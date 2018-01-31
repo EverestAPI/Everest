@@ -1,37 +1,48 @@
-﻿using MonoMod.InlineRT;
+﻿using MonoMod.Helpers;
+using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
-    public static class Everest {
+    public static partial class Everest {
 
         // TODO: Replace the following lines by build script automatically in the future.
         public static Version Version = new Version("0.0.0");
         public static string VersionSuffix = "dev";
 
-        public static string VersionUI => Version + "-" + VersionSuffix;
+        public static string VersionString => Version + "-" + VersionSuffix;
 
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         private static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
-        private static List<Dictionary<string, DynamicMethodDelegate>> _ModuleMethods = new List<Dictionary<string, DynamicMethodDelegate>>();
+        private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethods = new List<IDictionary<string, DynamicMethodDelegate>>();
+
+        public static string PathGame { get; internal set; }
 
         public static void Initialize() {
-            Register(new CoreEverestModule());
+            PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
 
-            // TODO: Relink and load external modules, do _everything._
-            // We've got a long way ahead of us. -ade
+            // Initialize the content helper.
+            Content.Initialize();
+
+            // Register our core module and load any other modules.
+            new CoreModule().Register();
+            Loader.LoadAuto();
+
+            // We're ready - invoke Initialize in all loaded modules, including CoreModule.
+            Invoke("Initialize");
         }
 
-        public static void Register(EverestModule module) {
+        public static void Register(this EverestModule module) {
             _Modules.Add(module);
             _ModuleTypes.Add(module.GetType());
-            _ModuleMethods.Add(new Dictionary<string, DynamicMethodDelegate>());
+            _ModuleMethods.Add(new FastDictionary<string, DynamicMethodDelegate>());
         }
 
         // A shared object a day keeps the GC away!
@@ -46,7 +57,7 @@ namespace Celeste.Mod {
 
             for (int i = 0; i < _Modules.Count; i++) {
                 EverestModule module = _Modules[i];
-                Dictionary<string, DynamicMethodDelegate> moduleMethods = _ModuleMethods[i];
+                IDictionary<string, DynamicMethodDelegate> moduleMethods = _ModuleMethods[i];
                 DynamicMethodDelegate method;
 
                 if (moduleMethods.TryGetValue(methodName, out method)) {
@@ -58,7 +69,7 @@ namespace Celeste.Mod {
 
                 MethodInfo methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
                 if (methodInfo != null)
-                    method = ReflectionHelper.GetDelegate(methodInfo);
+                    method = methodInfo.GetDelegate();
                 moduleMethods[methodName] = method;
                 if (method == null)
                     continue;
