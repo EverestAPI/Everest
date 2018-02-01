@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
+using Monocle;
 using MonoMod;
 using MonoMod.Helpers;
 using MonoMod.InlineRT;
@@ -18,15 +19,28 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class ContentExtensions {
 
-        public static Texture2D Patch(this Texture2D texture, List<AssetMetadata> patches) {
-            if (texture == null)
+        public static bool IsSubtexture(this MTexture input) =>
+            input.ClipRect.X != 0 ||
+            input.ClipRect.Y != 0 ||
+            input.ClipRect.Width != input.Texture.Texture.Width ||
+            input.ClipRect.Height != input.Texture.Texture.Height;
+
+        public static Texture2D GetSubtextureCopy(this MTexture input) {
+            if (input == null)
                 return null;
-            if (patches == null || patches.Count == 0)
-                return texture;
+            // TODO: Non-copy-to-CPU codepath!
 
-            // TODO: Overlay the patches over the input texture.
+            Color[] dataInput = new Color[input.Texture.Texture.Width * input.Texture.Texture.Height];
+            input.Texture.Texture.GetData(dataInput);
+            Color[] dataOutput = new Color[input.ClipRect.Width * input.ClipRect.Height];
 
-            return texture;
+            for (int y = 0; y < input.ClipRect.Height; y++)
+                for (int x = 0; x < input.ClipRect.Width; x++)
+                    dataOutput[y * input.ClipRect.Width + x] = dataInput[(input.ClipRect.Y + y) * input.Texture.Texture.Width + input.ClipRect.X + x];
+
+            Texture2D output = new Texture2D(Celeste.Instance.GraphicsDevice, input.ClipRect.Width, input.ClipRect.Height);
+            output.SetData(dataOutput);
+            return output;
         }
 
     }

@@ -13,6 +13,10 @@ using System.Xml;
 namespace Monocle {
     class patch_Atlas : Atlas {
 
+        // We're effectively in Atlas, but still need to "expose" private fields to our mod.
+        private Dictionary<string, MTexture> textures;
+        public Dictionary<string, MTexture> Textures => textures;
+
         public string DataMethod;
         public string DataPath;
         public string[] DataPaths;
@@ -68,6 +72,9 @@ namespace Monocle {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
+
+        public static Dictionary<string, MTexture> GetTextures(this Atlas self)
+            => ((patch_Atlas) self).Textures;
 
         public static string GetDataMethod(this Atlas self)
             => ((patch_Atlas) self).DataMethod;

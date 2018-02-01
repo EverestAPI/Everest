@@ -252,7 +252,11 @@ namespace Celeste.Mod {
 
                 } else if (asset is MTexture) {
                     MTexture tex = (MTexture) asset;
-                    Dump(assetName, tex.Texture);
+                    if (!tex.IsSubtexture())
+                        Dump(assetName, tex.Texture.Texture);
+                    else
+                        using (Texture2D region = tex.GetSubtextureCopy())
+                            Dump(assetName, region);
 
                 } else if (asset is Atlas) {
                     Atlas atlas = (Atlas) asset;
@@ -261,18 +265,27 @@ namespace Celeste.Mod {
                         // TODO: YAML metadata dump!
                     }
 
+                    /*
                     for (int i = 0; i < atlas.Sources.Count; i++) {
                         VirtualTexture source = atlas.Sources[i];
                         string name = source.Name;
 
                         if (name.StartsWith(assetNameFull))
-                            name = assetName + name.Substring(assetNameFull.Length);
+                            name = assetName + "_s_" + name.Substring(assetNameFull.Length);
                         else
-                            name = Path.Combine(assetName, name);
+                            name = Path.Combine(assetName + "_s", name);
                         if (name.EndsWith(".data"))
                             name = name.Substring(0, name.Length - 5);
 
                         Dump(name, source);
+                    }
+                    */
+
+                    Dictionary<string, MTexture> textures = atlas.GetTextures();
+                    foreach (KeyValuePair<string, MTexture> kvp in textures) {
+                        string name = kvp.Key;
+                        MTexture source = kvp.Value;
+                        Dump(Path.Combine(assetName, name.Replace('/', Path.DirectorySeparatorChar)), source);
                     }
                 }
 
