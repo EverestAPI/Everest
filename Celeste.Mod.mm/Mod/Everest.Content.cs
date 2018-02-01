@@ -49,6 +49,7 @@ namespace Celeste.Mod {
             public static bool DumpOnLoad = false;
             internal static bool _DumpAll = false;
 
+            public static string PathContentOrig { get; internal set; }
             public static string PathContent { get; internal set; }
             public static string PathDUMP { get; internal set; }
 
@@ -67,11 +68,33 @@ namespace Celeste.Mod {
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
+                Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
                 Directory.CreateDirectory(PathContent = Path.Combine(PathGame, "ModContent"));
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathGame, "ModDUMP"));
 
                 if (_DumpAll) {
-                    // TODO: Load all assets in original Content directory.
+                    bool prevDumpOnLoad = DumpOnLoad;
+                    DumpOnLoad = true;
+                    // TODO: Load and dump all other assets in original Content directory.
+
+                    // Dump atlases.
+
+                    // Noel on Discord:
+                    // not using it for the celeste assets but the "crunch" atlas packer is open source: https://github.com/ChevyRay/crunch
+                    // all celeste graphic assets use the Packer or PackerNoAtlas one tho
+
+                    // TODO: Find how to differentiate between Packer and PackerNoAtlas
+                    foreach (string file in Directory.EnumerateFiles(Path.Combine(PathContentOrig, "Graphics", "Atlases"), "*.meta", SearchOption.AllDirectories)) {
+                        Logger.Log("dump-all-atlas-meta", "file: " + file);
+                        // THIS IS HORRIBLE.
+                        try {
+                            Atlas.FromAtlas(file.Substring(0, file.Length - 5), Atlas.AtlasDataFormat.Packer).Dispose();
+                        } catch {
+                            Atlas.FromAtlas(file.Substring(0, file.Length - 5), Atlas.AtlasDataFormat.PackerNoAtlas).Dispose();
+                        }
+                    }
+
+                    DumpOnLoad = prevDumpOnLoad;
                 }
 
                 Crawl(null, PathContent);
@@ -207,9 +230,12 @@ namespace Celeste.Mod {
                 return asset;
             }
 
-            public static void Dump(string assetName, object asset) {
-                if (File.Exists(assetName))
-                    return; // TODO: Dump absolute path files.
+            public static void Dump(string assetNameFull, object asset) {
+                string assetName = assetNameFull;
+                if (assetName.StartsWith(PathContentOrig)) {
+                    assetName = assetName.Substring(PathContentOrig.Length + 1);
+                } else if (File.Exists(assetName))
+                    return; // Don't dump absolutely loaded files.
 
                 string pathDump = Path.Combine(PathDUMP, assetName);
                 Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
@@ -232,12 +258,21 @@ namespace Celeste.Mod {
                     Atlas atlas = (Atlas) asset;
 
                     if (!File.Exists(pathDump + ".yaml")) {
-                        // TODO: YAML dump!
+                        // TODO: YAML metadata dump!
                     }
 
                     for (int i = 0; i < atlas.Sources.Count; i++) {
                         VirtualTexture source = atlas.Sources[i];
-                        Dump(assetName + "." + source.Name, source);
+                        string name = source.Name;
+
+                        if (name.StartsWith(assetNameFull))
+                            name = assetName + name.Substring(assetNameFull.Length);
+                        else
+                            name = Path.Combine(assetName, name);
+                        if (name.EndsWith(".data"))
+                            name = name.Substring(0, name.Length - 5);
+
+                        Dump(name, source);
                     }
                 }
 
