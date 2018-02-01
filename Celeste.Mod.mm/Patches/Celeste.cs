@@ -18,6 +18,10 @@ namespace Celeste {
             while (queue.Count > 0) {
                 string arg = queue.Dequeue();
                 // TODO: Parse mod args.
+
+                if (arg == "--debug")
+                    PlayMode = PlayModes.Debug;
+
             }
 
             orig_Main(args);

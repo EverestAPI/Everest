@@ -25,8 +25,8 @@ namespace Celeste.Mod {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathGame, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
 
-                PathCache = Path.Combine(PathMods, "blacklist.txt");
-                if (!File.Exists(PathBlacklist)) {
+                PathBlacklist = Path.Combine(PathMods, "blacklist.txt");
+                if (File.Exists(PathBlacklist)) {
                     _Blacklist = File.ReadAllLines(PathBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                 } else {
                     using (StreamWriter writer = File.CreateText(PathBlacklist)) {

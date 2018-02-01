@@ -35,6 +35,8 @@ namespace Celeste {
         public extern void orig_Update();
         public override void Update() {
             if (introRoutine != null && Input.Pause.Pressed) {
+                if (Input.MenuDown.Check)
+                    Celeste.PlayMode = Celeste.PlayModes.Debug;
                 introRoutine.Cancel();
                 introRoutine = null;
             }
