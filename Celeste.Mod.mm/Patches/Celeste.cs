@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,15 +15,7 @@ namespace Celeste {
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
-            Queue<string> queue = new Queue<string>(args);
-            while (queue.Count > 0) {
-                string arg = queue.Dequeue();
-                // TODO: Parse mod args.
-
-                if (arg == "--debug")
-                    PlayMode = PlayModes.Debug;
-
-            }
+            Everest.ParseArgs(args);
 
             orig_Main(args);
         }

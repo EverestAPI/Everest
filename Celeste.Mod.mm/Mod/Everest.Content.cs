@@ -42,17 +42,19 @@ namespace Celeste.Mod {
                 public readonly static Type ObjModel = typeof(ObjModel);
             }
 
+            /// <summary>
+            /// Should Everest dump all game assets into a user-friendly format on load?
+            /// </summary>
+            public static bool DumpOnLoad = false;
+            internal static bool _DumpAll = false;
+
             public static string PathContent { get; internal set; }
-            public static string PathPatches { get; internal set; }
-            public static string PathPrefixPatches { get; internal set; }
-            public static string PathDialog { get; internal set; }
-            public static string PathPrefixDialog { get; internal set; }
+            public static string PathDUMP { get; internal set; }
 
             public readonly static IList<ContentModMetadata> Mods = new List<ContentModMetadata>();
 
             public readonly static IDictionary<string, AssetMetadata> Map = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
-            public readonly static IDictionary<string, List<AssetMetadata>> MapPatches = new FastDictionary<string, List<AssetMetadata>>();
 
             public readonly static IDictionary<string, object> Cache = new FastDictionary<string, object>();
             public readonly static HashSet<Type> CacheableTypes = new HashSet<Type>() {
@@ -65,12 +67,11 @@ namespace Celeste.Mod {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
                 Directory.CreateDirectory(PathContent = Path.Combine(PathGame, "ModContent"));
+                Directory.CreateDirectory(PathDUMP = Path.Combine(PathGame, "ModDUMP"));
 
-                Directory.CreateDirectory(PathPatches = Path.Combine(PathContent, PathPrefixPatches = "Patches"));
-                PathPrefixPatches += "/";
-
-                Directory.CreateDirectory(PathDialog = Path.Combine(PathContent, PathPrefixDialog = "Texts"));
-                PathPrefixDialog += "/";
+                if (_DumpAll) {
+                    // TODO: Load all assets in original Content directory.
+                }
 
                 Crawl(null, PathContent);
             }
@@ -91,42 +92,19 @@ namespace Celeste.Mod {
                 return metadata;
             }
 
-            public static bool TryGetMappedPatches(string path, out List<AssetMetadata> metadatas) {
-                if (MapPatches.TryGetValue(path, out metadatas)) return true;
-                if (MapPatches.TryGetValue(path.ToLowerInvariant(), out metadatas)) return true;
-
-                return false;
-            }
-            public static List<AssetMetadata> GetMappedPatches(string path) {
-                List<AssetMetadata> metadatas;
-                TryGetMappedPatches(path, out metadatas);
-                return metadatas;
-            }
-
             public static AssetMetadata AddMapping(string path, AssetMetadata metadata) {
                 path = path.Replace('\\', '/');
                 if (metadata.AssetType == null)
-                    path = ParseType(path, out metadata.AssetType, out metadata.AssetFormat, out metadata.IsPatch);
-                if (metadata.IsPatch)
-                    return AddMappingPatch(path, metadata);
+                    path = ParseType(path, out metadata.AssetType, out metadata.AssetFormat);
                 if (metadata.AssetType == Types.AssetTypeDirectory)
                     return MapDirs[path] = MapDirs[path.ToLowerInvariant()] = metadata;
 
                 return Map[path] = Map[path.ToLowerInvariant()] = metadata;
             }
 
-            public static AssetMetadata AddMappingPatch(string path, AssetMetadata metadata) {
-                List<AssetMetadata> metadatas;
-                if (!TryGetMappedPatches(path, out metadatas))
-                    MapPatches[path] = MapPatches[path.ToLowerInvariant()] = metadatas = new List<AssetMetadata>();
-                metadatas.Add(metadata);
-                return metadata;
-            }
-
-            public static string ParseType(string file, out Type type, out string format, out bool isPatch) {
+            public static string ParseType(string file, out Type type, out string format) {
                 type = Types.Object;
                 format = file.Length < 4 ? null : file.Substring(file.Length - 3);
-                isPatch = false;
 
                 if (file.EndsWith(".dll")) {
                     type = Types.AssetTypeAssembly;
@@ -141,11 +119,6 @@ namespace Celeste.Mod {
                     // TODO: Allow mods to parse custom types.
                 }
 
-                if (file.EndsWith(".patch")) {
-                    isPatch = true;
-                    file = file.Substring(0, file.Length - 6);
-                }
-
                 return file;
             }
 
@@ -154,7 +127,6 @@ namespace Celeste.Mod {
 
                 Map.Clear();
                 MapDirs.Clear();
-                MapPatches.Clear();
 
                 for (int i = 0; i < Mods.Count; i++)
                     Crawl(Mods[i]);
@@ -177,8 +149,6 @@ namespace Celeste.Mod {
                         PathDirectory = dir
                     });
 
-                if (Path.GetFileName(dir).StartsWith("DUMP"))
-                    return;
                 if (root == null)
                     root = dir;
                 string[] files = Directory.GetFiles(dir);
@@ -228,17 +198,29 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static T Patch<T>(string path, T asset) {
-                List<AssetMetadata> mapping = GetMappedPatches(path);
-                if (mapping == null || mapping.Count == 0)
-                    return asset;
-
-                if (asset is Texture2D)
-                    return (T) (object) (asset as Texture2D).Patch(GetMappedPatches(path));
-
-                // TODO: Allow mods to patch custom types.
-
+            public static T Process<T>(string assetName, T asset) {
+                if (DumpOnLoad)
+                    Dump(assetName, asset);
+                
+                // TODO: Allow mods to process the asset at runtime.
                 return asset;
+            }
+
+            public static void Dump(string assetName, object asset) {
+                if (File.Exists(assetName))
+                    return; // TODO: Dump absolute path files.
+                string pathDump = Path.Combine(PathDUMP, assetName);
+                if (File.Exists(pathDump))
+                    return; // Don't redump files.
+                Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
+
+                if (asset is Texture2D) {
+                    Texture2D tex = (Texture2D) asset;
+                    using (Stream stream = File.OpenWrite(pathDump))
+                        tex.SaveAsPng(stream, tex.Width, tex.Height);
+                }
+
+                // TODO: Dump more asset types if required.
             }
 
         }

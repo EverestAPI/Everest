@@ -13,27 +13,30 @@ namespace Celeste.Mod {
 
         public EverestContentManager(ContentManager inner)
             : base(inner.ServiceProvider) {
+            Inner = inner;
             RootDirectory = inner.RootDirectory;
         }
 
-        protected override Stream OpenStream(string assetName) {
+        public override T Load<T>(string assetName) {
             AssetMetadata mapping = Everest.Content.GetMapped(assetName);
-            // If we've got a valid non-patch mapping, load it.
-            if (mapping != null && !mapping.IsPatch)
-                return mapping.Stream;
+            // If we've got a valid mapping, load it instead of the original asset.
+            if (mapping != null)
+                return base.Load<T>(assetName);
 
-            return base.OpenStream(assetName);
+            // We don't have any overriding mapping - load from the inner CM instead.
+            T asset = Inner.Load<T>(assetName);
+            asset = Everest.Content.Process(assetName, asset);
+            return asset;
         }
 
-        public override T Load<T>(string assetName) {
-            T asset = base.Load<T>(assetName);
-            if (asset == null)
-                return asset;
+        public override void Unload() {
+            Inner.Unload();
+            base.Unload();
+        }
 
-            // If we've got a valid patch mapping, apply it.
-            asset = Everest.Content.Patch(assetName, asset);
-
-            return asset;
+        protected override void Dispose(bool disposing) {
+            Inner.Dispose();
+            base.Dispose(disposing);
         }
 
     }

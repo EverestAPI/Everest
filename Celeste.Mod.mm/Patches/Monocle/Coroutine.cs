@@ -20,11 +20,11 @@ namespace Monocle {
     }
     public static class CoroutineExt {
 
-        // Mods can't access patch_Coroutine directly.
-        // We thus expose it through an extension.
-        public static void Jump(this Coroutine c) {
-            // patch_Coroutine becomes Coroutine at patch time.
-            ((patch_Coroutine) c).Jump();
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static void Jump(this Coroutine self) {
+            ((patch_Coroutine) self).Jump();
         }
 
     }

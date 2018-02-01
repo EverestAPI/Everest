@@ -22,8 +22,6 @@ namespace Celeste.Mod {
         public Type AssetType = null;
         public string AssetFormat = null;
 
-        public bool IsPatch = false;
-
         public bool HasData = true;
 
         public string PathFile;
