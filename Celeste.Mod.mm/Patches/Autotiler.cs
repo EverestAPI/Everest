@@ -35,9 +35,8 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static string GetFilename(this Autotiler self) {
-            return ((patch_Autotiler) self).Filename;
-        }
+        public static string GetFilename(this Autotiler self)
+            => ((patch_Autotiler) self).Filename;
 
     }
 }

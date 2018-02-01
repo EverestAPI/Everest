@@ -16,15 +16,15 @@ namespace Celeste {
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
             Everest.ParseArgs(args);
-
             orig_Main(args);
         }
 
-        protected extern void orig_Initialize();
-        protected override void Initialize() {
-            orig_Initialize();
-
-            Everest.Initialize();
+        // Patching constructors is ugly.
+        public extern void orig_ctor_Celeste();
+        [MonoModConstructor]
+        public void ctor_Celeste() {
+            orig_ctor_Celeste();
+            Everest.Boot();
         }
 
     }

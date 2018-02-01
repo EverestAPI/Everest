@@ -47,7 +47,7 @@ namespace Celeste.Mod {
             }
         }
 
-        public static void Initialize() {
+        public static void Boot() {
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
 
             // Initialize the content helper.
@@ -57,8 +57,8 @@ namespace Celeste.Mod {
             new CoreModule().Register();
             Loader.LoadAuto();
 
-            // We're ready - invoke Initialize in all loaded modules, including CoreModule.
-            Invoke("Initialize");
+            // We're ready - invoke Boot in all loaded modules, including CoreModule.
+            Invoke("Boot");
         }
 
         public static void Register(this EverestModule module) {

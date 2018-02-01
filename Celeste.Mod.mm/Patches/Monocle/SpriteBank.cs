@@ -42,9 +42,8 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static string GetXMLPath(this SpriteBank self) {
-            return ((patch_SpriteBank) self).XMLPath;
-        }
+        public static string GetXMLPath(this SpriteBank self)
+            => ((patch_SpriteBank) self).XMLPath;
 
     }
 }

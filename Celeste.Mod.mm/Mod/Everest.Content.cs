@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
+using Monocle;
 using MonoMod;
 using MonoMod.Helpers;
 using MonoMod.InlineRT;
@@ -209,15 +210,35 @@ namespace Celeste.Mod {
             public static void Dump(string assetName, object asset) {
                 if (File.Exists(assetName))
                     return; // TODO: Dump absolute path files.
+
                 string pathDump = Path.Combine(PathDUMP, assetName);
-                if (File.Exists(pathDump))
-                    return; // Don't redump files.
                 Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
 
                 if (asset is Texture2D) {
                     Texture2D tex = (Texture2D) asset;
-                    using (Stream stream = File.OpenWrite(pathDump))
-                        tex.SaveAsPng(stream, tex.Width, tex.Height);
+                    if (!File.Exists(pathDump + ".png"))
+                        using (Stream stream = File.OpenWrite(pathDump + ".png"))
+                            tex.SaveAsPng(stream, tex.Width, tex.Height);
+
+                } else if (asset is VirtualTexture) {
+                    VirtualTexture tex = (VirtualTexture) asset;
+                    Dump(assetName, tex.Texture);
+
+                } else if (asset is MTexture) {
+                    MTexture tex = (MTexture) asset;
+                    Dump(assetName, tex.Texture);
+
+                } else if (asset is Atlas) {
+                    Atlas atlas = (Atlas) asset;
+
+                    if (!File.Exists(pathDump + ".yaml")) {
+                        // TODO: YAML dump!
+                    }
+
+                    for (int i = 0; i < atlas.Sources.Count; i++) {
+                        VirtualTexture source = atlas.Sources[i];
+                        Dump(assetName + "." + source.Name, source);
+                    }
                 }
 
                 // TODO: Dump more asset types if required.

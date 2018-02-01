@@ -23,9 +23,8 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static void Jump(this Coroutine self) {
-            ((patch_Coroutine) self).Jump();
-        }
+        public static void Jump(this Coroutine self)
+            => ((patch_Coroutine) self).Jump();
 
     }
 }

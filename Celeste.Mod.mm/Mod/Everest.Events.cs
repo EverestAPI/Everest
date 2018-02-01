@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
+using Monocle;
 using MonoMod;
 using MonoMod.Helpers;
 using MonoMod.InlineRT;
@@ -94,6 +95,14 @@ namespace Celeste.Mod {
                 public static event Action OnReloadMountainViews;
                 internal static void ReloadMountainViews()
                     => OnReloadMountainViews?.Invoke();
+
+            }
+
+            public static class Atlas {
+
+                public static event Action<Monocle.Atlas> OnLoad;
+                internal static void Load(Monocle.Atlas atlas)
+                    => OnLoad?.Invoke(atlas);
 
             }
 
