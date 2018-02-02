@@ -24,6 +24,7 @@ namespace Celeste.Mod {
             public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
             public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
             public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
+            public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
 
             /// <summary>
             /// Cached common type references. Microoptimization to replace ldtoken and token to ref conversion call with ldfld.
@@ -36,6 +37,7 @@ namespace Celeste.Mod {
                 public readonly static Type AssetTypeDirectory = typeof(AssetTypeDirectory);
                 public readonly static Type AssetTypeAssembly = typeof(AssetTypeAssembly);
                 public readonly static Type AssetTypeYaml = typeof(AssetTypeYaml);
+                public readonly static Type AssetTypeDialog = typeof(AssetTypeDialog);
 
                 public readonly static Type Texture = typeof(Texture);
                 public readonly static Type Texture2D = typeof(Texture2D);
@@ -57,6 +59,7 @@ namespace Celeste.Mod {
 
             public readonly static IDictionary<string, AssetMetadata> Map = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
+            public readonly static IDictionary<string, List<AssetMetadata>> MapDialogs = new FastDictionary<string, List<AssetMetadata>>();
 
             public readonly static IDictionary<string, object> Cache = new FastDictionary<string, object>();
             public readonly static HashSet<Type> CacheableTypes = new HashSet<Type>() {
@@ -94,6 +97,16 @@ namespace Celeste.Mod {
                 return metadata;
             }
 
+            public static bool TryGetDialogs(string path, out List<AssetMetadata> metadata) {
+                path = path.Replace('\\', '/');
+                return MapDialogs.TryGetValue(path, out metadata);
+            }
+            public static List<AssetMetadata> GetDialogs(string path) {
+                List<AssetMetadata> metadata;
+                TryGetDialogs(path, out metadata);
+                return metadata;
+            }
+
             public static AssetMetadata Add(string path, AssetMetadata metadata) {
                 path = path.Replace('\\', '/');
                 
@@ -107,7 +120,17 @@ namespace Celeste.Mod {
                 if (!Map.TryGetValue(path, out metadataPrev))
                     metadataPrev = null;
 
-                if (metadata.AssetType == Types.AssetTypeDirectory)
+                // Hardcoded case: Handle dialog .txts separately.
+                if (metadata.AssetType == Types.AssetTypeDialog) {
+                    List<AssetMetadata> dialogs;
+                    if (!MapDialogs.TryGetValue(path, out dialogs)) {
+                        dialogs = new List<AssetMetadata>();
+                        MapDialogs[path] = dialogs;
+                    }
+                    dialogs.Add(metadata);
+                }
+                // Hardcoded case: Handle directories separately.
+                else if (metadata.AssetType == Types.AssetTypeDirectory)
                     MapDirs[path] = metadata;
                 else
                     Map[path] = metadata;
@@ -145,6 +168,7 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".png")) {
                     type = Types.Texture2D;
                     file = file.Substring(0, file.Length - 4);
+
                 } else if (file.EndsWith(".obj")) {
                     type = Types.ObjModel;
                     file = file.Substring(0, file.Length - 4);
@@ -152,6 +176,10 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".yaml")) {
                     type = Types.AssetTypeYaml;
                     file = file.Substring(0, file.Length - 5);
+
+                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
+                    type = Types.AssetTypeDialog;
+                    file = file.Substring(0, file.Length - 4);
 
                 } else {
                     // TODO: Allow mods to parse custom types.
@@ -165,19 +193,24 @@ namespace Celeste.Mod {
 
                 Map.Clear();
                 MapDirs.Clear();
+                MapDialogs.Clear();
 
                 for (int i = 0; i < Mods.Count; i++)
                     Crawl(Mods[i]);
             }
 
             public static void Crawl(ContentModMetadata meta) {
-                if (meta.PathDirectory != null)
-                    Crawl(meta, meta.PathDirectory);
-                else if (meta.PathArchive != null)
-                    using (Stream zipStream = File.OpenRead(meta.PathArchive))
-                    using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read))
-                        Crawl(meta, meta.PathArchive, zip);
-                else if (meta.Assembly != null)
+                if (meta.PathDirectory != null) {
+                    if (Directory.Exists(meta.PathDirectory))
+                        Crawl(meta, meta.PathDirectory);
+
+                } else if (meta.PathArchive != null) {
+                    if (File.Exists(meta.PathArchive))
+                        using (Stream zipStream = File.OpenRead(meta.PathArchive))
+                        using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read))
+                            Crawl(meta, meta.PathArchive, zip);
+
+                } else if (meta.Assembly != null)
                     Crawl(meta, meta.Assembly);
             }
 

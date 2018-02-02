@@ -100,7 +100,7 @@ namespace Celeste.Mod {
                         AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
                     }
 
-                    // ... then handle the assembly and all assets.
+                    // ... then handle the assembly ...
                     foreach (ZipArchiveEntry entry in zip.Entries) {
                         string entryName = entry.FullName.Replace('\\', '/');
                         if (meta != null && entryName == meta.DLL) {
@@ -117,11 +117,11 @@ namespace Celeste.Mod {
                             }
 
                         }
-
-                        Content.Add(entryName, new AssetMetadata(archive, entryName) {
-                            AssetType = entryName.EndsWith("/") ? typeof(Content.AssetTypeDirectory) : null
-                        });
                     }
+
+                    // ... then tell the Content class to crawl through the zip.
+                    // (This also registers the zip for recrawls further down the line.)
+                    Content.Crawl(null, archive, zip);
                 }
 
                 if (meta != null && asm != null)

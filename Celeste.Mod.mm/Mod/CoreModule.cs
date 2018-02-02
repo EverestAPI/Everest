@@ -28,15 +28,17 @@ namespace Celeste.Mod {
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
             int index;
 
-            // Find options button and place our button above it.
+            // Find the options button and place our button below it.
             index = buttons.FindIndex(_ => {
                 MainMenuSmallButton other = (_ as MainMenuSmallButton);
                 if (other == null)
                     return false;
                 return other.GetLabelName() == "menu_options" && other.GetIconName() == "menu/options";
             });
-            // Before exit button.
-            if (index == -1)
+            if (index != -1)
+                index++;
+            // Otherwise, place it above the exit button.
+            else
                 index = buttons.Count - 1;
             buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions", menu, Vector2.Zero, Vector2.Zero, () => {
                 Audio.Play("event:/ui/main/button_select");
