@@ -114,7 +114,7 @@ _NCrunch_*
 nCrunchTemp_*
 
 # MightyMoose
-*.mm.*
+# *.mm.*
 AutoTest.Net/
 
 # Web workbench (sass)

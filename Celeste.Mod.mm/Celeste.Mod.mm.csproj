@@ -1,0 +1,122 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D5D0239D-FF95-4897-9484-1898AB7E82F5}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Celeste</RootNamespace>
+    <AssemblyName>Celeste.Mod.mm</AssemblyName>
+    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Celeste">
+      <HintPath>..\libs-stripped\Celeste.exe</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="FNA">
+      <HintPath>..\libs-stripped\FNA.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil">
+      <HintPath>..\libs\Mono.Cecil.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Mdb">
+      <HintPath>..\libs\Mono.Cecil.Mdb.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Pdb">
+      <HintPath>..\libs\Mono.Cecil.Pdb.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="MonoMod">
+      <HintPath>..\..\FastVRMod\libs\MonoMod.exe</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Steamworks.NET">
+      <HintPath>..\libs-stripped\Steamworks.NET.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.XML" />
+    <Reference Include="YamlDotNet, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\YamlDotNet.4.3.0\lib\net45\YamlDotNet.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Mod\AssetMetadata.cs" />
+    <Compile Include="Mod\ContentExtensions.cs" />
+    <Compile Include="Mod\Everest.Experiments.cs" />
+    <Compile Include="Mod\Everest.Events.cs" />
+    <Compile Include="Mod\Everest.Content.cs" />
+    <Compile Include="Mod\Everest.Relinker.cs" />
+    <Compile Include="Mod\Everest.Loader.cs" />
+    <Compile Include="Mod\Everest.cs" />
+    <Compile Include="Mod\CoreModule.cs" />
+    <Compile Include="Mod\EverestContentManager.cs" />
+    <Compile Include="Mod\EverestModule.cs" />
+    <Compile Include="Mod\Extensions.cs" />
+    <Compile Include="Mod\LimitedStream.cs" />
+    <Compile Include="Mod\Logger.cs" />
+    <Compile Include="Mod\YamlHelper.cs" />
+    <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\Player.cs" />
+    <Compile Include="Patches\PlayerHair.cs" />
+    <Compile Include="Patches\AreaData.cs" />
+    <Compile Include="Patches\Autotiler.cs" />
+    <Compile Include="Patches\GFX.cs" />
+    <Compile Include="Patches\Monocle\VirtualAsset.cs" />
+    <Compile Include="Patches\Monocle\MTexture.cs" />
+    <Compile Include="Patches\Monocle\VirtualTexture.cs" />
+    <Compile Include="Patches\Monocle\VirtualContent.cs" />
+    <Compile Include="Patches\Monocle\Calc.cs" />
+    <Compile Include="Patches\Monocle\Atlas.cs" />
+    <Compile Include="Patches\Monocle\SpriteBank.cs" />
+    <Compile Include="Patches\Monocle\Commands.cs" />
+    <Compile Include="Patches\Monocle\Coroutine.cs" />
+    <Compile Include="Patches\GameLoader.cs" />
+    <Compile Include="Patches\OuiMainMenu.cs" />
+    <Compile Include="Patches\Dialog.cs" />
+    <Compile Include="Patches\OuiTitleScreen.cs" />
+    <Compile Include="Patches\Celeste.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
