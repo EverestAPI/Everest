@@ -55,8 +55,7 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="MonoMod">
-      <HintPath>..\..\FastVRMod\libs\MonoMod.exe</HintPath>
-      <Private>False</Private>
+      <HintPath>..\libs\MonoMod.exe</HintPath>
     </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>..\libs-stripped\Steamworks.NET.dll</HintPath>
@@ -64,29 +63,30 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.IO.Compression" />
-    <Reference Include="System.XML" />
+    <Reference Include="System.Xml" />
     <Reference Include="YamlDotNet, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\YamlDotNet.4.3.0\lib\net45\YamlDotNet.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mod\AssetMetadata.cs" />
-    <Compile Include="Mod\ContentExtensions.cs" />
-    <Compile Include="Mod\Everest.Experiments.cs" />
-    <Compile Include="Mod\Everest.Events.cs" />
-    <Compile Include="Mod\Everest.Content.cs" />
-    <Compile Include="Mod\Everest.Relinker.cs" />
-    <Compile Include="Mod\Everest.Loader.cs" />
-    <Compile Include="Mod\Everest.cs" />
-    <Compile Include="Mod\CoreModule.cs" />
-    <Compile Include="Mod\EverestContentManager.cs" />
-    <Compile Include="Mod\EverestModule.cs" />
-    <Compile Include="Mod\Extensions.cs" />
-    <Compile Include="Mod\LimitedStream.cs" />
-    <Compile Include="Mod\Logger.cs" />
+    <Compile Include="Mod\Helpers\AssetMetadata.cs" />
+    <Compile Include="Mod\Helpers\ContentExtensions.cs" />
+    <Compile Include="Mod\Core\Everest.Experiments.cs" />
+    <Compile Include="Mod\Core\Everest.Events.cs" />
+    <Compile Include="Mod\Core\Everest.Content.cs" />
+    <Compile Include="Mod\Core\Everest.Relinker.cs" />
+    <Compile Include="Mod\Core\Everest.Loader.cs" />
+    <Compile Include="Mod\Core\Everest.cs" />
+    <Compile Include="Mod\Core\CoreModule.cs" />
+    <Compile Include="Mod\Helpers\EverestContentManager.cs" />
+    <Compile Include="Mod\Core\EverestModule.cs" />
+    <Compile Include="Mod\Helpers\Extensions.cs" />
+    <Compile Include="Mod\Helpers\LimitedStream.cs" />
+    <Compile Include="Mod\Helpers\Logger.cs" />
     <Compile Include="Mod\Meta\AtlasFrameMeta.cs" />
-    <Compile Include="Mod\YamlHelper.cs" />
+    <Compile Include="Mod\Helpers\YamlHelper.cs" />
+    <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Player.cs" />
