@@ -20,11 +20,10 @@ namespace Celeste.Mod {
     public static partial class Everest {
         public static class Content {
 
-            /// <summary>
-            /// Special meta types.
-            /// </summary>
+            // Special meta types.
             public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
             public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
+            public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
 
             /// <summary>
             /// Cached common type references. Microoptimization to replace ldtoken and token to ref conversion call with ldfld.
@@ -36,6 +35,7 @@ namespace Celeste.Mod {
 
                 public readonly static Type AssetTypeDirectory = typeof(AssetTypeDirectory);
                 public readonly static Type AssetTypeAssembly = typeof(AssetTypeAssembly);
+                public readonly static Type AssetTypeYaml = typeof(AssetTypeYaml);
 
                 public readonly static Type Texture = typeof(Texture);
                 public readonly static Type Texture2D = typeof(Texture2D);
@@ -75,6 +75,7 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
+                Crawl(null, typeof(Everest).Assembly);
                 Crawl(null, PathContent);
             }
 
@@ -147,6 +148,11 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".obj")) {
                     type = Types.ObjModel;
                     file = file.Substring(0, file.Length - 4);
+
+                } else if (file.EndsWith(".yaml")) {
+                    type = Types.AssetTypeYaml;
+                    file = file.Substring(0, file.Length - 5);
+
                 } else {
                     // TODO: Allow mods to parse custom types.
                 }

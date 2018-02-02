@@ -28,6 +28,9 @@ namespace Monocle {
     }
     public static class VirtualContentExt {
 
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
         public static VirtualTexture CreateTexture(AssetMetadata metadata)
             => patch_VirtualContent.CreateTexture(metadata);
 

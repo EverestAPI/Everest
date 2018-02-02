@@ -12,6 +12,13 @@ using System.Threading.Tasks;
 namespace Celeste {
     static class patch_Dialog {
 
+        public static extern void orig_InitLanguages();
+        public static void InitLanguages() {
+            // TODO: Apply custom texts.
+            orig_InitLanguages();
+            Everest.Events.Dialog.InitLanguages();
+        }
+
         public static string Get(string name, Language language = null) {
             if (language == null)
                 language = Dialog.Language;

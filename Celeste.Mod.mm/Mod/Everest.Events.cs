@@ -16,6 +16,9 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
+using _Atlas = Monocle.Atlas;
+using _OuiMainMenu = Celeste.OuiMainMenu;
+
 namespace Celeste.Mod {
     public static partial class Everest {
         public static class Events {
@@ -100,9 +103,25 @@ namespace Celeste.Mod {
 
             public static class Atlas {
 
-                public static event Action<Monocle.Atlas> OnLoad;
-                internal static void Load(Monocle.Atlas atlas)
+                public static event Action<_Atlas> OnLoad;
+                internal static void Load(_Atlas atlas)
                     => OnLoad?.Invoke(atlas);
+
+            }
+
+            public static class Dialog {
+
+                public static event Action OnInitLanguages;
+                internal static void InitLanguages()
+                    => OnInitLanguages?.Invoke();
+
+            }
+
+            public static class OuiMainMenu {
+
+                public static event Action<_OuiMainMenu, List<MenuButton>> OnCreateMainMenuButtons;
+                internal static void CreateMainMenuButtons(_OuiMainMenu menu, List<MenuButton> buttons)
+                    => OnCreateMainMenuButtons?.Invoke(menu, buttons);
 
             }
 

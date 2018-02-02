@@ -59,8 +59,8 @@ namespace Celeste.Mod {
             new CoreModule().Register();
             Loader.LoadAuto();
 
-            // We're ready - invoke Boot in all loaded modules, including CoreModule.
-            Invoke("Boot");
+            // We're ready - invoke Load in all loaded modules, including CoreModule.
+            Invoke("Load");
         }
 
         public static void Register(this EverestModule module) {

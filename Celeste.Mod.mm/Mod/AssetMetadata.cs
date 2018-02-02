@@ -123,6 +123,23 @@ namespace Celeste.Mod {
             AssemblyName = assembly.GetName().Name;
         }
 
+        public bool TryDeserialize<T>(out T result) {
+            if (AssetType == Everest.Content.Types.AssetTypeYaml) {
+                using (StreamReader reader = new StreamReader(Stream))
+                    result = YamlHelper.Deserializer.Deserialize<T>(reader);
+                return true;
+            }
+
+            result = default(T);
+            return false;
+        }
+
+        public T Deserialize<T>() {
+            T result;
+            TryDeserialize(out result);
+            return result;
+        }
+
         public enum SourceType {
             Meta,
             Filesystem,

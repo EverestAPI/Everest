@@ -21,19 +21,16 @@ namespace Celeste.Mod {
         public virtual EverestModuleMetadata Metadata { get; set; }
 
         /// <summary>
-        /// Perform any initializing actions after all mods have been loaded.
+        /// Perform any initializing actions after all modd have been loaded.
         /// Do not depend on any specific order in which the mods get initialized.
         /// </summary>
-        public abstract void Initialize();
+        public abstract void Load();
 
         /// <summary>
-        /// Create and add main menu buttons.
-        /// Note: I'm still thinking about replacing this with a delegate in Everest.Hooks. -ade
+        /// Unload any unmanaged resources allocated by the mod (f.e. textures) and
+        /// undo any changes performed by the mod.
         /// </summary>
-        /// <param name="menu">The main menu.</param>
-        /// <param name="buttons">The button list.</param>
-        public virtual void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
-        }
+        public abstract void Unload();
 
     }
 

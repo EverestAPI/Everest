@@ -21,7 +21,7 @@ namespace Celeste {
         public void CreateButtons() {
             orig_CreateButtons();
 
-            Everest.Invoke("CreateMainMenuButtons", this, buttons);
+            Everest.Events.OuiMainMenu.CreateMainMenuButtons(this, buttons);
 
             // Current button position.
             Vector2 pos = new Vector2(320f, 160f);
@@ -33,12 +33,11 @@ namespace Celeste {
                 MenuButton button = buttons[i];
 
                 button.TargetPosition = pos;
-                button.TweenFrom = pos + offs;
+                button.Position = button.TweenFrom = pos + offs;
                 if (Visible && Focused)
                     button.Position = button.TargetPosition;
 
                 pos += Vector2.UnitY * button.ButtonHeight;
-
                 // Special case: Climb button changes pos horizontally.
                 if (button == climbButton)
                     pos.X -= 140f;

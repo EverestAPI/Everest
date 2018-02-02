@@ -1,6 +1,8 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
@@ -90,28 +92,30 @@ namespace Monocle {
         public static Atlas.AtlasDataFormat? GetDataFormat(this Atlas self)
             => ((patch_Atlas) self).DataFormat;
 
-        public static void Ingest(this Atlas self, AssetMetadata metadata) {
+        public static void Ingest(this Atlas self, AssetMetadata asset) {
             // Crawl through all child assets.
-            if (metadata.AssetType == Everest.Content.Types.AssetTypeDirectory) {
-                foreach (AssetMetadata child in metadata.Children)
+            if (asset.AssetType == Everest.Content.Types.AssetTypeDirectory) {
+                foreach (AssetMetadata child in asset.Children)
                     self.Ingest(child);
                 return;
             }
 
             // Forcibly add the mod content to the atlas.
-            if (metadata.AssetType == Everest.Content.Types.Texture2D) {
+            if (asset.AssetType == Everest.Content.Types.Texture2D) {
                 string parentPath = self.GetDataPath();
                 if (parentPath.StartsWith(Everest.Content.PathContentOrig))
                     parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
                 parentPath = parentPath.Replace('\\', '/');
 
-                string path = metadata.PathRelative;
+                string path = asset.PathRelative;
                 if (!path.StartsWith(parentPath))
                     return;
                 path = path.Substring(parentPath.Length + 1);
 
-                VirtualTexture replacementV = VirtualContentExt.CreateTexture(metadata);
+                VirtualTexture replacementV = VirtualContentExt.CreateTexture(asset);
                 MTexture replacement;
+                AssetMetadata metaAsset;
+                AtlasFrameMeta meta;
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
                 MTexture existing;
@@ -131,9 +135,14 @@ namespace Monocle {
                     if (!alive)
                         existing.Unload();
 
+                } else if (
+                    Everest.Content.TryGet(asset.PathRelative + ".meta", out metaAsset) &&
+                    metaAsset.TryDeserialize(out meta)
+                ) {
+                    // Read metadata if available and use it.
+                    replacement = new MTexture(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                 } else {
                     // Apply width and height from replacement texture.
-                    // TODO: How will we handle custom drawOffsets, frameWidths and frameHeights in the future? Name suffix?
                     replacement = new MTexture(replacementV);
                 }
 

@@ -85,8 +85,10 @@
     <Compile Include="Mod\Extensions.cs" />
     <Compile Include="Mod\LimitedStream.cs" />
     <Compile Include="Mod\Logger.cs" />
+    <Compile Include="Mod\Meta\AtlasFrameMeta.cs" />
     <Compile Include="Mod\YamlHelper.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Player.cs" />
     <Compile Include="Patches\PlayerHair.cs" />
     <Compile Include="Patches\AreaData.cs" />
@@ -110,6 +112,17 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Content\Dialog\English.txt">
+      <LogicalName>Content\Dialog\English.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
