@@ -43,8 +43,7 @@ namespace Celeste.Mod {
             buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions", menu, Vector2.Zero, Vector2.Zero, () => {
                 Audio.Play("event:/ui/main/button_select");
                 Audio.Play("event:/ui/main/whoosh_large_in");
-                // TODO: Mod options menu.
-                menu.Overworld.Goto<OuiOptions>();
+                menu.Overworld.Goto<OuiModOptions>();
             }));
         }
 

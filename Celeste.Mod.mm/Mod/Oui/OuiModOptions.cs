@@ -1,1 +1,119 @@
-﻿
+﻿using Microsoft.Xna.Framework;
+using Monocle;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Celeste.Mod {
+    public class OuiModOptions : Oui {
+
+        private TextMenu menu;
+
+        private const float onScreenX = 960f;
+        private const float offScreenX = 2880f;
+
+        private string startLanguage;
+        private string currentLanguage;
+
+        private float alpha = 0f;
+
+        public OuiModOptions() {
+        }
+
+        private void ReloadMenu() {
+            Vector2 position = Vector2.Zero;
+
+            int selected = -1;
+            if (menu != null) {
+                position = menu.Position;
+                selected = menu.Selection;
+                Scene.Remove(menu);
+            }
+
+            menu = new TextMenu();
+            menu.Add(new TextMenu.Header("Everest v." + Everest.VersionString));
+            menu.Add(new TextMenu.SubHeader("Experiments"));
+            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
+
+            // TODO: Per mod options.
+
+            if (menu.Height > menu.ScrollableMinSize) {
+                menu.Position.Y = menu.ScrollTargetY;
+            }
+
+            if (selected >= 0) {
+                menu.Selection = selected;
+                menu.Position = position;
+            }
+
+            Scene.Add(menu);
+        }
+
+        public override IEnumerator Enter(Oui from) {
+            ReloadMenu();
+
+            menu.Visible = (Visible = true);
+            menu.Focused = false;
+
+            currentLanguage = startLanguage = Settings.Instance.Language;
+
+            for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
+                menu.X = offScreenX + -1920f * Ease.CubeOut(p);
+                alpha = Ease.CubeOut(p);
+                yield return null;
+            }
+
+            menu.Focused = true;
+            yield break;
+        }
+
+        public override IEnumerator Leave(Oui next) {
+            Audio.Play("event:/ui/main/whoosh_large_out");
+            menu.Focused = false;
+
+            yield return UserIO.SaveHandler(false, true);
+
+            for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
+                menu.X = onScreenX + 1920f * Ease.CubeIn(p);
+                alpha = 1f - Ease.CubeIn(p);
+                yield return null;
+            }
+
+            if (startLanguage != Settings.Instance.Language) {
+                Overworld.ReloadMenus(Overworld.StartMode.ReturnFromOptions);
+                yield return null;
+            }
+
+            menu.Visible = Visible = false;
+            menu.RemoveSelf();
+            menu = null;
+            yield break;
+        }
+
+        public override void Update() {
+            if (menu != null && menu.Focused &&
+                Selected && Input.MenuCancel.Pressed) {
+                Audio.Play("event:/ui/main/button_back");
+                Overworld.Goto<OuiMainMenu>();
+            }
+
+            if (Selected && currentLanguage != Settings.Instance.Language) {
+                currentLanguage = Settings.Instance.Language;
+                ReloadMenu();
+            }
+
+            base.Update();
+        }
+
+        public override void Render() {
+            if (alpha > 0f)
+                Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+            base.Render();
+        }
+
+
+    }
+}
