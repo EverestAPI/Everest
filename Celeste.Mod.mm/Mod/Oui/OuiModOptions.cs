@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FMOD.Studio;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections;
@@ -23,6 +24,22 @@ namespace Celeste.Mod {
         public OuiModOptions() {
         }
 
+        public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
+            TextMenu menu = new TextMenu();
+
+            menu.Add(new TextMenu.Header("Everest v." + Everest.VersionString));
+            menu.Add(new TextMenu.SubHeader("Experiments"));
+            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
+
+            // TODO: Per mod options - pass 
+
+            if (menu.Height > menu.ScrollableMinSize) {
+                menu.Position.Y = menu.ScrollTargetY;
+            }
+
+            return menu;
+        }
+
         private void ReloadMenu() {
             Vector2 position = Vector2.Zero;
 
@@ -33,16 +50,7 @@ namespace Celeste.Mod {
                 Scene.Remove(menu);
             }
 
-            menu = new TextMenu();
-            menu.Add(new TextMenu.Header("Everest v." + Everest.VersionString));
-            menu.Add(new TextMenu.SubHeader("Experiments"));
-            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
-
-            // TODO: Per mod options.
-
-            if (menu.Height > menu.ScrollableMinSize) {
-                menu.Position.Y = menu.ScrollTargetY;
-            }
+            menu = CreateMenu(false, null);
 
             if (selected >= 0) {
                 menu.Selection = selected;
