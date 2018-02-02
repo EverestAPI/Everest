@@ -40,9 +40,11 @@ namespace Celeste.Mod {
 
                 else if (arg == "--dump")
                     Content.DumpOnLoad = true;
-
                 else if (arg == "--dump-all")
                     Content._DumpAll = true;
+
+                else if (arg == "--rainbow")
+                    Experiments.RainbowMode = true;
 
             }
         }

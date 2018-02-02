@@ -118,6 +118,7 @@ namespace Monocle {
                 if (textures.TryGetValue(path, out existing)) {
                     // Apply width and height from existing instance.
                     replacement = new MTexture(replacementV, existing.DrawOffset, existing.Width, existing.Height);
+                    replacement.SetAtlasPath(existing.AtlasPath);
 
                     // Unload the texture if no other reference to the same VirtualTexture texture remaining.
                     bool alive = false;
