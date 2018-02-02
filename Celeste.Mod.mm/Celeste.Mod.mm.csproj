@@ -89,6 +89,7 @@
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
+    <Compile Include="Patches\Monocle\Engine.cs" />
     <Compile Include="Patches\Player.cs" />
     <Compile Include="Patches\PlayerHair.cs" />
     <Compile Include="Patches\AreaData.cs" />
