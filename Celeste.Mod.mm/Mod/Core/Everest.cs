@@ -84,11 +84,16 @@ namespace Celeste.Mod {
         private readonly static Type[] _EmptyTypeArray = new Type[0];
         private readonly static object[] _EmptyObjectArray = new object[0];
 
-        public static void Invoke(string methodName, params object[] args) {
+        public static void Invoke(string methodName, params object[] args)
+            => InvokeTyped(methodName, null, args);
+        public static void InvokeTyped(string methodName, Type[] argsTypes, params object[] args) {
             if (args == null) {
                 args = _EmptyObjectArray;
+                if (argsTypes == null)
+                    argsTypes = _EmptyTypeArray;
+            } else if (argsTypes == null) {
+                argsTypes = Type.GetTypeArray(args);
             }
-            Type[] argsTypes = Type.GetTypeArray(args);
 
             for (int i = 0; i < _Modules.Count; i++) {
                 EverestModule module = _Modules[i];

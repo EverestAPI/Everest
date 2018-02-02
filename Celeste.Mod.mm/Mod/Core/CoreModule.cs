@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FMOD.Studio;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,6 +46,13 @@ namespace Celeste.Mod {
                 Audio.Play("event:/ui/main/whoosh_large_in");
                 menu.Overworld.Goto<OuiModOptions>();
             }));
+        }
+
+        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+            menu.Add(new TextMenu.SubHeader("Everest Experiments"));
+
+            // TODO: EverestModuleSettings
+            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
         }
 
     }
