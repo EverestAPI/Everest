@@ -125,6 +125,13 @@ namespace Celeste.Mod {
 
             }
 
+            public static class Level
+            {
+                public static event Action<int, bool, bool> OnPause;
+                internal static void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false)
+                    => OnPause?.Invoke(startIndex, minimal, quickreset);
+            }
+
         }
     }
 }
