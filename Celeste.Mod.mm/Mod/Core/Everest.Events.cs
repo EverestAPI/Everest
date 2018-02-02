@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 
 using _Atlas = Monocle.Atlas;
 using _OuiMainMenu = Celeste.OuiMainMenu;
+using _Level = Celeste.Level;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -125,11 +126,16 @@ namespace Celeste.Mod {
 
             }
 
-            public static class Level
-            {
-                public static event Action<int, bool, bool> OnPause;
-                internal static void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false)
-                    => OnPause?.Invoke(startIndex, minimal, quickReset);
+            public static class Level {
+
+                public static event Action<_Level, int, bool, bool> OnPause;
+                internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
+                    => OnPause?.Invoke(level, startIndex, minimal, quickReset);
+
+                public static event Action<_Level, TextMenu, bool> OnCreatePauseMenuButtons;
+                internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
+                    => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
+
             }
 
         }

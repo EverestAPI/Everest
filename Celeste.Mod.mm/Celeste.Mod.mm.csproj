@@ -70,6 +70,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Core\EverestModuleSettings.cs" />
+    <Compile Include="Mod\Core\EverestModuleMetadata.cs" />
     <Compile Include="Mod\Helpers\AssetMetadata.cs" />
     <Compile Include="Mod\Helpers\ContentExtensions.cs" />
     <Compile Include="Mod\Core\Everest.Experiments.cs" />
@@ -88,8 +90,11 @@
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\Monocle\EntityList.cs" />
+    <Compile Include="Patches\TextMenu.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Monocle\Engine.cs" />
+    <Compile Include="Patches\Level.cs" />
     <Compile Include="Patches\Player.cs" />
     <Compile Include="Patches\PlayerHair.cs" />
     <Compile Include="Patches\AreaData.cs" />
