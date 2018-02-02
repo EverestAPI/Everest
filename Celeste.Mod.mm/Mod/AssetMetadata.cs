@@ -18,13 +18,14 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public class AssetMetadata {
 
-        public ContainerType Container;
+        public SourceType Source;
         public Type AssetType = null;
         public string AssetFormat = null;
 
         public bool HasData = true;
 
-        public string PathFile;
+        public string PathRelative;
+        public string PathSource;
         public string PathArchive;
 
         public Assembly Assembly;
@@ -32,6 +33,8 @@ namespace Celeste.Mod {
 
         public long Offset;
         public int Length;
+
+        public List<AssetMetadata> Children = new List<AssetMetadata>();
 
         /// <summary>
         /// Returns a new stream to read the data from.
@@ -41,10 +44,10 @@ namespace Celeste.Mod {
             get {
                 if (!HasData) return null;
                 Stream stream = null;
-                if (Container == ContainerType.Filesystem) {
-                    stream = File.OpenRead(PathFile);
-                } else if (Container == ContainerType.Zip) {
-                    string file = PathFile.Replace('\\', '/');
+                if (Source == SourceType.Filesystem) {
+                    stream = File.OpenRead(PathSource);
+                } else if (Source == SourceType.Zip) {
+                    string file = PathSource.Replace('\\', '/');
                     using (Stream zipStream = File.OpenRead(PathArchive))
                     using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
                             foreach (ZipArchiveEntry entry in zip.Entries) {
@@ -57,8 +60,8 @@ namespace Celeste.Mod {
                             }
                         }
                     }
-                } else if (Container == ContainerType.Assembly) {
-                    stream = Assembly.GetManifestResourceStream(PathFile);
+                } else if (Source == SourceType.Assembly) {
+                    stream = Assembly.GetManifestResourceStream(PathSource);
                 }
 
                 if (stream == null || Length == 0) {
@@ -92,7 +95,7 @@ namespace Celeste.Mod {
         }
 
         public AssetMetadata() {
-            Container = ContainerType.Filesystem;
+            Source = SourceType.Meta;
         }
 
         public AssetMetadata(string file)
@@ -100,29 +103,31 @@ namespace Celeste.Mod {
         }
         public AssetMetadata(string file, long offset, int length)
             : this() {
-            PathFile = file;
+            Source = SourceType.Filesystem;
+            PathSource = file;
             Offset = offset;
             Length = length;
         }
 
         public AssetMetadata(string zip, string file)
             : this(file) {
-            Container = ContainerType.Zip;
+            Source = SourceType.Zip;
             PathArchive = zip;
-            PathFile = file;
+            PathSource = file;
         }
 
         public AssetMetadata(Assembly assembly, string file)
             : this(file) {
-            Container = ContainerType.Assembly;
+            Source = SourceType.Assembly;
             Assembly = assembly;
             AssemblyName = assembly.GetName().Name;
         }
 
-        public enum ContainerType {
+        public enum SourceType {
+            Meta,
             Filesystem,
             Zip,
-            Assembly
+            Assembly,
         }
 
     }

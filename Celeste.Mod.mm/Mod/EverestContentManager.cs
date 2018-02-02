@@ -18,7 +18,7 @@ namespace Celeste.Mod {
         }
 
         public override T Load<T>(string assetName) {
-            AssetMetadata mapping = Everest.Content.GetMapped(assetName);
+            AssetMetadata mapping = Everest.Content.Get(assetName);
             // If we've got a valid mapping, load it instead of the original asset.
             if (mapping != null)
                 return base.Load<T>(assetName);

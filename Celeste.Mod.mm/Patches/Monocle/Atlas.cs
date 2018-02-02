@@ -1,10 +1,12 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -87,6 +89,57 @@ namespace Monocle {
 
         public static Atlas.AtlasDataFormat? GetDataFormat(this Atlas self)
             => ((patch_Atlas) self).DataFormat;
+
+        public static void Ingest(this Atlas self, AssetMetadata metadata) {
+            // Crawl through all child assets.
+            if (metadata.AssetType == Everest.Content.Types.AssetTypeDirectory) {
+                foreach (AssetMetadata child in metadata.Children)
+                    self.Ingest(child);
+                return;
+            }
+
+            // Forcibly add the mod content to the atlas.
+            if (metadata.AssetType == Everest.Content.Types.Texture2D) {
+                string parentPath = self.GetDataPath();
+                if (parentPath.StartsWith(Everest.Content.PathContentOrig))
+                    parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
+                parentPath = parentPath.Replace('\\', '/');
+
+                string path = metadata.PathRelative;
+                if (!path.StartsWith(parentPath))
+                    return;
+                path = path.Substring(parentPath.Length + 1);
+
+                VirtualTexture replacementV = VirtualContentExt.CreateTexture(metadata);
+                MTexture replacement;
+
+                Dictionary<string, MTexture> textures = self.GetTextures();
+                MTexture existing;
+                if (textures.TryGetValue(path, out existing)) {
+                    // Apply width and height from existing instance.
+                    replacement = new MTexture(replacementV, existing.DrawOffset, existing.Width, existing.Height);
+
+                    // Unload the texture if no other reference to the same VirtualTexture texture remaining.
+                    bool alive = false;
+                    foreach (KeyValuePair<string, MTexture> other in textures) {
+                        if (other.Key != path && other.Value.Texture == existing.Texture) {
+                            alive = true;
+                            break;
+                        }
+                    }
+                    if (!alive)
+                        existing.Unload();
+
+                } else {
+                    // Apply width and height from replacement texture.
+                    // TODO: How will we handle custom drawOffsets, frameWidths and frameHeights in the future? Name suffix?
+                    replacement = new MTexture(replacementV);
+                }
+
+                self[path] = replacement;
+                return;
+            }
+        }
 
     }
 }

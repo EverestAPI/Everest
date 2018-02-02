@@ -118,7 +118,7 @@ namespace Celeste.Mod {
 
                         }
 
-                        Content.AddMapping(entryName, new AssetMetadata(archive, entryName) {
+                        Content.Add(entryName, new AssetMetadata(archive, entryName) {
                             AssetType = entryName.EndsWith("/") ? typeof(Content.AssetTypeDirectory) : null
                         });
                     }
