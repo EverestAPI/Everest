@@ -8,8 +8,6 @@ WIP.
 
 Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding utility.
 
-Devs: Make sure to install all NuGet packages. Your IDE should do this for you.
-
 Windows users: Switch to the opengl / FNA branch.
 - In Steam, it's listed as under "betas"
 - In itch.io, **TODO**
