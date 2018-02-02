@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using FMOD.Studio;
+using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,6 +32,16 @@ namespace Celeste.Mod {
         /// undo any changes performed by the mod.
         /// </summary>
         public abstract void Unload();
+
+        /// <summary>
+        /// Create the mod menu subsection including the section header in the given menu.
+        /// </summary>
+        /// <param name="menu">Menu to add the section to.</param>
+        /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
+        /// <param name="snapshot">The Level.PauseSnapshot</param>
+        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+
+        }
 
     }
 

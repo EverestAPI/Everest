@@ -28,10 +28,12 @@ namespace Celeste.Mod {
             TextMenu menu = new TextMenu();
 
             menu.Add(new TextMenu.Header("Everest v." + Everest.VersionString));
-            menu.Add(new TextMenu.SubHeader("Experiments"));
-            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
 
-            // TODO: Per mod options - pass 
+            Everest.InvokeTyped(
+                "CreateModMenuSection",
+                new Type[] { typeof(TextMenu), typeof(bool), typeof(EventInstance) },
+                menu, inGame, snapshot
+            );
 
             if (menu.Height > menu.ScrollableMinSize) {
                 menu.Position.Y = menu.ScrollTargetY;
