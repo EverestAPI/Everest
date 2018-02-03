@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
+    <Compile Include="Mod\Everest\Commands.cs" />
     <Compile Include="Mod\Everest\EverestModuleSettings.cs" />
     <Compile Include="Mod\Everest\EverestModuleMetadata.cs" />
     <Compile Include="Mod\Helpers\AssetMetadata.cs" />
