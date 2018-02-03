@@ -29,7 +29,7 @@ namespace Celeste {
         private void CreateTrail() {
             // TODO: MOVE THIS OUT OF HERE.
             Color color = wasDashB ? NormalHairColor : UsedHairColor;
-            if (!Everest.Experiments.RainbowMode || Hair != null)
+            if (!CoreModule.Instance.Settings.RainbowMode || Hair != null)
                 color = ((patch_PlayerHair) Hair).GetHairColor(trailIndex, color);
             TrailManager.Add(this, color, 1f);
             trailIndex++;

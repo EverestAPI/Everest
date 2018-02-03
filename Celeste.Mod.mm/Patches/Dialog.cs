@@ -22,9 +22,14 @@ namespace Celeste {
         private static readonly Regex insert;
         private static readonly Regex variable;
 
+        private static Language FallbackLanguage;
+
         public static extern Language orig_LoadLanguage(string filename);
         public static Language LoadLanguage(string filename) {
             Language language = orig_LoadLanguage(filename);
+
+            if (language.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase))
+                FallbackLanguage = language;
 
             string path = filename;
             if (path.StartsWith(Everest.Content.PathContentOrig))
@@ -164,6 +169,9 @@ namespace Celeste {
             if (language.Dialog.TryGetValue(name, out result))
                 return result;
 
+            if (language != FallbackLanguage)
+                return Get(name, FallbackLanguage);
+
             return "[" + name + "]";
         }
 
@@ -174,6 +182,9 @@ namespace Celeste {
             string result;
             if (language.Cleaned.TryGetValue(name, out result))
                 return result;
+
+            if (language != FallbackLanguage)
+                return Clean(name, FallbackLanguage);
 
             return "{" + name + "}";
         }

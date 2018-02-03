@@ -27,25 +27,6 @@ namespace Celeste.Mod {
             public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
 
             /// <summary>
-            /// Cached common type references. Microoptimization to replace ldtoken and token to ref conversion call with ldfld.
-            /// </summary>
-            internal static class Types {
-                public readonly static Type Object = typeof(object);
-
-                public readonly static Type Content = typeof(Content);
-
-                public readonly static Type AssetTypeDirectory = typeof(AssetTypeDirectory);
-                public readonly static Type AssetTypeAssembly = typeof(AssetTypeAssembly);
-                public readonly static Type AssetTypeYaml = typeof(AssetTypeYaml);
-                public readonly static Type AssetTypeDialog = typeof(AssetTypeDialog);
-
-                public readonly static Type Texture = typeof(Texture);
-                public readonly static Type Texture2D = typeof(Texture2D);
-
-                public readonly static Type ObjModel = typeof(ObjModel);
-            }
-
-            /// <summary>
             /// Should Everest dump all game assets into a user-friendly format on load?
             /// </summary>
             public static bool DumpOnLoad = false;
@@ -60,13 +41,6 @@ namespace Celeste.Mod {
             public readonly static IDictionary<string, AssetMetadata> Map = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, List<AssetMetadata>> MapDialogs = new FastDictionary<string, List<AssetMetadata>>();
-
-            public readonly static IDictionary<string, object> Cache = new FastDictionary<string, object>();
-            public readonly static HashSet<Type> CacheableTypes = new HashSet<Type>() {
-                Types.Texture,
-                Types.Texture2D,
-                Types.ObjModel
-            };
 
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
@@ -121,7 +95,7 @@ namespace Celeste.Mod {
                     metadataPrev = null;
 
                 // Hardcoded case: Handle dialog .txts separately.
-                if (metadata.AssetType == Types.AssetTypeDialog) {
+                if (metadata.AssetType == typeof(AssetTypeDialog)) {
                     List<AssetMetadata> dialogs;
                     if (!MapDialogs.TryGetValue(path, out dialogs)) {
                         dialogs = new List<AssetMetadata>();
@@ -130,7 +104,7 @@ namespace Celeste.Mod {
                     dialogs.Add(metadata);
                 }
                 // Hardcoded case: Handle directories separately.
-                else if (metadata.AssetType == Types.AssetTypeDirectory)
+                else if (metadata.AssetType == typeof(AssetTypeDirectory))
                     MapDirs[path] = metadata;
                 else
                     Map[path] = metadata;
@@ -143,7 +117,7 @@ namespace Celeste.Mod {
                     if (!MapDirs.TryGetValue(pathDir, out metadataDir)) {
                         metadataDir = new AssetMetadata(pathDir) {
                             Source = AssetMetadata.SourceType.Meta,
-                            AssetType = Types.AssetTypeDirectory
+                            AssetType = typeof(AssetTypeDirectory)
                         };
                         Add(pathDir, metadataDir);
                     }
@@ -159,26 +133,26 @@ namespace Celeste.Mod {
             }
 
             public static string GuessType(string file, out Type type, out string format) {
-                type = Types.Object;
+                type = typeof(object);
                 format = file.Length < 4 ? null : file.Substring(file.Length - 3);
 
                 if (file.EndsWith(".dll")) {
-                    type = Types.AssetTypeAssembly;
+                    type = typeof(AssetTypeAssembly);
 
                 } else if (file.EndsWith(".png")) {
-                    type = Types.Texture2D;
+                    type = typeof(Texture2D);
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (file.EndsWith(".obj")) {
-                    type = Types.ObjModel;
+                    type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (file.EndsWith(".yaml")) {
-                    type = Types.AssetTypeYaml;
+                    type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
 
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
-                    type = Types.AssetTypeDialog;
+                    type = typeof(AssetTypeDialog);
                     file = file.Substring(0, file.Length - 4);
 
                 } else {
@@ -189,8 +163,6 @@ namespace Celeste.Mod {
             }
 
             public static void Recrawl() {
-                Cache.Clear();
-
                 Map.Clear();
                 MapDirs.Clear();
                 MapDialogs.Clear();
@@ -277,7 +249,7 @@ namespace Celeste.Mod {
                 if (asset is Atlas) {
                     Atlas atlas = asset as Atlas;
                     AssetMetadata mapping = Get(assetName, true);
-                    if (mapping == null || mapping.AssetType != Types.AssetTypeDirectory)
+                    if (mapping == null || mapping.AssetType != typeof(AssetTypeDirectory))
                         return asset;
 
                     atlas.Ingest(mapping);

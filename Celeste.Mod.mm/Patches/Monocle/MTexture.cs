@@ -16,7 +16,7 @@ namespace Monocle {
     class patch_MTexture : MTexture {
 
         // We're effectively in MTexture, but still need to "expose" private fields to our mod.
-        public string AtlasPath { get; private set; }
+        public new string AtlasPath { get; private set; }
 
         public void SetAtlasPath(string path) {
             if (AtlasPath != null)

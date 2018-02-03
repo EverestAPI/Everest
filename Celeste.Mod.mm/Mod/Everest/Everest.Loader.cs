@@ -190,9 +190,7 @@ namespace Celeste.Mod {
                         continue;
 
                     EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-
                     mod.Metadata = meta;
-
                     mod.Register();
                 }
 

@@ -70,19 +70,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mod\Core\EverestModuleSettings.cs" />
-    <Compile Include="Mod\Core\EverestModuleMetadata.cs" />
+    <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
+    <Compile Include="Mod\Everest\EverestModuleSettings.cs" />
+    <Compile Include="Mod\Everest\EverestModuleMetadata.cs" />
     <Compile Include="Mod\Helpers\AssetMetadata.cs" />
     <Compile Include="Mod\Helpers\ContentExtensions.cs" />
-    <Compile Include="Mod\Core\Everest.Experiments.cs" />
-    <Compile Include="Mod\Core\Everest.Events.cs" />
-    <Compile Include="Mod\Core\Everest.Content.cs" />
-    <Compile Include="Mod\Core\Everest.Relinker.cs" />
-    <Compile Include="Mod\Core\Everest.Loader.cs" />
-    <Compile Include="Mod\Core\Everest.cs" />
-    <Compile Include="Mod\Core\CoreModule.cs" />
+    <Compile Include="Mod\Everest\Everest.Experiments.cs" />
+    <Compile Include="Mod\Everest\Everest.Events.cs" />
+    <Compile Include="Mod\Everest\Everest.Content.cs" />
+    <Compile Include="Mod\Everest\Everest.Relinker.cs" />
+    <Compile Include="Mod\Everest\Everest.Loader.cs" />
+    <Compile Include="Mod\Everest\Everest.cs" />
+    <Compile Include="Mod\CoreModule\CoreModule.cs" />
     <Compile Include="Mod\Helpers\EverestContentManager.cs" />
-    <Compile Include="Mod\Core\EverestModule.cs" />
+    <Compile Include="Mod\Everest\EverestModule.cs" />
     <Compile Include="Mod\Helpers\Extensions.cs" />
     <Compile Include="Mod\Helpers\LimitedStream.cs" />
     <Compile Include="Mod\Helpers\Logger.cs" />

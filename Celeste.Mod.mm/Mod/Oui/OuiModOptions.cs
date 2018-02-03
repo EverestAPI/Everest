@@ -27,7 +27,7 @@ namespace Celeste.Mod {
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
 
-            menu.Add(new TextMenu.Header("Everest v." + Everest.VersionString));
+            menu.Add(new TextMenu.Header($"{Dialog.Clean("MODOPTIONS_TITLE")} v.{Everest.VersionString}"));
 
             Everest.InvokeTyped(
                 "CreateModMenuSection",

@@ -94,14 +94,14 @@ namespace Monocle {
 
         public static void Ingest(this Atlas self, AssetMetadata asset) {
             // Crawl through all child assets.
-            if (asset.AssetType == Everest.Content.Types.AssetTypeDirectory) {
+            if (asset.AssetType == typeof(Everest.Content.AssetTypeDirectory)) {
                 foreach (AssetMetadata child in asset.Children)
                     self.Ingest(child);
                 return;
             }
 
             // Forcibly add the mod content to the atlas.
-            if (asset.AssetType == Everest.Content.Types.Texture2D) {
+            if (asset.AssetType == typeof(Texture2D)) {
                 string parentPath = self.GetDataPath();
                 if (parentPath.StartsWith(Everest.Content.PathContentOrig))
                     parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);

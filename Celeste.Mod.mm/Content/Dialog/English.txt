@@ -19,8 +19,12 @@
 # {anchor} controls the visual position of the textbox in-game
 
 # Main Menu
-	MENU_MODOPTIONS= 		Mod Options
-	MENU_PAUSE_MODOPTIONS= 	Mod Options
+	MENU_MODOPTIONS= 						Mod Options
+	MENU_PAUSE_MODOPTIONS= 					Mod Options
 
 # Mod Options
-	MODOPTIONS_TITLE= 		EVEREST
+	MODOPTIONS_TITLE= 						EVEREST
+
+# Core Module Options
+	MODOPTIONS_COREMODULE_TITLE= 			Everest Core
+	MODOPTIONS_COREMODULE_RAINBOWMODE= 		Rainbow Mode

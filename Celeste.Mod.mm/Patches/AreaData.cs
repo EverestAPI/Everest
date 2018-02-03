@@ -14,13 +14,13 @@ namespace Celeste {
     class patch_AreaData : AreaData {
 
         public static extern void orig_Load();
-        public static void Load() {
+        public static new void Load() {
             orig_Load();
             Everest.Events.AreaData.Load();
         }
 
         public static extern void orig_ReloadMountainViews();
-        public static void ReloadMountainViews() {
+        public static new void ReloadMountainViews() {
             orig_ReloadMountainViews();
             Everest.Events.AreaData.ReloadMountainViews();
         }

@@ -20,8 +20,6 @@ namespace Celeste.Mod {
     public static partial class Everest {
         public static class Experiments {
 
-            public static bool RainbowMode = false;
-
         }
     }
 }

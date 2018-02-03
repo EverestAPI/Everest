@@ -124,7 +124,7 @@ namespace Celeste.Mod {
         }
 
         public bool TryDeserialize<T>(out T result) {
-            if (AssetType == Everest.Content.Types.AssetTypeYaml) {
+            if (AssetType == typeof(Everest.Content.AssetTypeYaml)) {
                 using (StreamReader reader = new StreamReader(Stream))
                     result = YamlHelper.Deserializer.Deserialize<T>(reader);
                 return true;

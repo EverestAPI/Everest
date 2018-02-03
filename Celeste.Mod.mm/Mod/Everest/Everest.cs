@@ -43,9 +43,6 @@ namespace Celeste.Mod {
                 else if (arg == "--dump-all")
                     Content._DumpAll = true;
 
-                else if (arg == "--rainbow")
-                    Experiments.RainbowMode = true;
-
             }
         }
 
@@ -64,6 +61,11 @@ namespace Celeste.Mod {
         }
 
         public static void Register(this EverestModule module) {
+            if (module._Settings == null && module.SettingsType != null) {
+                // TODO: Load and save settings!
+                module._Settings = (EverestModuleSettings) module.SettingsType.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+            }
+
             lock (_Modules) {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());

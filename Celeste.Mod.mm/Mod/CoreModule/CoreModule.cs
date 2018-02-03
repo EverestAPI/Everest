@@ -9,9 +9,17 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
-    class CoreModule : EverestModule {
+    public class CoreModule : EverestModule {
+
+        public static CoreModule Instance;
+
+        public override Type SettingsType => typeof(CoreModuleSettings);
+        public CoreModuleSettings Settings => (CoreModuleSettings) _Settings;
 
         public CoreModule() {
+            Instance = this;
+
+            // Runtime modules shouldn't do this.
             Metadata = new EverestModuleMetadata() {
                 Name = "Everest",
                 Version = Everest.Version
@@ -58,7 +66,7 @@ namespace Celeste.Mod {
             int index;
 
             // Find the options button and place our button below it.
-            string cleanedOptions = Dialog.Clean("menu_pause_options", null);
+            string cleanedOptions = Dialog.Clean("menu_pause_options");
             index = items.FindIndex(_ => {
                 TextMenu.Button other = (_ as TextMenu.Button);
                 if (other == null)
@@ -72,7 +80,7 @@ namespace Celeste.Mod {
                 index = items.Count;
 
             TextMenu.Item itemModOptions = null;
-            menu.Insert(index, itemModOptions = new TextMenu.Button(Dialog.Clean("menu_pause_modoptions", null)).Pressed(() => {
+            menu.Insert(index, itemModOptions = new TextMenu.Button(Dialog.Clean("menu_pause_modoptions")).Pressed(() => {
                 int returnIndex = menu.IndexOf(itemModOptions);
                 menu.RemoveSelf();
                 
@@ -97,13 +105,6 @@ namespace Celeste.Mod {
 
 			    level.Add(options);
             }));
-        }
-
-        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
-            menu.Add(new TextMenu.SubHeader("Everest Experiments"));
-
-            // TODO: EverestModuleSettings
-            menu.Add(new TextMenu.OnOff("Rainbow Mode", Everest.Experiments.RainbowMode).Change(v => Everest.Experiments.RainbowMode = v));
         }
 
     }

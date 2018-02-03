@@ -75,7 +75,7 @@ namespace Celeste {
 
         public Color GetHairColor(int index, Color colorHair) {
             // TODO: MOVE THIS OUT OF HERE.
-            if (!Everest.Experiments.RainbowMode)
+            if (!CoreModule.Instance.Settings.RainbowMode)
                 return colorHair;
             Color colorRainbow = ColorFromHSV((index / (float) sprite.HairCount) * 180f + wave * 60f, 0.6f, 0.6f);
             return new Color(
