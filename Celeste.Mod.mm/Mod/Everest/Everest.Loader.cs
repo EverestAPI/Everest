@@ -104,18 +104,16 @@ namespace Celeste.Mod {
                     foreach (ZipArchiveEntry entry in zip.Entries) {
                         string entryName = entry.FullName.Replace('\\', '/');
                         if (meta != null && entryName == meta.DLL) {
-                            using (Stream stream = entry.Open()) {
+                            using (MemoryStream ms = new MemoryStream()) {
+                                using (Stream stream = entry.Open())
+                                    stream.CopyTo(ms);
+                                ms.Seek(0, SeekOrigin.Begin);
                                 if (meta.Prelinked) {
-                                    using (MemoryStream ms = new MemoryStream()) {
-                                        stream.CopyTo(ms);
-                                        ms.Seek(0, SeekOrigin.Begin);
-                                        asm = Assembly.Load(ms.GetBuffer());
-                                    }
+                                    asm = Assembly.Load(ms.GetBuffer());
                                 } else {
-                                    asm = Relinker.GetRelinkedAssembly(meta, stream);
+                                    asm = Relinker.GetRelinkedAssembly(meta, ms);
                                 }
                             }
-
                         }
                     }
 

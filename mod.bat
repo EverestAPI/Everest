@@ -15,3 +15,5 @@ GOTO MOD
 :MOD
 MonoMod.exe Celeste.exe
 move MONOMODDED_Celeste.exe Celeste.exe
+
+pause

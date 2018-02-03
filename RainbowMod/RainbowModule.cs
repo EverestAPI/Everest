@@ -16,6 +16,7 @@ namespace Celeste.Mod.Rainbow {
         public override Type SettingsType => typeof(RainbowModuleSettings);
         public static RainbowModuleSettings Settings => (RainbowModuleSettings) Instance._Settings;
 
+        // The methods we want to hook.
         private readonly static MethodInfo m_GetHairColor = typeof(PlayerHair).GetMethod("GetHairColor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         private readonly static MethodInfo m_GetTrailColor = typeof(Player).GetMethod("GetTrailColor", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
 
@@ -28,6 +29,7 @@ namespace Celeste.Mod.Rainbow {
         public override void Load() {
             // Runtime hooks are quite different from static patches.
             Type t_RainbowModule = GetType();
+            // [trampoline] = [method we want to hook] .Detour< [signature] >( [replacement method] );
             orig_GetHairColor = m_GetHairColor.Detour<d_GetHairColor>(t_RainbowModule.GetMethod("GetHairColor"));
             orig_GetTrailColor = m_GetTrailColor.Detour<d_GetTrailColor>(t_RainbowModule.GetMethod("GetTrailColor"));
         }
@@ -38,7 +40,11 @@ namespace Celeste.Mod.Rainbow {
             RuntimeDetour.Undetour(m_GetTrailColor);
         }
 
+        // The delegate tells MonoMod.Detour / RuntimeDetour about the method signature.
+        // Instance (non-static) methods must become static, which means we add "this" as the first argument.
         public delegate Color d_GetHairColor(PlayerHair self, int index);
+        // A field containing the trampoline to the original method.
+        // You don't need to care about how RuntimeDetour handles this behind the scenes.
         public static d_GetHairColor orig_GetHairColor;
         public static Color GetHairColor(PlayerHair self, int index) {
             Color colorOrig = orig_GetHairColor(self, index);
