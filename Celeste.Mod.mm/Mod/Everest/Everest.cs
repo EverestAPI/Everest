@@ -1,6 +1,8 @@
-﻿using MonoMod.Helpers;
+﻿using Monocle;
+using MonoMod.Helpers;
 using MonoMod.InlineRT;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -26,6 +28,7 @@ namespace Celeste.Mod {
         private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethods = new List<IDictionary<string, DynamicMethodDelegate>>();
 
         public static string PathGame { get; internal set; }
+        public static string PathSettings { get; internal set; }
 
         public static void ParseArgs(string[] args) {
             // Expose the arguments to all other mods in a read-only collection.
@@ -48,6 +51,8 @@ namespace Celeste.Mod {
 
         public static void Boot() {
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+            PathSettings = Path.Combine(PathGame, "ModSettings");
+            Directory.CreateDirectory(PathSettings);
 
             // Initialize the content helper.
             Content.Initialize();
@@ -61,8 +66,8 @@ namespace Celeste.Mod {
         }
 
         public static void Register(this EverestModule module) {
+            module.LoadSettings();
             if (module._Settings == null && module.SettingsType != null) {
-                // TODO: Load and save settings!
                 module._Settings = (EverestModuleSettings) module.SettingsType.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
             }
 
@@ -80,6 +85,19 @@ namespace Celeste.Mod {
                 _ModuleTypes.RemoveAt(index);
                 _ModuleMethods.RemoveAt(index);
             }
+        }
+
+        public static IEnumerator SaveSettings() {
+            bool saving = true;
+            RunThread.Start(() => {
+                Invoke("SaveSettings");
+                saving = false;
+            }, "MOD_IO", false);
+
+            SaveLoadIcon.Show(Engine.Scene);
+            while (saving)
+                yield return null;
+            SaveLoadIcon.Hide();
         }
 
         // A shared object a day keeps the GC away!

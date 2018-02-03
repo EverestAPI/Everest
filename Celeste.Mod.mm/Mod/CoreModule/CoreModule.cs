@@ -90,14 +90,12 @@ namespace Celeste.Mod {
 
 			    options.OnESC = options.OnCancel = () => {
 				    Audio.Play("event:/ui/main/button_back");
-				    IEnumerator routine = UserIO.SaveHandler(false, true);
-				    options.CloseAndRun(routine, () => level.Pause(returnIndex, minimal, false));
+				    options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
 			    };
 
 			    options.OnPause = () => {
 				    Audio.Play("event:/ui/main/button_back");
-				    IEnumerator routine = UserIO.SaveHandler(false, true);
-				    options.CloseAndRun(routine, () => {
+				    options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;
                         Engine.FreezeTimer = 0.15f;
                     });

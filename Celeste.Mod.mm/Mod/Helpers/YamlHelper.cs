@@ -9,7 +9,7 @@ namespace Celeste.Mod {
     public static class YamlHelper {
 
         public static Deserializer Deserializer = new DeserializerBuilder().Build();
-        public static Serializer Serializer = new SerializerBuilder().Build();
+        public static Serializer Serializer = new SerializerBuilder().EmitDefaults().Build();
 
     }
 }

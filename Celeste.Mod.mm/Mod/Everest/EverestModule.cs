@@ -35,6 +35,28 @@ namespace Celeste.Mod {
         public virtual EverestModuleSettings _Settings { get; set; }
 
         /// <summary>
+        /// Load the mod settings. Loads the settings from {Everest.PathSettings}/{Metadata.Name}.yaml by default.
+        /// </summary>
+        public virtual void LoadSettings() {
+            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
+            if (!File.Exists(path))
+                return;
+            using (Stream stream = File.OpenRead(path))
+            using (StreamReader reader = new StreamReader(path))
+                _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
+        }
+
+        /// <summary>
+        /// Save the mod settings. Saves the settings to {Everest.PathSettings}/{Metadata.Name}.yaml by default.
+        /// </summary>
+        public virtual void SaveSettings() {
+            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
+            using (Stream stream = File.OpenWrite(path))
+            using (StreamWriter writer = new StreamWriter(stream))
+                YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
+        }
+
+        /// <summary>
         /// Perform any initializing actions after all modd have been loaded.
         /// Do not depend on any specific order in which the mods get initialized.
         /// </summary>
@@ -78,7 +100,10 @@ namespace Celeste.Mod {
             // The settings subheader.
             string name; // We lazily reuse this field for the props later on.
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
-            name = Dialog.Clean(name);
+            if (Dialog.Has(name))
+                name = Dialog.Clean(name);
+            else
+                name = Metadata.Name.SpacedPascalCase();
 
             menu.Add(new TextMenu.SubHeader(name));
 
@@ -102,7 +127,10 @@ namespace Celeste.Mod {
                     continue;
 
                 name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
-                name = Dialog.Clean(name);
+                if (Dialog.Has(name))
+                    name = Dialog.Clean(name);
+                else
+                    name = prop.Name.SpacedPascalCase();
 
                 TextMenu.Item item = null;
                 Type propType = prop.PropertyType;
@@ -113,7 +141,7 @@ namespace Celeste.Mod {
                 if (propType == typeof(bool)) {
                     item =
                         new TextMenu.OnOff(name, (bool) value)
-                        .Change(v => prop.SetValue(settings, value))
+                        .Change(v => prop.SetValue(settings, v))
                     ;
 
                 } else if (
@@ -122,7 +150,7 @@ namespace Celeste.Mod {
                 ) {
                     item =
                         new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
-                        .Change(v => prop.SetValue(settings, value))
+                        .Change(v => prop.SetValue(settings, v))
                     ;
                 }
 

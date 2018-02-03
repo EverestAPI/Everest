@@ -52,5 +52,21 @@ namespace Celeste.Mod {
             return true;
         }
 
+        /// <summary>
+        /// Split PascalCase words to become Pascal Case instead.
+        /// </summary>
+        /// <param name="input">PascalCaseString</param>
+        /// <returns>Pascal Case String</returns>
+        public static string SpacedPascalCase(this string input) {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < input.Length; i++) {
+                char c = input[i];
+                if (i > 0 && char.IsUpper(c))
+                    builder.Append(' ');
+                builder.Append(c);
+            }
+            return builder.ToString();
+        }
+
     }
 }

@@ -16,7 +16,7 @@ namespace Celeste.Mod {
 
         // Note: If SettingsName isn't given, the values default to modoptions_[typename without settings]_[fieldname]
 
-        [SettingName("options_coremodule_rainbowmode")]
+        //[SettingName("modoptions_coremodule_rainbowmode")]
         public bool RainbowMode { get; set; } = false;
 
         [SettingRange(0, 10)]

@@ -84,7 +84,7 @@ namespace Celeste.Mod {
             Audio.Play("event:/ui/main/whoosh_large_out");
             menu.Focused = false;
 
-            yield return UserIO.SaveHandler(false, true);
+            yield return Everest.SaveSettings();
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = onScreenX + 1920f * Ease.CubeIn(p);
