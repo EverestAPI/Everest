@@ -47,7 +47,7 @@ namespace Celeste.Mod.Rainbow {
         public static d_GetHairColor orig_GetHairColor;
         public static Color GetHairColor(PlayerHair self, int index) {
             Color colorOrig = orig_GetHairColor(self, index);
-            if (!Settings.Enabled)
+            if (!Settings.Enabled || self.GetSprite().Mode == PlayerSpriteMode.Badeline)
                 return colorOrig;
 
             Color colorRainbow = ColorFromHSV((index / (float) self.GetSprite().HairCount) * 180f + self.GetWave() * 60f, 0.6f, 0.6f);
@@ -62,7 +62,7 @@ namespace Celeste.Mod.Rainbow {
         public delegate Color d_GetTrailColor(Player self, bool wasDashB);
         public static d_GetTrailColor orig_GetTrailColor;
         public static Color GetTrailColor(Player self, bool wasDashB) {
-            if (!Settings.Enabled || self.Hair == null)
+            if (!Settings.Enabled || self.Sprite.Mode == PlayerSpriteMode.Badeline || self.Hair == null)
                 return orig_GetTrailColor(self, wasDashB);
 
             return self.Hair.GetHairColor((trailIndex++) % self.Hair.GetSprite().HairCount);
