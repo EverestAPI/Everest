@@ -193,8 +193,6 @@ namespace Celeste.Mod {
                     mod.Metadata = meta;
                     mod.Register();
                 }
-
-                Logger.Log("loader", $"Mod {meta} initialized.");
             }
 
             /// <summary>

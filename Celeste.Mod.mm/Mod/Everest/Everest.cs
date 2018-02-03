@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -25,7 +26,8 @@ namespace Celeste.Mod {
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         private static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
-        private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethods = new List<IDictionary<string, DynamicMethodDelegate>>();
+        private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
+        private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, DynamicMethodDelegate>>();
 
         public static string PathGame { get; internal set; }
         public static string PathSettings { get; internal set; }
@@ -74,8 +76,11 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());
-                _ModuleMethods.Add(new FastDictionary<string, DynamicMethodDelegate>());
+                _ModuleMethods.Add(new FastDictionary<string, MethodInfo>());
+                _ModuleMethodDelegates.Add(new FastDictionary<string, DynamicMethodDelegate>());
             }
+
+            Logger.Log("core", $"Module {module.Metadata} registered.");
         }
 
         public static void Unregister(this EverestModule module) {
@@ -116,26 +121,53 @@ namespace Celeste.Mod {
                 argsTypes = Type.GetTypeArray(args);
             }
 
-            for (int i = 0; i < _Modules.Count; i++) {
-                EverestModule module = _Modules[i];
-                IDictionary<string, DynamicMethodDelegate> moduleMethods = _ModuleMethods[i];
-                DynamicMethodDelegate method;
+            if (!Debugger.IsAttached) {
+                // Fast codepath: DynamicMethodDelegate
+                // Unfortunately prevents us from stepping into invoked methods.
+                for (int i = 0; i < _Modules.Count; i++) {
+                    EverestModule module = _Modules[i];
+                    IDictionary<string, DynamicMethodDelegate> moduleMethods = _ModuleMethodDelegates[i];
+                    DynamicMethodDelegate method;
 
-                if (moduleMethods.TryGetValue(methodName, out method)) {
+                    if (moduleMethods.TryGetValue(methodName, out method)) {
+                        if (method == null)
+                            continue;
+                        method(module, args);
+                        continue;
+                    }
+
+                    MethodInfo methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
+                    if (methodInfo != null)
+                        method = methodInfo.GetDelegate();
+                    moduleMethods[methodName] = method;
                     if (method == null)
                         continue;
+
                     method(module, args);
-                    continue;
                 }
 
-                MethodInfo methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
-                if (methodInfo != null)
-                    method = methodInfo.GetDelegate();
-                moduleMethods[methodName] = method;
-                if (method == null)
-                    continue;
+            } else {
+                // Slow codepath: MethodInfo.Invoke
+                // Doesn't hinder us from stepping into the invoked methods.
+                for (int i = 0; i < _Modules.Count; i++) {
+                    EverestModule module = _Modules[i];
+                    IDictionary<string, MethodInfo> moduleMethods = _ModuleMethods[i];
+                    MethodInfo methodInfo;
 
-                method(module, args);
+                    if (moduleMethods.TryGetValue(methodName, out methodInfo)) {
+                        if (methodInfo == null)
+                            continue;
+                        methodInfo.Invoke(module, args);
+                        continue;
+                    }
+
+                    methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
+                    moduleMethods[methodName] = methodInfo;
+                    if (methodInfo == null)
+                        continue;
+
+                    methodInfo.Invoke(module, args);
+                }
             }
         }
 

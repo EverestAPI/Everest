@@ -17,8 +17,6 @@ namespace Celeste.Mod.Rainbow {
 
         [SettingRange(0, 20)]
         public int Speed { get; set; } = 10;
-        [YamlIgnore]
-        public float SpeedFactor => Speed / 10f;
 
     }
 }

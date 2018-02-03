@@ -27,14 +27,9 @@ namespace Celeste.Mod.Rainbow {
 
         public override void Load() {
             // Runtime hooks are quite different from static patches.
-            orig_GetHairColor = RuntimeDetour.Detour<d_GetHairColor>(
-                m_GetHairColor,
-                (d_GetHairColor) GetHairColor
-            );
-            orig_GetTrailColor = RuntimeDetour.Detour<d_GetTrailColor>(
-                m_GetTrailColor,
-                (d_GetTrailColor) GetTrailColor
-            );
+            Type t_RainbowModule = GetType();
+            orig_GetHairColor = m_GetHairColor.Detour<d_GetHairColor>(t_RainbowModule.GetMethod("GetHairColor"));
+            orig_GetTrailColor = m_GetTrailColor.Detour<d_GetTrailColor>(t_RainbowModule.GetMethod("GetTrailColor"));
         }
 
         public override void Unload() {
@@ -50,7 +45,9 @@ namespace Celeste.Mod.Rainbow {
             if (!Settings.Enabled || self.GetSprite().Mode == PlayerSpriteMode.Badeline)
                 return colorOrig;
 
-            Color colorRainbow = ColorFromHSV((index / (float) self.GetSprite().HairCount) * 180f + self.GetWave() * 60f, 0.6f, 0.6f);
+            float wave = self.GetWave() * 60f;
+            wave *= Settings.Speed / 20f;
+            Color colorRainbow = ColorFromHSV((index / (float) self.GetSprite().HairCount) * 180f + wave, 0.6f, 0.6f);
             return new Color(
                 (colorOrig.R / 255f) * 0.3f + (colorRainbow.R / 255f) * 0.7f,
                 (colorOrig.G / 255f) * 0.3f + (colorRainbow.G / 255f) * 0.7f,
