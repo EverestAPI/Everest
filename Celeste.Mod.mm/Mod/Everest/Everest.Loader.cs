@@ -207,21 +207,19 @@ namespace Celeste.Mod {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;
 
-                if (depName == "Everest") {
-                    if (Version.Major != depVersion.Major)
-                        return false;
-                    if (Version.Minor < depVersion.Minor)
-                        return false;
-                    return true;
-                }
-
                 foreach (EverestModule mod in _Modules) {
                     EverestModuleMetadata meta = mod.Metadata;
                     if (meta.Name != depName)
                         continue;
                     Version version = meta.Version;
+
+                    // Special case: Always true if version == 0.0.*
+                    if (version.Major == 0 && version.Minor == 0)
+                        return true;
+                    // Major version, breaking changes, must match.
                     if (version.Major != depVersion.Major)
                         return false;
+                    // Minor version, non-breaking changes, installed can't be lower than what we depend on.
                     if (version.Minor < depVersion.Minor)
                         return false;
                     return true;

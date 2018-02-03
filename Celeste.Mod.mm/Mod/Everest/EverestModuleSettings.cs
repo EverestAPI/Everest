@@ -40,4 +40,16 @@ namespace Celeste.Mod {
             Max = max;
         }
     }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingNeedsRelaunchAttribute : Attribute {
+        public SettingNeedsRelaunchAttribute() {
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingIgnoreAttribute : Attribute {
+        public SettingIgnoreAttribute() {
+        }
+    }
 }

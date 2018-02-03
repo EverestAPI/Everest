@@ -18,8 +18,6 @@ namespace Celeste {
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
 
-        private int trailIndex;
-
         public patch_Player(Vector2 position, PlayerSpriteMode spriteMode)
             : base(position, spriteMode) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -27,13 +25,22 @@ namespace Celeste {
 
         [MonoModReplace]
         private void CreateTrail() {
-            // TODO: MOVE THIS OUT OF HERE.
-            Color color = wasDashB ? NormalHairColor : UsedHairColor;
-            if (!CoreModule.Instance.Settings.RainbowMode || Hair != null)
-                color = ((patch_PlayerHair) Hair).GetHairColor(trailIndex, color);
-            TrailManager.Add(this, color, 1f);
-            trailIndex++;
+            TrailManager.Add(this, GetCurrentTrailColor(), 1f);
         }
+
+        public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
+        private Color GetTrailColor(bool wasDashB) {
+            return wasDashB ? NormalHairColor : UsedHairColor;
+        }
+
+    }
+    public static class PlayerExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static Color GetCurrentTrailColor(this Player self)
+            => ((patch_Player) self).GetCurrentTrailColor();
 
     }
 }

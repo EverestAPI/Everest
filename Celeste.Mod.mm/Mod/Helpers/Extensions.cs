@@ -68,5 +68,17 @@ namespace Celeste.Mod {
             return builder.ToString();
         }
 
+        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch) {
+            if (!needsRelaunch)
+                return option;
+            return option
+            .Enter(() => {
+                // TODO: Show "needs relaunch" warning.
+            })
+            .Leave(() => {
+                // TODO: Hide "needs relaunch" warning.
+            });
+        }
+
     }
 }

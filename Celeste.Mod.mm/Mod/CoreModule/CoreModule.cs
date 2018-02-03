@@ -14,7 +14,7 @@ namespace Celeste.Mod {
         public static CoreModule Instance;
 
         public override Type SettingsType => typeof(CoreModuleSettings);
-        public CoreModuleSettings Settings => (CoreModuleSettings) _Settings;
+        public static CoreModuleSettings Settings => (CoreModuleSettings) Instance._Settings;
 
         public CoreModule() {
             Instance = this;

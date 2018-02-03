@@ -17,8 +17,10 @@ namespace Celeste {
 
         // We're effectively in PlayerHair, but still need to "expose" private fields to our mod.
         private PlayerSprite sprite;
+        public PlayerSprite Sprite => sprite;
         private List<MTexture> bangs;
         private float wave;
+        public float Wave => wave;
 
         public patch_PlayerHair(PlayerSprite sprite)
             : base(sprite) {
@@ -32,7 +34,6 @@ namespace Celeste {
 
             Vector2 origin = new Vector2(5f, 5f);
             Color colorBorder = Border * Alpha;
-            Color colorHair = Color * Alpha;
 
             if (DrawPlayerSpriteOutline) {
                 Color colorSprite = sprite.Color;
@@ -66,78 +67,35 @@ namespace Celeste {
             for (int i = sprite.HairCount - 1; i >= 0; i--) {
                 int hairFrame = sprite.HairFrame;
                 MTexture hair = (i == 0) ? bangs[hairFrame] : GFX.Game["characters/player/hair00"];
-                hair.Draw(Nodes[i], origin, GetHairColor(i, colorHair), GetHairScale(i));
+                hair.Draw(Nodes[i], origin, GetHairColor(i), GetHairScale(i));
             }
         }
 
         [MonoModIgnore]
         private extern Vector2 GetHairScale(int index);
+        public Vector2 PublicGetHairScale(int index) => GetHairScale(index);
 
-        public Color GetHairColor(int index, Color colorHair) {
-            // TODO: MOVE THIS OUT OF HERE.
-            if (!CoreModule.Instance.Settings.RainbowMode)
-                return colorHair;
-            Color colorRainbow = ColorFromHSV((index / (float) sprite.HairCount) * 180f + wave * 60f, 0.6f, 0.6f);
-            return new Color(
-                (colorHair.R / 255f) * 0.3f + (colorRainbow.R / 255f) * 0.7f,
-                (colorHair.G / 255f) * 0.3f + (colorRainbow.G / 255f) * 0.7f,
-                (colorHair.B / 255f) * 0.3f + (colorRainbow.B / 255f) * 0.7f,
-                colorHair.A
-            );
+        public Color GetHairColor(int index) {
+            return Color * Alpha;
         }
 
-        // Algorithms found randomly on the net - best source for HSV <-> RGB conversion ever:tm:
+    }
+    public static class PlayerHairExt {
 
-        private static void ColorToHSV(Color c, out float h, out float s, out float v) {
-            float r = c.R / 255f;
-            float g = c.G / 255f;
-            float b = c.B / 255f;
-            float min, max, delta;
-            min = Math.Min(Math.Min(r, g), b);
-            max = Math.Max(Math.Max(r, g), b);
-            v = max;
-            delta = max - min;
-            if (max != 0) {
-                s = delta / max;
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
 
-                if (r == max)
-                    h = (g - b) / delta;
-                else if (g == max)
-                    h = 2 + (b - r) / delta;
-                else
-                    h = 4 + (r - g) / delta;
-                h *= 60f;
-                if (h < 0)
-                    h += 360f;
-            } else {
-                s = 0f;
-                h = 0f;
-            }
-        }
+        public static Vector2 GetHairScale(this PlayerHair self, int index)
+            => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
-        private static Color ColorFromHSV(float hue, float saturation, float value) {
-            int hi = (int) (Math.Floor(hue / 60f)) % 6;
-            float f = hue / 60f - (float) Math.Floor(hue / 60f);
+        public static Color GetHairColor(this PlayerHair self, int index)
+            => ((patch_PlayerHair) self).GetHairColor(index);
 
-            value = value * 255;
-            int v = (int) (value);
-            int p = (int) (value * (1 - saturation));
-            int q = (int) (value * (1 - f * saturation));
-            int t = (int) (value * (1 - (1 - f) * saturation));
+        public static PlayerSprite GetSprite(this PlayerHair self)
+            => ((patch_PlayerHair) self).Sprite;
 
-            if (hi == 0)
-                return new Color(255, v, t, p);
-            else if (hi == 1)
-                return new Color(255, q, v, p);
-            else if (hi == 2)
-                return new Color(255, p, v, t);
-            else if (hi == 3)
-                return new Color(255, p, q, v);
-            else if (hi == 4)
-                return new Color(255, t, p, v);
-            else
-                return new Color(255, v, p, q);
-        }
+        public static float GetWave(this PlayerHair self)
+            => ((patch_PlayerHair) self).Wave;
 
     }
 }

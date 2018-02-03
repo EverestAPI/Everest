@@ -51,6 +51,8 @@ namespace Celeste.Mod {
         /// </summary>
         public virtual void SaveSettings() {
             string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
+            if (File.Exists(path))
+                File.Delete(path);
             using (Stream stream = File.OpenWrite(path))
             using (StreamWriter writer = new StreamWriter(stream))
                 YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
@@ -120,7 +122,7 @@ namespace Celeste.Mod {
                     attribInGame.InGame != inGame)
                     continue;
 
-                if (prop.GetCustomAttribute<YamlIgnoreAttribute>() != null)
+                if (prop.GetCustomAttribute<SettingIgnoreAttribute>() != null)
                     continue;
 
                 if (!prop.CanRead || !prop.CanWrite)
@@ -132,6 +134,8 @@ namespace Celeste.Mod {
                 else
                     name = prop.Name.SpacedPascalCase();
 
+                bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
+
                 TextMenu.Item item = null;
                 Type propType = prop.PropertyType;
                 object value = prop.GetValue(settings);
@@ -142,6 +146,7 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.OnOff(name, (bool) value)
                         .Change(v => prop.SetValue(settings, v))
+                        .NeedsRelaunch(needsRelaunch)
                     ;
 
                 } else if (
@@ -151,6 +156,7 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
                         .Change(v => prop.SetValue(settings, v))
+                        .NeedsRelaunch(needsRelaunch)
                     ;
                 }
 

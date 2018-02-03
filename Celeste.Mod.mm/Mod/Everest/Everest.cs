@@ -97,6 +97,7 @@ namespace Celeste.Mod {
             SaveLoadIcon.Show(Engine.Scene);
             while (saving)
                 yield return null;
+            yield return UserIO.SaveHandler(false, true);
             SaveLoadIcon.Hide();
         }
 
