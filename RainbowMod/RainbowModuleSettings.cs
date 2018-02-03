@@ -10,13 +10,15 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Rainbow {
+    [SettingName("Rainbow-deline")] // We're lazy.
     public class RainbowModuleSettings : EverestModuleSettings {
 
         public bool Enabled { get; set; } = false;
 
-        [SettingRange(0, 10)]
-        [SettingInGame(true)]
-        public int Speed { get; set; } = 5;
+        [SettingRange(0, 20)]
+        public int Speed { get; set; } = 10;
+        [YamlIgnore]
+        public float SpeedFactor => Speed / 10f;
 
     }
 }

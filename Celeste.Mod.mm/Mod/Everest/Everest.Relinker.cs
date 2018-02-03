@@ -25,8 +25,9 @@ namespace Celeste.Mod {
             public static string GameChecksum;
 
             public readonly static IDictionary<string, ModuleDefinition> AssemblyRelinkedCache = new FastDictionary<string, ModuleDefinition>() {
+                { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
+                { "FNA", ModuleDefinition.ReadModule(typeof(Game).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
-                { "FNA", ModuleDefinition.ReadModule(typeof(Game).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) }
             };
 
             private static FastDictionary<string, ModuleDefinition> _AssemblyRelinkMap;
