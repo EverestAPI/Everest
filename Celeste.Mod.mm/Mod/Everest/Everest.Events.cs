@@ -136,6 +136,9 @@ namespace Celeste.Mod {
                 internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
                     => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
 
+                public static event Action<LevelData, Vector2> OnTransitionTo; 
+                internal static void TransitionTo(LevelData next, Vector2 direction)
+                    => OnTransitionTo?.Invoke(next, direction);
             }
 
         }
