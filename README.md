@@ -4,7 +4,7 @@
 
 ----
 
-WIP.
+**WIP.**
 
 Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding utility.
 
