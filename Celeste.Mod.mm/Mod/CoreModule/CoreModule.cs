@@ -110,9 +110,9 @@ namespace Celeste.Mod {
 
             menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_COREMODULE_RELOAD")).Pressed(() => {
                 Everest.Content.Recrawl();
-                // Everest.Content.Reprocess(); // TODO: Atlases like to break.
-                AreaData.Load();
+                Everest.Content.Reprocess();
                 VirtualContentExt.ForceReload();
+                AreaData.Load();
             }));
         }
 
