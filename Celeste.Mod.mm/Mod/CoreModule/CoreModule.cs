@@ -105,5 +105,15 @@ namespace Celeste.Mod {
             }));
         }
 
+        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+            base.CreateModMenuSection(menu, inGame, snapshot);
+
+            menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_COREMODULE_RELOADASSETS")).Pressed(() => {
+                Everest.Content.Recrawl();
+                AreaData.Load();
+                VirtualContentExt.ForceReload();
+            }));
+        }
+
     }
 }

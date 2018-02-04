@@ -16,6 +16,7 @@ namespace Monocle {
 
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
+        private static bool reloading;
 
         // Allow loading VirtualTextures from modded AssetMetadatas.
 
@@ -23,6 +24,16 @@ namespace Monocle {
             VirtualTexture virtualTexture = (VirtualTexture) (object) new patch_VirtualTexture(metadata);
             assets.Add(virtualTexture);
             return virtualTexture;
+        }
+
+        [MonoModIgnore]
+        internal static extern void Reload();
+        public static void _Reload()
+            => Reload();
+        
+        public static void ForceReload() {
+            reloading = true;
+            Reload();
         }
 
     }
@@ -33,6 +44,12 @@ namespace Monocle {
 
         public static VirtualTexture CreateTexture(AssetMetadata metadata)
             => patch_VirtualContent.CreateTexture(metadata);
+
+        public static void Reload()
+            => patch_VirtualContent._Reload();
+
+        public static void ForceReload()
+            => patch_VirtualContent.ForceReload();
 
     }
 }
