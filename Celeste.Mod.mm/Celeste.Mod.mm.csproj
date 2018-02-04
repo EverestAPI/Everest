@@ -43,15 +43,12 @@
     </Reference>
     <Reference Include="Mono.Cecil">
       <HintPath>..\lib\Mono.Cecil.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil.Mdb">
       <HintPath>..\lib\Mono.Cecil.Mdb.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="Mono.Cecil.Pdb">
       <HintPath>..\lib\Mono.Cecil.Pdb.dll</HintPath>
-      <Private>False</Private>
     </Reference>
     <Reference Include="MonoMod">
       <HintPath>..\lib\MonoMod.exe</HintPath>
