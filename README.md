@@ -13,7 +13,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding ut
 - In itch.io, **TODO**
 
 ### Everest Installation:
-- Copy files from inside `libs` into Celeste dir.
+- Copy files from inside `lib` into Celeste dir.
 - Copy built `Celeste.Mod.mm.dll` into Celeste dir.
 - Copy `mod.bat` / `mod.sh` into Celeste dir.
 - Run `mod.bat` / `mod.sh`
@@ -27,5 +27,5 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding ut
 ### Mod Development:
 - Follow the installation instructions.
 - Use RainbowMod as an example mod. It already contains:
-    - The required references (`libs/`, `libs-stripped/`) with "Copy Local" set to "False"
+    - The required references (`lib/`, `lib-stripped/`) with "Copy Local" set to "False"
     - The mod `metadata.yaml`
