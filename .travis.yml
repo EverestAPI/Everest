@@ -24,6 +24,5 @@ script:
     - ./replace-version.sh
     - msbuild /p:Configuration=Release
 after_success:
-    - chmod a+x ./github-release.sh
-# TODO: Create blob, upload it.
-#    - ./github-release.sh "$TRAVIS_REPO_SLUG" "$TRAVIS_TAG" <blob>
+    - chmod a+x ./travis-release.sh
+    - ./travis-release.sh
