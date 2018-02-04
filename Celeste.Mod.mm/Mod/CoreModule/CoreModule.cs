@@ -108,7 +108,7 @@ namespace Celeste.Mod {
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
             base.CreateModMenuSection(menu, inGame, snapshot);
 
-            menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_reloadassets")).Pressed(() => {
+            menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_COREMODULE_RELOAD")).Pressed(() => {
                 Everest.Content.Recrawl();
                 // Everest.Content.Reprocess(); // TODO: Atlases like to break.
                 AreaData.Load();

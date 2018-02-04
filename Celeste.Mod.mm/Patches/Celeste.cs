@@ -24,7 +24,12 @@ namespace Celeste {
         [MonoModConstructor]
         public void ctor_Celeste() {
             orig_ctor_Celeste();
-            Everest.Boot();
+            try {
+                Everest.Boot();
+            } catch (Exception e) {
+                e.LogDetailed();
+                throw;
+            }
         }
 
     }
