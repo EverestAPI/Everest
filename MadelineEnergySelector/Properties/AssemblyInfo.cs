@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("RainbowMod")]
+[assembly: AssemblyTitle("MadelineEnergySelector")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("RainbowMod")]
+[assembly: AssemblyProduct("MadelineEnergySelector")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("8cba6958-cd94-44b4-970b-5fc3dbe6b019")]
+[assembly: Guid("53886AAE-5331-4509-B15D-970737D81B44")]
 
 // Version information for an assembly consists of the following four values:
 //
