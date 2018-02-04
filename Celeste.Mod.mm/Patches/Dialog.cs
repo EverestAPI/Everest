@@ -63,10 +63,10 @@ namespace Celeste {
                             }
                         }
                         if (!startsWithVariable) {
-                            line = Regex.Replace(line, "\\[unknown\\]", "", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, "\\[left\\]", "{left}", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, "\\[right\\]", "{right}", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, "\\[(?<content>[^\\[\\\\]*(?:\\\\.[^\\]\\\\]*)*)\\]", "{portrait ${content}}");
+                            line = Regex.Replace(line, @"\[unknown\]", @"", RegexOptions.IgnoreCase);
+                            line = Regex.Replace(line, @"\[left\]", @"{left}", RegexOptions.IgnoreCase);
+                            line = Regex.Replace(line, @"\[right\]", @"{right}", RegexOptions.IgnoreCase);
+                            line = Regex.Replace(line, @"\[(?<content>[^\[\\]*(?:\\.[^\]\\]*)*)\]", @"{portrait ${content}}");
                         }
 
                         if (line.Length <= 0)
@@ -150,6 +150,10 @@ namespace Celeste {
                         prev = line;
 
                     }
+
+                if (!string.IsNullOrEmpty(currentName) && !language.Dialog.ContainsKey(currentName)) {
+                    language.Dialog.Add(currentName, builder.ToString());
+                }
             }
 
             return language;
