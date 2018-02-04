@@ -22,8 +22,6 @@ namespace Celeste.Mod {
         public Type AssetType = null;
         public string AssetFormat = null;
 
-        public bool HasData = true;
-
         public string PathRelative;
         public string PathSource;
         public string PathArchive;
@@ -42,24 +40,27 @@ namespace Celeste.Mod {
         /// </summary>
         public Stream Stream {
             get {
-                if (!HasData) return null;
                 Stream stream = null;
                 if (Source == SourceType.Filesystem) {
-                    stream = File.OpenRead(PathSource);
+                    if (File.Exists(PathSource))
+                        stream = File.OpenRead(PathSource);
+
                 } else if (Source == SourceType.Zip) {
                     string file = PathSource.Replace('\\', '/');
                     using (Stream zipStream = File.OpenRead(PathArchive))
                     using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
-                            foreach (ZipArchiveEntry entry in zip.Entries) {
+                        foreach (ZipArchiveEntry entry in zip.Entries) {
                             if (entry.FullName.Replace('\\', '/') == file) {
                                 MemoryStream ms = new MemoryStream();
                                 using (Stream entryStream = entry.Open())
                                     entryStream.CopyTo(ms);
                                 ms.Seek(0, SeekOrigin.Begin);
                                 stream = ms;
+                                break;
                             }
                         }
                     }
+
                 } else if (Source == SourceType.Assembly) {
                     stream = Assembly.GetManifestResourceStream(PathSource);
                 }
@@ -76,7 +77,6 @@ namespace Celeste.Mod {
         /// </summary>
         public byte[] Data {
             get {
-                if (!HasData) return null;
                 using (Stream stream = Stream) {
                     if (stream is MemoryStream) {
                         return ((MemoryStream) stream).GetBuffer();

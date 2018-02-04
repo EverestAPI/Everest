@@ -42,6 +42,10 @@ namespace Celeste.Mod {
             public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, List<AssetMetadata>> MapDialogs = new FastDictionary<string, List<AssetMetadata>>();
 
+            public readonly static IList<string> LoadedAssetPaths = new List<string>();
+            public readonly static IList<string> LoadedAssetFullPaths = new List<string>();
+            public readonly static IList<WeakReference> LoadedAssets = new List<WeakReference>();
+
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
@@ -54,6 +58,8 @@ namespace Celeste.Mod {
 
                 Crawl(null, typeof(Everest).Assembly);
                 Crawl(null, PathContent);
+
+                Events.Atlas.OnLoad += atlas => Process(atlas.GetDataPath(), atlas);
             }
 
             public static bool TryGet(string path, out AssetMetadata metadata, bool includeDirs = false) {
@@ -171,6 +177,15 @@ namespace Celeste.Mod {
                     Crawl(Mods[i]);
             }
 
+            public static void Reprocess() {
+                for (int i = 0; i < LoadedAssets.Count; i++) {
+                    WeakReference weak = LoadedAssets[i];
+                    if (!weak.IsAlive)
+                        continue;
+                    Process(LoadedAssetFullPaths[i], weak.Target);
+                }
+            }
+
             public static void Crawl(ContentModMetadata meta) {
                 if (meta.PathDirectory != null) {
                     if (Directory.Exists(meta.PathDirectory))
@@ -237,7 +252,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static T Process<T>(string assetNameFull, T asset) {
+            public static object Process(string assetNameFull, object asset) {
                 if (DumpOnLoad)
                     Dump(assetNameFull, asset);
 
@@ -246,8 +261,18 @@ namespace Celeste.Mod {
                     assetName = assetName.Substring(PathContentOrig.Length + 1);
                 }
 
+                int loadedIndex = LoadedAssetPaths.IndexOf(assetName);
+                if (loadedIndex == -1) {
+                    LoadedAssetPaths.Add(assetName);
+                    LoadedAssetFullPaths.Add(assetNameFull);
+                    LoadedAssets.Add(new WeakReference(asset));
+                } else {
+                    LoadedAssets[loadedIndex] = new WeakReference(asset);
+                }
+
                 if (asset is Atlas) {
                     Atlas atlas = asset as Atlas;
+
                     AssetMetadata mapping = Get(assetName, true);
                     if (mapping == null || mapping.AssetType != typeof(AssetTypeDirectory))
                         return asset;

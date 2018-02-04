@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class Logger {
 
-        // TODO: Write mod log to disk
         // TODO: Allow displaying mod log in future ImGui UI
-        // TODO: Log levels
+        // TODO: Log levels (verbose, info, debug, error)
 
         public static void Log(string tag, string str) {
             Console.Write("(");
@@ -27,7 +26,10 @@ namespace Celeste.Mod {
         /// Method printing extended loading / reflection exception data to the console.
         /// </summary>
         public static void LogDetailed(this Exception e, string tag = null) {
+            Console.WriteLine("--------------------------------");
+            Console.WriteLine("Detailed exception log:");
             for (Exception e_ = e; e_ != null; e_ = e_.InnerException) {
+                Console.WriteLine("--------------------------------");
                 Console.WriteLine(e_.GetType().FullName + ": " + e_.Message + "\n" + e_.StackTrace);
                 if (e_ is ReflectionTypeLoadException) {
                     ReflectionTypeLoadException rtle = (ReflectionTypeLoadException) e_;

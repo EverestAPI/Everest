@@ -22,6 +22,8 @@ namespace Monocle {
 
         public AssetMetadata Metadata { get; private set; }
 
+        public VirtualTexture Fallback;
+
         // This _should_ work, but hell, this MonoModConstructor usage syntax went untested for ages. -ade
         [MonoModConstructor]
         internal patch_VirtualTexture(AssetMetadata metadata) {
@@ -38,12 +40,34 @@ namespace Monocle {
             }
 
             Unload();
+            Texture = null;
 
-            using (Stream stream = Metadata.Stream)
-                Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
-            Width = Texture.Width;
-            Height = Texture.Height;
+            Stream stream = Metadata.Stream;
+            if (stream != null) {
+                using (stream)
+                    Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+            } else if (Fallback != null) {
+                ((patch_VirtualTexture) (object) Fallback).Reload();
+                Texture = Fallback.Texture;
+            }
+
+            if (Texture != null) {
+                Width = Texture.Width;
+                Height = Texture.Height;
+            }
         }
+
+    }
+    public static class VirtualTextureExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static AssetMetadata GetMetadata(this VirtualTexture self)
+            => ((patch_VirtualTexture) (object) self).Metadata;
+
+        public static void SetFallback(this VirtualTexture self, VirtualTexture fallback)
+            => ((patch_VirtualTexture) (object) self).Fallback = fallback;
 
     }
 }

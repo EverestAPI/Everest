@@ -32,7 +32,6 @@ namespace Monocle {
             atlas.DataMethod = "FromAtlas";
             atlas.DataPath = path;
             atlas.DataFormat = format;
-            Everest.Content.Process(path, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -44,7 +43,6 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = dataPath;
             atlas.DataFormat = format;
-            Everest.Content.Process(rootPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -56,7 +54,6 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = new string[] { filename };
             atlas.DataFormat = format;
-            Everest.Content.Process(rootPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -66,7 +63,6 @@ namespace Monocle {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
             atlas.DataPath = path;
-            Everest.Content.Process(path, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -115,35 +111,38 @@ namespace Monocle {
                 VirtualTexture replacementV = VirtualContentExt.CreateTexture(asset);
                 MTexture replacement;
                 AssetMetadata metaAsset;
-                AtlasFrameMeta meta;
+                AtlasFrameMeta meta = null;
+                bool hasMeta =
+                    Everest.Content.TryGet(asset.PathRelative + ".meta", out metaAsset) &&
+                    metaAsset.TryDeserialize(out meta) &&
+                    meta != null;
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
                 MTexture existing;
                 if (textures.TryGetValue(path, out existing)) {
-                    // Apply width and height from existing instance.
-                    replacement = new MTexture(replacementV, existing.DrawOffset, existing.Width, existing.Height);
-                    replacement.SetAtlasPath(existing.AtlasPath);
+                    // We're the currently active overlay.
+                    if (existing.Texture.GetMetadata() == asset)
+                        return;
 
-                    // Unload the texture if no other reference to the same VirtualTexture texture remaining.
-                    bool alive = false;
-                    foreach (KeyValuePair<string, MTexture> other in textures) {
-                        if (other.Key != path && other.Value.Texture == existing.Texture) {
-                            alive = true;
-                            break;
-                        }
+                    if (hasMeta) {
+                        // Apply width and height from existing meta.
+                        existing.AddOverlay(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                    } else {
+                        // Keep width and height from existing instance.
+                        existing.AddOverlay(replacementV, existing.DrawOffset, existing.Width, existing.Height);
                     }
-                    if (!alive)
-                        existing.Unload();
 
-                } else if (
-                    Everest.Content.TryGet(asset.PathRelative + ".meta", out metaAsset) &&
-                    metaAsset.TryDeserialize(out meta)
-                ) {
-                    // Read metadata if available and use it.
-                    replacement = new MTexture(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                    replacement = existing;
+
                 } else {
-                    // Apply width and height from replacement texture.
-                    replacement = new MTexture(replacementV);
+                    if (hasMeta) {
+                        // Apply width and height from existing meta.
+                        replacement = new MTexture(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                    } else {
+                        // Apply width and height from replacement texture.
+                        replacement = new MTexture(replacementV);
+                    }
+                    // TODO: What's with the AtlasPath? Seems to stem from an atlas metadata property...
                 }
 
                 self[path] = replacement;
