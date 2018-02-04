@@ -122,6 +122,11 @@ namespace Celeste.Mod {
                         return null;
                     }
 
+                if (File.Exists(cachedChecksumPath)) {
+                    File.Delete(cachedChecksumPath);
+                }
+                File.WriteAllLines(cachedChecksumPath, checksums);
+
                 return Assembly.LoadFrom(cachedPath);
             }
 
