@@ -31,26 +31,25 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Celeste">
-      <HintPath>..\libs-stripped\Celeste.exe</HintPath>
+      <HintPath>..\lib-stripped\Celeste.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FNA">
-      <HintPath>..\libs-stripped\FNA.dll</HintPath>
+      <HintPath>..\lib-stripped\FNA.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="MonoMod, Version=18.1.6604.41264, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\libs\MonoMod.exe</HintPath>
+    <Reference Include="MonoMod">
+      <HintPath>..\lib\MonoMod.exe</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Steamworks.NET">
-      <HintPath>..\libs-stripped\Steamworks.NET.dll</HintPath>
+      <HintPath>..\lib-stripped\Steamworks.NET.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Xml" />
     <Reference Include="YamlDotNet">
-      <HintPath>..\libs\YamlDotNet.dll</HintPath>
+      <HintPath>..\lib\YamlDotNet.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
