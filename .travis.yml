@@ -11,7 +11,7 @@ env:
         - "BUILD_NUMBER=$TRAVIS_BUILD_NUMBER"
         - "BUILD_DIR=$TRAVIS_BUILD_DIR"
         - "TRAVIS_MSBUILD_MODE=framework"
-        - "TRAVIS_MSBUILD=./travis-msbuild"
+        - "TRAVIS_MSBUILD=$TRAVIS_BUILD_DIR/travis-msbuild"
         - "TRAVIS_MSBUILD_BIN=$TRAVIS_MSBUILD/bin"
         - "TRAVIS_MSBUILD_FRAMEWORK=$TRAVIS_MSBUILD/lib-dotnet"
         - "PATH=$PATH:$TRAVIS_MSBUILD_BIN"
