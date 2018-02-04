@@ -8,9 +8,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class Logger {
 
-        // TODO: Write mod log to disk
         // TODO: Allow displaying mod log in future ImGui UI
-        // TODO: Log levels
+        // TODO: Log levels (verbose, info, debug, error)
 
         public static void Log(string tag, string str) {
             Console.Write("(");
