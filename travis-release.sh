@@ -28,8 +28,8 @@ if ( [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" = "master" ] ) &
   ZIPNAME="build-${TRAVIS_BUILD_NUMBER}.zip"
   
   echo "Creating build .zip"
-  pushd Celeste.Mod.mm/bin/Release
-  zip "$ROOT/$ZIP" ./*
+  pushd Celeste.Mod.mm/Artifact
+  zip "$ROOT/$ZIP" *
   popd
   
   echo "Pushing build to S3"
