@@ -15,11 +15,21 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static partial class Everest {
 
-        // TODO: Replace the following lines by build script automatically in the future.
-        public static Version Version = new Version("0.0.0");
-        public static string VersionSuffix = "dev";
+        // The following line gets replaced by Travis automatically.
+        public readonly static string VersionString = "0.0.0-dev";
 
-        public static string VersionString => Version + "-" + VersionSuffix;
+        public readonly static Version Version;
+        public readonly static string VersionSuffix;
+        static Everest() {
+            int versionSplitIndex = VersionString.IndexOf('-');
+            if (versionSplitIndex == -1) {
+                Version = new Version(VersionString);
+                VersionSuffix = null;
+            } else {
+                Version = new Version(VersionString.Substring(0, versionSplitIndex));
+                VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
+            }
+        }
 
         public static ReadOnlyCollection<string> Args { get; internal set; }
 
