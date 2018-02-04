@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Celeste.Mod.mm", "Celeste.M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RainbowMod", "RainbowMod\RainbowMod.csproj", "{8CBA6958-CD94-44B4-970B-5FC3DBE6B019}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MadelineEnergySelector", "MadelineenergySelector\MadelineEnergySelector.csproj", "{53886AAE-5331-4509-B15D-970737D81B44}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MadelineEnergySelector", "MadelineEnergySelector\MadelineEnergySelector.csproj", "{53886AAE-5331-4509-B15D-970737D81B44}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
