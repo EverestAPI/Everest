@@ -47,5 +47,13 @@ namespace Celeste {
             }
         }
 
+        protected extern void orig_Initialize();
+        protected override void Initialize() {
+            // Note: You may instinctually call base.Initialize();
+            // DON'T! The original method is orig_Initialize
+            orig_Initialize();
+            Everest.Invoke("Initialize");
+        }
+
     }
 }

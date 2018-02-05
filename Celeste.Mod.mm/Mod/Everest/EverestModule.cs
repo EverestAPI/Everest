@@ -59,10 +59,17 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Perform any initializing actions after all modd have been loaded.
+        /// Perform any initializing actions after all mods have been loaded.
         /// Do not depend on any specific order in which the mods get initialized.
         /// </summary>
         public abstract void Load();
+
+        /// <summary>
+        /// Perform any initializing actions after Celeste.Initialize has been called.
+        /// Do not depend on any specific order in which the mods get initialized.
+        /// </summary>
+        public virtual void Initialize() {
+        }
 
         /// <summary>
         /// Unload any unmanaged resources allocated by the mod (f.e. textures) and

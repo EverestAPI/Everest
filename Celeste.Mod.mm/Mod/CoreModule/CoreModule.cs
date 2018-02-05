@@ -1,4 +1,5 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Editor;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -29,7 +30,29 @@ namespace Celeste.Mod {
         public override void Load() {
             Everest.Events.OuiMainMenu.OnCreateMainMenuButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+        }
 
+        public override void Initialize() {
+            // F5 - Reload and restart the current screen.
+            Engine.Commands.FunctionKeyActions[4] = () => {
+                Level level = Engine.Scene as Level;
+                if (level == null)
+                    return;
+                Engine.Scene = new LevelLoader(new Session(level.Session.Area, null, null) {
+                    FirstLevel = false,
+                    Level = level.Session.Level,
+                    StartedFromBeginning = level.Session.StartedFromBeginning
+                }, level.Session.RespawnPoint);
+            };
+
+            // F6 - Open map editor for current level.
+            Engine.Commands.FunctionKeyActions[5] = () => {
+                Level level = Engine.Scene as Level;
+                if (level == null)
+                    return;
+                Engine.Scene = new MapEditor(level.Session.Area, true);
+                Engine.Commands.Open = false;
+            };
         }
 
         public override void Unload() {
