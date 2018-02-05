@@ -9,6 +9,7 @@ function putS3
   aws_path=$3
   bucket='lollyde'
   date=$(date +"%a, %d %b %Y %T %z")
+  size=$(wc -c < "$path/$file" | tr -d '\n')
   acl="x-amz-acl:public-read"
   content_type='application/x-compressed-zip'
   string="PUT\n\n$content_type\n$date\n$acl\n/$bucket$aws_path$file"
@@ -19,7 +20,7 @@ function putS3
     -H "Content-Type: $content_type" \
     -H "$acl" \
     -H "Authorization: AWS ${S3KEY}:$signature" \
-	-H "Content-Length: "$(wc -c < "$path/$file") \
+	-H "Content-Length: $size" \
     "https://$bucket.ams3.digitaloceanspaces.com$aws_path$file"
 }
 
