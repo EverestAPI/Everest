@@ -5,14 +5,10 @@ language: csharp
 mono:
   - latest
 solution: Everest.sln
-env:
-    global:
-        - "BUILD_NUMBER=$TRAVIS_BUILD_NUMBER"
-        - "BUILD_DIR=$TRAVIS_BUILD_DIR"
 script:
-    - chmod a+x ./replace-version.sh
-    - ./replace-version.sh
+    - chmod a+x ./travis/replace-version.sh
+    - ./travis/replace-version.sh
     - msbuild /p:TravisCore=true /p:Configuration=Release
 after_success:
-    - chmod a+x ./travis-release.sh
-    - ./travis-release.sh
+    - chmod a+x ./travis/travis-release.sh
+    - ./travis/travis-release.sh
