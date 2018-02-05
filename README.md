@@ -6,6 +6,10 @@
 
 Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding tool.
 
+**We're in #game_modding on the "Mt. Celeste Climbing Association" Discord server:**
+
+[![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
+
 ### Windows users: Switch to the opengl / FNA branch.
 - In Steam, it's listed as under "betas"
 - In itch.io, **TODO**
@@ -14,7 +18,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
 - If you've updated Celeste or switched betas / branches, delete the `orig` directory where Celeste is installed.
 - Download [latest `build-XYZ.zip`](https://github.com/EverestAPI/Everest/releases)
     - Download pre-releases at your own risk.
-- Extract `build-XYZ.zip` to Celeste directory. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
+- Extract `build-XYZ.zip` to where Celeste is installed. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
 - Run `mod.bat` / `mod.sh`
 
 ### Custom Installation:
