@@ -14,16 +14,13 @@ function postList {
 
 function generateLink {
     IFS=' ' read -a myarray <<< $1
-	if [[ ${myarray[0]} != /everest-travis* ]] ; then
-	    return
-	fi
-	echo "<li><a href=\""${myarray[0]}"\">"${myarray[1]}"</a></li>" >> $FILE
+    echo "<li><a href=\""${myarray[0]}"\">"${myarray[1]}"</a></li>" >> $FILE
 }
 
-preList >> $FILE
-readarray array < builds_index.txt
+preList > $FILE
+readarray array < ./travis/builds_index.txt
 
-for (( idx=${#array[@]}-2 ; idx>=0 ; idx-- )) ; do
+for (( idx=${#array[@]}-1 ; idx>=0 ; idx-- )) ; do
     generateLink "${array[idx]}"
 done
 

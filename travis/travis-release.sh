@@ -14,7 +14,7 @@ function putS3
   date=$(date +"%a, %d %b %Y %T %z")
   size=$(wc -c < "$path/$file" | tr -d '\n')
   acl="x-amz-acl:public-read"
-  content_type='application/x-compressed-zip'
+  content_type=$4
   string="PUT\n\n$content_type\n$date\n$acl\n/$bucket$aws_path$file"
   signature=$(echo -en "${string}" | openssl sha1 -hmac "${S3SECRET}" -binary | base64)
   curl -X PUT -T "$path/$file" \
@@ -53,13 +53,13 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   ./travis/html-gen.sh
   
   echo "Pushing build to S3"
-  putS3 "$ROOT" "$ZIP" "/everest-travis/"
+  putS3 "$ROOT" "$ZIP" "/everest-travis/" 'application/x-compressed-zip'
   
   echo "Pushing index.html to S3"
-  putS3 "$ROOT/travis" "index.html" "/"
+  putS3 "$ROOT/travis" "index.html" "/" 'text/html'
   
   echo "Pushing builds_index.txt to S3"
-  putS3 "$ROOT/travis/" "builds_index.txt" "/everest-travis/"
+  putS3 "$ROOT/travis/" "builds_index.txt" "/everest-travis/" 'text/plain'
   
   
   if [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] ; then
