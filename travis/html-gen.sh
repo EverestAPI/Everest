@@ -4,7 +4,7 @@ FILE="./travis/index.html"
 
 function preList {
     echo "<!DOCTYPE html><html><body>
-a list of the lastest few builds:
+<h3 class="list-heading">a list of the lastest few builds:</h3>
 <ul>"
 }
 
