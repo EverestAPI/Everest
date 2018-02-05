@@ -1,6 +1,7 @@
 #!/bin/bash
 
-chmod a+x ./github-release.sh
+chmod a+x ./travis/github-release.sh
+chmod a+x ./travis/html-gen.sh
 
 # Taken from https://gist.github.com/chrismdp/6c6b6c825b07f680e710
 # Adapted for our S3 digitalocean target.
@@ -38,12 +39,28 @@ if ( [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" = "master" ] ) &
   chmod a+x mod.sh
   zip "$ROOT/$ZIP" mod.bat mod.sh
   
+  echo "Get latest builds_index.txt"
+  wget -O ./travis/builds_index.txt https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt
+  
+  echo "Update builds_index.txt"
+  echo "/everest-travis/$ZIP $ZIP" >> ./travis/builds_index.txt
+  
+  echo "Create updated index.html"
+  ./travis/html-gen.sh
+  
   echo "Pushing build to S3"
   putS3 "$ROOT" "$ZIP" "/everest-travis/"
   
+  echo "Pushing index.html to S3"
+  putS3 "$ROOT/travis/" "index.html" "/"
+  
+  echo "Pushing builds_index.txt to S3"
+  putS3 "$ROOT/travis/" "builds_index.txt" "/everest-travis/"
+  
+  
   if [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] ; then
 	echo "Pushing release"
-	./github-release.sh "$TRAVIS_REPO_SLUG" "$TRAVIS_TAG" "$ROOT/$ZIP"
+	./travis/github-release.sh "$TRAVIS_REPO_SLUG" "$TRAVIS_TAG" "$ROOT/$ZIP"
   fi
   
   echo "Done."
