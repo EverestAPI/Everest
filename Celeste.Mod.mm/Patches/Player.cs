@@ -28,6 +28,13 @@ namespace Celeste {
             TrailManager.Add(this, GetCurrentTrailColor(), 1f);
         }
 
+        public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
+
+        new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
+            return orig_Die(direction, evenIfInvincible, registerDeathInStats);
+            Everest.Events.Player.Die(this);
+        }
+
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         private Color GetTrailColor(bool wasDashB) {
             return wasDashB ? NormalHairColor : UsedHairColor;

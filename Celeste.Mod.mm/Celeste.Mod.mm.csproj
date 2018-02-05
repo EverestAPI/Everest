@@ -10,6 +10,7 @@
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <FrameworkPathOverride Condition=" '$(TravisCore)' == 'true' ">..\lib-dotnet\</FrameworkPathOverride>
     <OutputPath Condition=" '$(TravisCore)' == 'true' ">Artifact\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -91,6 +92,7 @@
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\LevelEnter.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\TextMenu.cs" />

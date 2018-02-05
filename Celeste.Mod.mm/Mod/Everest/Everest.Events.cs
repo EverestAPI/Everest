@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using _Atlas = Monocle.Atlas;
 using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Level = Celeste.Level;
+using _Player = Celeste.Player;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -141,6 +142,19 @@ namespace Celeste.Mod {
                     => OnTransitionTo?.Invoke(next, direction);
             }
 
+            public static class LevelEnter {
+
+                public static event Action<Session, bool> OnGo;
+                internal static void Go(Session session, bool fromSaveData)
+                    => OnGo?.Invoke(session, fromSaveData);
+            }
+
+            public static class Player {
+
+                public static event Action<_Player> OnDie;
+                internal static void Die(_Player player)
+                    => OnDie?.Invoke(player);
+            }
         }
     }
 }
