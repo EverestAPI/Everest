@@ -33,6 +33,9 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
     SUFFIX="-$TRAVIS_BRANCH"
   fi
   
+  echo "branch: $TRAVIS_BRANCH"
+  echo "suffix: $SUFFIX"
+  
   ROOT="$(pwd)"
   ZIP="build-${TRAVIS_BUILD_NUMBER}$(SUFFIX).zip"
   

@@ -12,7 +12,7 @@ function postList {
 
 function generateLink {
     IFS=' ' read -a myarray <<< $1
-	echo "<li><a href=\""${myarray[0]}"\">"${myarray[1]}"</a></li>" >> index.html
+	echo "<li><a href=\""${myarray[0]}"\">"${myarray[1]}"</a></li>" >> ./travis/index.html
 }
 
 preList >> index.html
