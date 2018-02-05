@@ -11,7 +11,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
 - In itch.io, **TODO**
 
 ### Everest Installation:
-- If you've updated Celeste or just switched betas / branches, go to where Celeste is installed and delete the `orig` directory.
+- If you've updated Celeste or switched betas / branches, delete the `orig` directory where Celeste is installed.
 - Download [latest `build-XYZ.zip`](https://github.com/EverestAPI/Everest/releases)
     - Download pre-releases at your own risk.
 - Extract `build-XYZ.zip` to Celeste directory. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
