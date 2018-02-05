@@ -13,12 +13,13 @@ function putS3
   content_type='application/x-compressed-zip'
   string="PUT\n\n$content_type\n$date\n$acl\n/$bucket$aws_path$file"
   signature=$(echo -en "${string}" | openssl sha1 -hmac "${S3SECRET}" -binary | base64)
-  curl -X PUT -d "" -T "$path/$file" \
+  curl -X PUT -T "$path/$file" \
     -H "Host: $bucket.ams3.digitaloceanspaces.com" \
     -H "Date: $date" \
     -H "Content-Type: $content_type" \
     -H "$acl" \
     -H "Authorization: AWS ${S3KEY}:$signature" \
+	-H "Content-Length: "$(wc -c < "$path/$file") \
     "https://$bucket.ams3.digitaloceanspaces.com$aws_path$file"
 }
 
@@ -31,6 +32,8 @@ if ( [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" = "master" ] ) &
   pushd Celeste.Mod.mm/Artifact
   zip "$ROOT/$ZIP" *
   popd
+  chmod a+x mod.sh
+  zip "$ROOT/$ZIP" mod.bat mod.sh
   
   echo "Pushing build to S3"
   putS3 "$ROOT" "$ZIP" "/everest-travis/"
