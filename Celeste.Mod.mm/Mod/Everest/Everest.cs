@@ -79,9 +79,6 @@ namespace Celeste.Mod {
 
         public static void Register(this EverestModule module) {
             module.LoadSettings();
-            if (module._Settings == null && module.SettingsType != null) {
-                module._Settings = (EverestModuleSettings) module.SettingsType.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-            }
 
             lock (_Modules) {
                 _Modules.Add(module);
@@ -117,8 +114,8 @@ namespace Celeste.Mod {
         }
 
         // A shared object a day keeps the GC away!
-        private readonly static Type[] _EmptyTypeArray = new Type[0];
-        private readonly static object[] _EmptyObjectArray = new object[0];
+        public readonly static Type[] _EmptyTypeArray = new Type[0];
+        public readonly static object[] _EmptyObjectArray = new object[0];
 
         public static void Invoke(string methodName, params object[] args)
             => InvokeTyped(methodName, null, args);

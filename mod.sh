@@ -9,3 +9,4 @@ cp orig/Celeste.exe Celeste.exe
 
 mono MonoMod.exe Celeste.exe
 mv MONOMODDED_Celeste.exe Celeste.exe
+chmod u+x Celeste.exe

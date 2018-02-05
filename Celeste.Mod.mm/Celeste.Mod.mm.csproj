@@ -65,8 +65,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\CoreModule\CoreModuleSaveData.cs" />
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
+    <Compile Include="Mod\Everest\EverestModuleSaveData.cs" />
     <Compile Include="Mod\Everest\EverestModuleSettings.cs" />
     <Compile Include="Mod\Everest\EverestModuleMetadata.cs" />
     <Compile Include="Mod\Helpers\AssetMetadata.cs" />
@@ -89,6 +91,7 @@
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\TextMenu.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
