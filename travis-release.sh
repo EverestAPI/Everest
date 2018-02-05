@@ -1,5 +1,7 @@
 #!/bin/bash
 
+chmod a+x ./github-release.sh
+
 # Taken from https://gist.github.com/chrismdp/6c6b6c825b07f680e710
 # Adapted for our S3 digitalocean target.
 function putS3
