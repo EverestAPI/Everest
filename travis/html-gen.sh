@@ -3,7 +3,7 @@
 FILE="./travis/index.html"
 
 function preList {
-    echo "<html><body>
+    echo "<!DOCTYPE html><html><body>
 a list of the lastest few builds:
 <ul>"
 }
@@ -23,7 +23,7 @@ function generateLink {
 preList >> $FILE
 readarray array < builds_index.txt
 
-for (( idx=${#array[@]}-1 ; idx>=0 ; idx-- )) ; do
+for (( idx=${#array[@]}-2 ; idx>=0 ; idx-- )) ; do
     generateLink "${array[idx]}"
 done
 
