@@ -38,6 +38,7 @@ namespace Celeste.Mod {
                 Level level = Engine.Scene as Level;
                 if (level == null)
                     return;
+                AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
                 Engine.Scene = new LevelLoader(new Session(level.Session.Area, null, null) {
                     FirstLevel = false,
                     Level = level.Session.Level,
@@ -50,7 +51,7 @@ namespace Celeste.Mod {
                 Level level = Engine.Scene as Level;
                 if (level == null)
                     return;
-                Engine.Scene = new MapEditor(level.Session.Area, true);
+                Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;
             };
         }
