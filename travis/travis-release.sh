@@ -33,11 +33,8 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
     SUFFIX="-$TRAVIS_BRANCH"
   fi
   
-  echo "branch: $TRAVIS_BRANCH"
-  echo "suffix: $SUFFIX"
-  
   ROOT="$(pwd)"
-  ZIP="build-${TRAVIS_BUILD_NUMBER}$(SUFFIX).zip"
+  ZIP="build-${TRAVIS_BUILD_NUMBER}${SUFFIX}.zip"
   
   echo "Creating build .zip"
   pushd Celeste.Mod.mm/Artifact
@@ -71,5 +68,9 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   fi
   
   echo "Done."
+  
+  echo "debuginfo:"
+  echo ls
+  echo ls ./travis
   
 fi
