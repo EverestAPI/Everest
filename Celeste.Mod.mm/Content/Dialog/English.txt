@@ -19,6 +19,7 @@
 # {anchor} controls the visual position of the textbox in-game
 
 # Main Menu
+	MENU_MAPLIST= 							Map List
 	MENU_MODOPTIONS= 						Mod Options
 	MENU_PAUSE_MODOPTIONS= 					Mod Options
 
@@ -28,3 +29,12 @@
 # Core Module Options
 	MODOPTIONS_COREMODULE_TITLE= 			Everest Core
 	MODOPTIONS_COREMODULE_RECRAWL= 			Reload Assets
+
+# Maplist
+	MAPLIST_TITLE= 							MAP LIST
+	MAPLIST_FILTERS= 						Filters
+	MAPLIST_TYPE= 							Type
+	MAPLIST_TYPE_0= 						Celeste
+	MAPLIST_TYPE_1= 						All Mods
+	MAPLIST_SIDE= 							Side
+	MAPLIST_LIST= 							Maps

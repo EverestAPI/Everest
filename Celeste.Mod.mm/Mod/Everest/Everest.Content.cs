@@ -17,14 +17,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
+    // Special meta types.
+    public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
+    public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
+    public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
+    public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
+    public sealed class AssetTypeMap { private AssetTypeMap() { } }
+
     public static partial class Everest {
         public static class Content {
-
-            // Special meta types.
-            public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
-            public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
-            public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
-            public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
 
             /// <summary>
             /// Should Everest dump all game assets into a user-friendly format on load?
@@ -41,6 +42,7 @@ namespace Celeste.Mod {
             public readonly static IDictionary<string, AssetMetadata> Map = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
             public readonly static IDictionary<string, List<AssetMetadata>> MapDialogs = new FastDictionary<string, List<AssetMetadata>>();
+            public readonly static List<AssetMetadata> ListMaps = new List<AssetMetadata>();
 
             public readonly static IList<string> LoadedAssetPaths = new List<string>();
             public readonly static IList<string> LoadedAssetFullPaths = new List<string>();
@@ -102,12 +104,24 @@ namespace Celeste.Mod {
 
                 // Hardcoded case: Handle dialog .txts separately.
                 if (metadata.AssetType == typeof(AssetTypeDialog)) {
+                    // Store multiple AssetMetadatas in a list per path.
                     List<AssetMetadata> dialogs;
                     if (!MapDialogs.TryGetValue(path, out dialogs)) {
                         dialogs = new List<AssetMetadata>();
                         MapDialogs[path] = dialogs;
                     }
                     dialogs.Add(metadata);
+                }
+                // Hardcoded case: Handle maps separately.
+                else if (metadata.AssetType == typeof(AssetTypeMap)) {
+                    // Store all maps in a single shared list.
+                    // Note that we only store the last added item.
+                    int index = ListMaps.FindIndex(other => other.PathRelative == metadata.PathRelative);
+                    if (index == -1)
+                        index = ListMaps.Count;
+                    ListMaps.Insert(index, metadata);
+                    // We also store the metadata as usual.
+                    Map[path] = metadata;
                 }
                 // Hardcoded case: Handle directories separately.
                 else if (metadata.AssetType == typeof(AssetTypeDirectory))
@@ -161,6 +175,10 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeDialog);
                     file = file.Substring(0, file.Length - 4);
 
+                } else if (file.StartsWith("Maps/") && file.EndsWith(".bin")) {
+                    type = typeof(AssetTypeMap);
+                    file = file.Substring(0, file.Length - 4);
+
                 } else {
                     // TODO: Allow mods to parse custom types.
                 }
@@ -172,6 +190,7 @@ namespace Celeste.Mod {
                 Map.Clear();
                 MapDirs.Clear();
                 MapDialogs.Clear();
+                ListMaps.Clear();
 
                 for (int i = 0; i < Mods.Count; i++)
                     Crawl(Mods[i]);

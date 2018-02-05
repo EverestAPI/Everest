@@ -86,6 +86,13 @@ namespace Celeste.Mod {
                 Audio.Play("event:/ui/main/whoosh_large_in");
                 menu.Overworld.Goto<OuiModOptions>();
             }));
+
+            // ... and let's just sneak in a maplist button above that.
+            buttons.Insert(index - 1, new MainMenuSmallButton("menu_maplist", "menu/maplist", menu, Vector2.Zero, Vector2.Zero, () => {
+                Audio.Play("event:/ui/main/button_select");
+                Audio.Play("event:/ui/main/whoosh_large_in");
+                menu.Overworld.Goto<OuiMapList>();
+            }));
         }
 
         public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
@@ -135,7 +142,7 @@ namespace Celeste.Mod {
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
             base.CreateModMenuSection(menu, inGame, snapshot);
 
-            menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_COREMODULE_RECRAWL")).Pressed(() => {
+            menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
                 Everest.Content.Recrawl();
                 Everest.Content.Reprocess();
                 VirtualContentExt.ForceReload();

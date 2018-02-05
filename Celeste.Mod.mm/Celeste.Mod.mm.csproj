@@ -83,15 +83,23 @@
     <Compile Include="Mod\Helpers\EverestContentManager.cs" />
     <Compile Include="Mod\Everest\EverestModule.cs" />
     <Compile Include="Mod\Helpers\Extensions.cs" />
+    <Compile Include="Mod\Helpers\FakeFileStream.cs" />
     <Compile Include="Mod\Helpers\LimitedStream.cs" />
     <Compile Include="Mod\Helpers\LogWriter.cs" />
     <Compile Include="Mod\Helpers\Logger.cs" />
     <Compile Include="Mod\Helpers\MTextureOverlay.cs" />
+    <Compile Include="Mod\Helpers\FileProxy.cs" />
+    <Compile Include="Mod\Meta\MapMeta.cs" />
     <Compile Include="Mod\Meta\AtlasFrameMeta.cs" />
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
+    <Compile Include="Mod\Oui\OuiMapList.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\BinaryPacker.cs" />
+    <Compile Include="Patches\MapData.cs" />
+    <Compile Include="Patches\AreaStats.cs" />
     <Compile Include="Patches\LevelEnter.cs" />
+    <Compile Include="Patches\Monocle\RendererList.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\TextMenu.cs" />
@@ -128,6 +136,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

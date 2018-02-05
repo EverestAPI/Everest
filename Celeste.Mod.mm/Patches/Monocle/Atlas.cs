@@ -90,7 +90,7 @@ namespace Monocle {
 
         public static void Ingest(this Atlas self, AssetMetadata asset) {
             // Crawl through all child assets.
-            if (asset.AssetType == typeof(Everest.Content.AssetTypeDirectory)) {
+            if (asset.AssetType == typeof(AssetTypeDirectory)) {
                 foreach (AssetMetadata child in asset.Children)
                     self.Ingest(child);
                 return;
@@ -110,12 +110,7 @@ namespace Monocle {
 
                 VirtualTexture replacementV = VirtualContentExt.CreateTexture(asset);
                 MTexture replacement;
-                AssetMetadata metaAsset;
-                AtlasFrameMeta meta = null;
-                bool hasMeta =
-                    Everest.Content.TryGet(asset.PathRelative + ".meta", out metaAsset) &&
-                    metaAsset.TryDeserialize(out meta) &&
-                    meta != null;
+                AtlasFrameMeta meta = asset.GetMeta<AtlasFrameMeta>();
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
                 MTexture existing;
@@ -124,7 +119,7 @@ namespace Monocle {
                     if (existing.Texture.GetMetadata() == asset)
                         return;
 
-                    if (hasMeta) {
+                    if (meta != null) {
                         // Apply width and height from existing meta.
                         existing.AddOverlay(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                     } else {
@@ -135,7 +130,7 @@ namespace Monocle {
                     replacement = existing;
 
                 } else {
-                    if (hasMeta) {
+                    if (meta != null) {
                         // Apply width and height from existing meta.
                         replacement = new MTexture(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                     } else {

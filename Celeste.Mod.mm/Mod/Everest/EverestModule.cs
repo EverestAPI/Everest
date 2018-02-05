@@ -156,10 +156,7 @@ namespace Celeste.Mod {
             // The settings subheader.
             string name; // We lazily reuse this field for the props later on.
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
-            if (Dialog.Has(name))
-                name = Dialog.Clean(name);
-            else
-                name = Metadata.Name.SpacedPascalCase();
+            name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
             menu.Add(new TextMenu.SubHeader(name));
 
@@ -183,10 +180,7 @@ namespace Celeste.Mod {
                     continue;
 
                 name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
-                if (Dialog.Has(name))
-                    name = Dialog.Clean(name);
-                else
-                    name = prop.Name.SpacedPascalCase();
+                name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
 
                 bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
 

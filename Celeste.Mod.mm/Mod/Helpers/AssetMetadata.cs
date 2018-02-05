@@ -124,7 +124,7 @@ namespace Celeste.Mod {
         }
 
         public bool TryDeserialize<T>(out T result) {
-            if (AssetType == typeof(Everest.Content.AssetTypeYaml)) {
+            if (AssetType == typeof(AssetTypeYaml)) {
                 using (StreamReader reader = new StreamReader(Stream))
                     result = YamlHelper.Deserializer.Deserialize<T>(reader);
                 return true;
@@ -138,6 +138,22 @@ namespace Celeste.Mod {
             T result;
             TryDeserialize(out result);
             return result;
+        }
+
+        public bool TryGetMeta<T>(out T meta) {
+            AssetMetadata metaAsset;
+            if (Everest.Content.TryGet(PathRelative + ".meta", out metaAsset) &&
+                metaAsset.TryDeserialize(out meta)
+            )
+                return true;
+            meta = default(T);
+            return false;
+        }
+
+        public T GetMeta<T>() {
+            T meta;
+            TryGetMeta(out meta);
+            return meta;
         }
 
         public enum SourceType {
