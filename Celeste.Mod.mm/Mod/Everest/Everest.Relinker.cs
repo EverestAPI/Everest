@@ -24,19 +24,18 @@ namespace Celeste.Mod {
 
             public static string GameChecksum;
 
-            public readonly static IDictionary<string, ModuleDefinition> AssemblyRelinkedCache = new FastDictionary<string, ModuleDefinition>() {
+            public readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new FastDictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
-                { "FNA", ModuleDefinition.ReadModule(typeof(Game).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
             };
 
-            private static FastDictionary<string, ModuleDefinition> _AssemblyRelinkMap;
-            public static IDictionary<string, ModuleDefinition> AssemblyRelinkMap {
+            private static FastDictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
+            public static IDictionary<string, ModuleDefinition> SharedRelinkModuleMap {
                 get {
-                    if (_AssemblyRelinkMap != null)
-                        return _AssemblyRelinkMap;
+                    if (_SharedRelinkModuleMap != null)
+                        return _SharedRelinkModuleMap;
 
-                    _AssemblyRelinkMap = new FastDictionary<string, ModuleDefinition>();
+                    _SharedRelinkModuleMap = new FastDictionary<string, ModuleDefinition>();
                     string[] entries = Directory.GetFiles(PathGame);
                     for (int i = 0; i < entries.Length; i++) {
                         string path = entries[i];
@@ -44,9 +43,7 @@ namespace Celeste.Mod {
                         string nameNeutral = name.Substring(0, Math.Max(0, name.Length - 4));
                         if (name.EndsWith(".mm.dll")) {
                             if (name.StartsWith("Celeste."))
-                                _AssemblyRelinkMap[nameNeutral] = AssemblyRelinkedCache["Celeste"];
-                            else if (name.StartsWith("FNA."))
-                                _AssemblyRelinkMap[nameNeutral] = AssemblyRelinkedCache["FNA"];
+                                _SharedRelinkModuleMap[nameNeutral] = StaticRelinkModuleCache["Celeste"];
                             else {
                                 Logger.Log("relinker", $"Found unknown {name}");
                                 int dot = name.IndexOf('.');
@@ -58,16 +55,53 @@ namespace Celeste.Mod {
                                 if (!File.Exists(pathRelinked))
                                     continue;
                                 ModuleDefinition relinked;
-                                if (!AssemblyRelinkedCache.TryGetValue(nameRelinkedNeutral, out relinked)) {
+                                if (!StaticRelinkModuleCache.TryGetValue(nameRelinkedNeutral, out relinked)) {
                                     relinked = ModuleDefinition.ReadModule(pathRelinked, new ReaderParameters(ReadingMode.Immediate));
-                                    AssemblyRelinkedCache[nameRelinkedNeutral] = relinked;
+                                    StaticRelinkModuleCache[nameRelinkedNeutral] = relinked;
                                 }
                                 Logger.Log("relinker", $"Remapped to {nameRelinked}");
-                                _AssemblyRelinkMap[nameNeutral] = relinked;
+                                _SharedRelinkModuleMap[nameNeutral] = relinked;
                             }
                         }
                     }
-                    return _AssemblyRelinkMap;
+                    return _SharedRelinkModuleMap;
+                }
+            }
+
+            private static FastDictionary<string, object> _SharedRelinkMap;
+            public static IDictionary<string, object> SharedRelinkMap {
+                get {
+                    if (_SharedRelinkMap != null)
+                        return _SharedRelinkMap;
+
+                    _SharedRelinkMap = new FastDictionary<string, object>();
+
+                    // Find our current XNA flavour and relink all types to it.
+                    // This relinks mods from XNA to FNA and from FNA to XNA.
+
+                    AssemblyName[] asmRefs = typeof(Celeste).Assembly.GetReferencedAssemblies();
+                    for (int ari = 0; ari < asmRefs.Length; ari++) {
+                        AssemblyName asmRef = asmRefs[ari];
+                        // Ugly hardcoded supported framework list.
+                        if (!asmRef.FullName.Contains("XNA") &&
+                            !asmRef.FullName.Contains("FNA") &&
+                            !asmRef.FullName.Contains("MonoGame") // Contains many differences - we should print a warning.
+                        )
+                            continue;
+                        Assembly asm = Assembly.Load(asmRef);
+                        ModuleDefinition module = ModuleDefinition.ReadModule(asm.Location, new ReaderParameters(ReadingMode.Immediate));
+                        SharedRelinkModuleMap[asmRef.FullName] = SharedRelinkModuleMap[asmRef.Name] = module;
+                        Type[] types = asm.GetExportedTypes();
+                        for (int i = 0; i < types.Length; i++) {
+                            Type type = types[i];
+                            TypeDefinition typeDef = module.GetType(type.FullName) ?? module.GetType(type.FullName.Replace('+', '/'));
+                            if (typeDef == null)
+                                continue;
+                            SharedRelinkMap[typeDef.FullName] = typeDef;
+                        }
+                    }
+
+                    return _SharedRelinkMap;
                 }
             }
 
@@ -102,7 +136,8 @@ namespace Celeste.Mod {
                     Input = stream,
                     OutputPath = cachedPath,
                     CleanupEnabled = false,
-                    RelinkModuleMap = AssemblyRelinkMap,
+                    RelinkModuleMap = SharedRelinkModuleMap,
+                    RelinkMap = SharedRelinkMap,
                     DependencyDirs = {
                         PathGame
                     },
@@ -140,8 +175,11 @@ namespace Celeste.Mod {
                             foreach (ZipArchiveEntry entry in zip.Entries) {
                                 if (entry.FullName != asmName)
                                     continue;
-                                using (Stream stream = entry.Open()) {
-                                    return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
+                                using (Stream stream = entry.Open())
+                                using (MemoryStream ms = new MemoryStream()) {
+                                    stream.CopyTo(ms);
+                                    ms.Seek(0, SeekOrigin.Begin);
+                                    return ModuleDefinition.ReadModule(ms, mod.GenReaderParameters(false));
                                 }
                             }
                         }
