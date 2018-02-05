@@ -27,7 +27,7 @@ function putS3
 if ( [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" = "master" ] ) && ( [ "$TRAVIS_PULL_REQUEST" = "false" ] ) ; then
   
   ROOT="$(pwd)"
-  ZIPNAME="build-${TRAVIS_BUILD_NUMBER}.zip"
+  ZIP="build-${TRAVIS_BUILD_NUMBER}.zip"
   
   echo "Creating build .zip"
   pushd Celeste.Mod.mm/Artifact
