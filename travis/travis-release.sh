@@ -56,7 +56,7 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   putS3 "$ROOT" "$ZIP" "/everest-travis/"
   
   echo "Pushing index.html to S3"
-  putS3 "$ROOT/travis/" "index.html" "/"
+  putS3 "$ROOT/travis" "index.html" "/"
   
   echo "Pushing builds_index.txt to S3"
   putS3 "$ROOT/travis/" "builds_index.txt" "/everest-travis/"
@@ -70,7 +70,7 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   echo "Done."
   
   echo "debuginfo:"
-  echo ls
-  echo ls ./travis
+  echo ${ls}
+  echo ${ls ./travis}
   
 fi
