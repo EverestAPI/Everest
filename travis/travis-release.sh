@@ -27,10 +27,14 @@ function putS3
     "https://$bucket.ams3.digitaloceanspaces.com$aws_path$file"
 }
 
-if ( [ "$TRAVIS_BRANCH" = "$TRAVIS_TAG" ] || [ "$TRAVIS_BRANCH" = "master" ] ) && ( [ "$TRAVIS_PULL_REQUEST" = "false" ] ) ; then
+if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
+  SUFFIX=""
+  if [ "$TRAVIS_BRANCH" != "master" ] ; then
+    SUFFIX="-$TRAVIS_BRANCH"
+  fi
   
   ROOT="$(pwd)"
-  ZIP="build-${TRAVIS_BUILD_NUMBER}.zip"
+  ZIP="build-${TRAVIS_BUILD_NUMBER}$(SUFFIX).zip"
   
   echo "Creating build .zip"
   pushd Celeste.Mod.mm/Artifact
