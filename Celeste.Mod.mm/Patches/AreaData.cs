@@ -110,6 +110,14 @@ namespace Celeste {
                         area.CassetteSong = meta.CassetteSong;
                 }
 
+                // Some of the game's code checks for [1] / [2] hardcoded.
+                if (area.Mode.Length < 3) {
+                    ModeProperties[] larger = new ModeProperties[3];
+                    for (int i = 0; i < area.Mode.Length; i++)
+                        larger[i] = area.Mode[i];
+                    area.Mode = larger;
+                }
+
                 Areas.Add(area);
             }
 
