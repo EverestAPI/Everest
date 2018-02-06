@@ -92,9 +92,11 @@
     <Compile Include="Mod\Meta\MapMeta.cs" />
     <Compile Include="Mod\Meta\AtlasFrameMeta.cs" />
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
+    <Compile Include="Mod\Oui\TextMenuExt.cs" />
     <Compile Include="Mod\Oui\OuiMapList.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\AreaKey.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
@@ -156,7 +158,7 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam_back.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\steam_back.meta.yaml</LogicalName>
     </EmbeddedResource>
-	    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null.png">
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null.png">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\null.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null.meta.yaml">

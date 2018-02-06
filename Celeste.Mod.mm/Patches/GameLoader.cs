@@ -41,7 +41,7 @@ namespace Celeste {
             if (CoreModule.Settings.LaunchWithoutIntro && introRoutine != null) {
                 introRoutine.Cancel();
                 introRoutine = null;
-                handler.Add(new Coroutine(FastIntroRoutine(), true));
+                handler.Add(new Coroutine(FastIntroRoutine()));
             }
         }
 
@@ -81,7 +81,7 @@ namespace Celeste {
                 }
                 introRoutine.Cancel();
                 introRoutine = null;
-                handler.Add(new Coroutine(FastIntroRoutine(), true));
+                handler.Add(new Coroutine(FastIntroRoutine()));
             }
 
             // Note: You may instinctually call base.Update();

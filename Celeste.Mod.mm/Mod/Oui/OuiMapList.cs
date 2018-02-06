@@ -21,11 +21,14 @@ namespace Celeste.Mod {
         private int type = 1;
         private int side = 0;
 
+        private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
+
         public OuiMapList() {
         }
         
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            TextMenu menu = new TextMenu();
+            menu = new TextMenu();
+            items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
 
@@ -35,18 +38,34 @@ namespace Celeste.Mod {
 
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
-            // TODO: Various map types? Determine max type.
-            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_type"), value => Dialog.Clean("maplist_type_" + value), 0, 1, type).Change(value => {
+            // TODO: List level set types!
+            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_type"), value => {
+                if (value == 0)
+                    return Dialog.Clean("levelset_celeste");
+                if (value == 1)
+                    return Dialog.Clean("maplist_type_allmods");
+                return "";
+            }, 0, 1, type).Change(value => {
                 type = value;
-                ReloadMenu();
+                ReloadItems();
             }));
 
             menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_side"), value => ((char) ('A' + value)).ToString(), 0, Enum.GetValues(typeof(AreaMode)).Length - 1, side).Change(value => {
                 side = value;
-                ReloadMenu();
+                ReloadItems();
             }));
 
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_list")));
+
+            ReloadItems();
+
+            return menu;
+        }
+
+        private void ReloadItems() {
+            foreach (TextMenu.Item item in items)
+                menu.Remove(item);
+            items.Clear();
 
             int min = 0;
             int max = AreaData.Areas.Count;
@@ -56,17 +75,70 @@ namespace Celeste.Mod {
                 min = 10;
             }
 
+            if (type >= 2) {
+                // TODO: Filter by levelset!
+            }
+
+            string levelSet = null;
+            string name;
+
             for (int i = min; i < max; i++) {
                 AreaData area = AreaData.Areas[i];
                 if (!area.HasMode((AreaMode) side))
                     continue;
-                string name = area.Name;
+
+                if (levelSet != area.GetLevelSet()) {
+                    levelSet = area.GetLevelSet();
+                    if (levelSet != "Celeste") {
+                        if (string.IsNullOrEmpty(levelSet)) {
+                            name = Dialog.Clean("levelset_");
+                        } else {
+                            name = levelSet;
+                            name = ("levelset_" + name).DialogCleanOrNull() ?? name.SpacedPascalCase();
+                        }
+                        TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
+                        levelSetHeader.Alpha = 0f;
+                        menu.Add(levelSetHeader);
+                        items.Add(levelSetHeader);
+                    }
+                }
+
+                name = area.Name;
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
-                menu.Add(new TextMenu.Button(name).Pressed(() => {
+
+                TextMenuExt.ButtonExt button = new TextMenuExt.ButtonExt(name);
+                button.Alpha = 0f;
+
+                if (area.Icon != "areas/null")
+                    button.Icon = area.Icon;
+                button.IconWidth = 128f;
+
+                menu.Add(button.Pressed(() => {
                     Start(area, (AreaMode) side);
                 }));
+                items.Add(button);
             }
-            return menu;
+
+            // Do this afterwards as the menu has now properly updated its size.
+            for (int i = 0; i < items.Count; i++)
+                Add(new Coroutine(FadeIn(i, items[i])));
+        }
+
+        private IEnumerator FadeIn(int i, TextMenuExt.IItemExt item) {
+            yield return 0.03f * i;
+            float ease = 0f;
+
+            Vector2 offset = item.Offset;
+
+            for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
+                ease = Ease.CubeOut(p);
+                item.Alpha = ease;
+                item.Offset = offset + new Vector2(0f, 64f * (1f - ease));
+                yield return null;
+            }
+
+            item.Alpha = 1f;
+            item.Offset = offset;
         }
 
         private void ReloadMenu() {
@@ -137,10 +209,16 @@ namespace Celeste.Mod {
             base.Render();
         }
 
+        public void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
+            Focused = false;
+            Audio.Play("event:/ui/world_map/chapter/checkpoint_start");
+            Overworld.Goto<OuiChapterPanel>().Area = area.ToKey(mode);
+        }
+
         public void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Focused = false;
             Audio.Play("event:/ui/world_map/chapter/checkpoint_start");
-            Add(new Coroutine(StartRoutine(area, mode, checkpoint), true));
+            Add(new Coroutine(StartRoutine(area, mode, checkpoint)));
         }
 
         private IEnumerator StartRoutine(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
@@ -153,7 +231,7 @@ namespace Celeste.Mod {
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;
-            LevelEnter.Go(new Session(area.GetKey(mode), checkpoint), false);
+            LevelEnter.Go(new Session(area.ToKey(mode), checkpoint), false);
             yield break;
         }
 

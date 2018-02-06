@@ -16,21 +16,81 @@ using System.Xml;
 namespace Celeste {
     class patch_AreaData : AreaData {
 
+        public string SID;
+
+        public string LevelSet {
+            get {
+                string sid = SID;
+                if (string.IsNullOrEmpty(sid))
+                    return "";
+                int lastIndexOfSlash = sid.LastIndexOf('/');
+                if (lastIndexOfSlash == -1)
+                    return "";
+                return sid.Substring(0, lastIndexOfSlash);
+            }
+        }
+
+        [MonoModReplace]
+        public static new AreaData Get(Scene scene) {
+            AreaData result;
+            if (scene != null && scene is Level) {
+                result = Get((scene as Level).Session.Area.GetSID());
+            } else {
+                result = null;
+            }
+            return result;
+        }
+
+        [MonoModReplace]
+        public static new AreaData Get(Session session) {
+            AreaData result;
+            if (session != null) {
+                result = Get(session.Area.GetSID());
+            } else {
+                result = null;
+            }
+            return result;
+        }
+
+        [MonoModReplace]
+        public static new AreaData Get(AreaKey area) {
+            return Get(area.GetSID());
+        }
+
+        [MonoModReplace]
+        public static new AreaData Get(int id) {
+            return Areas[id];
+        }
+
+        public static AreaData Get(string sid) {
+            return Areas.Find(area => area.GetSID() == sid);
+        }
+
         public static extern void orig_Load();
         public static new void Load() {
             orig_Load();
 
+            foreach (AreaData area in Areas) {
+                area.SetSID("Celeste/" + area.Mode[0].Path);
+            }
+
+            // Separate array as we sort it afterwards.
+            List<AreaData> modAreas = new List<AreaData>();
+
             // TODO: Check for existing entries and replace them.
 
             foreach (AssetMetadata asset in Everest.Content.ListMaps) {
+                string path = asset.PathRelative.Substring(5);
                 MapMeta meta = asset.GetMeta<MapMeta>();
 
                 AreaData area = new AreaData();
 
                 // Default values.
 
-                area.Name = asset.PathRelative.Substring(5);
-                area.Icon = "areas/" + area.Name.ToLowerInvariant();
+                area.SetSID(path);
+
+                area.Name = path;
+                area.Icon = "areas/" + path.ToLowerInvariant();
                 if (!GFX.Gui.Has(area.Icon))
                     area.Icon = "areas/null";
 
@@ -118,10 +178,13 @@ namespace Celeste {
                     area.Mode = larger;
                 }
 
-                Areas.Add(area);
+                modAreas.Add(area);
             }
 
             // TODO: Remove AreaDatas which are now a mode of another AreaData.
+
+            modAreas.Sort((a, b) => string.Compare(a.GetSID(), b.GetSID()));
+            Areas.AddRange(modAreas);
 
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
@@ -151,8 +214,19 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static AreaKey GetKey(this AreaData self, AreaMode mode)
+        public static AreaData Get(string sid)
+            => patch_AreaData.Get(sid);
+
+        public static AreaKey ToKey(this AreaData self, AreaMode mode)
             => new AreaKey(self.ID, mode);
+
+        public static string GetLevelSet(this AreaData self)
+            => ((patch_AreaData) self).LevelSet;
+
+        public static string GetSID(this AreaData self)
+            => ((patch_AreaData) self).SID;
+        public static void SetSID(this AreaData self, string value)
+            => ((patch_AreaData) self).SID = value;
 
     }
 }

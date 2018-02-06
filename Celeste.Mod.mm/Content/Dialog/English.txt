@@ -33,8 +33,11 @@
 # Maplist
 	MAPLIST_TITLE= 							MAP LIST
 	MAPLIST_FILTERS= 						Filters
-	MAPLIST_TYPE= 							Type
-	MAPLIST_TYPE_0= 						Celeste
-	MAPLIST_TYPE_1= 						Mods
+	MAPLIST_TYPE= 							From
+	MAPLIST_TYPE_ALLMODS= 					All Mods
 	MAPLIST_SIDE= 							Side
 	MAPLIST_LIST= 							Maps
+	MAPLIST_UNCATEGORIZED= 					Uncategorized
+
+	LEVELSET_CELESTE= 						Celeste
+	LEVELSET_= 								???
