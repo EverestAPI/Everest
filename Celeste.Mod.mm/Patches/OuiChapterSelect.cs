@@ -52,7 +52,7 @@ namespace Celeste {
         public override void Update() {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
-            if (Focused && !disableInput && display && Input.Pause.Pressed) {
+            if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
                 Overworld.Maddy.Hide(false);
                 Audio.Play("event:/ui/main/button_select");
                 Audio.Play("event:/ui/main/whoosh_large_in");
@@ -83,7 +83,7 @@ namespace Celeste {
                 if (journalEnabled)
                     pos.Y -= 128f;
                 GFX.Gui["menu/maplist"].DrawCentered(pos, Color.White * Ease.CubeOut(maplistEase));
-                Input.GuiButton(Input.Pause, "controls/keyboard/oemquestion").Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
+                (Input.GuiButton(Input.Pause, null) ?? Input.GuiButton(Input.ESC, "controls/keyboard/oemquestion")).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
             }
         }
 
