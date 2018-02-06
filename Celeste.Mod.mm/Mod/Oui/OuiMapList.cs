@@ -41,7 +41,7 @@ namespace Celeste.Mod {
                 ReloadMenu();
             }));
 
-            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_side"), value => ((char) ('A' + value)).ToString(), 0, Enum.GetValues(typeof(AreaMode)).Length, side).Change(value => {
+            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_side"), value => ((char) ('A' + value)).ToString(), 0, Enum.GetValues(typeof(AreaMode)).Length - 1, side).Change(value => {
                 side = value;
                 ReloadMenu();
             }));

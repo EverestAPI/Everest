@@ -83,7 +83,7 @@ namespace Celeste {
                 if (journalEnabled)
                     pos.Y -= 128f;
                 GFX.Gui["menu/maplist"].DrawCentered(pos, Color.White * Ease.CubeOut(maplistEase));
-                (Input.GuiButton(Input.Pause, null) ?? Input.GuiButton(Input.ESC, "controls/keyboard/oemquestion")).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
+                (Input.GuiInputController() ? Input.GuiButton(Input.Pause) : Input.GuiButton(Input.ESC)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
             }
         }
 
