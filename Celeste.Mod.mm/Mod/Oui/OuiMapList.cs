@@ -18,7 +18,7 @@ namespace Celeste.Mod {
 
         private float alpha = 0f;
 
-        private int type = 0;
+        private int type = 1;
         private int side = 0;
 
         public OuiMapList() {
@@ -125,7 +125,7 @@ namespace Celeste.Mod {
             if (menu != null && menu.Focused &&
                 Selected && Input.MenuCancel.Pressed) {
                 Audio.Play("event:/ui/main/button_back");
-                Overworld.Goto<OuiMainMenu>();
+                Overworld.Goto<OuiChapterSelect>();
             }
 
             base.Update();

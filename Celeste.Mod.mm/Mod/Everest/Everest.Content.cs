@@ -170,6 +170,9 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".yaml")) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
+                } else if (file.EndsWith(".yml")) {
+                    type = typeof(AssetTypeYaml);
+                    file = file.Substring(0, file.Length - 4);
 
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
                     type = typeof(AssetTypeDialog);

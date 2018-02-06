@@ -32,7 +32,7 @@ namespace Celeste {
                 area.Name = asset.PathRelative.Substring(5);
                 area.Icon = "areas/" + area.Name.ToLowerInvariant();
                 if (!GFX.Gui.Has(area.Icon))
-                    area.Icon = "areas/city";
+                    area.Icon = "areas/null";
 
                 area.TitleBaseColor = Calc.HexToColor("6c7c81");
                 area.TitleAccentColor = Calc.HexToColor("2f344b");
