@@ -38,7 +38,7 @@ namespace Celeste {
                 area.TitleAccentColor = Calc.HexToColor("2f344b");
                 area.TitleTextColor = Color.White;
 
-                area.IntroType = Player.IntroTypes.Transition;
+                area.IntroType = Player.IntroTypes.WakeUp;
 
                 area.Dreaming = false;
                 area.ColorGrade = null;

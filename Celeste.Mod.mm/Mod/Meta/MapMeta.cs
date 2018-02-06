@@ -20,7 +20,7 @@ namespace Celeste.Mod.Meta {
         public string TitleAccentColor { get; set; } = null;
         public string TitleTextColor { get; set; } = null;
 
-        public Player.IntroTypes IntroType { get; set; } = Player.IntroTypes.Transition;
+        public Player.IntroTypes IntroType { get; set; } = Player.IntroTypes.WakeUp;
 
         public bool Dreaming { get; set; } = false;
 
