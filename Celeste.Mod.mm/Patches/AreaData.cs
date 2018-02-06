@@ -34,7 +34,7 @@ namespace Celeste {
         public static new AreaData Get(Scene scene) {
             AreaData result;
             if (scene != null && scene is Level) {
-                result = Get((scene as Level).Session.Area.GetSID());
+                result = Get(((Level) scene).Session.Area);
             } else {
                 result = null;
             }
@@ -45,7 +45,7 @@ namespace Celeste {
         public static new AreaData Get(Session session) {
             AreaData result;
             if (session != null) {
-                result = Get(session.Area.GetSID());
+                result = Get(session.Area);
             } else {
                 result = null;
             }
@@ -54,7 +54,7 @@ namespace Celeste {
 
         [MonoModReplace]
         public static new AreaData Get(AreaKey area) {
-            return Get(area.GetSID());
+            return Get(area.GetSID()) ?? Get(area.ID);
         }
 
         [MonoModReplace]
@@ -189,13 +189,13 @@ namespace Celeste {
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 area.ID = i;
-                area.Mode[0].MapData = new MapData(new AreaKey(i, AreaMode.Normal));
+                area.Mode[0].MapData = new MapData(new AreaKey(i, AreaMode.Normal).SetSID(area.GetSID()));
                 if (area.Interlude)
                     continue;
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
                     if (area.Mode[mode] == null)
                         continue;
-                    area.Mode[mode].MapData = new MapData(new AreaKey(i, (AreaMode) mode));
+                    area.Mode[mode].MapData = new MapData(new AreaKey(i, (AreaMode) mode).SetSID(area.GetSID()));
                 }
             }
 
@@ -225,8 +225,10 @@ namespace Celeste {
 
         public static string GetSID(this AreaData self)
             => ((patch_AreaData) self).SID;
-        public static void SetSID(this AreaData self, string value)
-            => ((patch_AreaData) self).SID = value;
+        public static AreaData SetSID(this AreaData self, string value) {
+            ((patch_AreaData) self).SID = value;
+            return self;
+        }
 
     }
 }
