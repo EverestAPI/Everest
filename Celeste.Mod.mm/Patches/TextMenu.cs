@@ -26,14 +26,28 @@ namespace Celeste {
             Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
             Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
 
-            item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
+            item.ValueWiggler.UseRawDeltaTime = item.SelectWiggler.UseRawDeltaTime = true;
 
             if (Selection == -1)
                 FirstSelection();
 
             RecalculateSize();
-
             item.Added();
+            return this;
+        }
+
+        // The reverse of Add()
+        public TextMenu Remove(Item item) {
+            int index = items.IndexOf(item);
+            if (index == -1)
+                return this;
+            items.RemoveAt(index);
+            item.Container = null;
+
+            Remove(item.ValueWiggler);
+            Remove(item.SelectWiggler);
+
+            RecalculateSize();
             return this;
         }
 
@@ -48,6 +62,9 @@ namespace Celeste {
 
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
+
+        public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
+            => ((patch_TextMenu) self).Remove(item);
 
     }
 }
