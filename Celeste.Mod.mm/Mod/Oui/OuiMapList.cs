@@ -114,7 +114,7 @@ namespace Celeste.Mod {
                 button.IconWidth = 128f;
 
                 menu.Add(button.Pressed(() => {
-                    Start(area, (AreaMode) side);
+                    Inspect(area, (AreaMode) side);
                 }));
                 items.Add(button);
             }
@@ -212,7 +212,8 @@ namespace Celeste.Mod {
         public void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
             Audio.Play("event:/ui/world_map/chapter/checkpoint_start");
-            Overworld.Goto<OuiChapterPanel>().Area = area.ToKey(mode);
+            SaveData.Instance.LastArea = area.ToKey(mode);
+            Overworld.Goto<OuiChapterPanel>();
         }
 
         public void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {

@@ -108,6 +108,8 @@ namespace Celeste {
         public extern string orig_ToString();
         public override string ToString() {
             string value = orig_ToString();
+            if (ID < 10)
+                return value;
             string sid = SID;
             if (sid != null)
                 value += " (SID: " + sid + ")";
