@@ -221,6 +221,7 @@ namespace Celeste.Mod {
             Focused = false;
             Audio.Play("event:/ui/world_map/icon/select");
             SaveData.Instance.LastArea = area.ToKey(mode);
+            Overworld.Mountain.Model.EaseState(area.MountainState);
             Overworld.Goto<OuiChapterPanel>();
         }
 

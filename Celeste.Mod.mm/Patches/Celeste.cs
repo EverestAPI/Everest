@@ -55,5 +55,10 @@ namespace Celeste {
             Everest.Invoke("Initialize");
         }
 
+        protected override void OnExiting(object sender, EventArgs args) {
+            base.OnExiting(sender, args);
+            Everest.Events.Celeste.Exiting();
+        }
+
     }
 }

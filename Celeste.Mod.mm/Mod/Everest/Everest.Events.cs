@@ -26,6 +26,12 @@ namespace Celeste.Mod {
     public static partial class Everest {
         public static class Events {
 
+            public static class Celeste {
+                public static event Action OnExiting;
+                internal static void Exiting()
+                    => OnExiting?.Invoke();
+            }
+
             public static class GFX {
 
                 public static event Action OnLoadGame;
