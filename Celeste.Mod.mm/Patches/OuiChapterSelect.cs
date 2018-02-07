@@ -70,8 +70,8 @@ namespace Celeste {
             // Fix "out of bounds" iconless levels.
             if (area < 0)
                 area = 0;
-            else if (area >= icons.Count)
-                area = icons.Count - 1;
+            else if (area > SaveData.Instance.UnlockedAreas)
+                area = SaveData.Instance.UnlockedAreas;
             return orig_Enter(from);
         }
 
