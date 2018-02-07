@@ -20,6 +20,7 @@ using _Atlas = Monocle.Atlas;
 using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Level = Celeste.Level;
 using _Player = Celeste.Player;
+using _OuiJournal = Celeste.OuiJournal;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -154,6 +155,12 @@ namespace Celeste.Mod {
                 public static event Action<_Player> OnDie;
                 internal static void Die(_Player player)
                     => OnDie?.Invoke(player);
+            }
+
+            public static class OuiJournal {
+                public static event Action<_OuiJournal, List<OuiJournalPage>> OnEnterJournal;
+                internal static void EnterJournal(_OuiJournal journal, List<OuiJournalPage> pages)
+                    => OnEnterJournal?.Invoke(journal, pages);
             }
         }
     }
