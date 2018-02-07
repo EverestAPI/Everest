@@ -36,7 +36,7 @@ namespace Celeste.Mod.Meta {
 
         public string Jumpthru { get; set; } = null;
 
-        public string CassseteNoteColor { get; set; } = null;
+        public string CassetteNoteColor { get; set; } = null;
         public string CassetteSong { get; set; } = null;
 
         public MapMetaModeProperties[] Modes { get; set; } = null;

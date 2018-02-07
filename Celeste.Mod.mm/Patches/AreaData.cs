@@ -166,8 +166,8 @@ namespace Celeste {
                     if (!string.IsNullOrEmpty(meta.Jumpthru))
                         area.Jumpthru = meta.Jumpthru;
 
-                    if (!string.IsNullOrEmpty(meta.CassseteNoteColor))
-                        area.CassseteNoteColor = Calc.HexToColor(meta.CassseteNoteColor);
+                    if (!string.IsNullOrEmpty(meta.CassetteNoteColor))
+                        area.CassseteNoteColor = Calc.HexToColor(meta.CassetteNoteColor);
                     if (!string.IsNullOrEmpty(meta.CassetteSong))
                         area.CassetteSong = meta.CassetteSong;
 
