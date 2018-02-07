@@ -240,6 +240,8 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+
+# CCCCCC mod
 /CCCCCC
 
 # vscode files

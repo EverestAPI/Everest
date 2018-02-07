@@ -5,30 +5,31 @@ using System;
 using System.Collections;
 
 namespace Celeste {
-	class patch_OuiJournal : OuiJournal {
-		public extern IEnumerator orig_Enter(Oui from);
-		public override IEnumerator Enter(Oui from) {
-			var enumerator = orig_Enter(from);
+    class patch_OuiJournal : OuiJournal {
 
-			// Populate page list
-			// The page list is always populated before the first yield statement
-			bool done = !enumerator.MoveNext();
-			Object first = done ? null : enumerator.Current;			
+        public extern IEnumerator orig_Enter(Oui from);
+        public override IEnumerator Enter(Oui from) {
+            IEnumerator orig = orig_Enter(from);
 
-			Everest.Events.OuiJournal.Enter(from, this);
+            // Populate page list
+            // The page list is always populated before the first yield statement
+            bool done = !orig.MoveNext();
+            object first = done ? null : orig.Current;
 
-			// Recalculate page numbers
-			int pageNum = 0;
-			foreach (OuiJournalPage page in Pages)
-				page.PageIndex = pageNum++;
+            Everest.Events.OuiJournal.Enter(this, from);
 
-			// Iterate over the rest of the enumerator
-			if (!done)
-			{
-				yield return first;
-				while (enumerator.MoveNext())
-					yield return enumerator.Current;
-			}
-		}
-	}
+            // Recalculate page numbers
+            int pageNum = 0;
+            foreach (OuiJournalPage page in Pages)
+                page.PageIndex = pageNum++;
+
+            // Iterate over the rest of the enumerator
+            if (!done) {
+                yield return first;
+                while (orig.MoveNext())
+                    yield return orig.Current;
+            }
+        }
+
+    }
 }

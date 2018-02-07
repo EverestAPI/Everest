@@ -31,7 +31,7 @@ namespace Celeste.Mod {
         }
 
         public override void Load() {
-            Everest.Events.OuiMainMenu.OnCreateMainMenuButtons += CreateMainMenuButtons;
+            Everest.Events.OuiMainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
         }
 
@@ -60,7 +60,7 @@ namespace Celeste.Mod {
         }
 
         public override void Unload() {
-            Everest.Events.OuiMainMenu.OnCreateMainMenuButtons -= CreateMainMenuButtons;
+            Everest.Events.OuiMainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
 
         }
