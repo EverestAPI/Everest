@@ -113,6 +113,13 @@ namespace Celeste.Mod {
                     button.Icon = area.Icon;
                 button.IconWidth = 128f;
 
+                if (i < 10 && i > SaveData.Instance.UnlockedAreas)
+                    button.Disabled = true;
+                if (side == 1 && !SaveData.Instance.Areas[i].Cassette)
+                    button.Disabled = true;
+                if (side >= 2 && SaveData.Instance.UnlockedModes < (side + 1))
+                    button.Disabled = true;
+
                 menu.Add(button.Pressed(() => {
                     Inspect(area, (AreaMode) side);
                 }));
@@ -179,6 +186,7 @@ namespace Celeste.Mod {
 
         public override IEnumerator Leave(Oui next) {
             Audio.Play("event:/ui/main/whoosh_large_out");
+            Overworld.Maddy.Show = true;
             menu.Focused = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -211,7 +219,7 @@ namespace Celeste.Mod {
 
         public void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
-            Audio.Play("event:/ui/world_map/chapter/checkpoint_start");
+            Audio.Play("event:/ui/world_map/icon/select");
             SaveData.Instance.LastArea = area.ToKey(mode);
             Overworld.Goto<OuiChapterPanel>();
         }

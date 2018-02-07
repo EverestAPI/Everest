@@ -53,7 +53,7 @@ namespace Celeste {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
             if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
-                Overworld.Maddy.Hide(false);
+                Overworld.Maddy.Hide(true);
                 Audio.Play("event:/ui/main/button_select");
                 Audio.Play("event:/ui/main/whoosh_large_in");
                 Overworld.Goto<OuiMapList>();
