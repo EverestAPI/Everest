@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -79,6 +81,12 @@ namespace Celeste.Mod {
                 return Dialog.Clean(input);
             else
                 return null;
+        }
+
+        public static Vector3? ToVector3(this float[] a) {
+            if (a.Length != 3)
+                return null;
+            return new Vector3(a[0], a[1], a[2]);
         }
 
         public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch) {

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,6 +40,8 @@ namespace Celeste.Mod.Meta {
         public string CassetteSong { get; set; } = null;
 
         public MapMetaModeProperties[] Modes { get; set; } = null;
+
+        public MapMetaMountain Mountain { get; set; } = null;
 
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
             if (meta == null || meta.Length == 0)
@@ -114,5 +117,18 @@ namespace Celeste.Mod.Meta {
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
             => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert());
+    }
+    public class MapMetaMountain {
+        public MapMetaMountainCamera Idle { get; set; } = null;
+        public MapMetaMountainCamera Select { get; set; } = null;
+        public MapMetaMountainCamera Zoom { get; set; } = null;
+        public float[] Cursor { get; set; } = null;
+        public int State { get; set; } = 0;
+    }
+    public class MapMetaMountainCamera {
+        public float[] Position { get; set; }
+        public float[] Target { get; set; }
+        public MountainCamera Convert()
+            => new MountainCamera(Position?.ToVector3() ?? Vector3.Zero, Target?.ToVector3() ?? Vector3.Zero);
     }
 }

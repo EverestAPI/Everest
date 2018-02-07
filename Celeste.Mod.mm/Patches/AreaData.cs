@@ -170,6 +170,13 @@ namespace Celeste {
                         area.CassseteNoteColor = Calc.HexToColor(meta.CassseteNoteColor);
                     if (!string.IsNullOrEmpty(meta.CassetteSong))
                         area.CassetteSong = meta.CassetteSong;
+
+                    area.MountainIdle = meta.Mountain?.Idle?.Convert() ?? area.MountainIdle;
+                    area.MountainSelect = meta.Mountain?.Idle?.Convert() ?? area.MountainSelect;
+                    area.MountainZoom = meta.Mountain?.Idle?.Convert() ?? area.MountainZoom;
+                    area.MountainCursor = meta.Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
+                    area.MountainState = meta.Mountain?.State ?? area.MountainState;
+
                 }
 
                 // Some of the game's code checks for [1] / [2] hardcoded.
