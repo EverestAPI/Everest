@@ -20,6 +20,13 @@ namespace Celeste {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     unsafe struct patch_AreaKey {
 
+        // The below code works... but causes issues when convering ldarg.1, ldfld* to ldarg.1, call.
+        // Most other cases already pass the address as "this" to the ldfld and
+        // all general purpose conversions aren't general purpose enough.
+        // We're f'd until we find a solution.
+        // -ade
+
+        /*
         // If ID_Unsafe becomes a property, use this.
         // [MonoModHook("System.Int32 Celeste.AreaKey::get_ID_Unsafe()")]
         // [MonoModHook("System.Void Celeste.AreaKey::set_ID_Unsafe(System.Int32)")]
@@ -83,6 +90,51 @@ namespace Celeste {
                 ID_Unsafe = AreaDataExt.Get(value)?.ID ?? ID_Unsafe;
             }
         }
+        */
+
+        [MonoModHook("System.Int32 Celeste.AreaKey::ID_Unsafe")]
+        public int ID;
+
+        // ID hooks _Unsafe, meaning any access to this field affects ID instead.
+        [MonoModRemove] // We don't want to preserve the field.
+        public int ID_Unsafe;
+
+        [XmlAttribute]
+        public AreaMode Mode;
+
+        public const int SIDLength = 511;
+        [XmlIgnore]
+        public fixed char _SID[SIDLength + 1];
+        [XmlIgnore]
+        public int SIDID;
+        [XmlAttribute]
+        public string SID {
+            get {
+                string value;
+                fixed (char* ptr = _SID)
+                    value = Marshal.PtrToStringUni((IntPtr) ptr);
+                if ((SIDID != ID || string.IsNullOrEmpty(value)) && ID_Unsafe != -1)
+                    // We don't actually check if we're in bounds as we want an exception.
+                    value = AreaData.Areas[ID_Unsafe].GetSID();
+                return value;
+            }
+            set {
+                // Can probably be optimized.
+                char[] chars = value.ToCharArray();
+                int length = Math.Min(SIDLength - 1, chars.Length);
+                fixed (char* to = _SID) {
+                    Marshal.Copy(chars, 0, (IntPtr) to, length);
+                    for (int i = length; i < SIDLength; i++) {
+                        to[i] = '\0';
+                    }
+                }
+                // We want to force any legacy code to use the SID's ID.
+                ID_Unsafe = AreaDataExt.Get(value)?.ID ?? ID_Unsafe;
+                SIDID = ID;
+            }
+        }
+
+
 
         // Living on the edge...
         [MonoModConstructor]
@@ -91,6 +143,7 @@ namespace Celeste {
             Mode = mode;
             ID_Unsafe = id;
             ID = id;
+            SIDID = id;
             // Only set SID if this AreaKey isn't AreaKey.Default or AreaKey.None
             if (id != -1 && AreaData.Areas != null && AreaData.Areas.Count > 0) {
                 // We don't actually check if we're in bounds as we want an exception.
