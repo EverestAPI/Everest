@@ -20,21 +20,30 @@ namespace Celeste {
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     unsafe struct patch_AreaKey {
 
-        [XmlAttribute]
+        // If ID_Unsafe becomes a property, use this.
+        // [MonoModHook("System.Int32 Celeste.AreaKey::get_ID_Unsafe()")]
+        // [MonoModHook("System.Void Celeste.AreaKey::set_ID_Unsafe(System.Int32)")]
+        [MonoModHook("System.Int32 Celeste.AreaKey::ID_Unsafe")]
         public int ID;
+
+        // ID hooks _Unsafe, meaning any access to this field affects ID instead.
+        [MonoModRemove] // We don't want to preserve the field.
+        public int ID_Unsafe;
 
         // Legacy code sets ID, but we perform SID-based lookups behind the scenes.
         // Tell MonoMod to relink all direct (non-serialization-related) ID modifications
         // and apply them on ID_Safe instead.
         // Yes, relinking fields to properties works because MonoMod handles that for us.
         [XmlIgnore]
-        [MonoModHook("ID")]
+        [MonoModHook("System.Int32 Celeste.AreaKey::ID")]
         public int ID_Safe {
             get {
-                return ID;
+                return ID_Unsafe;
             }
             set {
-                ID = value;
+                ID_Unsafe = value;
+                if (value == -1)
+                    return;
                 // We don't actually check if we're in bounds as we want an exception.
                 string sid = AreaData.Areas[value].GetSID();
                 // Only set sid after load. During load, sid is still null.
@@ -55,9 +64,9 @@ namespace Celeste {
                 string value;
                 fixed (char* ptr = _SID)
                     value = Marshal.PtrToStringUni((IntPtr) ptr);
-                if (string.IsNullOrEmpty(value) && ID != -1)
+                if (string.IsNullOrEmpty(value) && ID_Unsafe != -1)
                     // We don't actually check if we're in bounds as we want an exception.
-                    value = AreaData.Areas[ID].GetSID();
+                    value = AreaData.Areas[ID_Unsafe].GetSID();
                 return value;
             }
             set {
@@ -71,7 +80,7 @@ namespace Celeste {
                     }
                 }
                 // We want to force any legacy code to use the SID's ID.
-                ID = AreaDataExt.Get(value)?.ID ?? ID;
+                ID_Unsafe = AreaDataExt.Get(value)?.ID ?? ID_Unsafe;
             }
         }
 
@@ -79,8 +88,9 @@ namespace Celeste {
         [MonoModConstructor]
         [MonoModReplace]
         public patch_AreaKey(int id, AreaMode mode = AreaMode.Normal) {
-            ID = id;
             Mode = mode;
+            ID_Unsafe = id;
+            ID = id;
             // Only set SID if this AreaKey isn't AreaKey.Default or AreaKey.None
             if (id != -1 && AreaData.Areas != null && AreaData.Areas.Count > 0) {
                 // We don't actually check if we're in bounds as we want an exception.
@@ -106,12 +116,12 @@ namespace Celeste {
         public int ChapterIndex {
             [MonoModReplace]
             get {
-                if (AreaDataExt.Get(SID).Interlude)
+                if (ID_Unsafe == -1 || AreaData.Areas[ID_Unsafe].Interlude)
                     return -1;
 
                 string levelSet = LevelSet;
                 int index = 0;
-                for (int i = 0; i <= ID; i++) {
+                for (int i = 0; i <= ID_Unsafe; i++) {
                     if (AreaData.Areas[i].GetLevelSet() != levelSet)
                         continue;
                     if (AreaData.Areas[i].Interlude)
@@ -120,6 +130,15 @@ namespace Celeste {
                 }
                 return index;
             }
+        }
+
+        public extern string orig_ToString();
+        public override string ToString() {
+            string value = orig_ToString();
+            string sid = SID;
+            if (sid != null)
+                value += " (SID: " + sid + ")";
+            return value;
         }
 
     }
