@@ -15,7 +15,7 @@ namespace Celeste {
 			bool done = !enumerator.MoveNext();
 			Object first = done ? null : enumerator.Current;			
 
-			Everest.Events.OuiJournal.EnterJournal(this, Pages);
+			Everest.Events.OuiJournal.Enter(from, this);
 
 			// Recalculate page numbers
 			int pageNum = 0;
