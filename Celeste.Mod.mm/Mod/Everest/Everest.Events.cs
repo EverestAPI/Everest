@@ -158,9 +158,9 @@ namespace Celeste.Mod {
             }
 
             public static class OuiJournal {
-                public static event Action<_OuiJournal, List<OuiJournalPage>> OnEnterJournal;
-                internal static void EnterJournal(_OuiJournal journal, List<OuiJournalPage> pages)
-                    => OnEnterJournal?.Invoke(journal, pages);
+                public static event Action<Oui, _OuiJournal> OnEnter;
+                internal static void Enter(Oui from, _OuiJournal journal)
+                    => OnEnter?.Invoke(from, journal);
             }
         }
     }
