@@ -94,7 +94,7 @@ namespace Celeste.Mod {
                             name = Dialog.Clean("levelset_");
                         } else {
                             name = levelSet;
-                            name = ("levelset_" + name).DialogCleanOrNull() ?? name.SpacedPascalCase();
+                            name = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
                         }
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
                         levelSetHeader.Alpha = 0f;

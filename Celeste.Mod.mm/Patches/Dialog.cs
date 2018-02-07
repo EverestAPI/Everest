@@ -165,7 +165,24 @@ namespace Celeste {
             Everest.Events.Dialog.InitLanguages();
         }
 
+        [MonoModReplace]
+        public static bool Has(string name, Language language = null) {
+            name = name.DialogKeyify();
+            if (language == null)
+                language = Dialog.Language;
+
+            if (language.Dialog.ContainsKey(name))
+                return true;
+
+            if (language != FallbackLanguage)
+                return Has(name, FallbackLanguage);
+
+            return false;
+        }
+
+        [MonoModReplace]
         public static string Get(string name, Language language = null) {
+            name = name.DialogKeyify();
             if (language == null)
                 language = Dialog.Language;
 
@@ -179,7 +196,9 @@ namespace Celeste {
             return "[" + name + "]";
         }
 
+        [MonoModReplace]
         public static string Clean(string name, Language language = null) {
+            name = name.DialogKeyify();
             if (language == null)
                 language = Dialog.Language;
 

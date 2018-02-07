@@ -105,7 +105,6 @@ namespace Celeste {
 
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
-                        PoemID = null,
                         Path = asset.PathRelative.Substring(5),
                         Inventory = PlayerInventory.Default,
                         AudioState = new AudioState("event:/music/lvl1/main", "event:/env/amb/01_main")
@@ -128,6 +127,9 @@ namespace Celeste {
                 if (meta != null) {
                     if (!string.IsNullOrEmpty(meta.Name))
                         area.Name = meta.Name;
+
+                    if (!string.IsNullOrEmpty(meta.SID))
+                        area.SetSID(meta.SID);
 
                     if (!string.IsNullOrEmpty(meta.Icon) && GFX.Gui.Has(meta.Icon))
                         area.Icon = meta.Icon;
@@ -186,16 +188,23 @@ namespace Celeste {
             modAreas.Sort((a, b) => string.Compare(a.GetSID(), b.GetSID()));
             Areas.AddRange(modAreas);
 
-            for (int i = 0; i < Areas.Count; i++) {
+            // Update old MapData areas and load any new areas.
+            for (int i = 10; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 area.ID = i;
-                area.Mode[0].MapData = new MapData(area.ToKey(AreaMode.Normal));
+                if (area.Mode[0].MapData != null)
+                    area.Mode[0].MapData.Area = area.ToKey(AreaMode.Normal);
+                else
+                    area.Mode[0].MapData = new MapData(area.ToKey(AreaMode.Normal));
                 if (area.Interlude)
                     continue;
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
                     if (area.Mode[mode] == null)
                         continue;
-                    area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
+                    if (area.Mode[mode].MapData != null)
+                        area.Mode[mode].MapData.Area = area.ToKey(AreaMode.Normal);
+                    else
+                        area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
             }
 

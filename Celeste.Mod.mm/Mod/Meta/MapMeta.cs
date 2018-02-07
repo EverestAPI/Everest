@@ -9,6 +9,7 @@ namespace Celeste.Mod.Meta {
     public class MapMeta {
 
         public string Name { get; set; } = null;
+        public string SID { get; set; } = null;
         public string Icon { get; set; } = null;
 
         public bool Interlude { get; set; } = false;
@@ -44,7 +45,7 @@ namespace Celeste.Mod.Meta {
                 return null;
             ModeProperties[] data = new ModeProperties[meta.Length];
             for (int i = 0; i < meta.Length; i++)
-                data[i] = meta[i].Convert();
+                data[i] = meta[i]?.Convert();
             return data;
         }
 
@@ -53,7 +54,7 @@ namespace Celeste.Mod.Meta {
                 return null;
             CheckpointData[] data = new CheckpointData[meta.Length];
             for (int i = 0; i < meta.Length; i++)
-                data[i] = meta[i].Convert();
+                data[i] = meta[i]?.Convert();
             return data;
         }
 
@@ -88,7 +89,7 @@ namespace Celeste.Mod.Meta {
         public string PoemID { get; set; }
         public ModeProperties Convert()
             => new ModeProperties() {
-                AudioState = AudioState.Convert(),
+                AudioState = AudioState?.Convert() ?? new AudioState("event:/music/lvl1/main", "event:/env/amb/01_main"),
                 Checkpoints = MapMeta.Convert(Checkpoints) ?? new CheckpointData[0],
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData,
                 Inventory = MapMeta.GetInventory(Inventory) ?? PlayerInventory.Default,
@@ -112,6 +113,6 @@ namespace Celeste.Mod.Meta {
         public string[] Flags { get; set; }
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
-            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState.Convert());
+            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert());
     }
 }
