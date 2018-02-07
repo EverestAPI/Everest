@@ -23,6 +23,10 @@ namespace Celeste {
         [XmlAttribute]
         public int ID;
 
+        // Legacy code sets ID, but we perform SID-based lookups behind the scenes.
+        // Tell MonoMod to relink all direct (non-serialization-related) ID modifications
+        // and apply them on ID_Safe instead.
+        // Yes, relinking fields to properties works because MonoMod handles that for us.
         [XmlIgnore]
         [MonoModHook("ID")]
         public int ID_Safe {
@@ -66,6 +70,8 @@ namespace Celeste {
                         to[i] = '\0';
                     }
                 }
+                // We want to force any legacy code to use the SID's ID.
+                ID = AreaDataExt.Get(value)?.ID ?? ID;
             }
         }
 
