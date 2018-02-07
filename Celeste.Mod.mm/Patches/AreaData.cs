@@ -54,7 +54,7 @@ namespace Celeste {
 
         [MonoModReplace]
         public static new AreaData Get(AreaKey area) {
-            return Get(area.GetSID()) ?? Get(area.ID);
+            return Get(area.GetSID()); // ?? Get(area.ID);
         }
 
         [MonoModReplace]
@@ -189,13 +189,13 @@ namespace Celeste {
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 area.ID = i;
-                area.Mode[0].MapData = new MapData(new AreaKey(i, AreaMode.Normal).SetSID(area.GetSID()));
+                area.Mode[0].MapData = new MapData(area.ToKey(AreaMode.Normal));
                 if (area.Interlude)
                     continue;
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
                     if (area.Mode[mode] == null)
                         continue;
-                    area.Mode[mode].MapData = new MapData(new AreaKey(i, (AreaMode) mode).SetSID(area.GetSID()));
+                    area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
             }
 
@@ -218,7 +218,7 @@ namespace Celeste {
             => patch_AreaData.Get(sid);
 
         public static AreaKey ToKey(this AreaData self, AreaMode mode)
-            => new AreaKey(self.ID, mode);
+            => new AreaKey(self.ID, mode).SetSID(self.GetSID());
 
         public static string GetLevelSet(this AreaData self)
             => ((patch_AreaData) self).LevelSet;

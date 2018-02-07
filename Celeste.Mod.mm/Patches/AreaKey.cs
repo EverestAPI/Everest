@@ -23,17 +23,38 @@ namespace Celeste {
         [XmlAttribute]
         public int ID;
 
+        [XmlIgnore]
+        [MonoModHook("ID")]
+        public int ID_Safe {
+            get {
+                return ID;
+            }
+            set {
+                ID = value;
+                // We don't actually check if we're in bounds as we want an exception.
+                string sid = AreaData.Areas[value].GetSID();
+                // Only set sid after load. During load, sid is still null.
+                if (sid != null)
+                    SID = sid;
+            }
+        }
+
         [XmlAttribute]
         public AreaMode Mode;
 
-        public const int SIDLength = 512;
+        public const int SIDLength = 511;
         [XmlIgnore]
-        public fixed char _SID[SIDLength];
+        public fixed char _SID[SIDLength + 1];
         [XmlAttribute]
         public string SID {
             get {
+                string value;
                 fixed (char* ptr = _SID)
-                    return Marshal.PtrToStringUni((IntPtr) ptr);
+                    value = Marshal.PtrToStringUni((IntPtr) ptr);
+                if (string.IsNullOrEmpty(value) && ID != -1)
+                    // We don't actually check if we're in bounds as we want an exception.
+                    value = AreaData.Areas[ID].GetSID();
+                return value;
             }
             set {
                 // Can probably be optimized.
@@ -41,10 +62,26 @@ namespace Celeste {
                 int length = Math.Min(SIDLength - 1, chars.Length);
                 fixed (char* to = _SID) {
                     Marshal.Copy(chars, 0, (IntPtr) to, length);
-                    for (int i = length - 1; i < SIDLength; i++) {
+                    for (int i = length; i < SIDLength; i++) {
                         to[i] = '\0';
                     }
                 }
+            }
+        }
+
+        // Living on the edge...
+        [MonoModConstructor]
+        [MonoModReplace]
+        public patch_AreaKey(int id, AreaMode mode = AreaMode.Normal) {
+            ID = id;
+            Mode = mode;
+            // Only set SID if this AreaKey isn't AreaKey.Default or AreaKey.None
+            if (id != -1 && AreaData.Areas != null && AreaData.Areas.Count > 0) {
+                // We don't actually check if we're in bounds as we want an exception.
+                string sid = AreaData.Areas[id].GetSID();
+                // Only set sid after load. During load, sid is still null.
+                if (sid != null)
+                    SID = sid;
             }
         }
 
