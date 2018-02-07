@@ -126,6 +126,7 @@
     <Compile Include="Patches\Dialog.cs" />
     <Compile Include="Patches\OuiTitleScreen.cs" />
     <Compile Include="Patches\Celeste.cs" />
+    <Compile Include="Patches\OuiJournal.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
