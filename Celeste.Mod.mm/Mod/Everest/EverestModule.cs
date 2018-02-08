@@ -206,6 +206,19 @@ namespace Celeste.Mod {
                         .Change(v => prop.SetValue(settings, v))
                         .NeedsRelaunch(needsRelaunch)
                     ;
+                } else if (propType.IsEnum) {
+                    Array enumValues = Enum.GetValues(propType);
+                    Array.Sort((int[]) enumValues);
+                    string enumNamePrefix = $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}_";
+                    item =
+                        new TextMenu.Slider(name, (i) => {
+                            string enumName = enumValues.GetValue(i).ToString();
+                            string fullName = $"{enumNamePrefix}{enumName.ToLowerInvariant()}";
+                            return fullName.DialogCleanOrNull() ?? enumName;
+                        }, 0, enumValues.Length - 1, (int) value)
+                        .Change(v => prop.SetValue(settings, v))
+                        .NeedsRelaunch(needsRelaunch)
+                    ;
                 }
 
                 if (item == null)
