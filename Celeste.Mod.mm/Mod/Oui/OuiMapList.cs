@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public class OuiMapList : Oui {
 
+        public List<OuiChapterSelectIcon> OuiIcons;
+
         private TextMenu menu;
 
         private const float onScreenX = 960f;
@@ -221,6 +223,8 @@ namespace Celeste.Mod {
             Focused = false;
             Audio.Play("event:/ui/world_map/icon/select");
             SaveData.Instance.LastArea = area.ToKey(mode);
+            if (OuiIcons != null && area.ID < OuiIcons.Count)
+                OuiIcons[area.ID].Select();
             Overworld.Mountain.Model.EaseState(area.MountainState);
             Overworld.Goto<OuiChapterPanel>();
         }

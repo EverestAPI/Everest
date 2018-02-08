@@ -43,7 +43,7 @@ namespace Celeste {
                 if (AreaData.Areas[i].Icon != "areas/null")
                     continue;
                 OuiChapterSelectIcon icon = icons[i];
-                icons.RemoveAt(i);
+                // icons.RemoveAt(i);
                 Scene.Remove(icon);
             }
         }
@@ -56,7 +56,8 @@ namespace Celeste {
                 Overworld.Maddy.Hide(true);
                 Audio.Play("event:/ui/main/button_select");
                 Audio.Play("event:/ui/main/whoosh_large_in");
-                Overworld.Goto<OuiMapList>();
+                OuiMapList list = Overworld.Goto<OuiMapList>();
+                list.OuiIcons = icons;
                 return;
             }
 
