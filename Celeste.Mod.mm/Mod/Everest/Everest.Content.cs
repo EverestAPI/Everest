@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using Monocle;
@@ -60,8 +61,6 @@ namespace Celeste.Mod {
 
                 Crawl(null, typeof(Everest).Assembly);
                 Crawl(null, PathContent);
-
-                Events.Atlas.OnLoad += atlas => Process(atlas.GetDataPath(), atlas);
             }
 
             public static bool TryGet(string path, out AssetMetadata metadata, bool includeDirs = false) {
@@ -341,7 +340,13 @@ namespace Celeste.Mod {
                 string pathDump = Path.Combine(PathDUMP, assetName);
                 Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
 
-                if (asset is Texture2D) {
+                if (asset is IMeta) {
+                    if (!File.Exists(pathDump + ".meta.yaml"))
+                        using (Stream stream = File.OpenWrite(pathDump + ".meta.yaml"))
+                        using (StreamWriter writer = new StreamWriter(stream))
+                            YamlHelper.Serializer.Serialize(writer, asset, asset.GetType());
+
+                } else if (asset is Texture2D) {
                     Texture2D tex = (Texture2D) asset;
                     if (!File.Exists(pathDump + ".png"))
                         using (Stream stream = File.OpenWrite(pathDump + ".png"))
@@ -353,11 +358,20 @@ namespace Celeste.Mod {
 
                 } else if (asset is MTexture) {
                     MTexture tex = (MTexture) asset;
-                    if (!tex.IsSubtexture())
-                        Dump(assetName, tex.Texture.Texture);
-                    else
-                        using (Texture2D region = tex.GetSubtextureCopy())
-                            Dump(assetName, region);
+                    // Always copy even if !.IsSubtexture() as we need to Postdivide()
+                    using (Texture2D region = tex.GetSubtextureCopy().Postdivide())
+                        Dump(assetName, region);
+
+                    if (tex.DrawOffset.X != 0 || tex.DrawOffset.Y != 0 ||
+                        tex.Width != tex.ClipRect.Width || tex.Height != tex.ClipRect.Height
+                    ) {
+                        Dump(assetName, new MTextureMeta {
+                            X = (int) Math.Round(tex.DrawOffset.X),
+                            Y = (int) Math.Round(tex.DrawOffset.Y),
+                            Width = tex.Width,
+                            Height = tex.Height
+                        });
+                    }
 
                 } else if (asset is Atlas) {
                     Atlas atlas = (Atlas) asset;

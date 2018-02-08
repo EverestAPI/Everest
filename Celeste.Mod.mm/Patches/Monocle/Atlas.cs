@@ -32,6 +32,7 @@ namespace Monocle {
             atlas.DataMethod = "FromAtlas";
             atlas.DataPath = path;
             atlas.DataFormat = format;
+            Everest.Content.Process(atlas.DataPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -43,6 +44,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = dataPath;
             atlas.DataFormat = format;
+            Everest.Content.Process(atlas.DataPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -54,6 +56,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = new string[] { filename };
             atlas.DataFormat = format;
+            Everest.Content.Process(atlas.DataPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -63,6 +66,7 @@ namespace Monocle {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
             atlas.DataPath = path;
+            Everest.Content.Process(atlas.DataPath, atlas);
             Everest.Events.Atlas.Load(atlas);
             return atlas;
         }
@@ -110,7 +114,7 @@ namespace Monocle {
 
                 VirtualTexture replacementV = VirtualContentExt.CreateTexture(asset);
                 MTexture replacement;
-                AtlasFrameMeta meta = asset.GetMeta<AtlasFrameMeta>();
+                MTextureMeta meta = asset.GetMeta<MTextureMeta>();
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
                 MTexture existing;

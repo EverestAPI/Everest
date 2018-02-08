@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
@@ -46,6 +47,15 @@ namespace Monocle {
             if (stream != null) {
                 using (stream)
                     Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+
+                TextureMeta meta;
+                if (Metadata.TryGetMeta(out meta)) {
+
+                    if (!meta.Premultiplied)
+                        Texture.Premultiply();
+
+                }
+
             } else if (Fallback != null) {
                 ((patch_VirtualTexture) (object) Fallback).Reload();
                 Texture = Fallback.Texture;

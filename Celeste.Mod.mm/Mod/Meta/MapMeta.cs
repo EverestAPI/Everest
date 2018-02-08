@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Meta {
-    public class MapMeta {
+    // MapMeta and anything related doesn't need interfaces.
+    public class MapMeta : IMeta {
 
         public string Name { get; set; } = null;
         public string SID { get; set; } = null;

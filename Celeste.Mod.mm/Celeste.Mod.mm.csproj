@@ -89,8 +89,10 @@
     <Compile Include="Mod\Helpers\Logger.cs" />
     <Compile Include="Mod\Helpers\MTextureOverlay.cs" />
     <Compile Include="Mod\Helpers\FileProxy.cs" />
+    <Compile Include="Mod\Meta\IMeta.cs" />
+    <Compile Include="Mod\Meta\TextureMeta.cs" />
     <Compile Include="Mod\Meta\MapMeta.cs" />
-    <Compile Include="Mod\Meta\AtlasFrameMeta.cs" />
+    <Compile Include="Mod\Meta\MTextureMeta.cs" />
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
     <Compile Include="Mod\Oui\TextMenuExt.cs" />
     <Compile Include="Mod\Oui\OuiMapList.cs" />
