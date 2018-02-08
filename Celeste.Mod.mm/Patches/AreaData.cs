@@ -62,6 +62,10 @@ namespace Celeste {
             return Areas[id];
         }
 
+        public static AreaData Get(AreaStats stats) {
+            return Get(stats.GetSID());
+        }
+
         public static AreaData Get(string sid) {
             return Areas.Find(area => area.GetSID() == sid);
         }
@@ -230,6 +234,8 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        public static AreaData Get(AreaStats stats)
+            => patch_AreaData.Get(stats);
         public static AreaData Get(string sid)
             => patch_AreaData.Get(sid);
 

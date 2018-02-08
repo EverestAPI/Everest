@@ -49,7 +49,7 @@ namespace MonoMod {
 
                 MethodDefinition replacement;
                 if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
-                    FileProxyCache[calling.Name] = replacement = FileProxy.FindMethod(calling.Name);
+                    FileProxyCache[calling.GetFindableID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetFindableID(withType: false));
                 if (replacement == null)
                     continue; // We haven't got any replacement.
 
@@ -68,8 +68,10 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "Corrupted Level Data")
                     pop = true;
 
-                if (pop && instr.OpCode == OpCodes.Throw)
+                if (pop && instr.OpCode == OpCodes.Throw) {
                     instr.OpCode = OpCodes.Pop;
+                    pop = false;
+                }
             }
 
         }
