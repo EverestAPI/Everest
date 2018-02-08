@@ -68,7 +68,6 @@ namespace Celeste {
             }
 
             Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, Snow);
-            yield break;
         }
 
         public extern void orig_Update();

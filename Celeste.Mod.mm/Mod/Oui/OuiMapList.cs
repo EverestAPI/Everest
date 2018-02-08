@@ -183,7 +183,6 @@ namespace Celeste.Mod {
             }
 
             menu.Focused = true;
-            yield break;
         }
 
         public override IEnumerator Leave(Oui next) {
@@ -200,7 +199,6 @@ namespace Celeste.Mod {
             menu.Visible = Visible = false;
             menu.RemoveSelf();
             menu = null;
-            yield break;
         }
 
         public override void Update() {
@@ -246,7 +244,6 @@ namespace Celeste.Mod {
             }
             yield return 0.5f;
             LevelEnter.Go(new Session(area.ToKey(mode), checkpoint), false);
-            yield break;
         }
 
     }

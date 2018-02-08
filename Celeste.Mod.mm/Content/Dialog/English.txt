@@ -18,6 +18,9 @@
 # {trigger x} this triggers an in-game event
 # {anchor} controls the visual position of the textbox in-game
 
+# Helper Postcards
+	POSTCARD_LEVELGONE= 					{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain!
+
 # Main Menu
 	MENU_MAPLIST= 							Map List
 	MENU_MODOPTIONS= 						Mod Options

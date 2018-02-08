@@ -90,7 +90,6 @@ namespace Celeste.Mod {
             menu.Visible = Visible = false;
             menu.RemoveSelf();
             menu = null;
-            yield break;
         }
 
         public override void Update() {
