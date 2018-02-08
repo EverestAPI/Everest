@@ -54,6 +54,9 @@ namespace Monocle {
                     if (!meta.Premultiplied)
                         Texture.Premultiply();
 
+                } else {
+                    // Assume unpremultiplied by default.
+                    Texture.Premultiply();
                 }
 
             } else if (Fallback != null) {

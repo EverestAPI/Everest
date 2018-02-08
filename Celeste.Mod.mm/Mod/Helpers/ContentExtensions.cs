@@ -56,6 +56,9 @@ namespace Celeste.Mod {
 
             for (int i = 0; i < data.Length; i++) {
                 Color c = data[i];
+                if (c.A == 0 || c.A == 255)
+                    // Skip mul by 0 or 1
+                    continue;
                 c = new Color(
                     Byte2ToFloat2 * (c.R * c.A),
                     Byte2ToFloat2 * (c.G * c.A),
