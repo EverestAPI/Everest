@@ -40,14 +40,19 @@ namespace Celeste.Mod {
         public virtual void LoadSettings() {
             if (SettingsType == null)
                 return;
+
             string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
-            if (!File.Exists(path)) {
-                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
-                return;
+            if (File.Exists(path)) {
+                using (Stream stream = File.OpenRead(path))
+                using (StreamReader reader = new StreamReader(path))
+                    try {
+                        _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
+                        return;
+                    } catch {
+                    }
             }
-            using (Stream stream = File.OpenRead(path))
-            using (StreamReader reader = new StreamReader(path))
-                _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
+
+            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
         }
 
         /// <summary>
@@ -80,14 +85,19 @@ namespace Celeste.Mod {
         public virtual void LoadSaveData(int index) {
             if (SaveDataType == null)
                 return;
+
             string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + ".yaml");
-            if (!File.Exists(path)) {
-                _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
-                return;
+            if (File.Exists(path)) {
+                using (Stream stream = File.OpenRead(path))
+                using (StreamReader reader = new StreamReader(path))
+                    try {
+                        _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
+                        return;
+                    } catch {
+                    }
             }
-            using (Stream stream = File.OpenRead(path))
-            using (StreamReader reader = new StreamReader(path))
-                _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
+
+            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
         }
 
         /// <summary>
