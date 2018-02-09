@@ -204,7 +204,6 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.OnOff(name, (bool) value)
                         .Change(v => prop.SetValue(settings, v))
-                        .NeedsRelaunch(needsRelaunch)
                     ;
 
                 } else if (
@@ -214,7 +213,6 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
                         .Change(v => prop.SetValue(settings, v))
-                        .NeedsRelaunch(needsRelaunch)
                     ;
                 } else if (propType.IsEnum) {
                     Array enumValues = Enum.GetValues(propType);
@@ -227,13 +225,13 @@ namespace Celeste.Mod {
                             return fullName.DialogCleanOrNull() ?? enumName;
                         }, 0, enumValues.Length - 1, (int) value)
                         .Change(v => prop.SetValue(settings, v))
-                        .NeedsRelaunch(needsRelaunch)
                     ;
                 }
 
                 if (item == null)
                     continue;
-                menu.Add(item);
+
+                menu.Add(item.NeedsRelaunch(needsRelaunch));
             }
 
         }

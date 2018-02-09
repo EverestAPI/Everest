@@ -191,13 +191,39 @@ namespace Celeste {
                     area.Mode = larger;
                 }
 
-                modAreas.Add(area);
+                // Celeste levelset always appears first.
+                if (area.GetLevelSet() == "Celeste")
+                    Areas.Add(area);
+                else
+                    modAreas.Add(area);
             }
 
-            // TODO: Remove AreaDatas which are now a mode of another AreaData.
 
+            // Sort and merge modAreas into Areas. Makes for easier levelset handling.
+            Areas.Sort((a, b) => string.Compare(a.GetSID(), b.GetSID()));
             modAreas.Sort((a, b) => string.Compare(a.GetSID(), b.GetSID()));
             Areas.AddRange(modAreas);
+
+            // Find duplicates and remove the earlier copy.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                int otherIndex = Areas.FindIndex(other => other.GetSID() == area.GetSID());
+                if (otherIndex < i) {
+                    Areas[otherIndex] = area;
+                    Areas.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            // Remove AreaDatas which are now a mode of another AreaData.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == area.Mode[0].Path));
+                if (otherIndex != -1 && otherIndex != i) {
+                    Areas.RemoveAt(i);
+                    i--;
+                }
+            }
 
             // Update old MapData areas and load any new areas.
             for (int i = 10; i < Areas.Count; i++) {
