@@ -37,15 +37,72 @@ namespace Celeste {
             // DON'T! The original method is orig_Added
             orig_Added(scene);
 
-            // Remove any icons having "areas/null" as icon.
-            // TODO: Get OuiChapterSelect to handle "holes" properly.
-            for (int i = AreaData.Areas.Count - 1; i >= 10; --i) {
-                if (AreaData.Areas[i].Icon != "areas/null")
+            // Do we even need to do anything here?
+        }
+
+        [MonoModIgnore]
+        private extern void EaseCamera();
+
+        [MonoModReplace]
+        public override IEnumerator Enter(Oui from) {
+            // Fix "out of bounds" level selection.
+            int areaOffs = SaveData.Instance.GetLevelSetStats().AreaOffset;
+            int areaMax = areaOffs + SaveData.Instance.GetLevelSetStats().UnlockedAreas;
+            area = Calc.Clamp(area, areaOffs, areaMax);
+
+            Visible = true;
+            EaseCamera();
+            display = true;
+
+            journalEnabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
+            for (int i = 0; i <= SaveData.Instance.UnlockedAreas && !journalEnabled; i++)
+                if (SaveData.Instance.Areas[i].Modes[0].TimePlayed > 0L && !AreaData.Get(i).Interlude)
+                    journalEnabled = true;
+
+            OuiChapterSelectIcon unselected = null;
+            if (from is OuiChapterPanel)
+                (unselected = icons[area]).Unselect();
+
+            string currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            foreach (OuiChapterSelectIcon icon in icons) {
+                AreaData area = AreaData.Areas[icon.Area];
+                if (area.GetLevelSet() != currentLevelSet)
                     continue;
-                OuiChapterSelectIcon icon = icons[i];
-                // icons.RemoveAt(i);
-                Scene.Remove(icon);
+
+                int chapterIndex = area.ToKey().ChapterIndex;
+                if (chapterIndex <= Math.Max(1, SaveData.Instance.UnlockedAreas) && icon != unselected) {
+                    icon.Position = icon.HiddenPosition;
+                    icon.Show();
+                    icon.AssistModeUnlockable = false;
+                } else if (SaveData.Instance.AssistMode && chapterIndex == SaveData.Instance.UnlockedAreas + 1) {
+                    icon.Position = icon.HiddenPosition;
+                    icon.Show();
+                    icon.AssistModeUnlockable = true;
+                }
+
+                // yield return 0.01f; // Originally returns 0.01f
             }
+
+            if (from is OuiChapterPanel)
+                yield return 0.25f;
+        }
+
+        [MonoModReplace]
+        private IEnumerator EaseOut(Oui next) {
+            OuiChapterSelectIcon selected = null;
+            if (next is OuiChapterPanel) {
+                (selected = icons[area]).Select();
+            }
+
+            foreach (OuiChapterSelectIcon icon in icons) {
+                if (selected != icon) {
+                    icon.Hide();
+                }
+                // yield return 0.01f; // Originally returns 0.01f
+            }
+
+            Visible = false;
+            yield break;
         }
 
         public extern void orig_Update();
@@ -61,19 +118,33 @@ namespace Celeste {
                 return;
             }
 
+            if (Focused && display && !disableInput && inputDelay <= 0f) {
+                if (Input.MenuUp.Pressed) {
+                    Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
+                    return;
+                }
+                if (Input.MenuDown.Pressed) {
+                    Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
+                    return;
+                }
+                // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.
+                if (Input.MenuLeft.Pressed &&
+                    (area > 0) &&
+                    icons[area - 1].IsHidden()
+                ) {
+                    return;
+                }
+                if (Input.MenuRight.Pressed &&
+                    (area < SaveData.Instance.UnlockedAreas || (SaveData.Instance.AssistMode && area == SaveData.Instance.UnlockedAreas && area < SaveData.Instance.MaxArea)) &&
+                    icons[area + 1].IsHidden()
+                ) {
+                    return;
+                }
+            }
+
             orig_Update();
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
-        }
-
-        public extern IEnumerator orig_Enter(Oui from);
-        public override IEnumerator Enter(Oui from) {
-            // Fix "out of bounds" iconless levels.
-            if (area < 0)
-                area = 0;
-            else if (area > SaveData.Instance.UnlockedAreas)
-                area = SaveData.Instance.UnlockedAreas;
-            return orig_Enter(from);
         }
 
         public extern void orig_Render();

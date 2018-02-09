@@ -29,6 +29,7 @@ namespace Celeste {
         [XmlIgnore]
         public fixed char _SID[SIDLength + 1];
         [XmlIgnore]
+        [NonSerialized]
         public int SIDID; // Last ID when the SID was set. SID is always set last.
         [XmlAttribute]
         public string SID {

@@ -81,8 +81,6 @@ namespace Celeste {
             // Separate array as we sort it afterwards.
             List<AreaData> modAreas = new List<AreaData>();
 
-            // TODO: Check for existing entries and replace them.
-
             foreach (AssetMetadata asset in Everest.Content.ListMaps) {
                 string path = asset.PathRelative.Substring(5);
                 MapMeta meta = asset.GetMeta<MapMeta>();
@@ -230,16 +228,16 @@ namespace Celeste {
                 AreaData area = Areas[i];
                 area.ID = i;
                 if (area.Mode[0].MapData != null)
-                    area.Mode[0].MapData.Area = area.ToKey(AreaMode.Normal);
+                    area.Mode[0].MapData.Area = area.ToKey();
                 else
-                    area.Mode[0].MapData = new MapData(area.ToKey(AreaMode.Normal));
+                    area.Mode[0].MapData = new MapData(area.ToKey());
                 if (area.Interlude)
                     continue;
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
                     if (area.Mode[mode] == null)
                         continue;
                     if (area.Mode[mode].MapData != null)
-                        area.Mode[mode].MapData.Area = area.ToKey(AreaMode.Normal);
+                        area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
@@ -265,7 +263,7 @@ namespace Celeste {
         public static AreaData Get(string sid)
             => patch_AreaData.Get(sid);
 
-        public static AreaKey ToKey(this AreaData self, AreaMode mode)
+        public static AreaKey ToKey(this AreaData self, AreaMode mode = AreaMode.Normal)
             => new AreaKey(self.ID, mode).SetSID(self.GetSID());
 
         public static string GetLevelSet(this AreaData self)

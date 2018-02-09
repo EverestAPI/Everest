@@ -21,7 +21,7 @@ namespace Celeste {
         [MonoModHook("System.Int32 Celeste.AreaStats::ID_Unsafe")]
         public new int ID;
 
-        [XmlIgnore]
+        [MonoModRemove]
         public int ID_Unsafe;
 
         [XmlIgnore]
