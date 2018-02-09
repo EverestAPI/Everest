@@ -110,7 +110,7 @@ namespace Celeste.Mod {
 
                 string levelSet = area.GetLevelSet();
 
-                if (!(filterSet == null && levelSet != "Celeste") || filterSet != levelSet)
+                if ((filterSet == null && levelSet == "Celeste") || (filterSet != null && filterSet != levelSet))
                     continue;
 
                 if (lastLevelSet != levelSet) {
