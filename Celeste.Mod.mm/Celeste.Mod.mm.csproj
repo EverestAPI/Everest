@@ -100,6 +100,7 @@
     <Compile Include="MonoModRules.cs" />
     <Compile Include="Patches\AreaKey.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
+    <Compile Include="Patches\GameLoader.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
     <Compile Include="Patches\LevelEnter.cs" />
@@ -126,7 +127,6 @@
     <Compile Include="Patches\Monocle\SpriteBank.cs" />
     <Compile Include="Patches\Monocle\Commands.cs" />
     <Compile Include="Patches\Monocle\Coroutine.cs" />
-    <Compile Include="Patches\GameLoader.cs" />
     <Compile Include="Patches\OuiMainMenu.cs" />
     <Compile Include="Patches\Dialog.cs" />
     <Compile Include="Patches\OuiTitleScreen.cs" />

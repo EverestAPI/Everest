@@ -17,6 +17,9 @@ namespace Celeste {
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private Entity handler;
         private bool loaded;
+        private bool ready;
+        [MonoModIfFlag("HasIntroSkip")]
+        private bool skipped;
 
         private List<MTexture> loadingTextures;
         private float loadingFrame;
@@ -31,7 +34,6 @@ namespace Celeste {
             // DON'T! The original method is orig_Begin
             orig_Begin();
 
-
             // Assume that the intro routine is the first added coroutine.
             foreach (Coroutine c in handler.Components) {
                 introRoutine = c;
@@ -39,12 +41,51 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LaunchWithoutIntro && introRoutine != null) {
-                introRoutine.Cancel();
-                introRoutine = null;
-                handler.Add(new Coroutine(FastIntroRoutine()));
+                SkipIntro();
             }
         }
 
+        public extern void orig_Update();
+        public override void Update() {
+            if (!ready) {
+                bool inputDisabled = MInput.Disabled;
+                MInput.Disabled = false;
+
+                if (Input.Pause.Pressed || Input.ESC.Pressed) {
+                    if (Input.MenuDown.Check) {
+                        Celeste.PlayMode = Celeste.PlayModes.Debug;
+                        // Late-enable commands. This is normally set by Celeste.Initialize.
+                        Engine.Commands.Enabled = true;
+                    }
+
+                    SkipIntro();
+
+                }
+
+                MInput.Disabled = inputDisabled;
+            }
+
+            // Note: You may instinctually call base.Update();
+            // DON'T! The original method is orig_Update
+            orig_Update();
+        }
+
+        [MonoModIfFlag("HasIntroSkip")]
+        private void SkipIntro() {
+            skipped = true;
+        }
+
+        // If we're on a version < 1.1.9.2, relink all SkipIntro calls to SkipIntroOld.
+
+        [MonoModIfFlag("LacksIntroSkip")]
+        [MonoModHook("System.Void Celeste.GameLoader::SkipIntro()")]
+        private void SkipIntroOld() {
+            introRoutine.Cancel();
+            introRoutine = null;
+            handler.Add(new Coroutine(FastIntroRoutine()));
+        }
+
+        [MonoModIfFlag("LacksIntroSkip")]
         public IEnumerator FastIntroRoutine() {
             if (!loaded) {
                 loadingTextures = GFX.Overworld.GetAtlasSubtextures("loading/");
@@ -68,24 +109,6 @@ namespace Celeste {
             }
 
             Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, Snow);
-        }
-
-        public extern void orig_Update();
-        public override void Update() {
-            if (introRoutine != null && (Input.Pause.Pressed || Input.ESC.Pressed)) {
-                if (Input.MenuDown.Check) {
-                    Celeste.PlayMode = Celeste.PlayModes.Debug;
-                    // Late-enable commands. This is normally set by Celeste.Initialize.
-                    Engine.Commands.Enabled = true;
-                }
-                introRoutine.Cancel();
-                introRoutine = null;
-                handler.Add(new Coroutine(FastIntroRoutine()));
-            }
-
-            // Note: You may instinctually call base.Update();
-            // DON'T! The original method is orig_Update
-            orig_Update();
         }
 
     }
