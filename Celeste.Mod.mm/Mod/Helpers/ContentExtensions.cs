@@ -19,9 +19,6 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class ContentExtensions {
 
-        public const float ByteToFloat = 1f / 255f;
-        public const float Byte2ToFloat2 = 1f / (255f * 255f);
-
         public static bool IsSubtexture(this MTexture input) =>
             input.ClipRect.X != 0 ||
             input.ClipRect.Y != 0 ||
@@ -60,10 +57,10 @@ namespace Celeste.Mod {
                     // Skip mul by 0 or 1
                     continue;
                 c = new Color(
-                    Byte2ToFloat2 * (c.R * c.A),
-                    Byte2ToFloat2 * (c.G * c.A),
-                    Byte2ToFloat2 * (c.B * c.A),
-                    ByteToFloat * (c.A)
+                    (int) Math.Round(c.R * c.A / 255D),
+                    (int) Math.Round(c.G * c.A / 255D),
+                    (int) Math.Round(c.B * c.A / 255D),
+                    c.A
                 );
                 data[i] = c;
             }
@@ -87,10 +84,10 @@ namespace Celeste.Mod {
                     continue;
                 float a = c.A;
                 c = new Color(
-                    c.R / a,
-                    c.G / a,
-                    c.B / a,
-                    ByteToFloat * c.A
+                    (int) Math.Round(255D * c.R / a),
+                    (int) Math.Round(255D * c.G / a),
+                    (int) Math.Round(255D * c.B / a),
+                    c.A
                 );
                 data[i] = c;
             }
