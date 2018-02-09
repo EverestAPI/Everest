@@ -25,7 +25,20 @@ namespace Celeste.Mod {
 
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
 
+        private List<string> sets = new List<string>();
+
         public OuiMapList() {
+        }
+
+        private static string GetLevelSetName(string levelSet) {
+            string name;
+            if (string.IsNullOrEmpty(levelSet)) {
+                name = Dialog.Clean("levelset_");
+            } else {
+                name = levelSet;
+                name = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
+            }
+            return name;
         }
         
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
@@ -40,14 +53,25 @@ namespace Celeste.Mod {
 
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
-            // TODO: List level set types!
+            sets.Clear();
+            foreach (AreaData area in AreaData.Areas) {
+                string levelSet = area.GetLevelSet();
+                if (string.IsNullOrEmpty(levelSet))
+                    continue;
+                if (levelSet == "Celeste")
+                    continue;
+                if (sets.Contains(levelSet))
+                    continue;
+                sets.Add(levelSet);
+            }
+
             menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_type"), value => {
                 if (value == 0)
                     return Dialog.Clean("levelset_celeste");
                 if (value == 1)
                     return Dialog.Clean("maplist_type_allmods");
-                return "";
-            }, 0, 1, type).Change(value => {
+                return GetLevelSetName(sets[value - 2]);
+            }, 0, 1 + sets.Count, type).Change(value => {
                 type = value;
                 ReloadItems();
             }));
@@ -69,35 +93,30 @@ namespace Celeste.Mod {
                 menu.Remove(item);
             items.Clear();
 
-            int min = 0;
-            int max = AreaData.Areas.Count;
+            string filterSet = null;
             if (type == 0) {
-                max = 10;
-            } else {
-                min = 10;
+                filterSet = "Celeste";
+            } else if (type >= 2) {
+                filterSet = sets[type - 2];
             }
 
-            if (type >= 2) {
-                // TODO: Filter by levelset!
-            }
-
-            string levelSet = null;
+            string lastLevelSet = null;
             string name;
 
-            for (int i = min; i < max; i++) {
+            for (int i = 0; i < AreaData.Areas.Count(); i++) {
                 AreaData area = AreaData.Areas[i];
                 if (!area.HasMode((AreaMode) side))
                     continue;
 
-                if (levelSet != area.GetLevelSet()) {
-                    levelSet = area.GetLevelSet();
-                    if (levelSet != "Celeste") {
-                        if (string.IsNullOrEmpty(levelSet)) {
-                            name = Dialog.Clean("levelset_");
-                        } else {
-                            name = levelSet;
-                            name = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
-                        }
+                string levelSet = area.GetLevelSet();
+
+                if (!(filterSet == null && levelSet != "Celeste") || filterSet != levelSet)
+                    continue;
+
+                if (lastLevelSet != levelSet) {
+                    lastLevelSet = levelSet;
+                    if (lastLevelSet != "Celeste") {
+                        name = GetLevelSetName(lastLevelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
                         levelSetHeader.Alpha = 0f;
                         menu.Add(levelSetHeader);
@@ -115,7 +134,7 @@ namespace Celeste.Mod {
                     button.Icon = area.Icon;
                 button.IconWidth = 128f;
 
-                if (i < 10 && i > SaveData.Instance.UnlockedAreas)
+                if (levelSet == "Celeste" && i > SaveData.Instance.UnlockedAreas)
                     button.Disabled = true;
                 if (side == 1 && !SaveData.Instance.Areas[i].Cassette)
                     button.Disabled = true;
