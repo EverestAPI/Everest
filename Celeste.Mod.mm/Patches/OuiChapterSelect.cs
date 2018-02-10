@@ -69,12 +69,12 @@ namespace Celeste {
                 if (area.GetLevelSet() != currentLevelSet)
                     continue;
 
-                int chapterIndex = area.ToKey().ChapterIndex;
-                if (chapterIndex <= Math.Max(1, SaveData.Instance.UnlockedAreas) && icon != unselected) {
+                int relativeIndex = area.ToKey().GetRelativeIndex();
+                if (relativeIndex <= Math.Max(1, SaveData.Instance.UnlockedAreas) && icon != unselected) {
                     icon.Position = icon.HiddenPosition;
                     icon.Show();
                     icon.AssistModeUnlockable = false;
-                } else if (SaveData.Instance.AssistMode && chapterIndex == SaveData.Instance.UnlockedAreas + 1) {
+                } else if (SaveData.Instance.AssistMode && relativeIndex == SaveData.Instance.UnlockedAreas + 1) {
                     icon.Position = icon.HiddenPosition;
                     icon.Show();
                     icon.AssistModeUnlockable = true;

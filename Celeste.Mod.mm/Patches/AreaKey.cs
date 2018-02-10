@@ -106,6 +106,22 @@ namespace Celeste {
             }
         }
 
+        public int RelativeIndex {
+            get {
+                if (ID == -1)
+                    return -1;
+
+                string levelSet = LevelSet;
+                int index = 0;
+                for (int i = 0; i <= ID; i++) {
+                    if (AreaData.Areas[i].GetLevelSet() != levelSet)
+                        continue;
+                    index++;
+                }
+                return index;
+            }
+        }
+
         public extern string orig_ToString();
         public override string ToString() {
             string value = orig_ToString();
@@ -130,15 +146,18 @@ namespace Celeste {
             => *((AreaKey*) &self);
 
         public static string GetLevelSet(this AreaKey self)
-            => ((patch_AreaKey) (object) self).LevelSet;
+            => ToPatch(self).LevelSet;
 
         public static string GetSID(this AreaKey self)
-            => ((patch_AreaKey) (object) self).SID;
+            => ToPatch(self).SID;
         public static AreaKey SetSID(this AreaKey self, string value) {
             patch_AreaKey p = self.ToPatch();
             p.SID = value;
             return p.ToOrig();
         }
+
+        public static int GetRelativeIndex(this AreaKey self)
+            => ToPatch(self).RelativeIndex;
 
     }
 }

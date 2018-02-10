@@ -256,9 +256,10 @@ namespace Celeste {
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
 
+                int offset = set.AreaOffset;
                 int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
                 while (areas.Count < count) {
-                    areas.Add(new AreaStats(areas.Count));
+                    areas.Add(new AreaStats(offset + areas.Count));
                 }
                 while (areas.Count > AreaData.Areas.Count) {
                     areas.RemoveAt(areas.Count - 1);
