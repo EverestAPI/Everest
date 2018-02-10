@@ -212,5 +212,25 @@ namespace Celeste {
             return "{" + name + "}";
         }
 
+        public static string CleanLevelSet(string name) {
+            string result;
+            if (string.IsNullOrEmpty(name)) {
+                result = Dialog.Clean("levelset_");
+            } else {
+                result = name;
+                result = ("levelset_" + result).DialogCleanOrNull() ?? result.DialogCleanOrNull() ?? result.SpacedPascalCase();
+            }
+            return result;
+        }
+
+    }
+    public static class DialogExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static string CleanLevelSet(string name)
+            => patch_Dialog.CleanLevelSet(name);
+
     }
 }

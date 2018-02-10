@@ -30,6 +30,8 @@ namespace Celeste {
         private float inputDelay;
 
         private float maplistEase;
+        private float levelsetEase;
+        private string currentLevelSet;
 
         private extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -63,7 +65,7 @@ namespace Celeste {
             if (from is OuiChapterPanel)
                 (unselected = icons[area]).Unselect();
 
-            string currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
                 AreaData area = AreaData.Areas[icon.Area];
                 if (area.GetLevelSet() != currentLevelSet)
@@ -145,17 +147,27 @@ namespace Celeste {
             orig_Update();
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
+            levelsetEase = Calc.Approach(levelsetEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
         }
 
         public extern void orig_Render();
         public override void Render() {
             orig_Render();
             if (maplistEase > 0f) {
-                Vector2 pos = new Vector2(128f * Ease.CubeOut(maplistEase), 952f);
+                Vector2 pos = new Vector2(128f * Ease.CubeOut(maplistEase), 1080f - 128f);
                 if (journalEnabled)
                     pos.Y -= 128f;
                 GFX.Gui["menu/maplist"].DrawCentered(pos, Color.White * Ease.CubeOut(maplistEase));
                 (Input.GuiInputController() ? Input.GuiButton(Input.Pause) : Input.GuiButton(Input.ESC)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
+            }
+
+            if (levelsetEase > 0f) {
+                Vector2 pos = new Vector2(1920f - 128f * Ease.CubeOut(maplistEase), 1080f - 128f);
+                string line = DialogExt.CleanLevelSet(currentLevelSet);
+                ActiveFont.DrawOutline(line, pos, new Vector2(1f, 0.5f), Vector2.One * 0.7f, Color.White * Ease.CubeOut(maplistEase), 2f, Color.Black * Ease.CubeOut(maplistEase));
+                Vector2 lineSize = ActiveFont.Measure(line) * 0.7f;
+                Input.GuiDirection(new Vector2(0f, -1f)).DrawCentered(pos + new Vector2(-lineSize.X * 0.5f, -lineSize.Y * 0.5f - 16f), Color.White * Ease.CubeOut(maplistEase), 0.5f);
+                Input.GuiDirection(new Vector2(0f, +1f)).DrawCentered(pos + new Vector2(-lineSize.X * 0.5f, +lineSize.Y * 0.5f + 16f), Color.White * Ease.CubeOut(maplistEase), 0.5f);
             }
         }
 

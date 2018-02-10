@@ -23,6 +23,8 @@ namespace Celeste.Mod {
             }
             Direction = Math.Sign(Direction);
 
+            yield return 0.25f;
+
             int startID = SaveData.Instance.LastArea.ID;
             string startLevelSet = SaveData.Instance.GetLevelSet();
             int count = AreaData.Areas.Count;
@@ -32,7 +34,6 @@ namespace Celeste.Mod {
                     SaveData.Instance.LastArea = area.ToKey();
                     goto Done;
                 }
-                yield return null;
             }
 
             Done:
@@ -42,11 +43,6 @@ namespace Celeste.Mod {
 
         public override IEnumerator Leave(Oui next) {
             yield break;
-        }
-
-        public override void Update() {
-            // Overworld.Goto<OuiChapterSelect>();
-            base.Update();
         }
 
     }

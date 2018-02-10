@@ -29,17 +29,6 @@ namespace Celeste.Mod {
 
         public OuiMapList() {
         }
-
-        private static string GetLevelSetName(string levelSet) {
-            string name;
-            if (string.IsNullOrEmpty(levelSet)) {
-                name = Dialog.Clean("levelset_");
-            } else {
-                name = levelSet;
-                name = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
-            }
-            return name;
-        }
         
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
@@ -70,7 +59,7 @@ namespace Celeste.Mod {
                     return Dialog.Clean("levelset_celeste");
                 if (value == 1)
                     return Dialog.Clean("maplist_type_allmods");
-                return GetLevelSetName(sets[value - 2]);
+                return DialogExt.CleanLevelSet(sets[value - 2]);
             }, 0, 1 + sets.Count, type).Change(value => {
                 type = value;
                 ReloadItems();
@@ -119,7 +108,7 @@ namespace Celeste.Mod {
                     lastLevelSet = levelSet;
                     levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
                     if (levelSet != "Celeste") {
-                        name = GetLevelSetName(levelSet);
+                        name = DialogExt.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
                         levelSetHeader.Alpha = 0f;
                         menu.Add(levelSetHeader);
