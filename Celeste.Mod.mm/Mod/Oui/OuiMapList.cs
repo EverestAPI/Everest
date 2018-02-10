@@ -101,11 +101,11 @@ namespace Celeste.Mod {
             }
 
             string lastLevelSet = null;
-            int levelSetOffset = 0;
             LevelSetStats levelSetStats = null;
             string name;
 
-            for (int i = 0; i < AreaData.Areas.Count(); i++) {
+            List<AreaStats> areaStatsAll = SaveData.Instance.Areas;
+            for (int i = 0; i < AreaData.Areas.Count; i++) {
                 AreaData area = AreaData.Areas[i];
                 if (!area.HasMode((AreaMode) side))
                     continue;
@@ -117,7 +117,6 @@ namespace Celeste.Mod {
 
                 if (lastLevelSet != levelSet) {
                     lastLevelSet = levelSet;
-                    levelSetOffset = i;
                     levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
                     if (levelSet != "Celeste") {
                         name = GetLevelSetName(levelSet);
@@ -140,7 +139,7 @@ namespace Celeste.Mod {
 
                 if (levelSet == "Celeste" && i > levelSetStats.UnlockedAreas)
                     button.Disabled = true;
-                if (side == 1 && !levelSetStats.Areas[i - levelSetOffset].Cassette)
+                if (side == 1 && !areaStatsAll[i].Cassette)
                     button.Disabled = true;
                 if (side >= 2 && SaveData.Instance.UnlockedModes < (side + 1))
                     button.Disabled = true;
