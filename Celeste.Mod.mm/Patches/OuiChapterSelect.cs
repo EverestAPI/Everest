@@ -122,10 +122,12 @@ namespace Celeste {
 
             if (Focused && display && !disableInput && inputDelay <= 0f) {
                 if (Input.MenuUp.Pressed) {
+                    Audio.Play("event:/ui/main/whoosh_large_out");
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
                     return;
                 }
                 if (Input.MenuDown.Pressed) {
+                    Audio.Play("event:/ui/main/whoosh_large_out");
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
                     return;
                 }

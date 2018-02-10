@@ -154,6 +154,18 @@ namespace Celeste.Mod {
                     => OnDie?.Invoke(player);
             }
 
+            public static class Input {
+
+                public static event Action OnInitialize;
+                internal static void Initialize()
+                    => OnInitialize?.Invoke();
+
+                public static event Action OnDeregister;
+                internal static void Deregister()
+                    => OnDeregister?.Invoke();
+
+            }
+
             public static class OuiJournal {
                 public static event Action<_OuiJournal, Oui> OnEnter;
                 internal static void Enter(_OuiJournal journal, Oui from)

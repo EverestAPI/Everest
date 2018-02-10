@@ -37,6 +37,7 @@ namespace Celeste.Mod {
             }
 
             Done:
+            Audio.Play("event:/ui/main/whoosh_large_in");
             Overworld.Goto<OuiChapterSelect>();
             yield break;
         }
