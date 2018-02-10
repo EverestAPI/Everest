@@ -162,7 +162,7 @@ namespace Celeste {
             }
 
             if (levelsetEase > 0f) {
-                Vector2 pos = new Vector2(1920f - 128f * Ease.CubeOut(maplistEase), 1080f - 128f);
+                Vector2 pos = new Vector2(1920f - 64f * Ease.CubeOut(maplistEase), 1080f - 128f);
                 string line = DialogExt.CleanLevelSet(currentLevelSet);
                 ActiveFont.DrawOutline(line, pos, new Vector2(1f, 0.5f), Vector2.One * 0.7f, Color.White * Ease.CubeOut(maplistEase), 2f, Color.Black * Ease.CubeOut(maplistEase));
                 Vector2 lineSize = ActiveFont.Measure(line) * 0.7f;
