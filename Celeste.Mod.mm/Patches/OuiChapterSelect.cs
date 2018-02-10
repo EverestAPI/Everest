@@ -54,7 +54,7 @@ namespace Celeste {
             EaseCamera();
             display = true;
 
-            journalEnabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
+            journalEnabled = Celeste.PlayMode == Celeste.PlayModes.Debug || (SaveData.Instance?.CheatMode ?? false);
             for (int i = 0; i <= SaveData.Instance.UnlockedAreas && !journalEnabled; i++)
                 if (SaveData.Instance.Areas[i].Modes[0].TimePlayed > 0L && !AreaData.Get(i).Interlude)
                     journalEnabled = true;

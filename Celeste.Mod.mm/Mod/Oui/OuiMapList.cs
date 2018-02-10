@@ -101,6 +101,8 @@ namespace Celeste.Mod {
             }
 
             string lastLevelSet = null;
+            int levelSetOffset = 0;
+            LevelSetStats levelSetStats = null;
             string name;
 
             for (int i = 0; i < AreaData.Areas.Count(); i++) {
@@ -115,8 +117,10 @@ namespace Celeste.Mod {
 
                 if (lastLevelSet != levelSet) {
                     lastLevelSet = levelSet;
-                    if (lastLevelSet != "Celeste") {
-                        name = GetLevelSetName(lastLevelSet);
+                    levelSetOffset = i;
+                    levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                    if (levelSet != "Celeste") {
+                        name = GetLevelSetName(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
                         levelSetHeader.Alpha = 0f;
                         menu.Add(levelSetHeader);
@@ -134,9 +138,9 @@ namespace Celeste.Mod {
                     button.Icon = area.Icon;
                 button.IconWidth = 128f;
 
-                if (levelSet == "Celeste" && i > SaveData.Instance.UnlockedAreas)
+                if (levelSet == "Celeste" && i > levelSetStats.UnlockedAreas)
                     button.Disabled = true;
-                if (side == 1 && !SaveData.Instance.Areas[i].Cassette)
+                if (side == 1 && !levelSetStats.Areas[i - levelSetOffset].Cassette)
                     button.Disabled = true;
                 if (side >= 2 && SaveData.Instance.UnlockedModes < (side + 1))
                     button.Disabled = true;

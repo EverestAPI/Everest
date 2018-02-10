@@ -15,24 +15,99 @@ namespace Celeste {
     [Serializable]
     public class LevelSetStats {
 
+        internal patch_SaveData SaveData;
+
         [XmlAttribute]
         public string Name;
 
         public int UnlockedAreas;
 
         public List<AreaStats> Areas = new List<AreaStats>();
+        [XmlIgnore]
+        public List<AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
 
+        public int TotalStrawberries;
+
+        [XmlIgnore]
         public int AreaOffset {
             get {
                 return AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
             }
         }
 
+        [XmlIgnore]
+        public int UnlockedModes {
+            get {
+                if (TotalHeartGems >= 16) {
+                    return 3;
+                }
+
+                int offset = AreaOffset;
+                for (int i = 0; i <= MaxArea; i++) {
+                    if (!AreaData.Areas[offset + i].Interlude && AreasIncludingCeleste[i].Cassette) {
+                        return 2;
+                    }
+                }
+
+                return 1;
+            }
+        }
+
+        [XmlIgnore]
         public int MaxArea {
             get {
+                int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name) - 1;
                 if (Celeste.PlayMode == Celeste.PlayModes.Event)
-                    return AreaOffset + 2;
-                return AreaData.Areas.Count(area => area.GetLevelSet() == Name) - 1;
+                    return Math.Min(count, AreaOffset + 2);
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int TotalHeartGems {
+            get {
+                return AreasIncludingCeleste.Count(area => area.Modes.Any(mode => mode?.HeartGem ?? false));
+            }
+        }
+
+        [XmlIgnore]
+        public int TotalCassettes {
+            get {
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    if (!AreaData.Areas[offset + i].Interlude && AreasIncludingCeleste[i].Cassette) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int TotalCompletions {
+            get {
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    if (!AreaData.Areas[offset + i].Interlude && AreasIncludingCeleste[i].Modes[0].Completed) {
+                        count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int CompletionPercent {
+            get {
+                // TODO: Get max counts on the fly.
+                float value = 0f;
+                value += TotalHeartGems / 24f * 24f;
+                value += TotalStrawberries / 175f * 55f;
+                value += TotalCassettes / 8f * 7f;
+                value += TotalCompletions / 8f * 14f;
+                return (int) value;
             }
         }
 
@@ -41,6 +116,7 @@ namespace Celeste {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
+        [XmlIgnore]
         public string LevelSet => LastArea.GetLevelSet() ?? "Celeste";
 
         [XmlIgnore]
@@ -83,6 +159,30 @@ namespace Celeste {
             }
         }
 
+        [XmlAttribute]
+        [MonoModHook("System.Int32 Celeste.SaveData::TotalStrawberries_Unsafe")]
+        public new int TotalStrawberries;
+
+        [MonoModRemove]
+        public int TotalStrawberries_Unsafe;
+
+        [XmlIgnore]
+        [MonoModHook("System.Int32 Celeste.SaveData::TotalStrawberries")]
+        public int TotalStrawberries_Safe {
+            get {
+                if (LevelSet == "Celeste")
+                    return TotalStrawberries_Unsafe;
+                return LevelSetStats.TotalStrawberries;
+            }
+            set {
+                if (LevelSets == null || LevelSet == "Celeste") {
+                    TotalStrawberries_Unsafe = value;
+                    return;
+                }
+                LevelSetStats.TotalStrawberries = value;
+            }
+        }
+
 
         [XmlAttribute]
         [MonoModHook("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
@@ -117,6 +217,17 @@ namespace Celeste {
             }
         }
 
+        public new int UnlockedModes {
+            [MonoModReplace]
+            get {
+                if (DebugMode || CheatMode) {
+                    return 3;
+                }
+
+                return LevelSetStats.UnlockedModes;
+            }
+        }
+
         public new int MaxArea {
             [MonoModReplace]
             get {
@@ -140,6 +251,7 @@ namespace Celeste {
             }
 
             foreach (LevelSetStats set in LevelSets) {
+                set.SaveData = this;
                 List<AreaStats> areas = set.Areas;
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
@@ -210,6 +322,9 @@ namespace Celeste {
             Everest.Invoke("SaveSaveData", FileSlot);
         }
 
+        public LevelSetStats GetLevelSetStatsFor(string name)
+            => LevelSets.Find(set => set.Name == name);
+
     }
     public static class SaveDataExt {
 
@@ -228,6 +343,9 @@ namespace Celeste {
 
         public static LevelSetStats GetLevelSetStats(this SaveData self)
             => ((patch_SaveData) self).LevelSetStats;
+
+        public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
+            => ((patch_SaveData) self).GetLevelSetStatsFor(name);
 
     }
 }
