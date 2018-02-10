@@ -69,7 +69,7 @@ namespace Celeste {
                 if (area.GetLevelSet() != currentLevelSet)
                     continue;
 
-                int relativeIndex = area.ToKey().GetRelativeIndex();
+                int relativeIndex = area.ToKey().GetRelativeIndex() - 1;
                 if (relativeIndex <= Math.Max(1, SaveData.Instance.UnlockedAreas) && icon != unselected) {
                     icon.Position = icon.HiddenPosition;
                     icon.Show();
