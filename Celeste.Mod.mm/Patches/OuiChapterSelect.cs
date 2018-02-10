@@ -49,7 +49,7 @@ namespace Celeste {
         public override IEnumerator Enter(Oui from) {
             // Fix "out of bounds" level selection.
             int areaOffs = SaveData.Instance.GetLevelSetStats().AreaOffset;
-            int areaMax = areaOffs + SaveData.Instance.GetLevelSetStats().UnlockedAreas;
+            int areaMax = areaOffs + SaveData.Instance.GetLevelSetStats().UnlockedAreas + 1;
             area = Calc.Clamp(area, areaOffs, areaMax);
 
             Visible = true;
@@ -122,12 +122,12 @@ namespace Celeste {
 
             if (Focused && display && !disableInput && inputDelay <= 0f) {
                 if (Input.MenuUp.Pressed) {
-                    Audio.Play("event:/ui/main/whoosh_large_out");
+                    Audio.Play("event:/ui/world_map/chapter/pane_contract");
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
                     return;
                 }
                 if (Input.MenuDown.Pressed) {
-                    Audio.Play("event:/ui/main/whoosh_large_out");
+                    Audio.Play("event:/ui/world_map/chapter/pane_contract");
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
                     return;
                 }
