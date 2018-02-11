@@ -266,6 +266,7 @@ namespace Celeste {
                 }
                 for (int i = 0; i < count; i++) {
                     areas[i].ID = offset + i;
+                    areas[i].SetSID(AreaData.Get(offset + i).GetSID());
                 }
 
                 int lastCompleted = -1;
@@ -293,6 +294,8 @@ namespace Celeste {
                 }
 
                 foreach (AreaStats area in areas) {
+                    if (AreaData.Get(area.ID).GetSID() != area.GetSID())
+                        continue;
                     area.CleanCheckpoints();
                 }
             }
