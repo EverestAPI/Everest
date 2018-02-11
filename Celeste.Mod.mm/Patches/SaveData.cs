@@ -264,6 +264,9 @@ namespace Celeste {
                 while (areas.Count > AreaData.Areas.Count) {
                     areas.RemoveAt(areas.Count - 1);
                 }
+                for (int i = 0; i < count; i++) {
+                    areas[i].ID = offset + i;
+                }
 
                 int lastCompleted = -1;
                 for (int i = 0; i < count; i++) {
