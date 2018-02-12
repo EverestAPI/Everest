@@ -31,8 +31,9 @@ namespace Celeste {
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
 
         new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
-            return orig_Die(direction, evenIfInvincible, registerDeathInStats);
+            PlayerDeadBody orig = orig_Die(direction, evenIfInvincible, registerDeathInStats);
             Everest.Events.Player.Die(this);
+            return orig;
         }
 
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
