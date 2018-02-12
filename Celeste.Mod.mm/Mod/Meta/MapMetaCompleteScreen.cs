@@ -56,6 +56,10 @@ namespace Celeste.Mod.Meta {
     }
     public class MapMetaCompleteScreenLayer {
 
+        public string Type { get; set; }
+
+        public string[] Images { get; set; }
+
         [YamlIgnore]
         public Vector2 Position { get; set; }
         [YamlMember(Alias = "Position")]
@@ -85,10 +89,6 @@ namespace Celeste.Mod.Meta {
                 Scroll = new Vector2(value[0], value[1]);
             }
         }
-
-        public string Type { get; set; }
-
-        public string[] Images { get; set; }
 
         public float FrameRate { get; set; } = 6f;
 

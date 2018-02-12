@@ -21,8 +21,8 @@ namespace Celeste {
         private static XmlElement _FakeXML;
         public static XmlElement FakeXML {
             get {
-                if (FakeXML != null)
-                    return FakeXML;
+                if (_FakeXML != null)
+                    return _FakeXML;
                 _FakeXML = new XmlDocument().CreateElement("layer");
                 _FakeXML.SetAttribute("img", "");
                 return _FakeXML;
@@ -74,6 +74,7 @@ namespace Celeste {
                 Position = meta.Position;
                 ScrollFactor = meta.Scroll;
             }
+
         }
 
         public class UILayerNoXML : UILayer {
