@@ -22,8 +22,8 @@ namespace Celeste {
 
         // Patching constructors is ugly.
         [MonoModConstructor]
-        [MonoModIgnore]
-        [PatchAreaCompleteCtor]
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchAreaCompleteCtor] // ... except for manually manipulating the method via MonoModRules
         public extern void ctor_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow);
 
     }
