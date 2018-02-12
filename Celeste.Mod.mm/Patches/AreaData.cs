@@ -30,6 +30,8 @@ namespace Celeste {
             }
         }
 
+        public MapMetaCompleteScreen CompleteScreenMeta;
+
         [MonoModReplace]
         public static new AreaData Get(Scene scene) {
             AreaData result;
@@ -179,9 +181,11 @@ namespace Celeste {
                     area.MountainCursor = meta.Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
                     area.MountainState = meta.Mountain?.State ?? area.MountainState;
 
+                    area.SetCompleteScreenMeta(meta.CompleteScreen);
                 }
 
-                // Some of the game's code checks for [1] / [2] hardcoded.
+                // Some of the game's code checks for [1] / [2] explicitly.
+                // Let's just provide null modes to fill any gaps.
                 if (area.Mode.Length < 3) {
                     ModeProperties[] larger = new ModeProperties[3];
                     for (int i = 0; i < area.Mode.Length; i++)
@@ -224,7 +228,7 @@ namespace Celeste {
             }
 
             // Update old MapData areas and load any new areas.
-            for (int i = 10; i < Areas.Count; i++) {
+            for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 area.ID = i;
                 if (area.Mode[0].MapData != null)
@@ -273,6 +277,13 @@ namespace Celeste {
             => ((patch_AreaData) self).SID;
         public static AreaData SetSID(this AreaData self, string value) {
             ((patch_AreaData) self).SID = value;
+            return self;
+        }
+
+        public static MapMetaCompleteScreen GetCompleteScreenMeta(this AreaData self)
+            => ((patch_AreaData) self).CompleteScreenMeta;
+        public static AreaData SetCompleteScreenMeta(this AreaData self, MapMetaCompleteScreen value) {
+            ((patch_AreaData) self).CompleteScreenMeta = value;
             return self;
         }
 

@@ -75,6 +75,7 @@
     <Compile Include="Mod\CoreModule\CoreModuleSaveData.cs" />
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
+    <Compile Include="Mod\Meta\MapMetaCompleteScreen.cs" />
     <Compile Include="Mod\Module\EverestModuleSaveData.cs" />
     <Compile Include="Mod\Module\EverestModuleSettings.cs" />
     <Compile Include="Mod\Module\EverestModuleMetadata.cs" />
@@ -106,10 +107,13 @@
     <Compile Include="Mod\Oui\OuiMapList.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\CompleteRenderer.cs" />
     <Compile Include="Patches\AreaKey.cs" />
+    <Compile Include="Patches\AreaComplete.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
     <Compile Include="Patches\GameLoader.cs" />
     <Compile Include="Patches\Input.cs" />
+    <Compile Include="Patches\LevelExit.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
     <Compile Include="Patches\LevelEnter.cs" />

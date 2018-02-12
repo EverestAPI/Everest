@@ -44,6 +44,8 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaMountain Mountain { get; set; } = null;
 
+        public MapMetaCompleteScreen CompleteScreen { get; set; } = null;
+
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
             if (meta == null || meta.Length == 0)
                 return null;

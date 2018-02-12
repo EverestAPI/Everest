@@ -14,11 +14,25 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute("ProxyFileCalls")]
     class ProxyFileCallsAttribute : Attribute { }
+
     /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
     /// </summary>
     [MonoModCustomMethodAttribute("PopCorruptedLevelData")]
     class PopCorruptedLevelDataAttribute : Attribute { }
+
+    /// <summary>
+    /// Slap a ldfld completeMeta right before newobj AreaComplete
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelExitRoutine")]
+    class PatchLevelExitRoutineAttribute : Attribute { }
+
+    /// <summary>
+    /// Slap a MapMetaCompleteScreen param at the end of the constructor and ldarg it right before newobj CompleteRenderer
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchAreaCompleteCtor")]
+    class PatchAreaCompleteCtorAttribute : Attribute { }
+
     class MonoModRules {
 
         static TypeDefinition Celeste;
@@ -144,6 +158,59 @@ namespace MonoMod {
                     instr.OpCode = OpCodes.Pop;
                     pop = false;
                 }
+            }
+
+        }
+
+        public static void PatchLevelExitRoutine(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                MethodReference calling = instr.Operand as MethodReference;
+                string callingID = calling?.GetFindableID();
+
+                // The original AreaComplete .ctor has been modified to contain an extra parameter.
+                // For safety, check against both signatures.
+                if (instr.OpCode != OpCodes.Newobj || (
+                    callingID != "System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow)" &&
+                    callingID != "System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow,Celeste.Mod.Meta.MapMetaCompleteScreen)"
+                ))
+                    continue;
+
+                instrs.Insert(instri, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("completeMeta")));
+                instri++;
+            }
+
+        }
+
+        public static void PatchAreaCompleteCtor(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MMILRT.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
+            method.Parameters.Add(paramMeta);
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                MethodReference calling = instr.Operand as MethodReference;
+                string callingID = calling?.GetFindableID();
+
+                // The matching CompleteRenderer .ctor has been added manually, thus manually relink to it.
+                if (instr.OpCode != OpCodes.Newobj || (
+                    callingID != "System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action)"
+                ))
+                    continue;
+
+                instr.Operand = calling.Resolve().DeclaringType.FindMethod("System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action,Celeste.Mod.Meta.MapMetaCompleteScreen)");
+
+                instrs.Insert(instri, il.Create(OpCodes.Ldarg, paramMeta));
+                instri++;
             }
 
         }
