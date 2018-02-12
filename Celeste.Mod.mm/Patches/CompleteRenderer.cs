@@ -78,22 +78,30 @@ namespace Celeste {
         }
 
         public class UILayerNoXML : UILayer {
+
             private CompleteRenderer renderer;
 
             public UILayerNoXML(CompleteRenderer renderer, MapMetaCompleteScreenLayer meta)
                 : base(renderer, FakeXML) {
+                Position = meta.Position;
+                ScrollFactor = meta.Scroll;
+
                 this.renderer = renderer;
             }
 
             public override void Render(Vector2 scroll) {
                 renderer?.RenderUI(scroll);
             }
+
         }
 
         public class ImageLayerNoXML : ImageLayer {
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
+                Position = meta.Position;
+                ScrollFactor = meta.Scroll;
+
                 Images.Clear();
                 foreach (string img in meta.Images) {
                     if (atlas.Has(img)) {
@@ -106,29 +114,6 @@ namespace Celeste {
                 FrameRate = meta.FrameRate;
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
-            }
-
-            public override void Update(Scene scene) {
-                Frame += Engine.DeltaTime * FrameRate;
-                Offset += Speed * Engine.DeltaTime;
-            }
-
-            public override void Render(Vector2 scroll) {
-                Vector2 position = GetScrollPosition(scroll).Floor();
-                MTexture texture = Images[(int) (Frame % Images.Count)];
-                if (texture == null)
-                    return;
-                Draw.SpriteBatch.Draw(
-                    texture.Texture.Texture,
-                    position + texture.DrawOffset,
-                    new Rectangle(
-                        -((int) Offset.X) + 1,
-                        -((int) Offset.Y) + 1,
-                        texture.ClipRect.Width - 2,
-                        texture.ClipRect.Height - 2
-                    ),
-                    Color.White * Alpha
-                );
             }
 
         }
