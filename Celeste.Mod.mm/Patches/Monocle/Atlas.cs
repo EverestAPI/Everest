@@ -26,6 +26,47 @@ namespace Monocle {
         public string[] DataPaths;
         public AtlasDataFormat? DataFormat;
 
+        private static extern void orig_ReadAtlasData(Atlas atlas, string path, AtlasDataFormat format);
+        private static void ReadAtlasData(Atlas atlas, string path, AtlasDataFormat format) {
+            string pathFull = Path.Combine(Engine.ContentDirectory, path);
+
+            // If the file doesn't exist, don't add any data to the atlas.
+            switch (format) {
+                case AtlasDataFormat.TexturePacker_Sparrow:
+                case AtlasDataFormat.CrunchXml:
+                case AtlasDataFormat.CrunchBinary:
+                    // These formats don't append any file extension.
+                    if (!File.Exists(pathFull))
+                        return;
+                    break;
+
+                case AtlasDataFormat.CrunchXmlOrBinary:
+                    // Check against both .bin and .xml paths, as the game reads whichever exists.
+                    if (!File.Exists(pathFull + ".bin") && !File.Exists(pathFull + ".xml"))
+                        return;
+                    break;
+
+                case AtlasDataFormat.CrunchBinaryNoAtlas:
+                    // This appends .bin to the path for whatever reason (compared to CrunchBinary).
+                    if (!File.Exists(pathFull + ".bin"))
+                        return;
+                    break;
+
+                case AtlasDataFormat.Packer:
+                case AtlasDataFormat.PackerNoAtlas:
+                    // The only format used by the game.
+                    if (!File.Exists(pathFull + ".meta"))
+                        return;
+                    break;
+
+                default:
+                    // Unsupported format. Let's avoid crashing.
+                    return;
+            }
+
+            orig_ReadAtlasData(atlas, path, format);
+        }
+
         public static extern Atlas orig_FromAtlas(string path, AtlasDataFormat format);
         public static new Atlas FromAtlas(string path, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromAtlas(path, format);

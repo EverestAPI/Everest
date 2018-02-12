@@ -16,11 +16,16 @@ namespace Celeste {
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
 
-            // Iterate over the added Entities and grab the first TextMenu.
-            List<Entity> added = Entities.GetToAdd();
-            foreach (TextMenu menu in added) {
-                Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
-                break;
+            if (!quickReset) {
+                // Iterate over the added Entities and grab the first TextMenu.
+                List<Entity> added = Entities.GetToAdd();
+                foreach (Entity entity in added) {
+                    if (!(entity is TextMenu))
+                        continue;
+                    TextMenu menu = (TextMenu) entity;
+                    Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
+                    break;
+                }
             }
 
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
