@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using FMOD.Studio;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System.Collections.Generic;
 
@@ -29,6 +30,13 @@ namespace Celeste {
             }
 
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
+        }
+
+        public extern void orig_TransitionTo(LevelData next, Vector2 direction);
+        public new void TransitionTo(LevelData next, Vector2 direction)
+        {
+            orig_TransitionTo(next, direction);
+            Everest.Events.Level.TransitionTo(next, direction);
         }
 
     }
