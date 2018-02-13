@@ -26,7 +26,7 @@ namespace Celeste {
         public void ctor_Autotiler(string filename) {
             Filename = filename;
             orig_ctor_Autotiler(filename);
-            Everest.Content.Process(filename, this);
+            Everest.Content.Process(this, filename);
         }
 
     }

@@ -36,12 +36,8 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Invokes all delegates in the invocation list, as long as the last invoked .
+        /// Invokes all delegates in the invocation list, as long as the previously invoked delegate returns true.
         /// </summary>
-        /// <typeparam name="T">Type of the result.</typeparam>
-        /// <param name="md">The multicast delegate.</param>
-        /// <param name="args">Any arguments that may be passed.</param>
-        /// <returns>The result of the last invoked delegate.</returns>
         public static bool InvokeWhileTrue(this MulticastDelegate md, params object[] args) {
             if (md == null)
                 return true;
@@ -52,6 +48,38 @@ namespace Celeste.Mod {
                     return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// Invokes all delegates in the invocation list, as long as the previously invoked delegate returns false.
+        /// </summary>
+        public static bool InvokeWhileFalse(this MulticastDelegate md, params object[] args) {
+            if (md == null)
+                return false;
+
+            Delegate[] ds = md.GetInvocationList();
+            for (int i = 0; i < ds.Length; i++)
+                if ((bool) ds[i].DynamicInvoke(args))
+                    return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Invokes all delegates in the invocation list, as long as the previously invoked delegate returns null.
+        /// </summary>
+        public static T InvokeWhileNull<T>(this MulticastDelegate md, params object[] args) where T : class {
+            if (md == null)
+                return null;
+
+            Delegate[] ds = md.GetInvocationList();
+            for (int i = 0; i < ds.Length; i++) {
+                T result = (T) ds[i].DynamicInvoke(args);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
 
         /// <summary>

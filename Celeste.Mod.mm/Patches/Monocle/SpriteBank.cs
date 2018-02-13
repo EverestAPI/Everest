@@ -25,7 +25,7 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor_SpriteBank(Atlas atlas, XmlDocument xml) {
             orig_ctor_SpriteBank(atlas, xml);
-            Everest.Content.Process(XMLPath, this);
+            Everest.Content.Process(this, XMLPath);
         }
 
         public extern void orig_ctor_SpriteBank(Atlas atlas, string xmlPath);

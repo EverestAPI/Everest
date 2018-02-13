@@ -25,6 +25,9 @@ namespace Celeste.Mod {
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
 
+    // Delegate types.
+    public delegate string TypeGuesser(string file, out Type type, out string format);
+
     public static partial class Everest {
         public static class Content {
 
@@ -151,6 +154,7 @@ namespace Celeste.Mod {
                 return metadata;
             }
 
+            public static event TypeGuesser OnGuessType;
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
                 format = file.Length < 4 ? null : file.Substring(file.Length - 3);
@@ -169,6 +173,7 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".yaml")) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
+                    format = ".yml";
                 } else if (file.EndsWith(".yml")) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 4);
@@ -181,8 +186,20 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeMap);
                     file = file.Substring(0, file.Length - 4);
 
-                } else {
-                    // TODO: Allow mods to parse custom types.
+                } else if (OnGuessType != null) {
+                    // Allow mods to parse custom types.
+                    Delegate[] ds = OnGuessType.GetInvocationList();
+                    for (int i = 0; i < ds.Length; i++) {
+                        Type typeMod;
+                        string formatMod;
+                        string fileMod = ((TypeGuesser) ds[i])(file, out typeMod, out formatMod);
+                        if (fileMod == null || typeMod == null || formatMod == null)
+                            continue;
+                        file = fileMod;
+                        type = typeMod;
+                        format = formatMod;
+                        break;
+                    }
                 }
 
                 return file;
@@ -203,7 +220,7 @@ namespace Celeste.Mod {
                     WeakReference weak = LoadedAssets[i];
                     if (!weak.IsAlive)
                         continue;
-                    Process(LoadedAssetFullPaths[i], weak.Target);
+                    Process(weak.Target, LoadedAssetFullPaths[i]);
                 }
             }
 
@@ -273,7 +290,8 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static object Process(string assetNameFull, object asset) {
+            public static event Func<object, string, object> OnProcess;
+            public static object Process(object asset, string assetNameFull) {
                 if (DumpOnLoad)
                     Dump(assetNameFull, asset);
 
@@ -300,9 +318,8 @@ namespace Celeste.Mod {
 
                     atlas.Ingest(mapping);
                 }
-                
-                // TODO: Allow mods to process the asset at runtime.
-                return asset;
+
+                return OnProcess?.InvokePassing(asset, assetNameFull) ?? asset;
             }
 
             public static void DumpAll() {
