@@ -17,7 +17,6 @@ using System.Xml.Serialization;
 
 namespace Celeste {
     // AreaKey is a struct.
-    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     unsafe struct patch_AreaKey {
 
         public int ID;
@@ -27,31 +26,22 @@ namespace Celeste {
 
         public const int SIDLength = 511;
         [XmlIgnore]
-        public fixed char _SID[SIDLength + 1];
+        [NonSerialized]
+        public string _SID;
         [XmlIgnore]
         [NonSerialized]
         public int SIDID; // Last ID when the SID was set. SID is always set last.
         [XmlAttribute]
         public string SID {
             get {
-                string value;
-                fixed (char* ptr = _SID)
-                    value = Marshal.PtrToStringUni((IntPtr) ptr);
+                string value = _SID;
                 if ((SIDID != ID || string.IsNullOrEmpty(value)) && ID != -1)
                     // We don't actually check if we're in bounds as we want an exception.
                     value = AreaData.Areas[ID].GetSID();
                 return value;
             }
             set {
-                // Can probably be optimized.
-                char[] chars = value.ToCharArray();
-                int length = Math.Min(SIDLength - 1, chars.Length);
-                fixed (char* to = _SID) {
-                    Marshal.Copy(chars, 0, (IntPtr) to, length);
-                    for (int i = length; i < SIDLength; i++) {
-                        to[i] = '\0';
-                    }
-                }
+                _SID = value;
                 // We want to force any legacy code to use the SID's ID.
                 ID = AreaDataExt.Get(value)?.ID ?? ID;
                 SIDID = ID; // Last ID when the SID was set. SID is always set last.
@@ -65,6 +55,8 @@ namespace Celeste {
             Mode = mode;
             ID = id;
             SIDID = id;
+            _SID = null;
+
             // Only set SID if this AreaKey isn't AreaKey.Default or AreaKey.None
             if (id != -1 && AreaData.Areas != null && AreaData.Areas.Count > 0) {
                 // We don't actually check if we're in bounds as we want an exception.
@@ -139,25 +131,19 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        unsafe static patch_AreaKey ToPatch(this AreaKey self)
-            => *((patch_AreaKey*) &self);
-
-        unsafe static AreaKey ToOrig(this patch_AreaKey self)
-            => *((AreaKey*) &self);
-
         public static string GetLevelSet(this AreaKey self)
-            => ToPatch(self).LevelSet;
+            => ((patch_AreaKey) (object) self).LevelSet;
 
         public static string GetSID(this AreaKey self)
-            => ToPatch(self).SID;
+            => ((patch_AreaKey) (object) self).SID;
         public static AreaKey SetSID(this AreaKey self, string value) {
-            patch_AreaKey p = self.ToPatch();
+            patch_AreaKey p = (patch_AreaKey) (object) self;
             p.SID = value;
-            return p.ToOrig();
+            return (AreaKey) (object) p;
         }
 
         public static int GetRelativeIndex(this AreaKey self)
-            => ToPatch(self).RelativeIndex;
+            => ((patch_AreaKey) (object) self).RelativeIndex;
 
     }
 }

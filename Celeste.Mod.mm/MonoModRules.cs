@@ -22,6 +22,12 @@ namespace MonoMod {
     class PopCorruptedLevelDataAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelLoader")]
+    class PatchLevelLoaderAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -163,6 +169,68 @@ namespace MonoMod {
                     instr.OpCode = OpCodes.Pop;
                     pop = false;
                 }
+            }
+
+        }
+
+        public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
+            if (m_LoadCustomEntity == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                ldwhatever the entityData into stack
+                ldfld     string Celeste.EntityData::Name < We're here
+				stloc*
+				ldloc*
+				call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 0 &&
+                    instri < instrs.Count - 4 &&
+                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
+                    instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
+                    instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
+                    instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetFindableID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                ) {
+                    // Insert a call to our own entity handler here.
+                    // If it returns true, replace the name with ""
+
+                    // Avoid loading entityData again.
+                    // Instead, duplicate already loaded existing value.
+                    instrs.Insert(instri, il.Create(OpCodes.Dup));
+                    instri++;
+                    // Load "this" onto stack - we're too lazy to shift this to the beginning of the stack.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+
+                    // Call our static custom entity handler.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_LoadCustomEntity));
+                    instri++;
+
+                    // If we returned false, branch to ldfld. We still have the entity name on stack.
+                    // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instri++;
+                    // Otherwise, pop the entityData, load "" and jump to stloc to skip any original entity handler.
+                    instrs.Insert(instri, il.Create(OpCodes.Pop));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldstr, ""));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instri++;
+                }
+
             }
 
         }

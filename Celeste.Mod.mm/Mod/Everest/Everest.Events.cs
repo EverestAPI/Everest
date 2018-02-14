@@ -140,6 +140,10 @@ namespace Celeste.Mod {
                 internal static void TransitionTo(LevelData next, Vector2 direction)
                     => OnTransitionTo?.Invoke(next, direction);
 
+                public static event Func<_Level, LevelData, Vector2, EntityData, bool> OnLoadEntity;
+                internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
+                    => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
+
             }
 
             public static class LevelEnter {

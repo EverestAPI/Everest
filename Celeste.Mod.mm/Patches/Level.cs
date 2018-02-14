@@ -4,6 +4,7 @@ using Celeste.Mod;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 using System.Collections.Generic;
 
 namespace Celeste {
@@ -37,6 +38,17 @@ namespace Celeste {
         {
             orig_TransitionTo(next, direction);
             Everest.Events.Level.TransitionTo(next, direction);
+        }
+
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelLoader] // ... except for manually manipulating the method via MonoModRules
+        public extern new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
+
+        // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
+        public static bool LoadCustomEntity(EntityData entityData, Level level) {
+            LevelData levelData = level.Session.LevelData;
+            Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
+            return Everest.Events.Level.LoadEntity(level, levelData, offset, entityData);
         }
 
     }
