@@ -12,10 +12,6 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
 
 [![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
 
-### Windows users: Switch to the opengl / FNA branch.
-- In Steam, it's listed as under "betas"
-- In itch.io, **TODO**
-
 ### Everest Installation:
 - If you've updated Celeste or switched betas / branches, delete the `orig` directory where Celeste is installed.
 - Download [latest `build-XYZ.zip`](https://lollyde.ams3.digitaloceanspaces.com/index.html)
