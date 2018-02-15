@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -17,21 +18,32 @@ namespace Celeste {
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
         [XmlIgnore]
-        public string LevelSet => LastArea.GetLevelSet() ?? "Celeste";
+        public string LevelSet => LevelSetStats.Name;
 
         [XmlIgnore]
         public LevelSetStats LevelSetStats {
             get {
-                LevelSetStats set = LevelSets.Find(other => other.Name == LevelSet);
+                string name = LastArea.GetLevelSet() ?? "Celeste";
+                LevelSetStats set = LevelSets.Find(other => other.Name == name);
+
+                // If the levelset doesn't exist anymore (offset == -1), fall back.
+                if (name != "Celeste" && set.AreaOffset == -1) {
+                    LastArea = AreaKey.Default;
+                    // Recurse - get the new, proper level set.
+                    return LevelSetStats;
+                }
+
                 if (set != null)
                     return set;
 
+                // Just silently add the missing levelset.
                 set = new LevelSetStats {
                     Name = LevelSet,
                     UnlockedAreas = 0
                 };
                 LevelSets.Add(set);
-                return set;
+                // Recurse - re-run any previous checks.
+                return LevelSetStats;
             }
         }
 
@@ -157,6 +169,10 @@ namespace Celeste {
                     areas = Areas_Unsafe;
 
                 int offset = set.AreaOffset;
+                // LevelSet gone - let's preserve the data as-is.
+                if (offset == -1)
+                    continue;
+
                 int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
                 while (areas.Count < count) {
                     areas.Add(new AreaStats(offset + areas.Count));
@@ -241,7 +257,17 @@ namespace Celeste {
         [XmlAttribute]
         public string Name;
 
-        public int UnlockedAreas;
+        [XmlIgnore]
+        [NonSerialized]
+        private int _UnlockedAreas;
+        public int UnlockedAreas {
+            get {
+                return Calc.Clamp(_UnlockedAreas, 0, Areas?.Count ?? 0);
+            }
+            set {
+                _UnlockedAreas = Calc.Clamp(value, 0, Areas?.Count ?? 0);
+            }
+        }
 
         public List<AreaStats> Areas = new List<AreaStats>();
         [XmlIgnore]
