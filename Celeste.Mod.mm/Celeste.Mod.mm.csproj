@@ -118,6 +118,7 @@
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
     <Compile Include="Patches\LevelEnter.cs" />
+    <Compile Include="Patches\Input.cs" />
     <Compile Include="Patches\Monocle\RendererList.cs" />
     <Compile Include="Patches\OuiChapterPanel.cs" />
     <Compile Include="Patches\OuiChapterSelectIcon.cs" />
