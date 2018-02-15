@@ -10,7 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -231,8 +231,7 @@ namespace Celeste.Mod {
 
                 } else if (meta.PathArchive != null) {
                     if (File.Exists(meta.PathArchive))
-                        using (Stream zipStream = File.OpenRead(meta.PathArchive))
-                        using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read))
+                        using (ZipFile zip = new ZipFile(meta.PathArchive))
                             Crawl(meta, meta.PathArchive, zip);
 
                 } else if (meta.Assembly != null)
@@ -276,14 +275,14 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static void Crawl(ContentModMetadata meta, string archive, ZipArchive zip) {
+            public static void Crawl(ContentModMetadata meta, string archive, ZipFile zip) {
                 if (meta == null)
                     Mods.Add(meta = new ContentModMetadata() {
                         PathArchive = archive
                     });
 
-                foreach (ZipArchiveEntry entry in zip.Entries) {
-                    string entryName = entry.FullName.Replace('\\', '/');
+                foreach (ZipEntry entry in zip.Entries) {
+                    string entryName = entry.FileName.Replace('\\', '/');
                     if (entryName.EndsWith("/"))
                         continue;
                     Add(entryName, new AssetMetadata(archive, entryName));

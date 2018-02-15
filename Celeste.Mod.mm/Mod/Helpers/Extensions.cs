@@ -1,13 +1,22 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Ionic.Zip;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Extensions {
+
+        public static MemoryStream ExtractStream(this ZipEntry entry) {
+            MemoryStream ms = new MemoryStream();
+            entry.Extract(ms);
+            ms.Seek(0, SeekOrigin.Begin);
+            return ms;
+        }
 
         public static string ToHexadecimalString(this byte[] data)
             => BitConverter.ToString(data).Replace("-", string.Empty);

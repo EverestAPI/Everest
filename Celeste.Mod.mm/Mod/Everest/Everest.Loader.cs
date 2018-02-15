@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -64,21 +64,20 @@ namespace Celeste.Mod {
                 EverestModuleMetadata meta = null;
                 Assembly asm = null;
 
-                using (Stream zipStream = File.OpenRead(archive))
-                using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
+                using (ZipFile zip = new ZipFile(archive)) {
                     // In case the icon appears before the metadata in the .zip, store it temporarily.
                     Texture2D icon = null;
 
                     // First read the metadata, ...
-                    foreach (ZipArchiveEntry entry in zip.Entries) {
-                        if (entry.FullName == "metadata.yaml") {
-                            using (Stream stream = entry.Open())
+                    foreach (ZipEntry entry in zip.Entries) {
+                        if (entry.FileName == "metadata.yaml") {
+                            using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream))
                                 meta = EverestModuleMetadata.Parse(archive, "", reader);
                             continue;
                         }
-                        if (entry.FullName == "icon.png") {
-                            using (Stream stream = entry.Open())
+                        if (entry.FileName == "icon.png") {
+                            using (Stream stream = entry.ExtractStream())
                                 icon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
                             continue;
                         }
@@ -101,17 +100,14 @@ namespace Celeste.Mod {
                     }
 
                     // ... then handle the assembly ...
-                    foreach (ZipArchiveEntry entry in zip.Entries) {
-                        string entryName = entry.FullName.Replace('\\', '/');
+                    foreach (ZipEntry entry in zip.Entries) {
+                        string entryName = entry.FileName.Replace('\\', '/');
                         if (meta != null && entryName == meta.DLL) {
-                            using (MemoryStream ms = new MemoryStream()) {
-                                using (Stream stream = entry.Open())
-                                    stream.CopyTo(ms);
-                                ms.Seek(0, SeekOrigin.Begin);
+                            using (MemoryStream stream = entry.ExtractStream()) {
                                 if (meta.Prelinked) {
-                                    asm = Assembly.Load(ms.GetBuffer());
+                                    asm = Assembly.Load(stream.GetBuffer());
                                 } else {
-                                    asm = Relinker.GetRelinkedAssembly(meta, ms);
+                                    asm = Relinker.GetRelinkedAssembly(meta, stream);
                                 }
                             }
                         }
@@ -228,16 +224,12 @@ namespace Celeste.Mod {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
                     return (sender, args) => {
                         string asmName = new AssemblyName(args.Name).Name + ".dll";
-                        using (Stream zipStream = File.OpenRead(meta.PathArchive))
-                        using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
-                            foreach (ZipArchiveEntry entry in zip.Entries) {
-                                if (entry.FullName != asmName)
+                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
+                            foreach (ZipEntry entry in zip.Entries) {
+                                if (entry.FileName != asmName)
                                     continue;
-                                using (Stream stream = entry.Open())
-                                using (MemoryStream ms = new MemoryStream()) {
-                                    stream.CopyTo(ms);
-                                    ms.Seek(0, SeekOrigin.Begin);
-                                    return Assembly.Load(ms.GetBuffer());
+                                using (MemoryStream stream = entry.ExtractStream()) {
+                                    return Assembly.Load(stream.GetBuffer());
                                 }
                             }
                         }

@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -47,15 +47,10 @@ namespace Celeste.Mod {
 
                 } else if (Source == SourceType.Zip) {
                     string file = PathSource.Replace('\\', '/');
-                    using (Stream zipStream = File.OpenRead(PathArchive))
-                    using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
-                        foreach (ZipArchiveEntry entry in zip.Entries) {
-                            if (entry.FullName.Replace('\\', '/') == file) {
-                                MemoryStream ms = new MemoryStream();
-                                using (Stream entryStream = entry.Open())
-                                    entryStream.CopyTo(ms);
-                                ms.Seek(0, SeekOrigin.Begin);
-                                stream = ms;
+                    using (ZipFile zip = new ZipFile(PathArchive)) {
+                        foreach (ZipEntry entry in zip.Entries) {
+                            if (entry.FileName.Replace('\\', '/') == file) {
+                                stream = entry.ExtractStream();
                                 break;
                             }
                         }

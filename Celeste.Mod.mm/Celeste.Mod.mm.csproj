@@ -40,6 +40,9 @@
       <HintPath>..\lib-stripped\Celeste.exe</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="DotNetZip">
+      <HintPath>..\lib\DotNetZip.dll</HintPath>
+    </Reference>
     <Reference Include="FNA">
       <HintPath>..\lib-stripped\FNA.dll</HintPath>
       <Private>False</Private>
@@ -61,7 +64,6 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.IO.Compression" />
     <Reference Include="System.ValueTuple, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
       <Private>False</Private>
@@ -112,7 +114,6 @@
     <Compile Include="Patches\AreaComplete.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
     <Compile Include="Patches\GameLoader.cs" />
-    <Compile Include="Patches\Input.cs" />
     <Compile Include="Patches\LevelExit.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />

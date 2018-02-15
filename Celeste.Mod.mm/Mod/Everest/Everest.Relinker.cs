@@ -8,7 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
+using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -189,16 +189,12 @@ namespace Celeste.Mod {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
                     return delegate (MonoModder mod, ModuleDefinition main, string name, string fullName) {
                         string asmName = name + ".dll";
-                        using (Stream zipStream = File.OpenRead(meta.PathArchive))
-                        using (ZipArchive zip = new ZipArchive(zipStream, ZipArchiveMode.Read)) {
-                            foreach (ZipArchiveEntry entry in zip.Entries) {
-                                if (entry.FullName != asmName)
+                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
+                            foreach (ZipEntry entry in zip.Entries) {
+                                if (entry.FileName != asmName)
                                     continue;
-                                using (Stream stream = entry.Open())
-                                using (MemoryStream ms = new MemoryStream()) {
-                                    stream.CopyTo(ms);
-                                    ms.Seek(0, SeekOrigin.Begin);
-                                    return ModuleDefinition.ReadModule(ms, mod.GenReaderParameters(false));
+                                using (MemoryStream stream = entry.ExtractStream()) {
+                                    return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
                                 }
                             }
                         }
