@@ -313,7 +313,7 @@ namespace Celeste {
         [XmlIgnore]
         public int TotalHeartGems {
             get {
-                return AreasIncludingCeleste.Count(area => area.Modes.Any(mode => mode?.HeartGem ?? false));
+                return AreasIncludingCeleste.Sum(area => area.Modes.Count(mode => mode?.HeartGem ?? false));
             }
         }
 
