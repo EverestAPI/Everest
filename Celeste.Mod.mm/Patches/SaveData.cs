@@ -26,8 +26,8 @@ namespace Celeste {
                 string name = LastArea.GetLevelSet() ?? "Celeste";
                 LevelSetStats set = LevelSets.Find(other => other.Name == name);
 
-                // If the levelset doesn't exist anymore (offset == -1), fall back.
-                if (name != "Celeste" && set.AreaOffset == -1) {
+                // If the levelset doesn't exist in AreaData.Areas anymore (offset == -1), fall back.
+                if (name != "Celeste" && set != null && set.AreaOffset == -1) {
                     LastArea = AreaKey.Default;
                     // Recurse - get the new, proper level set.
                     return LevelSetStats;
@@ -38,7 +38,7 @@ namespace Celeste {
 
                 // Just silently add the missing levelset.
                 set = new LevelSetStats {
-                    Name = LevelSet,
+                    Name = name,
                     UnlockedAreas = 0
                 };
                 LevelSets.Add(set);
