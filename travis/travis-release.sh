@@ -47,7 +47,7 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   wget -O ./travis/builds_index.txt https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt
   
   echo "Update builds_index.txt"
-  printf "lollyde/everest-travis/$ZIP $ZIP\n" >> ./travis/builds_index.txt
+  printf "/lollyde/everest-travis/$ZIP $ZIP\n" >> ./travis/builds_index.txt
   
   echo "Create updated index.html"
   ./travis/html-gen.sh

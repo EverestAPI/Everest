@@ -14,7 +14,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
 
 ### Everest Installation:
 - If you've updated Celeste or switched betas / branches, delete the `orig` directory where Celeste is installed.
-- Download [latest `build-XYZ.zip`](https://lollyde.ams3.digitaloceanspaces.com/index.html)
+- Download [latest `build-XYZ.zip`](https://ams3.digitaloceanspaces.com/lollyde/index.html)
     - Latest build may be unstable, download at own risk.
     - GitHub releases with stable Releases/Milestones (slower to update): [link](https://github.com/EverestAPI/Everest/releases)
 - Extract `build-XYZ.zip` to where Celeste is installed. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
