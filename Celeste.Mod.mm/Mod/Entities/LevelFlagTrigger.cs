@@ -51,6 +51,8 @@ namespace Celeste.Mod {
             if (deathCount >= 0 && (Scene as Level).Session.DeathsInCurrentLevel != deathCount)
                 return;
 
+            (Scene as Level).Session.SetFlag(flag, state);
+
             if (onlyOnce)
                 triggered = true;
         }
