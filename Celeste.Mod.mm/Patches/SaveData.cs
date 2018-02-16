@@ -262,10 +262,10 @@ namespace Celeste {
         private int _UnlockedAreas;
         public int UnlockedAreas {
             get {
-                return Calc.Clamp(_UnlockedAreas, 0, Areas?.Count ?? 0);
+                return Calc.Clamp(_UnlockedAreas, 0, AreasIncludingCeleste?.Count ?? 0);
             }
             set {
-                _UnlockedAreas = Calc.Clamp(value, 0, Areas?.Count ?? 0);
+                _UnlockedAreas = value;
             }
         }
 

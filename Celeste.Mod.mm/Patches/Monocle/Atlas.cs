@@ -135,7 +135,7 @@ namespace Monocle {
             => ((patch_Atlas) self).DataFormat;
 
         public static void Ingest(this Atlas self, AssetMetadata asset) {
-            Logger.Log("debug", $"Atlas.Ingest: atlas: {self.GetDataPath()}; asset: {asset.PathRelative}");
+            Logger.Log("Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathRelative}");
 
             // Crawl through all child assets.
             if (asset.AssetType == typeof(AssetTypeDirectory)) {
