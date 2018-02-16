@@ -76,6 +76,7 @@
   <ItemGroup>
     <Compile Include="Mod\CoreModule\CoreModuleSaveData.cs" />
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
+    <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
     <Compile Include="Mod\Meta\MapMetaCompleteScreen.cs" />
     <Compile Include="Mod\Module\EverestModuleSaveData.cs" />

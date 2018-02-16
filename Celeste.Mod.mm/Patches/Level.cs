@@ -34,8 +34,7 @@ namespace Celeste {
         }
 
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
-        public new void TransitionTo(LevelData next, Vector2 direction)
-        {
+        public new void TransitionTo(LevelData next, Vector2 direction) {
             orig_TransitionTo(next, direction);
             Everest.Events.Level.TransitionTo(next, direction);
         }
@@ -48,6 +47,13 @@ namespace Celeste {
         public static bool LoadCustomEntity(EntityData entityData, Level level) {
             LevelData levelData = level.Session.LevelData;
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
+
+            // Everest comes with a few core utility entities out of the box.
+            if (entityData.Name == "levelFlagTrigger") {
+                level.Add(new LevelFlagTrigger(entityData, offset));
+                return true;
+            }
+
             return Everest.Events.Level.LoadEntity(level, levelData, offset, entityData);
         }
 

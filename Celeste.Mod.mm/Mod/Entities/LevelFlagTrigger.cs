@@ -1,0 +1,65 @@
+﻿using FMOD.Studio;
+using Microsoft.Xna.Framework;
+using Monocle;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Celeste.Mod {
+    public class LevelFlagTrigger : Trigger {
+
+        private string flag;
+        private bool state;
+        private Modes mode;
+        private bool onlyOnce;
+        private int deathCount;
+
+        private bool triggered = false;
+
+        public LevelFlagTrigger(EntityData data, Vector2 offset)
+            : base(data, offset) {
+            flag = data.Attr("flag");
+            state = data.Bool("state");
+            mode = data.Enum("mode", Modes.OnPlayerEnter);
+            onlyOnce = data.Bool("only_once", false);
+            deathCount = data.Int("death_count", -1);
+        }
+
+        public override void Awake(Scene scene) {
+            base.Awake(scene);
+            if (mode == Modes.OnLevelStart)
+                Trigger();
+        }
+
+        public override void OnEnter(Player player) {
+            if (mode == Modes.OnPlayerEnter)
+                Trigger();
+        }
+
+        public override void OnLeave(Player player) {
+            if (mode == Modes.OnPlayerLeave)
+                Trigger();
+        }
+
+        private void Trigger() {
+            if (triggered)
+                return;
+
+            if (deathCount >= 0 && (Scene as Level).Session.DeathsInCurrentLevel != deathCount)
+                return;
+
+            if (onlyOnce)
+                triggered = true;
+        }
+
+        private enum Modes {
+            OnPlayerEnter,
+            OnPlayerLeave,
+            OnLevelStart
+        }
+
+    }
+}
