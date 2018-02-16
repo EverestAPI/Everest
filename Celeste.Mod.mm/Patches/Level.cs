@@ -49,7 +49,7 @@ namespace Celeste {
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
 
             // Everest comes with a few core utility entities out of the box.
-            if (entityData.Name == @"levelFlagTrigger") {
+            if (entityData.Name == $@"levelFlagTrigger") {
                 level.Add(new LevelFlagTrigger(entityData, offset));
                 return true;
             }
