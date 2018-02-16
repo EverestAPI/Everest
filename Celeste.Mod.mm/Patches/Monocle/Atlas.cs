@@ -13,6 +13,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Logger = Celeste.Mod.Logger;
 
 namespace Monocle {
     class patch_Atlas : Atlas {
@@ -134,6 +135,8 @@ namespace Monocle {
             => ((patch_Atlas) self).DataFormat;
 
         public static void Ingest(this Atlas self, AssetMetadata asset) {
+            Logger.Log("debug", $"Atlas.Ingest: atlas: {self.GetDataPath()}; asset: {asset.PathRelative}");
+
             // Crawl through all child assets.
             if (asset.AssetType == typeof(AssetTypeDirectory)) {
                 foreach (AssetMetadata child in asset.Children)

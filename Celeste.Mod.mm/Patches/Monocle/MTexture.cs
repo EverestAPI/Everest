@@ -21,7 +21,11 @@ namespace Monocle {
         public extern void orig_set_Texture(VirtualTexture value);
         public new VirtualTexture Texture {
             get {
-                return OverlayTexture?.Texture ?? orig_get_Texture();
+                VirtualTexture texture = OverlayTexture?.Texture ?? orig_get_Texture();
+                // Reset caches whenever the texture is used, f.e. on render.
+                _CachedOverlayMeta = null;
+                _CachedOverlayTexture = null;
+                return texture;
             }
             set {
                 if (OverlayTexture != null)
@@ -102,27 +106,34 @@ namespace Monocle {
         public new float TopUV => ClipRect.Top / (float) Texture.Height;
         public new float BottomUV => ClipRect.Bottom / (float) Texture.Height;
 
-        public List<MTextureOverlay> Overlays;
+        protected List<MTextureOverlay> _Overlays;
+
+        protected MTextureOverlay _CachedOverlayTexture;
         public MTextureOverlay OverlayTexture {
             get {
-                if (Overlays == null || Overlays.Count == 0)
+                if (_CachedOverlayTexture != null)
+                    return _CachedOverlayTexture;
+                if (_Overlays == null || _Overlays.Count == 0)
                     return null;
-                for (int i = Overlays.Count - 1; i > -1; --i) {
-                    MTextureOverlay overlay = Overlays[i];
+                for (int i = _Overlays.Count - 1; i > -1; --i) {
+                    MTextureOverlay overlay = _Overlays[i];
                     if (overlay.IsActiveTexture)
-                        return overlay;
+                        return _CachedOverlayTexture = overlay;
                 }
                 return null;
             }
         }
+        protected MTextureOverlay _CachedOverlayMeta;
         public MTextureOverlay OverlayMeta {
             get {
-                if (Overlays == null || Overlays.Count == 0)
+                if (_CachedOverlayMeta != null)
+                    return _CachedOverlayMeta;
+                if (_Overlays == null || _Overlays.Count == 0)
                     return null;
-                for (int i = Overlays.Count - 1; i > -1; --i) {
-                    MTextureOverlay overlay = Overlays[i];
+                for (int i = _Overlays.Count - 1; i > -1; --i) {
+                    MTextureOverlay overlay = _Overlays[i];
                     if (overlay.IsActiveMeta)
-                        return overlay;
+                        return _CachedOverlayMeta = overlay;
                 }
                 return null;
             }
@@ -168,9 +179,11 @@ namespace Monocle {
         }
 
         public MTextureOverlay AddOverlay(MTextureOverlay overlay) {
-            if (Overlays == null)
-                Overlays = new List<MTextureOverlay>();
-            Overlays.Add(overlay);
+            if (_Overlays == null)
+                _Overlays = new List<MTextureOverlay>();
+            _Overlays.Add(overlay);
+            _CachedOverlayMeta = null;
+            _CachedOverlayTexture = null;
             return overlay;
         }
 
