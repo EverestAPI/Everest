@@ -112,6 +112,7 @@ namespace Celeste.Mod {
                         return _Modder;
 
                     _Modder = new MonoModder() {
+                        ReadingMode = ReadingMode.Immediate,
                         CleanupEnabled = false,
                         RelinkModuleMap = SharedRelinkModuleMap,
                         RelinkMap = SharedRelinkMap,
@@ -193,8 +194,9 @@ namespace Celeste.Mod {
                             foreach (ZipEntry entry in zip.Entries) {
                                 if (entry.FileName != asmName)
                                     continue;
-                                // Don't close the extracted stream - ModuleDefinition lazily reads from it.
-                                return ModuleDefinition.ReadModule(entry.ExtractStream(), mod.GenReaderParameters(false));
+                                using (MemoryStream stream = entry.ExtractStream()) {
+                                    return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
+                                }
                             }
                         }
                         return null;
