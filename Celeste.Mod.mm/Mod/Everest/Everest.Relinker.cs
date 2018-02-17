@@ -193,9 +193,8 @@ namespace Celeste.Mod {
                             foreach (ZipEntry entry in zip.Entries) {
                                 if (entry.FileName != asmName)
                                     continue;
-                                using (MemoryStream stream = entry.ExtractStream()) {
-                                    return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
-                                }
+                                // Don't close the extracted stream - ModuleDefinition lazily reads from it.
+                                return ModuleDefinition.ReadModule(entry.ExtractStream(), mod.GenReaderParameters(false));
                             }
                         }
                         return null;
