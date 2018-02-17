@@ -40,8 +40,22 @@ namespace Monocle {
                     ExecuteFunctionKeyAction(i);
         }
 
+        internal void DrawCursor(Vector2 position, int scale, Color color) {
+            for (int i = -scale / 2; i <= scale / 2; i++) {
+                Draw.Line(position.X - 4f * scale, position.Y + i, position.X - 2f * scale, position.Y + i, color);
+                Draw.Line(position.X + 2f * scale - 1f, position.Y + i, position.X + 4f * scale - 1f, position.Y + i, color);
+                Draw.Line(position.X + i, position.Y - 4f * scale + 1f, position.X + i, position.Y - 2f * scale + 1f, color);
+                Draw.Line(position.X + i, position.Y + 2f * scale, position.X + i, position.Y + 4f * scale, color);
+            }
+            Draw.Line(position.X - 3f, position.Y, position.X + 2f, position.Y, color);
+            Draw.Line(position.X, position.Y - 2f, position.X, position.Y + 3f, color);
+        }
+
         [MonoModReplace]
         internal void Render() {
+            int viewWidth = Engine.ViewWidth;
+            int viewHeight = Engine.ViewHeight;
+
             // Vector2 mousePosition = MInput.Mouse.Position;
             // For whatever reason, MInput.Mouse.Position keeps returning 0, 0
             // Let's just use the XNA / FNA MouseState instead.
@@ -49,6 +63,7 @@ namespace Monocle {
             int mouseScrollDelta = mouseState.ScrollWheelValue - mouseScroll;
             mouseScroll = mouseState.ScrollWheelValue;
             Vector2 mousePosition = new Vector2(mouseState.X, mouseState.Y);
+            Vector2? mouseSnapPosition = null;
 
             int viewScale = 1;
 
@@ -59,14 +74,23 @@ namespace Monocle {
                 Camera cam = level.Camera;
                 viewScale = (int) Math.Round(Engine.Instance.GraphicsDevice.PresentationParameters.BackBufferWidth / (float) cam.Viewport.Width);
                 Vector2 mouseWorldPosition = mousePosition;
+                // Convert screen to world position.
+                mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
                 mouseWorldPosition = cam.ScreenToCamera(mouseWorldPosition);
                 mouseWorldPosition -= level.LevelOffset;
-                mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
-                mouseText += $"\n level: {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                mouseText += $"\n level:        {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                // Convert world to world-snap position.
+                mouseSnapPosition = mouseWorldPosition;
+                mouseSnapPosition = Calc.Floor(mouseSnapPosition.Value / 8f);
+                mouseText += $"\n level, /8:        {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseSnapPosition = 8f * mouseSnapPosition;
+                mouseText += $"\n level, snap: {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                // Convert world-snap to screen-snap position.
+                mouseSnapPosition += new Vector2(4f, 4f); // Center the cursor on the tile.
+                mouseSnapPosition += level.LevelOffset;
+                mouseSnapPosition = cam.CameraToScreen(mouseSnapPosition.Value);
+                mouseSnapPosition *= viewScale;
             }
-
-            int viewWidth = Engine.ViewWidth;
-            int viewHeight = Engine.ViewHeight;
 
             Draw.SpriteBatch.Begin();
 
@@ -76,14 +100,9 @@ namespace Monocle {
             else if (mouseScrollDelta > 0)
                 cursorScale++;
             cursorScale = Calc.Clamp(cursorScale, 1, viewScale);
-            for (int i = -cursorScale / 2; i <= cursorScale / 2; i++) {
-                Draw.Line(mousePosition.X - 4f * cursorScale, mousePosition.Y + i, mousePosition.X - 2f * cursorScale, mousePosition.Y + i, Color.Yellow);
-                Draw.Line(mousePosition.X + 2f * cursorScale - 1f, mousePosition.Y + i, mousePosition.X + 4f * cursorScale - 1f, mousePosition.Y + i, Color.Yellow);
-                Draw.Line(mousePosition.X + i, mousePosition.Y - 4f * cursorScale + 1f, mousePosition.X + i, mousePosition.Y - 2f * cursorScale + 1f, Color.Yellow);
-                Draw.Line(mousePosition.X + i, mousePosition.Y + 2f * cursorScale, mousePosition.X + i, mousePosition.Y + 4f * cursorScale, Color.Yellow);
-            }
-            Draw.Line(mousePosition.X - 3f, mousePosition.Y, mousePosition.X + 2f, mousePosition.Y, Color.Yellow);
-            Draw.Line(mousePosition.X, mousePosition.Y - 2f, mousePosition.X, mousePosition.Y + 3f, Color.Yellow);
+            if (mouseSnapPosition != null)
+                DrawCursor(mouseSnapPosition.Value, cursorScale, Color.Red);
+            DrawCursor(mousePosition, cursorScale, Color.Yellow);
 
             // Draw cursor world position.
             Vector2 mouseTextSize = Draw.DefaultFont.MeasureString(mouseText);
