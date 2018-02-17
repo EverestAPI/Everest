@@ -177,7 +177,7 @@ namespace Celeste {
                 while (areas.Count < count) {
                     areas.Add(new AreaStats(offset + areas.Count));
                 }
-                while (areas.Count > AreaData.Areas.Count) {
+                while (areas.Count > count) {
                     areas.RemoveAt(areas.Count - 1);
                 }
                 for (int i = 0; i < count; i++) {
