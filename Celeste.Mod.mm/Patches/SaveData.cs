@@ -248,6 +248,24 @@ namespace Celeste {
         public LevelSetStats GetLevelSetStatsFor(string name)
             => LevelSets.Find(set => set.Name == name);
 
+        public AreaStats GetAreaStatsFor(AreaKey key)
+            => LevelSets.Find(set => set.Name == key.GetLevelSet()).Areas.Find(area => area.GetSID() == key.GetSID());
+
+        public extern HashSet<string> orig_GetCheckpoints(AreaKey area);
+        public new HashSet<string> GetCheckpoints(AreaKey area) {
+            HashSet<string> checkpoints = orig_GetCheckpoints(area);
+
+            if (Celeste.PlayMode == Celeste.PlayModes.Event ||
+                DebugMode || CheatMode) {
+                return checkpoints;
+            }
+
+            // Remove any checkpoints which don't exist in the level.
+            ModeProperties mode = AreaData.Get(area).Mode[(int) area.Mode];
+            checkpoints.RemoveWhere(a => !mode.Checkpoints.Any(b => b.Level == a));
+            return checkpoints;
+        }
+
     }
     [Serializable]
     public class LevelSetStats {
