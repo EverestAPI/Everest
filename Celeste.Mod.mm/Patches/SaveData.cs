@@ -210,8 +210,6 @@ namespace Celeste {
                 }
 
                 foreach (AreaStats area in areas) {
-                    if (AreaData.Get(area.ID).GetSID() != area.GetSID())
-                        continue;
                     area.CleanCheckpoints();
                 }
             }
