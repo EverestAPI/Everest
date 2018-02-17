@@ -216,6 +216,8 @@ namespace Celeste {
                 }
             }
 
+            if (LastArea.ID < 0 || LastArea.ID >= AreaData.Areas.Count)
+                LastArea = AreaKey.Default;
 
             if (DebugMode) {
                 CurrentSession = null;

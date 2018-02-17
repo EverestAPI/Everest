@@ -28,6 +28,12 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
+    /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchErrorLogWrite")]
+    class PatchErrorLogWriteAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -42,6 +48,9 @@ namespace MonoMod {
     class MonoModRules {
 
         static TypeDefinition Celeste;
+
+        static TypeDefinition Everest;
+        static MethodDefinition m_Everest_get_VersionCelesteString;
 
         static TypeDefinition FileProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new FastDictionary<string, MethodDefinition>();
@@ -188,7 +197,7 @@ namespace MonoMod {
 
                 /* We expect something similar enough to the following:
                 ldwhatever the entityData into stack
-                ldfld     string Celeste.EntityData::Name < We're here
+                ldfld     string Celeste.EntityData::Name // We're here
 				stloc*
 				ldloc*
 				call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
@@ -228,6 +237,51 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ldstr, ""));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchErrorLogWrite(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            if (Everest == null)
+                Everest = MMILRT.Modder.FindType("Celeste.Mod.Everest")?.Resolve();
+            if (Everest == null)
+                return;
+
+            if (m_Everest_get_VersionCelesteString == null)
+                m_Everest_get_VersionCelesteString = Everest.FindMethod("System.String get_VersionCelesteString()");
+            if (m_Everest_get_VersionCelesteString == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                ldfld     class [mscorlib] System.Version Monocle.Engine::Version // We're here
+                callvirt instance string[mscorlib] System.Object::ToString()
+
+                Note that MonoMod requires the full type names (System.String instead of string)
+                */
+
+                if (instri > 0 &&
+                    instri < instrs.Count - 3 &&
+                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.Version Monocle.Engine::Version" &&
+                    instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference)?.GetFindableID() == "System.String System.Object::ToString()"
+                ) {
+                    // Skip the ldfld Version and ToString instructions.
+                    instri += 2;
+
+                    // Pop and replace with our own string.
+                    instrs.Insert(instri, il.Create(OpCodes.Pop));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_Everest_get_VersionCelesteString));
                     instri++;
                 }
 

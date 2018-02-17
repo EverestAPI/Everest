@@ -20,16 +20,8 @@ namespace Celeste.Mod {
 
         public readonly static Version Version;
         public readonly static string VersionSuffix;
-        static Everest() {
-            int versionSplitIndex = VersionString.IndexOf('-');
-            if (versionSplitIndex == -1) {
-                Version = new Version(VersionString);
-                VersionSuffix = null;
-            } else {
-                Version = new Version(VersionString.Substring(0, versionSplitIndex));
-                VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
-            }
-        }
+
+        public static string VersionCelesteString => $"{Engine.Instance.Version} [Everest: {VersionString}]";
 
         public static ReadOnlyCollection<string> Args { get; internal set; }
 
@@ -41,6 +33,17 @@ namespace Celeste.Mod {
 
         public static string PathGame { get; internal set; }
         public static string PathSettings { get; internal set; }
+
+        static Everest() {
+            int versionSplitIndex = VersionString.IndexOf('-');
+            if (versionSplitIndex == -1) {
+                Version = new Version(VersionString);
+                VersionSuffix = null;
+            } else {
+                Version = new Version(VersionString.Substring(0, versionSplitIndex));
+                VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
+            }
+        }
 
         public static void ParseArgs(string[] args) {
             // Expose the arguments to all other mods in a read-only collection.
@@ -62,6 +65,9 @@ namespace Celeste.Mod {
         }
 
         public static void Boot() {
+            Logger.Log("core", "Booting Everest");
+            Logger.Log("core", $"VersionCelesteString: {VersionCelesteString}");
+
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
             PathSettings = Path.Combine(PathGame, "ModSettings");
             Directory.CreateDirectory(PathSettings);
