@@ -311,7 +311,11 @@ namespace Celeste {
 
             // Remove any checkpoints which don't exist in the level.
             ModeProperties mode = AreaData.Get(area).Mode[(int) area.Mode];
-            checkpoints.RemoveWhere(a => !mode.Checkpoints.Any(b => b.Level == a));
+            if (mode == null) {
+                checkpoints.Clear();
+            } else {
+                checkpoints.RemoveWhere(a => mode.Checkpoints.Any(b => b.Level == a));
+            }
             return checkpoints;
         }
 

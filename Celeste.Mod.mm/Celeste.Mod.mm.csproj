@@ -78,13 +78,13 @@
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
+    <Compile Include="Mod\Everest\Everest.Update.cs" />
     <Compile Include="Mod\Meta\MapMetaCompleteScreen.cs" />
     <Compile Include="Mod\Module\EverestModuleSaveData.cs" />
     <Compile Include="Mod\Module\EverestModuleSettings.cs" />
     <Compile Include="Mod\Module\EverestModuleMetadata.cs" />
     <Compile Include="Mod\Helpers\AssetMetadata.cs" />
     <Compile Include="Mod\Helpers\ContentExtensions.cs" />
-    <Compile Include="Mod\Everest\Everest.Experiments.cs" />
     <Compile Include="Mod\Everest\Everest.Events.cs" />
     <Compile Include="Mod\Everest\Everest.Content.cs" />
     <Compile Include="Mod\Everest\Everest.Relinker.cs" />
@@ -105,7 +105,10 @@
     <Compile Include="Mod\Meta\MapMeta.cs" />
     <Compile Include="Mod\Meta\MTextureMeta.cs" />
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
+    <Compile Include="Mod\Oui\OuiHelper_Shutdown.cs" />
     <Compile Include="Mod\Oui\OuiHelper_ChapterSelect_LevelSet.cs" />
+    <Compile Include="Mod\Oui\OuiLoggedProgress.cs" />
+    <Compile Include="Mod\Oui\OuiVersionList.cs" />
     <Compile Include="Mod\Oui\TextMenuExt.cs" />
     <Compile Include="Mod\Oui\OuiMapList.cs" />
     <Compile Include="Mod\Oui\OuiModOptions.cs" />

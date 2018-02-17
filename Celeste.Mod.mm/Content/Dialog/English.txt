@@ -30,6 +30,8 @@
 	MODOPTIONS_TITLE= 						EVEREST
 
 # Core Module Options
+	MODOPTIONS_COREMODULE_UPDATE= 			Update to v.((version))
+	MODOPTIONS_COREMODULE_VERSIONLIST= 		~Version List~
 	MODOPTIONS_COREMODULE_TITLE= 			Everest Core
 	MODOPTIONS_COREMODULE_RECRAWL= 			Reload Assets
 
@@ -44,3 +46,15 @@
 
 	LEVELSET_CELESTE= 						Celeste
 	LEVELSET_= 								???
+
+# Updater
+	UPDATER_TITLE= 							UPDATER
+	UPDATER_VERSIONS_TITLE= 				VERSION LIST
+	UPDATER_VERSIONS_CURRENT= 				Installed: v.((version))
+	UPDATER_VERSIONS_REQUESTING= 			Refreshing...
+	
+	UPDATER_VERSIONS_ERR_DOWNLOAD= 			Failed downloading version list.
+	UPDATER_VERSIONS_ERR_FORMAT= 			Unknown format.
+	
+	UPDATER_SRC_TRAVIS= 					Development Builds (travis)
+	UPDATER_SRC_GITHUB= 					Stable Builds

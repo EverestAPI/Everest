@@ -78,11 +78,11 @@ namespace Monocle {
                 mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
                 mouseWorldPosition = cam.ScreenToCamera(mouseWorldPosition);
                 mouseWorldPosition -= level.LevelOffset;
-                mouseText += $"\n level:        {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                mouseText += $"\n level:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
                 // Convert world to world-snap position.
                 mouseSnapPosition = mouseWorldPosition;
                 mouseSnapPosition = Calc.Floor(mouseSnapPosition.Value / 8f);
-                mouseText += $"\n level, /8:        {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseText += $"\n level, /8:   {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
                 mouseSnapPosition = 8f * mouseSnapPosition;
                 mouseText += $"\n level, snap: {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
                 // Convert world-snap to screen-snap position.

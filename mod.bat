@@ -6,6 +6,7 @@ GOTO RESTORE
 :BACKUP
 mkdir orig
 copy Celeste.exe orig\Celeste.exe
+mkdir Mods
 GOTO MOD
 
 :RESTORE

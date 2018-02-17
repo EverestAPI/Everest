@@ -3,6 +3,7 @@
 if [ ! -d orig ]; then
   mkdir orig
   mv Celeste.exe orig/Celeste.exe
+  mkdir Mods
 fi
 
 cp orig/Celeste.exe Celeste.exe

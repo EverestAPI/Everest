@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public class OuiModOptions : Oui {
 
+        public static OuiModOptions Instance;
+
         private TextMenu menu;
 
         private const float onScreenX = 960f;
@@ -19,12 +21,14 @@ namespace Celeste.Mod {
         private float alpha = 0f;
 
         public OuiModOptions() {
+            Instance = this;
         }
         
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
 
-            menu.Add(new TextMenu.Header($"{Dialog.Clean("modoptions_title")} v.{Everest.VersionString}"));
+            menu.Add(new TextMenu.Header(Dialog.Clean("modoptions_title")));
+            menu.Add(new TextMenu.SubHeader($"v.{Everest.VersionString}"));
 
             Everest.InvokeTyped(
                 "CreateModMenuSection",

@@ -36,10 +36,6 @@ namespace Celeste.Mod {
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
 
-            if (menu.Height > menu.ScrollableMinSize) {
-                menu.Position.Y = menu.ScrollTargetY;
-            }
-
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
             sets.Clear();
@@ -142,6 +138,10 @@ namespace Celeste.Mod {
             // Do this afterwards as the menu has now properly updated its size.
             for (int i = 0; i < items.Count; i++)
                 Add(new Coroutine(FadeIn(i, items[i])));
+
+            if (menu.Height > menu.ScrollableMinSize) {
+                menu.Position.Y = menu.ScrollTargetY;
+            }
         }
 
         private IEnumerator FadeIn(int i, TextMenuExt.IItemExt item) {

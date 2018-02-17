@@ -38,7 +38,7 @@ namespace Celeste.Mod {
             int versionSplitIndex = VersionString.IndexOf('-');
             if (versionSplitIndex == -1) {
                 Version = new Version(VersionString);
-                VersionSuffix = null;
+                VersionSuffix = "";
             } else {
                 Version = new Version(VersionString.Substring(0, versionSplitIndex));
                 VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
@@ -81,6 +81,9 @@ namespace Celeste.Mod {
 
             // We're ready - invoke Load in all loaded modules, including CoreModule.
             Invoke("Load");
+
+            // Start requesting the version list ASAP.
+            Updater.RequestAll();
         }
 
         public static void Register(this EverestModule module) {

@@ -108,7 +108,7 @@ namespace Celeste.Mod {
         }
 
         public static string DialogKeyify(this string input)
-            => input.Replace('/', '_').Replace('-', '_');
+            => input.Replace('/', '_').Replace('-', '_').Replace('+', '_');
 
         public static string DialogClean(this string input, Language language = null)
             => Dialog.Clean(input, language);

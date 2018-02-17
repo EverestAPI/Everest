@@ -133,6 +133,22 @@ namespace Celeste.Mod {
         }
 
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+            if (!inGame) {
+                if (Everest.Updater.HasUpdate) {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Version.ToString())).Pressed(() => {
+                        // FIXME! UPDATER!
+                        OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>().Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), null, 100).Progress = 25;
+                    }));
+                }
+
+                // Allow downgrading travis / dev builds.
+                if (Celeste.PlayMode == Celeste.PlayModes.Debug || Everest.VersionSuffix.StartsWith("travis-") || Everest.VersionSuffix == "dev") {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
+                        OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
+                    }));
+                }
+            }
+
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
