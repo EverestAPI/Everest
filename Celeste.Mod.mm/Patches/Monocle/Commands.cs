@@ -2,6 +2,7 @@
 
 using Celeste;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
@@ -20,7 +21,8 @@ namespace Monocle {
         private string currentText = "";
         private List<patch_Line> drawCommands;
 
-        private Vector2 mousePosition;
+        private int mouseScroll;
+        private int cursorScale;
 
         [MonoModReplace] // Don't create orig_ method.
         internal void UpdateClosed() {
@@ -44,17 +46,22 @@ namespace Monocle {
             // For whatever reason, MInput.Mouse.Position keeps returning 0, 0
             // Let's just use the XNA / FNA MouseState instead.
             MouseState mouseState = Mouse.GetState();
+            int mouseScrollDelta = mouseState.ScrollWheelValue - mouseScroll;
+            mouseScroll = mouseState.ScrollWheelValue;
             Vector2 mousePosition = new Vector2(mouseState.X, mouseState.Y);
 
-            string mouseText = $"Cursor @\n raw: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
+            int viewScale = 1;
+
+            string mouseText = $"Cursor @\n screen: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
 
             if (Engine.Scene is Level) {
                 Level level = (Level) Engine.Scene;
                 Camera cam = level.Camera;
-                Vector2 mouseWorldPosition;
-                mouseWorldPosition = cam.ScreenToCamera(mousePosition);
-                mouseText += $"\n world: {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                viewScale = (int) Math.Round(Engine.Instance.GraphicsDevice.PresentationParameters.BackBufferWidth / (float) cam.Viewport.Width);
+                Vector2 mouseWorldPosition = mousePosition;
+                mouseWorldPosition = cam.ScreenToCamera(mouseWorldPosition);
                 mouseWorldPosition -= level.LevelOffset;
+                mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
                 mouseText += $"\n level: {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
             }
 
@@ -63,9 +70,20 @@ namespace Monocle {
 
             Draw.SpriteBatch.Begin();
 
-            // Draw cursor below all UI.
-            Draw.Line(mousePosition.X - 4f, mousePosition.Y, mousePosition.X + 3f, mousePosition.Y, Color.Yellow);
-            Draw.Line(mousePosition.X, mousePosition.Y - 3f, mousePosition.X, mousePosition.Y + 4f, Color.Yellow);
+            // Draw cursor below all other UI.
+            if (mouseScrollDelta < 0)
+                cursorScale--;
+            else if (mouseScrollDelta > 0)
+                cursorScale++;
+            cursorScale = Calc.Clamp(cursorScale, 1, viewScale);
+            for (int i = -cursorScale / 2; i <= cursorScale / 2; i++) {
+                Draw.Line(mousePosition.X - 4f * cursorScale, mousePosition.Y + i, mousePosition.X - 2f * cursorScale, mousePosition.Y + i, Color.Yellow);
+                Draw.Line(mousePosition.X + 2f * cursorScale - 1f, mousePosition.Y + i, mousePosition.X + 4f * cursorScale - 1f, mousePosition.Y + i, Color.Yellow);
+                Draw.Line(mousePosition.X + i, mousePosition.Y - 4f * cursorScale + 1f, mousePosition.X + i, mousePosition.Y - 2f * cursorScale + 1f, Color.Yellow);
+                Draw.Line(mousePosition.X + i, mousePosition.Y + 2f * cursorScale, mousePosition.X + i, mousePosition.Y + 4f * cursorScale, Color.Yellow);
+            }
+            Draw.Line(mousePosition.X - 3f, mousePosition.Y, mousePosition.X + 2f, mousePosition.Y, Color.Yellow);
+            Draw.Line(mousePosition.X, mousePosition.Y - 2f, mousePosition.X, mousePosition.Y + 3f, Color.Yellow);
 
             // Draw cursor world position.
             Vector2 mouseTextSize = Draw.DefaultFont.MeasureString(mouseText);
