@@ -79,6 +79,7 @@
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
     <Compile Include="Mod\Everest\Everest.Update.cs" />
+    <Compile Include="Mod\Helpers\FakeAssembly.cs" />
     <Compile Include="Mod\Meta\MapMetaCompleteScreen.cs" />
     <Compile Include="Mod\Module\EverestModuleSaveData.cs" />
     <Compile Include="Mod\Module\EverestModuleSettings.cs" />

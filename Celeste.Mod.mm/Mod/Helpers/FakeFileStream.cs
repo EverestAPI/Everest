@@ -4,13 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
-    public class FileProxyStream : FileStream {
+    public sealed class FileProxyStream : FileStream {
 
         // I'm overcomplicating this. -ade
 
         private readonly static string Dummy = Path.Combine(Path.GetTempPath(), "FileProxyStreamDummy.txt");
 
-        public Stream Inner;
+        public readonly Stream Inner;
 
         public FileProxyStream(Stream inner)
             // We need to open something.
