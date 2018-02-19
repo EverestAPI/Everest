@@ -18,19 +18,19 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
     - Latest build may be unstable, download at own risk.
     - GitHub releases with stable Releases/Milestones (slower to update): [link](https://github.com/EverestAPI/Everest/releases)
 - Extract `build-XYZ.zip` to where Celeste is installed. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
-- Run `mod.bat` / `mod.sh`
-
-### Custom Installation:
-- Copy files from inside `lib` into Celeste dir.
-- Copy built `Celeste.Mod.mm.dll` into Celeste dir.
-- Copy `mod.bat` / `mod.sh` into Celeste dir.
-- Run `mod.bat` / `mod.sh`
+- Run `MiniInstaller.exe`
 
 ### Mod Installation:
 - If it's missing, create a `Mods` directory where Celeste is.
 - Put the mod `.zip` into the `Mods` directory.
     - For prototyping: Create a subdirectory, pretend it's a `.zip`
 - That's it.
+
+### Everest Devbuild Installation:
+- Copy files from inside `lib` into Celeste dir.
+- Copy built `Celeste.Mod.mm.dll` into Celeste dir.
+- Copy `MiniInstaller.exe` into Celeste dir.
+- Run `MiniInstaller.exe`
 
 ### Mod Development:
 - Follow the installation instructions.

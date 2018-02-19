@@ -43,8 +43,6 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   pushd MiniInstaller/Artifact
   zip "$ROOT/$ZIP" *
   popd
-  chmod a+x mod.sh
-  zip "$ROOT/$ZIP" mod.bat mod.sh
   
   echo "Get latest builds_index.txt"
   wget -O ./travis/builds_index.txt https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt
