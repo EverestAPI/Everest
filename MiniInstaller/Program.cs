@@ -152,8 +152,8 @@ namespace MiniInstaller {
                 Process game = new Process();
                 // If the game was installed via Steam, it should restart in a Steam context on its own.
                 if (Type.GetType("Mono.Runtime") != null) {
-                    game.StartInfo.FileName = "mono";
-                    game.StartInfo.Arguments = PathCelesteExe;
+                    // The Linux and macOS versions come with a wrapping bash script.
+                    game.StartInfo.FileName = PathCelesteExe.Substring(PathCelesteExe.Length - 4);
                 } else {
                     game.StartInfo.FileName = PathCelesteExe;
                 }
