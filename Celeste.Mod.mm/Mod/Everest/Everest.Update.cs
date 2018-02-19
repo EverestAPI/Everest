@@ -73,6 +73,7 @@ namespace Celeste.Mod {
                     } catch (Exception e) {
                         ErrorTitle = "updater_versions_err_download";
                         Error = e.ToString();
+                        Logger.Log("updater", "Failed requesting index: " + e.ToString());
                         return this;
                     }
 
