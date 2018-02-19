@@ -120,6 +120,7 @@ namespace Celeste.Mod {
                             PathGame
                         }
                     };
+                    _Modder.Relinker = _Modder.DefaultUncachedRelinker;
 
                     return _Modder;
                 }
