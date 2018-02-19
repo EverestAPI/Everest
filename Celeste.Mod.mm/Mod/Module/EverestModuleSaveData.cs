@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /// <summary>
+    /// Per-save-slot mod data.
+    /// Everest loads / saves this for you as .yaml by default.
+    /// </summary>
     public abstract class EverestModuleSaveData {
 
         /// <summary>

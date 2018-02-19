@@ -64,7 +64,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GhostModuleSaveData.cs" />
+    <Compile Include="GhostRecorder.cs" />
+    <Compile Include="GhostData.cs" />
+    <Compile Include="Ghost.cs" />
+    <Compile Include="GhostFrame.cs" />
     <Compile Include="GhostModuleSettings.cs" />
     <Compile Include="GhostModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

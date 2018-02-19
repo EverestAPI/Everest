@@ -13,7 +13,13 @@ namespace Celeste.Mod.Ghost {
     [SettingName("Ghost-eline")] // We're lazy.
     public class GhostModuleSettings : EverestModuleSettings {
 
-        public bool Enabled { get; set; }
+        public bool Enabled { get; set; } = true;
+
+        [SettingRange(0, 10)]
+        public int Opacity { get; set; } = 5;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float OpacityFactor => Opacity / 10f;
 
     }
 }

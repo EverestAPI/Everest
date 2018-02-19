@@ -36,7 +36,7 @@ namespace Celeste {
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
         public new void TransitionTo(LevelData next, Vector2 direction) {
             orig_TransitionTo(next, direction);
-            Everest.Events.Level.TransitionTo(next, direction);
+            Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...

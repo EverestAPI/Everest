@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /// <summary>
+    /// Global mod settings, which will show up in the mod options menu.
+    /// Everest loads / saves this for you as .yaml by default.
+    /// </summary>
     public abstract class EverestModuleSettings {
 
         // If we ever need to add any methods in the future...
