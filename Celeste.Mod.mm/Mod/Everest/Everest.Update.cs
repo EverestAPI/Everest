@@ -131,11 +131,11 @@ namespace Celeste.Mod {
                 new Source {
                     NameDialog = "updater_src_travis",
 
-                    Index = "http://ams3.digitaloceanspaces.com/lollyde/everest-travis/builds_index.txt",
+                    Index = "https://ams3.digitaloceanspaces.com/lollyde/everest-travis/builds_index.txt",
 
                     IsCurrent = () => VersionSuffix.StartsWith("travis-"),
 
-                    ParseLine = CommonLineParser("http://ams3.digitaloceanspaces.com")
+                    ParseLine = CommonLineParser("https://ams3.digitaloceanspaces.com")
                 },
 
                 // TODO: GitHub updater source.
@@ -169,7 +169,7 @@ namespace Celeste.Mod {
                         throw new Exception("Version list format incompatible!");
 
                     string url = split[0];
-                    if (!url.StartsWith("http://") && !url.StartsWith("http://"))
+                    if (!url.StartsWith("http://") && !url.StartsWith("https://"))
                         // The index contains a relative path.
                         url = root + url;
 
@@ -217,7 +217,7 @@ namespace Celeste.Mod {
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
                 // Last line printed on error.
-                const string errorHint = "\nPlease create a new issue on GitHub @ http://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
+                const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");

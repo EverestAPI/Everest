@@ -8,7 +8,10 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Security;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +23,8 @@ namespace Celeste.Mod {
 
         public readonly static Version Version;
         public readonly static string VersionSuffix;
+        public readonly static string VersionTag;
+        public readonly static string VersionCommit;
 
         public static string VersionCelesteString => $"{Engine.Instance.Version} [Everest: {VersionString}]";
 
@@ -39,9 +44,20 @@ namespace Celeste.Mod {
             if (versionSplitIndex == -1) {
                 Version = new Version(VersionString);
                 VersionSuffix = "";
+                VersionTag = "";
+                VersionCommit = "";
+
             } else {
                 Version = new Version(VersionString.Substring(0, versionSplitIndex));
                 VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
+                versionSplitIndex = VersionSuffix.IndexOf('-');
+                if (versionSplitIndex == -1) {
+                    VersionTag = VersionSuffix;
+                    VersionCommit = "";
+                } else {
+                    VersionTag = VersionString.Substring(0, versionSplitIndex);
+                    VersionCommit = VersionString.Substring(versionSplitIndex + 1);
+                }
             }
         }
 
@@ -67,6 +83,28 @@ namespace Celeste.Mod {
         public static void Boot() {
             Logger.Log("core", "Booting Everest");
             Logger.Log("core", $"VersionCelesteString: {VersionCelesteString}");
+
+            if (Type.GetType("Mono.Runtime") != null) {
+                // Mono hates HTTPS.
+                ServicePointManager.ServerCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => {
+                    if (sslPolicyErrors == SslPolicyErrors.None)
+                        return true;
+
+                    for (int i = 0; i < chain.ChainStatus.Length; i++) {
+                        if (chain.ChainStatus[i].Status == X509ChainStatusFlags.RevocationStatusUnknown)
+                            continue;
+
+                        chain.ChainPolicy.RevocationFlag = X509RevocationFlag.EntireChain;
+                        chain.ChainPolicy.RevocationMode = X509RevocationMode.Online;
+                        chain.ChainPolicy.UrlRetrievalTimeout = new TimeSpan(0, 1, 0);
+                        chain.ChainPolicy.VerificationFlags = X509VerificationFlags.AllFlags;
+                        if (!chain.Build((X509Certificate2) certificate))
+                            return false;
+                    }
+
+                    return true;
+                };
+            }
 
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
             PathSettings = Path.Combine(PathGame, "ModSettings");
