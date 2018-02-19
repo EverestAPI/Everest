@@ -91,22 +91,28 @@ namespace MiniInstaller {
                         Console.WriteLine("Moving files from update directory");
                         foreach (string fileUpdate in Directory.GetFiles(PathUpdate)) {
                             string fileRelative = fileUpdate.Substring(PathUpdate.Length + 1);
-                            // We can't move MiniInstaller.exe while it's running.
-                            if (fileRelative == "MiniInstaller.exe")
-                                continue;
                             string fileGame = Path.Combine(PathGame, fileRelative);
                             if (File.Exists(fileGame)) {
                                 Console.WriteLine($"Deleting existing {fileGame}");
                                 File.Delete(fileGame);
                             }
-                            Console.WriteLine($"{fileUpdate} -> {fileGame}");
-                            File.Move(fileUpdate, fileGame);
+                            // We can't move MiniInstaller.exe while it's running.
+                            if (fileRelative == "MiniInstaller.exe") {
+                                // Copy it instead.
+                                Console.WriteLine($"{fileUpdate} +> {fileGame}");
+                                File.Copy(fileUpdate, fileGame);
+                            } else {
+                                // Move all other files, though.
+                                Console.WriteLine($"{fileUpdate} -> {fileGame}");
+                                File.Move(fileUpdate, fileGame);
+                            }
                         }
                     }
 
-                    // We can't add MonoMod as a reference to MiniInstaller, as we don't want to lock the file.
+                    // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
                     // Instead, load it dynamically and invoke the entry point.
                     Console.WriteLine("Loading MonoMod");
+                    // We also need to lazily load any dependencies.
                     LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.dll"));
                     LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Mdb.dll"));
                     LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Pdb.dll"));
@@ -127,7 +133,7 @@ namespace MiniInstaller {
                     Console.WriteLine();
                     Console.WriteLine(e.ToString());
                     Console.WriteLine();
-                    Console.WriteLine("Installing Everest failed!");
+                    Console.WriteLine("Installing Everest failed.");
                     Console.WriteLine("Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
                     Console.WriteLine("or join the #game_modding channel on Discord (invite in the repo).");
                     Console.WriteLine("Make sure to upload your miniinstaller-log.txt");

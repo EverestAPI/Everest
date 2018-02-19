@@ -296,7 +296,7 @@ namespace Celeste.Mod {
                                 continue;
                             }
 
-                            string fullPath = Path.Combine(PathGame, entry.FileName);
+                            string fullPath = Path.Combine(extractedPath, entry.FileName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
                                 Directory.CreateDirectory(fullDir);
@@ -315,12 +315,12 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Extraction finished.");
 
-                progress.LogLine("Starting updater");
+                progress.LogLine("Restarting");
                 for (int i = 5; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"Starting updater in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
                     Thread.Sleep(1000);
                 }
-                progress.Lines[progress.Lines.Count - 1] = $"Starting updater";
+                progress.Lines[progress.Lines.Count - 1] = $"Restarting";
 
                 // Start MiniInstaller.
 
