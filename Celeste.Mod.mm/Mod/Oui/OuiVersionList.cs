@@ -49,10 +49,8 @@ namespace Celeste.Mod {
                 menu.Add(header);
                 items.Add(header);
 
-                if (source.ErrorTitle != null) {
-                    string text = source.ErrorTitle.DialogClean();
-                    if (!string.IsNullOrEmpty(source.Error))
-                        text += "\n" + source.Error;
+                if (source.ErrorDialog != null) {
+                    string text = source.ErrorDialog.DialogClean();
                     TextMenuExt.SubHeaderExt error = new TextMenuExt.SubHeaderExt(text);
                     error.Alpha = 0f;
                     menu.Add(error);

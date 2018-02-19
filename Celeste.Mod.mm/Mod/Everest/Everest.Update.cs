@@ -50,8 +50,7 @@ namespace Celeste.Mod {
 
                 public virtual ReadOnlyCollection<Entry> Entries { get; protected set; }
 
-                public string ErrorTitle { get; protected set; }
-                public string Error { get; protected set; }
+                public string ErrorDialog { get; protected set; }
 
                 private Task<Source> _RequestTask;
                 public Task<Source> Request() {
@@ -63,16 +62,14 @@ namespace Celeste.Mod {
                 }
                 private Source _RequestStart() {
                     Entries = null;
-                    ErrorTitle = null;
-                    Error = null;
+                    ErrorDialog = null;
 
                     string data;
                     try {
                         using (WebClient wc = new WebClient())
                             data  = wc.DownloadString(Index);
                     } catch (Exception e) {
-                        ErrorTitle = "updater_versions_err_download";
-                        Error = e.ToString();
+                        ErrorDialog = "updater_versions_err_download";
                         Logger.Log("updater", "Failed requesting index: " + e.ToString());
                         return this;
                     }
@@ -89,8 +86,8 @@ namespace Celeste.Mod {
                             if (entry != null)
                                 entries.Add(entry);
                         } catch (Exception e) {
-                            ErrorTitle = "updater_versions_err_format";
-                            Error = e.ToString();
+                            ErrorDialog = "updater_versions_err_format";
+                            Logger.Log("updater", "Failed parsing index: " + e.ToString());
                             return this;
                         }
                     }
@@ -122,8 +119,7 @@ namespace Celeste.Mod {
 
                     _RequestTask = null;
                     Entries = null;
-                    ErrorTitle = null;
-                    Error = null;
+                    ErrorDialog = null;
                 }
 
             }
