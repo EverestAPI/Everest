@@ -20,7 +20,7 @@ namespace Celeste.Mod.Ghost {
         public int MachineState;
 
         public int FrameIndex = 0;
-        public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? null : Data[FrameIndex];
+        public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? default(GhostFrame) : Data[FrameIndex];
 
         public Ghost(Player player, GhostData data)
             : base(player.Position) {
@@ -40,7 +40,7 @@ namespace Celeste.Mod.Ghost {
         public override void Added(Scene scene) {
             base.Added(scene);
 
-            if (Frame == null) {
+            if (!Frame.Valid) {
                 RemoveSelf();
                 return;
             }
@@ -51,7 +51,7 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void UpdateHair() {
-            if (Frame == null)
+            if (!Frame.Valid)
                 return;
 
             Hair.Color = Frame.HairColor;
@@ -60,7 +60,7 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void UpdateSprite() {
-            if (Frame == null)
+            if (!Frame.Valid)
                 return;
 
             Position = Frame.Position;
@@ -68,13 +68,18 @@ namespace Celeste.Mod.Ghost {
             Sprite.Scale = Frame.Scale;
             Sprite.Color = Frame.Color * GhostModule.Settings.OpacityFactor;
 
-            if (Sprite.CurrentAnimationID != Frame.CurrentAnimationID)
-                Sprite.Play(Frame.CurrentAnimationID);
-            Sprite.SetAnimationFrame(Frame.CurrentAnimationFrame);
+            try {
+                if (Sprite.CurrentAnimationID != Frame.CurrentAnimationID)
+                    Sprite.Play(Frame.CurrentAnimationID);
+                Sprite.SetAnimationFrame(Frame.CurrentAnimationFrame);
+            } catch {
+                // Play likes to fail randomly as the ID doesn't exist in an underlying dict.
+                // Let's ignore this for now.
+            }
         }
 
         public override void Update() {
-            if (Frame == null) {
+            if (!Frame.Valid) {
                 RemoveSelf();
                 return;
             }

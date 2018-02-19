@@ -57,7 +57,7 @@ namespace Celeste.Mod.Ghost {
             if (!Settings.Enabled)
                 return;
 
-            // If we've got a new PB, write the ghost.
+            // If we've got a new IL PB, write the ghost.
             if (GhostRecorder?.Data != null && (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
                 GhostRecorder.Data.Write();
             SessionTransition++;

@@ -31,7 +31,14 @@ namespace Celeste.Mod.Ghost {
             base.Update();
 
             Player player = (Player) Entity;
+            if (player.Dead) {
+                Data = null;
+            }
+            if (Data == null)
+                return;
             Data.Frames.Add(new GhostFrame {
+                Valid = true,
+
                 Position = player.Position,
                 Speed = player.Speed,
                 Rotation = player.Sprite.Rotation,

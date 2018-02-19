@@ -10,7 +10,9 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Ghost {
-    public class GhostFrame {
+    public struct GhostFrame {
+
+        public bool Valid;
 
         public Vector2 Position;
         public Vector2 Speed;

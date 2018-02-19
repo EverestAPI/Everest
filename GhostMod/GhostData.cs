@@ -35,7 +35,7 @@ namespace Celeste.Mod.Ghost {
         public GhostFrame this[int i] {
             get {
                 if (i < 0 || i >= Frames.Count)
-                    return null;
+                    return default(GhostFrame);
                 return Frames[i];
             }
         }
@@ -73,6 +73,7 @@ namespace Celeste.Mod.Ghost {
             Frames = new List<GhostFrame>(count);
             for (int i = 0; i < count; i++) {
                 GhostFrame frame = new GhostFrame();
+                frame.Valid = true;
 
                 frame.Position = new Vector2(reader.ReadSingle(), reader.ReadSingle());
                 frame.Speed = new Vector2(reader.ReadSingle(), reader.ReadSingle());
