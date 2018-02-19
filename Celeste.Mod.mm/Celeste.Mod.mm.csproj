@@ -129,6 +129,7 @@
     <Compile Include="Patches\OuiChapterPanel.cs" />
     <Compile Include="Patches\OuiChapterSelectIcon.cs" />
     <Compile Include="Patches\OuiChapterSelect.cs" />
+    <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\TextMenu.cs" />

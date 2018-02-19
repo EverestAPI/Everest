@@ -88,8 +88,7 @@ namespace Celeste.Mod {
                     TextMenuExt.ButtonExt item = new TextMenuExt.ButtonExt(entry.Name);
                     item.Alpha = 0f;
                     menu.Add(item.Pressed(() => {
-                        // FIXME! UPDATER!
-                        Overworld.Goto<OuiLoggedProgress>().Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), null, 100).Progress = 25;
+                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>(), entry);
                     }));
                     items.Add(item);
                     continue;

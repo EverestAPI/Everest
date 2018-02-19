@@ -40,6 +40,9 @@ if [ "$TRAVIS_PULL_REQUEST" = "false" ] ; then
   pushd Celeste.Mod.mm/Artifact
   zip "$ROOT/$ZIP" *
   popd
+  pushd MiniInstaller/Artifact
+  zip "$ROOT/$ZIP" *
+  popd
   chmod a+x mod.sh
   zip "$ROOT/$ZIP" mod.bat mod.sh
   
