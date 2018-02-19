@@ -1,0 +1,6 @@
+﻿Name: GhostMod
+Version: 1.0.0
+DLL: GhostMod.dll
+Dependencies:
+  - Name: Everest
+    Version: 1.0.0

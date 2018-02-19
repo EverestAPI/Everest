@@ -11,7 +11,11 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod {
     public abstract class EverestModuleSaveData {
 
-        // If we ever need to add any methods in the future...
+        /// <summary>
+        /// The save data index. Assigned by Everest itself when loading it.
+        /// </summary>
+        [YamlIgnore]
+        public int Index { get; set; }
 
     }
 }

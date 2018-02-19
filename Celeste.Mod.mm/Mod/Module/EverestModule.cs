@@ -92,12 +92,14 @@ namespace Celeste.Mod {
                 using (StreamReader reader = new StreamReader(path))
                     try {
                         _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
+                        _SaveData.Index = index;
                         return;
                     } catch {
                     }
             }
 
             _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _SaveData.Index = index;
         }
 
         /// <summary>
