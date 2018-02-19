@@ -113,9 +113,8 @@ namespace Celeste.Mod {
 
         public override void Update() {
             if (Task != null && (Task.IsCompleted || Task.IsCanceled || Task.IsFaulted)) {
-                // TODO: Press anything to exit OuiLoggedProgress?
-                // exit?.Invoke();
-                // Task = null;
+                exit?.Invoke();
+                Task = null;
             }
 
             base.Update();

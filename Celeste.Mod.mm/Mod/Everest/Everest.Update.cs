@@ -216,11 +216,8 @@ namespace Celeste.Mod {
                 progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
-                while (progress.Task == null)
-                    Thread.Sleep(0);
-
                 // Last line printed on error.
-                const string errorHint = "\nPlease join the #game_modding channel on Discord and upload your log.txt\nCheck https://github.com/EverestAPI/Everest for an up-to-date invitation code.";
+                const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
@@ -318,13 +315,14 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Extraction finished.");
 
-                progress.LogLine("Restarting");
+                progress.LogLine("Starting updater");
                 for (int i = 5; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = $"Starting updater in {i}";
                     Thread.Sleep(1000);
                 }
+                progress.Lines[progress.Lines.Count - 1] = $"Starting updater";
 
-                // Start MiniInstaller, commit sudoku.
+                // Start MiniInstaller.
 
                 try {
                     Process installer = new Process();
@@ -334,11 +332,10 @@ namespace Celeste.Mod {
                     } else {
                         installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
                     }
+                    installer.StartInfo.WorkingDirectory = extractedPath;
                     installer.Start();
-
-                    Environment.Exit(0);
                 } catch (Exception e) {
-                    progress.LogLine("Restart failed!");
+                    progress.LogLine("Starting installer failed!");
                     progress.LogLine(e.ToString());
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
