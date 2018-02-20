@@ -138,5 +138,25 @@ namespace Celeste.Mod {
             });
         }
 
+        // Celeste already ships with this.
+        /*
+        public static string ReadNullTerminatedString(this BinaryReader stream) {
+            string text = "";
+            char c;
+            while ((c = stream.ReadChar()) > '\0') {
+                text += c.ToString();
+            }
+            return text;
+        }
+        */
+
+        public static void WriteNullTerminatedString(this BinaryWriter stream, string text) {
+            for (int i = 0; i < text.Length; i++) {
+                char c = text[i];
+                stream.Write(c);
+            }
+            stream.Write('\0');
+        }
+
     }
 }

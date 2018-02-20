@@ -13,6 +13,8 @@ using System.IO;
 namespace Celeste.Mod.Ghost {
     public class GhostData {
 
+        public readonly static string Magic = "\u0ade-everest-ghost\r\n";
+
         public readonly static int Version = 0;
 
         public static string GetPath(Session session, int transition)
@@ -20,7 +22,7 @@ namespace Celeste.Mod.Ghost {
                 Everest.PathSettings, "Ghosts",
                 session.Area.GetSID().Replace('/', Path.DirectorySeparatorChar),
                 session.Area.Mode.ToString(),
-                transition + "-" + session.Level + "-" + SpawnToPath(session.RespawnPoint) + ".bin"
+                transition + "-" + session.Level + "-" + SpawnToPath(session.RespawnPoint) + ".oshiro"
             );
         private static string SpawnToPath(Vector2? point) {
             if (point == null)
@@ -60,7 +62,7 @@ namespace Celeste.Mod.Ghost {
             }
 
             using (Stream stream = File.OpenRead(FilePath))
-            using (BinaryReader reader = new BinaryReader(stream))
+            using (BinaryReader reader = new BinaryReader(stream, Encoding.UTF8))
                 return Read(reader);
         }
         public GhostData Read(BinaryReader reader) {
@@ -73,22 +75,7 @@ namespace Celeste.Mod.Ghost {
             Frames = new List<GhostFrame>(count);
             for (int i = 0; i < count; i++) {
                 GhostFrame frame = new GhostFrame();
-                frame.Valid = true;
-
-                frame.Position = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                frame.Speed = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                frame.Rotation = reader.ReadSingle();
-                frame.Scale = new Vector2(reader.ReadSingle(), reader.ReadSingle());
-                frame.Color = new Color(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
-
-                frame.Facing = (Facings) reader.ReadInt32();
-
-                frame.CurrentAnimationID = reader.ReadString();
-                frame.CurrentAnimationFrame = reader.ReadInt32();
-
-                frame.HairColor = new Color(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
-                frame.HairSimulateMotion = reader.ReadBoolean();
-
+                frame.Read(reader);
                 Frames.Add(frame);
             }
 
@@ -105,7 +92,7 @@ namespace Celeste.Mod.Ghost {
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
 
             using (Stream stream = File.OpenWrite(FilePath))
-            using (BinaryWriter writer = new BinaryWriter(stream))
+            using (BinaryWriter writer = new BinaryWriter(stream, Encoding.UTF8))
                 Write(writer);
         }
         public void Write(BinaryWriter writer) {
@@ -114,33 +101,7 @@ namespace Celeste.Mod.Ghost {
             for (int i = 0; i < Frames.Count; i++) {
                 GhostFrame frame = Frames[i];
 
-                writer.Write(frame.Position.X);
-                writer.Write(frame.Position.Y);
-
-                writer.Write(frame.Speed.X);
-                writer.Write(frame.Speed.Y);
-
-                writer.Write(frame.Rotation);
-
-                writer.Write(frame.Scale.X);
-                writer.Write(frame.Scale.Y);
-
-                writer.Write(frame.Color.R);
-                writer.Write(frame.Color.G);
-                writer.Write(frame.Color.B);
-                writer.Write(frame.Color.A);
-
-                writer.Write((int) frame.Facing);
-
-                writer.Write(frame.CurrentAnimationID);
-                writer.Write(frame.CurrentAnimationFrame);
-
-                writer.Write(frame.HairColor.R);
-                writer.Write(frame.HairColor.G);
-                writer.Write(frame.HairColor.B);
-                writer.Write(frame.HairColor.A);
-
-                writer.Write(frame.HairSimulateMotion);
+                frame.Write(writer);
             }
         }
 

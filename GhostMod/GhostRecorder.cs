@@ -37,7 +37,7 @@ namespace Celeste.Mod.Ghost {
             if (Data == null)
                 return;
             Data.Frames.Add(new GhostFrame {
-                Valid = true,
+                HasData = true,
 
                 Position = player.Position,
                 Speed = player.Speed,

@@ -27,7 +27,7 @@ namespace Celeste.Mod.Ghost {
             Player = player;
             Data = data;
 
-            Depth = -1;
+            Depth = 1;
 
             Sprite = new PlayerSprite(player.Sprite.Mode);
             Sprite.HairCount = player.Sprite.HairCount;
@@ -40,18 +40,13 @@ namespace Celeste.Mod.Ghost {
         public override void Added(Scene scene) {
             base.Added(scene);
 
-            if (!Frame.Valid) {
-                RemoveSelf();
-                return;
-            }
-
             Hair.Facing = Frame.Facing;
             Hair.Start();
             UpdateHair();
         }
 
         public void UpdateHair() {
-            if (!Frame.Valid)
+            if (!Frame.HasData)
                 return;
 
             Hair.Color = Frame.HairColor;
@@ -60,7 +55,7 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void UpdateSprite() {
-            if (!Frame.Valid)
+            if (!Frame.HasData)
                 return;
 
             Position = Frame.Position;
@@ -79,11 +74,6 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Update() {
-            if (!Frame.Valid) {
-                RemoveSelf();
-                return;
-            }
-
             UpdateSprite();
             UpdateHair();
 
