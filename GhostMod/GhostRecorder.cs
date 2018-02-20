@@ -51,7 +51,31 @@ namespace Celeste.Mod.Ghost {
                 CurrentAnimationFrame = player.Sprite.CurrentAnimationFrame,
 
                 HairColor = player.Hair.Color,
-                HairSimulateMotion = player.Hair.SimulateMotion
+                HairSimulateMotion = player.Hair.SimulateMotion,
+
+                HasInput = true,
+
+                MoveX = Input.MoveX.Value,
+                MoveY = Input.MoveY.Value,
+
+                Aim = Input.Aim.Value,
+                MountainAim = Input.MountainAim.Value,
+
+                ESC = Input.ESC.Check,
+                Pause = Input.Pause.Check,
+                MenuLeft = Input.MenuLeft.Check,
+                MenuRight = Input.MenuRight.Check,
+                MenuUp = Input.MenuUp.Check,
+                MenuDown = Input.MenuDown.Check,
+                MenuConfirm = Input.MenuConfirm.Check,
+                MenuCancel = Input.MenuCancel.Check,
+                MenuJournal = Input.MenuJournal.Check,
+                QuickRestart = Input.QuickRestart.Check,
+                Jump = Input.Jump.Check,
+                Dash = Input.Dash.Check,
+                Grab = Input.Grab.Check,
+                Talk = Input.Talk.Check
+
             });
         }
 
