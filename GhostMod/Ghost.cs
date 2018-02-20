@@ -74,6 +74,8 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Update() {
+            Visible = Frame.HasData;
+
             UpdateSprite();
             UpdateHair();
 

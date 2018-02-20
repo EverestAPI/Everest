@@ -13,7 +13,8 @@ using System.IO;
 namespace Celeste.Mod.Ghost {
     public class GhostData {
 
-        public readonly static string Magic = "\u0ade-everest-ghost\r\n";
+        public readonly static string Magic = "everest-ghost\r\n";
+        public readonly static char[] MagicChars = Magic.ToCharArray();
 
         public readonly static int Version = 0;
 
@@ -66,6 +67,17 @@ namespace Celeste.Mod.Ghost {
                 return Read(reader);
         }
         public GhostData Read(BinaryReader reader) {
+            if (reader.ReadInt16() != 0x0ade)
+                return null; // Endianness mismatch.
+
+            char[] magic = reader.ReadChars(MagicChars.Length);
+            if (magic.Length != MagicChars.Length)
+                return null; // Didn't read as much as we wanted to read.
+            for (int i = 0; i < MagicChars.Length; i++) {
+                if (magic[i] != MagicChars[i])
+                    return null; // Magic mismatch.
+            }
+
             int version = reader.ReadInt32();
             // Don't read data from the future, but try to read data from the past.
             if (version > Version)
@@ -96,11 +108,12 @@ namespace Celeste.Mod.Ghost {
                 Write(writer);
         }
         public void Write(BinaryWriter writer) {
+            writer.Write((short) 0x0ade);
+            writer.Write(MagicChars);
             writer.Write(Version);
             writer.Write(Frames.Count);
             for (int i = 0; i < Frames.Count; i++) {
                 GhostFrame frame = Frames[i];
-
                 frame.Write(writer);
             }
         }

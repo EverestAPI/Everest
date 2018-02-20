@@ -53,7 +53,7 @@ namespace Celeste.Mod.Ghost {
 
         public long WriteChunkStart(BinaryWriter writer, string name) {
             writer.WriteNullTerminatedString(name);
-            writer.Write(0); // Filled in later.
+            writer.Write(0U); // Filled in later.
             long start = writer.BaseStream.Position;
             return start;
         }
@@ -63,9 +63,11 @@ namespace Celeste.Mod.Ghost {
             long length = pos - start;
 
             // Update the chunk length, which consists of the 4 bytes before the chunk data.
+            writer.Flush();
             writer.BaseStream.Seek(start - 4, SeekOrigin.Begin);
-            writer.Write(length);
+            writer.Write((uint) length);
 
+            writer.Flush();
             writer.BaseStream.Seek(pos, SeekOrigin.Begin);
         }
 
@@ -126,7 +128,7 @@ namespace Celeste.Mod.Ghost {
 
             writer.Write((int) Facing);
 
-            writer.Write(CurrentAnimationID);
+            writer.WriteNullTerminatedString(CurrentAnimationID);
             writer.Write(CurrentAnimationFrame);
 
             writer.Write(HairColor.R);
