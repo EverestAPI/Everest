@@ -322,10 +322,29 @@ namespace Celeste.Mod {
                 // Start MiniInstaller.
 
                 try {
-                    Process installer = new Process();
-                    installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
-                    installer.StartInfo.WorkingDirectory = extractedPath;
-                    installer.Start();
+                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        // We're on an OS which supports manipulating Celeste.exe while it's used.
+                        // Load the MiniInstaller into the current AppDomain as if it was a library, then execute it.
+                        Everest.Events.Celeste.OnShutdown += () => {
+                            Directory.SetCurrentDirectory(extractedPath);
+                            Assembly installer = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
+                            installer.EntryPoint.Invoke(null, new object[] { new string[] { } });
+                        };
+
+                    } else {
+                        // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
+                        // Run MiniInstaller "out of body."
+                        Process installer = new Process();
+                        if (Type.GetType("Mono.Runtime") != null) {
+                            installer.StartInfo.FileName = "mono";
+                            installer.StartInfo.Arguments = "\"" + Path.Combine(extractedPath, "MiniInstaller.exe") + "\"";
+                        } else {
+                            installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
+                        }
+                        installer.StartInfo.WorkingDirectory = extractedPath;
+                        installer.Start();
+                    }
                 } catch (Exception e) {
                     progress.LogLine("Starting installer failed!");
                     progress.LogLine(e.ToString());

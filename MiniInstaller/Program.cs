@@ -23,7 +23,7 @@ namespace MiniInstaller {
 
             // Set up / determine any paths.
 
-            PathGame = Path.GetFullPath(".");
+            PathGame = Directory.GetCurrentDirectory();
 
             if (Path.GetFileName(PathGame) == "everest-update" &&
                 File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
@@ -132,7 +132,7 @@ namespace MiniInstaller {
                             Environment.OSVersion.Platform == PlatformID.MacOSX) {
                             // The Linux and macOS versions come with a wrapping bash script.
                             game.StartInfo.FileName = "bash";
-                            game.StartInfo.Arguments = PathCelesteExe.Substring(0, PathCelesteExe.Length - 4);
+                            game.StartInfo.Arguments = "\"" + PathCelesteExe.Substring(0, PathCelesteExe.Length - 4) + "\"";
                         } else {
                             game.StartInfo.FileName = PathCelesteExe;
                         }
