@@ -322,7 +322,7 @@ namespace Celeste {
             if (mode == null) {
                 checkpoints.Clear();
             } else {
-                checkpoints.RemoveWhere(a => mode.Checkpoints.Any(b => b.Level != a));
+                checkpoints.RemoveWhere(a => !mode.Checkpoints.Any(b => b.Level == a));
             }
             return checkpoints;
         }
