@@ -216,8 +216,13 @@ namespace Celeste.Mod {
                 // Last line printed on error.
                 const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
 
+                // Check if we're on an OS which supports manipulating Celeste.exe while it's used.
+                bool canModWhileAlive =
+                    Environment.OSVersion.Platform == PlatformID.Unix ||
+                    Environment.OSVersion.Platform == PlatformID.MacOSX;
+
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
-                string extractedPath = Path.Combine(PathGame, "everest-update");
+                string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
 
                 progress.LogLine($"Updating to {version.Name} (branch: {version.Branch}) @ {version.URL}");
 
@@ -276,9 +281,9 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Download finished.");
 
-                progress.LogLine("Extracting");
+                progress.LogLine("Extracting update .zip");
                 try {
-                    if (Directory.Exists(extractedPath))
+                    if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
@@ -297,6 +302,8 @@ namespace Celeste.Mod {
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
                                 Directory.CreateDirectory(fullDir);
+                            if (File.Exists(fullPath))
+                                File.Delete(fullPath);
                             progress.LogLine($"{entry.FileName} -> {fullPath}");
                             entry.Extract(extractedPath); // Confusingly enough, this takes the base directory.
                             progress.Progress++;
@@ -312,6 +319,43 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Extraction finished.");
 
+                // Load MiniInstaller and run it in the current app domain on systems supporting this.
+                Assembly installerAssembly = null;
+                Type installerType = null;
+                if (canModWhileAlive) {
+                    progress.LogLine("Starting MiniInstaller");
+                    progress.Progress = 0;
+                    progress.ProgressMax = 0;
+                    Directory.SetCurrentDirectory(PathGame);
+
+                    try {
+                        installerAssembly = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
+                        installerType = installerAssembly.GetType("MiniInstaller.Program");
+
+                        // Set up any fields which we can set up by Everest.
+                        FieldInfo f_AsmMonoMod = installerType.GetField("AsmMonoMod");
+                        if (f_AsmMonoMod != null)
+                            f_AsmMonoMod.SetValue(null, typeof(MonoModder).Assembly);
+                        FieldInfo f_LogLine = installerType.GetField("LogLine");
+                        if (f_LogLine != null)
+                            f_LogLine.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LogLine.FieldType));
+
+                        // Let's just run the mod installer... from our mod... while we're running the mod...
+                        object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
+                        if (exitObject != null && exitObject is int && ((int) exitObject) != 0)
+                            throw new Exception($"Return code != 0, but {exitObject}");
+                    } catch (Exception e) {
+                        progress.LogLine("Installer failed!");
+                        progress.LogLine(e.ToString());
+                        progress.LogLine(errorHint);
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
+                        return;
+                    }
+                }
+
+                progress.Progress = 1;
+                progress.ProgressMax = 1;
                 progress.LogLine("Restarting");
                 for (int i = 5; i > 0; --i) {
                     progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
@@ -319,20 +363,9 @@ namespace Celeste.Mod {
                 }
                 progress.Lines[progress.Lines.Count - 1] = $"Restarting";
 
-                // Start MiniInstaller.
-
-                try {
-                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                        // We're on an OS which supports manipulating Celeste.exe while it's used.
-                        // Load the MiniInstaller into the current AppDomain as if it was a library, then execute it.
-                        Everest.Events.Celeste.OnShutdown += () => {
-                            Directory.SetCurrentDirectory(extractedPath);
-                            Assembly installer = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
-                            installer.EntryPoint.Invoke(null, new object[] { new string[] { } });
-                        };
-
-                    } else {
+                // Start MiniInstaller in a separate process on systems that don't support modding the game while it'S alive.
+                if (!canModWhileAlive) {
+                    try {
                         // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
                         // Run MiniInstaller "out of body."
                         Process installer = new Process();
@@ -344,13 +377,37 @@ namespace Celeste.Mod {
                         }
                         installer.StartInfo.WorkingDirectory = extractedPath;
                         installer.Start();
+                    } catch (Exception e) {
+                        progress.LogLine("Starting installer failed!");
+                        progress.LogLine(e.ToString());
+                        progress.LogLine(errorHint);
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
                     }
-                } catch (Exception e) {
-                    progress.LogLine("Starting installer failed!");
-                    progress.LogLine(e.ToString());
-                    progress.LogLine(errorHint);
-                    progress.Progress = 0;
-                    progress.ProgressMax = 1;
+
+                } else {
+                    // On Linux / macOS,
+                    Events.Celeste.OnShutdown += () => {
+                        // if the installer ships with an exposed StartGame method, run it.
+                        MethodInfo m_StartGame = installerType.GetMethod("StartGame");
+                        if (m_StartGame != null)
+                            m_StartGame.Invoke(null, new object[0]);
+                        else {
+                            // Otherwise run our own restart code on shutdown.
+                            Process game = new Process();
+                            // If the game was installed via Steam, it should restart in a Steam context on its own.
+                            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                                Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                                // The Linux and macOS versions come with a wrapping bash script.
+                                game.StartInfo.FileName = "bash";
+                                game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";
+                            } else {
+                                game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
+                            }
+                            game.StartInfo.WorkingDirectory = PathGame;
+                            game.Start();
+                        }
+                    };
                 }
             }
 
