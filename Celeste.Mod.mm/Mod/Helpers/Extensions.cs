@@ -158,5 +158,17 @@ namespace Celeste.Mod {
             stream.Write('\0');
         }
 
+        public static Delegate CastDelegate(this Delegate source, Type type) {
+            if (source == null)
+                return null;
+            Delegate[] delegates = source.GetInvocationList();
+            if (delegates.Length == 1)
+                return Delegate.CreateDelegate(type, delegates[0].Target, delegates[0].Method);
+            Delegate[] delegatesDest = new Delegate[delegates.Length];
+            for (int i = 0; i < delegates.Length; i++)
+                delegatesDest[i] = delegates[i].CastDelegate(type);
+            return Delegate.Combine(delegatesDest);
+        }
+
     }
 }
