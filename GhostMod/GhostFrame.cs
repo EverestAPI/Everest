@@ -72,6 +72,8 @@ namespace Celeste.Mod.Ghost {
 
         public bool HasData;
 
+        public bool InControl;
+
         public Vector2 Position;
         public Vector2 Speed;
         public float Rotation;
@@ -88,6 +90,8 @@ namespace Celeste.Mod.Ghost {
 
         public void ReadChunkData(BinaryReader reader) {
             HasData = true;
+
+            InControl = reader.ReadBoolean();
 
             Position = new Vector2(reader.ReadSingle(), reader.ReadSingle());
             Speed = new Vector2(reader.ReadSingle(), reader.ReadSingle());
@@ -108,6 +112,8 @@ namespace Celeste.Mod.Ghost {
             if (!HasData)
                 return;
             long start = WriteChunkStart(writer, "data");
+
+            writer.Write(InControl);
 
             writer.Write(Position.X);
             writer.Write(Position.Y);

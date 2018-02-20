@@ -13,19 +13,18 @@ namespace Celeste.Mod.Ghost {
     public class Ghost : Actor {
 
         public Player Player;
-        public GhostData Data;
 
         public PlayerSprite Sprite;
         public PlayerHair Hair;
         public int MachineState;
 
+        public GhostData Data;
         public int FrameIndex = 0;
         public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? default(GhostFrame) : Data[FrameIndex];
 
-        public Ghost(Player player, GhostData data)
+        public Ghost(Player player)
             : base(player.Position) {
             Player = player;
-            Data = data;
 
             Depth = -1;
 
@@ -84,7 +83,9 @@ namespace Celeste.Mod.Ghost {
             if (!Player.InControl)
                 return;
 
-            FrameIndex++;
+            do {
+                FrameIndex++;
+            } while (Frame.HasData && !Frame.InControl);
         }
 
     }

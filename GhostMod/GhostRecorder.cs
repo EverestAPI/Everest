@@ -14,9 +14,8 @@ namespace Celeste.Mod.Ghost {
 
         public GhostData Data;
 
-        public GhostRecorder(GhostData data)
+        public GhostRecorder()
             : base(true, false) {
-            Data = data;
         }
 
         public override void Added(Entity entity) {
@@ -36,11 +35,10 @@ namespace Celeste.Mod.Ghost {
             if (Data == null)
                 return;
 
-            if (!player.InControl)
-                return;
-
             Data.Frames.Add(new GhostFrame {
                 HasData = true,
+
+                InControl = player.InControl,
 
                 Position = player.Position,
                 Speed = player.Speed,

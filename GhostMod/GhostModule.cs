@@ -57,16 +57,30 @@ namespace Celeste.Mod.Ghost {
             if (!Settings.Enabled || SessionTransition <= 0)
                 return;
 
+            Logger.Log("ghost", $"Step level: {level.Session.Level} transition: {SessionTransition}");
+
             Player player = level.Tracker.GetEntity<Player>();
-            
+
+            if (GhostRecorder != null && (GhostRecorder.Entity != player || GhostRecorder.Data == null))
+                GhostRecorder = null;
+            if (GhostComparison != null && GhostComparison.Player != player) {
+                GhostComparison.RemoveSelf();
+                GhostComparison = null;
+            }
+
             // If we've got a new IL PB, write the ghost.
-            if (GhostRecorder != null && GhostRecorder.Entity == player && GhostRecorder.Data != null && (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
+            if (GhostRecorder != null && GhostRecorder.Data != null &&
+                (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
                 GhostRecorder.Data.Write();
 
-            level.Add(GhostComparison = new Ghost(player, new GhostData(level.Session, SessionTransition).Read()));
+            level.Add(GhostComparison = new Ghost(player));
+            GhostComparison.Player = player;
+            GhostComparison.Data = new GhostData(level.Session, SessionTransition).Read();
+            GhostComparison.FrameIndex = 0;
 
             if (GhostRecorder == null || GhostRecorder.Entity != player)
-                player.Add(GhostRecorder = new GhostRecorder(new GhostData(level.Session, SessionTransition)));
+                player.Add(GhostRecorder = new GhostRecorder());
+            GhostRecorder.Data = new GhostData(level.Session, SessionTransition);
         }
 
     }

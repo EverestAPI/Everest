@@ -18,6 +18,14 @@ namespace Celeste {
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
 
+        public bool IsIntroState {
+            get {
+                int state = StateMachine.State;
+                // Determined from StateMachine.SetCallbacks in Player ctor.
+                return 12 <= state && state <= 15;
+            }
+        }
+
         public patch_Player(Vector2 position, PlayerSpriteMode spriteMode)
             : base(position, spriteMode) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -49,6 +57,9 @@ namespace Celeste {
 
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
+
+        public static bool IsIntroState(this Player self)
+            => ((patch_Player) self).IsIntroState;
 
     }
 }
