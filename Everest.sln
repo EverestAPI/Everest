@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MadelineEnergySelector", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MiniInstaller", "MiniInstaller\MiniInstaller.csproj", "{E91F4ECB-C9EF-4D90-9A8F-62DE8C104854}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GhostMod", "GhostMod\GhostMod.csproj", "{4ABF8C07-C533-407E-9EC9-534C2916C907}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{E91F4ECB-C9EF-4D90-9A8F-62DE8C104854}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E91F4ECB-C9EF-4D90-9A8F-62DE8C104854}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E91F4ECB-C9EF-4D90-9A8F-62DE8C104854}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4ABF8C07-C533-407E-9EC9-534C2916C907}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4ABF8C07-C533-407E-9EC9-534C2916C907}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4ABF8C07-C533-407E-9EC9-534C2916C907}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4ABF8C07-C533-407E-9EC9-534C2916C907}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

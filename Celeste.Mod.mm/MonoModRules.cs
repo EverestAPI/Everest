@@ -183,6 +183,9 @@ namespace MonoMod {
         }
 
         public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+
             if (!method.HasBody)
                 return;
 

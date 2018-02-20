@@ -140,13 +140,17 @@ namespace Celeste.Mod {
                 internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
                     => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
 
-                public static event Action<LevelData, Vector2> OnTransitionTo; 
-                internal static void TransitionTo(LevelData next, Vector2 direction)
-                    => OnTransitionTo?.Invoke(next, direction);
+                public static event Action<_Level, LevelData, Vector2> OnTransitionTo; 
+                internal static void TransitionTo(_Level level, LevelData next, Vector2 direction)
+                    => OnTransitionTo?.Invoke(level, next, direction);
 
                 public static event Func<_Level, LevelData, Vector2, EntityData, bool> OnLoadEntity;
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
+
+                public static event Action<_Level, _Player.IntroTypes, bool> OnLoadLevel;
+                internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
+                    => OnLoadLevel?.Invoke(level, playerIntro, isFromLoader);
 
             }
 

@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /// <summary>
+    /// Any module metadata, usually mirroring the data in your metadata.yaml
+    /// </summary>
     public class EverestModuleMetadata {
 
         /// <summary>

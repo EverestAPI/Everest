@@ -52,7 +52,7 @@ namespace Celeste.Mod.Rainbow {
                 return colorOrig;
 
             float wave = self.GetWave() * 60f;
-            wave *= Settings.Speed / 20f;
+            wave *= Settings.SpeedFactor;
             Color colorRainbow = ColorFromHSV((index / (float) self.GetSprite().HairCount) * 180f + wave, 0.6f, 0.6f);
             return new Color(
                 (colorOrig.R / 255f) * 0.3f + (colorRainbow.R / 255f) * 0.7f,

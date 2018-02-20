@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /// <summary>
+    /// Your Everest main mod class inherits from this class.
+    /// </summary>
     public abstract class EverestModule {
 
         /// <summary>
@@ -41,32 +44,60 @@ namespace Celeste.Mod {
             if (SettingsType == null)
                 return;
 
-            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
-            if (File.Exists(path)) {
-                using (Stream stream = File.OpenRead(path))
-                using (StreamReader reader = new StreamReader(path))
-                    try {
-                        _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
-                        return;
-                    } catch {
-                    }
-            }
-
             _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+
+            string extension = ".yaml";
+            if (_Settings is EverestModuleBinarySettings)
+                extension = ".bin";
+
+            string path = Path.Combine(Everest.PathSettings, Metadata.Name + extension);
+            if (!File.Exists(path))
+                return;
+
+            try {
+                using (Stream stream = File.OpenRead(path)) {
+                    if (_Settings is EverestModuleBinarySettings) {
+                        // .bin
+                        using (BinaryReader reader = new BinaryReader(stream))
+                            ((EverestModuleBinarySettings) _Settings).Read(reader);
+                    } else {
+                        // .yaml
+                        using (StreamReader reader = new StreamReader(path)) {
+                            _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
+                        }
+                    }
+                }
+            } catch {
+            }
         }
 
         /// <summary>
         /// Save the mod settings. Saves the settings to {Everest.PathSettings}/{Metadata.Name}.yaml by default.
         /// </summary>
         public virtual void SaveSettings() {
-            if (SettingsType == null)
+            if (SettingsType == null || _Settings == null)
                 return;
-            string path = Path.Combine(Everest.PathSettings, Metadata.Name + ".yaml");
+
+            string extension = ".yaml";
+            if (_Settings is EverestModuleBinarySettings)
+                extension = ".bin";
+
+            string path = Path.Combine(Everest.PathSettings, Metadata.Name + extension);
             if (File.Exists(path))
                 File.Delete(path);
-            using (Stream stream = File.OpenWrite(path))
-            using (StreamWriter writer = new StreamWriter(stream))
-                YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
+
+            using (Stream stream = File.OpenWrite(path)) {
+                if (_Settings is EverestModuleBinarySettings) {
+                    // .bin
+                    using (BinaryWriter writer = new BinaryWriter(stream))
+                        ((EverestModuleBinarySettings) _Settings).Write(writer);
+                } else {
+                    // .yaml
+                    using (StreamWriter writer = new StreamWriter(stream))
+                        YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
+                }
+            }
+
         }
 
         /// <summary>
@@ -86,18 +117,33 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + ".yaml");
-            if (File.Exists(path)) {
-                using (Stream stream = File.OpenRead(path))
-                using (StreamReader reader = new StreamReader(path))
-                    try {
-                        _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
-                        return;
-                    } catch {
-                    }
-            }
-
             _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _SaveData.Index = index;
+
+            string extension = ".yaml";
+            if (_SaveData is EverestModuleBinarySaveData)
+                extension = ".bin";
+
+            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + extension);
+            if (!File.Exists(path))
+                return;
+
+            try {
+                using (Stream stream = File.OpenRead(path)) {
+                    if (_SaveData is EverestModuleBinarySaveData) {
+                        // .bin
+                        using (BinaryReader reader = new BinaryReader(stream))
+                            ((EverestModuleBinarySaveData) _SaveData).Read(reader);
+                    } else {
+                        // .yaml
+                        using (StreamReader reader = new StreamReader(path)) {
+                            _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
+                            _SaveData.Index = index;
+                        }
+                    }
+                }
+            } catch {
+            }
         }
 
         /// <summary>

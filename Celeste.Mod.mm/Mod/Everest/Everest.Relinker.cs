@@ -112,7 +112,6 @@ namespace Celeste.Mod {
                         return _Modder;
 
                     _Modder = new MonoModder() {
-                        ReadingMode = ReadingMode.Immediate,
                         CleanupEnabled = false,
                         RelinkModuleMap = SharedRelinkModuleMap,
                         RelinkMap = SharedRelinkMap,
@@ -120,6 +119,11 @@ namespace Celeste.Mod {
                             PathGame
                         }
                     };
+
+                    _Modder.ReaderParameters.ReadSymbols = false;
+                    _Modder.WriterParameters.WriteSymbols = false;
+                    _Modder.WriterParameters.SymbolWriterProvider = null;
+
                     _Modder.Relinker = _Modder.DefaultUncachedRelinker;
 
                     return _Modder;
@@ -163,10 +167,6 @@ namespace Celeste.Mod {
                     modder.OutputPath = cachedPath;
                     modder.MissingDependencyResolver = depResolver;
 
-                    modder.ReaderParameters.ReadSymbols = false;
-                    modder.WriterParameters.WriteSymbols = false;
-                    modder.WriterParameters.SymbolWriterProvider = null;
-
                     modder.Read();
                     modder.MapDependencies();
                     modder.AutoPatch();
@@ -176,6 +176,8 @@ namespace Celeste.Mod {
                     return null;
                 } finally {
                     Modder.ClearCaches(moduleSpecific: true);
+                    Modder.Module.Dispose();
+                    Modder.Module = null;
                 }
 
                 if (File.Exists(cachedChecksumPath)) {
