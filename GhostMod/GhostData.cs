@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Celeste.Mod.Ghost {
     public class GhostData {
@@ -18,18 +19,16 @@ namespace Celeste.Mod.Ghost {
 
         public readonly static int Version = 0;
 
+        public readonly static Regex PathVerifyRegex = new Regex("[\"`" + Regex.Escape(new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars())) + "]", RegexOptions.Compiled);
+
         public static string GetPath(Session session, int transition)
             => Path.Combine(
                 Everest.PathSettings, "Ghosts",
-                session.Area.GetSID().Replace('/', Path.DirectorySeparatorChar),
-                session.Area.Mode.ToString(),
-                transition + "-" + session.Level + "-" + SpawnToPath(session.RespawnPoint) + ".oshiro"
+                PathVerifyRegex.Replace(
+                    session.Area.GetSID().Replace('/', '-') + "-" + session.Area.Mode.ToString() + "-" + transition + "-" + session.Level + ".oshiro",
+                    "_"
+                )
             );
-        private static string SpawnToPath(Vector2? point) {
-            if (point == null)
-                return "unknown";
-            return ((int) Math.Round(point.Value.X)) + "x" + ((int) Math.Round(point.Value.Y));
-        }
 
         public string FilePath;
 
@@ -55,9 +54,12 @@ namespace Celeste.Mod.Ghost {
 
         public GhostData Read() {
             if (FilePath == null)
+                // Keep existing frames in-tact.
                 return null;
 
             if (!File.Exists(FilePath)) {
+                // File doesn't exist - load nothing.
+                Logger.Log("ghost", $"Ghost doesn't exist: {FilePath}");
                 Frames = new List<GhostFrame>();
                 return null;
             }

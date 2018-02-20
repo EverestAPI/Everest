@@ -74,11 +74,10 @@ namespace Celeste.Mod.Ghost {
                 GhostRecorder.Data.Write();
 
             level.Add(GhostComparison = new Ghost(player));
-            GhostComparison.Player = player;
             GhostComparison.Data = new GhostData(level.Session, SessionTransition).Read();
             GhostComparison.FrameIndex = 0;
 
-            if (GhostRecorder == null || GhostRecorder.Entity != player)
+            if (GhostRecorder == null)
                 player.Add(GhostRecorder = new GhostRecorder());
             GhostRecorder.Data = new GhostData(level.Session, SessionTransition);
         }
