@@ -30,6 +30,10 @@ namespace Celeste.Mod {
                 public static event Action OnExiting;
                 internal static void Exiting()
                     => OnExiting?.Invoke();
+
+                public static event Action OnShutdown;
+                internal static void Shutdown()
+                    => OnShutdown?.Invoke();
             }
 
             public static class GFX {

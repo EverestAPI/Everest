@@ -189,16 +189,21 @@ namespace Celeste {
             }
 
             // Fill each LevelSetStats with its areas.
-            foreach (LevelSetStats set in LevelSets) {
+            for (int lsi = 0; lsi < LevelSets.Count; lsi++) {
+                LevelSetStats set = LevelSets[lsi];
                 set.SaveData = this;
                 List<AreaStats> areas = set.Areas;
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
 
                 int offset = set.AreaOffset;
-                // LevelSet gone - let's preserve the data as-is.
-                if (offset == -1)
+                if (offset == -1) {
+                    // LevelSet gone - let's remove it to prevent any unwanted accesses.
+                    // We previously kept the LevelSetStats around in case the levelset resurfaces later on, but as it turns out, this breaks some stuff.
+                    LevelSets.RemoveAt(lsi);
+                    lsi--;
                     continue;
+                }
 
                 int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
                 while (areas.Count < count) {
@@ -240,6 +245,9 @@ namespace Celeste {
                     area.CleanCheckpoints();
                 }
             }
+
+            // Order the levelsets to appear just as their areas appear in AreaData.Areas
+            LevelSets.OrderBy(set => set.AreaOffset);
 
             // Carry over any progress from vanilla saves.
             if (LastArea_Unsafe.ID != 0)

@@ -29,6 +29,8 @@ namespace Celeste {
                 Everest.ParseArgs(args);
                 orig_Main(args);
 
+                Everest.Events.Celeste.Shutdown();
+
                 Console.SetOut(logWriter.STDOUT);
                 logWriter.STDOUT = null;
             }

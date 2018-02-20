@@ -19,6 +19,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding to
     - GitHub releases with stable Releases/Milestones (slower to update): [link](https://github.com/EverestAPI/Everest/releases)
 - Extract `build-XYZ.zip` to where Celeste is installed. `Celeste.Mod.mm.dll` should be right next to `Celeste.exe`
 - Run `MiniInstaller.exe`
+    - Linux / macOS users: Run `mono MiniInstaller.exe`
 
 ### Mod Installation:
 - If it's missing, create a `Mods` directory where Celeste is.
