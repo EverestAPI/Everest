@@ -55,8 +55,8 @@ namespace Celeste.Mod {
                     VersionTag = VersionSuffix;
                     VersionCommit = "";
                 } else {
-                    VersionTag = VersionString.Substring(0, versionSplitIndex);
-                    VersionCommit = VersionString.Substring(versionSplitIndex + 1);
+                    VersionTag = VersionSuffix.Substring(0, versionSplitIndex);
+                    VersionCommit = VersionSuffix.Substring(versionSplitIndex + 1);
                 }
             }
         }
