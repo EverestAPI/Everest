@@ -60,10 +60,13 @@ namespace Celeste.Mod.Ghost {
             // If we've got a new IL PB, write the ghost.
             if (GhostRecorder?.Data != null && (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
                 GhostRecorder.Data.Write();
-            SessionTransition++;
 
             // Add a new GhostComparison and update the GhostRecorder.
             Player player = level.Tracker.GetEntity<Player>();
+
+            if (!player.Dead)
+                // Only transition if the player isn't dead.
+                SessionTransition++;
 
             level.Add(GhostComparison = new Ghost(player, new GhostData(level.Session, SessionTransition).Read()));
 

@@ -37,7 +37,6 @@ namespace Celeste.Mod.Ghost {
                         reader.BaseStream.Seek(length, SeekOrigin.Current);
                         break;
                 }
-                break;
             }
         }
 
