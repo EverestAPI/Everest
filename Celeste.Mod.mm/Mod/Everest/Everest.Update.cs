@@ -323,12 +323,7 @@ namespace Celeste.Mod {
 
                 try {
                     Process installer = new Process();
-                    if (Type.GetType("Mono.Runtime") != null) {
-                        installer.StartInfo.FileName = "mono";
-                        installer.StartInfo.Arguments = Path.Combine(extractedPath, "MiniInstaller.exe");
-                    } else {
-                        installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
-                    }
+                    installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     installer.Start();
                 } catch (Exception e) {

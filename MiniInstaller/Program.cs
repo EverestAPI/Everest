@@ -36,9 +36,6 @@ namespace MiniInstaller {
             if (!File.Exists(PathCelesteExe)) {
                 Console.WriteLine("Celeste.exe not found!");
                 Console.WriteLine("Did you extract the .zip into the same place as Celeste?");
-                Console.WriteLine();
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
                 return;
             }
 
@@ -48,9 +45,6 @@ namespace MiniInstaller {
             ) {
                 Console.WriteLine("Celeste.Mod.mm.dll not found!");
                 Console.WriteLine("Did you extract all the files in the .zip?");
-                Console.WriteLine();
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
                 return;
             }
 
@@ -129,6 +123,23 @@ namespace MiniInstaller {
                         Directory.CreateDirectory(Path.Combine(PathGame, "Mods"));
                     }
 
+                    // If we're updating, start the game. Otherwise, tell the user to close the window. 
+                    if (PathUpdate != null) {
+                        Console.WriteLine("Restarting Celeste");
+                        Process game = new Process();
+                        // If the game was installed via Steam, it should restart in a Steam context on its own.
+                        if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                            Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                            // The Linux and macOS versions come with a wrapping bash script.
+                            game.StartInfo.FileName = "bash";
+                            game.StartInfo.Arguments = PathCelesteExe.Substring(0, PathCelesteExe.Length - 4);
+                        } else {
+                            game.StartInfo.FileName = PathCelesteExe;
+                        }
+                        game.StartInfo.WorkingDirectory = PathGame;
+                        game.Start();
+                    }
+
                 } catch (Exception e) {
                     Console.WriteLine();
                     Console.WriteLine(e.ToString());
@@ -137,34 +148,11 @@ namespace MiniInstaller {
                     Console.WriteLine("Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
                     Console.WriteLine("or join the #game_modding channel on Discord (invite in the repo).");
                     Console.WriteLine("Make sure to upload your miniinstaller-log.txt");
-                    Console.WriteLine();
-                    Console.WriteLine("Press any key to exit.");
-                    Console.ReadKey();
                     return;
                 }
 
                 Console.SetOut(logWriter.STDOUT);
                 logWriter.STDOUT = null;
-            }
-
-            // If we're updating, start the game. Otherwise, tell the user to close the window. 
-            if (PathUpdate != null) {
-                Process game = new Process();
-                // If the game was installed via Steam, it should restart in a Steam context on its own.
-                if (Type.GetType("Mono.Runtime") != null) {
-                    // The Linux and macOS versions come with a wrapping bash script.
-                    game.StartInfo.FileName = "bash";
-                    game.StartInfo.Arguments = PathCelesteExe.Substring(PathCelesteExe.Length - 4);
-                } else {
-                    game.StartInfo.FileName = PathCelesteExe;
-                }
-                game.StartInfo.WorkingDirectory = PathGame;
-                game.Start();
-
-            } else {
-                Console.WriteLine();
-                Console.WriteLine("Press any key to exit.");
-                Console.ReadKey();
             }
         }
 
