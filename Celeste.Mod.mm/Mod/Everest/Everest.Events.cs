@@ -148,18 +148,16 @@ namespace Celeste.Mod {
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
 
+                public static event Action<_Level, _Player.IntroTypes, bool> OnLoadLevel;
+                internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
+                    => OnLoadLevel?.Invoke(level, playerIntro, isFromLoader);
+
             }
 
             public static class LevelEnter {
                 public static event Action<Session, bool> OnGo;
                 internal static void Go(Session session, bool fromSaveData)
                     => OnGo?.Invoke(session, fromSaveData);
-            }
-
-            public static class LevelLoader {
-                public static event Action<_Level> OnStartLevel;
-                internal static void StartLevel(_Level level)
-                    => OnStartLevel?.Invoke(level);
             }
 
             public static class Player {

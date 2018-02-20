@@ -39,9 +39,12 @@ namespace Celeste {
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLevelLoader] // ... except for manually manipulating the method via MonoModRules
-        public extern new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
+        public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
+        [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
+            orig_LoadLevel(playerIntro, isFromLoader);
+            Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
+        }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
         public static bool LoadCustomEntity(EntityData entityData, Level level) {

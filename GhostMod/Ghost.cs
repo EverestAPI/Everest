@@ -27,7 +27,7 @@ namespace Celeste.Mod.Ghost {
             Player = player;
             Data = data;
 
-            Depth = 1;
+            Depth = -1;
 
             Sprite = new PlayerSprite(player.Sprite.Mode);
             Sprite.HairCount = player.Sprite.HairCount;
@@ -80,6 +80,9 @@ namespace Celeste.Mod.Ghost {
             UpdateHair();
 
             base.Update();
+
+            if (!Player.InControl)
+                return;
 
             FrameIndex++;
         }

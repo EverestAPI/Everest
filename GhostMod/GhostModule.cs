@@ -28,51 +28,45 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Load() {
-            Everest.Events.LevelLoader.OnStartLevel += OnStartLevel;
-            Everest.Events.Level.OnTransitionTo += OnTransition;
+            Everest.Events.Level.OnLoadLevel += OnLoadLevel;
         }
 
         public override void Unload() {
-            Everest.Events.LevelLoader.OnStartLevel -= OnStartLevel;
-            Everest.Events.Level.OnTransitionTo -= OnTransition;
+            Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
         }
 
-        public void OnStartLevel(Level level) {
-            GhostComparison = null;
-            GhostRecorder = null;
-            SessionTransition = 0;
+        public void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
+            Logger.Log("ghost", $"OnLoadLevel level: {level.Session.Level} playerIntro: {playerIntro} isFromLoader: {isFromLoader}");
 
-            if (!level.Session.StartedFromBeginning)
-                // We can't properly keep track of the transition count when we're starting from the middle.
-                return;
+            if (isFromLoader) {
+                GhostComparison = null;
+                GhostRecorder = null;
+                SessionTransition = 0;
 
-            Next(level);
-        }
+                if (!level.Session.StartedFromBeginning)
+                    // We can't properly keep track of the transition count when we're starting from the middle.
+                    return;
+            }
 
-        public void OnTransition(Level level, LevelData next, Vector2 direction) {
-            Next(level);
-        }
-
-        public void Next(Level level) {
-            if (!Settings.Enabled)
-                return;
-
-            // If we've got a new IL PB, write the ghost.
-            if (GhostRecorder?.Data != null && (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
-                GhostRecorder.Data.Write();
-
-            // Add a new GhostComparison and update the GhostRecorder.
-            Player player = level.Tracker.GetEntity<Player>();
-
-            if (!player.Dead)
-                // Only transition if the player isn't dead.
+            if (playerIntro != Player.IntroTypes.Respawn)
                 SessionTransition++;
+            Step(level);
+        }
+
+        public void Step(Level level) {
+            if (!Settings.Enabled || SessionTransition <= 0)
+                return;
+
+            Player player = level.Tracker.GetEntity<Player>();
+            
+            // If we've got a new IL PB, write the ghost.
+            if (GhostRecorder != null && GhostRecorder.Entity == player && GhostRecorder.Data != null && (GhostComparison?.Data == null || GhostComparison.Data.Frames.Count >= GhostRecorder.Data.Frames.Count))
+                GhostRecorder.Data.Write();
 
             level.Add(GhostComparison = new Ghost(player, new GhostData(level.Session, SessionTransition).Read()));
 
-            if (GhostRecorder == null)
-                player.Add(GhostRecorder = new GhostRecorder());
-            GhostRecorder.Data = new GhostData(level.Session, SessionTransition);
+            if (GhostRecorder == null || GhostRecorder.Entity != player)
+                player.Add(GhostRecorder = new GhostRecorder(new GhostData(level.Session, SessionTransition)));
         }
 
     }

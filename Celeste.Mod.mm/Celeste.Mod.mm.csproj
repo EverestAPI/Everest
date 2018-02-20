@@ -139,7 +139,6 @@
     <Compile Include="Patches\AreaComplete.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
     <Compile Include="Patches\GameLoader.cs" />
-    <Compile Include="Patches\LevelLoader.cs" />
     <Compile Include="Patches\LevelExit.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
