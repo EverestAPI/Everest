@@ -72,6 +72,8 @@ namespace Celeste.Mod {
         }
 
         public override IEnumerator Enter(Oui from) {
+            Overworld.ShowInputUI = false;
+
             audioPrevMusic = Audio.GetEventName(Audio.CurrentMusicEventInstance);
             Audio.SetMusic(null);
             audioPrevAmbience = Audio.GetEventName(Audio.CurrentAmbienceEventInstance);
@@ -79,19 +81,21 @@ namespace Celeste.Mod {
 
             Visible = true;
 
-            for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
-                alpha = Ease.CubeOut(p);
+            for (float t = 0f; t < 1f; t += Engine.DeltaTime * 4f) {
+                alpha = Ease.CubeOut(t);
                 yield return null;
             }
         }
 
         public override IEnumerator Leave(Oui next) {
+            Overworld.ShowInputUI = true;
+
             Audio.SetMusic(audioPrevMusic);
             Audio.SetAmbience(audioPrevAmbience);
             Audio.Play("event:/ui/main/whoosh_large_out");
 
-            for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
-                alpha = 1f - Ease.CubeIn(p);
+            for (float t = 0f; t < 1f; t += Engine.DeltaTime * 4f) {
+                alpha = 1f - Ease.CubeIn(t);
                 yield return null;
             }
 

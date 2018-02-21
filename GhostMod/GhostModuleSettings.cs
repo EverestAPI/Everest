@@ -14,6 +14,7 @@ namespace Celeste.Mod.Ghost {
 
         public bool Enabled { get; set; } = true;
 
+        [SettingInGame(false)]
         public string Name { get; set; } = "";
 
         public bool ShowOtherNames { get; set; } = true;

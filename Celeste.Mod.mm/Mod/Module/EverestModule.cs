@@ -261,6 +261,7 @@ namespace Celeste.Mod {
                         new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
                         .Change(v => prop.SetValue(settings, v))
                     ;
+
                 } else if (propType.IsEnum) {
                     Array enumValues = Enum.GetValues(propType);
                     Array.Sort((int[]) enumValues);
@@ -272,6 +273,18 @@ namespace Celeste.Mod {
                             return fullName.DialogCleanOrNull() ?? enumName;
                         }, 0, enumValues.Length - 1, (int) value)
                         .Change(v => prop.SetValue(settings, v))
+                    ;
+
+                } else if (!inGame && propType == typeof(string)) {
+                    item =
+                        new TextMenu.Button(name + ": " + value)
+                        .Pressed(() => {
+                            Audio.Play("event:/ui/main/savefile_rename_start");
+                            menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
+                                (string) value,
+                                v => prop.SetValue(settings, v)
+                            );
+                        })
                     ;
                 }
 
