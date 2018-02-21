@@ -196,9 +196,10 @@ namespace Celeste.Mod {
                 return;
 
             // The default name prefix.
-            string nameDefaultPrefix = $"modoptions_{type.Name.ToLowerInvariant()}_";
-            if (nameDefaultPrefix.EndsWith("Settings"))
-                nameDefaultPrefix = nameDefaultPrefix.Substring(0, nameDefaultPrefix.Length - 8);
+            string typeName = type.Name.ToLowerInvariant();
+            if (typeName.EndsWith("settings"))
+                typeName = typeName.Substring(0, typeName.Length - 8);
+            string nameDefaultPrefix = $"modoptions_{typeName}_";
 
             // Any attributes we may want to get and read from later.
             SettingInGameAttribute attribInGame;
@@ -214,7 +215,7 @@ namespace Celeste.Mod {
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
             name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
-            menu.Add(new TextMenu.SubHeader(name));
+            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
 
             PropertyInfo[] props;
             if (type == _PrevSettingsType) {

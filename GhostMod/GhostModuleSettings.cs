@@ -14,6 +14,12 @@ namespace Celeste.Mod.Ghost {
 
         public bool Enabled { get; set; } = true;
 
+        public string Name { get; set; } = "";
+
+        public bool ShowOtherNames { get; set; } = true;
+
+        public bool ShowDeaths { get; set; } = false;
+
         [SettingRange(0, 10)]
         public int InnerOpacity { get; set; } = 5;
         [YamlIgnore]
@@ -21,12 +27,24 @@ namespace Celeste.Mod.Ghost {
         public float InnerOpacityFactor => InnerOpacity / 10f;
 
         [SettingRange(0, 10)]
+        public int InnerHairOpacity { get; set; } = 5;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float InnerHairOpacityFactor => InnerHairOpacity / 10f;
+
+        [SettingRange(0, 10)]
         public int OuterOpacity { get; set; } = 1;
         [YamlIgnore]
         [SettingIgnore]
         public float OuterOpacityFactor => OuterOpacity / 10f;
 
-        [SettingRange(1, 10)]
+        [SettingRange(0, 10)]
+        public int OuterHairOpacity { get; set; } = 1;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float OuterHairOpacityFactor => OuterHairOpacity / 10f;
+
+        [SettingRange(0, 10)]
         public int InnerRadius { get; set; } = 4;
         [YamlIgnore]
         [SettingIgnore]
@@ -37,10 +55,6 @@ namespace Celeste.Mod.Ghost {
         [YamlIgnore]
         [SettingIgnore]
         public float BorderSizeDist => BorderSize * BorderSize * 64f;
-
-        public bool FloatingHair { get; set; } = false;
-
-        public bool ShowDeaths { get; set; } = false;
 
     }
 }

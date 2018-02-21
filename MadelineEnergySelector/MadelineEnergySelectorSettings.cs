@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Energy {
-    [SettingName("MadelineEnergySelector")]
     public class MadelineEnergySelectorSettings : EverestModuleSettings {
 
         public bool Enabled { get; set; } = false;

@@ -39,10 +39,6 @@ namespace Celeste.Mod.Ghost {
             if (isFromLoader) {
                 Ghosts.Clear();
                 GhostRecorder = null;
-
-                if (!level.Session.StartedFromBeginning)
-                    // We can't properly keep track of the transition count when we're starting from the middle.
-                    return;
             }
 
             Step(level);
@@ -72,11 +68,12 @@ namespace Celeste.Mod.Ghost {
                 GhostRecorder.Data.Write();
             }
 
-            // Read and add all possible ghosts.
-            GhostData.ForAllGhosts(level.Session, ghostData => {
+            // Read and add all ghosts.
+            GhostData.ForAllGhosts(level.Session, (i, ghostData) => {
                 Ghost ghost = new Ghost(player, ghostData);
                 level.Add(ghost);
                 Ghosts.Add(ghost);
+                return true;
             });
 
             if (GhostRecorder == null)

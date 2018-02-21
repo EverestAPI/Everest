@@ -20,9 +20,12 @@ namespace Celeste.Mod.Ghost {
 
         public GhostData Data;
         public int FrameIndex = 0;
-        public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? default(GhostFrame) : Data[FrameIndex];
+        public GhostFrame? ForcedFrame;
+        public GhostFrame Frame => ForcedFrame ?? (Data == null ? default(GhostFrame) : Data[FrameIndex]);
+        public bool AutoForward = true;
 
         protected float alpha;
+        protected float alphaHair;
 
         public Ghost(Player player)
             : this(player, null) {
@@ -55,7 +58,7 @@ namespace Celeste.Mod.Ghost {
                 return;
 
             Hair.Color = Frame.HairColor;
-            Hair.Alpha = GhostModule.Settings.FloatingHair ? 1f : alpha;
+            Hair.Alpha = alphaHair;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
@@ -80,20 +83,28 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Update() {
-            Visible = Frame.HasData;
+            Visible = GhostModule.Settings.Enabled && Frame.HasData;
             if (Data != null && Data.Dead)
                 Visible &= GhostModule.Settings.ShowDeaths;
 
-            float dist = (Player.Position - Position).LengthSquared();
-            dist -= GhostModule.Settings.InnerRadiusDist;
-            if (dist < 0f)
-                dist = 0f;
-            if (GhostModule.Settings.BorderSize == 0) {
-                dist = dist < GhostModule.Settings.InnerRadiusDist ? 0f : 1f;
+            if (Data != null && Data.Opacity != null) {
+                alpha = Data.Opacity.Value;
+                alphaHair = Data.Opacity.Value;
             } else {
-                dist /= GhostModule.Settings.BorderSizeDist;
+                float dist = (Player.Position - Position).LengthSquared();
+                dist -= GhostModule.Settings.InnerRadiusDist;
+                if (dist < 0f)
+                    dist = 0f;
+                if (GhostModule.Settings.BorderSize == 0) {
+                    dist = dist < GhostModule.Settings.InnerRadiusDist ? 0f : 1f;
+                } else {
+                    dist /= GhostModule.Settings.BorderSizeDist;
+                }
+                alpha = Calc.LerpClamp(GhostModule.Settings.InnerOpacityFactor, GhostModule.Settings.OuterOpacityFactor, dist);
+                alphaHair = Calc.LerpClamp(GhostModule.Settings.InnerHairOpacityFactor, GhostModule.Settings.OuterHairOpacityFactor, dist);
             }
-            alpha = Calc.LerpClamp(GhostModule.Settings.InnerOpacityFactor, GhostModule.Settings.OuterOpacityFactor, dist);
+
+            Visible &= alpha > 0f;
 
             UpdateSprite();
             UpdateHair();
@@ -103,9 +114,11 @@ namespace Celeste.Mod.Ghost {
             if (!Player.InControl)
                 return;
 
-            do {
-                FrameIndex++;
-            } while (Frame.HasData && !Frame.InControl);
+            if (AutoForward && ForcedFrame == null) {
+                do {
+                    FrameIndex++;
+                } while (Frame.HasData && !Frame.InControl);
+            }
         }
 
     }

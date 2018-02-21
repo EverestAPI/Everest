@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Rainbow {
-    [SettingName("Rainbow-deline")] // We're lazy.
     public class RainbowModuleSettings : EverestModuleSettings {
 
         public bool Enabled { get; set; } = false;
