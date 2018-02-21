@@ -19,6 +19,6 @@
 # {anchor} controls the visual position of the textbox in-game
 
 # Rainbow Module Options
-	MODOPTIONS_RAINBOWMODULE_TITLE= 	Rainbow-eline
+	MODOPTIONS_RAINBOWMODULE_TITLE= 	Fabeline
 	MODOPTIONS_RAINBOWMODULE_ENABLED= 	Enabled
 	MODOPTIONS_RAINBOWMODULE_SPEED= 	Speed
