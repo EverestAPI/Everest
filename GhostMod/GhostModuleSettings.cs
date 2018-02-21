@@ -16,10 +16,32 @@ namespace Celeste.Mod.Ghost {
         public bool Enabled { get; set; } = true;
 
         [SettingRange(0, 10)]
-        public int Opacity { get; set; } = 5;
+        [SettingName("Near Opacity")]
+        public int InnerOpacity { get; set; } = 5;
         [YamlIgnore]
         [SettingIgnore]
-        public float OpacityFactor => Opacity / 10f;
+        public float InnerOpacityFactor => InnerOpacity / 10f;
+
+        [SettingRange(0, 10)]
+        [SettingName("Far Opacity")]
+        public int OuterOpacity { get; set; } = 1;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float OuterOpacityFactor => OuterOpacity / 10f;
+
+        [SettingRange(1, 10)]
+        [SettingName("Near Radius")]
+        public int InnerRadius { get; set; } = 3;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float InnerRadiusDist => InnerRadius * InnerRadius * 64f;
+
+        [SettingRange(1, 10)]
+        [SettingName("Gradient Region")]
+        public int BorderSize { get; set; } = 4;
+        [YamlIgnore]
+        [SettingIgnore]
+        public float BorderSizeDist => BorderSize * BorderSize * 64f;
 
     }
 }

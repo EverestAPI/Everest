@@ -22,6 +22,8 @@ namespace Celeste.Mod.Ghost {
         public int FrameIndex = 0;
         public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? default(GhostFrame) : Data[FrameIndex];
 
+        protected float alpha;
+
         public Ghost(Player player)
             : this(player, null) {
         }
@@ -30,7 +32,7 @@ namespace Celeste.Mod.Ghost {
             Player = player;
             Data = data;
 
-            Depth = -1;
+            Depth = 1;
 
             Sprite = new PlayerSprite(player.Sprite.Mode);
             Sprite.HairCount = player.Sprite.HairCount;
@@ -52,7 +54,7 @@ namespace Celeste.Mod.Ghost {
             if (!Frame.HasData)
                 return;
 
-            Hair.Color = Frame.HairColor * GhostModule.Settings.OpacityFactor;
+            Hair.Color = Frame.HairColor * alpha;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
@@ -64,7 +66,7 @@ namespace Celeste.Mod.Ghost {
             Position = Frame.Position;
             Sprite.Rotation = Frame.Rotation;
             Sprite.Scale = Frame.Scale;
-            Sprite.Color = Frame.Color * GhostModule.Settings.OpacityFactor;
+            Sprite.Color = Frame.Color * alpha;
 
             try {
                 if (Sprite.CurrentAnimationID != Frame.CurrentAnimationID)
@@ -78,6 +80,17 @@ namespace Celeste.Mod.Ghost {
 
         public override void Update() {
             Visible = Frame.HasData;
+
+            float dist = (Player.Position - Position).LengthSquared();
+            dist -= GhostModule.Settings.InnerRadiusDist;
+            if (dist < 0f)
+                dist = 0f;
+            if (GhostModule.Settings.BorderSize == 0) {
+                dist = dist < GhostModule.Settings.InnerRadiusDist ? 0f : 1f;
+            } else {
+                dist /= GhostModule.Settings.BorderSizeDist;
+            }
+            alpha = Calc.LerpClamp(GhostModule.Settings.InnerOpacityFactor, GhostModule.Settings.OuterOpacityFactor, dist);
 
             UpdateSprite();
             UpdateHair();
