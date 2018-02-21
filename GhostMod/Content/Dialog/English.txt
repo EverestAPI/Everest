@@ -1,0 +1,28 @@
+﻿# NOTES:
+# The # Symbol at the start of a line counts as a Comment. To include in dialog, use a \#
+# The . Symbol will cause a pause unless escaped with \. (ex: Mr. Oshiro has a pause, Mr\. Oshiro does not)
+# Newlines automatically create a Page Break, unless there is an {n} command on the previous line
+# Commands: Anything inside of curly braces {...} is a command and should not be translated.
+
+# Inline Text Commands:
+# {~}wavy text{/~}
+# {!}impact text{/!}
+# {>> x}changes speed at which characters are displayed{>>}
+# {# 000000}this text is black{#} (uses HEX color values)
+# {+MENU_BEGIN} inserts the dialog from the MENU_BEGIN value (in English, "CLIMB")
+# {n} creates a newline, without a page break
+# {0.5} creates a 0.5 second pause
+# {big}this text is large{/big}
+
+# Gameplay Control Commands (should never change)
+# {trigger x} this triggers an in-game event
+# {anchor} controls the visual position of the textbox in-game
+
+# Ghost Module Options
+	MODOPTIONS_GHOSTMODULE_TITLE= 			Ghost-eline
+	MODOPTIONS_GHOSTMODULE_INNEROPACITY= 	Near Ghost Visibility
+	MODOPTIONS_GHOSTMODULE_OUTEROPACITY= 	Far Ghost Visibility
+	MODOPTIONS_GHOSTMODULE_INNERRADIUS= 	Near Ghost Radius
+	MODOPTIONS_GHOSTMODULE_BORDERSIZE= 		Gradient Region
+	MODOPTIONS_GHOSTMODULE_FLOATINGHAIR= 	Show Floating Hair
+	MODOPTIONS_GHOSTMODULE_SHOWDEATHS= 		Show Recorded Deaths

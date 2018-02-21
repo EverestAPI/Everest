@@ -55,7 +55,7 @@ namespace Celeste.Mod.Ghost {
                 return;
 
             Hair.Color = Frame.HairColor;
-            Hair.Alpha = GhostModule.Settings.ShowFloatingHair ? 1f : alpha;
+            Hair.Alpha = GhostModule.Settings.FloatingHair ? 1f : alpha;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
