@@ -54,7 +54,8 @@ namespace Celeste.Mod.Ghost {
             if (!Frame.HasData)
                 return;
 
-            Hair.Color = Frame.HairColor * alpha;
+            Hair.Color = Frame.HairColor;
+            Hair.Alpha = alpha;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
