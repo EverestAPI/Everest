@@ -71,6 +71,9 @@ namespace Celeste.Mod.Ghost {
         public Vector2 Scale;
         public Color Color;
 
+        public float SpriteRate;
+        public Vector2? SpriteJustify;
+
         public Facings Facing;
 
         public string CurrentAnimationID;
@@ -89,6 +92,9 @@ namespace Celeste.Mod.Ghost {
             Rotation = reader.ReadSingle();
             Scale = new Vector2(reader.ReadSingle(), reader.ReadSingle());
             Color = new Color(reader.ReadByte(), reader.ReadByte(), reader.ReadByte(), reader.ReadByte());
+
+            SpriteRate = reader.ReadSingle();
+            SpriteJustify = reader.ReadBoolean() ? (Vector2?) new Vector2(reader.ReadSingle(), reader.ReadSingle()) : null;
 
             Facing = (Facings) reader.ReadInt32();
 
@@ -121,6 +127,16 @@ namespace Celeste.Mod.Ghost {
             writer.Write(Color.G);
             writer.Write(Color.B);
             writer.Write(Color.A);
+
+            writer.Write(SpriteRate);
+
+            if (SpriteJustify != null) {
+                writer.Write(true);
+                writer.Write(SpriteJustify.Value.X);
+                writer.Write(SpriteJustify.Value.Y);
+            } else {
+                writer.Write(false);
+            }
 
             writer.Write((int) Facing);
 

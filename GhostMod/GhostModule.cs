@@ -53,6 +53,13 @@ namespace Celeste.Mod.Ghost {
 
             Player player = level.Tracker.GetEntity<Player>();
 
+            // Write the ghost, even if we haven't gotten an IL PB.
+            // Maybe we left the level prematurely earlier?
+            if (GhostRecorder?.Data != null) {
+                GhostRecorder.Data.Target = target;
+                GhostRecorder.Data.Write();
+            }
+
             // Remove any dead ghosts (heh)
             for (int i = Ghosts.Count - 1; i > -1; --i) {
                 Ghost ghost = Ghosts[i];
@@ -60,13 +67,6 @@ namespace Celeste.Mod.Ghost {
                     ghost.RemoveSelf();
             }
             Ghosts.Clear();
-
-            // Write the ghost, even if we haven't gotten an IL PB.
-            // Maybe we left the level prematurely earlier?
-            if (GhostRecorder?.Data != null) {
-                GhostRecorder.Data.Target = target;
-                GhostRecorder.Data.Write();
-            }
 
             // Read and add all ghosts.
             GhostData.ForAllGhosts(level.Session, (i, ghostData) => {
@@ -76,7 +76,7 @@ namespace Celeste.Mod.Ghost {
                 return true;
             });
 
-            if (GhostRecorder == null)
+            if (GhostRecorder == null || GhostRecorder.Entity != player)
                 player.Add(GhostRecorder = new GhostRecorder());
             GhostRecorder.Data = new GhostData(level.Session);
         }

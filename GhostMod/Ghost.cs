@@ -72,6 +72,9 @@ namespace Celeste.Mod.Ghost {
             Sprite.Scale = Frame.Scale;
             Sprite.Color = Frame.Color * alpha;
 
+            Sprite.Rate = Frame.SpriteRate;
+            Sprite.Justify = Frame.SpriteJustify;
+
             try {
                 if (Sprite.CurrentAnimationID != Frame.CurrentAnimationID)
                     Sprite.Play(Frame.CurrentAnimationID);
