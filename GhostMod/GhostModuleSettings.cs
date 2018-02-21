@@ -29,19 +29,25 @@ namespace Celeste.Mod.Ghost {
         [SettingIgnore]
         public float OuterOpacityFactor => OuterOpacity / 10f;
 
+        [SettingName("Show Floating Hair")]
+        public bool ShowFloatingHair { get; set; } = false;
+
         [SettingRange(1, 10)]
         [SettingName("Near Radius")]
-        public int InnerRadius { get; set; } = 3;
+        public int InnerRadius { get; set; } = 4;
         [YamlIgnore]
         [SettingIgnore]
         public float InnerRadiusDist => InnerRadius * InnerRadius * 64f;
 
-        [SettingRange(1, 10)]
+        [SettingRange(0, 10)]
         [SettingName("Gradient Region")]
         public int BorderSize { get; set; } = 4;
         [YamlIgnore]
         [SettingIgnore]
         public float BorderSizeDist => BorderSize * BorderSize * 64f;
+
+        [SettingName("Show Recorded Deaths")]
+        public bool ShowDeaths { get; set; } = false;
 
     }
 }

@@ -35,6 +35,9 @@ namespace Celeste.Mod.Ghost {
             if (Data == null)
                 return;
 
+            if (player.Dead)
+                Data.Dead = true;
+
             Data.Frames.Add(new GhostFrame {
                 HasData = true,
 

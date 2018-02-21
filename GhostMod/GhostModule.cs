@@ -27,10 +27,12 @@ namespace Celeste.Mod.Ghost {
 
         public override void Load() {
             Everest.Events.Level.OnLoadLevel += OnLoadLevel;
+            Everest.Events.Player.OnDie += OnDie;
         }
 
         public override void Unload() {
             Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+            Everest.Events.Player.OnDie -= OnDie;
         }
 
         public void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
@@ -55,10 +57,6 @@ namespace Celeste.Mod.Ghost {
 
             Player player = level.Tracker.GetEntity<Player>();
 
-            // If we're not recording the current player, set the recorder to null for simplicity.
-            if (GhostRecorder != null && (GhostRecorder.Entity != player || GhostRecorder.Data == null))
-                GhostRecorder = null;
-
             // Remove any dead ghosts (heh)
             for (int i = Ghosts.Count - 1; i > -1; --i) {
                 Ghost ghost = Ghosts[i];
@@ -69,7 +67,7 @@ namespace Celeste.Mod.Ghost {
 
             // Write the ghost, even if we haven't gotten an IL PB.
             // Maybe we left the level prematurely earlier?
-            if (GhostRecorder != null && GhostRecorder.Data != null) {
+            if (GhostRecorder?.Data != null) {
                 GhostRecorder.Data.Target = target;
                 GhostRecorder.Data.Write();
             }
@@ -84,6 +82,11 @@ namespace Celeste.Mod.Ghost {
             if (GhostRecorder == null)
                 player.Add(GhostRecorder = new GhostRecorder());
             GhostRecorder.Data = new GhostData(level.Session);
+        }
+
+        public void OnDie(Player player) {
+            if (GhostRecorder?.Data != null)
+                GhostRecorder.Data.Dead = true;
         }
 
     }

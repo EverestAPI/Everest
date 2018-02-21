@@ -55,7 +55,7 @@ namespace Celeste.Mod.Ghost {
                 return;
 
             Hair.Color = Frame.HairColor;
-            Hair.Alpha = alpha;
+            Hair.Alpha = GhostModule.Settings.ShowFloatingHair ? 1f : alpha;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
@@ -81,6 +81,8 @@ namespace Celeste.Mod.Ghost {
 
         public override void Update() {
             Visible = Frame.HasData;
+            if (Data != null && Data.Dead)
+                Visible &= GhostModule.Settings.ShowDeaths;
 
             float dist = (Player.Position - Position).LengthSquared();
             dist -= GhostModule.Settings.InnerRadiusDist;

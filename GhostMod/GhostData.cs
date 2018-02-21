@@ -17,7 +17,7 @@ namespace Celeste.Mod.Ghost {
         public readonly static string Magic = "everest-ghost\r\n";
         public readonly static char[] MagicChars = Magic.ToCharArray();
 
-        public readonly static int Version = 0;
+        public readonly static int Version = 1;
 
         public readonly static Regex PathVerifyRegex = new Regex("[\"`" + Regex.Escape(new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars())) + "]", RegexOptions.Compiled);
 
@@ -26,6 +26,8 @@ namespace Celeste.Mod.Ghost {
         public string Level;
         public string Target;
         public int Revision;
+
+        public bool Dead;
 
         protected string _FilePath;
         public string FilePath {
@@ -140,6 +142,10 @@ namespace Celeste.Mod.Ghost {
             Target = reader.ReadNullTerminatedString();
             Revision = reader.ReadInt32();
 
+            if (version >= 1) {
+                Dead = reader.ReadBoolean();
+            }
+
             int count = reader.ReadInt32();
             reader.ReadChar(); // \r
             reader.ReadChar(); // \n
@@ -181,6 +187,8 @@ namespace Celeste.Mod.Ghost {
             writer.WriteNullTerminatedString(Level);
             writer.WriteNullTerminatedString(Target);
             writer.Write(Revision);
+
+            writer.Write(Dead);
 
             writer.Write(Frames.Count);
             writer.Write('\r');
