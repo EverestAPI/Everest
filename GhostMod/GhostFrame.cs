@@ -13,14 +13,7 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod.Ghost {
     public struct GhostFrame {
 
-        /// <summary>
-        /// To be used in a possible networking context.
-        /// </summary>
-        public int Index;
-
         public void Read(BinaryReader reader) {
-            Index = reader.ReadInt32();
-
             string chunk;
             // The last "chunk" type, \r\n (Windows linebreak), doesn't contain a length.
             while ((chunk = reader.ReadNullTerminatedString()) != "\r\n") {
@@ -41,8 +34,6 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void Write(BinaryWriter writer) {
-            writer.Write(Index);
-
             WriteChunkData(writer);
 
             WriteChunkInput(writer);

@@ -151,9 +151,11 @@ namespace Celeste.Mod {
         */
 
         public static void WriteNullTerminatedString(this BinaryWriter stream, string text) {
-            for (int i = 0; i < text.Length; i++) {
-                char c = text[i];
-                stream.Write(c);
+            if (text != null) {
+                for (int i = 0; i < text.Length; i++) {
+                    char c = text[i];
+                    stream.Write(c);
+                }
             }
             stream.Write('\0');
         }

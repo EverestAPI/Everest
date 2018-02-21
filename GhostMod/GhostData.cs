@@ -21,16 +21,30 @@ namespace Celeste.Mod.Ghost {
 
         public readonly static Regex PathVerifyRegex = new Regex("[\"`" + Regex.Escape(new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars())) + "]", RegexOptions.Compiled);
 
-        public static string GetPath(Session session, int transition)
-            => Path.Combine(
-                Everest.PathSettings, "Ghosts",
-                PathVerifyRegex.Replace(
-                    session.Area.GetSID().Replace('/', '-') + "-" + session.Area.Mode.ToString() + "-" + transition + "-" + session.Level + ".oshiro",
-                    "_"
-                )
-            );
+        public string SID;
+        public AreaMode Mode;
+        public string Level;
+        public string Target;
+        public int Revision;
 
-        public string FilePath;
+        protected string _FilePath;
+        public string FilePath {
+            get {
+                if (_FilePath != null)
+                    return _FilePath;
+
+                return Path.Combine(
+                    Everest.PathSettings, "Ghosts",
+                    PathVerifyRegex.Replace(
+                        $"{SID.Replace('/', '-')} {Mode} in {Level}",
+                        "_"
+                    ) + $" #{(Revision + 1).ToString("0000")}.oshiro"
+                );
+            }
+            set {
+                _FilePath = value;
+            }
+        }
 
         public List<GhostFrame> Frames = new List<GhostFrame>();
 
@@ -42,11 +56,46 @@ namespace Celeste.Mod.Ghost {
             }
         }
 
-        public GhostData()
-            : this(null) {
+        public static string[] GetAllGhostFilePaths(Session session)
+            => Directory.GetFiles(
+                Path.Combine(Everest.PathSettings, "Ghosts"),
+                PathVerifyRegex.Replace(
+                    $"{session.Area.GetSID().Replace('/', '-')} {session.Area.Mode} in {session.Level}",
+                    "_"
+                ) + " #*.oshiro"
+            );
+        public static List<GhostData> ReadAllGhosts(Session session, List<GhostData> list = null) {
+            if (list == null)
+                list = new List<GhostData>();
+
+            foreach (string filePath in GetAllGhostFilePaths(session)) {
+                GhostData ghost = new GhostData(filePath).Read();
+                if (ghost == null)
+                    continue;
+                list.Add(ghost);
+            }
+
+            return list;
         }
-        public GhostData(Session session, int transition)
-            : this(GetPath(session, transition)) {
+        public static void ForAllGhosts(Session session, Action<GhostData> cb) {
+            if (cb == null)
+                return;
+            foreach (string filePath in GetAllGhostFilePaths(session)) {
+                GhostData ghost = new GhostData(filePath).Read();
+                if (ghost == null)
+                    continue;
+                cb(ghost);
+            }
+        }
+
+        public GhostData() {
+        }
+        public GhostData(Session session) {
+            if (session != null) {
+                SID = session.Area.GetSID();
+                Mode = session.Area.Mode;
+                Level = session.Level;
+            }
         }
         public GhostData(string filePath) {
             FilePath = filePath;
@@ -85,7 +134,15 @@ namespace Celeste.Mod.Ghost {
             if (version > Version)
                 return null;
 
+            SID = reader.ReadNullTerminatedString();
+            Mode = (AreaMode) reader.ReadInt32();
+            Level = reader.ReadNullTerminatedString();
+            Target = reader.ReadNullTerminatedString();
+            Revision = reader.ReadInt32();
+
             int count = reader.ReadInt32();
+            reader.ReadChar(); // \r
+            reader.ReadChar(); // \n
             Frames = new List<GhostFrame>(count);
             for (int i = 0; i < count; i++) {
                 GhostFrame frame = new GhostFrame();
@@ -99,8 +156,13 @@ namespace Celeste.Mod.Ghost {
         public void Write() {
             if (FilePath == null)
                 return;
-            if (File.Exists(FilePath))
-                File.Delete(FilePath);
+            if (_FilePath != null && File.Exists(_FilePath)) {
+                // Force ourselves onto the set filepath.
+                File.Delete(_FilePath);
+            } else while (File.Exists(FilePath)) {
+                    // Increase the revision.
+                    Revision++;
+                }
 
             if (!Directory.Exists(Path.GetDirectoryName(FilePath)))
                 Directory.CreateDirectory(Path.GetDirectoryName(FilePath));
@@ -113,7 +175,16 @@ namespace Celeste.Mod.Ghost {
             writer.Write((short) 0x0ade);
             writer.Write(MagicChars);
             writer.Write(Version);
+
+            writer.WriteNullTerminatedString(SID);
+            writer.Write((int) Mode);
+            writer.WriteNullTerminatedString(Level);
+            writer.WriteNullTerminatedString(Target);
+            writer.Write(Revision);
+
             writer.Write(Frames.Count);
+            writer.Write('\r');
+            writer.Write('\n');
             for (int i = 0; i < Frames.Count; i++) {
                 GhostFrame frame = Frames[i];
                 frame.Write(writer);

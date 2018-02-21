@@ -23,8 +23,12 @@ namespace Celeste.Mod.Ghost {
         public GhostFrame Frame => !GhostModule.Settings.Enabled || Data == null ? default(GhostFrame) : Data[FrameIndex];
 
         public Ghost(Player player)
+            : this(player, null) {
+        }
+        public Ghost(Player player, GhostData data)
             : base(player.Position) {
             Player = player;
+            Data = data;
 
             Depth = -1;
 
@@ -48,7 +52,7 @@ namespace Celeste.Mod.Ghost {
             if (!Frame.HasData)
                 return;
 
-            Hair.Color = Frame.HairColor;
+            Hair.Color = Frame.HairColor * GhostModule.Settings.OpacityFactor;
             Hair.Facing = Frame.Facing;
             Hair.SimulateMotion = Frame.HairSimulateMotion;
         }
