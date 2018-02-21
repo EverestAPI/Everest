@@ -24,6 +24,8 @@ namespace Celeste.Mod.Ghost {
         public GhostFrame Frame => ForcedFrame ?? (Data == null ? default(GhostFrame) : Data[FrameIndex]);
         public bool AutoForward = true;
 
+        public GhostName Name;
+
         protected float alpha;
         protected float alphaHair;
 
@@ -51,6 +53,15 @@ namespace Celeste.Mod.Ghost {
             Hair.Facing = Frame.Facing;
             Hair.Start();
             UpdateHair();
+
+            if (Data != null && Data.Name != GhostModule.Settings.Name)
+                Scene.Add(Name = new GhostName(this, Data.Name));
+        }
+
+        public override void Removed(Scene scene) {
+            base.Removed(scene);
+
+            Name?.RemoveSelf();
         }
 
         public void UpdateHair() {
@@ -108,6 +119,9 @@ namespace Celeste.Mod.Ghost {
             }
 
             Visible &= alpha > 0f;
+
+            if (Name != null)
+                Name.Alpha = alpha;
 
             UpdateSprite();
             UpdateHair();
