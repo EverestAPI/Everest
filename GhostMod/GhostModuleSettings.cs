@@ -22,13 +22,13 @@ namespace Celeste.Mod.Ghost {
         public bool ShowDeaths { get; set; } = false;
 
         [SettingRange(0, 10)]
-        public int InnerOpacity { get; set; } = 5;
+        public int InnerOpacity { get; set; } = 4;
         [YamlIgnore]
         [SettingIgnore]
         public float InnerOpacityFactor => InnerOpacity / 10f;
 
         [SettingRange(0, 10)]
-        public int InnerHairOpacity { get; set; } = 5;
+        public int InnerHairOpacity { get; set; } = 4;
         [YamlIgnore]
         [SettingIgnore]
         public float InnerHairOpacityFactor => InnerHairOpacity / 10f;

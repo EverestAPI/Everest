@@ -79,6 +79,10 @@ namespace Celeste.Mod.Ghost {
             if (GhostRecorder == null || GhostRecorder.Entity != player)
                 player.Add(GhostRecorder = new GhostRecorder());
             GhostRecorder.Data = new GhostData(level.Session);
+            GhostRecorder.Data.Name = Settings.Name;
+
+            if (Ghosts.Count > 0)
+                level.Add(new GhostName(player, !string.IsNullOrEmpty(Settings.Name) ? Settings.Name : "YOU"));
         }
 
         public void OnDie(Player player) {
