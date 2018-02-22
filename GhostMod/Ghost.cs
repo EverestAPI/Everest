@@ -134,7 +134,10 @@ namespace Celeste.Mod.Ghost {
             if (AutoForward && ForcedFrame == null) {
                 do {
                     FrameIndex++;
-                } while (Frame.HasData && !Frame.InControl);
+                } while (
+                    (Frame.HasData && !Frame.InControl) || // Skip any frames we're not in control in.
+                    (!Frame.HasData && FrameIndex < Data.Frames.Count) // Skip any frames not containing the data chunk.
+                );
             }
         }
 

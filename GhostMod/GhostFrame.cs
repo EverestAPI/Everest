@@ -157,6 +157,7 @@ namespace Celeste.Mod.Ghost {
 
         public int MoveX;
         public int MoveY;
+
         public Vector2 Aim;
         public Vector2 MountainAim;
 
