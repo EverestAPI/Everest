@@ -23,8 +23,10 @@ namespace Celeste.Mod {
         public CustomMemorial(Vector2 position, string texture, string dialog)
             : base(position) {
             Tag = Tags.PauseUpdate;
-            Add(sprite = new Image(GFX.Game[texture]));
-            sprite.Origin = new Vector2(sprite.Width / 2f, sprite.Height);
+            if (!string.IsNullOrWhiteSpace(texture)) {
+                Add(sprite = new Image(GFX.Game[texture]));
+                sprite.Origin = new Vector2(sprite.Width / 2f, sprite.Height);
+            }
 
             textText = Dialog.Clean(dialog);
 
