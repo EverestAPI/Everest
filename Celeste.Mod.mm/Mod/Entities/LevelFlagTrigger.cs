@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
+    [Tracked]
     public class LevelFlagTrigger : Trigger {
 
         private string flag;

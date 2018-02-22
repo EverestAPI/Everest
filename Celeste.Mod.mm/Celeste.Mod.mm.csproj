@@ -94,6 +94,9 @@
   <ItemGroup>
     <Compile Include="Mod\CoreModule\CoreModuleSaveData.cs" />
     <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
+    <Compile Include="Mod\Entities\CustomMemorialText.cs" />
+    <Compile Include="Mod\Entities\CustomMemorial.cs" />
+    <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Commands.cs" />
     <Compile Include="Mod\Everest\Everest.Update.cs" />
