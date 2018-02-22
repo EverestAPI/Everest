@@ -21,8 +21,11 @@ namespace Celeste.Mod.Ghost {
         public List<Ghost> Ghosts = new List<Ghost>();
         public GhostRecorder GhostRecorder;
 
+        private string cmdTASPath;
+
         public GhostModule() {
             Instance = this;
+            
         }
 
         public override void Load() {
@@ -35,9 +38,34 @@ namespace Celeste.Mod.Ghost {
             Everest.Events.Player.OnDie -= OnDie;
         }
 
+        public override bool ParseArg(string arg, Queue<string> args) {
+            if (arg == "--tas" && args.Count >= 1) {
+                cmdTASPath = args.Dequeue();
+                Logger.Log("ghost", $"Found --tas argument: {cmdTASPath}");
+                return true;
+            }
+
+            return false;
+        }
+
+        public override void Initialize() {
+            if (cmdTASPath != null) {
+                cmdTASPath = Path.Combine(Everest.PathSettings, "Ghosts", cmdTASPath + ".oshiro");
+                Logger.Log("ghost", $"Loading TAS input file: {cmdTASPath}");
+                GhostData data = new GhostData(cmdTASPath).Read();
+                if (data != null) {
+                    Logger.Log("ghost", "Loaded, adding GhostReplayer component.");
+                    Celeste.Instance.Components.Add(new GhostInputReplayer(Celeste.Instance, data));
+                } else {
+                    Logger.Log("ghost", "TAS input file failed loading.");
+                }
+            }
+        }
+
         public void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
             if (isFromLoader) {
                 Ghosts.Clear();
+                GhostRecorder?.RemoveSelf();
                 GhostRecorder = null;
             }
 
@@ -76,8 +104,9 @@ namespace Celeste.Mod.Ghost {
                 return true;
             });
 
-            if (GhostRecorder == null || GhostRecorder.Entity != player)
-                player.Add(GhostRecorder = new GhostRecorder());
+            if (GhostRecorder != null)
+                GhostRecorder.RemoveSelf();
+            level.Add(GhostRecorder = new GhostRecorder(player));
             GhostRecorder.Data = new GhostData(level.Session);
             GhostRecorder.Data.Name = Settings.Name;
         }

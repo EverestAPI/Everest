@@ -10,18 +10,22 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Ghost {
-    public class GhostRecorder : Component {
+    public class GhostRecorder : Entity {
+
+        public Player Player;
 
         public GhostData Data;
 
-        public GhostRecorder()
-            : base(true, false) {
+        public GhostRecorder(Player player)
+            : base() {
+            Player = player;
+            Tag = Tags.HUD;
         }
 
-        public override void Added(Entity entity) {
-            base.Added(entity);
+        public override void Added(Scene scene) {
+            base.Added(scene);
 
-            if (!GhostModule.Settings.Enabled) {
+            if (!GhostModule.Settings.Enabled || Player == null) {
                 RemoveSelf();
                 return;
             }
@@ -30,57 +34,91 @@ namespace Celeste.Mod.Ghost {
         public override void Update() {
             base.Update();
 
-            Player player = (Player) Entity;
+            if (Data == null)
+                return;
+
+            RecordData();
+        }
+
+        public override void Render() {
+            base.Render();
 
             if (Data == null)
                 return;
 
-            if (player.Dead)
-                Data.Dead = true;
+            RecordInput();
+        }
 
+        public void RecordData() {
+            // A data frame is always a new frame, no matter if the previous one lacks data or not.
             Data.Frames.Add(new GhostFrame {
                 HasData = true,
 
-                InControl = player.InControl,
+                InControl = Player.InControl,
 
-                Position = player.Position,
-                Speed = player.Speed,
-                Rotation = player.Sprite.Rotation,
-                Scale = player.Sprite.Scale,
-                Color = player.Sprite.Color,
+                Position = Player.Position,
+                Speed = Player.Speed,
+                Rotation = Player.Sprite.Rotation,
+                Scale = Player.Sprite.Scale,
+                Color = Player.Sprite.Color,
 
-                Facing = player.Facing,
+                Facing = Player.Facing,
 
-                CurrentAnimationID = player.Sprite.CurrentAnimationID,
-                CurrentAnimationFrame = player.Sprite.CurrentAnimationFrame,
+                CurrentAnimationID = Player.Sprite.CurrentAnimationID,
+                CurrentAnimationFrame = Player.Sprite.CurrentAnimationFrame,
 
-                HairColor = player.Hair.Color,
-                HairSimulateMotion = player.Hair.SimulateMotion,
-
-                HasInput = true,
-
-                MoveX = Input.MoveX.Value,
-                MoveY = Input.MoveY.Value,
-
-                Aim = Input.Aim.Value,
-                MountainAim = Input.MountainAim.Value,
-
-                ESC = Input.ESC.Check,
-                Pause = Input.Pause.Check,
-                MenuLeft = Input.MenuLeft.Check,
-                MenuRight = Input.MenuRight.Check,
-                MenuUp = Input.MenuUp.Check,
-                MenuDown = Input.MenuDown.Check,
-                MenuConfirm = Input.MenuConfirm.Check,
-                MenuCancel = Input.MenuCancel.Check,
-                MenuJournal = Input.MenuJournal.Check,
-                QuickRestart = Input.QuickRestart.Check,
-                Jump = Input.Jump.Check,
-                Dash = Input.Dash.Check,
-                Grab = Input.Grab.Check,
-                Talk = Input.Talk.Check
-
+                HairColor = Player.Hair.Color,
+                HairSimulateMotion = Player.Hair.SimulateMotion
             });
+        }
+
+        public void RecordInput() {
+            // Check if we've got a data-less input frame. If so, add input to it.
+            // If the frame already has got input, add a new input frame.
+
+            bool inputDisabled = MInput.Disabled;
+            MInput.Disabled = false;
+
+            GhostFrame frame;
+            bool isNew = false;
+            if (Data.Frames.Count == 0 || Data[Data.Frames.Count - 1].HasInput) {
+                frame = new GhostFrame();
+                isNew = true;
+            } else {
+                frame = Data[Data.Frames.Count - 1];
+            }
+
+            frame.HasInput = true;
+
+            frame.MoveX = Input.MoveX.Value;
+            frame.MoveY = Input.MoveY.Value;
+
+            frame.Aim = Input.Aim.Value;
+            frame.MountainAim = Input.MountainAim.Value;
+
+            frame.ESC = Input.ESC.Check;
+            frame.Pause = Input.Pause.Check;
+            frame.MenuLeft = Input.MenuLeft.Check;
+            frame.MenuRight = Input.MenuRight.Check;
+            frame.MenuUp = Input.MenuUp.Check;
+            frame.MenuDown = Input.MenuDown.Check;
+            frame.MenuConfirm = Input.MenuConfirm.Check;
+            frame.MenuCancel = Input.MenuCancel.Check;
+            frame.MenuJournal = Input.MenuJournal.Check;
+            frame.QuickRestart = Input.QuickRestart.Check;
+            frame.Jump = Input.Jump.Check;
+            frame.Dash = Input.Dash.Check;
+            frame.Grab = Input.Grab.Check;
+            frame.Talk = Input.Talk.Check;
+
+            if (isNew) {
+                Data.Frames.Add(frame);
+            } else {
+                Data.Frames[Data.Frames.Count - 1] = frame;
+            }
+
+            MInput.Disabled = inputDisabled;
+
         }
 
     }

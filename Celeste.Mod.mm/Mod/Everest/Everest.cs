@@ -104,6 +104,15 @@ namespace Celeste.Mod {
 
             // We're ready - invoke Load in all loaded modules, including CoreModule.
             Invoke("Load");
+            // Also let all mods parse the arguments.
+            Queue<string> args = new Queue<string>(Args);
+            while (args.Count > 0) {
+                string arg = args.Dequeue();
+                foreach (EverestModule mod in Modules) {
+                    if (mod.ParseArg(arg, args))
+                        break;
+                }
+            }
 
             // Start requesting the version list ASAP.
             Updater.RequestAll();

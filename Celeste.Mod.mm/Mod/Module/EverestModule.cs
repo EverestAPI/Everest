@@ -180,6 +180,16 @@ namespace Celeste.Mod {
         /// </summary>
         public abstract void Unload();
 
+        /// <summary>
+        /// Parse the current command-line argument and any follow-ups.
+        /// </summary>
+        /// <param name="arg">The current command line argument.</param>
+        /// <param name="args">Any further arguments the mod may want to dequeue and parse.</param>
+        /// <returns>True if the argument "belongs" to the mod, false otherwise.</returns>
+        public virtual bool ParseArg(string arg, Queue<string> args) {
+            return false;
+        }
+
         private Type _PrevSettingsType;
         private PropertyInfo[] _PrevSettingsProps;
         /// <summary>
