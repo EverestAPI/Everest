@@ -192,7 +192,7 @@ namespace Celeste.Mod.Ghost {
                 return;
             if (FilePath != null && File.Exists(FilePath)) {
                 // Force ourselves onto the set filepath.
-                File.Delete(_FilePath);
+                File.Delete(FilePath);
             }
 
             if (!Directory.Exists(Path.GetDirectoryName(FilePath)))
