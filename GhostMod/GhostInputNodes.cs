@@ -51,9 +51,9 @@ namespace Celeste.Mod.Ghost {
                 Replayer = replayer;
                 Mask = (int) mask;
             }
-            public override bool Check => MInput.Disabled && (Replayer.Frame.Buttons & Mask) == Mask;
-            public override bool Pressed => MInput.Disabled && (Replayer.Frame.Buttons & Mask) == Mask && (Replayer.Frame.Buttons & Mask) != Mask;
-            public override bool Released => MInput.Disabled && (Replayer.Frame.Buttons & Mask) != Mask && (Replayer.Frame.Buttons & Mask) == Mask;
+            public override bool Check => !MInput.Disabled && (Replayer.Frame.Buttons & Mask) == Mask;
+            public override bool Pressed => !MInput.Disabled && (Replayer.Frame.Buttons & Mask) == Mask && (Replayer.PrevFrame.Buttons & Mask) == 0;
+            public override bool Released => !MInput.Disabled && (Replayer.Frame.Buttons & Mask) == 0 && (Replayer.PrevFrame.Buttons & Mask) == Mask;
         }
 
     }

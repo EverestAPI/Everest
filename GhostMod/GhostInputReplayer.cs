@@ -54,8 +54,6 @@ namespace Celeste.Mod.Ghost {
         public override void Update(GameTime gameTime) {
             base.Update(gameTime);
 
-            Logger.Log("ghost", $"GhostReplayer Update, prev frame #{FrameIndex} Buttons: {Convert.ToString(Frame.Buttons, 2)}");
-
             do {
                 FrameIndex++;
             } while (
