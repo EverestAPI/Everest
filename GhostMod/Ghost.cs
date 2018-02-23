@@ -81,6 +81,7 @@ namespace Celeste.Mod.Ghost {
             Position = Frame.Position;
             Sprite.Rotation = Frame.Rotation;
             Sprite.Scale = Frame.Scale;
+            Sprite.Scale.X = Sprite.Scale.X * (float) Frame.Facing;
             Sprite.Color = Frame.Color * alpha;
 
             Sprite.Rate = Frame.SpriteRate;
