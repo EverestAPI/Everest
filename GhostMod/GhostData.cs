@@ -68,7 +68,6 @@ namespace Celeste.Mod.Ghost {
 
         public string SID;
         public AreaMode Mode;
-        public string From;
         public string Level;
         public string Target;
 

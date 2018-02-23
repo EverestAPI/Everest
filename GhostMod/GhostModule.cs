@@ -21,8 +21,6 @@ namespace Celeste.Mod.Ghost {
         public List<Ghost> Ghosts = new List<Ghost>();
         public GhostRecorder GhostRecorder;
 
-        private string cmdTASPath;
-
         public GhostModule() {
             Instance = this;
             
@@ -36,30 +34,6 @@ namespace Celeste.Mod.Ghost {
         public override void Unload() {
             Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
             Everest.Events.Player.OnDie -= OnDie;
-        }
-
-        public override bool ParseArg(string arg, Queue<string> args) {
-            if (arg == "--tas" && args.Count >= 1) {
-                cmdTASPath = args.Dequeue();
-                Logger.Log("ghost", $"Found --tas argument: {cmdTASPath}");
-                return true;
-            }
-
-            return false;
-        }
-
-        public override void Initialize() {
-            if (cmdTASPath != null) {
-                cmdTASPath = Path.Combine(Everest.PathSettings, "Ghosts", cmdTASPath + ".oshiro");
-                Logger.Log("ghost", $"Loading TAS input file: {cmdTASPath}");
-                GhostData data = new GhostData(cmdTASPath).Read();
-                if (data != null) {
-                    Logger.Log("ghost", "Loaded, adding GhostReplayer component.");
-                    Celeste.Instance.Components.Add(new GhostInputReplayer(Celeste.Instance, data));
-                } else {
-                    Logger.Log("ghost", "TAS input file failed loading.");
-                }
-            }
         }
 
         public void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
