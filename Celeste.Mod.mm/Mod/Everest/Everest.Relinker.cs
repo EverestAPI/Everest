@@ -22,6 +22,8 @@ namespace Celeste.Mod {
         /// </summary>
         public static class Relinker {
 
+            public static HashAlgorithm ChecksumHasher = MD5.Create();
+
             public static string GameChecksum;
 
             public readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new FastDictionary<string, ModuleDefinition>() {
@@ -133,25 +135,23 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream, MissingDependencyResolver depResolver = null) {
+            public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream, MissingDependencyResolver depResolver = null, string[] checksumsExtra = null) {
                 string name = Path.GetFileName(meta.DLL);
                 string cachedName = meta.Name + "." + name.Substring(0, name.Length - 3) + "dll";
                 string cachedPath = Path.Combine(Loader.PathCache, cachedName);
                 string cachedChecksumPath = Path.Combine(Loader.PathCache, cachedName + ".sum");
 
-                string[] checksums = new string[2];
-                using (MD5 md5 = MD5.Create()) {
-                    if (GameChecksum == null)
-                        using (FileStream fs = File.OpenRead(Assembly.GetAssembly(typeof(Relinker)).Location))
-                            GameChecksum = md5.ComputeHash(fs).ToHexadecimalString();
-                    checksums[0] = GameChecksum;
+                string[] checksums = new string[2 + (checksumsExtra?.Length ?? 0)];
+                if (GameChecksum == null)
+                    GameChecksum = GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location);
+                checksums[0] = GameChecksum;
 
-                    string modPath = meta.PathArchive;
-                    if (modPath.Length == 0)
-                        modPath = meta.DLL;
-                    using (FileStream fs = File.OpenRead(modPath))
-                        checksums[1] = md5.ComputeHash(fs).ToHexadecimalString();
-                }
+                checksums[1] = GetChecksum(meta);
+
+                if (checksumsExtra != null)
+                    for (int i = 0; i < checksumsExtra.Length; i++) {
+                        checksums[i + 2] = checksumsExtra[i];
+                    }
 
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath)))
@@ -216,6 +216,17 @@ namespace Celeste.Mod {
                 }
 
                 return null;
+            }
+
+            public static string GetChecksum(EverestModuleMetadata meta) {
+                string path = meta.PathArchive;
+                if (string.IsNullOrEmpty(path))
+                    path = meta.DLL;
+                return GetChecksum(path);
+            }
+            public static string GetChecksum(string path) {
+                using (FileStream fs = File.OpenRead(path))
+                    return ChecksumHasher.ComputeHash(fs).ToHexadecimalString();
             }
 
             public static bool ChecksumsEqual(string[] a, string[] b) {
