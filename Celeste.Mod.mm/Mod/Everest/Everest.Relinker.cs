@@ -137,10 +137,8 @@ namespace Celeste.Mod {
 
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
-                string name = Path.GetFileName(meta.DLL);
-                string cachedName = meta.Name + "." + name.Substring(0, name.Length - 3) + "dll";
-                string cachedPath = Path.Combine(Loader.PathCache, cachedName);
-                string cachedChecksumPath = Path.Combine(Loader.PathCache, cachedName + ".sum");
+                string cachedPath = GetCachedPath(meta);
+                string cachedChecksumPath = cachedPath.Substring(0, cachedPath.Length - 4) + ".sum";
 
                 string[] checksums = new string[2 + (checksumsExtra?.Length ?? 0)];
                 if (GameChecksum == null)
@@ -219,6 +217,9 @@ namespace Celeste.Mod {
 
                 return null;
             }
+
+            public static string GetCachedPath(EverestModuleMetadata meta)
+                => Path.Combine(Loader.PathCache, meta.Name + "." + Path.GetFileNameWithoutExtension(meta.DLL) + ".dll");
 
             public static string GetChecksum(EverestModuleMetadata meta) {
                 string path = meta.PathArchive;
