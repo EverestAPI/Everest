@@ -105,7 +105,7 @@ namespace Celeste.Mod.Ghost {
             // and throw away the data when we're just retrying.
             foreach (StackFrame frame in new StackTrace().GetFrames()) {
                 MethodBase method = frame?.GetMethod();
-                if (method == null)
+                if (method == null || method.DeclaringType == null)
                     continue;
                 if (!method.DeclaringType.FullName.StartsWith("Celeste.Level+") ||
                     !method.Name.StartsWith("<Pause>"))
