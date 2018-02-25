@@ -28,11 +28,13 @@ namespace Celeste.Mod.Ghost {
 
         public override void Load() {
             Everest.Events.Level.OnLoadLevel += OnLoadLevel;
+            Everest.Events.Level.OnExit += OnExit;
             Everest.Events.Player.OnDie += OnDie;
         }
 
         public override void Unload() {
             Everest.Events.Level.OnLoadLevel -= OnLoadLevel;
+            Everest.Events.Level.OnExit -= OnExit;
             Everest.Events.Player.OnDie -= OnDie;
         }
 
@@ -44,6 +46,13 @@ namespace Celeste.Mod.Ghost {
             }
 
             Step(level);
+        }
+
+        public void OnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
+            if (mode == LevelExit.Mode.Completed ||
+                mode == LevelExit.Mode.CompletedInterlude) {
+                Step(level);
+            }
         }
 
         public void Step(Level level) {
