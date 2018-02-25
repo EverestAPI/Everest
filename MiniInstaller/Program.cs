@@ -93,15 +93,6 @@ namespace MiniInstaller {
                 return;
             }
 
-            if (
-                (PathUpdate == null && !File.Exists(Path.Combine(PathGame, "Celeste.Mod.mm.dll"))) ||
-                (PathUpdate != null && !File.Exists(Path.Combine(PathUpdate, "Celeste.Mod.mm.dll")))
-            ) {
-                LogLine("Celeste.Mod.mm.dll not found!");
-                LogLine("Did you extract all the files in the .zip?");
-                return;
-            }
-
             PathOrig = Path.Combine(PathGame, "orig");
             PathLog = Path.Combine(PathGame, "miniinstaller-log.txt");
 
