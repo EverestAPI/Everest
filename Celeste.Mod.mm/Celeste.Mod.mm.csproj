@@ -150,6 +150,7 @@
     <Compile Include="Patches\Input.cs" />
     <Compile Include="Patches\Monocle\ErrorLog.cs" />
     <Compile Include="Patches\Monocle\RendererList.cs" />
+    <Compile Include="Patches\OuiFileSelectSlot.cs" />
     <Compile Include="Patches\OuiChapterPanel.cs" />
     <Compile Include="Patches\OuiChapterSelectIcon.cs" />
     <Compile Include="Patches\OuiChapterSelect.cs" />

@@ -21,6 +21,7 @@ namespace Celeste.Mod.Ghost {
         public GhostData Data;
         public int FrameIndex = 0;
         public GhostFrame? ForcedFrame;
+        public GhostFrame PrevFrame => ForcedFrame ?? (Data == null ? default(GhostFrame) : Data[FrameIndex - 1]);
         public GhostFrame Frame => ForcedFrame ?? (Data == null ? default(GhostFrame) : Data[FrameIndex]);
         public bool AutoForward = true;
 
@@ -28,6 +29,8 @@ namespace Celeste.Mod.Ghost {
 
         protected float alpha;
         protected float alphaHair;
+
+        protected bool playerHadControl;
 
         public Ghost(Player player)
             : this(player, null) {
@@ -102,6 +105,19 @@ namespace Celeste.Mod.Ghost {
             if (Data != null && Data.Dead)
                 Visible &= GhostModule.Settings.ShowDeaths;
 
+            if (Player.InControl && AutoForward && ForcedFrame == null) {
+                do {
+                    FrameIndex++;
+                } while (
+                    (PrevFrame.HasData && !PrevFrame.InControl) || // Skip any frames we're not in control in.
+                    (!PrevFrame.HasData && FrameIndex < Data.Frames.Count) // Skip any frames not containing the data chunk.
+                );
+            }
+            playerHadControl = Player.InControl;
+
+            UpdateSprite();
+            UpdateHair();
+
             if (Data != null && Data.Opacity != null) {
                 alpha = Data.Opacity.Value;
                 alphaHair = Data.Opacity.Value;
@@ -124,22 +140,7 @@ namespace Celeste.Mod.Ghost {
             if (Name != null)
                 Name.Alpha = alpha;
 
-            UpdateSprite();
-            UpdateHair();
-
             base.Update();
-
-            if (!Player.InControl)
-                return;
-
-            if (AutoForward && ForcedFrame == null) {
-                do {
-                    FrameIndex++;
-                } while (
-                    (Frame.HasData && !Frame.InControl) || // Skip any frames we're not in control in.
-                    (!Frame.HasData && FrameIndex < Data.Frames.Count) // Skip any frames not containing the data chunk.
-                );
-            }
         }
 
     }
