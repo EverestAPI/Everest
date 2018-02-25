@@ -49,7 +49,7 @@ namespace Celeste {
         public override IEnumerator Enter(Oui from) {
             // Fix "out of bounds" level selection.
             int areaOffs = SaveData.Instance.GetLevelSetStats().AreaOffset;
-            int areaMax = Math.Max(areaOffs + 1, SaveData.Instance.UnlockedAreas);
+            int areaMax = Math.Max(areaOffs, SaveData.Instance.UnlockedAreas);
             area = Calc.Clamp(area, areaOffs, areaMax);
 
             Visible = true;
