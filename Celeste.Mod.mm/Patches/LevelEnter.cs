@@ -13,6 +13,8 @@ using Monocle;
 namespace Celeste {
     class patch_LevelEnter : Scene {
 
+        public static string ErrorMessage;
+
         private Session session;
 
         private Postcard postcard;
@@ -25,23 +27,46 @@ namespace Celeste {
 
         private extern IEnumerator orig_Routine();
         private IEnumerator Routine() {
-            if (AreaData.Get(session.Area) == null)
-                return LevelGoneRoutine();
+            if (ErrorMessage != null) {
+                return ErrorRoutine();
+            }
+
+            if (AreaData.Get(session.Area) == null) {
+                string message = Dialog.Get("postcard_levelgone");
+                message = message.Replace("((player))", SaveData.Instance.Name);
+                message = message.Replace("((sid))", session.Area.GetSID());
+                ErrorMessage = message;
+                return ErrorRoutine();
+            }
+
             return orig_Routine();
         }
 
-        private IEnumerator LevelGoneRoutine() {
+        private IEnumerator ErrorRoutine() {
             yield return 1f;
 
-            string message = Dialog.Get("postcard_levelgone");
-            message = message.Replace("((player))", SaveData.Instance.Name);
-            message = message.Replace("((sid))", session.Area.GetSID());
-            Add(postcard = new Postcard(message));
+            Add(postcard = new Postcard(ErrorMessage));
             yield return postcard.DisplayRoutine();
 
             SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
             SaveData.Instance.LastArea = AreaKey.None;
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaComplete);
+            ErrorMessage = null;
+        }
+
+    }
+    public static class LevelEnterExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static string ErrorMessage {
+            get {
+                return patch_LevelEnter.ErrorMessage;
+            }
+            set {
+                patch_LevelEnter.ErrorMessage = value;
+            }
         }
 
     }

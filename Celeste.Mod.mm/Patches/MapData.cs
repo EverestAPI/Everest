@@ -21,10 +21,16 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
-        [PopCorruptedLevelData] // ... and we don't want to throw new Exception("Corrupted Level Data")
-        private extern void Load();
+        private extern void orig_Load();
+        [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
+        private void Load() {
+            try {
+                orig_Load();
+            } catch (Exception e) {
+                Mod.Logger.Log("misc", $"Failed loading MapData ${Area}");
+                e.LogDetailed();
+            }
+        }
 
     }
 }

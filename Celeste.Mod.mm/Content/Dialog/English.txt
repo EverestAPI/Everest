@@ -19,7 +19,8 @@
 # {anchor} controls the visual position of the textbox in-game
 
 # Helper Postcards
-	POSTCARD_LEVELGONE= 					{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain!
+	POSTCARD_LEVELGONE= 					{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain.
+	POSTCARD_LEVELLOADFAILED= 				{big}We're sorry, ((player))!{/big}{n}But {#ff1144}((sid)){#}{n}has closed for maintenance.{n}Please send your {#44adf7}log.txt{#}{n}to the builder.{n}Thank you!
 
 # Main Menu
 	MENU_MAPLIST= 							Map List

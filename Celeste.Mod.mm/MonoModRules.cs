@@ -17,9 +17,10 @@ namespace MonoMod {
 
     /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
+    /// Also manually invoke ProxyFileCalls
     /// </summary>
-    [MonoModCustomMethodAttribute("PopCorruptedLevelData")]
-    class PopCorruptedLevelDataAttribute : Attribute { }
+    [MonoModCustomMethodAttribute("PatchMapDataLoader")]
+    class PatchMapDataLoaderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
@@ -165,9 +166,14 @@ namespace MonoMod {
 
         }
 
-        public static void PopCorruptedLevelData(MethodDefinition method, CustomAttribute attrib) {
+        public static void PatchMapDataLoader(MethodDefinition method, CustomAttribute attrib) {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+
             if (!method.HasBody)
                 return;
+
+            ProxyFileCalls(method, attrib);
 
             bool pop = false;
             foreach (Instruction instr in method.Body.Instructions) {

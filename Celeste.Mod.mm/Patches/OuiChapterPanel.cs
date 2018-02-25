@@ -60,6 +60,7 @@ namespace Celeste {
             orig_Update();
         }
 
+        [MonoModReplace]
         private IEnumerator StartRoutine(string checkpoint = null) {
             Overworld.Maddy.Hide(false);
             Overworld.Mountain.EaseCamera(Area.ID, Data.MountainZoom, 1f);
@@ -76,7 +77,19 @@ namespace Celeste {
             }
             yield return 0.5f;
 
-            LevelEnter.Go(new Session(Area, checkpoint), false);
+            try {
+                LevelEnter.Go(new Session(Area, checkpoint), false);
+            } catch (Exception e) {
+                Mod.Logger.Log("misc", $"Failed entering area ${Area}");
+                e.LogDetailed();
+
+                string message = Dialog.Get("postcard_levelloadfailed");
+                message = message.Replace("((player))", SaveData.Instance.Name);
+                message = message.Replace("((sid))", Area.GetSID());
+
+                LevelEnterExt.ErrorMessage = message;
+                LevelEnter.Go(new Session(new AreaKey(1).SetSID("")), false);
+            }
         }
 
     }
