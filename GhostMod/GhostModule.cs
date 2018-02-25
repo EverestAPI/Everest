@@ -50,7 +50,6 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void OnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
-            if (mode == LevelExit.Mode.Restart)
             if (mode == LevelExit.Mode.Completed ||
                 mode == LevelExit.Mode.CompletedInterlude) {
                 Step(level);
