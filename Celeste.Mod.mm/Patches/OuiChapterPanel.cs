@@ -60,5 +60,24 @@ namespace Celeste {
             orig_Update();
         }
 
+        private IEnumerator StartRoutine(string checkpoint = null) {
+            Overworld.Maddy.Hide(false);
+            Overworld.Mountain.EaseCamera(Area.ID, Data.MountainZoom, 1f);
+            Add(new Coroutine(EaseOut(false)));
+            yield return 0.2f;
+
+            AreaData.Get(Area).Wipe(Overworld, false, null);
+            Audio.SetMusic(null);
+            Audio.SetAmbience(null);
+            // TODO: Determine if the area should keep the overworld snow.
+            if ((Area.ID == 0 || Area.ID == 9) && checkpoint == null && Area.Mode == AreaMode.Normal) {
+                Overworld.RendererList.UpdateLists();
+                Overworld.RendererList.MoveToFront(Overworld.Snow);
+            }
+            yield return 0.5f;
+
+            LevelEnter.Go(new Session(Area, checkpoint), false);
+        }
+
     }
 }

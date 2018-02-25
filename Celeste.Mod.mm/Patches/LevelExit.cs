@@ -29,6 +29,13 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        public extern void orig_ctor_LevelExit(Mode mode, Session session, HiresSnow snow = null);
+        [MonoModConstructor]
+        public void ctor_LevelExit(Mode mode, Session session, HiresSnow snow = null) {
+            orig_ctor_LevelExit(mode, session, snow);
+            Everest.Events.Level.Exit(Engine.Scene as Level, this, mode, session, snow);
+        }
+
         [MonoModReplace]
         private void LoadCompleteThread() {
             AreaData area = AreaData.Get(session);

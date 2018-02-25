@@ -18,10 +18,9 @@ namespace Celeste {
         private Postcard postcard;
 
         extern public static void orig_Go(Session session, bool fromSaveData);
-
         public static void Go(Session session, bool fromSaveData) {
             orig_Go(session, fromSaveData);
-            Everest.Events.LevelEnter.Go(session, fromSaveData);
+            Everest.Events.Level.Enter(session, fromSaveData);
         }
 
         private extern IEnumerator orig_Routine();

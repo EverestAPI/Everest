@@ -125,39 +125,49 @@ namespace Celeste.Mod {
             }
 
             public static class OuiMainMenu {
-                public static event Action<_OuiMainMenu, List<MenuButton>> OnCreateButtons;
+                public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
+                public static event CreateButtonsHandler OnCreateButtons;
                 internal static void CreateButtons(_OuiMainMenu menu, List<MenuButton> buttons)
                     => OnCreateButtons?.Invoke(menu, buttons);
             }
 
             public static class Level {
 
-                public static event Action<_Level, int, bool, bool> OnPause;
+                public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
+                public static event PauseHandler OnPause;
                 internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
                     => OnPause?.Invoke(level, startIndex, minimal, quickReset);
 
-                public static event Action<_Level, TextMenu, bool> OnCreatePauseMenuButtons;
+                public delegate void CreatePauseMenuButtonsHandler(_Level level, TextMenu menu, bool minimal);
+                public static event CreatePauseMenuButtonsHandler OnCreatePauseMenuButtons;
                 internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
                     => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
 
-                public static event Action<_Level, LevelData, Vector2> OnTransitionTo; 
+                public delegate void TransitionToHandler(_Level level, LevelData next, Vector2 direction);
+                public static event TransitionToHandler OnTransitionTo;
                 internal static void TransitionTo(_Level level, LevelData next, Vector2 direction)
                     => OnTransitionTo?.Invoke(level, next, direction);
 
-                public static event Func<_Level, LevelData, Vector2, EntityData, bool> OnLoadEntity;
+                public delegate void LoadEntityHandler(_Level level, LevelData levelData, Vector2 offset, EntityData entityData);
+                public static event LoadEntityHandler OnLoadEntity;
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
 
-                public static event Action<_Level, _Player.IntroTypes, bool> OnLoadLevel;
+                public delegate void LoadLevelHandler(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader);
+                public static event LoadLevelHandler OnLoadLevel;
                 internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
                     => OnLoadLevel?.Invoke(level, playerIntro, isFromLoader);
 
-            }
+                public delegate void EnterHandler(Session session, bool fromSaveData);
+                public static event EnterHandler OnEnter;
+                internal static void Enter(Session session, bool fromSaveData)
+                    => OnEnter?.Invoke(session, fromSaveData);
 
-            public static class LevelEnter {
-                public static event Action<Session, bool> OnGo;
-                internal static void Go(Session session, bool fromSaveData)
-                    => OnGo?.Invoke(session, fromSaveData);
+                public delegate void ExitHandler(_Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow);
+                public static event ExitHandler OnExit;
+                internal static void Exit(_Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
+                    => OnExit?.Invoke(level, exit, mode, session, snow);
+
             }
 
             public static class Player {
@@ -179,12 +189,11 @@ namespace Celeste.Mod {
             }
 
             public static class OuiJournal {
-                public static event Action<_OuiJournal, Oui> OnEnter;
+                public delegate void EnterHandler(_OuiJournal journal, Oui from);
+                public static event EnterHandler OnEnter;
                 internal static void Enter(_OuiJournal journal, Oui from)
                     => OnEnter?.Invoke(journal, from);
             }
-
-            // Put any events we want to expose (f.e. Level.OnLoad) here.
 
         }
     }
