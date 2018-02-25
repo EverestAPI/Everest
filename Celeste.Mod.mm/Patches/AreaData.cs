@@ -32,6 +32,26 @@ namespace Celeste {
 
         public MapMetaCompleteScreen CompleteScreenMeta;
 
+        // Required for the journal to hide areas outside of the current levelset.
+
+        [MonoModHook("System.Boolean Celeste.AreaData::Interlude_Unsafe")]
+        public new bool Interlude;
+
+        [MonoModRemove]
+        public bool Interlude_Unsafe;
+
+        [MonoModHook("System.Boolean Celeste.AreaData::Interlude")]
+        public bool Interlude_Safe {
+            get {
+                return 
+                    Interlude_Unsafe ||
+                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() != LevelSet);
+            }
+            set {
+                Interlude_Unsafe = value;
+            }
+        }
+
         [MonoModReplace]
         public static new AreaData Get(Scene scene) {
             AreaData result;
