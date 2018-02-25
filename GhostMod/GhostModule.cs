@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod.Detour;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -49,6 +50,7 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void OnExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
+            if (mode == LevelExit.Mode.Restart)
             if (mode == LevelExit.Mode.Completed ||
                 mode == LevelExit.Mode.CompletedInterlude) {
                 Step(level);
@@ -95,8 +97,25 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void OnDie(Player player) {
-            if (GhostRecorder?.Data != null)
-                GhostRecorder.Data.Dead = true;
+            if (GhostRecorder == null || GhostRecorder.Data == null)
+                return;
+
+            // This is hacky, but it works:
+            // Check the stack trace for Celeste.Level+* <Pause>*
+            // and throw away the data when we're just retrying.
+            foreach (StackFrame frame in new StackTrace().GetFrames()) {
+                MethodBase method = frame?.GetMethod();
+                if (method == null)
+                    continue;
+                if (!method.DeclaringType.FullName.StartsWith("Celeste.Level+") ||
+                    !method.Name.StartsWith("<Pause>"))
+                    continue;
+
+                GhostRecorder.Data = null;
+                return;
+            }
+
+            GhostRecorder.Data.Dead = true;
         }
 
     }
