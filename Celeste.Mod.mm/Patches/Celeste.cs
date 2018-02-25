@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -45,6 +46,8 @@ namespace Celeste {
                 Everest.Boot();
             } catch (Exception e) {
                 e.LogDetailed();
+                ErrorLog.Write(e);
+                ErrorLog.Open();
                 throw;
             }
         }
