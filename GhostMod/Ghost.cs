@@ -101,7 +101,8 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Update() {
-            Visible = GhostModule.Settings.Enabled && Frame.HasData;
+            Visible = ((GhostModule.Settings.Mode & GhostModuleMode.Play) == GhostModuleMode.Play);
+            Visible &= Frame.HasData;
             if (Data != null && Data.Dead)
                 Visible &= GhostModule.Settings.ShowDeaths;
 

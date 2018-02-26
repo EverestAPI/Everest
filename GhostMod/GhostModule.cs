@@ -57,7 +57,7 @@ namespace Celeste.Mod.Ghost {
         }
 
         public void Step(Level level) {
-            if (!Settings.Enabled)
+            if (Settings.Mode == GhostModuleMode.Off)
                 return;
 
             string target = level.Session.Level;

@@ -12,7 +12,7 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod.Ghost {
     public class GhostModuleSettings : EverestModuleSettings {
 
-        public bool Enabled { get; set; } = true;
+        public GhostModuleMode Mode { get; set; } = GhostModuleMode.On;
 
         [SettingInGame(false)]
         public string Name { get; set; } = "";
@@ -57,5 +57,11 @@ namespace Celeste.Mod.Ghost {
         [SettingIgnore]
         public float BorderSizeDist => BorderSize * BorderSize * 64f;
 
+    }
+    public enum GhostModuleMode {
+        Off = 0,
+        Record = 1 << 0,
+        Play = 1 << 1,
+        On = Record | Play
     }
 }

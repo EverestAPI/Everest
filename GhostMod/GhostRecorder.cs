@@ -22,25 +22,20 @@ namespace Celeste.Mod.Ghost {
             Tag = Tags.HUD;
         }
 
-        public override void Added(Scene scene) {
-            base.Added(scene);
-
-            if (!GhostModule.Settings.Enabled || Player == null) {
-                RemoveSelf();
-                return;
-            }
-        }
-
         public override void Update() {
             base.Update();
 
-            if (Data == null)
-                return;
+            if ((GhostModule.Settings.Mode & GhostModuleMode.Record) != GhostModuleMode.Record ||
+                Player == null)
+                Data = null;
 
             RecordData();
         }
 
         public void RecordData() {
+            if (Data == null)
+                return;
+
             // A data frame is always a new frame, no matter if the previous one lacks data or not.
             Data.Frames.Add(new GhostFrame {
                 HasData = true,
