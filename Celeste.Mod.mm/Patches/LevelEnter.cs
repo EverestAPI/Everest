@@ -60,6 +60,9 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// The error message to display when entering a level. Null if no error message should be presented.
+        /// </summary>
         public static string ErrorMessage {
             get {
                 return patch_LevelEnter.ErrorMessage;

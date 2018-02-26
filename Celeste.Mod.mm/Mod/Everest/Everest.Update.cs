@@ -23,7 +23,8 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static partial class Everest {
-        public static class Updater {
+        // TODO: General purpose updater for both Everest itself and any runtime mods.
+        internal static class Updater {
 
             public class Entry {
                 public readonly string Name;

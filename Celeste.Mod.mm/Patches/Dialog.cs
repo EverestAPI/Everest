@@ -38,11 +38,11 @@ namespace Celeste {
             if (path.EndsWith(".txt"))
                 path = path.Substring(0, path.Length - 4);
 
-            List<AssetMetadata> metas;
+            List<ModAsset> metas;
             if (!Everest.Content.TryGetDialogs(path, out metas) || metas.Count == 0)
                 return language;
 
-            foreach (AssetMetadata meta in metas) {
+            foreach (ModAsset meta in metas) {
                 string line;
 
                 string currentName = "";
@@ -213,14 +213,10 @@ namespace Celeste {
         }
 
         public static string CleanLevelSet(string name) {
-            string result;
             if (string.IsNullOrEmpty(name)) {
-                result = Dialog.Clean("levelset_");
-            } else {
-                result = name;
-                result = ("levelset_" + result).DialogCleanOrNull() ?? result.DialogCleanOrNull() ?? result.SpacedPascalCase();
+                return Dialog.Clean("levelset_");
             }
-            return result;
+            return ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
         }
 
     }
@@ -229,6 +225,10 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Same as Dialog.Clean, but for level set names.
+        /// Tries to find a value under both "LEVELSET_NAME" and "NAME", otherwise returns name.SpacedPascalCase()
+        /// </summary>
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
 

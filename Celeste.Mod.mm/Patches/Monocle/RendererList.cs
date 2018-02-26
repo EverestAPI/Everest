@@ -27,6 +27,9 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Update the renderer lists - apply any pending additions or removals.
+        /// </summary>
         public static void UpdateLists(this RendererList self)
             => ((patch_RendererList) (object) self)._UpdateLists();
 

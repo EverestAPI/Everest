@@ -18,25 +18,55 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static partial class Everest {
 
+        /// <summary>
+        /// The currently installed Everest version in string form.
+        /// </summary>
         // The following line gets replaced by Travis automatically.
         public readonly static string VersionString = "0.0.0-dev";
 
+        /// <summary>
+        /// The currently installed Everest version.
+        /// </summary>
         public readonly static Version Version;
+        /// <summary>
+        /// The currently installed Everest version suffix. For "1.2.3-a-b", this is "a-b"
+        /// </summary>
         public readonly static string VersionSuffix;
+        /// <summary>
+        /// The currently installed Everest version tag. For "1.2.3-a-b", this is "a"
+        /// </summary>
         public readonly static string VersionTag;
+        /// <summary>
+        /// The currently installed Everest version tag. For "1.2.3-a-b", this is "b"
+        /// </summary>
         public readonly static string VersionCommit;
 
+        /// <summary>
+        /// The currently present Celeste version combined with the currently installed Everest version.
+        /// </summary>
         public static string VersionCelesteString => $"{Engine.Instance.Version} [Everest: {VersionString}]";
 
+        /// <summary>
+        /// The command line arguments passed when launching the game.
+        /// </summary>
         public static ReadOnlyCollection<string> Args { get; internal set; }
 
+        /// <summary>
+        /// A collection of all currently loaded EverestModules (mods).
+        /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         private static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
         private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
         private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, DynamicMethodDelegate>>();
 
+        /// <summary>
+        /// The path to the directory holding Celeste.exe
+        /// </summary>
         public static string PathGame { get; internal set; }
+        /// <summary>
+        /// The path to the Everest /ModSettings directory.
+        /// </summary>
         public static string PathSettings { get; internal set; }
 
         static Everest() {
@@ -61,7 +91,7 @@ namespace Celeste.Mod {
             }
         }
 
-        public static void ParseArgs(string[] args) {
+        internal static void ParseArgs(string[] args) {
             // Expose the arguments to all other mods in a read-only collection.
             Args = new ReadOnlyCollection<string>(args);
 
@@ -80,7 +110,7 @@ namespace Celeste.Mod {
             }
         }
 
-        public static void Boot() {
+        internal static void Boot() {
             Logger.Log("core", "Booting Everest");
             Logger.Log("core", $"VersionCelesteString: {VersionCelesteString}");
 
@@ -102,8 +132,6 @@ namespace Celeste.Mod {
             new CoreModule().Register();
             Loader.LoadAuto();
 
-            // We're ready - invoke Load in all loaded modules, including CoreModule.
-            Invoke("Load");
             // Also let all mods parse the arguments.
             Queue<string> args = new Queue<string>(Args);
             while (args.Count > 0) {
@@ -118,8 +146,13 @@ namespace Celeste.Mod {
             Updater.RequestAll();
         }
 
+        /// <summary>
+        /// Register a new EverestModule (mod) dynamically. Invokes LoadSettings and Load.
+        /// </summary>
+        /// <param name="module">Mod to register.</param>
         public static void Register(this EverestModule module) {
             module.LoadSettings();
+            module.Load();
 
             lock (_Modules) {
                 _Modules.Add(module);
@@ -131,15 +164,27 @@ namespace Celeste.Mod {
             Logger.Log("core", $"Module {module.Metadata} registered.");
         }
 
+        /// <summary>
+        /// Unregisters an already registered EverestModule (mod) dynamically. Invokes Unload.
+        /// </summary>
+        /// <param name="module"></param>
         public static void Unregister(this EverestModule module) {
+            module.Unload();
+
             lock (_Modules) {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
                 _ModuleTypes.RemoveAt(index);
                 _ModuleMethods.RemoveAt(index);
             }
+
+            Logger.Log("core", $"Module {module.Metadata} unregistered.");
         }
 
+        /// <summary>
+        /// Save all mod and user settings. Use this instead of UserIO.SaveHandler(false, true)
+        /// </summary>
+        /// <returns>The routine enumerator.</returns>
         public static IEnumerator SaveSettings() {
             bool saving = true;
             RunThread.Start(() => {
@@ -158,8 +203,19 @@ namespace Celeste.Mod {
         public readonly static Type[] _EmptyTypeArray = new Type[0];
         public readonly static object[] _EmptyObjectArray = new object[0];
 
+        /// <summary>
+        /// Invoke a method in all loaded EverestModules.
+        /// </summary>
+        /// <param name="methodName">The name of the method.</param>
+        /// <param name="args">Any arguments to be passed to the methods.</param>
         public static void Invoke(string methodName, params object[] args)
             => InvokeTyped(methodName, null, args);
+        /// <summary>
+        /// Invoke a method in all loaded EverestModules.
+        /// </summary>
+        /// <param name="methodName">The name of the method.</param>
+        /// <param name="argsTypes">The types of the arguments passed to the methods.</param>
+        /// <param name="args">Any arguments to be passed to the methods.</param>
         public static void InvokeTyped(string methodName, Type[] argsTypes, params object[] args) {
             if (args == null) {
                 args = _EmptyObjectArray;

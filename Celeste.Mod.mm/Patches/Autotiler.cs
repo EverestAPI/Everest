@@ -35,6 +35,10 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the filename of the file belonging to the Autotiler.
+        /// </summary>
+        // TODO: Is this the file path? What is this exactly?
         public static string GetFilename(this Autotiler self)
             => ((patch_Autotiler) self).Filename;
 

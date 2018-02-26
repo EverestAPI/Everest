@@ -21,15 +21,15 @@ namespace Monocle {
         // This is public, but we don't build upon the original type. MonoMod knows what to do, though.
         public Texture2D Texture;
 
-        public AssetMetadata Metadata { get; private set; }
+        public ModAsset Metadata { get; private set; }
 
         public VirtualTexture Fallback;
 
         // This _should_ work, but hell, this MonoModConstructor usage syntax went untested for ages. -ade
         [MonoModConstructor]
-        internal patch_VirtualTexture(AssetMetadata metadata) {
+        internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
-            Name = metadata.PathRelative;
+            Name = metadata.PathMapped;
             Reload();
         }
 
@@ -76,9 +76,15 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static AssetMetadata GetMetadata(this VirtualTexture self)
+        /// <summary>
+        /// If the VirtualTexture originates from a mod, get the mod asset metadata.
+        /// </summary>
+        public static ModAsset GetMetadata(this VirtualTexture self)
             => ((patch_VirtualTexture) (object) self).Metadata;
 
+        /// <summary>
+        /// Set a fallback texture in case the texture becomes unavailable on reload.
+        /// </summary>
         public static void SetFallback(this VirtualTexture self, VirtualTexture fallback)
             => ((patch_VirtualTexture) (object) self).Fallback = fallback;
 

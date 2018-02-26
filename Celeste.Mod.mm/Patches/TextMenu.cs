@@ -57,12 +57,21 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get a list of all items which have been added to the menu.
+        /// </summary>
         public static List<TextMenu.Item> GetItems(this TextMenu self)
             => ((patch_TextMenu) self).Items;
 
+        /// <summary>
+        /// Insert the given menu item at the given index.
+        /// </summary>
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
 
+        /// <summary>
+        /// Remove the given menu item from the menu.
+        /// </summary>
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
 

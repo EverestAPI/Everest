@@ -89,14 +89,26 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get an AreaKey for this area.
+        /// </summary>
         public static AreaKey ToKey(this AreaStats self, AreaMode mode)
             => new AreaKey(self.ID, mode).SetSID(self.GetSID());
 
+        /// <summary>
+        /// Get the name of the level set this area belongs to.
+        /// </summary>
         public static string GetLevelSet(this AreaStats self)
             => ((patch_AreaStats) self).LevelSet;
 
+        /// <summary>
+        /// Get the SID (string ID) of the area.
+        /// </summary>
         public static string GetSID(this AreaStats self)
             => ((patch_AreaStats) self).SID;
+        /// <summary>
+        /// Set the SID (string ID) of the area.
+        /// </summary>
         public static AreaStats SetSID(this AreaStats self, string value) {
             ((patch_AreaStats) self).SID = value;
             return self;

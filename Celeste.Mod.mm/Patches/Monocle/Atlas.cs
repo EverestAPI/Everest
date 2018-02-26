@@ -119,27 +119,45 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the internal string-MTexture dictionary.
+        /// </summary>
         public static Dictionary<string, MTexture> GetTextures(this Atlas self)
             => ((patch_Atlas) self).Textures;
 
+        /// <summary>
+        /// Get the method with which this atlas was loaded.
+        /// </summary>
         public static string GetDataMethod(this Atlas self)
             => ((patch_Atlas) self).DataMethod;
 
+        /// <summary>
+        /// Get the path from which this atlas was loaded.
+        /// </summary>
         public static string GetDataPath(this Atlas self)
             => ((patch_Atlas) self).DataPath;
 
+        /// <summary>
+        /// If the atlas was loaded with FromMultiAtlas, get the paths from which this atlas was loaded.
+        /// </summary>
         public static string[] GetDataPaths(this Atlas self)
             => ((patch_Atlas) self).DataPaths;
 
+        /// <summary>
+        /// Get the atlas data format, or none in case of directory atlases.
+        /// </summary>
         public static Atlas.AtlasDataFormat? GetDataFormat(this Atlas self)
             => ((patch_Atlas) self).DataFormat;
 
-        public static void Ingest(this Atlas self, AssetMetadata asset) {
-            Logger.Log("Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathRelative}");
+        /// <summary>
+        /// Feed the given ModAsset into the atlas.
+        /// </summary>
+        public static void Ingest(this Atlas self, ModAsset asset) {
+            Logger.Log("Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
 
             // Crawl through all child assets.
             if (asset.AssetType == typeof(AssetTypeDirectory)) {
-                foreach (AssetMetadata child in asset.Children)
+                foreach (ModAsset child in asset.Children)
                     self.Ingest(child);
                 return;
             }
@@ -151,7 +169,7 @@ namespace Monocle {
                     parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
                 parentPath = parentPath.Replace('\\', '/');
 
-                string path = asset.PathRelative;
+                string path = asset.PathMapped;
                 if (!path.StartsWith(parentPath))
                     return;
                 path = path.Substring(parentPath.Length + 1);
@@ -169,10 +187,10 @@ namespace Monocle {
 
                     if (meta != null) {
                         // Apply width and height from existing meta.
-                        existing.AddOverlay(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                        existing.AddOverride(replacementV, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                     } else {
                         // Keep width and height from existing instance.
-                        existing.AddOverlay(replacementV, existing.DrawOffset, existing.Width, existing.Height);
+                        existing.AddOverride(replacementV, existing.DrawOffset, existing.Width, existing.Height);
                     }
 
                     replacement = existing;

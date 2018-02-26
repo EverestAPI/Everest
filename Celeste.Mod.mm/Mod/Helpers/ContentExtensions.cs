@@ -19,12 +19,22 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class ContentExtensions {
 
+        /// <summary>
+        /// Determine if the MTexture depicts a region of a larger VirtualTexture.
+        /// </summary>
+        /// <param name="input">The input texture.</param>
+        /// <returns>True if the ClipRect is a subregion of the MTexture's VirtualTexture's Texture2D, false otherwise.</returns>
         public static bool IsSubtexture(this MTexture input) =>
             input.ClipRect.X != 0 ||
             input.ClipRect.Y != 0 ||
             input.ClipRect.Width != input.Texture.Texture.Width ||
             input.ClipRect.Height != input.Texture.Texture.Height;
 
+        /// <summary>
+        /// Create a new, standalone copy of the region accessed via the MTexture.
+        /// </summary>
+        /// <param name="input">The input texture.</param>
+        /// <returns>The output texture, matching the input MTexture's ClipRect.</returns>
         public static Texture2D GetSubtextureCopy(this MTexture input) {
             if (input == null)
                 return null;
@@ -43,6 +53,11 @@ namespace Celeste.Mod {
             return output;
         }
 
+        /// <summary>
+        /// Lazily late-premultiply a texture: Multiply the values of the R, G and B channels by the value of the A channel.
+        /// </summary>
+        /// <param name="texture">The input texture.</param>
+        /// <returns>A premultiplied copy of the input texture.</returns>
         public static Texture2D Premultiply(this Texture2D texture) {
             if (texture == null)
                 return null;
@@ -69,6 +84,11 @@ namespace Celeste.Mod {
             return texture;
         }
 
+        /// <summary>
+        /// Lazily late-postdivide a texture: Divide the values of the R, G and B channels by the value of the A channel.
+        /// </summary>
+        /// <param name="texture">The input texture.</param>
+        /// <returns>A postdivided copy of the input texture.</returns>
         public static Texture2D Postdivide(this Texture2D texture) {
             if (texture == null)
                 return null;

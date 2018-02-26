@@ -18,15 +18,21 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static partial class Everest {
         /// <summary>
-        /// Relink mods to point towards Celeste.exe and FNA.dll properly at runtime.
+        /// Relink mods to point towards Celeste.exe and FNA / XNA properly at runtime.
         /// </summary>
         public static class Relinker {
 
-            public static HashAlgorithm ChecksumHasher = MD5.Create();
+            /// <summary>
+            /// The hasher used by Relinker.
+            /// </summary>
+            public readonly static HashAlgorithm ChecksumHasher = MD5.Create();
 
-            public static string GameChecksum;
+            /// <summary>
+            /// The current Celeste.exe's checksum.
+            /// </summary>
+            public static string GameChecksum { get; internal set; }
 
-            public readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new FastDictionary<string, ModuleDefinition>() {
+            internal readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new FastDictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
             };
@@ -135,6 +141,15 @@ namespace Celeste.Mod {
                 }
             }
 
+            /// <summary>
+            /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
+            /// </summary>
+            /// <param name="meta">The mod metadata, used for caching, among other things.</param>
+            /// <param name="stream">The stream to read the .dll from.</param>
+            /// <param name="depResolver">An optional dependency resolver.</param>
+            /// <param name="checksumsExtra">Any optional checksums. If you're running this at runtime, pass at least Everest.Relinker.GetChecksum(Metadata)</param>
+            /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
+            /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
                 string cachedPath = GetCachedPath(meta);
@@ -218,20 +233,41 @@ namespace Celeste.Mod {
                 return null;
             }
 
+            /// <summary>
+            /// Get the cached path of a given mod's relinked .dll
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <returns>The full path to the cached relinked .dll</returns>
             public static string GetCachedPath(EverestModuleMetadata meta)
                 => Path.Combine(Loader.PathCache, meta.Name + "." + Path.GetFileNameWithoutExtension(meta.DLL) + ".dll");
 
+            /// <summary>
+            /// Get the checksum for a given mod's .dll or the containing .zip
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <returns>A checksum to be used with other Relinker methods.</returns>
             public static string GetChecksum(EverestModuleMetadata meta) {
                 string path = meta.PathArchive;
                 if (string.IsNullOrEmpty(path))
                     path = meta.DLL;
                 return GetChecksum(path);
             }
+            /// <summary>
+            /// Get the checksum for a given path.
+            /// </summary>
+            /// <param name="path">The filepath.</param>
+            /// <returns>A checksum to be used with other Relinker methods.</returns>
             public static string GetChecksum(string path) {
                 using (FileStream fs = File.OpenRead(path))
                     return ChecksumHasher.ComputeHash(fs).ToHexadecimalString();
             }
 
+            /// <summary>
+            /// Determine if both checksum collections are equal.
+            /// </summary>
+            /// <param name="a">The first checksum array.</param>
+            /// <param name="b">The second checksum array.</param>
+            /// <returns>True if the contents of both arrays match, false otherwise.</returns>
             public static bool ChecksumsEqual(string[] a, string[] b) {
                 if (a.Length != b.Length)
                     return false;

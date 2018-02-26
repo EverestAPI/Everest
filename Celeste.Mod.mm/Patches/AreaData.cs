@@ -103,8 +103,8 @@ namespace Celeste {
             // Separate array as we sort it afterwards.
             List<AreaData> modAreas = new List<AreaData>();
 
-            foreach (AssetMetadata asset in Everest.Content.ListMaps) {
-                string path = asset.PathRelative.Substring(5);
+            foreach (ModAsset asset in Everest.Content.ListMaps) {
+                string path = asset.PathMapped.Substring(5);
                 MapMeta meta = asset.GetMeta<MapMeta>();
 
                 AreaData area = new AreaData();
@@ -129,7 +129,7 @@ namespace Celeste {
 
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
-                        Path = asset.PathRelative.Substring(5),
+                        Path = asset.PathMapped.Substring(5),
                         Inventory = PlayerInventory.Default,
                         AudioState = new AudioState("event:/music/lvl1/main", "event:/env/amb/01_main")
                     }
@@ -287,21 +287,39 @@ namespace Celeste {
         public static AreaData Get(string sid)
             => patch_AreaData.Get(sid);
 
+        /// <summary>
+        /// Get an AreaKey for this area.
+        /// </summary>
         public static AreaKey ToKey(this AreaData self, AreaMode mode = AreaMode.Normal)
             => new AreaKey(self.ID, mode).SetSID(self.GetSID());
 
+        /// <summary>
+        /// Get the name of the level set this area belongs to.
+        /// </summary>
         public static string GetLevelSet(this AreaData self)
             => ((patch_AreaData) self).LevelSet;
 
+        /// <summary>
+        /// Get the SID (string ID) of the area.
+        /// </summary>
         public static string GetSID(this AreaData self)
             => ((patch_AreaData) self).SID;
+        /// <summary>
+        /// Set the SID (string ID) of the area.
+        /// </summary>
         public static AreaData SetSID(this AreaData self, string value) {
             ((patch_AreaData) self).SID = value;
             return self;
         }
 
+        /// <summary>
+        /// Get the custom complete screen if it has been loaded from the .meta or set otherwise.
+        /// </summary>
         public static MapMetaCompleteScreen GetCompleteScreenMeta(this AreaData self)
             => ((patch_AreaData) self).CompleteScreenMeta;
+        /// <summary>
+        /// Set the custom complete screen.
+        /// </summary>
         public static AreaData SetCompleteScreenMeta(this AreaData self, MapMetaCompleteScreen value) {
             ((patch_AreaData) self).CompleteScreenMeta = value;
             return self;

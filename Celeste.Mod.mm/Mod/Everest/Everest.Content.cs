@@ -32,25 +32,50 @@ namespace Celeste.Mod {
         public static class Content {
 
             /// <summary>
-            /// Should Everest dump all game assets into a user-friendly format on load?
+            /// Whether or not Everest should dump all game assets into a user-friendly format on load (technically on Process).
             /// </summary>
             public static bool DumpOnLoad = false;
             internal static bool _DumpAll = false;
 
+            /// <summary>
+            /// The path to the original /Content directory.
+            /// </summary>
             public static string PathContentOrig { get; internal set; }
+            /// <summary>
+            /// The path to the Everest /ModContent directory.
+            /// </summary>
             public static string PathContent { get; internal set; }
+            /// <summary>
+            /// The path to the Everest /ModDUMP directory.
+            /// </summary>
             public static string PathDUMP { get; internal set; }
 
+            /// <summary>
+            /// List of all currently loaded content mods.
+            /// </summary>
             public readonly static IList<ContentModMetadata> Mods = new List<ContentModMetadata>();
 
-            public readonly static IDictionary<string, AssetMetadata> Map = new FastDictionary<string, AssetMetadata>();
-            public readonly static IDictionary<string, AssetMetadata> MapDirs = new FastDictionary<string, AssetMetadata>();
-            public readonly static IDictionary<string, List<AssetMetadata>> MapDialogs = new FastDictionary<string, List<AssetMetadata>>();
-            public readonly static List<AssetMetadata> ListMaps = new List<AssetMetadata>();
+            /// <summary>
+            /// Mod content mapping. Use Everest.Content.Add, Get, and TryGet where applicable instead.
+            /// </summary>
+            public readonly static IDictionary<string, ModAsset> Map = new FastDictionary<string, ModAsset>();
+            /// <summary>
+            /// Mod content mapping, directories only. Use Everest.Content.Add, Get, and TryGet where applicable instead.
+            /// </summary>
+            public readonly static IDictionary<string, ModAsset> MapDirs = new FastDictionary<string, ModAsset>();
+            /// <summary>
+            /// Mod dialog .txt mapping. Used as one path can map to multiple AssetMetadatas.
+            /// Use Everest.Content.Add, GetDialogs, and TryGetDialogs where applicable instead.
+            /// </summary>
+            public readonly static IDictionary<string, List<ModAsset>> MapDialogs = new FastDictionary<string, List<ModAsset>>();
+            /// <summary>
+            /// List of all maps to be loaded by AreaData.Load
+            /// </summary>
+            public readonly static List<ModAsset> ListMaps = new List<ModAsset>();
 
-            public readonly static IList<string> LoadedAssetPaths = new List<string>();
-            public readonly static IList<string> LoadedAssetFullPaths = new List<string>();
-            public readonly static IList<WeakReference> LoadedAssets = new List<WeakReference>();
+            internal readonly static IList<string> LoadedAssetPaths = new List<string>();
+            internal readonly static IList<string> LoadedAssetFullPaths = new List<string>();
+            internal readonly static IList<WeakReference> LoadedAssets = new List<WeakReference>();
 
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
@@ -66,7 +91,14 @@ namespace Celeste.Mod {
                 Crawl(null, PathContent);
             }
 
-            public static bool TryGet(string path, out AssetMetadata metadata, bool includeDirs = false) {
+            /// <summary>
+            /// Gets the ModAsset mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The resulting mod asset meta object.</param>
+            /// <param name="includeDirs">Whether to include directories or not.</param>
+            /// <returns>True if a mapping for the given path is present, false otherwise.</returns>
+            public static bool TryGet(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
                 if (includeDirs) {
@@ -75,41 +107,65 @@ namespace Celeste.Mod {
                 if (Map.TryGetValue(path, out metadata)) return true;
                 return false;
             }
-            public static AssetMetadata Get(string path, bool includeDirs = false) {
-                AssetMetadata metadata;
+            /// <summary>
+            /// Gets the ModAsset mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="includeDirs">Whether to include directories or not.</param>
+            /// <returns>The resulting mod asset meta object, or null.</returns>
+            public static ModAsset Get(string path, bool includeDirs = false) {
+                ModAsset metadata;
                 TryGet(path, out metadata, includeDirs);
                 return metadata;
             }
 
-            public static bool TryGetDialogs(string path, out List<AssetMetadata> metadata) {
+            /// <summary>
+            /// Gets the list of all Dialog-related ModAssets mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The resulting mod asset meta list.</param>
+            /// <returns>True if a mapping for the given path is present, false otherwise.</returns>
+            public static bool TryGetDialogs(string path, out List<ModAsset> metadata) {
                 path = path.Replace('\\', '/');
                 return MapDialogs.TryGetValue(path, out metadata);
             }
-            public static List<AssetMetadata> GetDialogs(string path) {
-                List<AssetMetadata> metadata;
+            /// <summary>
+            /// Gets the list of all Dialog-related ModAssets mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The resulting mod asset meta list.</param>
+            /// <returns>The resulting mod asset meta list, or null.</returns>
+            public static List<ModAsset> GetDialogs(string path) {
+                List<ModAsset> metadata;
                 TryGetDialogs(path, out metadata);
                 return metadata;
             }
 
-            public static AssetMetadata Add(string path, AssetMetadata metadata) {
+            /// <summary>
+            /// Adds a new mapping for the given relative content path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The matching mod asset meta object.</param>
+            /// <returns>The passed mod asset meta object.</returns>
+            public static ModAsset Add(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
                 
                 if (metadata.AssetType == null)
                     path = GuessType(path, out metadata.AssetType, out metadata.AssetFormat);
 
-                metadata.PathRelative = path;
+                metadata.PathMapped = path;
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
-                AssetMetadata metadataPrev;
+                ModAsset metadataPrev;
                 if (!Map.TryGetValue(path, out metadataPrev))
                     metadataPrev = null;
 
                 // Hardcoded case: Handle dialog .txts separately.
                 if (metadata.AssetType == typeof(AssetTypeDialog)) {
                     // Store multiple AssetMetadatas in a list per path.
-                    List<AssetMetadata> dialogs;
+                    List<ModAsset> dialogs;
                     if (!MapDialogs.TryGetValue(path, out dialogs)) {
-                        dialogs = new List<AssetMetadata>();
+                        dialogs = new List<ModAsset>();
                         MapDialogs[path] = dialogs;
                     }
                     dialogs.Add(metadata);
@@ -118,7 +174,7 @@ namespace Celeste.Mod {
                 else if (metadata.AssetType == typeof(AssetTypeMap)) {
                     // Store all maps in a single shared list.
                     // Note that we only store the last added item.
-                    int index = ListMaps.FindIndex(other => other.PathRelative == metadata.PathRelative);
+                    int index = ListMaps.FindIndex(other => other.PathMapped == metadata.PathMapped);
                     if (index == -1)
                         index = ListMaps.Count;
                     ListMaps.Insert(index, metadata);
@@ -135,10 +191,10 @@ namespace Celeste.Mod {
                 if (path != "") {
                     // Add directories automatically.
                     string pathDir = Path.GetDirectoryName(path).Replace('\\', '/');
-                    AssetMetadata metadataDir;
+                    ModAsset metadataDir;
                     if (!MapDirs.TryGetValue(pathDir, out metadataDir)) {
-                        metadataDir = new AssetMetadata(pathDir) {
-                            Source = AssetMetadata.SourceType.Meta,
+                        metadataDir = new ModAsset(pathDir) {
+                            Source = ModAsset.SourceType.None,
                             AssetType = typeof(AssetTypeDirectory)
                         };
                         Add(pathDir, metadataDir);
@@ -154,7 +210,17 @@ namespace Celeste.Mod {
                 return metadata;
             }
 
+            /// <summary>
+            /// Invoked when GuessType can't guess the asset format / type.
+            /// </summary>
             public static event TypeGuesser OnGuessType;
+            /// <summary>
+            /// Guess the file type and format based on its path. 
+            /// </summary>
+            /// <param name="file">The relative asset path.</param>
+            /// <param name="type">The file type.</param>
+            /// <param name="format">The file format (file ending).</param>
+            /// <returns>The passed asset path, trimmed if required.</returns>
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
                 format = file.Length < 4 ? null : file.Substring(file.Length - 3);
@@ -205,6 +271,9 @@ namespace Celeste.Mod {
                 return file;
             }
 
+            /// <summary>
+            /// Recrawl all currently loaded mods and recreate the content mappings. If you want to apply the new mapping, call Reprocess afterwards.
+            /// </summary>
             public static void Recrawl() {
                 Map.Clear();
                 MapDirs.Clear();
@@ -215,6 +284,9 @@ namespace Celeste.Mod {
                     Crawl(Mods[i]);
             }
 
+            /// <summary>
+            /// Reprocess all loaded / previously processed assets, re-applying any changes after a recrawl.
+            /// </summary>
             public static void Reprocess() {
                 for (int i = 0; i < LoadedAssets.Count; i++) {
                     WeakReference weak = LoadedAssets[i];
@@ -224,6 +296,10 @@ namespace Celeste.Mod {
                 }
             }
 
+            /// <summary>
+            /// Crawl through the content mod and automatically fill the mod asset map.
+            /// </summary>
+            /// <param name="meta">The content mod to crawl through.</param>
             public static void Crawl(ContentModMetadata meta) {
                 if (meta.PathDirectory != null) {
                     if (Directory.Exists(meta.PathDirectory))
@@ -238,7 +314,7 @@ namespace Celeste.Mod {
                     Crawl(meta, meta.Assembly);
             }
 
-            public static void Crawl(ContentModMetadata meta, string dir, string root = null) {
+            internal static void Crawl(ContentModMetadata meta, string dir, string root = null) {
                 if (meta == null)
                     Mods.Add(meta = new ContentModMetadata() {
                         PathDirectory = dir
@@ -249,7 +325,7 @@ namespace Celeste.Mod {
                 string[] files = Directory.GetFiles(dir);
                 for (int i = 0; i < files.Length; i++) {
                     string file = files[i];
-                    Add(file.Substring(root.Length + 1), new AssetMetadata(file));
+                    Add(file.Substring(root.Length + 1), new ModAsset(file));
                 }
                 files = Directory.GetDirectories(dir);
                 for (int i = 0; i < files.Length; i++) {
@@ -258,7 +334,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            public static void Crawl(ContentModMetadata meta, Assembly asm) {
+            internal static void Crawl(ContentModMetadata meta, Assembly asm) {
                 if (meta == null)
                     Mods.Add(meta = new ContentModMetadata() {
                         Assembly = asm
@@ -271,11 +347,11 @@ namespace Celeste.Mod {
                     if (indexOfContent < 0)
                         continue;
                     name = name.Substring(indexOfContent + 8);
-                    Add(name, new AssetMetadata(asm, resourceNames[i]));
+                    Add(name, new ModAsset(asm, resourceNames[i]));
                 }
             }
 
-            public static void Crawl(ContentModMetadata meta, string archive, ZipFile zip) {
+            internal static void Crawl(ContentModMetadata meta, string archive, ZipFile zip) {
                 if (meta == null)
                     Mods.Add(meta = new ContentModMetadata() {
                         PathArchive = archive
@@ -285,11 +361,21 @@ namespace Celeste.Mod {
                     string entryName = entry.FileName.Replace('\\', '/');
                     if (entryName.EndsWith("/"))
                         continue;
-                    Add(entryName, new AssetMetadata(archive, entryName));
+                    Add(entryName, new ModAsset(archive, entryName));
                 }
             }
 
+            /// <summary>
+            /// Invoked when content is being processed (most likely on load), allowing you to manipulate it.
+            /// </summary>
             public static event Func<object, string, object> OnProcess;
+            /// <summary>
+            /// Process an asset and register it for further reprocessing in the future.
+            /// Apply any mod-related changes to the asset based on the existing mod asset meta map.
+            /// </summary>
+            /// <param name="asset">The asset to process.</param>
+            /// <param name="assetNameFull">The "full name" of the asset, preferable the relative asset path.</param>
+            /// <returns>The processed asset.</returns>
             public static object Process(object asset, string assetNameFull) {
                 if (DumpOnLoad)
                     Dump(assetNameFull, asset);
@@ -311,7 +397,7 @@ namespace Celeste.Mod {
                 if (asset is Atlas) {
                     Atlas atlas = asset as Atlas;
 
-                    AssetMetadata mapping = Get(assetName, true);
+                    ModAsset mapping = Get(assetName, true);
                     if (mapping == null || mapping.AssetType != typeof(AssetTypeDirectory))
                         return asset;
 
@@ -321,6 +407,9 @@ namespace Celeste.Mod {
                 return OnProcess?.InvokePassing(asset, assetNameFull) ?? asset;
             }
 
+            /// <summary>
+            /// Dump all dumpable game content into PathDUMP.
+            /// </summary>
             public static void DumpAll() {
                 bool prevDumpOnLoad = DumpOnLoad;
                 DumpOnLoad = true;
@@ -346,6 +435,11 @@ namespace Celeste.Mod {
                 DumpOnLoad = prevDumpOnLoad;
             }
 
+            /// <summary>
+            /// Dump the given asset into an user-friendly and mod-compatible format.
+            /// </summary>
+            /// <param name="assetNameFull">The "full name" of the asset, preferable the relative asset path.</param>
+            /// <param name="asset">The asset to process.</param>
             public static void Dump(string assetNameFull, object asset) {
                 string assetName = assetNameFull;
                 if (assetName.StartsWith(PathContentOrig)) {

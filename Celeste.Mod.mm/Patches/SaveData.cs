@@ -443,19 +443,34 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the statistics for all level sets.
+        /// </summary>
         public static List<LevelSetStats> GetLevelSets(this SaveData self)
             => ((patch_SaveData) self).LevelSets;
+        /// <summary>
+        /// Set the statistics for all level sets.
+        /// </summary>
         public static SaveData SetLevelSets(this SaveData self, List<LevelSetStats> value) {
             ((patch_SaveData) self).LevelSets = value;
             return self;
         }
 
+        /// <summary>
+        /// Get the last played level set.
+        /// </summary>
         public static string GetLevelSet(this SaveData self)
             => ((patch_SaveData) self).LevelSet;
 
+        /// <summary>
+        /// Get the statistics for the last played level set.
+        /// </summary>
         public static LevelSetStats GetLevelSetStats(this SaveData self)
             => ((patch_SaveData) self).LevelSetStats;
 
+        /// <summary>
+        /// Get the statistics for a given level set.
+        /// </summary>
         public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
             => ((patch_SaveData) self).GetLevelSetStatsFor(name);
 

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 using System.Xml;
 
 namespace Monocle {
-    public class MTextureOverlay {
+    public class MTextureOverride {
 
         public virtual bool IsActiveTexture => Texture != null && Texture.Texture != null && !Texture.Texture.IsDisposed;
         public virtual bool IsActiveMeta => Texture == null || (Texture.Texture != null && !Texture.Texture.IsDisposed);
@@ -28,9 +28,8 @@ namespace Monocle {
 
         public virtual bool ForceClipRect { get; set; } = false;
 
-
     }
-    public class MTextureParent : MTextureOverlay {
+    public class MTextureParent : MTextureOverride {
 
         public MTexture Parent;
 
@@ -44,7 +43,7 @@ namespace Monocle {
                 if (!HasRelativeRect)
                     return parentRect;
 
-                if (Parent.GetOverlayTexture()?.ForceClipRect ?? false) {
+                if (Parent.GetOverrideTexture()?.ForceClipRect ?? false) {
                     // TODO: Uh... UV-based clip rect calculation?
                 }
 

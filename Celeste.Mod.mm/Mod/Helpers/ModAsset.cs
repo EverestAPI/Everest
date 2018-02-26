@@ -16,27 +16,56 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
-    public class AssetMetadata {
-
-        public SourceType Source;
-        public Type AssetType = null;
-        public string AssetFormat = null;
-
-        public string PathRelative;
-        public string PathSource;
-        public string PathArchive;
-
-        public Assembly Assembly;
-        public string AssemblyName;
-
-        public long Offset;
-        public int Length;
-
-        public List<AssetMetadata> Children = new List<AssetMetadata>();
+    public class ModAsset {
 
         /// <summary>
-        /// Returns a new stream to read the data from.
-        /// In case of limited data (Length is set), LimitedStream is used.
+        /// The mod asset source.
+        /// </summary>
+        public SourceType Source;
+        /// <summary>
+        /// The type matching the mod asset.
+        /// </summary>
+        public Type AssetType = null;
+        /// <summary>
+        /// The original file extension.
+        /// </summary>
+        public string AssetFormat = null;
+
+        /// <summary>
+        /// The virtual path to the asset, matching the mapping path.
+        /// </summary>
+        public string PathMapped;
+        /// <summary>
+        /// The path to the source file, or the path to the source entry in an container.
+        /// </summary>
+        public string PathSource;
+        /// <summary>
+        /// The path to the source archive.
+        /// </summary>
+        public string PathArchive;
+
+        /// <summary>
+        /// The containing assembly.
+        /// </summary>
+        public Assembly Assembly;
+
+        /// <summary>
+        /// If the asset is a section of a larger file, the asset starting offset.
+        /// </summary>
+        public long SectionOffset;
+        /// <summary>
+        /// If the asset is a section of a larger file, the asset length.
+        /// </summary>
+        public int SectionLength;
+
+        /// <summary>
+        /// The "children" assets in f.e. directory type "assets."
+        /// </summary>
+        public List<ModAsset> Children = new List<ModAsset>();
+
+        /// <summary>
+        /// A stream to read the asset data from.
+        /// If the asset is a section of a larger file, LimitedStream is used.
         /// </summary>
         public Stream Stream {
             get {
@@ -60,15 +89,15 @@ namespace Celeste.Mod {
                     stream = Assembly.GetManifestResourceStream(PathSource);
                 }
 
-                if (stream == null || Length == 0) {
+                if (stream == null || SectionLength == 0) {
                     return stream;
                 }
-                return new LimitedStream(stream, Offset, Length);
+                return new LimitedStream(stream, SectionOffset, SectionLength);
             }
         }
 
         /// <summary>
-        /// Returns the files contents.
+        /// The asset contents.
         /// </summary>
         public byte[] Data {
             get {
@@ -89,35 +118,40 @@ namespace Celeste.Mod {
             }
         }
 
-        public AssetMetadata() {
-            Source = SourceType.Meta;
+        public ModAsset() {
+            Source = SourceType.None;
         }
 
-        public AssetMetadata(string file)
+        public ModAsset(string file)
             : this(file, 0, 0) {
         }
-        public AssetMetadata(string file, long offset, int length)
+        public ModAsset(string file, long offset, int length)
             : this() {
             Source = SourceType.Filesystem;
             PathSource = file;
-            Offset = offset;
-            Length = length;
+            SectionOffset = offset;
+            SectionLength = length;
         }
 
-        public AssetMetadata(string zip, string file)
+        public ModAsset(string zip, string file)
             : this(file) {
             Source = SourceType.Zip;
             PathArchive = zip;
             PathSource = file;
         }
 
-        public AssetMetadata(Assembly assembly, string file)
+        public ModAsset(Assembly assembly, string file)
             : this(file) {
             Source = SourceType.Assembly;
             Assembly = assembly;
-            AssemblyName = assembly.GetName().Name;
         }
 
+        /// <summary>
+        /// Deserialize the asset using a deserializer based on the AssetType (f.e. AssetTypeYaml -> YamlDotNet).
+        /// </summary>
+        /// <typeparam name="T">The target type.</typeparam>
+        /// <param name="result">The asset in its deserialized (object) form.</param>
+        /// <returns>True if deserializing the asset succeeded, false otherwise.</returns>
         public bool TryDeserialize<T>(out T result) {
             if (AssetType == typeof(AssetTypeYaml)) {
                 using (StreamReader reader = new StreamReader(Stream))
@@ -129,15 +163,26 @@ namespace Celeste.Mod {
             return false;
         }
 
+        /// <summary>
+        /// Deserialize the asset using a deserializer based on the AssetType (f.e. AssetTypeYaml -> YamlDotNet).
+        /// </summary>
+        /// <typeparam name="T">The target type.</typeparam>
+        /// <returns>The asset in its deserialized (object) form or default(T).</returns>
         public T Deserialize<T>() {
             T result;
             TryDeserialize(out result);
             return result;
         }
 
+        /// <summary>
+        /// Deserialize this asset's matching .meta asset. Uses TryDeserialize internally.
+        /// </summary>
+        /// <typeparam name="T">The target meta type.</typeparam>
+        /// <param name="meta">The requested meta object.</param>
+        /// <returns>True if deserializing the meta asset succeeded, false otherwise.</returns>
         public bool TryGetMeta<T>(out T meta) {
-            AssetMetadata metaAsset;
-            if (Everest.Content.TryGet(PathRelative + ".meta", out metaAsset) &&
+            ModAsset metaAsset;
+            if (Everest.Content.TryGet(PathMapped + ".meta", out metaAsset) &&
                 metaAsset.TryDeserialize(out meta)
             )
                 return true;
@@ -145,6 +190,11 @@ namespace Celeste.Mod {
             return false;
         }
 
+        /// <summary>
+        /// Deserialize this asset's matching .meta asset. Uses TryDeserialize internally.
+        /// </summary>
+        /// <typeparam name="T">The target meta type.</typeparam>
+        /// <returns>The requested meta object or default(T).</returns>
         public T GetMeta<T>() {
             T meta;
             TryGetMeta(out meta);
@@ -152,7 +202,7 @@ namespace Celeste.Mod {
         }
 
         public enum SourceType {
-            Meta,
+            None,
             Filesystem,
             Zip,
             Assembly,

@@ -14,11 +14,23 @@ namespace Celeste.Mod {
     public static partial class Everest {
         public static class Loader {
 
+            /// <summary>
+            /// The path to the Everest /Mods directory.
+            /// </summary>
             public static string PathMods { get; internal set; }
+            /// <summary>
+            /// The path to the Everest /Mods/Cache directory.
+            /// </summary>
             public static string PathCache { get; internal set; }
 
+            /// <summary>
+            /// The path to the Everest /Mods/blacklist.txt file.
+            /// </summary>
             public static string PathBlacklist { get; internal set; }
             internal static List<string> _Blacklist = new List<string>();
+            /// <summary>
+            /// The currently loaded mod blacklist.
+            /// </summary>
             public static ReadOnlyCollection<string> Blacklist => _Blacklist.AsReadOnly();
 
             internal static void LoadAuto() {
@@ -53,8 +65,12 @@ namespace Celeste.Mod {
 
             }
 
+            /// <summary>
+            /// Load a mod from a .zip archive at runtime.
+            /// </summary>
+            /// <param name="archive">The path to the mod .zip archive.</param>
             public static void LoadZip(string archive) {
-                if (!File.Exists(archive)) // Relative path?
+                if (!File.Exists(archive)) // Relative path? Let's just make it absolute.
                     archive = Path.Combine(PathMods, archive);
                 if (!File.Exists(archive)) // It just doesn't exist.
                     return;
@@ -122,6 +138,10 @@ namespace Celeste.Mod {
                     LoadMod(meta, asm);
             }
 
+            /// <summary>
+            /// Load a mod from a directory at runtime.
+            /// </summary>
+            /// <param name="dir">The path to the mod directory.</param>
             public static void LoadDir(string dir) {
                 if (!Directory.Exists(dir)) // Relative path?
                     dir = Path.Combine(PathMods, dir);
@@ -167,6 +187,11 @@ namespace Celeste.Mod {
                     LoadMod(meta, asm);
             }
 
+            /// <summary>
+            /// Find and load all EverestModules in the given assembly.
+            /// </summary>
+            /// <param name="meta">The mod metadata, preferably from the mod metadata.yaml file.</param>
+            /// <param name="asm">The mod assembly, preferably relinked.</param>
             public static void LoadMod(EverestModuleMetadata meta, Assembly asm) {
                 Content.Crawl(null, asm);
 
@@ -194,7 +219,7 @@ namespace Celeste.Mod {
             /// Can be used by mods manually to f.e. activate / disable functionality.
             /// </summary>
             /// <param name="dependency">Dependency to check for. Name and Version will be checked.</param>
-            /// <returns></returns>
+            /// <returns>True if the dependency has already been loaded by Everest, false otherwise.</returns>
             public static bool DependencyLoaded(EverestModuleMetadata dep) {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;

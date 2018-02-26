@@ -37,9 +37,15 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the original label name dialog key. Useful when inserting your own button between others.
+        /// </summary>
         public static string GetLabelName(this MainMenuSmallButton self)
             => ((patch_MainMenuSmallButton) self).LabelName;
 
+        /// <summary>
+        /// Get the original GUI atlas icon path. Useful when inserting your own button between others.
+        /// </summary>
         public static string GetIconName(this MainMenuSmallButton self)
             => ((patch_MainMenuSmallButton) self).IconName;
 

@@ -85,15 +85,27 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the current player hair scale for the given hair segment.
+        /// </summary>
         public static Vector2 GetHairScale(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
+        /// <summary>
+        /// Get the current player hair color for the given hair segment.
+        /// </summary>
         public static Color GetHairColor(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairColor(index);
 
+        /// <summary>
+        /// Get the PlayerSprite which the PlayerHair belongs to.
+        /// </summary>
         public static PlayerSprite GetSprite(this PlayerHair self)
             => ((patch_PlayerHair) self).Sprite;
 
+        /// <summary>
+        /// Get the current wave, updated by Engine.DeltaTime * 4f each Update.
+        /// </summary>
         public static float GetWave(this PlayerHair self)
             => ((patch_PlayerHair) self).Wave;
 

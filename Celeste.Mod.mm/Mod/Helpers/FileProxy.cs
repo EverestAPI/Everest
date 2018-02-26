@@ -39,7 +39,7 @@ namespace Celeste.Mod {
         }
 
         public static FileStream OpenRead(string path) {
-            AssetMetadata meta;
+            ModAsset meta;
             if (Everest.Content.TryGet(_Modize(path), out meta))
                 return new FileProxyStream(meta.Stream);
 

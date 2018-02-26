@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static class Extensions {
 
+        /// <summary>
+        /// Create a new MemoryStream for a given ZipEntry, which is safe to use in outside contexts.
+        /// </summary>
+        /// <param name="entry">The input ZipEntry.</param>
+        /// <returns>The MemoryStream holding the extracted data of the ZipEntry.</returns>
         public static MemoryStream ExtractStream(this ZipEntry entry) {
             MemoryStream ms = new MemoryStream();
             entry.Extract(ms);
@@ -18,6 +23,11 @@ namespace Celeste.Mod {
             return ms;
         }
 
+        /// <summary>
+        /// Create a hexadecimal string for the given bytes.
+        /// </summary>
+        /// <param name="data">The input bytes.</param>
+        /// <returns>The output hexadecimal string.</returns>
         public static string ToHexadecimalString(this byte[] data)
             => BitConverter.ToString(data).Replace("-", string.Empty);
 
@@ -107,12 +117,28 @@ namespace Celeste.Mod {
             return builder.ToString();
         }
 
+        /// <summary>
+        /// Escape some common strings from a given string for usage with the Dialog class.
+        /// The following characters get replaced with an underscore: /-+
+        /// </summary>
+        /// <param name="input">The input string.</param>
+        /// <returns>The Dialog-compatible key.</returns>
         public static string DialogKeyify(this string input)
             => input.Replace('/', '_').Replace('-', '_').Replace('+', '_');
 
+        /// <summary>
+        /// Get the dialog string for the given input key.
+        /// </summary>
+        /// <param name="input">The dialog key.</param>
+        /// <returns>The resolved dialog string.</returns>
         public static string DialogClean(this string input, Language language = null)
             => Dialog.Clean(input, language);
 
+        /// <summary>
+        /// Get the dialog string for the given input key.
+        /// </summary>
+        /// <param name="input">The dialog key.</param>
+        /// <returns>The resolved dialog string or null.</returns>
         public static string DialogCleanOrNull(this string input, Language language = null) {
             if (Dialog.Has(input))
                 return Dialog.Clean(input);
@@ -120,12 +146,34 @@ namespace Celeste.Mod {
                 return null;
         }
 
+        /// <summary>
+        /// Get a Vector2 from any float[] with a length of 2.
+        /// </summary>
+        /// <param name="a">The input array.</param>
+        /// <returns>The output Vector2 or null if the length doesn't match.</returns>
+        public static Vector2? ToVector2(this float[] a) {
+            if (a.Length != 2)
+                return null;
+            return new Vector2(a[0], a[1]);
+        }
+
+        /// <summary>
+        /// Get a Vector3 from any float[] with a length of 3.
+        /// </summary>
+        /// <param name="a">The input array.</param>
+        /// <returns>The output Vector3 or null if the length doesn't match.</returns>
         public static Vector3? ToVector3(this float[] a) {
             if (a.Length != 3)
                 return null;
             return new Vector3(a[0], a[1], a[2]);
         }
 
+        /// <summary>
+        /// Add an Enter and Leave handler, notifying the user that a relaunch is required to apply the changes.
+        /// </summary>
+        /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="needsRelaunch">This method does nothing if this is set to false.</param>
+        /// <returns>The passed option.</returns>
         public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch) {
             if (!needsRelaunch)
                 return option;
@@ -150,6 +198,11 @@ namespace Celeste.Mod {
         }
         */
 
+        /// <summary>
+        /// Write the string to the BinaryWriter in a C-friendly format.
+        /// </summary>
+        /// <param name="stream">The output which the method writes to.</param>
+        /// <param name="text">The input string.</param>
         public static void WriteNullTerminatedString(this BinaryWriter stream, string text) {
             if (text != null) {
                 for (int i = 0; i < text.Length; i++) {
@@ -160,6 +213,12 @@ namespace Celeste.Mod {
             stream.Write('\0');
         }
 
+        /// <summary>
+        /// Cast a delegate from one type to another. Compatible with delegates holding an invocation list (combined delegates).
+        /// </summary>
+        /// <param name="source">The input delegate.</param>
+        /// <param name="type">The wanted output delegate type.</param>
+        /// <returns>The output delegate.</returns>
         public static Delegate CastDelegate(this Delegate source, Type type) {
             if (source == null)
                 return null;

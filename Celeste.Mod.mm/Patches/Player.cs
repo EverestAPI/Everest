@@ -55,9 +55,15 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
+        /// <summary>
+        /// Get the current player dash trail color.
+        /// </summary>
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
 
+        /// <summary>
+        /// Get whether the player is in an intro state or not.
+        /// </summary>
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
 

@@ -134,4 +134,27 @@ namespace Celeste.Mod.Meta {
         public MountainCamera Convert()
             => new MountainCamera(Position?.ToVector3() ?? Vector3.Zero, Target?.ToVector3() ?? Vector3.Zero);
     }
+
+    public class MapMetaCompleteScreen : IMeta {
+        public string Atlas { get; set; }
+        [YamlIgnore] public Vector2 Start => StartArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Start")] public float[] StartArray { get; set; }
+        [YamlIgnore] public Vector2 Center => CenterArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Center")] public float[] CenterArray { get; set; }
+        [YamlIgnore] public Vector2 Offset => OffsetArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Offset")] public float[] OffsetArray { get; set; }
+        public MapMetaCompleteScreenLayer[] Layers { get; set; }
+    }
+    public class MapMetaCompleteScreenLayer {
+        public string Type { get; set; }
+        public string[] Images { get; set; }
+        [YamlIgnore] public Vector2 Position => PositionArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Position")] public float[] PositionArray { get; set; }
+        [YamlIgnore] public Vector2 Scroll => ScrollArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Scroll")] public float[] ScrollArray { get; set; }
+        public float FrameRate { get; set; } = 6f;
+        public float Alpha { get; set; } = 1f;
+        [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
+        [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
+    }
 }

@@ -101,13 +101,12 @@
     <Compile Include="Mod\Everest\Commands.cs" />
     <Compile Include="Mod\Everest\Everest.Update.cs" />
     <Compile Include="Mod\Helpers\FakeAssembly.cs" />
-    <Compile Include="Mod\Meta\MapMetaCompleteScreen.cs" />
     <Compile Include="Mod\Module\EverestModuleBinarySaveData.cs" />
     <Compile Include="Mod\Module\EverestModuleSaveData.cs" />
     <Compile Include="Mod\Module\EverestModuleBinarySettings.cs" />
     <Compile Include="Mod\Module\EverestModuleSettings.cs" />
     <Compile Include="Mod\Module\EverestModuleMetadata.cs" />
-    <Compile Include="Mod\Helpers\AssetMetadata.cs" />
+    <Compile Include="Mod\Helpers\ModAsset.cs" />
     <Compile Include="Mod\Helpers\ContentExtensions.cs" />
     <Compile Include="Mod\Everest\Everest.Events.cs" />
     <Compile Include="Mod\Everest\Everest.Content.cs" />
@@ -122,7 +121,7 @@
     <Compile Include="Mod\Helpers\LimitedStream.cs" />
     <Compile Include="Mod\Helpers\LogWriter.cs" />
     <Compile Include="Mod\Helpers\Logger.cs" />
-    <Compile Include="Mod\Helpers\MTextureOverlay.cs" />
+    <Compile Include="Mod\Helpers\MTextureOverride.cs" />
     <Compile Include="Mod\Helpers\FileProxy.cs" />
     <Compile Include="Mod\Meta\IMeta.cs" />
     <Compile Include="Mod\Meta\TextureMeta.cs" />

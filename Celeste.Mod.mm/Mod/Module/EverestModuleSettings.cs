@@ -19,6 +19,9 @@ namespace Celeste.Mod {
 
     }
 
+    /// <summary>
+    /// The dialog key / name for the settings option.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
     public class SettingNameAttribute : Attribute {
         public string Name;
@@ -27,6 +30,9 @@ namespace Celeste.Mod {
         }
     }
 
+    /// <summary>
+    /// Whether the option should be shown in-game or in the main menu only.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property)]
     public class SettingInGameAttribute : Attribute {
         public bool InGame;
@@ -35,6 +41,9 @@ namespace Celeste.Mod {
         }
     }
 
+    /// <summary>
+    /// The integer option range.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class SettingRangeAttribute : Attribute {
         public int Min;
@@ -45,12 +54,18 @@ namespace Celeste.Mod {
         }
     }
 
+    /// <summary>
+    /// Any options with this attribute will notify the user that a restart is required to apply the changes.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class SettingNeedsRelaunchAttribute : Attribute {
         public SettingNeedsRelaunchAttribute() {
         }
     }
 
+    /// <summary>
+    /// Ignore the setting in the default mod options menu handler.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class SettingIgnoreAttribute : Attribute {
         public SettingIgnoreAttribute() {
