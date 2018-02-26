@@ -32,6 +32,9 @@ namespace Celeste.Mod {
         [SettingNeedsRelaunch]
         public bool LaunchWithoutIntro { get; set; } = false;
 
+        [SettingIgnore]
+        public string InputGui { get; set; } = "";
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;

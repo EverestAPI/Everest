@@ -59,6 +59,18 @@ namespace Celeste.Mod {
             };
         }
 
+        public override void LoadContent() {
+            // Check if the current input GUI override is still valid. If so, apply it.
+            if (!string.IsNullOrEmpty(Settings.InputGui)) {
+                string inputGuiPath = $"controls/{Settings.InputGui}/";
+                if (GFX.Gui.GetTextures().Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
+                    Input.OverrideInputPrefix = Settings.InputGui;
+                } else {
+                    Settings.InputGui = "";
+                }
+            }
+        }
+
         public override void Unload() {
             Everest.Events.OuiMainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
@@ -150,12 +162,42 @@ namespace Celeste.Mod {
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
-            menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
-                Everest.Content.Recrawl();
-                Everest.Content.Reprocess();
-                VirtualContentExt.ForceReload();
-                AreaData.Load();
-            }));
+            // Get all Input GUI prefixes and add a slider for switching between them.
+            List<string> inputGuiPrefixes = new List<string>();
+            inputGuiPrefixes.Add(""); // Auto
+            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
+                string path = kvp.Key;
+                if (!path.StartsWith("controls/"))
+                    continue;
+                path = path.Substring(9);
+                int indexOfSlash = path.IndexOf('/');
+                if (indexOfSlash == -1)
+                    continue;
+                path = path.Substring(0, indexOfSlash);
+                if (!inputGuiPrefixes.Contains(path))
+                    inputGuiPrefixes.Add(path);
+            }
+
+            menu.Add(
+                new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_inputgui"), i => {
+                    string inputGuiPrefix = inputGuiPrefixes[i];
+                    string fullName = $"modoptions_coremodule_inputgui_{inputGuiPrefix.ToLowerInvariant()}";
+                    return fullName.DialogCleanOrNull() ?? inputGuiPrefix.ToUpperInvariant();
+                }, 0, inputGuiPrefixes.Count - 1, Math.Max(0, inputGuiPrefixes.IndexOf(Settings.InputGui)))
+                .Change(i => {
+                    Settings.InputGui = inputGuiPrefixes[i];
+                    Input.OverrideInputPrefix = inputGuiPrefixes[i];
+                })
+            );
+
+            if (Celeste.PlayMode == Celeste.PlayModes.Debug) {
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
+                    Everest.Content.Recrawl();
+                    Everest.Content.Reprocess();
+                    VirtualContentExt.ForceReload();
+                    AreaData.Load();
+                }));
+            }
         }
 
     }

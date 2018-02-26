@@ -20,7 +20,7 @@
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 					{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain.
-	POSTCARD_LEVELLOADFAILED= 				{big}We're sorry, ((player))!{/big}{n}But {#ff1144}((sid)){#}{n}has closed for maintenance.{n}Please send your {#44adf7}log.txt{#}{n}to the builder.{n}Thank you!
+	POSTCARD_LEVELLOADFAILED= 				{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please submit your {#44adf7}log.txt{#}{n}to the map builder.
 
 # Main Menu
 	MENU_MAPLIST= 							Map List
@@ -34,7 +34,16 @@
 	MODOPTIONS_COREMODULE_UPDATE= 			Update to v.((version))
 	MODOPTIONS_COREMODULE_VERSIONLIST= 		~Version List~
 	MODOPTIONS_COREMODULE_TITLE= 			Everest Core
-	MODOPTIONS_COREMODULE_RECRAWL= 			Reload Assets
+	MODOPTIONS_COREMODULE_INPUTGUI= 		Input Prompts
+	MODOPTIONS_COREMODULE_INPUTGUI_= 		AUTO
+	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 			KEYBOARD
+	MODOPTIONS_COREMODULE_INPUTGUI_NS= 					SWITCH
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 		SWITCH - L JOYCON
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 		SWITCH - R JOYCON
+	MODOPTIONS_COREMODULE_INPUTGUI_PS4= 				PS4
+	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 				XBONE
+	
+	MODOPTIONS_COREMODULE_RECRAWL= 			~Reload Assets~
 
 # Maplist
 	MAPLIST_TITLE= 							MAP LIST
@@ -46,7 +55,7 @@
 	MAPLIST_UNCATEGORIZED= 					Uncategorized
 
 	LEVELSET_CELESTE= 						Celeste
-	LEVELSET_= 								???
+	LEVELSET_= 								Uncategorized
 
 # Updater
 	UPDATER_TITLE= 							UPDATER

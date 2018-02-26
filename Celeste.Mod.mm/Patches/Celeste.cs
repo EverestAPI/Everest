@@ -60,6 +60,14 @@ namespace Celeste {
             Everest.Invoke("Initialize");
         }
 
+        protected extern void orig_LoadContent();
+        protected override void LoadContent() {
+            // Note: You may instinctually call base.LoadContent();
+            // DON'T! The original method is orig_LoadContent
+            orig_LoadContent();
+            Everest.Invoke("LoadContent");
+        }
+
         protected override void OnExiting(object sender, EventArgs args) {
             base.OnExiting(sender, args);
             Everest.Events.Celeste.Exiting();

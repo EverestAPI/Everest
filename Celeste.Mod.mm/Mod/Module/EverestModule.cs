@@ -175,6 +175,12 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
+        /// Perform any content loading actions after Celeste.LoadContent has been called.
+        /// </summary>
+        public virtual void LoadContent() {
+        }
+
+        /// <summary>
         /// Unload any unmanaged resources allocated by the mod (f.e. textures) and
         /// undo any changes performed by the mod.
         /// </summary>
