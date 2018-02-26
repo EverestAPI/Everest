@@ -1,4 +1,5 @@
-﻿using Monocle;
+﻿using Celeste.Mod.Core;
+using Monocle;
 using MonoMod.Helpers;
 using MonoMod.InlineRT;
 using System;

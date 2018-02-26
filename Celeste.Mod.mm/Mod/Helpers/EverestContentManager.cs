@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Content;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     class EverestContentManager : ContentManager {
 
         private ContentManager Inner;

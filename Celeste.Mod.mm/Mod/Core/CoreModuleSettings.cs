@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
     [SettingName("modoptions_coremodule_title")]
     public class CoreModuleSettings : EverestModuleSettings {

@@ -4,6 +4,7 @@ using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 
-namespace Monocle {
+namespace Celeste.Mod {
     public class MTextureOverride {
 
         public virtual bool IsActiveTexture => Texture != null && Texture.Texture != null && !Texture.Texture.IsDisposed;

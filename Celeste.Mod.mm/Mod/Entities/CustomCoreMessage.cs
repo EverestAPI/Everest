@@ -8,8 +8,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
-    // Based on CoreMessage
+namespace Celeste.Mod.Entities {
+    /// <summary>
+    /// Based on CoreMessage, to be used by custom maps.
+    /// 
+    /// Checks for the following new attributes:
+    /// - `string dialog` (default: `"app_ending"`)
+    /// </summary>
     public class CustomCoreMessage : Entity {
 
         private string text;

@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.UI {
     // Based on OuiFileNaming
     public class OuiModOptionString : Oui {
 

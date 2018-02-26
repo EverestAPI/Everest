@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Core {
     public class CoreModuleSaveData : EverestModuleSaveData {
 
         public int WhateverCount { get; set; } = 1337;

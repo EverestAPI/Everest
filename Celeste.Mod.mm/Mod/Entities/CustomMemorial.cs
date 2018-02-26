@@ -8,8 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
-    // Based on Memorial
+namespace Celeste.Mod.Entities {
+    /// <summary>
+    /// Based on Memorial, to be used by custom maps.
+    /// 
+    /// Checks for the following new attributes:
+    /// - `string dialog` (default: `"memorial"`)
+    /// - `string sprite` (default: `"scenery/memorial/memorial"`)
+    /// </summary>
     public class CustomMemorial : Entity {
 
         private Image sprite;

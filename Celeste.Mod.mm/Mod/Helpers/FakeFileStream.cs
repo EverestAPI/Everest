@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     public sealed class FileProxyStream : FileStream {
 
         // I'm overcomplicating this. -ade

@@ -24,6 +24,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>bin\Debug\Celeste.Mod.mm.xml</DocumentationFile>
+    <NoWarn>CS1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath Condition=" '$(TravisCore)' == '' ">bin\Release\</OutputPath>
@@ -92,13 +94,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mod\CoreModule\CoreModuleSaveData.cs" />
-    <Compile Include="Mod\CoreModule\CoreModuleSettings.cs" />
+    <Compile Include="Mod\Core\CoreModuleSaveData.cs" />
+    <Compile Include="Mod\Core\CoreModuleSettings.cs" />
     <Compile Include="Mod\Entities\CustomMemorialText.cs" />
     <Compile Include="Mod\Entities\CustomMemorial.cs" />
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
-    <Compile Include="Mod\Everest\Commands.cs" />
+    <Compile Include="Mod\Helpers\Commands.cs" />
     <Compile Include="Mod\Everest\Everest.Update.cs" />
     <Compile Include="Mod\Helpers\FakeAssembly.cs" />
     <Compile Include="Mod\Module\EverestModuleBinarySaveData.cs" />
@@ -106,36 +108,36 @@
     <Compile Include="Mod\Module\EverestModuleBinarySettings.cs" />
     <Compile Include="Mod\Module\EverestModuleSettings.cs" />
     <Compile Include="Mod\Module\EverestModuleMetadata.cs" />
-    <Compile Include="Mod\Helpers\ModAsset.cs" />
-    <Compile Include="Mod\Helpers\ContentExtensions.cs" />
+    <Compile Include="Mod\Everest\ModAsset.cs" />
+    <Compile Include="Mod\Everest\ContentExtensions.cs" />
     <Compile Include="Mod\Everest\Everest.Events.cs" />
     <Compile Include="Mod\Everest\Everest.Content.cs" />
     <Compile Include="Mod\Everest\Everest.Relinker.cs" />
     <Compile Include="Mod\Everest\Everest.Loader.cs" />
     <Compile Include="Mod\Everest\Everest.cs" />
-    <Compile Include="Mod\CoreModule\CoreModule.cs" />
+    <Compile Include="Mod\Core\CoreModule.cs" />
     <Compile Include="Mod\Helpers\EverestContentManager.cs" />
     <Compile Include="Mod\Module\EverestModule.cs" />
-    <Compile Include="Mod\Helpers\Extensions.cs" />
+    <Compile Include="Mod\Everest\Extensions.cs" />
     <Compile Include="Mod\Helpers\FakeFileStream.cs" />
     <Compile Include="Mod\Helpers\LimitedStream.cs" />
     <Compile Include="Mod\Helpers\LogWriter.cs" />
-    <Compile Include="Mod\Helpers\Logger.cs" />
-    <Compile Include="Mod\Helpers\MTextureOverride.cs" />
+    <Compile Include="Mod\Everest\Logger.cs" />
+    <Compile Include="Mod\Everest\MTextureOverride.cs" />
     <Compile Include="Mod\Helpers\FileProxy.cs" />
     <Compile Include="Mod\Meta\IMeta.cs" />
     <Compile Include="Mod\Meta\TextureMeta.cs" />
     <Compile Include="Mod\Meta\MapMeta.cs" />
     <Compile Include="Mod\Meta\MTextureMeta.cs" />
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
-    <Compile Include="Mod\Oui\OuiHelper_Shutdown.cs" />
-    <Compile Include="Mod\Oui\OuiHelper_ChapterSelect_LevelSet.cs" />
-    <Compile Include="Mod\Oui\OuiModOptionString.cs" />
-    <Compile Include="Mod\Oui\OuiLoggedProgress.cs" />
-    <Compile Include="Mod\Oui\OuiVersionList.cs" />
-    <Compile Include="Mod\Oui\TextMenuExt.cs" />
-    <Compile Include="Mod\Oui\OuiMapList.cs" />
-    <Compile Include="Mod\Oui\OuiModOptions.cs" />
+    <Compile Include="Mod\UI\OuiHelper_Shutdown.cs" />
+    <Compile Include="Mod\UI\OuiHelper_ChapterSelect_LevelSet.cs" />
+    <Compile Include="Mod\UI\OuiModOptionString.cs" />
+    <Compile Include="Mod\UI\OuiLoggedProgress.cs" />
+    <Compile Include="Mod\UI\OuiVersionList.cs" />
+    <Compile Include="Mod\UI\TextMenuExt.cs" />
+    <Compile Include="Mod\UI\OuiMapList.cs" />
+    <Compile Include="Mod\UI\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
     <Compile Include="Patches\CompleteRenderer.cs" />
     <Compile Include="Patches\AreaKey.cs" />

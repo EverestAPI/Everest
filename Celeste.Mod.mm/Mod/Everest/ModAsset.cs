@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Celeste.Mod.Helpers;
 
 namespace Celeste.Mod {
     public class ModAsset {

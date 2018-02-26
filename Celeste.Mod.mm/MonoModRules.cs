@@ -10,14 +10,14 @@ using System.Threading.Tasks;
 
 namespace MonoMod {
     /// <summary>
-    /// Proxy any System.IO.File.* calls inside the method via Celeste.Mod.FileProxy.*
+    /// Proxy any System.IO.File.* calls inside the method via Celeste.Mod.Helpers.FileProxy.*
     /// </summary>
     [MonoModCustomMethodAttribute("ProxyFileCalls")]
     class ProxyFileCallsAttribute : Attribute { }
 
     /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
-    /// Also manually invoke ProxyFileCalls
+    /// Also manually execute ProxyFileCalls rule.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchMapDataLoader")]
     class PatchMapDataLoaderAttribute : Attribute { }
@@ -140,7 +140,7 @@ namespace MonoMod {
                 return;
 
             if (FileProxy == null)
-                FileProxy = MMILRT.Modder.FindType("Celeste.Mod.FileProxy")?.Resolve();
+                FileProxy = MMILRT.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
             if (FileProxy == null)
                 return;
 

@@ -8,8 +8,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
-    // Based on MemorialText
+namespace Celeste.Mod.Entities {
+    /// <summary>
+    /// Based on MemorialText, spawned by CustomMemorial.
+    /// </summary>
     public class CustomMemorialText : Entity {
 
         public bool Show;

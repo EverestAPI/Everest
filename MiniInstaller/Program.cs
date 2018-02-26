@@ -7,6 +7,7 @@ using Celeste.Mod;
 using System.Reflection;
 using System.Diagnostics;
 using System.Threading;
+using Celeste.Mod.Helpers;
 
 namespace MiniInstaller {
     public class Program {

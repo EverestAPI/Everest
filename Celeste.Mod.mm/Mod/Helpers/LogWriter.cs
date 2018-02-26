@@ -5,7 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     public class LogWriter : TextWriter {
 
         public TextWriter STDOUT;

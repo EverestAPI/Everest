@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     /// <summary>
     /// Partial replacement for the System.IO.File class.
     /// </summary>

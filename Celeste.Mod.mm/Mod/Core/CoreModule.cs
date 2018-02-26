@@ -1,4 +1,5 @@
 ﻿using Celeste.Editor;
+using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -9,7 +10,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Core {
+    /// <summary>
+    /// The Everest core module class. Feel free to access the core module settings from your own mod.
+    /// </summary>
     public class CoreModule : EverestModule {
 
         public static CoreModule Instance;

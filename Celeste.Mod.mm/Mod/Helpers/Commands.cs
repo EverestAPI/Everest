@@ -12,8 +12,8 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
-    public static class Commands {
+namespace Celeste.Mod.Helpers {
+    internal static class Commands {
 
         [Command("q", "hides the command line")]
         public static void Hide() {

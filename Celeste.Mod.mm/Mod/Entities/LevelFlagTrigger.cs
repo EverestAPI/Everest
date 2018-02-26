@@ -8,7 +8,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Entities {
+    /// <summary>
+    /// A general purpose level flag setting trigger, to be used by custom maps.
+    /// 
+    /// Checks for the following new attributes:
+    /// - `string flag`
+    /// - `bool state`
+    /// - `Modes mode` (default: `OnPlayerEnter`; available: `OnPlayerEnter, OnPlayerLeave, OnLevelStart`)
+    /// - `bool only_once` (default: `false`)
+    /// - `int death_count` (default: `-1`)
+    /// </summary>
     [Tracked]
     public class LevelFlagTrigger : Trigger {
 

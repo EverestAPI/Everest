@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     public class LimitedStream : MemoryStream {
 
         public Stream LimitStream;

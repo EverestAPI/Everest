@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security.Policy;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.Helpers {
     public sealed class FakeAssembly : Assembly {
 
         // If you thought FakeFileStream was overkill, watch this. -ade

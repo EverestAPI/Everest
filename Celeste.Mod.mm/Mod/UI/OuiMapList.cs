@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod {
+namespace Celeste.Mod.UI {
     public class OuiMapList : Oui {
 
         public List<OuiChapterSelectIcon> OuiIcons;
