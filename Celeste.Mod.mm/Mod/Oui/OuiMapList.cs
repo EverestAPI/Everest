@@ -122,7 +122,7 @@ namespace Celeste.Mod {
                     button.Icon = area.Icon;
                 button.IconWidth = 128f;
 
-                if (levelSet == "Celeste" && i > levelSetStats.UnlockedAreas)
+                if (levelSet == "Celeste" && i > SaveData.Instance.UnlockedAreas)
                     button.Disabled = true;
                 if (side == 1 && !areaStatsAll[i].Cassette)
                     button.Disabled = true;
