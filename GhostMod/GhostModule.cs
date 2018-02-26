@@ -19,6 +19,8 @@ namespace Celeste.Mod.Ghost {
         public override Type SettingsType => typeof(GhostModuleSettings);
         public static GhostModuleSettings Settings => (GhostModuleSettings) Instance._Settings;
 
+        public static string PathGhosts { get; internal set; }
+
         public List<Ghost> Ghosts = new List<Ghost>();
         public GhostRecorder GhostRecorder;
 
@@ -28,6 +30,10 @@ namespace Celeste.Mod.Ghost {
         }
 
         public override void Load() {
+            PathGhosts = Path.Combine(Everest.PathSettings, "Ghosts");
+            if (!Directory.Exists(PathGhosts))
+                Directory.CreateDirectory(PathGhosts);
+
             Everest.Events.Level.OnLoadLevel += OnLoadLevel;
             Everest.Events.Level.OnExit += OnExit;
             Everest.Events.Player.OnDie += OnDie;

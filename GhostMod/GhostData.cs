@@ -31,13 +31,13 @@ namespace Celeste.Mod.Ghost {
             => GetGhostFilePath(session.Area.GetSID(), session.Area.Mode, session.Level, name, date);
         public static string GetGhostFilePath(string sid, AreaMode mode, string level, string name, DateTime date)
             => Path.Combine(
-                Everest.PathSettings, "Ghosts",
+                GhostModule.PathGhosts,
                 GetGhostFilePrefix(sid, mode, level) + PathVerifyRegex.Replace($"{name}-{date.ToString("yyyy-MM-dd-HH-mm-ss-fff", CultureInfo.InvariantCulture)}", "-") + ".oshiro"
             );
 
         public static string[] GetAllGhostFilePaths(Session session)
             => Directory.GetFiles(
-                Path.Combine(Everest.PathSettings, "Ghosts"),
+                GhostModule.PathGhosts,
                 GetGhostFilePrefix(session) + "*.oshiro"
             );
         public static List<GhostData> ReadAllGhosts(Session session, List<GhostData> list = null) {
