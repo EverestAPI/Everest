@@ -13,7 +13,7 @@ namespace Celeste.Mod.Entities {
     /// Based on CoreMessage, to be used by custom maps.
     /// 
     /// Checks for the following new attributes:
-    /// - `string dialog` (default: `"app_ending"`)
+    /// - `string dialog` (default: `app_ending`)
     /// </summary>
     public class CustomCoreMessage : Entity {
 

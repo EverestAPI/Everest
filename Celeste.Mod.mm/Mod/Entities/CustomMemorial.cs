@@ -13,8 +13,8 @@ namespace Celeste.Mod.Entities {
     /// Based on Memorial, to be used by custom maps.
     /// 
     /// Checks for the following new attributes:
-    /// - `string dialog` (default: `"memorial"`)
-    /// - `string sprite` (default: `"scenery/memorial/memorial"`)
+    /// - `string dialog` (default: `memorial`)
+    /// - `string sprite` (default: `scenery/memorial/memorial`)
     /// </summary>
     public class CustomMemorial : Entity {
 
