@@ -4,9 +4,9 @@
 
 ----
 
-[**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
-
 [![Build Status](https://travis-ci.org/EverestAPI/Everest.svg?branch=master)](https://travis-ci.org/EverestAPI/Everest)
+
+[**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
 
 Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding utility.
 
@@ -15,6 +15,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding ut
 [![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
 
 ### Mod Development:
-Use RainbowMod as an example mod. It already contains:
+Use [RainbowMod](https://github.com/EverestAPI/RainbowMod) and [MadelineEnergySelector](https://github.com/EverestAPI/MadelineEnergySelector) as an example mods. They already contains:
+- Everest as a submodule
 - The required references (`lib/`, `lib-stripped/`) with "Copy Local" set to "False"
 - The mod `metadata.yaml`
