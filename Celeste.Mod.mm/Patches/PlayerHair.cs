@@ -54,8 +54,7 @@ namespace Celeste {
             Nodes[0] = Nodes[0].Floor();
             if (colorBorder.A > 0) {
                 for (int i = 0; i < sprite.HairCount; i++) {
-                    int hairFrame = sprite.HairFrame;
-                    MTexture hair = (i == 0) ? bangs[hairFrame] : GFX.Game["characters/player/hair00"];
+                    MTexture hair = GetHairTexture(i);
                     Vector2 hairScale = GetHairScale(i);
                     hair.Draw(Nodes[i] + new Vector2(-1f, 0f), origin, colorBorder, hairScale);
                     hair.Draw(Nodes[i] + new Vector2(1f, 0f), origin, colorBorder, hairScale);
@@ -65,10 +64,15 @@ namespace Celeste {
             }
 
             for (int i = sprite.HairCount - 1; i >= 0; i--) {
-                int hairFrame = sprite.HairFrame;
-                MTexture hair = (i == 0) ? bangs[hairFrame] : GFX.Game["characters/player/hair00"];
+                MTexture hair = GetHairTexture(i);
                 hair.Draw(Nodes[i], origin, GetHairColor(i), GetHairScale(i));
             }
+        }
+
+        public MTexture GetHairTexture(int index) {
+            if (index == 0)
+                return bangs[sprite.HairFrame];
+            return GFX.Game["characters/player/hair00"];
         }
 
         [MonoModIgnore]
@@ -84,6 +88,12 @@ namespace Celeste {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
+
+        /// <summary>
+        /// Get the current player hair texture for the given hair segment.
+        /// </summary>
+        public static MTexture GetHairTexture(this PlayerHair self, int index)
+            => ((patch_PlayerHair) self).GetHairTexture(index);
 
         /// <summary>
         /// Get the current player hair scale for the given hair segment.
