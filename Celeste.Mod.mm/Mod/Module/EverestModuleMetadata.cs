@@ -77,11 +77,11 @@ namespace Celeste.Mod {
             try {
                 meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
             } catch (Exception e) {
-                Logger.Log("loader", "Failed parsing metadata.yaml: " + e);
+                Logger.Log(LogLevel.Warn, "loader", "Failed parsing metadata.yaml: " + e);
                 return null;
             }
             if (meta == null) {
-                Logger.Log("loader", "Failed parsing metadata.yaml: YamlDotNet returned null");
+                Logger.Log(LogLevel.Warn, "loader", "Failed parsing metadata.yaml: YamlDotNet returned null");
                 return null;
             }
             meta.PathArchive = archive;
@@ -101,7 +101,7 @@ namespace Celeste.Mod {
                 }
             }
             if (!dependsOnAPI) {
-                Logger.Log("loader", "WARNING: No dependency to API found in " + meta + "! Adding dependency to API 1.0...");
+                Logger.Log(LogLevel.Warn, "loader", "No dependency to API found in " + meta + "! Adding dependency to API 1.0...");
                 meta.Dependencies.Insert(0, new EverestModuleMetadata() {
                     Name = "API",
                     Version = new Version(1, 0)

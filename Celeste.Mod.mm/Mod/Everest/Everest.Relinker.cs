@@ -53,7 +53,7 @@ namespace Celeste.Mod {
                             if (name.StartsWith("Celeste."))
                                 _SharedRelinkModuleMap[nameNeutral] = StaticRelinkModuleCache["Celeste"];
                             else {
-                                Logger.Log("relinker", $"Found unknown {name}");
+                                Logger.Log(LogLevel.Warn, "relinker", $"Found unknown {name}");
                                 int dot = name.IndexOf('.');
                                 if (dot < 0)
                                     continue;
@@ -67,7 +67,7 @@ namespace Celeste.Mod {
                                     relinked = ModuleDefinition.ReadModule(pathRelinked, new ReaderParameters(ReadingMode.Immediate));
                                     StaticRelinkModuleCache[nameRelinkedNeutral] = relinked;
                                 }
-                                Logger.Log("relinker", $"Remapped to {nameRelinked}");
+                                Logger.Log(LogLevel.Verbose, "relinker", $"Remapped to {nameRelinked}");
                                 _SharedRelinkModuleMap[nameNeutral] = relinked;
                             }
                         }
@@ -187,7 +187,7 @@ namespace Celeste.Mod {
                     modder.AutoPatch();
                     modder.Write();
                 } catch (Exception e) {
-                    Logger.Log("relinker", $"Failed relinking {meta}: {e}");
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}: {e}");
                     return null;
                 } finally {
                     Modder.ClearCaches(moduleSpecific: true);

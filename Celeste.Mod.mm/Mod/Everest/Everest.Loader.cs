@@ -33,6 +33,9 @@ namespace Celeste.Mod {
             /// </summary>
             public static ReadOnlyCollection<string> Blacklist => _Blacklist.AsReadOnly();
 
+            internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
+            internal static int DelayedLock;
+
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathGame, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
@@ -75,16 +78,13 @@ namespace Celeste.Mod {
                 if (!File.Exists(archive)) // It just doesn't exist.
                     return;
 
-                Logger.Log("loader", $"Loading mod .zip: {archive}");
+                Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata meta = null;
-                Assembly asm = null;
 
+                // In case the icon appears before the metadata in the .zip, store it temporarily, set it later.
+                Texture2D icon = null;
                 using (ZipFile zip = new ZipFile(archive)) {
-                    // In case the icon appears before the metadata in the .zip, store it temporarily.
-                    Texture2D icon = null;
-
-                    // First read the metadata, ...
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
                             using (MemoryStream stream = entry.ExtractStream())
@@ -98,44 +98,18 @@ namespace Celeste.Mod {
                             continue;
                         }
                     }
-
-                    if (meta != null) {
-                        if (icon != null)
-                            meta.Icon = icon;
-
-                        // ... then check if the dependencies are loaded ...
-                        // TODO: Enqueue the mod, reload it on Register of other mods, rechecking if deps loaded.
-                        foreach (EverestModuleMetadata dep in meta.Dependencies)
-                            if (!DependencyLoaded(dep)) {
-                                Logger.Log("loader", $"Dependency {dep} of mod {meta} not loaded!");
-                                return;
-                            }
-
-                        // ... then add an AssemblyResolve handler for all the .zip-ped libraries
-                        AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
-                    }
-
-                    // ... then handle the assembly ...
-                    foreach (ZipEntry entry in zip.Entries) {
-                        string entryName = entry.FileName.Replace('\\', '/');
-                        if (meta != null && entryName == meta.DLL) {
-                            using (MemoryStream stream = entry.ExtractStream()) {
-                                if (meta.Prelinked) {
-                                    asm = Assembly.Load(stream.GetBuffer());
-                                } else {
-                                    asm = Relinker.GetRelinkedAssembly(meta, stream);
-                                }
-                            }
-                        }
-                    }
-
-                    // ... then tell the Content class to crawl through the zip.
-                    // (This also registers the zip for recrawls further down the line.)
-                    Content.Crawl(null, archive, zip);
                 }
 
-                if (meta != null && asm != null)
-                    LoadMod(meta, asm);
+                if (meta != null) {
+                    if (icon != null)
+                        meta.Icon = icon;
+                }
+
+                LoadModDelayed(meta, () => {
+                    Content.Crawl(new ContentModMetadata() {
+                        PathArchive = archive
+                    });
+                });
             }
 
             /// <summary>
@@ -148,43 +122,85 @@ namespace Celeste.Mod {
                 if (!Directory.Exists(dir)) // It just doesn't exist.
                     return;
 
-                Logger.Log("loader", $"Loading mod directory: {dir}");
+                Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
                 EverestModuleMetadata meta = null;
-                Assembly asm = null;
 
-                // First read the metadata, ...
                 string metaPath = Path.Combine(dir, "metadata.yaml");
                 if (File.Exists(metaPath))
                     using (StreamReader reader = new StreamReader(metaPath))
                         meta = EverestModuleMetadata.Parse("", dir, reader);
 
-                if (meta != null) {
-                    // ... then check if the dependencies are loaded ...
-                    foreach (EverestModuleMetadata dep in meta.Dependencies)
-                        if (!DependencyLoaded(dep)) {
-                            Logger.Log("loader", $"Dependency {dep} of mod {meta} not loaded!");
-                            return;
-                        }
+                LoadModDelayed(meta, () => {
+                    Content.Crawl(new ContentModMetadata() {
+                        PathDirectory = dir
+                    });
+                });
+            }
 
-                    // ... then add an AssemblyResolve handler for all the  .zip-ped libraries
-                    AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
+            /// <summary>
+            /// Load a mod .dll given its metadata at runtime. Doesn't load the mod content.
+            /// If required, loads the mod after all of its dependencies have been loaded.
+            /// </summary>
+            /// <param name="meta">Metadata of the mod to load.</param>
+            /// <param name="callback">Callback to be executed after the mod has been loaded. Executed immediately if meta == null.</param>
+            public static void LoadModDelayed(EverestModuleMetadata meta, Action callback) {
+                if (meta == null) {
+                    callback?.Invoke();
+                    return;
                 }
 
-                // ... then handle the assembly and all assets.
-                Content.Crawl(null, dir);
+                foreach (EverestModuleMetadata dep in meta.Dependencies)
+                    if (!DependencyLoaded(dep)) {
+                        Logger.Log(LogLevel.Info, "loader", $"Dependency {dep} of mod {meta} not loaded! Delaying.");
+                        Delayed.Add(Tuple.Create(meta, callback));
+                        return;
+                    }
 
-                if (meta == null || !File.Exists(meta.DLL))
+                LoadMod(meta);
+
+                callback?.Invoke();
+            }
+
+            /// <summary>
+            /// Load a mod .dll given its metadata at runtime. Doesn't load the mod content.
+            /// </summary>
+            /// <param name="meta">Metadata of the mod to load.</param>
+            public static void LoadMod(EverestModuleMetadata meta) {
+                if (meta == null)
                     return;
 
-                if (meta.Prelinked)
-                    asm = Assembly.LoadFrom(meta.DLL);
-                else
-                    using (FileStream stream = File.OpenRead(meta.DLL))
-                        asm = Relinker.GetRelinkedAssembly(meta, stream);
+                // Add an AssemblyResolve handler for all bundled libraries.
+                AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
+
+                // Load the actual assembly.
+                Assembly asm = null;
+                if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                    using (ZipFile zip = new ZipFile(meta.PathArchive)) {
+                        foreach (ZipEntry entry in zip.Entries) {
+                            string entryName = entry.FileName.Replace('\\', '/');
+                            if (entryName == meta.DLL) {
+                                using (MemoryStream stream = entry.ExtractStream()) {
+                                    if (meta.Prelinked) {
+                                        asm = Assembly.Load(stream.GetBuffer());
+                                    } else {
+                                        asm = Relinker.GetRelinkedAssembly(meta, stream);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                } else {
+                    if (meta.Prelinked)
+                        asm = Assembly.LoadFrom(meta.DLL);
+                    else
+                        using (FileStream stream = File.OpenRead(meta.DLL))
+                            asm = Relinker.GetRelinkedAssembly(meta, stream);
+                }
 
                 if (asm != null)
-                    LoadMod(meta, asm);
+                    LoadModAssembly(meta, asm);
             }
 
             /// <summary>
@@ -192,14 +208,16 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="meta">The mod metadata, preferably from the mod metadata.yaml file.</param>
             /// <param name="asm">The mod assembly, preferably relinked.</param>
-            public static void LoadMod(EverestModuleMetadata meta, Assembly asm) {
-                Content.Crawl(null, asm);
+            public static void LoadModAssembly(EverestModuleMetadata meta, Assembly asm) {
+                Content.Crawl(new ContentModMetadata {
+                    Assembly = asm
+                });
 
                 Type[] types;
                 try {
                     types = asm.GetTypes();
                 } catch (Exception e) {
-                    Logger.Log("loader", $"Failed reading assembly: {e}");
+                    Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
                     e.LogDetailed();
                     return;
                 }
@@ -215,17 +233,30 @@ namespace Celeste.Mod {
             }
 
             /// <summary>
+            /// Checks if all dependencies are loaded.
+            /// Can be used by mods manually to f.e. activate / disable functionality.
+            /// </summary>
+            /// <param name="meta">The metadata of the mod listing the dependencies.</param>
+            /// <returns>True if the dependencies have already been loaded by Everest, false otherwise.</returns>
+            public static bool DependenciesLoaded(EverestModuleMetadata meta) {
+                foreach (EverestModuleMetadata dep in meta.Dependencies)
+                    if (!DependencyLoaded(dep))
+                        return false;
+                return true;
+            }
+
+            /// <summary>
             /// Checks if an dependency is loaded.
             /// Can be used by mods manually to f.e. activate / disable functionality.
             /// </summary>
-            /// <param name="dependency">Dependency to check for. Name and Version will be checked.</param>
+            /// <param name="dep">Dependency to check for. Name and Version will be checked.</param>
             /// <returns>True if the dependency has already been loaded by Everest, false otherwise.</returns>
             public static bool DependencyLoaded(EverestModuleMetadata dep) {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;
 
-                foreach (EverestModule mod in _Modules) {
-                    EverestModuleMetadata meta = mod.Metadata;
+                foreach (EverestModule other in _Modules) {
+                    EverestModuleMetadata meta = other.Metadata;
                     if (meta.Name != depName)
                         continue;
                     Version version = meta.Version;

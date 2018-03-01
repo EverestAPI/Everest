@@ -27,7 +27,7 @@ namespace Celeste {
             try {
                 orig_Load();
             } catch (Exception e) {
-                Mod.Logger.Log("misc", $"Failed loading MapData {Area}");
+                Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();
             }
         }

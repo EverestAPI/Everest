@@ -72,7 +72,7 @@ namespace Celeste.Mod {
                             data  = wc.DownloadString(Index);
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
-                        Logger.Log("updater", "Failed requesting index: " + e.ToString());
+                        Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
                         return this;
                     }
 
@@ -89,7 +89,7 @@ namespace Celeste.Mod {
                                 entries.Add(entry);
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_format";
-                            Logger.Log("updater", "Failed parsing index: " + e.ToString());
+                            Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
                             return this;
                         }
                     }

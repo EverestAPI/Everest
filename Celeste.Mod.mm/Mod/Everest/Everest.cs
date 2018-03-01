@@ -14,6 +14,7 @@ using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
@@ -112,8 +113,8 @@ namespace Celeste.Mod {
         }
 
         internal static void Boot() {
-            Logger.Log("core", "Booting Everest");
-            Logger.Log("core", $"VersionCelesteString: {VersionCelesteString}");
+            Logger.Log(LogLevel.Info, "core", "Booting Everest");
+            Logger.Log(LogLevel.Info, "core", $"VersionCelesteString: {VersionCelesteString}");
 
             if (Type.GetType("Mono.Runtime") != null) {
                 // Mono hates HTTPS.
@@ -162,7 +163,25 @@ namespace Celeste.Mod {
                 _ModuleMethodDelegates.Add(new FastDictionary<string, DynamicMethodDelegate>());
             }
 
-            Logger.Log("core", $"Module {module.Metadata} registered.");
+            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
+
+            // Attempt to load mods after their dependencies have been loaded.
+            // Only load and lock the delayed list if we're not already loading delayed mods.
+            if (Interlocked.CompareExchange(ref Loader.DelayedLock, 1, 0) == 0) {
+                lock (Loader.Delayed) {
+                    for (int i = Loader.Delayed.Count - 1; i > -1; i--) {
+                        Tuple<EverestModuleMetadata, Action> entry = Loader.Delayed[i];
+                        if (!Loader.DependenciesLoaded(entry.Item1))
+                            continue;
+
+                        Loader.LoadMod(entry.Item1);
+                        Loader.Delayed.RemoveAt(i);
+
+                        entry.Item2?.Invoke();
+                    }
+                }
+                Interlocked.Decrement(ref Loader.DelayedLock);
+            }
         }
 
         /// <summary>
@@ -179,7 +198,7 @@ namespace Celeste.Mod {
                 _ModuleMethods.RemoveAt(index);
             }
 
-            Logger.Log("core", $"Module {module.Metadata} unregistered.");
+            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
         }
 
         /// <summary>

@@ -80,7 +80,7 @@ namespace Celeste {
             try {
                 LevelEnter.Go(new Session(Area, checkpoint), false);
             } catch (Exception e) {
-                Mod.Logger.Log("misc", $"Failed entering area {Area}");
+                Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed entering area {Area}");
                 e.LogDetailed();
 
                 string message = Dialog.Get("postcard_levelloadfailed");

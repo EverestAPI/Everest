@@ -153,7 +153,7 @@ namespace Monocle {
         /// Feed the given ModAsset into the atlas.
         /// </summary>
         public static void Ingest(this Atlas self, ModAsset asset) {
-            Logger.Log("Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
+            Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
 
             // Crawl through all child assets.
             if (asset.AssetType == typeof(AssetTypeDirectory)) {

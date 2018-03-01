@@ -88,8 +88,12 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
-                Crawl(null, typeof(Everest).Assembly);
-                Crawl(null, PathContent);
+                Crawl(new ContentModMetadata() {
+                    Assembly = typeof(Everest).Assembly
+                });
+                Crawl(new ContentModMetadata() {
+                    PathDirectory = PathContent
+                });
             }
 
             /// <summary>
@@ -316,11 +320,6 @@ namespace Celeste.Mod {
             }
 
             internal static void Crawl(ContentModMetadata meta, string dir, string root = null) {
-                if (meta == null)
-                    Mods.Add(meta = new ContentModMetadata() {
-                        PathDirectory = dir
-                    });
-
                 if (root == null)
                     root = dir;
                 string[] files = Directory.GetFiles(dir);
@@ -353,11 +352,6 @@ namespace Celeste.Mod {
             }
 
             internal static void Crawl(ContentModMetadata meta, string archive, ZipFile zip) {
-                if (meta == null)
-                    Mods.Add(meta = new ContentModMetadata() {
-                        PathArchive = archive
-                    });
-
                 foreach (ZipEntry entry in zip.Entries) {
                     string entryName = entry.FileName.Replace('\\', '/');
                     if (entryName.EndsWith("/"))
@@ -424,7 +418,7 @@ namespace Celeste.Mod {
 
                 // TODO: Find how to differentiate between Packer and PackerNoAtlas
                 foreach (string file in Directory.EnumerateFiles(Path.Combine(PathContentOrig, "Graphics", "Atlases"), "*.meta", SearchOption.AllDirectories)) {
-                    Logger.Log("dump-all-atlas-meta", "file: " + file);
+                    Logger.Log(LogLevel.Verbose, "dump-all-atlas-meta", "file: " + file);
                     // THIS IS HORRIBLE.
                     try {
                         Atlas.FromAtlas(file.Substring(0, file.Length - 5), Atlas.AtlasDataFormat.Packer).Dispose();

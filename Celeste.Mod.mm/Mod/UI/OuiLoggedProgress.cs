@@ -52,7 +52,7 @@ namespace Celeste.Mod.UI {
         
         public void LogLine(string line, bool logToLogger = true) {
             if (logToLogger)
-                Logger.Log("progress", line);
+                Logger.Log(LogLevel.Verbose, "progress", line);
 
             int indexOfNewline;
             while ((indexOfNewline = line.IndexOf('\n')) != -1) {
