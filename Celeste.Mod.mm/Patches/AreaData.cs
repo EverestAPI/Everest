@@ -9,6 +9,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -180,7 +181,11 @@ namespace Celeste {
                     area.Mode = MapMeta.Convert(meta.Modes) ?? area.Mode;
 
                     if (!string.IsNullOrEmpty(meta.Wipe)) {
-                        // TODO: Use meta.Wipe!
+                        Type type = Assembly.GetEntryAssembly().GetType(meta.Wipe);
+                        ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                        if (type != null && ctor != null) {
+                            area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                        }
                     }
 
                     area.DarknessAlpha = meta.DarknessAlpha;

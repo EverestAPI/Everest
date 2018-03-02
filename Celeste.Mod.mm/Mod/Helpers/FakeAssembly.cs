@@ -44,6 +44,63 @@ namespace Celeste.Mod.Helpers {
             return types.ToArray();
         }
 
+        public override Type[] GetExportedTypes() {
+            HashSet<Assembly> added = new HashSet<Assembly>();
+            List<Type> types = new List<Type>();
+            // Everest.Modules contains CoreModule, which is inside the executing assembly.
+            foreach (EverestModule module in Everest.Modules) {
+                Assembly asm = module.GetType().Assembly;
+                if (added.Contains(asm))
+                    continue;
+                added.Add(asm);
+                types.AddRange(asm.GetExportedTypes());
+            }
+            return types.ToArray();
+        }
+
+        public override Type GetType(string name) {
+            // Everest.Modules contains CoreModule, which is inside the executing assembly.
+            foreach (EverestModule module in Everest.Modules) {
+                Assembly asm = module.GetType().Assembly;
+                Type type = asm.GetType(name, false);
+                if (type != null)
+                    return type;
+            }
+            return Inner.GetType(name);
+        }
+
+        public override Type GetType(string name, bool throwOnError) {
+            // Everest.Modules contains CoreModule, which is inside the executing assembly.
+            foreach (EverestModule module in Everest.Modules) {
+                Assembly asm = module.GetType().Assembly;
+                Type type = asm.GetType(name, false);
+                if (type != null)
+                    return type;
+            }
+            return Inner.GetType(name, throwOnError);
+        }
+
+        public override Type GetType(string name, bool throwOnError, bool ignoreCase) {
+            // Everest.Modules contains CoreModule, which is inside the executing assembly.
+            foreach (EverestModule module in Everest.Modules) {
+                Assembly asm = module.GetType().Assembly;
+                Type type = asm.GetType(name, false, ignoreCase);
+                if (type != null)
+                    return type;
+            }
+            return Inner.GetType(name, throwOnError, ignoreCase);
+        }
+
+        public override bool IsDefined(Type attributeType, bool inherit) {
+            // Everest.Modules contains CoreModule, which is inside the executing assembly.
+            foreach (EverestModule module in Everest.Modules) {
+                Assembly asm = module.GetType().Assembly;
+                if (asm.IsDefined(attributeType, inherit))
+                    return true;
+            }
+            return Inner.IsDefined(attributeType, inherit);
+        }
+
         // All following overrides just invoke Inner.* where possible.
 
         public override string CodeBase {
@@ -117,10 +174,6 @@ namespace Celeste.Mod.Helpers {
 
         public override object[] GetCustomAttributes(Type attributeType, bool inherit) {
             return Inner.GetCustomAttributes(attributeType, inherit);
-        }
-
-        public override Type[] GetExportedTypes() {
-            return Inner.GetExportedTypes();
         }
 
         public override FileStream GetFile(string name) {
@@ -197,22 +250,6 @@ namespace Celeste.Mod.Helpers {
 
         public override Assembly GetSatelliteAssembly(CultureInfo culture, Version version) {
             return Inner.GetSatelliteAssembly(culture, version);
-        }
-
-        public override Type GetType(string name) {
-            return Inner.GetType(name);
-        }
-
-        public override Type GetType(string name, bool throwOnError) {
-            return Inner.GetType(name, throwOnError);
-        }
-
-        public override Type GetType(string name, bool throwOnError, bool ignoreCase) {
-            return Inner.GetType(name, throwOnError, ignoreCase);
-        }
-
-        public override bool IsDefined(Type attributeType, bool inherit) {
-            return Inner.IsDefined(attributeType, inherit);
         }
 
         /*

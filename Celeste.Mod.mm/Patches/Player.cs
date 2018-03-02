@@ -21,8 +21,7 @@ namespace Celeste {
         public bool IsIntroState {
             get {
                 int state = StateMachine.State;
-                // Determined from StateMachine.SetCallbacks in Player ctor.
-                return 12 <= state && state <= 15;
+                return StIntroWalk <= state && state <= StIntroWakeUp;
             }
         }
 
