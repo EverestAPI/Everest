@@ -24,6 +24,7 @@ namespace Celeste.Mod.UI {
         private Action exit;
 
         private float alpha = 0f;
+        private float time = 0f;
 
         private string audioPrevMusic;
         private string audioPrevAmbience;
@@ -35,6 +36,8 @@ namespace Celeste.Mod.UI {
         public OuiLoggedProgress() {
         }
 
+        public OuiLoggedProgress Init<T>(string title, Action task, int max) where T : Oui
+            => Init<T>(title, new Task(task), max);
         public OuiLoggedProgress Init<T>(string title, Task task, int max) where T : Oui {
             Title = title;
             Task = task;
@@ -121,6 +124,8 @@ namespace Celeste.Mod.UI {
                 Task = null;
             }
 
+            time += Engine.DeltaTime;
+
             base.Update();
         }
 
@@ -162,7 +167,13 @@ namespace Celeste.Mod.UI {
             if (ProgressMax > 0) {
                 Draw.Rect(64f, 128f + 64f, (Progress / (float) ProgressMax) * (1920f - 2f * 64f), 8f, Color.White * alpha * 0.8f);
             } else {
-                // TODO: Indeterminate progress bar!
+                float t = (time * 4f) % 2f;
+                if (t < 1f) {
+                    Draw.Rect(64f, 128f + 64f, t * (1920f - 2f * 64f), 8f, Color.White * alpha * 0.8f);
+                } else {
+                    t -= 1f;
+                    Draw.Rect(64f + t * (1920f - 2f * 64f), 128f + 64f, (1f - t) * (1920f - 2f * 64f), 8f, Color.White * alpha * 0.8f);
+                }
             }
 
             Rectangle log = new Rectangle(1920 / 2 - logBounds.Width / 2, 128 + 64 + 16, logBounds.Width, logBounds.Height);
