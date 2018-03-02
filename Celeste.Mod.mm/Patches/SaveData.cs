@@ -279,12 +279,12 @@ namespace Celeste {
                 Assists = default(Assists);
             }
 
-            // Disable the GameSpeed clamping - allow mods to "break" this.
-            /*
+            // Note to future person trying to disable this clamping:
+            // Audio snapshots matching the speed are being used.
+            // Removing this clamp kills the game.
             if (Assists.GameSpeed < 5 || Assists.GameSpeed > 10) {
                 Assists.GameSpeed = 10;
             }
-            */
 
             Everest.Invoke("LoadSaveData", FileSlot);
         }
