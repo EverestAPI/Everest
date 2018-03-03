@@ -30,6 +30,12 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        public extern void orig_Added(Scene scene);
+        public override void Added(Scene scene) {
+            orig_Added(scene);
+            Everest.Events.Player.Spawn(this);
+        }
+
         [MonoModReplace]
         private void CreateTrail() {
             TrailManager.Add(this, GetCurrentTrailColor(), 1f);

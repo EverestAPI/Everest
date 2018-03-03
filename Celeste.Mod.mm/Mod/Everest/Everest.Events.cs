@@ -171,9 +171,15 @@ namespace Celeste.Mod {
             }
 
             public static class Player {
+
+                public static event Action<_Player> OnSpawn;
+                internal static void Spawn(_Player player)
+                    => OnSpawn?.Invoke(player);
+
                 public static event Action<_Player> OnDie;
                 internal static void Die(_Player player)
                     => OnDie?.Invoke(player);
+
             }
 
             public static class Input {
