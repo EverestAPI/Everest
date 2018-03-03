@@ -152,7 +152,7 @@ namespace Celeste.Mod {
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector2 or null if the length doesn't match.</returns>
         public static Vector2? ToVector2(this float[] a) {
-            if (a.Length != 2)
+            if (a == null || a.Length != 2)
                 return null;
             return new Vector2(a[0], a[1]);
         }
@@ -163,7 +163,7 @@ namespace Celeste.Mod {
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector3 or null if the length doesn't match.</returns>
         public static Vector3? ToVector3(this float[] a) {
-            if (a.Length != 3)
+            if (a == null || a.Length != 3)
                 return null;
             return new Vector3(a[0], a[1], a[2]);
         }
