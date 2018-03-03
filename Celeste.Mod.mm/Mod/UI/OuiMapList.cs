@@ -87,6 +87,9 @@ namespace Celeste.Mod.UI {
 
             string lastLevelSet = null;
             LevelSetStats levelSetStats = null;
+            int levelSetAreaOffset = 0;
+            int levelSetUnlockedAreas = int.MaxValue;
+            int levelSetUnlockedModes = int.MaxValue;
             string name;
 
             List<AreaStats> areaStatsAll = SaveData.Instance.Areas;
@@ -103,6 +106,9 @@ namespace Celeste.Mod.UI {
                 if (lastLevelSet != levelSet) {
                     lastLevelSet = levelSet;
                     levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                    levelSetAreaOffset = levelSetStats.AreaOffset;
+                    levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
+                    levelSetUnlockedModes = levelSetStats.UnlockedModes;
                     if (levelSet != "Celeste") {
                         name = DialogExt.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(name);
@@ -122,11 +128,11 @@ namespace Celeste.Mod.UI {
                     button.Icon = area.Icon;
                 button.IconWidth = 128f;
 
-                if (levelSet == "Celeste" && i > SaveData.Instance.UnlockedAreas)
+                if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     button.Disabled = true;
                 if (side == 1 && !areaStatsAll[i].Cassette)
                     button.Disabled = true;
-                if (side >= 2 && SaveData.Instance.UnlockedModes < (side + 1))
+                if (side >= 2 && levelSetUnlockedModes < (side + 1))
                     button.Disabled = true;
 
                 menu.Add(button.Pressed(() => {

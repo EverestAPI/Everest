@@ -28,11 +28,11 @@ namespace Celeste {
 
                 if (set == null) {
                     // Just silently add the missing levelset.
-                    set = new LevelSetStats {
+                    LevelSets.Add(set = new LevelSetStats {
+                        SaveData = this,
                         Name = name,
                         UnlockedAreas = 0
-                    };
-                    LevelSets.Add(set);
+                    });
                 }
 
                 // If the levelset doesn't exist in AreaData.Areas anymore (offset == -1), fall back.
@@ -176,6 +176,9 @@ namespace Celeste {
             // Vanilla / new saves don't have the LevelSets list.
             if (LevelSets == null)
                 LevelSets = new List<LevelSetStats>();
+
+            if (Areas_Unsafe == null)
+                Areas_Unsafe = new List<AreaStats>();
 
             // Add missing LevelSetStats.
             foreach (AreaData area in AreaData.Areas) {
@@ -343,9 +346,15 @@ namespace Celeste {
         private int _UnlockedAreas;
         public int UnlockedAreas {
             get {
+                if (Name == "Celeste" && SaveData != null)
+                    return SaveData.UnlockedAreas_Unsafe;
                 return Calc.Clamp(_UnlockedAreas, 0, AreasIncludingCeleste?.Count ?? 0);
             }
             set {
+                if (Name == "Celeste" && SaveData != null) {
+                    SaveData.UnlockedAreas_Unsafe = value;
+                    return;
+                }
                 _UnlockedAreas = value;
             }
         }
@@ -354,7 +363,24 @@ namespace Celeste {
         [XmlIgnore]
         public List<AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
 
-        public int TotalStrawberries;
+        [XmlIgnore]
+        [NonSerialized]
+        private int _TotalStrawberries;
+        public int TotalStrawberries {
+            get {
+                // TODO: Dynamically calculate?
+                if (Name == "Celeste" && SaveData != null)
+                    return SaveData.TotalStrawberries_Unsafe;
+                return _TotalStrawberries;
+            }
+            set {
+                if (Name == "Celeste" && SaveData != null) {
+                    SaveData.TotalStrawberries_Unsafe = value;
+                    return;
+                }
+                _TotalStrawberries = value;
+            }
+        }
 
         [XmlIgnore]
         public int AreaOffset {
