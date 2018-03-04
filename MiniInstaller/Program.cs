@@ -161,6 +161,7 @@ namespace MiniInstaller {
             // We're lazy.
             LogLine("Starting MonoMod");
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
+            Environment.SetEnvironmentVariable("MONOMOD_MODS", PathGame);
             asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe + ".tmp" } });
 
             if (!File.Exists(PathCelesteExe + ".tmp"))
