@@ -50,8 +50,8 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="HookedMethod, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\HookedMethod.0.3.0-beta\lib\net45\HookedMethod.dll</HintPath>
-      <Private>True</Private>
+      <HintPath>..\packages\HookedMethod.0.3.1-beta\lib\net45\HookedMethod.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="I18N">
       <HintPath>..\lib\I18N.dll</HintPath>
