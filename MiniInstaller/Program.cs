@@ -198,7 +198,7 @@ namespace MiniInstaller {
         }
 
         static Assembly LazyLoadAssembly(string path) {
-            Assembly asm = Assembly.LoadFrom(path);
+            Assembly asm = Assembly.LoadFile(path);
             AppDomain.CurrentDomain.TypeResolve += (object sender, ResolveEventArgs args) => {
                 return asm.GetType(args.Name) != null ? asm : null;
             };

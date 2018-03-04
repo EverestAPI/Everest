@@ -62,10 +62,10 @@ namespace MonoMod {
         static MonoModRules() {
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
 
-            MMILRT.Modder.PostProcessors += PostProcessor;
+            MonoModRule.Modder.PostProcessors += PostProcessor;
 
             if (Celeste == null)
-                Celeste = MMILRT.Modder.FindType("Celeste.Celeste")?.Resolve();
+                Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
             if (Celeste == null)
                 return;
 
@@ -124,13 +124,13 @@ namespace MonoMod {
 
             // Set any flags based on the version.
             if (version < new Version(1, 1, 9, 2)) {
-                MMIL.Flag.Set("LacksIntroSkip", true);
-                MMIL.Flag.Set("HasIntroSkip", false);
+                MonoModRule.Flag.Set("LacksIntroSkip", true);
+                MonoModRule.Flag.Set("HasIntroSkip", false);
 
             } else {
                 // Current version.
-                MMIL.Flag.Set("LacksIntroSkip", false);
-                MMIL.Flag.Set("HasIntroSkip", true);
+                MonoModRule.Flag.Set("LacksIntroSkip", false);
+                MonoModRule.Flag.Set("HasIntroSkip", true);
             }
 
         }
@@ -140,7 +140,7 @@ namespace MonoMod {
                 return;
 
             if (FileProxy == null)
-                FileProxy = MMILRT.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
+                FileProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
             if (FileProxy == null)
                 return;
 
@@ -258,7 +258,7 @@ namespace MonoMod {
                 return;
 
             if (Everest == null)
-                Everest = MMILRT.Modder.FindType("Celeste.Mod.Everest")?.Resolve();
+                Everest = MonoModRule.Modder.FindType("Celeste.Mod.Everest")?.Resolve();
             if (Everest == null)
                 return;
 
@@ -361,7 +361,7 @@ namespace MonoMod {
             if (!method.HasBody)
                 return;
 
-            ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MMILRT.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
+            ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MonoModRule.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
             method.Parameters.Add(paramMeta);
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
