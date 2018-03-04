@@ -105,7 +105,7 @@ namespace MiniInstaller {
 
         public static void WaitForGameExit() {
             if (!CanReadWrite(PathCelesteExe)) {
-                LogLine("Celeste still running - waiting");
+                LogLine("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(100);
             }

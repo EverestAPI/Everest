@@ -225,7 +225,7 @@ namespace Celeste.Mod {
                     Environment.OSVersion.Platform == PlatformID.MacOSX;
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
-                string extractedPath = Path.Combine(PathGame, "everest-update");
+                string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
 
                 progress.LogLine($"Updating to {version.Name} (branch: {version.Branch}) @ {version.URL}");
 
@@ -341,15 +341,17 @@ namespace Celeste.Mod {
                         );
 
                         // nest.DoCallBack(Boot);
-                        ((MiniInstallerProxy) nest.CreateInstanceAndUnwrap(typeof(MiniInstallerProxy).Assembly.FullName, typeof(MiniInstallerProxy).FullName))
-                            .Boot(
-                            extractedPath,
-                            Marshal.GetFunctionPointerForDelegate(new Action<string>(_ => progress.LogLine(_)))
-                        );
+                        ((MiniInstallerProxy) nest.CreateInstanceAndUnwrap(
+                            typeof(MiniInstallerProxy).Assembly.FullName,
+                            typeof(MiniInstallerProxy).FullName
+                        )).Boot(new MiniInstallerBridge {
+                            Progress = progress,
+                            ExtractedPath = extractedPath
+                        });
 
                         AppDomain.Unload(nest);
                     } catch (Exception e) {
-                        progress.LogLine("Installer failed!");
+                        progress.LogLine("MiniInstaller failed!");
                         progress.LogLine(e.ToString());
                         progress.LogLine(errorHint);
                         progress.Progress = 0;
@@ -416,8 +418,8 @@ namespace Celeste.Mod {
             }
 
             class MiniInstallerProxy : MarshalByRefObject {
-                public void Boot(string extractedPath, IntPtr logLine) {
-                    Assembly installerAssembly = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
+                public void Boot(MiniInstallerBridge bridge) {
+                    Assembly installerAssembly = Assembly.LoadFrom(Path.Combine(bridge.ExtractedPath, "MiniInstaller.exe"));
                     Type installerType = installerAssembly.GetType("MiniInstaller.Program");
 
                     // Set up any fields which we can set up by Everest.
@@ -426,15 +428,24 @@ namespace Celeste.Mod {
                     if (f_AsmMonoMod != null)
                         f_AsmMonoMod.SetValue(null, typeof(MonoModder).Assembly);
                     */
-                    FieldInfo f_LogLine = installerType.GetField("LogLine");
-                    if (f_LogLine != null)
-                        // f_LogLine.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LogLine.FieldType));
-                        f_LogLine.SetValue(null, Marshal.GetDelegateForFunctionPointer(logLine, typeof(Action<string>)).CastDelegate(f_LogLine.FieldType));
+                    FieldInfo f_LineLogger = installerType.GetField("LineLogger");
+                    if (f_LineLogger != null)
+                        // f_LineLogger.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LineLogger.FieldType));
+                        f_LineLogger.SetValue(null, new Action<string>(bridge.LogLine).CastDelegate(f_LineLogger.FieldType));
 
-                        // Let's just run the mod installer... from our mod... while we're running the mod...
-                        object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
+
+                    // Let's just run the mod installer... from our mod... while we're running the mod...
+                    object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
                     if (exitObject != null && exitObject is int && ((int) exitObject) != 0)
                         throw new Exception($"Return code != 0, but {exitObject}");
+                }
+            }
+
+            class MiniInstallerBridge : MarshalByRefObject {
+                internal volatile OuiLoggedProgress Progress;
+                public string ExtractedPath { get; set; }
+                public void LogLine(string line) {
+                    Progress.LogLine(line);
                 }
             }
 
