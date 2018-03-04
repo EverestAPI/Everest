@@ -196,10 +196,10 @@ namespace Celeste.Mod.Core {
 
             if (Celeste.PlayMode == Celeste.PlayModes.Debug) {
                 menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
-                    VirtualContentExt.Unload();
                     Everest.Content.Recrawl();
-                    VirtualContentExt.Reload();
                     Everest.Content.Reprocess();
+                    VirtualContentExt.Unload();
+                    VirtualContentExt.Reload();
                     AreaData.Load();
                 }));
             }
