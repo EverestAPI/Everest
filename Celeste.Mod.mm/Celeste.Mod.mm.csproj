@@ -232,6 +232,22 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\lib-fna\libjpeg-9.dll">
+      <Link>libjpeg-9.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-fna\libpng16-16.dll">
+      <Link>libpng16-16.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-fna\SDL2_image.dll">
+      <Link>SDL2_image.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-fna\zlib1.dll">
+      <Link>zlib1.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\lib\YamlDotNet.xml">
       <Link>YamlDotNet.xml</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
