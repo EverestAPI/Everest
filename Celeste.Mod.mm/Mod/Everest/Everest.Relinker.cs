@@ -187,7 +187,8 @@ namespace Celeste.Mod {
                     modder.AutoPatch();
                     modder.Write();
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}: {e}");
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}");
+                    e.LogDetailed();
                     return null;
                 } finally {
                     Modder.ClearCaches(moduleSpecific: true);
@@ -200,7 +201,14 @@ namespace Celeste.Mod {
                 }
                 File.WriteAllLines(cachedChecksumPath, checksums);
 
-                return Assembly.LoadFrom(cachedPath);
+                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta}");
+                try {
+                    return Assembly.LoadFrom(cachedPath);
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
+                    e.LogDetailed();
+                    return null;
+                }
             }
 
 
