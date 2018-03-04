@@ -46,7 +46,7 @@ namespace MiniInstaller {
 
                     WaitForGameExit();
 
-                    BackupOrRestore();
+                    Backup();
 
                     MoveFilesFromUpdate();
 
@@ -111,17 +111,13 @@ namespace MiniInstaller {
             }
         }
 
-        public static void BackupOrRestore() {
+        public static void Backup() {
             // Backup / restore the original game files we're going to modify.
             // TODO: Maybe invalidate the orig dir when the backed up version < installed version?
             if (!Directory.Exists(PathOrig)) {
                 LogLine("Creating backup orig directory");
                 Directory.CreateDirectory(PathOrig);
                 File.Copy(PathCelesteExe, Path.Combine(PathOrig, "Celeste.exe"));
-
-            } else {
-                LogLine("Restoring files from orig directory");
-                File.Copy(Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe, true);
             }
         }
 
@@ -163,11 +159,8 @@ namespace MiniInstaller {
 
         public static void RunMonoMod(Assembly asmMonoMod) {
             // We're lazy.
-            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { PathCelesteExe } });
-
-            LogLine("Replacing Celeste.exe");
-            File.Delete(PathCelesteExe);
-            File.Move(Path.Combine(PathGame, "MONOMODDED_Celeste.exe"), PathCelesteExe);
+            LogLine("Starting MonoMod");
+            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe } });
         }
 
         public static void StartGame() {

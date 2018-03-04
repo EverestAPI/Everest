@@ -16,6 +16,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -321,14 +322,50 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Extraction finished.");
 
+                // Load MiniInstaller and run it in a new app domain on systems supporting this.
+                if (canModWhileAlive) {
+                    progress.LogLine("Starting MiniInstaller");
+                    progress.Progress = 0;
+                    progress.ProgressMax = 0;
+                    Directory.SetCurrentDirectory(PathGame);
+
+                    try {
+                        AppDomainSetup nestInfo = new AppDomainSetup();
+                        nestInfo.ApplicationBase = Path.GetDirectoryName(extractedPath);
+
+                        AppDomain nest = AppDomain.CreateDomain(
+                            AppDomain.CurrentDomain.FriendlyName + " - MiniInstaller",
+                            AppDomain.CurrentDomain.Evidence,
+                            nestInfo,
+                            AppDomain.CurrentDomain.PermissionSet
+                        );
+
+                        // nest.DoCallBack(Boot);
+                        ((MiniInstallerProxy) nest.CreateInstanceAndUnwrap(typeof(MiniInstallerProxy).Assembly.FullName, typeof(MiniInstallerProxy).FullName))
+                            .Boot(
+                            extractedPath,
+                            Marshal.GetFunctionPointerForDelegate(new Action<string>(_ => progress.LogLine(_)))
+                        );
+
+                        AppDomain.Unload(nest);
+                    } catch (Exception e) {
+                        progress.LogLine("Installer failed!");
+                        progress.LogLine(e.ToString());
+                        progress.LogLine(errorHint);
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
+                        return;
+                    }
+                }
+
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
-                progress.LogLine("Starting installer");
+                progress.LogLine("Restarting");
                 for (int i = 5; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"Starting installer in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
                     Thread.Sleep(1000);
                 }
-                progress.Lines[progress.Lines.Count - 1] = $"Starting installer";
+                progress.Lines[progress.Lines.Count - 1] = $"Restarting";
 
                 // Start MiniInstaller in a separate process on systems that don't support modding the game while it'S alive.
                 if (!canModWhileAlive) {
@@ -353,21 +390,20 @@ namespace Celeste.Mod {
                     }
 
                 } else {
-                    // On Linux / macOS,
+                    // On Linux / macOS, restart the game after it shuts down.
                     Events.Celeste.OnShutdown += () => {
-                        // Load MiniInstaller and run it in the current app domain on systems supporting this.
-                        Assembly installerAssembly = null;
-                        Type installerType = null;
-
-                        Directory.SetCurrentDirectory(extractedPath);
-
-                        installerAssembly = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
-                        installerType = installerAssembly.GetType("MiniInstaller.Program");
-
-                        // Let's just run the mod installer... from our mod... while we're running the mod...
-                        object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
-                        if (exitObject != null && exitObject is int && ((int) exitObject) != 0)
-                            throw new Exception($"Return code != 0, but {exitObject}");
+                        Process game = new Process();
+                        // If the game was installed via Steam, it should restart in a Steam context on its own.
+                        if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                            Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                            // The Linux and macOS versions come with a wrapping bash script.
+                            game.StartInfo.FileName = "bash";
+                            game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";
+                        } else {
+                            game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
+                        }
+                        game.StartInfo.WorkingDirectory = PathGame;
+                        game.Start();
                     };
                 }
             }
@@ -377,6 +413,29 @@ namespace Celeste.Mod {
                 request.Method = "HEAD";
                 using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
                     return response.ContentLength;
+            }
+
+            class MiniInstallerProxy : MarshalByRefObject {
+                public void Boot(string extractedPath, IntPtr logLine) {
+                    Assembly installerAssembly = Assembly.LoadFrom(Path.Combine(extractedPath, "MiniInstaller.exe"));
+                    Type installerType = installerAssembly.GetType("MiniInstaller.Program");
+
+                    // Set up any fields which we can set up by Everest.
+                    /*
+                    FieldInfo f_AsmMonoMod = installerType.GetField("AsmMonoMod");
+                    if (f_AsmMonoMod != null)
+                        f_AsmMonoMod.SetValue(null, typeof(MonoModder).Assembly);
+                    */
+                    FieldInfo f_LogLine = installerType.GetField("LogLine");
+                    if (f_LogLine != null)
+                        // f_LogLine.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LogLine.FieldType));
+                        f_LogLine.SetValue(null, Marshal.GetDelegateForFunctionPointer(logLine, typeof(Action<string>)).CastDelegate(f_LogLine.FieldType));
+
+                        // Let's just run the mod installer... from our mod... while we're running the mod...
+                        object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
+                    if (exitObject != null && exitObject is int && ((int) exitObject) != 0)
+                        throw new Exception($"Return code != 0, but {exitObject}");
+                }
             }
 
         }
