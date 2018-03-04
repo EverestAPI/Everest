@@ -161,7 +161,14 @@ namespace MiniInstaller {
             // We're lazy.
             LogLine("Starting MonoMod");
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
-            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe } });
+            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe + ".tmp" } });
+
+            if (!File.Exists(PathCelesteExe + ".tmp"))
+                throw new Exception("MonoMod failed creating a patched .exe!");
+
+            LogLine("Replacing Celeste.exe");
+            File.Delete(PathCelesteExe);
+            File.Move(PathCelesteExe + ".tmp", PathCelesteExe);
         }
 
         public static void StartGame() {
