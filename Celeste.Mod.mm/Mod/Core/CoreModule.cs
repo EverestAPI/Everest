@@ -198,8 +198,7 @@ namespace Celeste.Mod.Core {
                 menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
                     Everest.Content.Recrawl();
                     Everest.Content.Reprocess();
-                    VirtualContentExt.Unload();
-                    VirtualContentExt.Reload();
+                    VirtualContentExt.ForceReload();
                     AreaData.Load();
                 }));
             }

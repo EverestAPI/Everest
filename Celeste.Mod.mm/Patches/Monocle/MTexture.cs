@@ -111,7 +111,7 @@ namespace Monocle {
         protected MTextureOverride _CachedOverrideTexture;
         public MTextureOverride OverrideTexture {
             get {
-                if (_CachedOverrideTexture != null)
+                if (_CachedOverrideTexture != null && _CachedOverrideTexture.IsActiveTexture)
                     return _CachedOverrideTexture;
                 if (_Overrides == null || _Overrides.Count == 0)
                     return null;
@@ -126,7 +126,7 @@ namespace Monocle {
         protected MTextureOverride _CachedOverrideMeta;
         public MTextureOverride OverrideMeta {
             get {
-                if (_CachedOverrideMeta != null)
+                if (_CachedOverrideMeta != null && _CachedOverrideMeta.IsActiveMeta)
                     return _CachedOverrideMeta;
                 if (_Overrides == null || _Overrides.Count == 0)
                     return null;

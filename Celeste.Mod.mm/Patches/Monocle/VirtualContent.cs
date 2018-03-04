@@ -65,5 +65,11 @@ namespace Monocle {
         public static void Unload()
             => patch_VirtualContent._Unload();
 
+        /// <summary>
+        /// Forcibly unload and reload all content.
+        /// </summary>
+        public static void ForceReload()
+            => patch_VirtualContent.ForceReload();
+
     }
 }
