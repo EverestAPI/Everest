@@ -168,8 +168,16 @@ namespace Celeste.Mod {
                     }
 
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
-                    ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath)))
-                    return Assembly.LoadFrom(cachedPath);
+                    ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
+                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta}");
+                    try {
+                        return Assembly.LoadFrom(cachedPath);
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
+                        e.LogDetailed();
+                        return null;
+                    }
+                }
 
                 if (depResolver == null)
                     depResolver = GenerateModDependencyResolver(meta);
