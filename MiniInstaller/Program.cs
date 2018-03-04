@@ -160,6 +160,7 @@ namespace MiniInstaller {
         public static void RunMonoMod(Assembly asmMonoMod) {
             // We're lazy.
             LogLine("Starting MonoMod");
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe } });
         }
 
