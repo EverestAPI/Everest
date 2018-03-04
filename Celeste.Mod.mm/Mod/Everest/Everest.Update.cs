@@ -276,7 +276,7 @@ namespace Celeste.Mod {
                     }
                 } catch (Exception e) {
                     progress.LogLine("Download failed!");
-                    progress.LogLine(e.ToString());
+                    e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
@@ -314,7 +314,7 @@ namespace Celeste.Mod {
                     }
                 } catch (Exception e) {
                     progress.LogLine("Extraction failed!");
-                    progress.LogLine(e.ToString());
+                    e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
@@ -352,7 +352,7 @@ namespace Celeste.Mod {
                         AppDomain.Unload(nest);
                     } catch (Exception e) {
                         progress.LogLine("MiniInstaller failed!");
-                        progress.LogLine(e.ToString());
+                        e.LogDetailed();
                         progress.LogLine(errorHint);
                         progress.Progress = 0;
                         progress.ProgressMax = 1;
@@ -385,7 +385,7 @@ namespace Celeste.Mod {
                         installer.Start();
                     } catch (Exception e) {
                         progress.LogLine("Starting installer failed!");
-                        progress.LogLine(e.ToString());
+                        e.LogDetailed();
                         progress.LogLine(errorHint);
                         progress.Progress = 0;
                         progress.ProgressMax = 1;
