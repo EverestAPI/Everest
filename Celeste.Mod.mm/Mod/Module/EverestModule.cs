@@ -2,6 +2,7 @@
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
+using MonoMod.Helpers;
 using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
@@ -243,6 +244,19 @@ namespace Celeste.Mod {
             }
 
             foreach (PropertyInfo prop in props) {
+                MethodInfo creator = type.GetMethod(
+                    $"Create{prop.Name}Entry",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    null,
+                    new Type[] { typeof(TextMenu), typeof(bool) },
+                    new ParameterModifier[0]
+                );
+
+                if (creator != null) {
+                    creator.GetDelegate()(settings, menu, inGame);
+                    continue;
+                }
+
                 if ((attribInGame = prop.GetCustomAttribute<SettingInGameAttribute>()) != null &&
                     attribInGame.InGame != inGame)
                     continue;
