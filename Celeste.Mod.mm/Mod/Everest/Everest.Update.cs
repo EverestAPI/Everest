@@ -221,8 +221,7 @@ namespace Celeste.Mod {
 
                 // Check if we're on an OS which supports manipulating Celeste.exe while it's used.
                 bool canModWhileAlive =
-                    Environment.OSVersion.Platform == PlatformID.Unix ||
-                    Environment.OSVersion.Platform == PlatformID.MacOSX;
+                    Environment.OSVersion.Platform == PlatformID.Unix;
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
