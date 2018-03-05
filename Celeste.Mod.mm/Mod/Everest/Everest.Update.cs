@@ -99,8 +99,9 @@ namespace Celeste.Mod {
                     // - Order by first occurence of branch
                     // - Order by version inside branch
                     Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
-                    // Force master branch to appear first.
-                    branchFirsts["master"] = int.MaxValue;
+                    // Force stable, then master branches to appear first.
+                    branchFirsts["stable"] = int.MaxValue;
+                    branchFirsts["master"] = int.MaxValue - 1;
                     for (int i = 0; i < entries.Count; i++) {
                         Entry entry = entries[i];
                         if (!branchFirsts.ContainsKey(entry.Branch))
