@@ -340,8 +340,8 @@ namespace Celeste.Mod {
                         );
 
                         // nest.DoCallBack(Boot);
-                        ((MiniInstallerProxy) nest.CreateInstanceAndUnwrap(
-                            typeof(MiniInstallerProxy).Assembly.FullName,
+                        ((MiniInstallerProxy) nest.CreateInstanceFromAndUnwrap(
+                            typeof(MiniInstallerProxy).Assembly.Location,
                             typeof(MiniInstallerProxy).FullName
                         )).Boot(new MiniInstallerBridge {
                             Progress = progress,
