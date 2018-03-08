@@ -141,6 +141,7 @@
     <Compile Include="Mod\UI\OuiModOptionString.cs" />
     <Compile Include="Mod\UI\OuiLoggedProgress.cs" />
     <Compile Include="Mod\UI\OuiVersionList.cs" />
+    <Compile Include="Mod\UI\SubHudRenderer.cs" />
     <Compile Include="Mod\UI\TextMenuExt.cs" />
     <Compile Include="Mod\UI\OuiMapList.cs" />
     <Compile Include="Mod\UI\OuiModOptions.cs" />
@@ -150,6 +151,7 @@
     <Compile Include="Patches\AreaComplete.cs" />
     <Compile Include="Patches\BinaryPacker.cs" />
     <Compile Include="Patches\GameLoader.cs" />
+    <Compile Include="Patches\LevelLoader.cs" />
     <Compile Include="Patches\LevelExit.cs" />
     <Compile Include="Patches\MapData.cs" />
     <Compile Include="Patches\AreaStats.cs" />
@@ -164,6 +166,7 @@
     <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
+    <Compile Include="Patches\Tags.cs" />
     <Compile Include="Patches\TextMenu.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Monocle\Engine.cs" />

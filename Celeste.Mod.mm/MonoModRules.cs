@@ -29,6 +29,18 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelRender")]
+    class PatchLevelRenderAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelLoaderThread")]
+    class PatchLevelLoaderThreadAttribute : Attribute { }
+
+    /// <summary>
     /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
     /// </summary>
     [MonoModCustomMethodAttribute("PatchErrorLogWrite")]
@@ -52,6 +64,8 @@ namespace MonoMod {
 
         static TypeDefinition Everest;
         static MethodDefinition m_Everest_get_VersionCelesteString;
+
+        static TypeDefinition Level;
 
         static TypeDefinition FileProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new FastDictionary<string, MethodDefinition>();
@@ -247,6 +261,145 @@ namespace MonoMod {
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
                     instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchLevelRender(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            FieldDefinition f_SubHudRenderer = method.DeclaringType.FindField("SubHudRenderer");
+            if (f_SubHudRenderer == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                brfalse.s	338 (0441) ldarg.0 
+                ldarg.0
+                ldfld	class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
+                ldarg.0
+                callvirt	instance void Monocle.Renderer::Render(class Monocle.Scene)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 1 &&
+                    instri < instrs.Count - 2 &&
+                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
+                    instrs[instri + 1].OpCode == OpCodes.Ldarg_0 &&
+                    instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference)?.GetFindableID() == "System.Void Monocle.Renderer::Render(Monocle.Scene)"
+                ) {
+                    // Load this, SubHudRenderer, this and call it right before the branch.
+
+                    MethodReference m_Renderer_Render = instrs[instri + 2].Operand as MethodReference;
+
+                    instri -= 2;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_SubHudRenderer));
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_Renderer_Render));
+                    instri++;
+
+                    instri += 2;
+                }
+
+            }
+
+        }
+
+        public static void PatchLevelLoaderThread(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            if (Level == null)
+                Level = MonoModRule.Modder.FindType("Celeste.Level")?.Resolve();
+            if (Level == null)
+                return;
+
+            FieldDefinition f_SubHudRenderer = Level.FindField("SubHudRenderer");
+            if (f_SubHudRenderer == null)
+                return;
+
+            MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve()?.FindMethod("System.Void .ctor()");
+            if (ctor_SubHudRenderer == null)
+                return;
+
+            VariableDefinition loc_SubHudRenderer_0 = new VariableDefinition(f_SubHudRenderer.FieldType);
+            method.Body.Variables.Add(loc_SubHudRenderer_0);
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+        	    ldarg.0
+                callvirt	instance class Celeste.Level Celeste.LevelLoader::get_Level()
+                ldarg.0
+                callvirt	instance class Celeste.Level Celeste.LevelLoader::get_Level()
+                newobj	instance void Celeste.HudRenderer::.ctor() // We're here
+                dup
+                stloc.s	V_9 (9)
+                stfld	class Celeste.HudRenderer Celeste.Level::HudRenderer
+                ldloc.s	V_9 (9)
+                callvirt	instance void Monocle.Scene::Add(class Monocle.Renderer)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 3 &&
+                    instri < instrs.Count - 6 &&
+                    instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.HudRenderer::.ctor()" &&
+                    instrs[instri + 1].OpCode == OpCodes.Dup &&
+                    instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
+                    instrs[instri + 3].OpCode == OpCodes.Stfld && (instrs[instri + 3].Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
+                    instrs[instri + 4].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
+                    instrs[instri + 5].OpCode == OpCodes.Callvirt && (instrs[instri + 5].Operand as MethodReference)?.GetFindableID() == "System.Void Monocle.Scene::Add(Monocle.Renderer)"
+                ) {
+                    // Insert our own SubHudRenderer here.
+
+                    // Avoid calling get_Level again.
+                    // Instead, duplicate already loaded existing value.
+                    instrs.Insert(instri, il.Create(OpCodes.Dup)); // Used to Add()
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Dup)); // Used to stfld
+                    instri++;
+
+                    // Load the new renderer onto the stack.
+                    instrs.Insert(instri, il.Create(OpCodes.Newobj, ctor_SubHudRenderer));
+                    instri++;
+
+                    // Store the renderer in a local so we can first stfld, then Add() it.
+                    instrs.Insert(instri, il.Create(OpCodes.Dup));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Stloc, loc_SubHudRenderer_0));
+                    instri++;
+
+                    // Store the renderer in the level.
+                    instrs.Insert(instri, il.Create(OpCodes.Stfld, f_SubHudRenderer));
+                    instri++;
+
+                    // Add the renderer to the scene.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldloc, loc_SubHudRenderer_0));
+                    instri++;
+                    // Offset taken from above.
+                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, instrs[instri + 5].Operand as MethodReference));
+                    instri++;
+
+                    // The rest should work as-is.
                 }
 
             }

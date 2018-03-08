@@ -1,6 +1,7 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Celeste;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -14,7 +15,7 @@ namespace Celeste.Mod.Core {
     [SettingName("modoptions_coremodule_title")]
     public class CoreModuleSettings : EverestModuleSettings {
 
-        // Note: If SettingName isn't given, the values default to modoptions_[typename without settings]_[fieldname]
+        // Note: If SettingName isn't given, the values default to modoptions_[typename without settings]_[propname]
 
         // Example runtime setting that only shows up in the menu, not the settings file.
         // [SettingName("modoptions_coremodule_debugmode")]

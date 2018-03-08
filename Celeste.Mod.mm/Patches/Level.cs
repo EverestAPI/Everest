@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Entities;
+using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -14,6 +15,12 @@ namespace Celeste {
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
+
+        public SubHudRenderer SubHudRenderer;
+
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
+        public override extern void Render();
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
@@ -78,6 +85,11 @@ namespace Celeste {
         // We thus expose any new members through extensions.
 
         internal static EventInstance PauseSnapshot => patch_Level._PauseSnapshot;
+
+        public static SubHudRenderer GetSubHudRenderer(this Level self)
+            => ((patch_Level) self).SubHudRenderer;
+        public static void SetSubHudRenderer(this Level self, SubHudRenderer value)
+            => ((patch_Level) self).SubHudRenderer = value;
 
     }
 }
