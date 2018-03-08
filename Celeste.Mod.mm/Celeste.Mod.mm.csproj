@@ -167,6 +167,7 @@
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\Tags.cs" />
+    <Compile Include="Patches\HiresRenderer.cs" />
     <Compile Include="Patches\TextMenu.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Monocle\Engine.cs" />
