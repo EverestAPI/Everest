@@ -1,6 +1,7 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Celeste;
 using System;
 using System.Collections;
 using System.Collections.Generic;
