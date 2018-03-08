@@ -302,8 +302,17 @@ namespace MonoMod {
 
                     instri -= 2;
 
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
+                    // Let's go back before ldarg.0, System.Boolean Monocle.Scene::Paused
+                    int pausedOffs = 0;
+                    while (
+                        instri > 0 &&
+                        !(instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference)?.FullName == "System.Boolean Monocle.Scene::Paused")
+                    ) {
+                        instri--;
+                        pausedOffs++;
+                    }
+
+                    // We use the existing ldarg.0
                     instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_SubHudRenderer));
                     instri++;
 
@@ -313,6 +322,11 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_Renderer_Render));
                     instri++;
 
+                    // Add back the ldarg.0 which we consumed.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+
+                    instri += pausedOffs;
                     instri += 2;
                 }
 
