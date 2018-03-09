@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -15,6 +16,9 @@ using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
+
+        // We're effectively in Celeste, but still need to "expose" private fields to our mod.
+        private bool firstLoad;
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
@@ -65,8 +69,15 @@ namespace Celeste {
         protected override void LoadContent() {
             // Note: You may instinctually call base.LoadContent();
             // DON'T! The original method is orig_LoadContent
+            bool firstLoad = this.firstLoad;
             orig_LoadContent();
+
+            if (firstLoad) {
+                SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
+            }
+
             Everest.Invoke("LoadContent");
+            Everest.Invoke("LoadContent", firstLoad);
         }
 
         protected override void OnExiting(object sender, EventArgs args) {

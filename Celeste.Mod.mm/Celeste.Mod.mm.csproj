@@ -146,6 +146,7 @@
     <Compile Include="Mod\UI\OuiMapList.cs" />
     <Compile Include="Mod\UI\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\GameplayRenderer.cs" />
     <Compile Include="Patches\CompleteRenderer.cs" />
     <Compile Include="Patches\AreaKey.cs" />
     <Compile Include="Patches\AreaComplete.cs" />
@@ -167,7 +168,6 @@
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\Tags.cs" />
-    <Compile Include="Patches\HiresRenderer.cs" />
     <Compile Include="Patches\TextMenu.cs" />
     <Compile Include="Patches\MainMenuSmallButton.cs" />
     <Compile Include="Patches\Monocle\Engine.cs" />

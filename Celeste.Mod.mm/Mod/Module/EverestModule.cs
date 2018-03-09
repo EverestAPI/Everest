@@ -176,10 +176,18 @@ namespace Celeste.Mod {
         public virtual void Initialize() {
         }
 
+        [Obsolete("Override LoadContent(bool firstLoad) instead.")]
         /// <summary>
         /// Perform any content loading actions after Celeste.LoadContent has been called.
         /// </summary>
         public virtual void LoadContent() {
+        }
+
+        /// <summary>
+        /// Perform any content loading actions after Celeste.LoadContent has been called.
+        /// </summary>
+        /// <param name="firstLoad">Is this the first load?</param>
+        public virtual void LoadContent(bool firstLoad) {
         }
 
         /// <summary>
