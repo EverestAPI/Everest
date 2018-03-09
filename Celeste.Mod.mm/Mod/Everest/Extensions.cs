@@ -140,8 +140,8 @@ namespace Celeste.Mod {
         /// <param name="input">The dialog key.</param>
         /// <returns>The resolved dialog string or null.</returns>
         public static string DialogCleanOrNull(this string input, Language language = null) {
-            if (Dialog.Has(input))
-                return Dialog.Clean(input);
+            if (Dialog.Has(input, language))
+                return Dialog.Clean(input, language);
             else
                 return null;
         }
