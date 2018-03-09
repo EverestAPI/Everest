@@ -153,8 +153,6 @@ namespace Monocle {
         /// Feed the given ModAsset into the atlas.
         /// </summary>
         public static void Ingest(this Atlas self, ModAsset asset) {
-            Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
-
             // Crawl through all child assets.
             if (asset.AssetType == typeof(AssetTypeDirectory)) {
                 foreach (ModAsset child in asset.Children)
@@ -164,6 +162,8 @@ namespace Monocle {
 
             // Forcibly add the mod content to the atlas.
             if (asset.AssetType == typeof(Texture2D)) {
+                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
+
                 string parentPath = self.GetDataPath();
                 if (parentPath.StartsWith(Everest.Content.PathContentOrig))
                     parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
@@ -203,7 +203,7 @@ namespace Monocle {
                         // Apply width and height from replacement texture.
                         replacement = new MTexture(replacementV);
                     }
-                    // TODO: What's with the AtlasPath? Seems to stem from an atlas metadata property...
+                    replacement.SetAtlasPath(path);
                 }
 
                 self[path] = replacement;
