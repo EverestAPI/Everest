@@ -106,6 +106,8 @@
     <Compile Include="Mod\Entities\CustomMemorial.cs" />
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
+    <Compile Include="Mod\Everest\TextInput.cs" />
+    <Compile Include="Mod\Helpers\XNAFormsHook.cs" />
     <Compile Include="Mod\Helpers\Commands.cs" />
     <Compile Include="Mod\Everest\Everest.Update.cs" />
     <Compile Include="Mod\Helpers\FakeAssembly.cs" />
