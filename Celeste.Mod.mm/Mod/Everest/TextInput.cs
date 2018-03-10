@@ -50,7 +50,7 @@ namespace Celeste.Mod {
         /// Invoked whenever text input occurs, including some "input action" characters.
         /// Take a look at the FNA TextInputExt documentation for more info: https://github.com/FNA-XNA/FNA/wiki/5:-FNA-Extensions#textinputext
         /// </summary>
-        public static Action<char> OnInput;
+        public static event Action<char> OnInput;
 
     }
 }
