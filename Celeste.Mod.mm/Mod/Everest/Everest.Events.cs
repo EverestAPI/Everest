@@ -148,7 +148,7 @@ namespace Celeste.Mod {
                 internal static void TransitionTo(_Level level, LevelData next, Vector2 direction)
                     => OnTransitionTo?.Invoke(level, next, direction);
 
-                public delegate void LoadEntityHandler(_Level level, LevelData levelData, Vector2 offset, EntityData entityData);
+                public delegate bool LoadEntityHandler(_Level level, LevelData levelData, Vector2 offset, EntityData entityData);
                 public static event LoadEntityHandler OnLoadEntity;
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
