@@ -168,6 +168,11 @@ namespace Celeste.Mod {
                 internal static void Exit(_Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow)
                     => OnExit?.Invoke(level, exit, mode, session, snow);
 
+                public delegate void CompleteHandler(_Level level);
+                public static event CompleteHandler OnComplete;
+                internal static void Complete(_Level level)
+                    => OnComplete?.Invoke(level);
+
             }
 
             public static class Player {

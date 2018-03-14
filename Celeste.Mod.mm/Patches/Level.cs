@@ -22,6 +22,12 @@ namespace Celeste {
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
 
+        public extern void orig_RegisterAreaComplete();
+        public new void RegisterAreaComplete() {
+            orig_RegisterAreaComplete();
+            Everest.Events.Level.Complete(this);
+        }
+
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
