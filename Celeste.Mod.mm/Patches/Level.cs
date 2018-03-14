@@ -24,8 +24,11 @@ namespace Celeste {
 
         public extern void orig_RegisterAreaComplete();
         public new void RegisterAreaComplete() {
+            bool completed = Completed;
             orig_RegisterAreaComplete();
-            Everest.Events.Level.Complete(this);
+            if (!completed) {
+                Everest.Events.Level.Complete(this);
+            }
         }
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
