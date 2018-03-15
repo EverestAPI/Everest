@@ -28,25 +28,25 @@ namespace Celeste {
         private extern IEnumerator orig_Routine();
         private IEnumerator Routine() {
             if (ErrorMessage != null) {
-                return ErrorRoutine();
+                string message = ErrorMessage;
+                ErrorMessage = null;
+                return ErrorRoutine(message);
             }
 
             if (AreaData.Get(session.Area) == null) {
                 string message = Dialog.Get("postcard_levelgone");
                 message = message.Replace("((player))", SaveData.Instance.Name);
                 message = message.Replace("((sid))", session.Area.GetSID());
-                ErrorMessage = message;
-                return ErrorRoutine();
+                return ErrorRoutine(message);
             }
 
             return orig_Routine();
         }
 
-        private IEnumerator ErrorRoutine() {
+        private IEnumerator ErrorRoutine(string message) {
             yield return 1f;
 
-            Add(postcard = new Postcard(ErrorMessage));
-            ErrorMessage = null;
+            Add(postcard = new Postcard(message));
             yield return postcard.DisplayRoutine();
 
             SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
