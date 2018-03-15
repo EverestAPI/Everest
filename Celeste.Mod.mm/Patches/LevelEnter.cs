@@ -46,12 +46,12 @@ namespace Celeste {
             yield return 1f;
 
             Add(postcard = new Postcard(ErrorMessage));
+            ErrorMessage = null;
             yield return postcard.DisplayRoutine();
 
             SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
             SaveData.Instance.LastArea = AreaKey.None;
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaComplete);
-            ErrorMessage = null;
         }
 
     }
