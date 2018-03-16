@@ -125,12 +125,11 @@ namespace Celeste.Mod {
                         RelinkMap = SharedRelinkMap,
                         DependencyDirs = {
                             PathGame
+                        },
+                        ReaderParameters = {
+                            SymbolReaderProvider = new RelinkerSymbolReaderProvider()
                         }
                     };
-
-                    _Modder.ReaderParameters.ReadSymbols = false;
-                    _Modder.WriterParameters.WriteSymbols = false;
-                    _Modder.WriterParameters.SymbolWriterProvider = null;
 
                     _Modder.Relinker = _Modder.DefaultUncachedRelinker;
 
@@ -189,10 +188,33 @@ namespace Celeste.Mod {
                     modder.OutputPath = cachedPath;
                     modder.MissingDependencyResolver = depResolver;
 
+                    string symbolPath;
+                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
+                    modder.ReaderParameters.ReadSymbols = modder.ReaderParameters.SymbolStream != null;
+                    if (modder.ReaderParameters.SymbolReaderProvider != null &&
+                        modder.ReaderParameters.SymbolReaderProvider is RelinkerSymbolReaderProvider) {
+                        ((RelinkerSymbolReaderProvider) modder.ReaderParameters.SymbolReaderProvider).Format =
+                            string.IsNullOrEmpty(symbolPath) ? DebugSymbolFormat.Auto :
+                            symbolPath.EndsWith(".mdb") ? DebugSymbolFormat.MDB :
+                            symbolPath.EndsWith(".pdb") ? DebugSymbolFormat.PDB :
+                            DebugSymbolFormat.Auto;
+                    }
+
                     modder.Read();
+
+                    modder.ReaderParameters.ReadSymbols = false;
+
+                    if (modder.ReaderParameters.SymbolReaderProvider != null &&
+                        modder.ReaderParameters.SymbolReaderProvider is RelinkerSymbolReaderProvider) {
+                        ((RelinkerSymbolReaderProvider) modder.ReaderParameters.SymbolReaderProvider).Format = DebugSymbolFormat.Auto;
+                    }
+
                     modder.MapDependencies();
+
                     prePatch?.Invoke(modder);
+
                     modder.AutoPatch();
+
                     modder.Write();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}");
@@ -202,6 +224,7 @@ namespace Celeste.Mod {
                     Modder.ClearCaches(moduleSpecific: true);
                     Modder.Module.Dispose();
                     Modder.Module = null;
+                    Modder.ReaderParameters.SymbolStream?.Dispose();
                 }
 
                 if (File.Exists(cachedChecksumPath)) {
@@ -246,6 +269,36 @@ namespace Celeste.Mod {
                     };
                 }
 
+                return null;
+            }
+
+            private static Stream OpenStream(EverestModuleMetadata meta, out string result, params string[] names) {
+                if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                    using (ZipFile zip = new ZipFile(meta.PathArchive)) {
+                        foreach (ZipEntry entry in zip.Entries) {
+                            if (!names.Contains(entry.FileName))
+                                continue;
+                            result = entry.FileName;
+                            return entry.ExtractStream();
+                        }
+                    }
+                    result = null;
+                    return null;
+                }
+
+                if (!string.IsNullOrEmpty(meta.PathDirectory)) {
+                    foreach (string name in names) {
+                        string path = name;
+                        if (!File.Exists(path))
+                            path = Path.Combine(meta.PathDirectory, name);
+                        if (!File.Exists(path))
+                            continue;
+                        result = path;
+                        return File.OpenRead(path);
+                    }
+                }
+
+                result = null;
                 return null;
             }
 
