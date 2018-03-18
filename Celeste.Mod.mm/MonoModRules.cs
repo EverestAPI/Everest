@@ -68,13 +68,14 @@ namespace MonoMod {
         static TypeDefinition Level;
 
         static TypeDefinition FileProxy;
-        static IDictionary<string, MethodDefinition> FileProxyCache = new FastDictionary<string, MethodDefinition>();
+        static IDictionary<string, MethodDefinition> FileProxyCache = new Dictionary<string, MethodDefinition>();
 
         static List<MethodDefinition> LevelExitRoutines = new List<MethodDefinition>();
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
 
         static MonoModRules() {
-            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
+            // Note: It may actually be too late to set this to false.
+            MonoModRule.Modder.MissingDependencyThrow = false;
 
             MonoModRule.Modder.PostProcessors += PostProcessor;
 

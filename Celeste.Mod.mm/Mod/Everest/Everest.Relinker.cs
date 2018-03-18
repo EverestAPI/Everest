@@ -32,18 +32,18 @@ namespace Celeste.Mod {
             /// </summary>
             public static string GameChecksum { get; internal set; }
 
-            internal readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new FastDictionary<string, ModuleDefinition>() {
+            internal readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new Dictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
             };
 
-            private static FastDictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
+            private static IDictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
             public static IDictionary<string, ModuleDefinition> SharedRelinkModuleMap {
                 get {
                     if (_SharedRelinkModuleMap != null)
                         return _SharedRelinkModuleMap;
 
-                    _SharedRelinkModuleMap = new FastDictionary<string, ModuleDefinition>();
+                    _SharedRelinkModuleMap = new Dictionary<string, ModuleDefinition>();
                     string[] entries = Directory.GetFiles(PathGame);
                     for (int i = 0; i < entries.Length; i++) {
                         string path = entries[i];
@@ -76,13 +76,13 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static FastDictionary<string, object> _SharedRelinkMap;
+            private static IDictionary<string, object> _SharedRelinkMap;
             public static IDictionary<string, object> SharedRelinkMap {
                 get {
                     if (_SharedRelinkMap != null)
                         return _SharedRelinkMap;
 
-                    _SharedRelinkMap = new FastDictionary<string, object>();
+                    _SharedRelinkMap = new Dictionary<string, object>();
 
                     // Find our current XNA flavour and relink all types to it.
                     // This relinks mods from XNA to FNA and from FNA to XNA.
@@ -131,13 +131,22 @@ namespace Celeste.Mod {
                         }
                     };
 
-                    _Modder.Relinker = _Modder.DefaultUncachedRelinker;
+                    _Modder.Relinker = DefaultRelinker;
 
                     return _Modder;
                 }
                 set {
                     _Modder = value;
                 }
+            }
+
+            public static IMetadataTokenProvider DefaultRelinker(IMetadataTokenProvider mtp, IGenericParameterProvider context) {
+                ModuleReference scope = (mtp as TypeReference)?.Scope as ModuleReference;
+                if (scope != null && scope.Name.EndsWith(".mm") && !_Modder.Mods.Contains(scope)) {
+                    _Modder.Mods.Add(scope);
+                }
+
+                return _Modder.DefaultUncachedRelinker(mtp, context);
             }
 
             /// <summary>

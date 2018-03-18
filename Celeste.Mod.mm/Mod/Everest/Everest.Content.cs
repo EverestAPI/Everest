@@ -59,16 +59,16 @@ namespace Celeste.Mod {
             /// <summary>
             /// Mod content mapping. Use Everest.Content.Add, Get, and TryGet where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, ModAsset> Map = new FastDictionary<string, ModAsset>();
+            public readonly static IDictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
             /// <summary>
             /// Mod content mapping, directories only. Use Everest.Content.Add, Get, and TryGet where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, ModAsset> MapDirs = new FastDictionary<string, ModAsset>();
+            public readonly static IDictionary<string, ModAsset> MapDirs = new Dictionary<string, ModAsset>();
             /// <summary>
             /// Mod dialog .txt mapping. Used as one path can map to multiple AssetMetadatas.
             /// Use Everest.Content.Add, GetDialogs, and TryGetDialogs where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, List<ModAsset>> MapDialogs = new FastDictionary<string, List<ModAsset>>();
+            public readonly static IDictionary<string, List<ModAsset>> MapDialogs = new Dictionary<string, List<ModAsset>>();
             /// <summary>
             /// List of all maps to be loaded by AreaData.Load
             /// </summary>
