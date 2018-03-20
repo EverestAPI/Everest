@@ -34,8 +34,15 @@ namespace Celeste.Mod {
 
             internal readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new Dictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
-                { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
+                { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) }
             };
+            internal static ModuleDefinition RuntimeRuleContainer = ModuleDefinition.ReadModule(
+                Path.Combine(
+                    Path.GetDirectoryName(typeof(Celeste).Assembly.Location),
+                    Path.GetFileNameWithoutExtension(typeof(Celeste).Assembly.Location) + ".Mod.mm.dll"
+                ),
+                new ReaderParameters(ReadingMode.Immediate)
+            );
 
             private static IDictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
             public static IDictionary<string, ModuleDefinition> SharedRelinkModuleMap {
@@ -219,6 +226,11 @@ namespace Celeste.Mod {
                     }
 
                     modder.MapDependencies();
+
+                    if (RuntimeRuleContainer != null) {
+                        modder.ParseRules(RuntimeRuleContainer);
+                        RuntimeRuleContainer = null;
+                    }
 
                     prePatch?.Invoke(modder);
 

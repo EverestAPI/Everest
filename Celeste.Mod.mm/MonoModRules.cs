@@ -58,7 +58,9 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("RegisterAreaCompleteCtor")]
     class PatchAreaCompleteCtorAttribute : Attribute { }
 
-    class MonoModRules {
+    static class MonoModRules {
+
+        static bool IsCeleste;
 
         static TypeDefinition Celeste;
 
@@ -77,12 +79,15 @@ namespace MonoMod {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
 
-            MonoModRule.Modder.PostProcessors += PostProcessor;
-
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
+            if (Celeste.Scope != MonoModRule.Modder.Module)
+                return;
             if (Celeste == null)
                 return;
+            IsCeleste = true;
+
+            MonoModRule.Modder.PostProcessors += PostProcessor;
 
             // Get version - used to set any MonoMod flags.
 
