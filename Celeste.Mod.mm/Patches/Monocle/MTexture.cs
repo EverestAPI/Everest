@@ -92,16 +92,17 @@ namespace Monocle {
         public new float TopUV => ClipRect.Top / (float) Texture.Height;
         public new float BottomUV => ClipRect.Bottom / (float) Texture.Height;
 
-        protected List<MTextureOverride> _Overrides;
+        protected int _OverrideCount = 0;
+        protected MTextureOverride[] _Overrides;
 
         protected MTextureOverride _CachedOverrideTexture;
         public MTextureOverride OverrideTexture {
             get {
                 if (!(_CachedOverrideTexture?.Texture?.IsDisposed ?? true))
                     return _CachedOverrideTexture;
-                if (_Overrides == null || _Overrides.Count == 0)
+                if (_OverrideCount == 0)
                     return null;
-                for (int i = _Overrides.Count - 1; i > -1; --i) {
+                for (int i = _OverrideCount - 1; i > -1; --i) {
                     MTextureOverride layer = _Overrides[i];
                     if (layer.IsActiveTexture)
                         return _CachedOverrideTexture = layer;
@@ -114,9 +115,9 @@ namespace Monocle {
             get {
                 if (_CachedOverrideMeta != null)
                     return _CachedOverrideMeta;
-                if (_Overrides == null || _Overrides.Count == 0)
+                if (_OverrideCount == 0)
                     return null;
-                for (int i = _Overrides.Count - 1; i > -1; --i) {
+                for (int i = _OverrideCount - 1; i > -1; --i) {
                     MTextureOverride layer = _Overrides[i];
                     if (layer.IsActiveMeta)
                         return _CachedOverrideMeta = layer;
@@ -180,8 +181,16 @@ namespace Monocle {
 
         public MTextureOverride AddOverride(MTextureOverride layer) {
             if (_Overrides == null)
-                _Overrides = new List<MTextureOverride>();
-            _Overrides.Add(layer);
+                _Overrides = new MTextureOverride[16];
+
+            if (_OverrideCount + 1 >= _Overrides.Length) {
+                MTextureOverride[] grown = new MTextureOverride[_Overrides.Length * 2];
+                Array.Copy(_Overrides, grown, _Overrides.Length);
+                _Overrides = grown;
+            }
+            _Overrides[_OverrideCount] = layer;
+            ++_OverrideCount;
+
             _CachedOverrideMeta = null;
             _CachedOverrideTexture = null;
             return layer;
