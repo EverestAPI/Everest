@@ -16,7 +16,6 @@ using System.Xml;
 namespace Monocle {
     class patch_MTexture : MTexture {
 
-        // We're effectively in MTexture, but still need to "expose" private fields to our mod.
         public extern VirtualTexture orig_get_Texture();
         public extern void orig_set_Texture(VirtualTexture value);
         public new VirtualTexture Texture {
@@ -45,19 +44,6 @@ namespace Monocle {
                     OverrideTexture.ClipRect = value;
                 else
                     orig_set_ClipRect(value);
-            }
-        }
-        public extern string orig_get_AtlasPath();
-        public extern void orig_set_AtlasPath(string value);
-        public new string AtlasPath {
-            get {
-                return OverrideMeta?.AtlasPath ?? orig_get_AtlasPath();
-            }
-            set {
-                if (OverrideMeta != null)
-                    OverrideMeta.AtlasPath = value;
-                else
-                    orig_set_AtlasPath(value);
             }
         }
         public extern Vector2 orig_get_DrawOffset();
@@ -111,7 +97,7 @@ namespace Monocle {
         protected MTextureOverride _CachedOverrideTexture;
         public MTextureOverride OverrideTexture {
             get {
-                if (_CachedOverrideTexture != null && _CachedOverrideTexture.IsActiveTexture)
+                if (!(_CachedOverrideTexture?.Texture?.IsDisposed ?? true))
                     return _CachedOverrideTexture;
                 if (_Overrides == null || _Overrides.Count == 0)
                     return null;
@@ -126,7 +112,7 @@ namespace Monocle {
         protected MTextureOverride _CachedOverrideMeta;
         public MTextureOverride OverrideMeta {
             get {
-                if (_CachedOverrideMeta != null && _CachedOverrideMeta.IsActiveMeta)
+                if (_CachedOverrideMeta != null)
                     return _CachedOverrideMeta;
                 if (_Overrides == null || _Overrides.Count == 0)
                     return null;
@@ -136,6 +122,20 @@ namespace Monocle {
                         return _CachedOverrideMeta = layer;
                 }
                 return null;
+            }
+        }
+
+        public extern string orig_get_AtlasPath();
+        public extern void orig_set_AtlasPath(string value);
+        public new string AtlasPath {
+            get {
+                return OverrideMeta?.AtlasPath ?? orig_get_AtlasPath();
+            }
+            set {
+                if (OverrideMeta != null)
+                    OverrideMeta.AtlasPath = value;
+                else
+                    orig_set_AtlasPath(value);
             }
         }
 

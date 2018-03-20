@@ -17,8 +17,8 @@ using System.Xml;
 namespace Celeste.Mod {
     public class MTextureOverride {
 
-        public virtual bool IsActiveTexture => Texture != null && Texture.Texture != null && !Texture.Texture.IsDisposed;
-        public virtual bool IsActiveMeta => Texture == null || (Texture.Texture != null && !Texture.Texture.IsDisposed);
+        public virtual bool IsActiveTexture => !(Texture?.Texture?.IsDisposed ?? true);
+        public virtual bool IsActiveMeta => !(Texture?.Texture?.IsDisposed ?? false);
 
         public virtual VirtualTexture Texture { get; set; }
         public virtual Rectangle ClipRect { get; set; }
