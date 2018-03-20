@@ -153,15 +153,15 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="module">Mod to register.</param>
         public static void Register(this EverestModule module) {
-            module.LoadSettings();
-            module.Load();
-
             lock (_Modules) {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());
                 _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
                 _ModuleMethodDelegates.Add(new Dictionary<string, DynamicMethodDelegate>());
             }
+
+            module.LoadSettings();
+            module.Load();
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
 
