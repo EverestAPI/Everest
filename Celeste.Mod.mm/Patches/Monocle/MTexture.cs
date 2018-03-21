@@ -179,6 +179,12 @@ namespace Monocle {
         }
 
         public MTextureOverride AddOverride(MTextureOverride layer) {
+            _CachedOverrideMeta = null;
+            _CachedOverrideTexture = null;
+
+            if (layer == null)
+                return null;
+
             if (_Overrides == null)
                 _Overrides = new MTextureOverride[16];
 
@@ -190,8 +196,6 @@ namespace Monocle {
             _Overrides[_OverrideCount] = layer;
             ++_OverrideCount;
 
-            _CachedOverrideMeta = null;
-            _CachedOverrideTexture = null;
             return layer;
         }
 
