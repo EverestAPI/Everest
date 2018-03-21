@@ -18,11 +18,17 @@ namespace Monocle {
 
         public extern VirtualTexture orig_get_Texture();
         public extern void orig_set_Texture(VirtualTexture value);
+        protected VirtualTexture _Texture {
+            get {
+                return OverrideTexture?.Texture ?? Parent?.Texture ?? orig_get_Texture();
+            }
+        }
         public new VirtualTexture Texture {
             get {
-                VirtualTexture texture = OverrideTexture?.Texture ?? orig_get_Texture();
-                // Reset caches whenever the texture is used, f.e. on render.
-                // TODO: Clear caches!
+                VirtualTexture texture = _Texture;
+                // Reset caches whenever the texture is used by the game, f.e. on render.
+                _CachedOverrideTexture = null;
+                _CachedOverrideMeta = null;
                 return texture;
             }
             set {
@@ -36,7 +42,28 @@ namespace Monocle {
         public extern void orig_set_ClipRect(Rectangle value);
         public new Rectangle ClipRect {
             get {
-                return OverrideTexture?.ClipRect ?? orig_get_ClipRect();
+                MTextureOverride layer = OverrideTexture;
+                if (layer != null && layer.ForceClipRect)
+                    return layer.ClipRect;
+
+                if (Parent != null) {
+                    Rectangle parentRect = Parent.ClipRect;
+                    if (!HasRelativeRect)
+                        return parentRect;
+
+                    Vector2 parentOffset = Parent.DrawOffset;
+
+                    // TODO: Possible perf bottleneck?
+                    int a = (int) (parentRect.X - parentOffset.X + RelativeRectX);
+                    int b = (int) (parentRect.Y - parentOffset.Y + RelativeRectY);
+                    int x = (int) MathHelper.Clamp(a, parentRect.Left, parentRect.Right);
+                    int y = (int) MathHelper.Clamp(b, parentRect.Top, parentRect.Bottom);
+                    int width = Math.Max(0, Math.Min(a + RelativeRectWidth, parentRect.Right) - x);
+                    int height = Math.Max(0, Math.Min(b + RelativeRectHeight, parentRect.Bottom) - y);
+                    return new Rectangle(x, y, width, height);
+                }
+
+                return layer?.ClipRect ?? orig_get_ClipRect();
             }
             set {
                 if (OverrideTexture != null)
@@ -86,10 +113,10 @@ namespace Monocle {
         }
 
         public new Vector2 Center => new Vector2(Width * 0.5f, Height * 0.5f);
-        public new float LeftUV => ClipRect.Left / (float) Texture.Width;
-        public new float RightUV => ClipRect.Right / (float) Texture.Width;
-        public new float TopUV => ClipRect.Top / (float) Texture.Height;
-        public new float BottomUV => ClipRect.Bottom / (float) Texture.Height;
+        public new float LeftUV => ClipRect.Left / (float) _Texture.Width;
+        public new float RightUV => ClipRect.Right / (float) _Texture.Width;
+        public new float TopUV => ClipRect.Top / (float) _Texture.Height;
+        public new float BottomUV => ClipRect.Bottom / (float) _Texture.Height;
 
         protected int _OverrideCount = 0;
         protected MTextureOverride[] _Overrides;
@@ -103,6 +130,7 @@ namespace Monocle {
                     return null;
                 for (int i = _OverrideCount - 1; i > -1; --i) {
                     MTextureOverride layer = _Overrides[i];
+                    layer.UpdateTexture();
                     if (layer.IsActiveTexture)
                         return _CachedOverrideTexture = layer;
                 }
@@ -118,18 +146,26 @@ namespace Monocle {
                     return null;
                 for (int i = _OverrideCount - 1; i > -1; --i) {
                     MTextureOverride layer = _Overrides[i];
+                    layer.UpdateMeta();
                     if (layer.IsActiveMeta)
                         return _CachedOverrideMeta = layer;
                 }
                 return null;
             }
         }
+        public MTexture Parent;
+
+        protected bool HasRelativeRect;
+        protected int RelativeRectX;
+        protected int RelativeRectY;
+        protected int RelativeRectWidth;
+        protected int RelativeRectHeight;
 
         public extern string orig_get_AtlasPath();
         public extern void orig_set_AtlasPath(string value);
         public new string AtlasPath {
             get {
-                return OverrideMeta?.AtlasPath ?? orig_get_AtlasPath();
+                return OverrideMeta?.AtlasPath ?? Parent?.AtlasPath ?? orig_get_AtlasPath();
             }
             set {
                 if (OverrideMeta != null)
@@ -144,27 +180,24 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor_MTexture(MTexture parent, int x, int y, int width, int height) {
             orig_ctor_MTexture(parent, x, y, width, height);
-            AddOverride(new MTextureParent(parent).GetRelativeRect(x, y, width, height));
-            AddOverride(new MTextureOverride {
-                // ClipRect = parent.GetRelativeRect(x, y, width, height),
-                DrawOffset = new Vector2(-Math.Min(x - parent.DrawOffset.X, 0f), -Math.Min(y - parent.DrawOffset.Y, 0f)),
-                Width = width,
-                Height = height,
-            });
+            Parent = parent;
+            HasRelativeRect = true;
+            RelativeRectX = x;
+            RelativeRectY = y;
+            RelativeRectWidth = width;
+            RelativeRectHeight = height;
         }
 
         public extern void orig_ctor_MTexture(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height);
         [MonoModConstructor]
         public void ctor_MTexture(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height) {
             orig_ctor_MTexture(parent, atlasPath, clipRect, drawOffset, width, height);
-            AddOverride(new MTextureParent(parent).GetRelativeRect(clipRect));
-            AddOverride(new MTextureOverride {
-                AtlasPath = atlasPath,
-                // ClipRect = parent.GetRelativeRect(clipRect),
-                DrawOffset = drawOffset,
-                Width = width,
-                Height = height,
-            });
+            Parent = parent;
+            HasRelativeRect = true;
+            RelativeRectX = clipRect.X;
+            RelativeRectY = clipRect.Y;
+            RelativeRectWidth = clipRect.Width;
+            RelativeRectHeight = clipRect.Height;
         }
 
         [MonoModReplace]
@@ -213,20 +246,21 @@ namespace Monocle {
 
         [MonoModReplace]
         public new MTexture GetSubtexture(int x, int y, int width, int height, MTexture applyTo = null) {
-            MTexture result;
             if (applyTo == null) {
-                result = new MTexture(this, x, y, width, height);
-            } else {
-                applyTo.AddOverride(new MTextureParent(this).GetRelativeRect(x, y, width, height));
-                applyTo.AddOverride(new MTextureOverride {
-                    // ClipRect = GetRelativeRect(x, y, width, height),
-                    DrawOffset = new Vector2(-Math.Min(x - DrawOffset.X, 0f), -Math.Min(y - DrawOffset.Y, 0f)),
-                    Width = width,
-                    Height = height,
-                });
-                result = applyTo;
+                return new MTexture(this, x, y, width, height);
             }
-            return result;
+
+            patch_MTexture sub = (patch_MTexture) applyTo;
+            sub.Parent = this;
+            sub.HasRelativeRect = true;
+            sub.RelativeRectX = x;
+            sub.RelativeRectY = y;
+            sub.RelativeRectWidth = width;
+            sub.RelativeRectHeight = height;
+            sub.DrawOffset = new Vector2(-Math.Min(x - DrawOffset.X, 0f), -Math.Min(y - DrawOffset.Y, 0f));
+            sub.Width = width;
+            sub.Height = height;
+            return sub;
         }
 
     }
@@ -269,6 +303,18 @@ namespace Monocle {
         /// <returns>The resulting MTextureOverride.</returns>
         public static MTextureOverride AddOverride(this MTexture self, VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight)
             => ((patch_MTexture) self).AddOverride(texture, drawOffset, frameWidth, frameHeight);
+
+        /// <summary>
+        /// Gets the parent texture of the given MTexture.
+        /// </summary>
+        public static MTexture GetParent(this MTexture self)
+            => ((patch_MTexture) self).Parent;
+
+        /// <summary>
+        /// Sets the parent texture of the given MTexture.
+        /// </summary>
+        public static void SetParent(this MTexture self, MTexture parent)
+            => ((patch_MTexture) self).Parent = parent;
 
     }
 }
