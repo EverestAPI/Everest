@@ -22,8 +22,7 @@ namespace Monocle {
             get {
                 VirtualTexture texture = OverrideTexture?.Texture ?? orig_get_Texture();
                 // Reset caches whenever the texture is used, f.e. on render.
-                _CachedOverrideMeta = null;
-                _CachedOverrideTexture = null;
+                // TODO: Clear caches!
                 return texture;
             }
             set {
