@@ -1,5 +1,7 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -229,6 +231,27 @@ namespace Celeste.Mod {
             for (int i = 0; i < delegates.Length; i++)
                 delegatesDest[i] = delegates[i].CastDelegate(type);
             return Delegate.Combine(delegatesDest);
+        }
+
+        /// <summary>
+        /// Map the list of buttons to the given virtual button.
+        /// </summary>
+        /// <param name="vbtn">The virtual button to map the buttons to.</param>
+        /// <param name="buttons">The buttons to map.</param>
+        public static void AddButtons(this VirtualButton vbtn, List<Buttons> buttons) {
+            foreach (Buttons btn in buttons) {
+                if (btn == Buttons.LeftTrigger) {
+                    vbtn.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                    continue;
+                }
+
+                if (btn == Buttons.RightTrigger) {
+                    vbtn.Nodes.Add(new VirtualButton.PadRightTrigger(Input.Gamepad, 0.25f));
+                    continue;
+                }
+
+                vbtn.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, btn));
+            }
         }
 
     }
