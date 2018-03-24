@@ -83,7 +83,7 @@ namespace MiniInstaller {
             if (Path.GetFileName(PathGame) == "everest-update" &&
                 File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
                 // We're updating Everest via the in-game installler.
-                PathUpdate = Path.GetFullPath(".");
+                PathUpdate = PathGame;
                 PathGame = Path.GetDirectoryName(PathUpdate);
             }
 
@@ -107,7 +107,7 @@ namespace MiniInstaller {
             if (!CanReadWrite(PathCelesteExe)) {
                 LogLine("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
-                    Thread.Sleep(100);
+                    Thread.Sleep(1000);
             }
         }
 
@@ -148,11 +148,12 @@ namespace MiniInstaller {
         public static Assembly LoadMonoMod() {
             // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
             // Instead, load it dynamically and invoke the entry point.
-            LogLine("Loading MonoMod");
+            LogLine("Loading Mono.Cecil");
             // We also need to lazily load any dependencies.
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.dll"));
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Mdb.dll"));
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Pdb.dll"));
+            LogLine("Loading MonoMod");
             Assembly asmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
             return asmMonoMod;
         }
