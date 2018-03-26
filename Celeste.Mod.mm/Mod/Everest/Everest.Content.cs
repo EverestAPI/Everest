@@ -23,6 +23,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
     public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
     public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
+    public sealed class AssetTypeXml { private AssetTypeXml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
 
@@ -247,6 +248,10 @@ namespace Celeste.Mod {
                     format = ".yml";
                 } else if (file.EndsWith(".yml")) {
                     type = typeof(AssetTypeYaml);
+                    file = file.Substring(0, file.Length - 4);
+
+                } else if (file.EndsWith(".xml")) {
+                    type = typeof(AssetTypeXml);
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {

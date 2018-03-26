@@ -160,6 +160,8 @@ namespace Celeste.Mod {
                 return true;
             }
 
+            // TODO: Deserialize AssetTypeXml
+
             result = default(T);
             return false;
         }

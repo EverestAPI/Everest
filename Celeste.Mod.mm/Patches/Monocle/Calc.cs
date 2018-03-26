@@ -1,5 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
@@ -17,16 +18,32 @@ namespace Monocle {
 
         public static extern XmlDocument orig_LoadContentXML(string filename);
         public static XmlDocument LoadContentXML(string filename) {
-            if (!orig_ContentXMLExists(filename))
-                return new XmlDocument();
-            return orig_LoadContentXML(filename);
+            ModAsset asset;
+            if (Everest.Content.TryGet(filename.Substring(0, filename.Length - 4), out asset) &&
+                asset.AssetType == typeof(AssetTypeXml)) {
+                XmlDocument doc = new XmlDocument();
+                using (Stream stream = asset.Stream)
+                    doc.Load(stream);
+                return doc;
+            }
+            if (orig_ContentXMLExists(filename))
+                return orig_LoadContentXML(filename);
+            return new XmlDocument();
         }
 
         public static extern XmlDocument orig_LoadXML(string filename);
         public static XmlDocument LoadXML(string filename) {
-            if (!orig_XMLExists(filename))
-                return new XmlDocument();
-            return orig_LoadXML(filename);
+            ModAsset asset;
+            if (Everest.Content.TryGet(filename.Substring(0, filename.Length - 4), out asset) &&
+                asset.AssetType == typeof(AssetTypeXml)) {
+                XmlDocument doc = new XmlDocument();
+                using (Stream stream = asset.Stream)
+                    doc.Load(stream);
+                return doc;
+            }
+            if (orig_XMLExists(filename))
+                return orig_LoadXML(filename);
+            return new XmlDocument();
         }
 
         public static extern bool orig_ContentXMLExists(string filename);
