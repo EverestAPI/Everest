@@ -4,9 +4,12 @@ using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
+using SDL2;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -15,9 +18,21 @@ using System.Xml.Serialization;
 namespace Celeste {
     static class patch_UserIO {
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchUnhandledSDL2Platform] // ... except for manually manipulating the method via MonoModRules
-        private static extern string GetSavePath();
+        private static extern string orig_GetSavePath();
+        private static string GetSavePath() {
+            string plat = SDL.SDL_GetPlatform();
+            string fallback = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Saves");
+
+            if (plat == "Android") {
+                return fallback;
+            }
+
+            try {
+                return orig_GetSavePath();
+            } catch (NotSupportedException) {
+                return fallback;
+            }
+        }
 
     }
 }
