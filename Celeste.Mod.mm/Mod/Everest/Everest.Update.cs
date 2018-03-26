@@ -137,9 +137,7 @@ namespace Celeste.Mod {
                     IsCurrent = () => VersionSuffix.StartsWith("travis-"),
 
                     ParseLine = CommonLineParser("https://ams3.digitaloceanspaces.com")
-                },
-
-                // TODO: GitHub updater source.
+                }
             };
 
             public static Task RequestAll() {

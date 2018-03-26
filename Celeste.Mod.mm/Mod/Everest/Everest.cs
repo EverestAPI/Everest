@@ -130,6 +130,10 @@ namespace Celeste.Mod {
             // Initialize the content helper.
             Content.Initialize();
 
+            // Initialize the notification manager before loading any mods.
+            NotificationManager.Instance = new NotificationManager(Celeste.Instance);
+            // Don't add it yet, though - add it in Initialize.
+
             // Register our core module and load any other modules.
             new CoreModule().Register();
             Loader.LoadAuto();
@@ -146,6 +150,16 @@ namespace Celeste.Mod {
 
             // Start requesting the version list ASAP.
             Updater.RequestAll();
+        }
+
+        internal static void Initialize() {
+            // Initialize misc stuff.
+            TextInput.Initialize(Celeste.Instance);
+
+            // Add the previously created notification manager.
+            Celeste.Instance.Components.Add(NotificationManager.Instance);
+
+            Invoke("Initialize");
         }
 
         /// <summary>

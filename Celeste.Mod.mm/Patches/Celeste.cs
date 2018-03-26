@@ -63,10 +63,7 @@ namespace Celeste {
             // DON'T! The original method is orig_Initialize
             orig_Initialize();
 
-            // Initialize misc stuff.
-            TextInput.Initialize(this);
-
-            Everest.Invoke("Initialize");
+            Everest.Initialize();
         }
 
         protected extern void orig_LoadContent();

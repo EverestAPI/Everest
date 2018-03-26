@@ -72,15 +72,19 @@
       <HintPath>..\lib\I18N.West.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net35\Mono.Cecil.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Mono.Cecil.Mdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net35\Mono.Cecil.Mdb.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Mono.Cecil.Pdb, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net35\Mono.Cecil.Pdb.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.10.0\lib\net35\Mono.Cecil.Rocks.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="MonoMod">
@@ -107,6 +111,8 @@
     <Compile Include="Mod\Entities\CustomMemorial.cs" />
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
+    <Compile Include="Mod\Everest\Notification.cs" />
+    <Compile Include="Mod\Everest\NotificationManager.cs" />
     <Compile Include="Mod\Everest\TextInput.cs" />
     <Compile Include="Mod\Helpers\XNAFormsHook.cs" />
     <Compile Include="Mod\Helpers\Commands.cs" />
@@ -169,6 +175,7 @@
     <Compile Include="Patches\OuiChapterSelectIcon.cs" />
     <Compile Include="Patches\OuiChapterSelect.cs" />
     <Compile Include="Patches\Overworld.cs" />
+    <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
     <Compile Include="Patches\Tags.cs" />
@@ -236,6 +243,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\notification\default\bg.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\notification\default\bg.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
