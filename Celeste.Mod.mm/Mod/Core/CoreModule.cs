@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -41,6 +42,15 @@ namespace Celeste.Mod.Core {
             // If using FNADroid, forcibly enable lazy texture loading.
             if (Environment.GetEnvironmentVariable("FNADROID") == "1") {
                 Settings.LazyTextures = true;
+            }
+
+            // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
+            // Note: This isn't accurate, as it doesn't check which GL device is being used.
+            Type t_OpenGLDevice = typeof(Game).Assembly.GetType("Microsoft.Xna.Framework.Graphics.OpenGLDevice");
+            if (typeof(Game).Assembly.FullName.Contains("FNA") &&
+                t_OpenGLDevice != null &&
+                t_OpenGLDevice.GetMethod("ForceToMainThread", BindingFlags.NonPublic | BindingFlags.Instance) == null) {
+                Settings.NonThreadedGL = true;
             }
         }
 

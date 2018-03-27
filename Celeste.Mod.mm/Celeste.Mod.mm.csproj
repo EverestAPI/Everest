@@ -175,6 +175,7 @@
     <Compile Include="Patches\OuiChapterPanel.cs" />
     <Compile Include="Patches\OuiChapterSelectIcon.cs" />
     <Compile Include="Patches\OuiChapterSelect.cs" />
+    <Compile Include="Patches\OverworldLoader.cs" />
     <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />
@@ -251,7 +252,7 @@
       <LogicalName>Content\Graphics\Atlases\Gui\notification\default\bg.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
-    <ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\menu\modoptions.png">
       <LogicalName>Content\Graphics\Atlases\GuiLQ\menu\modoptions.png</LogicalName>
     </EmbeddedResource>

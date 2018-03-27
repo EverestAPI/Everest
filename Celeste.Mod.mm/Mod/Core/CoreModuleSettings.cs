@@ -36,6 +36,9 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         public bool LazyTextures { get; set; } = false;
 
+        [SettingNeedsRelaunch]
+        public bool NonThreadedGL { get; set; } = false;
+
         public string InputGui { get; set; } = "";
 
         /*

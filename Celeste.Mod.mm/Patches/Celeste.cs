@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
@@ -76,6 +77,13 @@ namespace Celeste {
             if (firstLoad) {
                 SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
             }
+
+            if (GFX.MountainTerrain == null && CoreModule.Settings.NonThreadedGL) {
+                GFX.MountainTerrain = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "mountain.obj"));
+                GFX.MountainBuildings = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "buildings.obj"));
+                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "mountain_wall.obj"));
+            }
+            // Otherwise loaded in GameLoader.LoadThread
 
             Everest.Invoke("LoadContent");
             Everest.Invoke("LoadContent", firstLoad);
