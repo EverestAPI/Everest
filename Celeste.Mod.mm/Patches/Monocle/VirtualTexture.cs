@@ -28,18 +28,17 @@ namespace Monocle {
         [MonoModRemove]
         public Texture2D Texture_Unsafe;
 
-        private bool _Texture_ForceUnsafe;
+        private bool _Texture_Reloading;
         [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
-                // If we're "manipulating" the texture (unload or reload), directly pass on to the field.
-                if (_Texture_ForceUnsafe)
+                // If we're reloading, directly pass on to the field.
+                if (_Texture_Reloading)
                     return Texture_Unsafe;
 
                 // If we're accessing the texture from outside (render), load lazily if required.
-                if (Texture_Unsafe?.IsDisposed ?? true) {
+                if (Texture_Unsafe?.IsDisposed ?? true)
                     Reload();
-                }
 
                 return Texture_Unsafe;
             }
@@ -53,35 +52,37 @@ namespace Monocle {
         public VirtualTexture Fallback;
 
         [MonoModConstructor]
+        [MonoModReplace]
         internal patch_VirtualTexture(string path) {
             Path = path;
             Name = path;
-            // Reload();
+            Preload();
         }
 
         [MonoModConstructor]
+        [MonoModReplace]
         internal patch_VirtualTexture(string name, int width, int height, Color color) {
             Name = name;
             Width = width;
             Height = height;
             this.color = color;
-            // Reload();
+            Preload();
         }
 
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
             Name = metadata.PathMapped;
-            // Reload();
+            Preload();
         }
 
         internal extern void orig_Reload();
         internal override void Reload() {
-            _Texture_ForceUnsafe = true;
+            _Texture_Reloading = true;
 
             if (Metadata == null) {
                 orig_Reload();
-                _Texture_ForceUnsafe = false;
+                _Texture_Reloading = false;
                 return;
             }
 
@@ -114,7 +115,77 @@ namespace Monocle {
                 Height = Texture.Height;
             }
 
-            _Texture_ForceUnsafe = false;
+            _Texture_Reloading = false;
+        }
+
+        private void Preload() {
+            // Preload any important data, preferably metadata only.
+
+            if (!string.IsNullOrEmpty(Path)) {
+                string extension = System.IO.Path.GetExtension(Path);
+                if (extension == ".data") {
+                    // Easy.
+                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                    using (BinaryReader reader = new BinaryReader(stream)) {
+                        Width = reader.ReadInt32();
+                        Height = reader.ReadInt32();
+                    }
+
+                } else if (extension == ".png") {
+                    // Hard.
+                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                        GetSizeFromPNG(stream);
+
+                } else if (extension == ".xnb") {
+                    // Impossible.
+                    Texture = Engine.Instance.Content.Load<Texture2D>(Path.Replace(".xnb", ""));
+                    Width = Texture.Width;
+                    Height = Texture.Height;
+
+                } else {
+                    // FFFUU~
+                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                        Texture = Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
+                    Width = Texture.Width;
+                    Height = Texture.Height;
+                }
+
+            } else if (Metadata != null) {
+                if (Metadata.AssetFormat == "png") {
+                    // Hard.
+                    using (Stream stream = Metadata.Stream)
+                        GetSizeFromPNG(stream);
+
+                } else {
+                    // FFFUU~
+                    using (Stream stream = Metadata.Stream)
+                        Texture = Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
+                    Width = Texture.Width;
+                    Height = Texture.Height;
+                }
+            }
+        }
+
+        private void GetSizeFromPNG(Stream stream) {
+            using (BinaryReader reader = new BinaryReader(stream)) {
+                ulong magic = reader.ReadUInt64();
+                if (magic != 0x0A1A0A0D474E5089U) {
+                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
+                    throw new InvalidDataException("PNG magic mismatch!");
+                }
+                uint length = reader.ReadUInt32();
+                if (length != 0x0D000000U) {
+                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
+                    throw new InvalidDataException("First chunk of PNG not 0x0000000D (13) bytes long!");
+                }
+                uint chunk = reader.ReadUInt32();
+                if (chunk != 0x52444849U) {
+                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
+                    throw new InvalidDataException("PNG doesn't start with IHDR!");
+                }
+                Width = reader.ReadInt32();
+                Height = reader.ReadInt32();
+            }
         }
 
     }
