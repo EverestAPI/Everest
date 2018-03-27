@@ -27,45 +27,207 @@ namespace Monocle {
         public string[] DataPaths;
         public AtlasDataFormat? DataFormat;
 
-        private static extern void orig_ReadAtlasData(Atlas atlas, string path, AtlasDataFormat format);
-        private static void ReadAtlasData(Atlas atlas, string path, AtlasDataFormat format) {
+        [MonoModReplace]
+        private static void ReadAtlasData(Atlas _atlas, string path, AtlasDataFormat format) {
+            patch_Atlas atlas = (patch_Atlas) _atlas;
+
             string pathFull = Path.Combine(Engine.ContentDirectory, path);
 
-            // If the file doesn't exist, don't add any data to the atlas.
+            XmlDocument xmlDoc;
+            VirtualTexture texV;
+            MTexture texM;
+
             switch (format) {
                 case AtlasDataFormat.TexturePacker_Sparrow:
+                    xmlDoc = Calc.LoadContentXML(path);
+                    XmlElement xmlTextureAtlas = xmlDoc["TextureAtlas"];
+                    if (xmlTextureAtlas == null)
+                        break;
+
+                    texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlTextureAtlas.Attr("imagePath", "")));
+                    texM = new MTexture(texV);
+                    atlas.Sources.Add(texV);
+
+                    XmlNodeList xmlSubs = xmlTextureAtlas.GetElementsByTagName("SubTexture");
+                    foreach (XmlElement xmlSub in xmlSubs) {
+                        string name = xmlSub.Attr("name");
+                        Rectangle clipRect = xmlSub.Rect();
+                        if (xmlSub.HasAttr("frameX")) {
+                            atlas.textures[name] = new MTexture(
+                                texM, name, clipRect,
+                                new Vector2(-xmlSub.AttrInt("frameX"), -xmlSub.AttrInt("frameY")),
+                                xmlSub.AttrInt("frameWidth"), xmlSub.AttrInt("frameHeight")
+                            );
+                        } else {
+                            atlas.textures[name] = new MTexture(texM, name, clipRect);
+                        }
+                    }
+                    break;
+
                 case AtlasDataFormat.CrunchXml:
-                case AtlasDataFormat.CrunchBinary:
-                    // These formats don't append any file extension.
                     if (!File.Exists(pathFull))
-                        return;
+                        break;
+
+                    xmlDoc = Calc.LoadContentXML(path);
+                    XmlElement xmlAtlas = xmlDoc["atlas"];
+
+                    foreach (XmlElement xmlAtlasSource in xmlAtlas) {
+                        texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlAtlasSource.Attr("n", "") + ".png"));
+                        texM = new MTexture(texV);
+                        atlas.Sources.Add(texV);
+                        foreach (XmlElement xmlSub in xmlAtlasSource) {
+                            string name = xmlSub.Attr("n");
+                            Rectangle clipRect = new Rectangle(xmlSub.AttrInt("x"), xmlSub.AttrInt("y"), xmlSub.AttrInt("w"), xmlSub.AttrInt("h"));
+                            if (xmlSub.HasAttr("fx")) {
+                                atlas.textures[name] = new MTexture(
+                                    texM, name, clipRect,
+                                    new Vector2(-xmlSub.AttrInt("fx"), -xmlSub.AttrInt("fy")),
+                                    xmlSub.AttrInt("fw"), xmlSub.AttrInt("fh")
+                                );
+                            } else {
+                                atlas.textures[name] = new MTexture(texM, name, clipRect);
+                            }
+                        }
+                    }
+                    break;
+
+                case AtlasDataFormat.CrunchBinary:
+                    if (!File.Exists(pathFull))
+                        break;
+
+                    using (FileStream stream = File.OpenRead(pathFull))
+                    using (BinaryReader reader = new BinaryReader(stream)) {
+                        short sources = reader.ReadInt16();
+                        for (int i = 0; i < sources; i++) {
+                            texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadNullTerminatedString() + ".png"));
+                            atlas.Sources.Add(texV);
+                            texM = new MTexture(texV);
+                            short subs = reader.ReadInt16();
+                            for (int j = 0; j < subs; j++) {
+                                string name = reader.ReadNullTerminatedString();
+                                short clipX = reader.ReadInt16();
+                                short clipY = reader.ReadInt16();
+                                short clipWidth = reader.ReadInt16();
+                                short clipHeight = reader.ReadInt16();
+                                short offsX = reader.ReadInt16();
+                                short offsY = reader.ReadInt16();
+                                short width = reader.ReadInt16();
+                                short height = reader.ReadInt16();
+                                atlas.textures[name] = new MTexture(
+                                    texM, name, new Rectangle(clipX, clipY, clipWidth, clipHeight),
+                                    new Vector2(-offsX, -offsY),
+                                    width, height
+                                );
+                            }
+                        }
+                    }
                     break;
 
                 case AtlasDataFormat.CrunchXmlOrBinary:
-                    // Check against both .bin and .xml paths, as the game reads whichever exists.
-                    if (!File.Exists(pathFull + ".bin") && !File.Exists(pathFull + ".xml"))
-                        return;
-                    break;
+                    if (File.Exists(pathFull + ".bin")) {
+                        ReadAtlasData(atlas, path + ".bin", AtlasDataFormat.CrunchBinary);
+                    } else if (File.Exists(pathFull + ".xml")) {
+                        ReadAtlasData(atlas, path + ".xml", AtlasDataFormat.CrunchXml);
+                    }
+                    return;
 
                 case AtlasDataFormat.CrunchBinaryNoAtlas:
-                    // This appends .bin to the path for whatever reason (compared to CrunchBinary).
                     if (!File.Exists(pathFull + ".bin"))
-                        return;
+                        break;
+
+                    using (FileStream stream = File.OpenRead(pathFull + ".bin"))
+                    using (BinaryReader reader = new BinaryReader(stream)) {
+                        short sources = reader.ReadInt16();
+                        for (int i = 0; i < sources; i++) {
+                            string sourcePath = Path.Combine(Path.GetDirectoryName(path), reader.ReadNullTerminatedString());
+                            short subs = reader.ReadInt16();
+                            for (int j = 0; j < subs; j++) {
+                                string name = reader.ReadNullTerminatedString();
+                                short unknownA = reader.ReadInt16();
+                                short unknownB = reader.ReadInt16();
+                                short unknownC = reader.ReadInt16();
+                                short unknownD = reader.ReadInt16();
+                                short offsX = reader.ReadInt16();
+                                short offsY = reader.ReadInt16();
+                                short width = reader.ReadInt16();
+                                short height = reader.ReadInt16();
+                                texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".png"));
+                                atlas.Sources.Add(texV);
+                                atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                            }
+                        }
+                    }
                     break;
 
                 case AtlasDataFormat.Packer:
-                case AtlasDataFormat.PackerNoAtlas:
-                    // The only format used by the game.
                     if (!File.Exists(pathFull + ".meta"))
-                        return;
+                        break;
+
+                    using (FileStream stream = File.OpenRead(pathFull + ".meta"))
+                    using (BinaryReader reader = new BinaryReader(stream)) {
+                        reader.ReadInt32(); // ???
+                        reader.ReadString(); // ???
+                        reader.ReadInt32(); // ???
+                        short sources = reader.ReadInt16();
+                        for (int i = 0; i < sources; i++) {
+                            texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
+                            atlas.Sources.Add(texV);
+                            texM = new MTexture(texV);
+                            short subs = reader.ReadInt16();
+                            for (int j = 0; j < subs; j++) {
+                                string name = reader.ReadString().Replace('\\', '/');
+                                short clipX = reader.ReadInt16();
+                                short clipY = reader.ReadInt16();
+                                short clipWidth = reader.ReadInt16();
+                                short clipHeight = reader.ReadInt16();
+                                short offsX = reader.ReadInt16();
+                                short offsY = reader.ReadInt16();
+                                short width = reader.ReadInt16();
+                                short height = reader.ReadInt16();
+                                atlas.textures[name] = new MTexture(
+                                    texM, name, new Rectangle(clipX, clipY, clipWidth, clipHeight),
+                                    new Vector2(-offsX, -offsY),
+                                    width, height
+                                );
+                            }
+                        }
+                    }
+                    break;
+
+                case AtlasDataFormat.PackerNoAtlas:
+                    if (!File.Exists(pathFull + ".meta"))
+                        break;
+
+                    using (FileStream stream = File.OpenRead(pathFull + ".meta"))
+                    using (BinaryReader reader = new BinaryReader(stream)) {
+                        reader.ReadInt32();
+                        reader.ReadString();
+                        reader.ReadInt32();
+                        short sources = reader.ReadInt16();
+                        for (int i = 0; i < sources; i++) {
+                            string sourcePath = Path.Combine(Path.GetDirectoryName(path), reader.ReadString());
+                            short subs = reader.ReadInt16();
+                            for (int j = 0; j < subs; j++) {
+                                string name = reader.ReadString().Replace('\\', '/');
+                                short unknownA = reader.ReadInt16();
+                                short unknownB = reader.ReadInt16();
+                                short unknownC = reader.ReadInt16();
+                                short unknownD = reader.ReadInt16();
+                                short offsX = reader.ReadInt16();
+                                short offsY = reader.ReadInt16();
+                                short width = reader.ReadInt16();
+                                short height = reader.ReadInt16();
+                                texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".data"));
+                                atlas.Sources.Add(texV);
+                                atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                            }
+                        }
+                    }
                     break;
 
                 default:
-                    // Unsupported format. Let's avoid crashing.
-                    return;
+                    break;
             }
-
-            orig_ReadAtlasData(atlas, path, format);
         }
 
         public static extern Atlas orig_FromAtlas(string path, AtlasDataFormat format);

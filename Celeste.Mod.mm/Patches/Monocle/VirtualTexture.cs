@@ -3,6 +3,7 @@
 using Celeste.Mod;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
@@ -19,25 +20,68 @@ namespace Monocle {
 
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
         public string Path { get; private set; }
-        // This is public, but we don't build upon the original type. MonoMod knows what to do, though.
+        private Color color;
+
+        [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture_Unsafe")]
         public Texture2D Texture;
+
+        [MonoModRemove]
+        public Texture2D Texture_Unsafe;
+
+        private bool _Texture_ForceUnsafe;
+        [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
+        public Texture2D Texture_Safe {
+            get {
+                // If we're "manipulating" the texture (unload or reload), directly pass on to the field.
+                if (_Texture_ForceUnsafe)
+                    return Texture_Unsafe;
+
+                // If we're accessing the texture from outside (render), load lazily if required.
+                if (Texture_Unsafe?.IsDisposed ?? true) {
+                    Reload();
+                }
+
+                return Texture_Unsafe;
+            }
+            set {
+                Texture_Unsafe = value;
+            }
+        }
 
         public ModAsset Metadata { get; private set; }
 
         public VirtualTexture Fallback;
 
-        // This _should_ work, but hell, this MonoModConstructor usage syntax went untested for ages. -ade
+        [MonoModConstructor]
+        internal patch_VirtualTexture(string path) {
+            Path = path;
+            Name = path;
+            // Reload();
+        }
+
+        [MonoModConstructor]
+        internal patch_VirtualTexture(string name, int width, int height, Color color) {
+            Name = name;
+            Width = width;
+            Height = height;
+            this.color = color;
+            // Reload();
+        }
+
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
             Name = metadata.PathMapped;
-            Reload();
+            // Reload();
         }
 
         internal extern void orig_Reload();
         internal override void Reload() {
+            _Texture_ForceUnsafe = true;
+
             if (Metadata == null) {
                 orig_Reload();
+                _Texture_ForceUnsafe = false;
                 return;
             }
 
@@ -69,6 +113,8 @@ namespace Monocle {
                 Width = Texture.Width;
                 Height = Texture.Height;
             }
+
+            _Texture_ForceUnsafe = false;
         }
 
     }
