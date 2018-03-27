@@ -119,7 +119,7 @@ namespace Monocle {
         }
 
         private void Preload() {
-            // Preload any important data, preferably metadata only.
+            // Preload the width / height, and if needed, the entire texture.
 
             if (!string.IsNullOrEmpty(Path)) {
                 string extension = System.IO.Path.GetExtension(Path);
@@ -136,18 +136,10 @@ namespace Monocle {
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
                         GetSizeFromPNG(stream);
 
-                } else if (extension == ".xnb") {
-                    // Impossible.
-                    Texture = Engine.Instance.Content.Load<Texture2D>(Path.Replace(".xnb", ""));
-                    Width = Texture.Width;
-                    Height = Texture.Height;
-
                 } else {
-                    // FFFUU~
-                    using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                        Texture = Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
-                    Width = Texture.Width;
-                    Height = Texture.Height;
+                    // .xnb and other file formats - impossible.
+                    Reload();
+
                 }
 
             } else if (Metadata != null) {
@@ -157,11 +149,8 @@ namespace Monocle {
                         GetSizeFromPNG(stream);
 
                 } else {
-                    // FFFUU~
-                    using (Stream stream = Metadata.Stream)
-                        Texture = Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
-                    Width = Texture.Width;
-                    Height = Texture.Height;
+                    // .xnb and other file formats - impossible.
+                    Reload();
                 }
             }
         }
@@ -183,9 +172,17 @@ namespace Monocle {
                     Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
                     throw new InvalidDataException("PNG doesn't start with IHDR!");
                 }
-                Width = reader.ReadInt32();
-                Height = reader.ReadInt32();
+                Width = SwapEndian(reader.ReadInt32());
+                Height = SwapEndian(reader.ReadInt32());
             }
+        }
+
+        private static int SwapEndian(int data) {
+            return
+                ((data & 0xFF) << 24) |
+                (((data >> 8) & 0xFF) << 16) |
+                (((data >> 16) & 0xFF) << 8) |
+                ((data >> 24) & 0xFF);
         }
 
     }
