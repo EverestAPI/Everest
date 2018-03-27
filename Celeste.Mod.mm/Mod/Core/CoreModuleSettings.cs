@@ -33,7 +33,9 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         public bool LaunchWithoutIntro { get; set; } = false;
 
-        [SettingIgnore]
+        [SettingNeedsRelaunch]
+        public bool LazyTextures { get; set; } = false;
+
         public string InputGui { get; set; } = "";
 
         /*
@@ -48,6 +50,36 @@ namespace Celeste.Mod.Core {
         [SettingInGame(true)]
         public int ExampleInGameSlider { get; set; } = 5;
         */
+
+        public void CreateInputGuiEntry(TextMenu menu, bool inGame) {
+            // Get all Input GUI prefixes and add a slider for switching between them.
+            List<string> inputGuiPrefixes = new List<string>();
+            inputGuiPrefixes.Add(""); // Auto
+            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
+                string path = kvp.Key;
+                if (!path.StartsWith("controls/"))
+                    continue;
+                path = path.Substring(9);
+                int indexOfSlash = path.IndexOf('/');
+                if (indexOfSlash == -1)
+                    continue;
+                path = path.Substring(0, indexOfSlash);
+                if (!inputGuiPrefixes.Contains(path))
+                    inputGuiPrefixes.Add(path);
+            }
+
+            menu.Add(
+                new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_inputgui"), i => {
+                    string inputGuiPrefix = inputGuiPrefixes[i];
+                    string fullName = $"modoptions_coremodule_inputgui_{inputGuiPrefix.ToLowerInvariant()}";
+                    return fullName.DialogCleanOrNull() ?? inputGuiPrefix.ToUpperInvariant();
+                }, 0, inputGuiPrefixes.Count - 1, Math.Max(0, inputGuiPrefixes.IndexOf(InputGui)))
+                .Change(i => {
+                    InputGui = inputGuiPrefixes[i];
+                    Input.OverrideInputPrefix = inputGuiPrefixes[i];
+                })
+            );
+        }
 
     }
 }

@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
@@ -32,8 +33,7 @@ namespace Monocle {
         [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
-                // If we're reloading, directly pass on to the field.
-                if (_Texture_Reloading)
+                if (_Texture_Reloading || !CoreModule.Settings.LazyTextures)
                     return Texture_Unsafe;
 
                 // If we're accessing the texture from outside (render), load lazily if required.
@@ -119,6 +119,11 @@ namespace Monocle {
         }
 
         private void Preload() {
+            if (!CoreModule.Settings.LazyTextures) {
+                Reload();
+                return;
+            }
+
             // Preload the width / height, and if needed, the entire texture.
 
             if (!string.IsNullOrEmpty(Path)) {
