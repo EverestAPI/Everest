@@ -14,9 +14,6 @@ using System.Threading.Tasks;
 namespace Celeste {
     static class patch_GFX {
 
-        // Don't mind this ugly hack.
-        public static bool LQ => Everest.Content.Get("lq") != null;
-
         public static extern void orig_LoadGame();
         public static void LoadGame() {
             orig_LoadGame();
@@ -31,16 +28,7 @@ namespace Celeste {
 
         public static extern void orig_LoadGui();
         public static void LoadGui() {
-            if (!LQ) {
-                orig_LoadGui();
-            } else {
-                GFX.Opening = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "Opening"), Atlas.AtlasDataFormat.PackerNoAtlas);
-                GFX.Gui = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "GuiLQ"), Atlas.AtlasDataFormat.Packer);
-                GFX.GuiSpriteBank = new SpriteBank(GFX.Gui, Path.Combine("Graphics", "SpritesGui.xml"));
-                GFX.Journal = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "Journal"), Atlas.AtlasDataFormat.Packer);
-                GFX.Misc = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "MiscLQ"), Atlas.AtlasDataFormat.PackerNoAtlas);
-            }
-
+            orig_LoadGui();
             Everest.Events.GFX.LoadGui();
         }
 
@@ -64,22 +52,7 @@ namespace Celeste {
 
         public static extern void orig_LoadMountain();
         public static void LoadMountain() {
-            if (!LQ) {
-                orig_LoadMountain();
-            } else {
-                GFX.Mountain = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "MountainLQ"), Atlas.AtlasDataFormat.PackerNoAtlas);
-                GFX.Checkpoints = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "CheckpointsLQ"), Atlas.AtlasDataFormat.Packer);
-                GFX.MountainTerrainTextures = new VirtualTexture[3];
-                GFX.MountainBuildingTextures = new VirtualTexture[3];
-                GFX.MountainSkyboxTextures = new VirtualTexture[3];
-                for (int i = 0; i < 3; i++) {
-                    GFX.MountainTerrainTextures[i] = GFX.Mountain["mountain_" + i].Texture;
-                    GFX.MountainBuildingTextures[i] = GFX.Mountain["buildings_" + i].Texture;
-                    GFX.MountainSkyboxTextures[i] = GFX.Mountain["skybox_" + i].Texture;
-                }
-                GFX.MountainFogTexture = GFX.Mountain["fog"].Texture;
-            }
-
+            orig_LoadMountain();
             Everest.Events.GFX.LoadMountain();
         }
 
@@ -103,13 +76,7 @@ namespace Celeste {
 
         public static extern void orig_LoadPortraits();
         public static void LoadPortraits() {
-            if (!LQ) {
-                orig_LoadPortraits();
-            } else {
-                GFX.Portraits = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", "PortraitsLQ"), Atlas.AtlasDataFormat.PackerNoAtlas);
-                GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, Path.Combine("Graphics", "PortraitsLQ.xml"));
-            }
-
+            orig_LoadPortraits();
             Everest.Events.GFX.LoadPortraits();
         }
 
