@@ -222,6 +222,25 @@ namespace Celeste.Mod {
                 bool canModWhileAlive =
                     Environment.OSVersion.Platform == PlatformID.Unix;
 
+                if (canModWhileAlive) {
+                    // Check if we can even read-write the file.
+                    Exception eLast = null;
+                    string path = typeof(Celeste).Assembly.Location;
+                    for (int i = 2048; i > -1; --i) {
+                        try {
+                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite))
+                                break;
+                        } catch (Exception e) {
+                            eLast = e;
+                        }
+                    }
+                    if (eLast != null) {
+                        progress.LogLine("Note: You're on a platform that should support\nread-writing Celeste while running, but it doesn't.\nCheck your log.txt to find out why.\n");
+                        Logger.Log(LogLevel.Warn, "updater", $"Failed read-writing {path} on platform that should support it: " + eLast.ToString());
+                        canModWhileAlive = false;
+                    }
+                }
+
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
 
@@ -373,11 +392,14 @@ namespace Celeste.Mod {
                         // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
                         // Run MiniInstaller "out of body."
                         Process installer = new Process();
+                        installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
                         if (Type.GetType("Mono.Runtime") != null) {
+                            installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
                             installer.StartInfo.FileName = "mono";
-                            installer.StartInfo.Arguments = "\"" + Path.Combine(extractedPath, "MiniInstaller.exe") + "\"";
-                        } else {
-                            installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
+                            if (File.Exists("/bin/sh")) {
+                                installer.StartInfo.Arguments = $"-c {installer.StartInfo.FileName} {installer.StartInfo.Arguments}";
+                                installer.StartInfo.FileName = "/bin/sh";
+                            }
                         }
                         installer.StartInfo.WorkingDirectory = extractedPath;
                         installer.Start();

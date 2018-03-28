@@ -148,11 +148,14 @@ namespace MiniInstaller {
         public static Assembly LoadMonoMod() {
             // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
             // Instead, load it dynamically and invoke the entry point.
-            LogLine("Loading MonoMod");
             // We also need to lazily load any dependencies.
+            LogLine("Loading Mono.Cecil");
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.dll"));
+            LogLine("Loading Mono.Cecil.Mdb");
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Mdb.dll"));
+            LogLine("Loading Mono.Cecil.Pdb");
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Pdb.dll"));
+            LogLine("Loading MonoMod");
             Assembly asmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
             return asmMonoMod;
         }
@@ -200,6 +203,7 @@ namespace MiniInstaller {
         }
 
         static Assembly LazyLoadAssembly(string path) {
+            LogLine($"Lazily loading {path}");
             Assembly asm = Assembly.LoadFile(path);
             AppDomain.CurrentDomain.TypeResolve += (object sender, ResolveEventArgs args) => {
                 return asm.GetType(args.Name) != null ? asm : null;
