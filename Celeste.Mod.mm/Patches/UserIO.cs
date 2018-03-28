@@ -18,16 +18,8 @@ namespace Celeste {
     static class patch_UserIO {
 
         private static extern string orig_GetSavePath();
-        [MonoModIfFlag("FNA")]
-        [MonoModPatch("GetSavePath")]
-        private static string GetSavePathFNA() {
-            string plat = SDL2.SDL.SDL_GetPlatform();
+        private static string GetSavePath() {
             string fallback = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Saves");
-
-            if (plat == "Android") {
-                return fallback;
-            }
-
             try {
                 return orig_GetSavePath();
             } catch (NotSupportedException) {
