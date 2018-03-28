@@ -4,7 +4,6 @@ using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,8 +18,10 @@ namespace Celeste {
     static class patch_UserIO {
 
         private static extern string orig_GetSavePath();
-        private static string GetSavePath() {
-            string plat = SDL.SDL_GetPlatform();
+        [MonoModIfFlag("FNA")]
+        [MonoModPatch("GetSavePath")]
+        private static string GetSavePathFNA() {
+            string plat = SDL2.SDL.SDL_GetPlatform();
             string fallback = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Saves");
 
             if (plat == "Android") {
