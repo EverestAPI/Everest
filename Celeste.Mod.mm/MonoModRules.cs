@@ -90,7 +90,11 @@ namespace MonoMod {
             FMODStub = Environment.GetEnvironmentVariable("EVEREST_FMOD_STUB") == "1";
             MonoModRule.Flag.Set("FMODStub", FMODStub);
 
-            MonoModRule.Flag.Set("FNA", MonoModRule.Modder.Module.AssemblyReferences.Any(name => name.Name.Contains("FNA")));
+            bool isFNA = false;
+            foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences)
+                if (isFNA = name.Name.Contains("FNA"))
+                    break;
+            MonoModRule.Flag.Set("FNA", isFNA);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
