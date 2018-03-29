@@ -61,6 +61,10 @@ namespace Celeste.Mod {
             /// Does the environment (platform, ...) support relinking runtime mods?
             /// </summary>
             public static bool SupportRelinkingMods { get; private set; }
+            /// <summary>
+            /// Does the environment (platform, ...) support updating Everest?
+            /// </summary>
+            public static bool SupportUpdatingEverest { get; private set; }
 
             internal static void Initialize() {
                 IsMono = Type.GetType("Mono.Runtime") != null;
@@ -75,7 +79,8 @@ namespace Celeste.Mod {
                 PreferLQAtlas = IsMobile;
 
                 SupportRuntimeMods = true;
-                SupportRelinkingMods = !IsMobile;
+                SupportRelinkingMods = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*
+                SupportUpdatingEverest = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*
             }
 
         }

@@ -141,6 +141,9 @@ namespace Celeste.Mod {
             };
 
             public static Task RequestAll() {
+                if (!Flags.SupportUpdatingEverest)
+                    return new Task(() => { });
+
                 Task[] tasks = new Task[Sources.Count];
                 for (int i = 0; i < tasks.Length; i++) {
                     tasks[i] = Sources[i].Request();
@@ -203,6 +206,12 @@ namespace Celeste.Mod {
             public static bool HasUpdate => Newest != null && Newest.Version > Version;
 
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
+                if (!Flags.SupportUpdatingEverest) {
+                    progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
+                    progress.LogLine("Updating not supported on this platform - cancelling.");
+                    return;
+                }
+
                 if (version == null)
                     version = Newest;
                 if (version == null) {
