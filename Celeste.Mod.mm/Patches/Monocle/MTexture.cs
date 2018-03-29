@@ -51,16 +51,7 @@ namespace Monocle {
                     if (!HasRelativeRect)
                         return parentRect;
 
-                    Vector2 parentOffset = Parent.DrawOffset;
-
-                    // TODO: Possible perf bottleneck?
-                    int a = (int) (parentRect.X - parentOffset.X + RelativeRectX);
-                    int b = (int) (parentRect.Y - parentOffset.Y + RelativeRectY);
-                    int x = (int) MathHelper.Clamp(a, parentRect.Left, parentRect.Right);
-                    int y = (int) MathHelper.Clamp(b, parentRect.Top, parentRect.Bottom);
-                    int width = Math.Max(0, Math.Min(a + RelativeRectWidth, parentRect.Right) - x);
-                    int height = Math.Max(0, Math.Min(b + RelativeRectHeight, parentRect.Bottom) - y);
-                    return new Rectangle(x, y, width, height);
+                    return Parent.GetRelativeRect(RelativeRectX, RelativeRectY, RelativeRectWidth, RelativeRectHeight);
                 }
 
                 return layer?.ClipRect ?? orig_get_ClipRect();
@@ -113,10 +104,10 @@ namespace Monocle {
         }
 
         public new Vector2 Center => new Vector2(Width * 0.5f, Height * 0.5f);
-        public new float LeftUV => ClipRect.Left / (float) _Texture.Width;
-        public new float RightUV => ClipRect.Right / (float) _Texture.Width;
-        public new float TopUV => ClipRect.Top / (float) _Texture.Height;
-        public new float BottomUV => ClipRect.Bottom / (float) _Texture.Height;
+        public new float LeftUV => ClipRect.Left / (float) (Parent?.Width ?? _Texture.Width);
+        public new float RightUV => ClipRect.Right / (float) (Parent?.Width ?? _Texture.Width);
+        public new float TopUV => ClipRect.Top / (float) (Parent?.Height ?? _Texture.Height);
+        public new float BottomUV => ClipRect.Bottom / (float) (Parent?.Height ?? _Texture.Height);
 
         protected int _OverrideCount = 0;
         protected MTextureOverride[] _Overrides;
@@ -179,6 +170,7 @@ namespace Monocle {
         public extern void orig_ctor_MTexture(MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]
         public void ctor_MTexture(MTexture parent, int x, int y, int width, int height) {
+            ScaleSubtextureCoords(parent, ref x, ref y, ref width, ref height);
             orig_ctor_MTexture(parent, x, y, width, height);
             Parent = parent;
             HasRelativeRect = true;
@@ -250,6 +242,8 @@ namespace Monocle {
                 return new MTexture(this, x, y, width, height);
             }
 
+            ScaleSubtextureCoords(this, ref x, ref y, ref width, ref height);
+
             patch_MTexture sub = (patch_MTexture) applyTo;
             sub.Parent = this;
             sub.HasRelativeRect = true;
@@ -261,6 +255,42 @@ namespace Monocle {
             sub.Width = width;
             sub.Height = height;
             return sub;
+        }
+
+
+        [MonoModReplace]
+        public new Rectangle GetRelativeRect(int cx, int cy, int cw, int ch) {
+            Rectangle parentRect = ClipRect;
+            Vector2 parentOffset = DrawOffset;
+            int a = (int) (parentRect.X - parentOffset.X + cx);
+            int b = (int) (parentRect.Y - parentOffset.Y + cy);
+            int x = (int) MathHelper.Clamp(a, parentRect.Left, parentRect.Right);
+            int y = (int) MathHelper.Clamp(b, parentRect.Top, parentRect.Bottom);
+            int w = Math.Max(0, Math.Min(a + cw, parentRect.Right) - x);
+            int h = Math.Max(0, Math.Min(b + ch, parentRect.Bottom) - y);
+            return new Rectangle(x, y, w, h);
+        }
+
+        public static void ScaleSubtextureCoords(MTexture parent, ref int x, ref int y, ref int width, ref int height) {
+            VirtualTexture parentTexture = ((patch_MTexture) parent)._Texture;
+
+            // Try to find the most up-to-date MTexture parent belonging to this texture.
+            // Use it for subtexturing instead.
+            MTexture atlased;
+            if (AtlasExt.VTextureToMTextureMap != null && AtlasExt.VTextureToMTextureMap.TryGetValue(parentTexture.Name, out atlased))
+                parent = atlased;
+
+            // Extra step for when this parent texture's size doesn't match with hardcoded sized.
+            float parentWidth = ((patch_MTexture) parent).Parent?.Width ?? parent.Width;
+            float parentHeight = ((patch_MTexture) parent).Parent?.Height ?? parent.Height;
+
+            float xf = parentTexture.Width / parentWidth;
+            float yf = parentTexture.Height / parentHeight;
+
+            x = (int) Math.Round(x * xf);
+            y = (int) Math.Round(y * yf);
+            width = (int) Math.Round(width * xf);
+            height = (int) Math.Round(height * yf);
         }
 
     }

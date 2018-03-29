@@ -295,6 +295,518 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1_6.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1_6.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1_6.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1_6.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1_9b.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1_9b.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1_9b.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1_9b.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H_04.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H_04.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H_04.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H_04.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H_08.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H_08.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\1H_08.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\1H_08.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2_3.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2_3.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2_3.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2_3.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2_end_3.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2_end_3.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2_end_3.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2_end_3.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H_03.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H_03.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H_03.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H_03.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H_08b.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H_08b.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\2H_08b.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\2H_08b.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_00-d.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_00-d.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_00-d.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_00-d.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_08-a.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_08-a.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_08-a.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_08-a.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_09-d.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_09-d.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3_09-d.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3_09-d.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_06.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_06.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_06.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_06.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_11.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_11.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_11.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_11.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_16.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_16.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\3H_16.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\3H_16.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\4H_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\4H_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_e-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_e-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5_e-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5_e-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\5H_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\5H_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_04.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_04.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_04.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_04.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_after-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_after-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_after-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_after-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_boss-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_boss-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6_boss-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6_boss-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\6H_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\6H_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_e-00b.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_e-00b.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_e-00b.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_e-00b.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_f-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_f-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_f-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_f-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_g-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_g-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7_g-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7_g-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_c-01.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_c-01.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_c-01.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_c-01.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_e-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_e-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_e-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_e-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_f-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_f-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_f-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_f-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_g-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_g-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\7H_g-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\7H_g-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_a-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_a-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_a-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_a-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_c-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_c-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_c-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_c-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_d-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_d-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9_d-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9_d-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_a-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_a-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_a-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_a-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_b-00.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_b-00.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_b-00.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_b-00.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_c-01.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_c-01.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\9H_c-01.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\9H_c-01.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\mask.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\mask.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\mask.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\mask.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\polaroid.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\polaroid.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\CheckpointsLQ\polaroid.png">
+      <LogicalName>Content\Graphics\Atlases\CheckpointsLQ\polaroid.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\darkswamp.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\darkswamp.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\darkswamp.png">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\darkswamp.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\mist.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\mist.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\mist.png">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\mist.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\purplesunset.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\purplesunset.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MiscLQ\purplesunset.png">
+      <LogicalName>Content\Graphics\Atlases\MiscLQ\purplesunset.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_0.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_0.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_0.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_0.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_1.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_1.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_1.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_1.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_2.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_2.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\buildings_2.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\buildings_2.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\fog.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\fog.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\fog.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\fog.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_0.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_0.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_0.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_0.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_1.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_1.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_1.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_1.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_2.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_2.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\mountain_2.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\mountain_2.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_0.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_0.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_0.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_0.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_1.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_1.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_1.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_1.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_2.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_2.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\MountainLQ\skybox_2.png">
+      <LogicalName>Content\Graphics\Atlases\MountainLQ\skybox_2.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\OverworldLQ\snow.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\OverworldLQ\snow.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\OverworldLQ\snow.png">
+      <LogicalName>Content\Graphics\Atlases\OverworldLQ\snow.png</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="..\lib-fna\libjpeg-9.dll">
       <Link>libjpeg-9.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

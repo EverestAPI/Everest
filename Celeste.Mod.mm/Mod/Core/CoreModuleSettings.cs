@@ -37,6 +37,9 @@ namespace Celeste.Mod.Core {
         public bool LazyLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
+        public bool LQAtlas { get; set; } = false;
+
+        [SettingNeedsRelaunch]
         public bool NonThreadedGL { get; set; } = false;
 
         public string InputGui { get; set; } = "";

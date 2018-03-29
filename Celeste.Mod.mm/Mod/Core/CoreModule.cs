@@ -40,10 +40,9 @@ namespace Celeste.Mod.Core {
         public override void LoadSettings() {
             base.LoadSettings();
 
-            // If we're running in an environment that prefers lazy loading, forcibly enable lazy texture loading.
-            if (Everest.Flags.PreferLazyLoading) {
-                Settings.LazyLoading = true;
-            }
+            // If we're running in an environment that prefers those flag, forcibly enable them.
+            Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
+            Settings.LQAtlas |= Everest.Flags.PreferLQAtlas;
 
             // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
             // Note: This isn't accurate, as it doesn't check which GL device is being used.

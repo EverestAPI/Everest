@@ -167,7 +167,7 @@ namespace Celeste.Mod {
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
-                if (Flags.SupportRelinkingMods) {
+                if (!Flags.SupportRelinkingMods) {
                     Logger.Log(LogLevel.Warn, "relinker", "Relinker disabled!");
                     return null;
                 }

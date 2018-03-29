@@ -396,12 +396,19 @@ namespace Celeste.Mod {
 
                 if (asset is Atlas) {
                     Atlas atlas = asset as Atlas;
+                    ModAsset mapping;
 
-                    ModAsset mapping = Get(assetName, true);
-                    if (mapping == null || mapping.AssetType != typeof(AssetTypeDirectory))
-                        return asset;
+                    mapping = Get(assetName + "LQ", true);
+                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                        atlas.Ingest(mapping);
+                    }
 
-                    atlas.Ingest(mapping);
+                    mapping = Get(assetName, true);
+                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                        atlas.Ingest(mapping);
+                    }
+
+                    return asset;
                 }
 
                 return OnProcess?.InvokePassing(asset, assetNameFull) ?? asset;
