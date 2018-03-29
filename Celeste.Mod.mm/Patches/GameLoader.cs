@@ -106,7 +106,7 @@ namespace Celeste {
                 GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
                 GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
             }
-            // Otherwise loaded in Celeste.LoadContent
+            // Otherwise loaded in CoreModule.LoadContent
 
             Console.WriteLine("LOADED : " + Stopwatch.ElapsedMilliseconds + "ms");
             Stopwatch.Stop();

@@ -188,6 +188,9 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="firstLoad">Is this the first load?</param>
         public virtual void LoadContent(bool firstLoad) {
+#pragma warning disable CS0618 // Type or member is obsolete
+            LoadContent();
+#pragma warning restore CS0618 // Type or member is obsolete
         }
 
         /// <summary>

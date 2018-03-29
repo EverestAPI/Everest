@@ -220,7 +220,7 @@ namespace Celeste.Mod {
 
                 // Check if we're on an OS which supports manipulating Celeste.exe while it's used.
                 bool canModWhileAlive =
-                    Environment.OSVersion.Platform == PlatformID.Unix;
+                    System.Environment.OSVersion.Platform == PlatformID.Unix;
 
                 if (canModWhileAlive) {
                     // Check if we can even read-write the file.
@@ -416,8 +416,8 @@ namespace Celeste.Mod {
                     Events.Celeste.OnShutdown += () => {
                         Process game = new Process();
                         // If the game was installed via Steam, it should restart in a Steam context on its own.
-                        if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                            Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        if (System.Environment.OSVersion.Platform == PlatformID.Unix ||
+                            System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
                             // The Linux and macOS versions come with a wrapping bash script.
                             game.StartInfo.FileName = "bash";
                             game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";

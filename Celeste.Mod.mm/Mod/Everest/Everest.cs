@@ -127,6 +127,9 @@ namespace Celeste.Mod {
             PathSettings = Path.Combine(PathGame, "ModSettings");
             Directory.CreateDirectory(PathSettings);
 
+            // Before even initializing anything else, make sure to prepare any static flags.
+            Flags.Initialize();
+
             // Initialize the content helper.
             Content.Initialize();
 

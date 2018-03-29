@@ -620,6 +620,7 @@ namespace MonoMod {
                 method.PInvokeInfo.Module.Name == "fmod" ||
                 method.PInvokeInfo.Module.Name == "fmodstudio")
             ) {
+                MonoModRule.Modder.Log($"[Everest] [FMODStub] Stubbing {method.FullName} -> {method.PInvokeInfo.Module.Name}::{method.PInvokeInfo.EntryPoint}");
 
                 if (method.HasPInvokeInfo)
                     method.PInvokeInfo = null;

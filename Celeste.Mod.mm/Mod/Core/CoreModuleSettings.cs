@@ -34,7 +34,7 @@ namespace Celeste.Mod.Core {
         public bool LaunchWithoutIntro { get; set; } = false;
 
         [SettingNeedsRelaunch]
-        public bool LazyTextures { get; set; } = false;
+        public bool LazyLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
         public bool NonThreadedGL { get; set; } = false;

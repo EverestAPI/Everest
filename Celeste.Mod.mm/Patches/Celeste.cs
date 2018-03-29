@@ -74,18 +74,6 @@ namespace Celeste {
             bool firstLoad = this.firstLoad;
             orig_LoadContent();
 
-            if (firstLoad) {
-                SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
-            }
-
-            if (GFX.MountainTerrain == null && CoreModule.Settings.NonThreadedGL) {
-                GFX.MountainTerrain = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "mountain.obj"));
-                GFX.MountainBuildings = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "buildings.obj"));
-                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(ContentDirectory, "Overworld", "mountain_wall.obj"));
-            }
-            // Otherwise loaded in GameLoader.LoadThread
-
-            Everest.Invoke("LoadContent");
             Everest.Invoke("LoadContent", firstLoad);
         }
 

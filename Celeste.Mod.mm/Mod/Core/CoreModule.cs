@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
+using System.IO;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -39,9 +40,9 @@ namespace Celeste.Mod.Core {
         public override void LoadSettings() {
             base.LoadSettings();
 
-            // If using FNADroid, forcibly enable lazy texture loading.
-            if (Environment.GetEnvironmentVariable("FNADROID") == "1") {
-                Settings.LazyTextures = true;
+            // If we're running in an environment that prefers lazy loading, forcibly enable lazy texture loading.
+            if (Everest.Flags.PreferLazyLoading) {
+                Settings.LazyLoading = true;
             }
 
             // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
@@ -93,6 +94,21 @@ namespace Celeste.Mod.Core {
                     Settings.InputGui = "";
                 }
             }
+
+            if (firstLoad && !Everest.Flags.AvoidRenderTargets) {
+                SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
+            }
+            if (Everest.Flags.AvoidRenderTargets && Celeste.HudTarget != null) {
+                Celeste.HudTarget.Dispose();
+                Celeste.HudTarget = null;
+            }
+
+            if (GFX.MountainTerrain == null && Settings.NonThreadedGL) {
+                GFX.MountainTerrain = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain.obj"));
+                GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
+                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
+            }
+            // Otherwise loaded in GameLoader.LoadThread
         }
 
         public override void Unload() {

@@ -33,7 +33,7 @@ namespace Monocle {
         [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
-                if (_Texture_Reloading || !CoreModule.Settings.LazyTextures)
+                if (_Texture_Reloading || !CoreModule.Settings.LazyLoading)
                     return Texture_Unsafe;
 
                 // If we're accessing the texture from outside (render), load lazily if required.
@@ -119,7 +119,7 @@ namespace Monocle {
         }
 
         private void Preload() {
-            if (!CoreModule.Settings.LazyTextures) {
+            if (!CoreModule.Settings.LazyLoading) {
                 Reload();
                 return;
             }
