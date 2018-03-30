@@ -21,6 +21,7 @@ namespace Celeste.Mod.Core {
         // [SettingName("modoptions_coremodule_debugmode")]
         [YamlIgnore]
         [SettingNeedsRelaunch]
+        [SettingInGame(false)]
         public bool LaunchInDebugMode {
             get {
                 return Settings.Instance.LaunchInDebugMode;
@@ -31,15 +32,19 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingNeedsRelaunch]
+        [SettingInGame(false)]
         public bool LaunchWithoutIntro { get; set; } = false;
 
         [SettingNeedsRelaunch]
+        [SettingInGame(false)]
         public bool LazyLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
+        [SettingInGame(false)]
         public bool LQAtlas { get; set; } = false;
 
         [SettingNeedsRelaunch]
+        [SettingInGame(false)]
         public bool NonThreadedGL { get; set; } = false;
 
         public string InputGui { get; set; } = "";
