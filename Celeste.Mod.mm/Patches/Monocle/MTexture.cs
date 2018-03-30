@@ -103,15 +103,6 @@ namespace Monocle {
             }
         }
 
-        public float ScaleFix {
-            get {
-                MTextureOverride layer = OverrideMeta;
-                if (layer == null)
-                    return ((patch_MTexture) Parent)?.ScaleFix ?? 1f;
-                return orig_get_Width() / (float) layer.ClipRect.Width;
-            }
-        }
-
         public new Vector2 Center => new Vector2(Width * 0.5f, Height * 0.5f);
         public new float LeftUV => ClipRect.Left / (float) (Parent?.Width ?? _Texture.Width);
         public new float RightUV => ClipRect.Right / (float) (Parent?.Width ?? _Texture.Width);
@@ -306,56 +297,79 @@ namespace Monocle {
 
         #region Drawing Methods
 
+        #region Draw-related fixes
+
+        private float ScaleFix {
+            get {
+                MTextureOverride layer = OverrideMeta;
+                if (layer == null)
+                    return ((patch_MTexture) Parent)?.ScaleFix ?? 1f;
+                return orig_get_Width() / (float) layer.ClipRect.Width;
+            }
+        }
+
+        #endregion
+
         #region Draw
 
         [MonoModReplace]
         public new void Draw(Vector2 position) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, -DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, -DrawOffset / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (origin - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, origin - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, origin - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, origin - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, origin - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, origin - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, origin - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, Rectangle clip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, origin - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         #endregion
@@ -364,42 +378,50 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (Center - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, Center - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, Center - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, Center - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, Center - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, Center - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, Center - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         #endregion
@@ -408,42 +430,50 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, SpriteEffects.None, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale * ScaleFix, flip, 0f);
+			float scaleFix = ScaleFix;			
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         #endregion
@@ -452,125 +482,143 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position) {
+			float scaleFix = ScaleFix;						
             Rectangle clip = ClipRect;
+			Vector2 offset = -DrawOffset / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, -DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, -DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin) {
+			float scaleFix = ScaleFix;						
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color) {
+			float scaleFix = ScaleFix;						
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, origin - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, origin - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, origin - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, origin - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;						
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, origin - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, origin - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         #endregion
@@ -579,112 +627,126 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position) {
-            Rectangle clip = ClipRect;
+		    float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color) {
-            Rectangle clip = ClipRect;
+		    float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, Center - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, Center - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, Center - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, Center - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, Center - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, Center - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         #endregion
@@ -693,112 +755,128 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify) {
+			float scaleFix = ScaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, Color.White, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color) {
+			float scaleFix = ScaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scaleFix, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, ScaleFix, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, 0f, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, 0f, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, SpriteEffects.None, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, SpriteEffects.None, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-            scale *= ScaleFix;
+			float scaleFix = ScaleFix;
+            scale *= scaleFix;
             Rectangle clip = ClipRect;
+			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
-                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, flip, 0f);
+                        Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position + new Vector2(x, y), clip, Color.Black, rotation, offset, scale, flip, 0f);
                     }
                 }
             }
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset, scale, flip, 0f);
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
         }
 
         #endregion

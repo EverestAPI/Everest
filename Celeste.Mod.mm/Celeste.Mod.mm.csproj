@@ -257,42 +257,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\menu\modoptions.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\menu\modoptions.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\menu\modoptions.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\menu\modoptions.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\menu\maplist.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\menu\maplist.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\menu\maplist.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\menu\maplist.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\steam.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\steam.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\steam.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\steam.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\steam_back.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\steam_back.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\steam_back.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\steam_back.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\null.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\null.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\null.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\null.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\null_back.png">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\null_back.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\areas\null_back.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\GuiLQ\areas\null_back.meta.yaml</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\GuiLQ\notification\default\bg.png">
       <LogicalName>Content\Graphics\Atlases\GuiLQ\notification\default\bg.png</LogicalName>
     </EmbeddedResource>
