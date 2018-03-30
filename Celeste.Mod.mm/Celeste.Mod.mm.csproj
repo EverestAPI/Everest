@@ -213,6 +213,9 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.png</LogicalName>
     </EmbeddedResource>

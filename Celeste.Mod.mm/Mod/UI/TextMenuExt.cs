@@ -25,9 +25,9 @@ namespace Celeste.Mod.UI {
                 scale = MathHelper.Min(scale, width / icon.Width);
 
             if (outline)
-                icon.DrawOutlineCentered(new Vector2(position.X + width * 0.5f, position.Y + height * 0f), color, scale);
+                icon.DrawOutlineCentered(new Vector2(position.X + width * 0.5f * scale, position.Y), color, scale);
             else
-                icon.DrawCentered(new Vector2(position.X + width * 0.5f, position.Y + height * 0f), color, scale);
+                icon.DrawCentered(new Vector2(position.X + width * 0.5f * scale, position.Y), color, scale);
 
             textPosition.X += inputWidth ?? (icon.Width * scale);
         }
@@ -121,6 +121,54 @@ namespace Celeste.Mod.UI {
                     return;
 
                 ActiveFont.DrawOutline(Title, textPosition, justify, Vector2.One * 0.6f, Color.Gray * alpha, 2f, strokeColor);
+            }
+
+        }
+
+        public class HeaderImage : TextMenu.Item {
+
+            public string Image { get; set; }
+            public bool ImageOutline { get; set; }
+            public Color ImageColor { get; set; } = Color.White;
+            public float ImageScale { get; set; } = 1f;
+
+            public Vector2 Offset { get; set; }
+            public float Alpha { get; set; }
+
+            public HeaderImage(string image = null) {
+                Image = image;
+                Selectable = false;
+                IncludeWidthInMeasurement = false;
+            }
+
+            public override float LeftWidth() {
+                if (Image == null || !GFX.Gui.Has(Image))
+                    return 0f;
+                MTexture image = GFX.Gui[Image];
+                return image.Width * ImageScale;
+            }
+
+            public override float Height() {
+                if (Image == null || !GFX.Gui.Has(Image))
+                    return 0f;
+                MTexture image = GFX.Gui[Image];
+                return image.Height * ImageScale;
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                position += Offset;
+                float alpha = Container.Alpha * Alpha;
+
+                Color strokeColor = Color.Black * (alpha * alpha * alpha);
+
+                if (Image == null || !GFX.Gui.Has(Image))
+                    return;
+                MTexture image = GFX.Gui[Image];
+
+                if (ImageOutline)
+                    image.DrawOutlineJustified(position, Vector2.UnitY * 0.5f, ImageColor, ImageScale);
+                else
+                    image.DrawJustified(position, Vector2.UnitY * 0.5f, ImageColor, ImageScale);
             }
 
         }
