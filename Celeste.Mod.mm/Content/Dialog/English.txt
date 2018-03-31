@@ -23,6 +23,7 @@
 	POSTCARD_LEVELLOADFAILED= 				{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please submit your {#44adf7}log.txt{#}{n}to the map builder.
 
 # Main Menu
+	MENU_TITLETOUCH= 				TOUCH
 	MENU_MAPLIST= 							Map List
 	MENU_MODOPTIONS= 						Mod Options
 	MENU_PAUSE_MODOPTIONS= 					Mod Options

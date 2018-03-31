@@ -57,6 +57,11 @@ namespace Celeste.Mod.Core {
         public override void Load() {
             Everest.Events.OuiMainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+
+            if (Everest.Flags.IsMobile) {
+                // It shouldn't look that bad on mobile screens...
+                Environment.SetEnvironmentVariable("FNA_OPENGL_BACKBUFFER_SCALE_NEAREST", "1");
+            }
         }
 
         public override void Initialize() {
@@ -80,6 +85,14 @@ namespace Celeste.Mod.Core {
                     return;
                 Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;
+            };
+
+            // Set up the touch input regions.
+            TouchRegion touchTitleScreen = new TouchRegion {
+                Position = new Vector2(0f, 0f),
+                Size = new Vector2(1920f, 1080f),
+                Condition = _ => (Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false,
+                Button = Input.MenuConfirm
             };
         }
 

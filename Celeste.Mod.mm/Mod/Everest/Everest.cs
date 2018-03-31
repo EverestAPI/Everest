@@ -133,8 +133,9 @@ namespace Celeste.Mod {
             // Initialize the content helper.
             Content.Initialize();
 
-            // Initialize the notification manager before loading any mods.
+            // Initialize all main managers before loading any mods.
             NotificationManager.Instance = new NotificationManager(Celeste.Instance);
+            TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
             // Don't add it yet, though - add it in Initialize.
 
             // Register our core module and load any other modules.
@@ -159,8 +160,9 @@ namespace Celeste.Mod {
             // Initialize misc stuff.
             TextInput.Initialize(Celeste.Instance);
 
-            // Add the previously created notification manager.
+            // Add the previously created managers.
             Celeste.Instance.Components.Add(NotificationManager.Instance);
+            Celeste.Instance.Components.Add(TouchInputManager.Instance);
 
             Invoke("Initialize");
         }

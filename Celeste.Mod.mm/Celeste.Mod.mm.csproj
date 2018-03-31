@@ -111,6 +111,9 @@
     <Compile Include="Mod\Entities\CustomMemorial.cs" />
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
+    <Compile Include="Mod\Touch\TouchInputNodes.cs" />
+    <Compile Include="Mod\Touch\TouchRegion.cs" />
+    <Compile Include="Mod\Touch\TouchInputManager.cs" />
     <Compile Include="Mod\Everest\Everest.Flags.cs" />
     <Compile Include="Mod\Everest\Notification.cs" />
     <Compile Include="Mod\Everest\NotificationManager.cs" />
