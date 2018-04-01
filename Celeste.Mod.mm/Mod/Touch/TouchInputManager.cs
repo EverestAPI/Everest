@@ -22,11 +22,13 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public class TouchInputManager : DrawableGameComponent {
 
-        public static bool IsTouch;
+        public static bool IsTouch { get; set; }
+        public static Vector2 TouchToUI { get; protected set; }
 
         public static TouchInputManager Instance;
 
         public List<ATouchRegion> Regions = new List<ATouchRegion>();
+
 
         public TouchInputManager(Game game)
             : base(game) {
@@ -44,12 +46,20 @@ namespace Celeste.Mod {
                 IsTouch = true;
             }
 
-            Vector2 touchPosUIScale = new Vector2(
-                1920f / TouchPanel.DisplayWidth,
-                1080f / TouchPanel.DisplayHeight
+            Vector2 touchPosUIScale = TouchToUI = new Vector2(
+                1920f / Celeste.Instance.GraphicsDevice.PresentationParameters.BackBufferWidth, // TouchPanel.DisplayWidth,
+                1080f / Celeste.Instance.GraphicsDevice.PresentationParameters.BackBufferHeight // TouchPanel.DisplayHeight
             );
 
             HashSet<int> consumedIds = new HashSet<int>();
+
+            /*
+            Logger.Log(LogLevel.Verbose, "touch", "--------");
+            Logger.Log(LogLevel.Verbose, "touch", $"Connected: {state.IsConnected}; IsTouch: {IsTouch}; Count: {state.Count}");
+            for (int ti = 0; ti < state.Count; ti++) {
+                Logger.Log(LogLevel.Verbose, "touch", $"[{ti}]: {state[ti].State} {state[ti].Position * touchPosUIScale}");
+            }
+            */
 
             for (int i = 0; i < Regions.Count; i++) {
                 ATouchRegion region = Regions[i];

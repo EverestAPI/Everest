@@ -89,9 +89,12 @@ namespace Celeste.Mod.Core {
 
             // Set up the touch input regions.
             TouchRegion touchTitleScreen = new TouchRegion {
-                Position = new Vector2(0f, 0f),
+                Position = new Vector2(1920f, 1080f) * 0.5f,
                 Size = new Vector2(1920f, 1080f),
-                Condition = _ => (Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false,
+                Condition = _ =>
+                    ((Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false) ||
+                    (Engine.Scene is GameLoader)
+                ,
                 Button = Input.MenuConfirm
             };
         }

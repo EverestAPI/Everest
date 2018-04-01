@@ -28,8 +28,8 @@ namespace Celeste.Mod {
                 Region = region;
             }
             public override bool Check => !MInput.Disabled && TouchInputManager.IsTouch && Region.Touch.State.IsDown();
-            public override bool Pressed => !MInput.Disabled && TouchInputManager.IsTouch && Region.Touch.State.IsDown() && Region.Touch.State.IsUp();
-            public override bool Released => !MInput.Disabled && TouchInputManager.IsTouch && Region.Touch.State.IsUp() && Region.Touch.State.IsDown();
+            public override bool Pressed => !MInput.Disabled && TouchInputManager.IsTouch && Region.Touch.State.IsDown() && Region.TouchPrev.State.IsUp();
+            public override bool Released => !MInput.Disabled && TouchInputManager.IsTouch && Region.Touch.State.IsUp() && Region.TouchPrev.State.IsDown();
         }
 
     }

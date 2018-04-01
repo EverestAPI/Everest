@@ -88,8 +88,9 @@ namespace Celeste.Mod {
 
         public override bool Update(TouchCollection state, TouchLocation touch) {
             bool enabled = TouchInputManager.IsTouch;
-            if (enabled && Condition != null)
+            if (enabled && Condition != null) {
                 enabled = Condition(this);
+            }
 
             if (!enabled)
                 touch = default(TouchLocation);
