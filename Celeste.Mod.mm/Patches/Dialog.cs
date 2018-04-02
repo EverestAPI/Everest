@@ -151,7 +151,10 @@ namespace Celeste {
 
                     }
 
-                if (!string.IsNullOrEmpty(currentName) && !language.Dialog.ContainsKey(currentName)) {
+                if (!string.IsNullOrEmpty(currentName)/* && !language.Dialog.ContainsKey(currentName)*/) {
+                    if (language.Dialog.ContainsKey(currentName)) {
+                        language.Dialog.Remove(currentName);
+                    }
                     language.Dialog.Add(currentName, builder.ToString());
                 }
             }
