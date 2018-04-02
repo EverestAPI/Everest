@@ -151,11 +151,10 @@ namespace Celeste {
 
                     }
 
+                // The game originally also checks if the key already exists and uses Add(...).
                 if (!string.IsNullOrEmpty(currentName)/* && !language.Dialog.ContainsKey(currentName)*/) {
-                    if (language.Dialog.ContainsKey(currentName)) {
-                        language.Dialog.Remove(currentName);
-                    }
-                    language.Dialog.Add(currentName, builder.ToString());
+                    // language.Dialog.Add(currentName, builder.ToString());
+                    language.Dialog[currentName] = builder.ToString();
                 }
             }
 
