@@ -302,9 +302,11 @@ namespace Monocle {
         private float ScaleFix {
             get {
                 MTextureOverride layer = OverrideMeta;
-                if (layer == null)
-                    return ((patch_MTexture) Parent)?.ScaleFix ?? 1f;
-                return orig_get_Width() / (float) layer.ClipRect.Width;
+                if (layer != null)
+                    return orig_get_Width() / (float) layer.ClipRect.Width;
+                if (Parent != null)
+                    return ((patch_MTexture) Parent).ScaleFix;
+                return 1f;
             }
         }
 
