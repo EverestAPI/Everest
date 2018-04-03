@@ -303,7 +303,7 @@ namespace Monocle {
             get {
                 MTextureOverride layer = OverrideMeta;
                 if (layer != null)
-                    return orig_get_Width() / (float) layer.ClipRect.Width;
+                    return orig_get_ClipRect().Width / (float) layer.ClipRect.Width;
                 if (Parent != null)
                     return ((patch_MTexture) Parent).ScaleFix;
                 return 1f;
