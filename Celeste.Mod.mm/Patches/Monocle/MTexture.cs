@@ -18,14 +18,15 @@ namespace Monocle {
 
         public extern VirtualTexture orig_get_Texture();
         public extern void orig_set_Texture(VirtualTexture value);
+        // Access the texture without resetting the cached override.
         protected VirtualTexture _Texture {
             get {
-                return OverrideTexture?.Texture ?? Parent?.Texture ?? orig_get_Texture();
+                return OverrideTexture?.Texture ?? ((patch_MTexture) Parent)?._Texture ?? orig_get_Texture();
             }
         }
         public new VirtualTexture Texture {
             get {
-                VirtualTexture texture = _Texture;
+                VirtualTexture texture = OverrideTexture?.Texture ?? Parent?.Texture ?? orig_get_Texture();
                 // Reset caches whenever the texture is used by the game, f.e. on render.
                 _CachedOverrideTexture = null;
                 _CachedOverrideMeta = null;

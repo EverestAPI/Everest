@@ -86,6 +86,7 @@ namespace Celeste.Mod {
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata meta = null;
+                EverestModuleMetadata[] multimetas = null;
 
                 // In case the icon appears before the metadata in the .zip, store it temporarily, set it later.
                 Texture2D icon = null;
@@ -93,8 +94,30 @@ namespace Celeste.Mod {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
                             using (MemoryStream stream = entry.ExtractStream())
-                            using (StreamReader reader = new StreamReader(stream))
-                                meta = EverestModuleMetadata.Parse(archive, "", reader);
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                try {
+                                    meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
+                                    meta.PathArchive = archive;
+                                    meta.PostParse();
+                                } catch (Exception e) {
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
+                                }
+                            }
+                            continue;
+                        }
+                        if (entry.FileName == "multimetadata.yaml") {
+                            using (MemoryStream stream = entry.ExtractStream())
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                try {
+                                    multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                                        multimeta.PathArchive = archive;
+                                        multimeta.PostParse();
+                                    }
+                                } catch (Exception e) {
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {archive}: {e}");
+                                }
+                            }
                             continue;
                         }
                         if (entry.FileName == "icon.png") {
@@ -110,11 +133,24 @@ namespace Celeste.Mod {
                         meta.Icon = icon;
                 }
 
-                LoadModDelayed(meta, () => {
-                    Content.Crawl(new ContentModMetadata() {
-                        PathArchive = archive
-                    });
-                });
+                ContentModMetadata contentMeta = new ContentModMetadata() {
+                    PathArchive = archive
+                };
+
+                Action contentCrawl = () => {
+                    if (contentMeta == null)
+                        return;
+                    Content.Crawl(contentMeta);
+                    contentMeta = null;
+                };
+
+                if (multimetas != null) {
+                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                        LoadModDelayed(multimeta, contentCrawl);
+                    }
+                }
+
+                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
@@ -135,17 +171,52 @@ namespace Celeste.Mod {
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
                 EverestModuleMetadata meta = null;
+                EverestModuleMetadata[] multimetas = null;
 
                 string metaPath = Path.Combine(dir, "metadata.yaml");
                 if (File.Exists(metaPath))
-                    using (StreamReader reader = new StreamReader(metaPath))
-                        meta = EverestModuleMetadata.Parse("", dir, reader);
+                    using (StreamReader reader = new StreamReader(metaPath)) {
+                        try {
+                            meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
+                            meta.PathDirectory = dir;
+                            meta.PostParse();
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
+                        }
+                    }
 
-                LoadModDelayed(meta, () => {
-                    Content.Crawl(new ContentModMetadata() {
-                        PathDirectory = dir
-                    });
-                });
+                metaPath = Path.Combine(dir, "multimetadata.yaml");
+                if (File.Exists(metaPath))
+                    using (StreamReader reader = new StreamReader(metaPath)) {
+                        try {
+                            multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                            foreach (EverestModuleMetadata multimeta in multimetas) {
+                                multimeta.PathDirectory = dir;
+                                multimeta.PostParse();
+                            }
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {dir}: {e}");
+                        }
+                    }
+
+                ContentModMetadata contentMeta = new ContentModMetadata() {
+                    PathDirectory = dir
+                };
+
+                Action contentCrawl = () => {
+                    if (contentMeta == null)
+                        return;
+                    Content.Crawl(contentMeta);
+                    contentMeta = null;
+                };
+
+                if (multimetas != null) {
+                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                        LoadModDelayed(multimeta, contentCrawl);
+                    }
+                }
+
+                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
