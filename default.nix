@@ -1,5 +1,6 @@
 let nixpkgs = import <nixpkgs> {};
     stdenv = nixpkgs.stdenv;
+    nuget = nixpkgs.dotnetPackages.Nuget;
 
 in rec {
   everest = nixpkgs.buildDotnetPackage rec {

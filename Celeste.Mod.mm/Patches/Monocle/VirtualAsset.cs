@@ -29,4 +29,24 @@ namespace Monocle {
         }
 
     }
+    public static class VirtualAssetExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        /// <summary>
+        /// Unloads a virtual asset without removing it from the virtual asset list.
+        /// </summary>
+        /// <param name="self">The asset to unload.</param>
+        public static void Unload(this VirtualAsset self)
+            => ((patch_VirtualAsset) (object) self).Unload();
+
+        /// <summary>
+        /// Reloads a single virtual asset.
+        /// </summary>
+        /// <param name="self">The asset to reload.</param>
+        public static void Reload(this VirtualAsset self)
+            => ((patch_VirtualAsset) (object) self).Reload();
+
+    }
 }

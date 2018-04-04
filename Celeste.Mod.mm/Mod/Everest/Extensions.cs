@@ -1,6 +1,7 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -253,6 +254,18 @@ namespace Celeste.Mod {
                 vbtn.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, btn));
             }
         }
+
+        /// <summary>
+        /// Is the given touch state "down" (pressed or moved)?
+        /// </summary>
+        public static bool IsDown(this TouchLocationState state)
+            => state == TouchLocationState.Pressed || state == TouchLocationState.Moved;
+
+        /// <summary>
+        /// Is the given touch state "up" (released or invalid)?
+        /// </summary>
+        public static bool IsUp(this TouchLocationState state)
+            => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
     }
 }

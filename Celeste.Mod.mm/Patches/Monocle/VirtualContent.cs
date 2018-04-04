@@ -16,6 +16,7 @@ namespace Monocle {
 
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
+        public static List<VirtualAsset> Assets => assets;
         private static bool reloading;
 
         // Allow loading VirtualTextures from modded AssetMetadatas.
@@ -41,11 +42,28 @@ namespace Monocle {
             Reload();
         }
 
+        public static void UnloadOverworld() {
+            foreach (VirtualAsset asset in assets) {
+                string path = asset.Name.Replace('\\', '/');
+                if (asset is VirtualTexture && path.StartsWith("Graphics/Atlases/")) {
+                    path = path.Substring(17);
+                    if (path.StartsWith("Opening") || path.StartsWith("Overworld") || path.StartsWith("Mountain") || path.StartsWith("Journal")) {
+                        asset.Unload();
+                    }
+                }
+            }
+        }
+
     }
     public static class VirtualContentExt {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
+
+        /// <summary>
+        /// The list of all managed VirtualAssets.
+        /// </summary>
+        public static List<VirtualAsset> Assets => patch_VirtualContent.Assets;
 
         /// <summary>
         /// Create a new VirtualTexture based on the passed mod asset.
@@ -70,6 +88,12 @@ namespace Monocle {
         /// </summary>
         public static void ForceReload()
             => patch_VirtualContent.ForceReload();
+
+        /// <summary>
+        /// Unload all overworld-related content.
+        /// </summary>
+        public static void UnloadOverworld()
+            => patch_VirtualContent.UnloadOverworld();
 
     }
 }

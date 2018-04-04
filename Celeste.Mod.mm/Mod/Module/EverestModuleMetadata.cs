@@ -72,27 +72,16 @@ namespace Celeste.Mod {
             return Name + " " + Version;
         }
 
-        internal static EverestModuleMetadata Parse(string archive, string directory, StreamReader reader) {
-            EverestModuleMetadata meta;
-            try {
-                meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
-            } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "loader", "Failed parsing metadata.yaml: " + e);
-                return null;
-            }
-            if (meta == null) {
-                Logger.Log(LogLevel.Warn, "loader", "Failed parsing metadata.yaml: YamlDotNet returned null");
-                return null;
-            }
-            meta.PathArchive = archive;
-            meta.PathDirectory = directory;
-
-            if (!string.IsNullOrEmpty(directory))
-                meta.DLL = Path.Combine(directory, meta.DLL.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
+        /// <summary>
+        /// Perform a few basic post-parsing operations. For example, make the DLL path absolute if the mod is in a directory.
+        /// </summary>
+        public void PostParse() {
+            if (!string.IsNullOrEmpty(PathDirectory) && !File.Exists(DLL))
+                DLL = Path.Combine(PathDirectory, DLL.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
 
             // Add dependency to API 1.0 if missing.
             bool dependsOnAPI = false;
-            foreach (EverestModuleMetadata dep in meta.Dependencies) {
+            foreach (EverestModuleMetadata dep in Dependencies) {
                 if (dep.Name == "API")
                     dep.Name = "Everest";
                 if (dep.Name == "Everest") {
@@ -101,14 +90,12 @@ namespace Celeste.Mod {
                 }
             }
             if (!dependsOnAPI) {
-                Logger.Log(LogLevel.Warn, "loader", "No dependency to API found in " + meta + "! Adding dependency to API 1.0...");
-                meta.Dependencies.Insert(0, new EverestModuleMetadata() {
+                Logger.Log(LogLevel.Warn, "loader", "No dependency to API found in " + ToString() + "! Adding dependency to API 1.0...");
+                Dependencies.Insert(0, new EverestModuleMetadata() {
                     Name = "API",
                     Version = new Version(1, 0)
                 });
             }
-
-            return meta;
         }
 
     }

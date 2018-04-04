@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
@@ -63,10 +64,7 @@ namespace Celeste {
             // DON'T! The original method is orig_Initialize
             orig_Initialize();
 
-            // Initialize misc stuff.
-            TextInput.Initialize(this);
-
-            Everest.Invoke("Initialize");
+            Everest.Initialize();
         }
 
         protected extern void orig_LoadContent();
@@ -76,11 +74,6 @@ namespace Celeste {
             bool firstLoad = this.firstLoad;
             orig_LoadContent();
 
-            if (firstLoad) {
-                SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
-            }
-
-            Everest.Invoke("LoadContent");
             Everest.Invoke("LoadContent", firstLoad);
         }
 

@@ -16,6 +16,12 @@ namespace MonoMod {
     class ProxyFileCallsAttribute : Attribute { }
 
     /// <summary>
+    /// Check for ldstr "Unhandled SDL2 platform!" and pop the throw after that.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchUnhandledSDL2Platform")]
+    class PatchUnhandledSDL2PlatformAttribute : Attribute { }
+
+    /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
     /// Also manually execute ProxyFileCalls rule.
     /// </summary>
@@ -62,6 +68,8 @@ namespace MonoMod {
 
         static bool IsCeleste;
 
+        static bool FMODStub = false;
+
         static TypeDefinition Celeste;
 
         static TypeDefinition Everest;
@@ -78,6 +86,15 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
+
+            FMODStub = Environment.GetEnvironmentVariable("EVEREST_FMOD_STUB") == "1";
+            MonoModRule.Flag.Set("FMODStub", FMODStub);
+
+            bool isFNA = false;
+            foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences)
+                if (isFNA = name.Name.Contains("FNA"))
+                    break;
+            MonoModRule.Flag.Set("FNA", isFNA);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
@@ -182,6 +199,23 @@ namespace MonoMod {
 
                 // Replace the called method with our replacement.
                 instr.Operand = replacement;
+            }
+
+        }
+
+        public static void PatchUnhandledSDL2Platform(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            bool pop = false;
+            foreach (Instruction instr in method.Body.Instructions) {
+                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "Unhandled SDL2 platform!")
+                    pop = true;
+
+                if (pop && instr.OpCode == OpCodes.Throw) {
+                    instr.OpCode = OpCodes.Pop;
+                    pop = false;
+                }
             }
 
         }
@@ -565,6 +599,82 @@ namespace MonoMod {
             foreach (MethodDefinition method in LevelExitRoutines)
                 PatchLevelExitRoutine(method);
 
+            foreach (TypeDefinition type in modder.Module.Types) {
+                PostProcessType(modder, type);
+            }
+        }
+
+        private static void PostProcessType(MonoModder modder, TypeDefinition type) {
+            foreach (MethodDefinition method in type.Methods) {
+                PostProcessMethod(modder, method);
+            }
+
+            foreach (TypeDefinition nested in type.NestedTypes)
+                PostProcessType(modder, nested);
+        }
+
+        private static void PostProcessMethod(MonoModder modder, MethodDefinition method) {
+            // Find all FMOD-related extern methods and stub them.
+            if (FMODStub &&
+                !method.HasBody && method.HasPInvokeInfo && (
+                method.PInvokeInfo.Module.Name == "fmod" ||
+                method.PInvokeInfo.Module.Name == "fmodstudio")
+            ) {
+                MonoModRule.Modder.Log($"[Everest] [FMODStub] Stubbing {method.FullName} -> {method.PInvokeInfo.Module.Name}::{method.PInvokeInfo.EntryPoint}");
+
+                if (method.HasPInvokeInfo)
+                    method.PInvokeInfo = null;
+                method.IsManaged = true;
+                method.IsIL = true;
+                method.IsNative = false;
+                method.PInvokeInfo = null;
+                method.IsPreserveSig = false;
+                method.IsInternalCall = false;
+                method.IsPInvokeImpl = false;
+
+                MethodBody body = method.Body = new MethodBody(method);
+                body.InitLocals = true;
+                ILProcessor il = body.GetILProcessor();
+
+                for (int i = 0; i < method.Parameters.Count; i++) {
+                    ParameterDefinition param = method.Parameters[i];
+                    if (param.IsOut || param.IsReturnValue) {
+                        // il.Emit(OpCodes.Ldarg, i);
+                        // il.EmitDefault(param.ParameterType, true);
+                    }
+                }
+
+                il.EmitDefault(method.ReturnType ?? method.Module.TypeSystem.Void);
+                il.Emit(OpCodes.Ret);
+                return;
+            }
+
+        }
+
+        public static void EmitDefault(this ILProcessor il, TypeReference t, bool stind = false, bool arrayEmpty = true) {
+            if (t == null) {
+                il.Emit(OpCodes.Ldnull);
+                if (stind)
+                    il.Emit(OpCodes.Stind_Ref);
+                return;
+            }
+
+            if (t.MetadataType == MetadataType.Void)
+                return;
+
+            if (t.IsArray && arrayEmpty) {
+                // TODO: Instead of emitting a null array, emit an empty array.
+            }
+
+            int var = 0;
+            if (!stind) {
+                var = il.Body.Variables.Count;
+                il.Body.Variables.Add(new VariableDefinition(t));
+                il.Emit(OpCodes.Ldloca, var);
+            }
+            il.Emit(OpCodes.Initobj, t);
+            if (!stind)
+                il.Emit(OpCodes.Ldloc, var);
         }
 
     }

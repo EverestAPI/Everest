@@ -10,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
+using System.IO;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -35,9 +37,31 @@ namespace Celeste.Mod.Core {
             };
         }
 
+        public override void LoadSettings() {
+            base.LoadSettings();
+
+            // If we're running in an environment that prefers those flag, forcibly enable them.
+            Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
+            Settings.LQAtlas |= Everest.Flags.PreferLQAtlas;
+
+            // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
+            // Note: This isn't accurate, as it doesn't check which GL device is being used.
+            Type t_OpenGLDevice = typeof(Game).Assembly.GetType("Microsoft.Xna.Framework.Graphics.OpenGLDevice");
+            if (typeof(Game).Assembly.FullName.Contains("FNA") &&
+                t_OpenGLDevice != null &&
+                t_OpenGLDevice.GetMethod("ForceToMainThread", BindingFlags.NonPublic | BindingFlags.Instance) == null) {
+                Settings.NonThreadedGL = true;
+            }
+        }
+
         public override void Load() {
             Everest.Events.OuiMainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+
+            if (Everest.Flags.IsMobile) {
+                // It shouldn't look that bad on mobile screens...
+                Environment.SetEnvironmentVariable("FNA_OPENGL_BACKBUFFER_SCALE_NEAREST", "1");
+            }
         }
 
         public override void Initialize() {
@@ -62,9 +86,20 @@ namespace Celeste.Mod.Core {
                 Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;
             };
+
+            // Set up the touch input regions.
+            TouchRegion touchTitleScreen = new TouchRegion {
+                Position = new Vector2(1920f, 1080f) * 0.5f,
+                Size = new Vector2(1920f, 1080f),
+                Condition = _ =>
+                    ((Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false) ||
+                    (Engine.Scene is GameLoader)
+                ,
+                Button = Input.MenuConfirm
+            };
         }
 
-        public override void LoadContent() {
+        public override void LoadContent(bool firstLoad) {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
                 string inputGuiPath = $"controls/{Settings.InputGui}/";
@@ -74,6 +109,21 @@ namespace Celeste.Mod.Core {
                     Settings.InputGui = "";
                 }
             }
+
+            if (firstLoad && !Everest.Flags.AvoidRenderTargets) {
+                SubHudRenderer.Buffer = VirtualContent.CreateRenderTarget("subhud-target", 1922, 1082);
+            }
+            if (Everest.Flags.AvoidRenderTargets && Celeste.HudTarget != null) {
+                Celeste.HudTarget.Dispose();
+                Celeste.HudTarget = null;
+            }
+
+            if (GFX.MountainTerrain == null && Settings.NonThreadedGL) {
+                GFX.MountainTerrain = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain.obj"));
+                GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
+                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
+            }
+            // Otherwise loaded in GameLoader.LoadThread
         }
 
         public override void Unload() {
@@ -166,43 +216,6 @@ namespace Celeste.Mod.Core {
             }
 
             base.CreateModMenuSection(menu, inGame, snapshot);
-
-            // Get all Input GUI prefixes and add a slider for switching between them.
-            List<string> inputGuiPrefixes = new List<string>();
-            inputGuiPrefixes.Add(""); // Auto
-            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
-                string path = kvp.Key;
-                if (!path.StartsWith("controls/"))
-                    continue;
-                path = path.Substring(9);
-                int indexOfSlash = path.IndexOf('/');
-                if (indexOfSlash == -1)
-                    continue;
-                path = path.Substring(0, indexOfSlash);
-                if (!inputGuiPrefixes.Contains(path))
-                    inputGuiPrefixes.Add(path);
-            }
-
-            menu.Add(
-                new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_inputgui"), i => {
-                    string inputGuiPrefix = inputGuiPrefixes[i];
-                    string fullName = $"modoptions_coremodule_inputgui_{inputGuiPrefix.ToLowerInvariant()}";
-                    return fullName.DialogCleanOrNull() ?? inputGuiPrefix.ToUpperInvariant();
-                }, 0, inputGuiPrefixes.Count - 1, Math.Max(0, inputGuiPrefixes.IndexOf(Settings.InputGui)))
-                .Change(i => {
-                    Settings.InputGui = inputGuiPrefixes[i];
-                    Input.OverrideInputPrefix = inputGuiPrefixes[i];
-                })
-            );
-
-            if (Celeste.PlayMode == Celeste.PlayModes.Debug) {
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_recrawl")).Pressed(() => {
-                    Everest.Content.Recrawl();
-                    Everest.Content.Reprocess();
-                    VirtualContentExt.ForceReload();
-                    AreaData.Load();
-                }));
-            }
         }
 
     }

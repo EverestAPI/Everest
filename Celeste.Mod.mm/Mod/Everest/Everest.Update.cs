@@ -137,12 +137,13 @@ namespace Celeste.Mod {
                     IsCurrent = () => VersionSuffix.StartsWith("travis-"),
 
                     ParseLine = CommonLineParser("https://ams3.digitaloceanspaces.com")
-                },
-
-                // TODO: GitHub updater source.
+                }
             };
 
             public static Task RequestAll() {
+                if (!Flags.SupportUpdatingEverest)
+                    return new Task(() => { });
+
                 Task[] tasks = new Task[Sources.Count];
                 for (int i = 0; i < tasks.Length; i++) {
                     tasks[i] = Sources[i].Request();
@@ -205,6 +206,12 @@ namespace Celeste.Mod {
             public static bool HasUpdate => Newest != null && Newest.Version > Version;
 
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
+                if (!Flags.SupportUpdatingEverest) {
+                    progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
+                    progress.LogLine("Updating not supported on this platform - cancelling.");
+                    return;
+                }
+
                 if (version == null)
                     version = Newest;
                 if (version == null) {
@@ -222,7 +229,26 @@ namespace Celeste.Mod {
 
                 // Check if we're on an OS which supports manipulating Celeste.exe while it's used.
                 bool canModWhileAlive =
-                    Environment.OSVersion.Platform == PlatformID.Unix;
+                    System.Environment.OSVersion.Platform == PlatformID.Unix;
+
+                if (canModWhileAlive) {
+                    // Check if we can even read-write the file.
+                    Exception eLast = null;
+                    string path = typeof(Celeste).Assembly.Location;
+                    for (int i = 2048; i > -1; --i) {
+                        try {
+                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite))
+                                break;
+                        } catch (Exception e) {
+                            eLast = e;
+                        }
+                    }
+                    if (eLast != null) {
+                        progress.LogLine("Note: You're on a platform that should support\nread-writing Celeste while running, but it doesn't.\nCheck your log.txt to find out why.\n");
+                        Logger.Log(LogLevel.Warn, "updater", $"Failed read-writing {path} on platform that should support it: " + eLast.ToString());
+                        canModWhileAlive = false;
+                    }
+                }
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
@@ -375,11 +401,14 @@ namespace Celeste.Mod {
                         // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
                         // Run MiniInstaller "out of body."
                         Process installer = new Process();
+                        installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
                         if (Type.GetType("Mono.Runtime") != null) {
+                            installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
                             installer.StartInfo.FileName = "mono";
-                            installer.StartInfo.Arguments = "\"" + Path.Combine(extractedPath, "MiniInstaller.exe") + "\"";
-                        } else {
-                            installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
+                            if (File.Exists("/bin/sh")) {
+                                installer.StartInfo.Arguments = $"-c {installer.StartInfo.FileName} {installer.StartInfo.Arguments}";
+                                installer.StartInfo.FileName = "/bin/sh";
+                            }
                         }
                         installer.StartInfo.WorkingDirectory = extractedPath;
                         installer.Start();
@@ -396,8 +425,8 @@ namespace Celeste.Mod {
                     Events.Celeste.OnShutdown += () => {
                         Process game = new Process();
                         // If the game was installed via Steam, it should restart in a Steam context on its own.
-                        if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                            Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        if (System.Environment.OSVersion.Platform == PlatformID.Unix ||
+                            System.Environment.OSVersion.Platform == PlatformID.MacOSX) {
                             // The Linux and macOS versions come with a wrapping bash script.
                             game.StartInfo.FileName = "bash";
                             game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";

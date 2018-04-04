@@ -8,6 +8,7 @@ using MonoMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +19,9 @@ namespace Celeste {
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private Entity handler;
         private bool loaded;
+        private bool audioLoaded;
+        private bool audioStarted;
+        private bool dialogLoaded;
         private bool ready;
         [MonoModIfFlag("HasIntroSkip")]
         private bool skipped;
@@ -69,6 +73,45 @@ namespace Celeste {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
             orig_Update();
+        }
+
+        [MonoModReplace]
+        private void LoadThread() {
+            Console.WriteLine("GAME DISPLAYED : " + Stopwatch.ElapsedMilliseconds + "ms");
+            MInput.Disabled = true;
+
+            Audio.Init();
+            Audio.Banks.Master = Audio.Banks.Load("Master Bank", true);
+            Audio.Banks.Music = Audio.Banks.Load("music", false);
+            Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
+            Audio.Banks.UI = Audio.Banks.Load("ui", false);
+            Settings.Instance.ApplyVolumes();
+            audioLoaded = true;
+
+            Fonts.Load(); // Luckily, the textures for the fonts are preloaded.
+            Dialog.Load();
+            dialogLoaded = true;
+
+            MInput.Disabled = false;
+
+            if (!GFX.LoadedMainContent) {
+                throw new Exception("GFX not loaded!");
+            }
+            GFX.LoadData(); // Load all related GFX metadata.
+
+            AreaData.Load();
+
+            if (!CoreModule.Settings.NonThreadedGL) {
+                GFX.MountainTerrain = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain.obj"));
+                GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
+                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
+            }
+            // Otherwise loaded in CoreModule.LoadContent
+
+            Console.WriteLine("LOADED : " + Stopwatch.ElapsedMilliseconds + "ms");
+            Stopwatch.Stop();
+            Stopwatch = null;
+            loaded = true;
         }
 
         [MonoModIfFlag("HasIntroSkip")]

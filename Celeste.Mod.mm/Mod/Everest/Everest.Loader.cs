@@ -73,6 +73,11 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="archive">The path to the mod .zip archive.</param>
             public static void LoadZip(string archive) {
+                if (!Flags.SupportRuntimeMods) {
+                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    return;
+                }
+
                 if (!File.Exists(archive)) // Relative path? Let's just make it absolute.
                     archive = Path.Combine(PathMods, archive);
                 if (!File.Exists(archive)) // It just doesn't exist.
@@ -81,6 +86,7 @@ namespace Celeste.Mod {
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata meta = null;
+                EverestModuleMetadata[] multimetas = null;
 
                 // In case the icon appears before the metadata in the .zip, store it temporarily, set it later.
                 Texture2D icon = null;
@@ -88,8 +94,30 @@ namespace Celeste.Mod {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
                             using (MemoryStream stream = entry.ExtractStream())
-                            using (StreamReader reader = new StreamReader(stream))
-                                meta = EverestModuleMetadata.Parse(archive, "", reader);
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                try {
+                                    meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
+                                    meta.PathArchive = archive;
+                                    meta.PostParse();
+                                } catch (Exception e) {
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
+                                }
+                            }
+                            continue;
+                        }
+                        if (entry.FileName == "multimetadata.yaml") {
+                            using (MemoryStream stream = entry.ExtractStream())
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                try {
+                                    multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                                        multimeta.PathArchive = archive;
+                                        multimeta.PostParse();
+                                    }
+                                } catch (Exception e) {
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {archive}: {e}");
+                                }
+                            }
                             continue;
                         }
                         if (entry.FileName == "icon.png") {
@@ -105,11 +133,24 @@ namespace Celeste.Mod {
                         meta.Icon = icon;
                 }
 
-                LoadModDelayed(meta, () => {
-                    Content.Crawl(new ContentModMetadata() {
-                        PathArchive = archive
-                    });
-                });
+                ContentModMetadata contentMeta = new ContentModMetadata() {
+                    PathArchive = archive
+                };
+
+                Action contentCrawl = () => {
+                    if (contentMeta == null)
+                        return;
+                    Content.Crawl(contentMeta);
+                    contentMeta = null;
+                };
+
+                if (multimetas != null) {
+                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                        LoadModDelayed(multimeta, contentCrawl);
+                    }
+                }
+
+                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
@@ -117,6 +158,11 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="dir">The path to the mod directory.</param>
             public static void LoadDir(string dir) {
+                if (!Flags.SupportRuntimeMods) {
+                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    return;
+                }
+
                 if (!Directory.Exists(dir)) // Relative path?
                     dir = Path.Combine(PathMods, dir);
                 if (!Directory.Exists(dir)) // It just doesn't exist.
@@ -125,17 +171,52 @@ namespace Celeste.Mod {
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
                 EverestModuleMetadata meta = null;
+                EverestModuleMetadata[] multimetas = null;
 
                 string metaPath = Path.Combine(dir, "metadata.yaml");
                 if (File.Exists(metaPath))
-                    using (StreamReader reader = new StreamReader(metaPath))
-                        meta = EverestModuleMetadata.Parse("", dir, reader);
+                    using (StreamReader reader = new StreamReader(metaPath)) {
+                        try {
+                            meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
+                            meta.PathDirectory = dir;
+                            meta.PostParse();
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
+                        }
+                    }
 
-                LoadModDelayed(meta, () => {
-                    Content.Crawl(new ContentModMetadata() {
-                        PathDirectory = dir
-                    });
-                });
+                metaPath = Path.Combine(dir, "multimetadata.yaml");
+                if (File.Exists(metaPath))
+                    using (StreamReader reader = new StreamReader(metaPath)) {
+                        try {
+                            multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                            foreach (EverestModuleMetadata multimeta in multimetas) {
+                                multimeta.PathDirectory = dir;
+                                multimeta.PostParse();
+                            }
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {dir}: {e}");
+                        }
+                    }
+
+                ContentModMetadata contentMeta = new ContentModMetadata() {
+                    PathDirectory = dir
+                };
+
+                Action contentCrawl = () => {
+                    if (contentMeta == null)
+                        return;
+                    Content.Crawl(contentMeta);
+                    contentMeta = null;
+                };
+
+                if (multimetas != null) {
+                    foreach (EverestModuleMetadata multimeta in multimetas) {
+                        LoadModDelayed(multimeta, contentCrawl);
+                    }
+                }
+
+                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
@@ -145,6 +226,11 @@ namespace Celeste.Mod {
             /// <param name="meta">Metadata of the mod to load.</param>
             /// <param name="callback">Callback to be executed after the mod has been loaded. Executed immediately if meta == null.</param>
             public static void LoadModDelayed(EverestModuleMetadata meta, Action callback) {
+                if (!Flags.SupportRuntimeMods) {
+                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    return;
+                }
+
                 if (meta == null) {
                     callback?.Invoke();
                     return;
@@ -167,6 +253,11 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="meta">Metadata of the mod to load.</param>
             public static void LoadMod(EverestModuleMetadata meta) {
+                if (!Flags.SupportRuntimeMods) {
+                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    return;
+                }
+
                 if (meta == null)
                     return;
 
@@ -209,6 +300,11 @@ namespace Celeste.Mod {
             /// <param name="meta">The mod metadata, preferably from the mod metadata.yaml file.</param>
             /// <param name="asm">The mod assembly, preferably relinked.</param>
             public static void LoadModAssembly(EverestModuleMetadata meta, Assembly asm) {
+                if (!Flags.SupportRuntimeMods) {
+                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    return;
+                }
+
                 Content.Crawl(new ContentModMetadata {
                     Assembly = asm
                 });
@@ -239,6 +335,10 @@ namespace Celeste.Mod {
             /// <param name="meta">The metadata of the mod listing the dependencies.</param>
             /// <returns>True if the dependencies have already been loaded by Everest, false otherwise.</returns>
             public static bool DependenciesLoaded(EverestModuleMetadata meta) {
+                if (!Flags.SupportRuntimeMods) {
+                    return false;
+                }
+
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep))
                         return false;

@@ -127,8 +127,16 @@ namespace Celeste.Mod {
             PathSettings = Path.Combine(PathGame, "ModSettings");
             Directory.CreateDirectory(PathSettings);
 
+            // Before even initializing anything else, make sure to prepare any static flags.
+            Flags.Initialize();
+
             // Initialize the content helper.
             Content.Initialize();
+
+            // Initialize all main managers before loading any mods.
+            NotificationManager.Instance = new NotificationManager(Celeste.Instance);
+            TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
+            // Don't add it yet, though - add it in Initialize.
 
             // Register our core module and load any other modules.
             new CoreModule().Register();
@@ -146,6 +154,17 @@ namespace Celeste.Mod {
 
             // Start requesting the version list ASAP.
             Updater.RequestAll();
+        }
+
+        internal static void Initialize() {
+            // Initialize misc stuff.
+            TextInput.Initialize(Celeste.Instance);
+
+            // Add the previously created managers.
+            Celeste.Instance.Components.Add(NotificationManager.Instance);
+            Celeste.Instance.Components.Add(TouchInputManager.Instance);
+
+            Invoke("Initialize");
         }
 
         /// <summary>

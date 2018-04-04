@@ -19,7 +19,6 @@ namespace Celeste {
         public static void Initialize() {
             orig_Initialize();
             TagsExt.SubHUD = new BitTag("subHUD");
-            // TODO: Allow mods to register tags easily.
         }
 
     }

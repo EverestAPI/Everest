@@ -23,6 +23,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
     public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
     public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
+    public sealed class AssetTypeXml { private AssetTypeXml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
 
@@ -249,6 +250,10 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 4);
 
+                } else if (file.EndsWith(".xml")) {
+                    type = typeof(AssetTypeXml);
+                    file = file.Substring(0, file.Length - 4);
+
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
                     type = typeof(AssetTypeDialog);
                     file = file.Substring(0, file.Length - 4);
@@ -391,12 +396,19 @@ namespace Celeste.Mod {
 
                 if (asset is Atlas) {
                     Atlas atlas = asset as Atlas;
+                    ModAsset mapping;
 
-                    ModAsset mapping = Get(assetName, true);
-                    if (mapping == null || mapping.AssetType != typeof(AssetTypeDirectory))
-                        return asset;
+                    mapping = Get(assetName + "LQ", true);
+                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                        atlas.Ingest(mapping);
+                    }
 
-                    atlas.Ingest(mapping);
+                    mapping = Get(assetName, true);
+                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                        atlas.Ingest(mapping);
+                    }
+
+                    return asset;
                 }
 
                 return OnProcess?.InvokePassing(asset, assetNameFull) ?? asset;
