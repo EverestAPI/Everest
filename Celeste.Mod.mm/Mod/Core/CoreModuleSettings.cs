@@ -37,14 +37,17 @@ namespace Celeste.Mod.Core {
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool LazyLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool LQAtlas { get; set; } = false;
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool NonThreadedGL { get; set; } = false;
 
         public string InputGui { get; set; } = "";
