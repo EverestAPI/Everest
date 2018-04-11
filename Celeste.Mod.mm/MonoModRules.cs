@@ -1,6 +1,6 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
-using MonoMod.Helpers;
+using MonoMod.Utils;
 using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;

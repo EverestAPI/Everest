@@ -52,7 +52,9 @@ namespace MiniInstaller {
 
                     if (AsmMonoMod == null)
                         AsmMonoMod = LoadMonoMod();
-                    RunMonoMod(AsmMonoMod);
+                    RunMonoMod(AsmMonoMod, Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe);
+                    // TEMPORARY STEP until we've updated to HookedMethod 0.3.4
+                    RunMonoMod(AsmMonoMod, Path.Combine(PathGame, "HookedMethod.dll"));
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -155,24 +157,28 @@ namespace MiniInstaller {
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Mdb.dll"));
             LogLine("Loading Mono.Cecil.Pdb");
             LazyLoadAssembly(Path.Combine(PathGame, "Mono.Cecil.Pdb.dll"));
+            LogLine("Loading MonoMod.Utils.dll");
+            LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Utils.dll"));
             LogLine("Loading MonoMod");
             Assembly asmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
             return asmMonoMod;
         }
 
-        public static void RunMonoMod(Assembly asmMonoMod) {
+        public static void RunMonoMod(Assembly asmMonoMod, string asmFrom, string asmTo = null) {
+            if (asmTo == null)
+                asmTo = asmFrom;
+            LogLine($"Running MonoMod for {asmFrom}");
             // We're lazy.
-            LogLine("Starting MonoMod");
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", PathGame);
-            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe + ".tmp" } });
+            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
 
-            if (!File.Exists(PathCelesteExe + ".tmp"))
-                throw new Exception("MonoMod failed creating a patched .exe!");
+            if (!File.Exists(asmTo + ".tmp"))
+                throw new Exception("MonoMod failed creating a patched assembly!");
 
-            LogLine("Replacing Celeste.exe");
-            File.Delete(PathCelesteExe);
-            File.Move(PathCelesteExe + ".tmp", PathCelesteExe);
+            if (File.Exists(asmTo))
+                File.Delete(asmTo);
+            File.Move(asmTo + ".tmp", asmTo);
         }
 
         public static void StartGame() {

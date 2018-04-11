@@ -90,6 +90,12 @@
     <Reference Include="MonoMod">
       <HintPath>..\lib\MonoMod.exe</HintPath>
     </Reference>
+    <Reference Include="MonoMod.RuntimeDetour">
+      <HintPath>..\lib\MonoMod.RuntimeDetour.dll</HintPath>
+    </Reference>
+    <Reference Include="MonoMod.Utils">
+      <HintPath>..\lib\MonoMod.Utils.dll</HintPath>
+    </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>..\lib-stripped\Steamworks.NET.dll</HintPath>
       <Private>False</Private>

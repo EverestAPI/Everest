@@ -5,7 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using Monocle;
 using MonoMod;
-using MonoMod.Helpers;
+using MonoMod.Utils;
 using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;

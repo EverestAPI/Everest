@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using MonoMod;
-using MonoMod.Helpers;
+using MonoMod.Utils;
 using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
@@ -32,7 +32,7 @@ namespace Celeste.Mod {
             /// </summary>
             public static string GameChecksum { get; internal set; }
 
-            internal readonly static IDictionary<string, ModuleDefinition> StaticRelinkModuleCache = new Dictionary<string, ModuleDefinition>() {
+            internal readonly static Dictionary<string, ModuleDefinition> StaticRelinkModuleCache = new Dictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) }
             };
@@ -44,8 +44,8 @@ namespace Celeste.Mod {
                 new ReaderParameters(ReadingMode.Immediate)
             );
 
-            private static IDictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
-            public static IDictionary<string, ModuleDefinition> SharedRelinkModuleMap {
+            private static Dictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
+            public static Dictionary<string, ModuleDefinition> SharedRelinkModuleMap {
                 get {
                     if (_SharedRelinkModuleMap != null)
                         return _SharedRelinkModuleMap;
@@ -83,8 +83,8 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static IDictionary<string, object> _SharedRelinkMap;
-            public static IDictionary<string, object> SharedRelinkMap {
+            private static Dictionary<string, object> _SharedRelinkMap;
+            public static Dictionary<string, object> SharedRelinkMap {
                 get {
                     if (_SharedRelinkMap != null)
                         return _SharedRelinkMap;

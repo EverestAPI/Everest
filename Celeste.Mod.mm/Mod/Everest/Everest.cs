@@ -1,6 +1,6 @@
 ﻿using Celeste.Mod.Core;
 using Monocle;
-using MonoMod.Helpers;
+using MonoMod.Utils;
 using MonoMod.InlineRT;
 using System;
 using System.Collections;

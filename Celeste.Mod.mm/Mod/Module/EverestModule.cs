@@ -2,7 +2,7 @@
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod.Helpers;
+using MonoMod.Utils;
 using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
