@@ -19,6 +19,7 @@ namespace MiniInstaller {
         public static string PathLog;
 
         public static Assembly AsmMonoMod;
+        public static Assembly AsmHookGen;
 
         // This can be set from the in-game installer via reflection.
         public static Action<string> LineLogger;
@@ -50,11 +51,13 @@ namespace MiniInstaller {
 
                     MoveFilesFromUpdate();
 
-                    if (AsmMonoMod == null)
-                        AsmMonoMod = LoadMonoMod();
-                    RunMonoMod(AsmMonoMod, Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe);
+                    if (AsmMonoMod == null) {
+                        LoadMonoMod();
+                    }
+                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe);
+                    RunHookGen(PathCelesteExe);
                     // TEMPORARY STEP until we've updated to HookedMethod 0.3.4
-                    RunMonoMod(AsmMonoMod, Path.Combine(PathGame, "HookedMethod.dll"));
+                    RunMonoMod(Path.Combine(PathGame, "HookedMethod.dll"));
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -147,7 +150,7 @@ namespace MiniInstaller {
             }
         }
 
-        public static Assembly LoadMonoMod() {
+        public static void LoadMonoMod() {
             // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
             // Instead, load it dynamically and invoke the entry point.
             // We also need to lazily load any dependencies.
@@ -160,11 +163,12 @@ namespace MiniInstaller {
             LogLine("Loading MonoMod.Utils.dll");
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Utils.dll"));
             LogLine("Loading MonoMod");
-            Assembly asmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
-            return asmMonoMod;
+            AsmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
+            LogLine("Loading MonoMod.RuntimeDetour.HookGen");
+            AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.exe"));
         }
 
-        public static void RunMonoMod(Assembly asmMonoMod, string asmFrom, string asmTo = null) {
+        public static void RunMonoMod(string asmFrom, string asmTo = null) {
             if (asmTo == null)
                 asmTo = asmFrom;
             LogLine($"Running MonoMod for {asmFrom}");
@@ -172,7 +176,7 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+            AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
 
             if (!File.Exists(asmTo + ".tmp"))
                 throw new Exception("MonoMod failed creating a patched assembly!");
@@ -180,6 +184,14 @@ namespace MiniInstaller {
             if (File.Exists(asmTo))
                 File.Delete(asmTo);
             File.Move(asmTo + ".tmp", asmTo);
+        }
+
+        public static void RunHookGen(string asm) {
+            LogLine($"Running MonoMod.RuntimeDetour.HookGen for {asm}");
+            // We're lazy.
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
+            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
+            AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { asm } });
         }
 
         public static void StartGame() {
