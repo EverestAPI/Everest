@@ -171,6 +171,7 @@ namespace MiniInstaller {
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", PathGame);
+            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             asmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
 
             if (!File.Exists(asmTo + ".tmp"))
