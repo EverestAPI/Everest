@@ -24,6 +24,7 @@ using _OuiJournal = Celeste.OuiJournal;
 
 namespace Celeste.Mod {
     public static partial class Everest {
+        [Obsolete("Please use HookGen (aka MMHOOK_Celeste.dll) instead.")]
         public static class Events {
 
             public static class Celeste {

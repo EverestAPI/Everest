@@ -138,22 +138,11 @@ namespace Celeste.Mod {
                         }
                     };
 
-                    _Modder.Relinker = DefaultRelinker;
-
                     return _Modder;
                 }
                 set {
                     _Modder = value;
                 }
-            }
-
-            public static IMetadataTokenProvider DefaultRelinker(IMetadataTokenProvider mtp, IGenericParameterProvider context) {
-                ModuleReference scope = (mtp as TypeReference)?.Scope as ModuleReference;
-                if (scope != null && scope.Name.EndsWith(".mm") && !_Modder.Mods.Contains(scope)) {
-                    _Modder.Mods.Add(scope);
-                }
-
-                return _Modder.DefaultUncachedRelinker(mtp, context);
             }
 
             /// <summary>
