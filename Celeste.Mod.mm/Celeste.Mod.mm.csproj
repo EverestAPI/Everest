@@ -93,6 +93,9 @@
     <Reference Include="MonoMod.RuntimeDetour">
       <HintPath>..\lib\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
+    <Reference Include="MonoMod.RuntimeDetour.HookGen">
+      <HintPath>..\lib\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
+    </Reference>
     <Reference Include="MonoMod.Utils">
       <HintPath>..\lib\MonoMod.Utils.dll</HintPath>
     </Reference>
