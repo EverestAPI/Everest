@@ -149,7 +149,6 @@
     <Compile Include="Mod\Module\EverestModule.cs" />
     <Compile Include="Mod\Everest\Extensions.cs" />
     <Compile Include="Mod\Helpers\FakeFileStream.cs" />
-    <Compile Include="Mod\Helpers\LimitedStream.cs" />
     <Compile Include="Mod\Helpers\LogWriter.cs" />
     <Compile Include="Mod\Everest\Logger.cs" />
     <Compile Include="Mod\Everest\MTextureOverride.cs" />
