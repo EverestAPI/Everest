@@ -55,29 +55,29 @@ namespace Celeste.Mod {
             /// <summary>
             /// List of all currently loaded content mods.
             /// </summary>
-            public readonly static IList<ContentModMetadata> Mods = new List<ContentModMetadata>();
+            public readonly static List<ContentModMetadata> Mods = new List<ContentModMetadata>();
 
             /// <summary>
             /// Mod content mapping. Use Everest.Content.Add, Get, and TryGet where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
+            public readonly static Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
             /// <summary>
             /// Mod content mapping, directories only. Use Everest.Content.Add, Get, and TryGet where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, ModAsset> MapDirs = new Dictionary<string, ModAsset>();
+            public readonly static Dictionary<string, ModAsset> MapDirs = new Dictionary<string, ModAsset>();
             /// <summary>
             /// Mod dialog .txt mapping. Used as one path can map to multiple AssetMetadatas.
             /// Use Everest.Content.Add, GetDialogs, and TryGetDialogs where applicable instead.
             /// </summary>
-            public readonly static IDictionary<string, List<ModAsset>> MapDialogs = new Dictionary<string, List<ModAsset>>();
+            public readonly static Dictionary<string, List<ModAsset>> MapDialogs = new Dictionary<string, List<ModAsset>>();
             /// <summary>
             /// List of all maps to be loaded by AreaData.Load
             /// </summary>
             public readonly static List<ModAsset> ListMaps = new List<ModAsset>();
 
-            internal readonly static IList<string> LoadedAssetPaths = new List<string>();
-            internal readonly static IList<string> LoadedAssetFullPaths = new List<string>();
-            internal readonly static IList<WeakReference> LoadedAssets = new List<WeakReference>();
+            internal readonly static List<string> LoadedAssetPaths = new List<string>();
+            internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
+            internal readonly static List<WeakReference> LoadedAssets = new List<WeakReference>();
 
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
@@ -311,6 +311,9 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="meta">The content mod to crawl through.</param>
             public static void Crawl(ContentModMetadata meta) {
+                if (Mods.Contains(meta))
+                    Mods.Add(meta);
+
                 if (meta.PathDirectory != null) {
                     if (Directory.Exists(meta.PathDirectory))
                         Crawl(meta, meta.PathDirectory);
