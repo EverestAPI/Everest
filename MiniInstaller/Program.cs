@@ -164,6 +164,8 @@ namespace MiniInstaller {
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Utils.dll"));
             LogLine("Loading MonoMod");
             AsmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
+            LogLine("Loading MonoMod.RuntimeDetour.dll");
+            LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.HookGen");
             AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.exe"));
         }
