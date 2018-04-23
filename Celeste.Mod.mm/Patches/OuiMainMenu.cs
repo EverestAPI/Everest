@@ -15,6 +15,7 @@ namespace Celeste {
 
         // We're effectively in OuiTitleScreen, but still need to "expose" private fields to our mod.
         private List<MenuButton> buttons;
+        public List<MenuButton> Buttons => buttons;
         private MainMenuClimb climbButton;
 
         public extern void orig_CreateButtons();
@@ -50,6 +51,15 @@ namespace Celeste {
                     Scene.Add(button);
             }
         }
+
+    }
+    public static class OuiMainMenuExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        public static List<MenuButton> GetButtons(this OuiMainMenu self)
+            => ((patch_OuiMainMenu) self).Buttons;
 
     }
 }
