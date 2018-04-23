@@ -201,7 +201,6 @@
     <Compile Include="Patches\PlayerHair.cs" />
     <Compile Include="Patches\AreaData.cs" />
     <Compile Include="Patches\Autotiler.cs" />
-    <Compile Include="Patches\GFX.cs" />
     <Compile Include="Patches\Monocle\VirtualAsset.cs" />
     <Compile Include="Patches\Monocle\MTexture.cs" />
     <Compile Include="Patches\Monocle\VirtualTexture.cs" />

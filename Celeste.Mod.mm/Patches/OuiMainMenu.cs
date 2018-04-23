@@ -21,7 +21,7 @@ namespace Celeste {
         public void CreateButtons() {
             orig_CreateButtons();
 
-            Everest.Events.OuiMainMenu.CreateButtons(this, buttons);
+            Everest.Events.MainMenu.CreateButtons(this, buttons);
 
             // Current button position.
             Vector2 pos = new Vector2(320f, 160f);

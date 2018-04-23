@@ -16,7 +16,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-using _Atlas = Monocle.Atlas;
 using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Level = Celeste.Level;
 using _Player = Celeste.Player;
@@ -24,7 +23,6 @@ using _OuiJournal = Celeste.OuiJournal;
 
 namespace Celeste.Mod {
     public static partial class Everest {
-        [Obsolete("Please use HookGen (aka MMHOOK_Celeste.dll) instead.")]
         public static class Events {
 
             public static class Celeste {
@@ -37,95 +35,20 @@ namespace Celeste.Mod {
                     => OnShutdown?.Invoke();
             }
 
-            public static class GFX {
-
-                public static event Action OnLoadGame;
-                internal static void LoadGame()
-                    => OnLoadGame?.Invoke();
-
-                public static event Action OnUnloadGame;
-                internal static void UnloadGame()
-                    => OnUnloadGame?.Invoke();
-
-                public static event Action OnLoadGui;
-                internal static void LoadGui()
-                    => OnLoadGui?.Invoke();
-
-                public static event Action OnUnloadGui;
-                internal static void UnloadGui()
-                    => OnUnloadGui?.Invoke();
-
-                public static event Action OnLoadOverworld;
-                internal static void LoadOverworld()
-                    => OnLoadOverworld?.Invoke();
-
-                public static event Action OnUnloadOverworld;
-                internal static void UnloadOverworld()
-                    => OnUnloadOverworld?.Invoke();
-
-                public static event Action OnLoadMountain;
-                internal static void LoadMountain()
-                    => OnLoadMountain?.Invoke();
-
-                public static event Action OnUnloadMountain;
-                internal static void UnloadMountain()
-                    => OnUnloadMountain?.Invoke();
-
-                public static event Action OnLoadOther;
-                internal static void LoadOther()
-                    => OnLoadOther?.Invoke();
-
-                public static event Action OnUnloadOther;
-                internal static void UnloadOther()
-                    => OnUnloadOther?.Invoke();
-
-                public static event Action OnLoadPortraits;
-                internal static void LoadPortraits()
-                    => OnLoadPortraits?.Invoke();
-
-                public static event Action OnUnloadPortraits;
-                internal static void UnloadPortraits()
-                    => OnUnloadPortraits?.Invoke();
-
-                public static event Action OnLoadData;
-                internal static void LoadData()
-                    => OnLoadData?.Invoke();
-
-                public static event Action OnUnloadData;
-                internal static void UnloadData()
-                    => OnUnloadData?.Invoke();
-
-                public static event Action OnLoadEffects;
-                internal static void LoadEffects()
-                    => OnLoadEffects?.Invoke();
-
-            }
-
-            public static class AreaData {
-
-                public static event Action OnLoad;
-                internal static void Load()
-                    => OnLoad?.Invoke();
-
-                public static event Action OnReloadMountainViews;
-                internal static void ReloadMountainViews()
-                    => OnReloadMountainViews?.Invoke();
-
-            }
-
-            public static class Atlas {
-                public static event Action<_Atlas> OnLoad;
-                internal static void Load(_Atlas atlas)
-                    => OnLoad?.Invoke(atlas);
-            }
-
-            public static class Dialog {
-                public static event Action OnInitLanguages;
-                internal static void InitLanguages()
-                    => OnInitLanguages?.Invoke();
-            }
-
+            [Obsolete("Use MainMenu instead.")]
             public static class OuiMainMenu {
+                public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
+                public static event CreateButtonsHandler OnCreateButtons {
+                    add {
+                        MainMenu.OnCreateButtons += (MainMenu.CreateButtonsHandler) value.CastDelegate(typeof(MainMenu.CreateButtonsHandler));
+                    }
+                    remove {
+                        MainMenu.OnCreateButtons -= (MainMenu.CreateButtonsHandler) value.CastDelegate(typeof(MainMenu.CreateButtonsHandler));
+                    }
+                }
+            }
+
+            public static class MainMenu {
                 public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
                 public static event CreateButtonsHandler OnCreateButtons;
                 internal static void CreateButtons(_OuiMainMenu menu, List<MenuButton> buttons)
@@ -133,7 +56,6 @@ namespace Celeste.Mod {
             }
 
             public static class Level {
-
                 public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
                 public static event PauseHandler OnPause;
                 internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
@@ -173,11 +95,9 @@ namespace Celeste.Mod {
                 public static event CompleteHandler OnComplete;
                 internal static void Complete(_Level level)
                     => OnComplete?.Invoke(level);
-
             }
 
             public static class Player {
-
                 public static event Action<_Player> OnSpawn;
                 internal static void Spawn(_Player player)
                     => OnSpawn?.Invoke(player);
@@ -185,11 +105,9 @@ namespace Celeste.Mod {
                 public static event Action<_Player> OnDie;
                 internal static void Die(_Player player)
                     => OnDie?.Invoke(player);
-
             }
 
             public static class Input {
-
                 public static event Action OnInitialize;
                 internal static void Initialize()
                     => OnInitialize?.Invoke();
@@ -197,10 +115,22 @@ namespace Celeste.Mod {
                 public static event Action OnDeregister;
                 internal static void Deregister()
                     => OnDeregister?.Invoke();
-
             }
 
+            [Obsolete("Use Journal instead.")]
             public static class OuiJournal {
+                public delegate void EnterHandler(_OuiJournal journal, Oui from);
+                public static event EnterHandler OnCreateButtons {
+                    add {
+                        Journal.OnEnter += (Journal.EnterHandler) value.CastDelegate(typeof(Journal.EnterHandler));
+                    }
+                    remove {
+                        Journal.OnEnter -= (Journal.EnterHandler) value.CastDelegate(typeof(Journal.EnterHandler));
+                    }
+                }
+            }
+
+            public static class Journal {
                 public delegate void EnterHandler(_OuiJournal journal, Oui from);
                 public static event EnterHandler OnEnter;
                 internal static void Enter(_OuiJournal journal, Oui from)

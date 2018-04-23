@@ -271,14 +271,6 @@ namespace Celeste {
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
             }
-
-            Everest.Events.AreaData.Load();
-        }
-
-        public static extern void orig_ReloadMountainViews();
-        public static new void ReloadMountainViews() {
-            orig_ReloadMountainViews();
-            Everest.Events.AreaData.ReloadMountainViews();
         }
 
     }

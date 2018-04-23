@@ -161,12 +161,6 @@ namespace Celeste {
             return language;
         }
 
-        public static extern void orig_InitLanguages();
-        public static void InitLanguages() {
-            orig_InitLanguages();
-            Everest.Events.Dialog.InitLanguages();
-        }
-
         [MonoModReplace]
         public static bool Has(string name, Language language = null) {
             name = name.DialogKeyify();
