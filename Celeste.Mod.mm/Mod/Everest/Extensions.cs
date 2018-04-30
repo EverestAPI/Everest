@@ -177,7 +177,7 @@ namespace Celeste.Mod {
         /// <param name="option">The input TextMenu.Item option.</param>
         /// <param name="needsRelaunch">This method does nothing if this is set to false.</param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch) {
+        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch = true) {
             if (!needsRelaunch)
                 return option;
             return option

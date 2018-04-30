@@ -60,7 +60,7 @@ namespace Celeste.Mod {
         private static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
         private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
-        private static List<IDictionary<string, DynamicMethodDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, DynamicMethodDelegate>>();
+        private static List<IDictionary<string, FastReflectionDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, FastReflectionDelegate>>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -176,7 +176,7 @@ namespace Celeste.Mod {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());
                 _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
-                _ModuleMethodDelegates.Add(new Dictionary<string, DynamicMethodDelegate>());
+                _ModuleMethodDelegates.Add(new Dictionary<string, FastReflectionDelegate>());
             }
 
             module.LoadSettings();
@@ -269,8 +269,8 @@ namespace Celeste.Mod {
                 // Unfortunately prevents us from stepping into invoked methods.
                 for (int i = 0; i < _Modules.Count; i++) {
                     EverestModule module = _Modules[i];
-                    IDictionary<string, DynamicMethodDelegate> moduleMethods = _ModuleMethodDelegates[i];
-                    DynamicMethodDelegate method;
+                    IDictionary<string, FastReflectionDelegate> moduleMethods = _ModuleMethodDelegates[i];
+                    FastReflectionDelegate method;
 
                     if (moduleMethods.TryGetValue(methodName, out method)) {
                         if (method == null)
@@ -281,7 +281,7 @@ namespace Celeste.Mod {
 
                     MethodInfo methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
                     if (methodInfo != null)
-                        method = methodInfo.GetDelegate();
+                        method = methodInfo.GetFastDelegate();
                     moduleMethods[methodName] = method;
                     if (method == null)
                         continue;

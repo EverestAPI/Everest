@@ -18,7 +18,7 @@ namespace Celeste.Mod.Core {
         // Note: If SettingName isn't given, the values default to modoptions_[typename without settings]_[propname]
 
         // Example runtime setting that only shows up in the menu, not the settings file.
-        // [SettingName("modoptions_coremodule_debugmode")]
+        // [SettingName("modoptions_coremodule_launchindebugmode")]
         [YamlIgnore]
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
@@ -28,6 +28,18 @@ namespace Celeste.Mod.Core {
             }
             set {
                 Settings.Instance.LaunchInDebugMode = value;
+            }
+        }
+
+        [YamlIgnore]
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        public bool LaunchWithFMODLiveUpdate {
+            get {
+                return Settings.Instance.LaunchWithFMODLiveUpdate;
+            }
+            set {
+                Settings.Instance.LaunchWithFMODLiveUpdate = value;
             }
         }
 
@@ -64,6 +76,28 @@ namespace Celeste.Mod.Core {
         [SettingInGame(true)]
         public int ExampleInGameSlider { get; set; } = 5;
         */
+
+        public void CreateLaunchInDebugMode(TextMenu menu, bool inGame) {
+            if (inGame || typeof(Settings).GetField("LaunchInDebugMode") == null)
+                return;
+
+            menu.Add(
+                new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_launchindebugmode"), LaunchInDebugMode)
+                .Change(v => LaunchInDebugMode = v)
+                .NeedsRelaunch()
+            );
+        }
+
+        public void CreateLaunchWithFMODLiveUpdate(TextMenu menu, bool inGame) {
+            if (inGame || typeof(Settings).GetField("LaunchWithFMODLiveUpdate") == null)
+                return;
+
+            menu.Add(
+                new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_launchwithfmodliveupdate"), LaunchWithFMODLiveUpdate)
+                .Change(v => LaunchWithFMODLiveUpdate = v)
+                .NeedsRelaunch()
+            );
+        }
 
         public void CreateInputGuiEntry(TextMenu menu, bool inGame) {
             // Get all Input GUI prefixes and add a slider for switching between them.

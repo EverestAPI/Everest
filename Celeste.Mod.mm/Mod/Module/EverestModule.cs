@@ -264,7 +264,7 @@ namespace Celeste.Mod {
                 );
 
                 if (creator != null) {
-                    creator.GetDelegate()(settings, menu, inGame);
+                    creator.GetFastDelegate()(settings, menu, inGame);
                     continue;
                 }
 
@@ -333,7 +333,10 @@ namespace Celeste.Mod {
                 if (item == null)
                     continue;
 
-                menu.Add(item.NeedsRelaunch(needsRelaunch));
+                if (needsRelaunch)
+                    item = item.NeedsRelaunch();
+
+                menu.Add(item);
             }
 
         }
