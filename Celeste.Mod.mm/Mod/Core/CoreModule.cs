@@ -216,6 +216,13 @@ namespace Celeste.Mod.Core {
             }
 
             base.CreateModMenuSection(menu, inGame, snapshot);
+
+            if (Celeste.PlayMode == Celeste.PlayModes.Debug && Engine.Instance.Version >= new Version(1, 2, 2, 4)) {
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_unlocksecretchar")).Pressed(() => {
+                    Audio.Play("event:/char/dialogue/secret_character");
+                }));
+            }
+
         }
 
     }

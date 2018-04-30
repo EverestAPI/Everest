@@ -51,6 +51,8 @@
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload Assets~
 
+	MODOPTIONS_COREMODULE_UNLOCKSECRETCHAR= 				~Unlock Secret Character~
+
 # Maplist
 	MAPLIST_TITLE= 			MAP LIST
 	MAPLIST_FILTERS= 		Filters
