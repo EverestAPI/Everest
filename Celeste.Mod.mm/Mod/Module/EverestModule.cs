@@ -321,7 +321,7 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.Button(name + ": " + value)
                         .Pressed(() => {
-                            Audio.Play("event:/ui/main/savefile_rename_start");
+                            Audio.Play(Sfxs.ui_main_savefile_rename_start);
                             menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
                                 (string) value,
                                 v => prop.SetValue(settings, v)

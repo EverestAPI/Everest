@@ -149,8 +149,8 @@ namespace Celeste.Mod.Core {
                 index = buttons.Count - 1;
 
             buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions", menu, Vector2.Zero, Vector2.Zero, () => {
-                Audio.Play("event:/ui/main/button_select");
-                Audio.Play("event:/ui/main/whoosh_large_in");
+                Audio.Play(Sfxs.ui_main_button_select);
+                Audio.Play(Sfxs.ui_main_whoosh_large_in);
                 menu.Overworld.Goto<OuiModOptions>();
             }));
         }
@@ -183,12 +183,12 @@ namespace Celeste.Mod.Core {
 			    TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
 
 			    options.OnESC = options.OnCancel = () => {
-				    Audio.Play("event:/ui/main/button_back");
+				    Audio.Play(Sfxs.ui_main_button_back);
 				    options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
 			    };
 
 			    options.OnPause = () => {
-				    Audio.Play("event:/ui/main/button_back");
+				    Audio.Play(Sfxs.ui_main_button_back);
 				    options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;
                         Engine.FreezeTimer = 0.15f;
@@ -216,13 +216,6 @@ namespace Celeste.Mod.Core {
             }
 
             base.CreateModMenuSection(menu, inGame, snapshot);
-
-            if (Celeste.PlayMode == Celeste.PlayModes.Debug && Engine.Instance.Version >= new Version(1, 2, 2, 4)) {
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_unlocksecretchar")).Pressed(() => {
-                    Audio.Play("event:/char/dialogue/secret_character");
-                }));
-            }
-
         }
 
     }

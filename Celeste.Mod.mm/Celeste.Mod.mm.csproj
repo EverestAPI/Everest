@@ -168,6 +168,7 @@
     <Compile Include="Mod\UI\OuiMapList.cs" />
     <Compile Include="Mod\UI\OuiModOptions.cs" />
     <Compile Include="MonoModRules.cs" />
+    <Compile Include="Patches\Audio.cs" />
     <Compile Include="Patches\FMOD\Studio\EventDescription.cs" />
     <Compile Include="Patches\GameplayRenderer.cs" />
     <Compile Include="Patches\CompleteRenderer.cs" />

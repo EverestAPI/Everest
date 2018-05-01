@@ -156,7 +156,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play("event:/ui/main/whoosh_large_out");
+            Audio.Play(Sfxs.ui_main_whoosh_large_out);
             menu.Focused = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -173,7 +173,7 @@ namespace Celeste.Mod.UI {
         public override void Update() {
             if (menu != null && menu.Focused &&
                 Selected && Input.MenuCancel.Pressed) {
-                Audio.Play("event:/ui/main/button_back");
+                Audio.Play(Sfxs.ui_main_button_back);
                 Overworld.Goto<OuiModOptions>();
             }
 

@@ -26,6 +26,8 @@ namespace Celeste.Mod {
     public sealed class AssetTypeXml { private AssetTypeXml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
+    public sealed class AssetTypeBank { private AssetTypeBank() { } }
+    public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -74,6 +76,10 @@ namespace Celeste.Mod {
             /// List of all maps to be loaded by AreaData.Load
             /// </summary>
             public readonly static List<ModAsset> ListMaps = new List<ModAsset>();
+            /// <summary>
+            /// List of all banks to be loaded by Audio.Init
+            /// </summary>
+            public readonly static List<ModAsset> ListBanks = new List<ModAsset>();
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
             internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
@@ -89,10 +95,10 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
-                Crawl(new ContentModMetadata() {
+                Crawl(new ContentModMetadata {
                     Assembly = typeof(Everest).Assembly
                 });
-                Crawl(new ContentModMetadata() {
+                Crawl(new ContentModMetadata {
                     PathDirectory = PathContent
                 });
             }
@@ -107,10 +113,12 @@ namespace Celeste.Mod {
             public static bool TryGet(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
-                if (includeDirs) {
-                    if (MapDirs.TryGetValue(path, out metadata)) return true;
-                }
-                if (Map.TryGetValue(path, out metadata)) return true;
+                if (includeDirs && MapDirs.TryGetValue(path, out metadata))
+                    return true;
+                if (Map.TryGetValue(path, out metadata))
+                    return true;
+
+                metadata = null;
                 return false;
             }
             /// <summary>
@@ -121,8 +129,40 @@ namespace Celeste.Mod {
             /// <returns>The resulting mod asset meta object, or null.</returns>
             public static ModAsset Get(string path, bool includeDirs = false) {
                 ModAsset metadata;
-                TryGet(path, out metadata, includeDirs);
-                return metadata;
+                if (TryGet(path, out metadata, includeDirs))
+                    return metadata;
+                return null;
+            }
+
+            /// <summary>
+            /// Gets the ModAsset mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The resulting mod asset meta object.</param>
+            /// <param name="includeDirs">Whether to include directories or not.</param>
+            /// <returns>True if a mapping for the given path is present, false otherwise.</returns>
+            public static bool TryGet<T>(string path, out ModAsset metadata, bool includeDirs = false) {
+                path = path.Replace('\\', '/');
+
+                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata.AssetType == typeof(T))
+                    return true;
+                if (Map.TryGetValue(path, out metadata) && metadata.AssetType == typeof(T))
+                    return true;
+
+                metadata = null;
+                return false;
+            }
+            /// <summary>
+            /// Gets the ModAsset mapped to the given relative path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="includeDirs">Whether to include directories or not.</param>
+            /// <returns>The resulting mod asset meta object, or null.</returns>
+            public static ModAsset Get<T>(string path, bool includeDirs = false) {
+                ModAsset metadata;
+                if (TryGet<T>(path, out metadata, includeDirs))
+                    return metadata;
+                return null;
             }
 
             /// <summary>
@@ -166,6 +206,11 @@ namespace Celeste.Mod {
                 if (!Map.TryGetValue(path, out metadataPrev))
                     metadataPrev = null;
 
+                // Hardcoded case: Store audio banks in a list of banks to preload.
+                if (metadata.AssetType == typeof(AssetTypeBank)) {
+                    ListBanks.Add(metadata);
+                }
+                
                 // Hardcoded case: Handle dialog .txts separately.
                 if (metadata.AssetType == typeof(AssetTypeDialog)) {
                     // Store multiple AssetMetadatas in a list per path.
@@ -229,7 +274,9 @@ namespace Celeste.Mod {
             /// <returns>The passed asset path, trimmed if required.</returns>
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
-                format = file.Length < 4 ? null : file.Substring(file.Length - 3);
+                format = Path.GetExtension(file) ?? "";
+                if (format.Length >= 1)
+                    format = format.Substring(1);
 
                 if (file.EndsWith(".dll")) {
                     type = typeof(AssetTypeAssembly);
@@ -262,6 +309,17 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeMap);
                     file = file.Substring(0, file.Length - 4);
 
+                } else if (file.EndsWith(".bank")) {
+                    type = typeof(AssetTypeBank);
+                    file = file.Substring(0, file.Length - 5);
+                } else if (file.EndsWith(".guids.txt")) {
+                    type = typeof(AssetTypeGUIDs);
+                    file = file.Substring(0, file.Length - 4);
+                } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                    type = typeof(AssetTypeGUIDs);
+                    file = file.Substring(0, file.Length - 4 - 6);
+                    file += ".guids";
+
                 } else if (OnGuessType != null) {
                     // Allow mods to parse custom types.
                     Delegate[] ds = OnGuessType.GetInvocationList();
@@ -289,6 +347,7 @@ namespace Celeste.Mod {
                 MapDirs.Clear();
                 MapDialogs.Clear();
                 ListMaps.Clear();
+                ListBanks.Clear();
 
                 for (int i = 0; i < Mods.Count; i++)
                     Crawl(Mods[i]);
@@ -344,7 +403,7 @@ namespace Celeste.Mod {
 
             internal static void Crawl(ContentModMetadata meta, Assembly asm) {
                 if (meta == null)
-                    Mods.Add(meta = new ContentModMetadata() {
+                    Mods.Add(meta = new ContentModMetadata {
                         Assembly = asm
                     });
 

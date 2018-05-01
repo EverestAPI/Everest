@@ -37,7 +37,11 @@ namespace Celeste.Mod.UI {
             }
 
             Done:
-            Audio.Play("event:/ui/world_map/chapter/pane_expand");
+            if (Direction > 0) {
+                Audio.Play(Sfxs.ui_world_chapter_pane_expand);
+            } else {
+                Audio.Play(Sfxs.ui_world_chapter_pane_contract);
+            }
             Overworld.Goto<OuiChapterSelect>();
             yield break;
         }

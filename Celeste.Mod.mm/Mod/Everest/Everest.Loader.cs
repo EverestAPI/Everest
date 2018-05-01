@@ -133,7 +133,7 @@ namespace Celeste.Mod {
                         meta.Icon = icon;
                 }
 
-                ContentModMetadata contentMeta = new ContentModMetadata() {
+                ContentModMetadata contentMeta = new ContentModMetadata {
                     PathArchive = archive
                 };
 
@@ -199,7 +199,7 @@ namespace Celeste.Mod {
                         }
                     }
 
-                ContentModMetadata contentMeta = new ContentModMetadata() {
+                ContentModMetadata contentMeta = new ContentModMetadata {
                     PathDirectory = dir
                 };
 

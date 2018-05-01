@@ -81,10 +81,15 @@ namespace Celeste {
             MInput.Disabled = true;
 
             Audio.Init();
+
+            // Original code loads audio banks here.
+            /*
             Audio.Banks.Master = Audio.Banks.Load("Master Bank", true);
             Audio.Banks.Music = Audio.Banks.Load("music", false);
             Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
             Audio.Banks.UI = Audio.Banks.Load("ui", false);
+            */
+
             Settings.Instance.ApplyVolumes();
             audioLoaded = true;
 

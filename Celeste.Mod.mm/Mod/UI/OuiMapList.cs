@@ -203,7 +203,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play("event:/ui/main/whoosh_large_out");
+            Audio.Play(Sfxs.ui_main_whoosh_large_out);
             Overworld.Maddy.Show = true;
             menu.Focused = false;
 
@@ -221,7 +221,7 @@ namespace Celeste.Mod.UI {
         public override void Update() {
             if (menu != null && menu.Focused &&
                 Selected && Input.MenuCancel.Pressed) {
-                Audio.Play("event:/ui/main/button_back");
+                Audio.Play(Sfxs.ui_main_button_back);
                 Overworld.Goto<OuiChapterSelect>();
             }
 
@@ -236,7 +236,7 @@ namespace Celeste.Mod.UI {
 
         public void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
-            Audio.Play("event:/ui/world_map/icon/select");
+            Audio.Play(Sfxs.ui_world_icon_select);
             SaveData.Instance.LastArea = area.ToKey(mode);
             if (OuiIcons != null && area.ID < OuiIcons.Count)
                 OuiIcons[area.ID].Select();
@@ -246,7 +246,7 @@ namespace Celeste.Mod.UI {
 
         public void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Focused = false;
-            Audio.Play("event:/ui/world_map/chapter/checkpoint_start");
+            Audio.Play(Sfxs.ui_world_chapter_checkpoint_start);
             Add(new Coroutine(StartRoutine(area, mode, checkpoint)));
         }
 

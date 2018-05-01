@@ -95,7 +95,7 @@ namespace Celeste.Mod.Meta {
         public string PoemID { get; set; }
         public ModeProperties Convert()
             => new ModeProperties() {
-                AudioState = AudioState?.Convert() ?? new AudioState("event:/music/lvl1/main", "event:/env/amb/01_main"),
+                AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),
                 Checkpoints = MapMeta.Convert(Checkpoints) ?? new CheckpointData[0],
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData,
                 Inventory = MapMeta.GetInventory(Inventory) ?? PlayerInventory.Default,

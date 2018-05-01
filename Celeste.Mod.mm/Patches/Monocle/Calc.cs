@@ -19,8 +19,7 @@ namespace Monocle {
         public static extern XmlDocument orig_LoadContentXML(string filename);
         public static XmlDocument LoadContentXML(string filename) {
             ModAsset asset;
-            if (Everest.Content.TryGet(filename.Substring(0, filename.Length - 4), out asset) &&
-                asset.AssetType == typeof(AssetTypeXml)) {
+            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out asset)) {
                 XmlDocument doc = new XmlDocument();
                 using (Stream stream = asset.Stream)
                     doc.Load(stream);
@@ -34,8 +33,7 @@ namespace Monocle {
         public static extern XmlDocument orig_LoadXML(string filename);
         public static XmlDocument LoadXML(string filename) {
             ModAsset asset;
-            if (Everest.Content.TryGet(filename.Substring(0, filename.Length - 4), out asset) &&
-                asset.AssetType == typeof(AssetTypeXml)) {
+            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out asset)) {
                 XmlDocument doc = new XmlDocument();
                 using (Stream stream = asset.Stream)
                     doc.Load(stream);

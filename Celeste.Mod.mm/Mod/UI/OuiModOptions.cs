@@ -84,7 +84,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play("event:/ui/main/whoosh_large_out");
+            Audio.Play(Sfxs.ui_main_whoosh_large_out);
             menu.Focused = false;
 
             yield return Everest.SaveSettings();
@@ -103,7 +103,7 @@ namespace Celeste.Mod.UI {
         public override void Update() {
             if (menu != null && menu.Focused &&
                 Selected && Input.MenuCancel.Pressed) {
-                Audio.Play("event:/ui/main/button_back");
+                Audio.Play(Sfxs.ui_main_button_back);
                 Overworld.Goto<OuiMainMenu>();
             }
 

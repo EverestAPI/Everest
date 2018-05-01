@@ -132,7 +132,7 @@ namespace Celeste {
                     new ModeProperties {
                         Path = asset.PathMapped.Substring(5),
                         Inventory = PlayerInventory.Default,
-                        AudioState = new AudioState("event:/music/lvl1/main", "event:/env/amb/01_main")
+                        AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
                     }
                 };
 
@@ -146,7 +146,7 @@ namespace Celeste {
                 area.Jumpthru = "wood";
 
                 area.CassseteNoteColor = Calc.HexToColor("33a9ee");
-                area.CassetteSong = "event:/music/cassette/01_forsaken_city";
+                area.CassetteSong = Sfxs.cas_01_forsaken_city;
 
                 // Custom values.
                 if (meta != null) {

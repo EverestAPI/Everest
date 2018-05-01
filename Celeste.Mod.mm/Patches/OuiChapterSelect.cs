@@ -114,8 +114,8 @@ namespace Celeste {
             // DON'T! The original method is orig_Update
             if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
                 Overworld.Maddy.Hide(true);
-                Audio.Play("event:/ui/main/button_select");
-                Audio.Play("event:/ui/main/whoosh_large_in");
+                Audio.Play(Sfxs.ui_main_button_select);
+                Audio.Play(Sfxs.ui_main_whoosh_large_in);
                 OuiMapList list = Overworld.Goto<OuiMapList>();
                 list.OuiIcons = icons;
                 return;
@@ -123,12 +123,14 @@ namespace Celeste {
 
             if (Focused && display && !disableInput && inputDelay <= 0f) {
                 if (Input.MenuUp.Pressed) {
-                    Audio.Play("event:/ui/world_map/chapter/pane_contract");
+                    Audio.Play(Sfxs.ui_world_chapter_pane_contract);
+                    Audio.Play(Sfxs.ui_world_icon_roll_left);
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
                     return;
                 }
                 if (Input.MenuDown.Pressed) {
-                    Audio.Play("event:/ui/world_map/chapter/pane_contract");
+                    Audio.Play(Sfxs.ui_world_chapter_pane_expand);
+                    Audio.Play(Sfxs.ui_world_icon_roll_right);
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
                     return;
                 }
