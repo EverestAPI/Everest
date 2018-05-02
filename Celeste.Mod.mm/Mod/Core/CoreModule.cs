@@ -216,6 +216,12 @@ namespace Celeste.Mod.Core {
             }
 
             base.CreateModMenuSection(menu, inGame, snapshot);
+
+            if (!inGame) {
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
+                    OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
+                }));
+            }
         }
 
     }

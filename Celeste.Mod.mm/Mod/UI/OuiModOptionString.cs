@@ -393,7 +393,6 @@ namespace Celeste.Mod.UI {
         private Color GetTextColor(bool selected) {
             if (selected)
                 return (Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB);
-
             return unselectColor;
         }
 

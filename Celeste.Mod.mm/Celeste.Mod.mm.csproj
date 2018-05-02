@@ -160,6 +160,7 @@
     <Compile Include="Mod\Helpers\YamlHelper.cs" />
     <Compile Include="Mod\UI\OuiHelper_Shutdown.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_LevelSet.cs" />
+    <Compile Include="Mod\UI\OuiSoundTest.cs" />
     <Compile Include="Mod\UI\OuiModOptionString.cs" />
     <Compile Include="Mod\UI\OuiLoggedProgress.cs" />
     <Compile Include="Mod\UI\OuiVersionList.cs" />

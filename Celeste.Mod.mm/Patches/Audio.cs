@@ -157,6 +157,7 @@ namespace Celeste {
         // We thus expose any new members through extensions.
 
         public static FMOD.Studio.System System => patch_Audio.System;
+        public static Dictionary<Guid, string> cachedPaths => patch_Audio.cachedPaths;
 
         public static Dictionary<string, Bank> Banks => patch_Audio.patch_Banks.Banks;
 

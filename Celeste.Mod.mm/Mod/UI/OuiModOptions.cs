@@ -70,7 +70,7 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Enter(Oui from) {
             ReloadMenu();
 
-            menu.Visible = (Visible = true);
+            menu.Visible = Visible = true;
             menu.Focused = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -80,7 +80,6 @@ namespace Celeste.Mod.UI {
             }
 
             menu.Focused = true;
-            yield break;
         }
 
         public override IEnumerator Leave(Oui next) {

@@ -51,7 +51,10 @@
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload Assets~
 
-	MODOPTIONS_COREMODULE_UNLOCKSECRETCHAR= 				~Unlock Secret Character~
+	MODOPTIONS_COREMODULE_SOUNDTEST= 						Sound Test
+
+# Sound Test
+	SOUNDTEST_TITLE=	SOUND TEST
 
 # Maplist
 	MAPLIST_TITLE= 			MAP LIST
@@ -74,5 +77,4 @@
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
-	UPDATER_SRC_TRAVIS= 			Development Builds (travis)
-	UPDATER_SRC_GITHUB= 			Stable Builds
+	UPDATER_SRC_TRAVIS= 			Automatic Builds
