@@ -70,9 +70,6 @@ namespace Celeste {
 
         public extern void orig_Update();
         public override void Update() {
-            if (Focused)
-                Name = Emoji.Apply(Name);
-
             bool wasFocused = Focused;
             // Only "focus" if the input method is a gamepad, not a keyboard.
             Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
