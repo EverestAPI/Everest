@@ -93,6 +93,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
+            TextInput.OnInput += OnTextInput;
+
             Overworld.ShowInputUI = false;
 
             selectingOptions = false;
@@ -159,6 +161,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
+            TextInput.OnInput -= OnTextInput;
+
             Overworld.ShowInputUI = true;
             Focused = false;
 
@@ -173,7 +177,51 @@ namespace Celeste.Mod.UI {
             Visible = false;
         }
 
+        public void OnTextInput(char c) {
+            if (MInput.GamePads[Input.Gamepad].Attached)
+                return;
+
+            if (c == (char) 13) {
+                // Enter - confirm.
+                Finish();
+
+            } else if (c == (char) 8) {
+                // Backspace - trim.
+                if (Value.Length > 0) {
+                    Value = Value.Substring(0, Value.Length - 1);
+                    Audio.Play(Sfxs.ui_main_rename_entry_backspace);
+                } else {
+                    Audio.Play(Sfxs.ui_main_button_invalid);
+                }
+
+            } else if (c == (char) 127) {
+                // Delete - currenly not handled.
+
+            } else if (c == ' ') {
+                // Space - append.
+                if (Value.Length < 12) {
+                    Audio.Play(Sfxs.ui_main_rename_entry_space);
+                    Value += c;
+                } else {
+                    Audio.Play(Sfxs.ui_main_button_invalid);
+                }
+
+            } else if (!char.IsControl(c)) {
+                // Any other character - append.
+                if (Value.Length < 12 && ActiveFont.FontSize.Characters.ContainsKey(c)) {
+                    Audio.Play(Sfxs.ui_main_rename_entry_char);
+                    Value += c;
+                } else {
+                    Audio.Play(Sfxs.ui_main_button_invalid);
+                }
+            }
+        }
+
         public override void Update() {
+            bool wasFocused = Focused;
+            // Only "focus" if the input method is a gamepad, not a keyboard.
+            Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+
             base.Update();
 
             // TODO: Rewrite or study and document the following code.
@@ -295,6 +343,14 @@ namespace Celeste.Mod.UI {
             }
 
             End:
+
+            if (wasFocused && !Focused) {
+                if (Input.ESC)
+                    Cancel();
+            }
+
+            Focused = wasFocused;
+
             pressedTimer -= Engine.DeltaTime;
             timer += Engine.DeltaTime;
             wiggler.Update();
@@ -337,6 +393,11 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Render() {
+            int prevIndex = index;
+            // Only "focus" if the input method is a gamepad, not a keyboard.
+            if (!MInput.GamePads[Input.Gamepad].Attached)
+                index = -1;
+
             // TODO: Rewrite or study and document the following code.
             // It stems from OuiFileNaming.
 
@@ -378,9 +439,17 @@ namespace Celeste.Mod.UI {
             DrawOptionText(accept, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 3) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 3, Value.Length < 1 || !Focused);
 
             ActiveFont.DrawEdgeOutline(Value, Position + new Vector2(960f, 256f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
+
+            index = prevIndex;
         }
 
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
+            // Only draw "interactively" if the input method is a gamepad, not a keyboard.
+            if (!MInput.GamePads[Input.Gamepad].Attached) {
+                selected = false;
+                disabled = true;
+            }
+
             Color color = disabled ? disableColor : GetTextColor(selected);
             Color edgeColor = disabled ? Color.Lerp(disableColor, Color.Black, 0.7f) : Color.Gray;
             if (selected && pressedTimer > 0f) {
