@@ -124,8 +124,6 @@
     <Compile Include="Mod\Touch\TouchRegion.cs" />
     <Compile Include="Mod\Touch\TouchInputManager.cs" />
     <Compile Include="Mod\Everest\Everest.Flags.cs" />
-    <Compile Include="Mod\Everest\Notification.cs" />
-    <Compile Include="Mod\Everest\NotificationManager.cs" />
     <Compile Include="Mod\Everest\TextInput.cs" />
     <Compile Include="Mod\Helpers\XNAFormsHook.cs" />
     <Compile Include="Mod\Helpers\Commands.cs" />
@@ -264,9 +262,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\notification\default\bg.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\notification\default\bg.png</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
