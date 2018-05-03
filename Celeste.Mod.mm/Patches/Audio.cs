@@ -35,9 +35,24 @@ namespace Celeste {
             Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
             Audio.Banks.UI = Audio.Banks.Load("ui", false);
 
-            foreach (ModAsset asset in Everest.Content.ListBanks) {
-                IngestBank(asset);
+            // Prepopulate cachedPaths, as it's being used directly.
+            foreach (Bank bank in patch_Banks.Banks.Values) {
+                EventDescription[] descs;
+                bank.getEventList(out descs);
+                foreach (EventDescription desc in descs) {
+                    if (!desc.isValid())
+                        continue;
+                    Guid id;
+                    desc.getID(out id);
+                    string path;
+                    desc.getPath(out path);
+                    cachedPaths[id] = path;
+                }
             }
+
+            // Load any additional banks.
+            foreach (ModAsset asset in Everest.Content.ListBanks)
+                IngestBank(asset);
         }
 
         public static Bank IngestBank(ModAsset asset) {
