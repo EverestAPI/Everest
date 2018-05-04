@@ -70,6 +70,7 @@ namespace Celeste {
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
 
             // Everest comes with a few core utility entities out of the box.
+
             if (entityData.Name == "levelFlagTrigger") {
                 level.Add(new LevelFlagTrigger(entityData, offset));
                 return true;
@@ -85,8 +86,9 @@ namespace Celeste {
                 return true;
             }
 
-            // The spinner type and colors are hardcoded.
-            // Everest allows custom maps to set the dust and color attributes.
+            // The following entities have hardcoded "attributes."
+            // Everest allows custom maps to set them.
+
             if (entityData.Name == "spinner") {
                 if (level.Session.Area.ID == 3 ||
                     (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
@@ -104,6 +106,30 @@ namespace Celeste {
                     color = CrystalColor.Blue;
 
                 level.Add(new CrystalStaticSpinner(entityData, offset, color));
+                return true;
+            }
+
+            if (entityData.Name == "trackSpinner") {
+                if (level.Session.Area.ID == 3 ||
+                    (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
+                    entityData.Bool("dust")) {
+                    level.Add(new DustTrackSpinner(entityData, offset));
+                    return true;
+                }
+
+                level.Add(new BladeTrackSpinner(entityData, offset));
+                return true;
+            }
+
+            if (entityData.Name == "rotateSpinner") {
+                if (level.Session.Area.ID == 3 ||
+                    (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
+                    entityData.Bool("dust")) {
+                    level.Add(new DustRotateSpinner(entityData, offset));
+                    return true;
+                }
+
+                level.Add(new DustRotateSpinner(entityData, offset));
                 return true;
             }
 
