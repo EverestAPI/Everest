@@ -7,6 +7,7 @@ using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 
 namespace Celeste {
@@ -81,6 +82,28 @@ namespace Celeste {
 
             if (entityData.Name == "customMemorial") {
                 level.Add(new CustomMemorial(entityData, offset));
+                return true;
+            }
+
+            // The spinner type and colors are hardcoded.
+            // Everest allows custom maps to set the dust and color attributes.
+            if (entityData.Name == "spinner") {
+                if (level.Session.Area.ID == 3 ||
+                    (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
+                    entityData.Bool("dust")) {
+                    level.Add(new DustStaticSpinner(entityData, offset));
+                    return true;
+                }
+
+                CrystalColor color = CrystalColor.Blue;
+                if (level.Session.Area.ID == 5)
+                    color = CrystalColor.Red;
+                else if (level.Session.Area.ID == 6)
+                    color = CrystalColor.Purple;
+                else if (!Enum.TryParse(entityData.Attr("color"), out color))
+                    color = CrystalColor.Blue;
+
+                level.Add(new CrystalStaticSpinner(entityData, offset, color));
                 return true;
             }
 
