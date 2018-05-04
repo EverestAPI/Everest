@@ -100,7 +100,7 @@ namespace Celeste {
                     color = CrystalColor.Red;
                 else if (level.Session.Area.ID == 6)
                     color = CrystalColor.Purple;
-                else if (!Enum.TryParse(entityData.Attr("color"), out color))
+                else if (!Enum.TryParse(entityData.Attr("color"), true, out color))
                     color = CrystalColor.Blue;
 
                 level.Add(new CrystalStaticSpinner(entityData, offset, color));
