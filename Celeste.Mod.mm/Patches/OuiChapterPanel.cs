@@ -83,9 +83,10 @@ namespace Celeste {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed entering area {Area}");
                 e.LogDetailed();
 
-                string message = Dialog.Get("postcard_levelloadfailed");
-                message = message.Replace("((player))", SaveData.Instance.Name);
-                message = message.Replace("((sid))", Area.GetSID());
+                string message = Dialog.Get("postcard_levelloadfailed")
+                    .Replace("((player))", SaveData.Instance.Name)
+                    .Replace("((sid))", Area.GetSID())
+                ;
 
                 LevelEnterExt.ErrorMessage = message;
                 LevelEnter.Go(new Session(new AreaKey(1).SetSID("")), false);

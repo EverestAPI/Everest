@@ -12,6 +12,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.IO;
+using Celeste.Mod.Helpers;
+using MonoMod.Utils;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -55,7 +57,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Load() {
-            Everest.Events.OuiMainMenu.OnCreateButtons += CreateMainMenuButtons;
+            Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
 
             if (Everest.Flags.IsMobile) {
@@ -127,7 +129,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Unload() {
-            Everest.Events.OuiMainMenu.OnCreateButtons -= CreateMainMenuButtons;
+            Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
 
         }

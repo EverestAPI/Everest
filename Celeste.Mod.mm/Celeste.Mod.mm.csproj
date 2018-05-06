@@ -121,6 +121,8 @@
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Emoji.cs" />
+    <Compile Include="Mod\Everest\Everest.Discord.cs" />
+    <Compile Include="Mod\Helpers\DiscordRpc.cs" />
     <Compile Include="Mod\Touch\TouchInputNodes.cs" />
     <Compile Include="Mod\Touch\TouchRegion.cs" />
     <Compile Include="Mod\Touch\TouchInputManager.cs" />
@@ -195,6 +197,7 @@
     <Compile Include="Patches\OuiChapterSelect.cs" />
     <Compile Include="Patches\OverworldLoader.cs" />
     <Compile Include="Patches\Overworld.cs" />
+    <Compile Include="Patches\Strawberry.cs" />
     <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />
     <Compile Include="Patches\Monocle\EntityList.cs" />
@@ -282,6 +285,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="..\lib-ext\discord-rpc.dll">
+      <Link>discord-rpc.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\lib-fna\libjpeg-9.dll">
       <Link>libjpeg-9.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -300,6 +307,14 @@
     </Content>
     <Content Include="..\lib\YamlDotNet.xml">
       <Link>YamlDotNet.xml</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-ext\libdiscord-rpc.dylib">
+      <Link>libdiscord-rpc.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-ext\libdiscord-rpc.so">
+      <Link>libdiscord-rpc.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="packages.config" />

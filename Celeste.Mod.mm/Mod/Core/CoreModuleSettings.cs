@@ -64,6 +64,11 @@ namespace Celeste.Mod.Core {
 
         public string InputGui { get; set; } = "";
 
+        [SettingIgnore]
+        public string DiscordLib { get; set; } = "";
+        [SettingIgnore]
+        public string DiscordID { get; set; } = "";
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;

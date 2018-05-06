@@ -158,6 +158,7 @@ namespace Celeste.Mod {
         internal static void Initialize() {
             // Initialize misc stuff.
             TextInput.Initialize(Celeste.Instance);
+            Discord.Initialize();
 
             // Add the previously created managers.
             Celeste.Instance.Components.Add(TouchInputManager.Instance);

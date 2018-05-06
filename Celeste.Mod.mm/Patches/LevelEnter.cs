@@ -34,9 +34,10 @@ namespace Celeste {
             }
 
             if (AreaData.Get(session.Area) == null) {
-                string message = Dialog.Get("postcard_levelgone");
-                message = message.Replace("((player))", SaveData.Instance.Name);
-                message = message.Replace("((sid))", session.Area.GetSID());
+                string message = Dialog.Get("postcard_levelgone")
+                    .Replace("((player))", SaveData.Instance.Name)
+                    .Replace("((sid))", session.Area.GetSID())
+                ;
                 return ErrorRoutine(message);
             }
 

@@ -78,3 +78,8 @@
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
 	UPDATER_SRC_TRAVIS= 			Automatic Builds
+
+# Discord Rich Presence - Note: Everest always uses the English texts!
+	DISCORD_MENU=				📋 Menu
+	DISCORD_INGAME=				🗻 ((area)) 📼 ((side))
+	DISCORD_INGAME_STATUS=		((deaths)) x 💀 | ((strawberries)) x 🍓
