@@ -193,7 +193,7 @@ namespace MiniInstaller {
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { asm } });
+            AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm } });
         }
 
         public static void StartGame() {
