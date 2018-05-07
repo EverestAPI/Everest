@@ -51,7 +51,7 @@ namespace Celeste.Mod {
                 DiscordHandlers.disconnectedCallback += OnDiscordDisconnect;
                 DiscordHandlers.errorCallback += OnDiscordError;
 
-                DiscordRpc.Initialize.Invoke(discordID, ref DiscordHandlers, true, null); // Celeste Steam ID is 504230
+                DiscordRpc.Initialize.Invoke(discordID, ref DiscordHandlers, true, "504230");
                 DiscordRpc.UpdatePresence(DiscordPresence);
 
                 Events.Celeste.OnExiting += OnGameExit;
