@@ -68,6 +68,12 @@ namespace Celeste.Mod.Core {
         public string DiscordLib { get; set; } = "";
         [SettingIgnore]
         public string DiscordID { get; set; } = "";
+        [SettingIgnore]
+        public string DiscordTextInMenu { get; set; } = "📋 Menu";
+        [SettingIgnore]
+        public string DiscordTextInGame { get; set; } = "🗻 ((area)) 📼 ((side))";
+        [SettingIgnore]
+        public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
 
         /*
         [SettingRange(0, 10)]

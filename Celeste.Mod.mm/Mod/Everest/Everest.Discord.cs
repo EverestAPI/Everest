@@ -76,7 +76,7 @@ namespace Celeste.Mod {
             }
 
             private static void OnMainMenu(OuiMainMenu menu, List<MenuButton> buttons) {
-                UpdateText("discord_menu");
+                UpdateText(CoreModule.Settings.DiscordTextInMenu);
             }
             private static void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
                 DateTime now = DateTime.UtcNow;
@@ -84,17 +84,17 @@ namespace Celeste.Mod {
                     DiscordPresence.startTimestamp = DateTimeToDiscordTime(DateTime.UtcNow);
                 DiscordPresence.endTimestamp = 0;
 
-                UpdateText("discord_ingame", "discord_ingame_status", level.Session);
+                UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame, level.Session);
             }
             private static void OnLevelExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
                 DiscordPresence.startTimestamp = 0;
                 DiscordPresence.endTimestamp = 0;
 
-                UpdateText("discord_menu");
+                UpdateText(CoreModule.Settings.DiscordTextInMenu);
             }
 
             internal static void OnStrawberryCollect() {
-                UpdateText("discord_ingame", "discord_ingame_status");
+                UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame);
             }
 
             private static string FillText(string text, Session session, string area) {
@@ -114,10 +114,8 @@ namespace Celeste.Mod {
 
             public static void UpdateText(string details, string state = null, Session session = null) {
                 Language language = null;
-                if (Dialog.Languages?.TryGetValue("english", out language) ?? false) {
-                    details = details?.DialogCleanOrNull(language) ?? details;
-                    state = state?.DialogCleanOrNull(language) ?? state;
-                }
+                if (!(Dialog.Languages?.TryGetValue("english", out language) ?? false))
+                    language = null;
 
                 if (session == null)
                     session = (Engine.Scene as Level)?.Session;

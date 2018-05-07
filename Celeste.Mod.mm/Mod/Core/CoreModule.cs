@@ -202,6 +202,9 @@ namespace Celeste.Mod.Core {
         }
 
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+            // Optional - reload mod settings when entering the mod options.
+            LoadSettings();
+
             if (!inGame) {
                 if (Everest.Updater.HasUpdate) {
                     menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Version.ToString())).Pressed(() => {
