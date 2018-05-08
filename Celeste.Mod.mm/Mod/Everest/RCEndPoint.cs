@@ -24,6 +24,8 @@ namespace Celeste.Mod {
     public class RCEndPoint {
 
         public string Path;
+        public string PathHelp;
+        public string PathExample;
         public string Name;
         public string InfoHTML;
 

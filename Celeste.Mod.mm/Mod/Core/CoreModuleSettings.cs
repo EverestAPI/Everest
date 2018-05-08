@@ -65,7 +65,7 @@ namespace Celeste.Mod.Core {
         public string InputGui { get; set; } = "";
 
         [SettingIgnore]
-        public string DebugRCPort { get; set; } = "2781";
+        public int DebugRCPort { get; set; } = 32270;
 
         [SettingIgnore]
         public string DiscordLib { get; set; } = "";

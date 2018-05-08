@@ -19,6 +19,7 @@ using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
 using System.Net;
 using System.Threading;
+using System.Collections.Specialized;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -32,17 +33,16 @@ namespace Celeste.Mod {
                 if (Listener != null)
                     return;
 
-                int port;
                 if (Celeste.PlayMode != Celeste.PlayModes.Debug ||
-                    !int.TryParse(CoreModule.Settings.DebugRCPort, out port))
+                    CoreModule.Settings.DebugRCPort <= 0)
                     return;
 
                 Listener = new HttpListener();
-                Listener.Prefixes.Add($"http://localhost:{port}/");
+                Listener.Prefixes.Add($"http://localhost:{CoreModule.Settings.DebugRCPort}/");
                 Listener.Start();
 
                 ThreadPool.QueueUserWorkItem(_ => {
-                    Logger.Log(LogLevel.Info, "debugrc", $"Started DebugRC thread, available via http://localhost:{port}/");
+                    Logger.Log(LogLevel.Info, "debugrc", $"Started DebugRC thread, available via http://localhost:{CoreModule.Settings.DebugRCPort}/");
                     try {
                         while (Listener.IsListening) {
                             ThreadPool.QueueUserWorkItem(c => {
@@ -66,11 +66,41 @@ namespace Celeste.Mod {
             private static void HandleRequest(HttpListenerContext c) {
                 Logger.Log(LogLevel.Verbose, "debugrc", $"Requested: {c.Request.RawUrl}");
 
+                string url = c.Request.RawUrl;
+                int indexOfSplit = url.IndexOf('?');
+                if (indexOfSplit != -1)
+                    url = url.Substring(0, indexOfSplit);
+
                 RCEndPoint endpoint =
                     EndPoints.FirstOrDefault(ep => ep.Path == c.Request.RawUrl) ??
+                    EndPoints.FirstOrDefault(ep => ep.Path == url) ??
                     EndPoints.FirstOrDefault(ep => ep.Path.ToLowerInvariant() == c.Request.RawUrl.ToLowerInvariant()) ??
+                    EndPoints.FirstOrDefault(ep => ep.Path.ToLowerInvariant() == url.ToLowerInvariant()) ??
                     EndPoints.FirstOrDefault(ep => ep.Path == "/404");
                 endpoint.Handle(c);
+            }
+
+            #endregion
+
+            #region Read / Parse Helpers
+
+            public static NameValueCollection ParseQueryString(string url) {
+                NameValueCollection nvc = new NameValueCollection();
+
+                int indexOfSplit = url.IndexOf('?');
+                if (indexOfSplit == -1)
+                    return nvc;
+                url = url.Substring(indexOfSplit + 1);
+
+                string[] args = url.Split('&');
+                foreach (string arg in args) {
+                    indexOfSplit = arg.IndexOf('=');
+                    if (indexOfSplit == -1)
+                        continue;
+                    nvc[arg.Substring(0, indexOfSplit)] = arg.Substring(indexOfSplit + 1);
+                }
+
+                return nvc;
             }
 
             #endregion
@@ -188,7 +218,7 @@ header {
                         foreach (RCEndPoint ep in EndPoints) {
                             builder.AppendLine(@"<li>");
                             builder.AppendLine($@"<h3>{ep.Name}</h3>");
-                            builder.AppendLine($@"<p><code>{ep.Path}</code><br>{ep.InfoHTML}</p>");
+                            builder.AppendLine($@"<p><a href=""{ep.PathExample ?? ep.Path}""><code>{ep.PathHelp ?? ep.Path}</code></a><br>{ep.InfoHTML}</p>");
                             builder.AppendLine(@"</li>");
                         }
                         builder.AppendLine(@"</ul>");
@@ -202,10 +232,73 @@ header {
                 new RCEndPoint {
                     Path = "/404",
                     Name = "404",
-                    InfoHTML = "Basic 404 endpoint.",
+                    InfoHTML = "Basic 404.",
                     Handle = c => {
                         c.Response.StatusCode = (int) HttpStatusCode.NotFound;
-                        Write(c, "ERROR: 404 - Endpoint not found.");
+                        Write(c, "ERROR: Endpoint not found.");
+                    }
+                },
+
+                new RCEndPoint {
+                    Path = "/reloadmap",
+                    PathHelp = "/reloadmap?sid={SID}[&side={A|B|C}]",
+                    PathExample = "/reloadmap?sid=Cruor/Secret/1-Secret&side=A",
+                    Name = "Reload Map",
+                    InfoHTML = "Reload the map binary. Passing no side will reload all map binaries.",
+                    Handle = c => {
+                        NameValueCollection data = ParseQueryString(c.Request.RawUrl);
+                        string sid = data["sid"];
+                        if (string.IsNullOrEmpty(sid)) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: No SID given.");
+                            return;
+                        }
+
+                        AreaData area = AreaDataExt.Get(sid);
+                        if (area == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Area not found: {sid}");
+                            return;
+                        }
+
+                        string sideStr = data["side"];
+                        if (string.IsNullOrEmpty(sideStr)) {
+                            foreach (ModeProperties mode in area.Mode)
+                                mode?.MapData?.Reload();
+                            Write(c, "OK");
+                            return;
+                        }
+
+                        int side = sideStr.Length != 1 ? -1 : (sideStr.ToLowerInvariant()[0] - 'a');
+                        if (side < 0 || area.Mode.Length <= side) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Invalid side value.");
+                            return;
+                        }
+
+                        if (area.Mode[side] == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Area {sid} doesn't have side {(char) ('A' + side)}.");
+                        }
+
+                        Write(c, "OK");
+                    }
+                },
+
+                new RCEndPoint {
+                    Path = "/respawn",
+                    Name = "Respawn",
+                    InfoHTML = "Restart the current screen, respawning the player.",
+                    Handle = c => {
+                        Level level = Engine.Scene as Level;
+                        if (level == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, "ERROR: Player not in a level.");
+                            return;
+                        }
+
+                        Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                        Write(c, "OK");
                     }
                 },
 
