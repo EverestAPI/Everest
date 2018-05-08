@@ -22,6 +22,9 @@ namespace Celeste {
             orig_ctor_OuiTitleScreen();
 
             version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
+
+            // Initialize DebugRC here, as the play mode can change.
+            Everest.DebugRC.Initialize();
         }
 
     }

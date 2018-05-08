@@ -121,7 +121,9 @@
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
     <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
     <Compile Include="Mod\Everest\Emoji.cs" />
+    <Compile Include="Mod\Everest\Everest.DebugRC.cs" />
     <Compile Include="Mod\Everest\Everest.Discord.cs" />
+    <Compile Include="Mod\Everest\RCEndPoint.cs" />
     <Compile Include="Mod\Helpers\DiscordRpc.cs" />
     <Compile Include="Mod\Touch\TouchInputNodes.cs" />
     <Compile Include="Mod\Touch\TouchRegion.cs" />

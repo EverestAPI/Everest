@@ -42,13 +42,19 @@ namespace Celeste.Mod {
         /// </summary>
         [YamlIgnore]
         public virtual Version Version { get; set; } = new Version(1, 0);
+        protected string _VersionString;
         [YamlMember(Alias = "Version")]
-        public string VersionString {
+        public virtual string VersionString {
             get {
-                return Version.ToString();
+                return _VersionString;
             }
             set {
-                Version = new Version(value);
+                _VersionString = value;
+                int versionSplitIndex = value.IndexOf('-');
+                if (versionSplitIndex == -1)
+                    Version = new Version(value);
+                else
+                    Version = new Version(value.Substring(0, versionSplitIndex));
             }
         }
 

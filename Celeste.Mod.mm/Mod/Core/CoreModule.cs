@@ -35,7 +35,7 @@ namespace Celeste.Mod.Core {
             // Runtime modules shouldn't do this.
             Metadata = new EverestModuleMetadata() {
                 Name = "Everest",
-                Version = Everest.Version
+                VersionString = Everest.VersionString
             };
         }
 
