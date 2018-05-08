@@ -20,6 +20,7 @@ using Celeste.Mod.Core;
 using System.Net;
 using System.Threading;
 using System.Collections.Specialized;
+using System.Globalization;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -240,14 +241,34 @@ header {
                 },
 
                 new RCEndPoint {
+                    Path = "/respawn",
+                    Name = "Respawn",
+                    InfoHTML = "Restart the current screen, respawning the player.",
+                    Handle = c => {
+                        Level level = Engine.Scene as Level;
+                        if (level == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, "ERROR: Player not in a level.");
+                            return;
+                        }
+
+                        Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                        Write(c, "OK");
+                    }
+                },
+
+                new RCEndPoint {
                     Path = "/reloadmap",
-                    PathHelp = "/reloadmap?sid={SID}[&side={A|B|C}]",
-                    PathExample = "/reloadmap?sid=Cruor/Secret/1-Secret&side=A",
+                    PathHelp = "/reloadmap?area={none|SID}&side={none|A|B|C} (Example: ?sid=Celeste/1-ForsakenCity&side=A)",
+                    PathExample = "/reloadmap?area=Celeste/1-ForsakenCity&side=A",
                     Name = "Reload Map",
-                    InfoHTML = "Reload the map binary. Passing no side will reload all map binaries.",
+                    InfoHTML = "Reload the map binary. Passing no side will reload all side binaries.",
                     Handle = c => {
                         NameValueCollection data = ParseQueryString(c.Request.RawUrl);
-                        string sid = data["sid"];
+
+                        string sid = data["area"];
+                        if (string.IsNullOrEmpty(sid))
+                            sid = (Engine.Scene as Level)?.Session.Area.GetSID();
                         if (string.IsNullOrEmpty(sid)) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: No SID given.");
@@ -257,12 +278,12 @@ header {
                         AreaData area = AreaDataExt.Get(sid);
                         if (area == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-                            Write(c, $"ERROR: Area not found: {sid}");
+                            Write(c, $"ERROR: Chapter not found: {sid}");
                             return;
                         }
 
                         string sideStr = data["side"];
-                        if (string.IsNullOrEmpty(sideStr)) {
+                        if (!string.IsNullOrEmpty(sideStr)) {
                             foreach (ModeProperties mode in area.Mode)
                                 mode?.MapData?.Reload();
                             Write(c, "OK");
@@ -286,18 +307,88 @@ header {
                 },
 
                 new RCEndPoint {
-                    Path = "/respawn",
-                    Name = "Respawn",
-                    InfoHTML = "Restart the current screen, respawning the player.",
+                    Path = "/tp",
+                    PathHelp = "/tp?area={none|SID}&side={none|A|B|C}&level={LVL}&x={none|X}&y={none|Y} (Example: ?area=Celeste/1-ForsakenCity&side=A&level=8zb)",
+                    PathExample = "/tp?area=Celeste/1-ForsakenCity&side=A&level=8zb",
+                    Name = "Teleport To Map",
+                    InfoHTML = "Start a new session and teleport the player to the given level.",
                     Handle = c => {
-                        Level level = Engine.Scene as Level;
-                        if (level == null) {
+                        NameValueCollection data = ParseQueryString(c.Request.RawUrl);
+
+                        if (SaveData.Instance == null)
+                            SaveData.InitializeDebugMode();
+                        Session session = (Engine.Scene as Level)?.Session;
+
+                        string sid = data["area"];
+                        if (string.IsNullOrEmpty(sid))
+                            sid = session.Area.GetSID();
+                        if (string.IsNullOrEmpty(sid)) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
-                            Write(c, "ERROR: Player not in a level.");
+                            Write(c, $"ERROR: No SID given.");
                             return;
                         }
 
-                        Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                        AreaData area = AreaDataExt.Get(sid);
+                        if (area == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Chapter not found: {sid}");
+                            return;
+                        }
+
+                        int side;
+                        string sideStr = data["side"];
+                        if (!string.IsNullOrEmpty(sideStr)) {
+                            side = sideStr.Length != 1 ? -1 : (sideStr.ToLowerInvariant()[0] - 'a');
+                            if (side < 0 || area.Mode.Length <= side) {
+                                c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                                Write(c, $"ERROR: Invalid side value.");
+                                return;
+                            }
+                        } else if (session != null) {
+                            side = (int) session.Area.Mode;
+                        } else {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: No side given.");
+                            return;
+                        }
+
+                        string levelName = data["level"];
+                        if (string.IsNullOrEmpty(levelName)) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: No level given.");
+                        }
+
+                        ModeProperties mode = area.Mode[side];
+                        if (mode == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Area {sid} doesn't have side {(char) ('A' + side)}.");
+                        }
+
+                        LevelData level =
+                            mode.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) ??
+                            mode.MapData.Levels.FirstOrDefault(lvl => lvl.Name == "lvl_" + levelName);
+                        if (level == null) {
+                            c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                            Write(c, $"ERROR: Area {sid} side {(char) ('A' + side)} doesn't have level {levelName}");
+                        }
+
+                        if (session == null ||
+                            session.Area.GetSID() != sid ||
+                            session.Area.Mode != (AreaMode) side
+                        ) {
+                            session = new Session(area.ToKey(), level.Name);
+                        }
+                        session.Level = level.Name;
+
+                        float x, y;
+                        if (float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
+                            float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y)) {
+                            session.RespawnPoint = new Vector2(x, y);
+                        } else {
+                            session.RespawnPoint = null;
+                        }
+
+                        Engine.Scene = new LevelLoader(session, session.RespawnPoint);
                         Write(c, "OK");
                     }
                 },
