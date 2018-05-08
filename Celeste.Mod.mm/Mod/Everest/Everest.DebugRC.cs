@@ -308,10 +308,10 @@ header {
 
                 new RCEndPoint {
                     Path = "/tp",
-                    PathHelp = "/tp?area={none|SID}&side={none|A|B|C}&level={LVL}&x={none|X}&y={none|Y} (Example: ?area=Celeste/1-ForsakenCity&side=A&level=8zb)",
+                    PathHelp = "/tp?area={none|SID}&side={none|A|B|C}&level={LVL}&x={none|X}&y={none|Y}&forcenew={*|true} (Example: ?area=Celeste/1-ForsakenCity&side=A&level=8zb)",
                     PathExample = "/tp?area=Celeste/1-ForsakenCity&side=A&level=8zb",
                     Name = "Teleport To Map",
-                    InfoHTML = "Start a new session and teleport the player to the given level.",
+                    InfoHTML = "Teleport the player to the given level, reusing the session if possible. Set <code>forcenew=true</code> to start a new session.",
                     Handle = c => {
                         NameValueCollection data = ParseQueryString(c.Request.RawUrl);
 
@@ -374,7 +374,8 @@ header {
 
                         if (session == null ||
                             session.Area.GetSID() != sid ||
-                            session.Area.Mode != (AreaMode) side
+                            session.Area.Mode != (AreaMode) side ||
+                            data["forcenew"]?.ToLowerInvariant() == "true"
                         ) {
                             session = new Session(area.ToKey(), level.Name);
                         }
