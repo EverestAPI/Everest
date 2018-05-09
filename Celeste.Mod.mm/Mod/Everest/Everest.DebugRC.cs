@@ -21,6 +21,7 @@ using System.Net;
 using System.Threading;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -241,6 +242,20 @@ header {
                 },
 
                 new RCEndPoint {
+                    Path = "/focus",
+                    Name = "Focus Game",
+                    InfoHTML = "Refocus the game window. Doesn't work on Windows 10.",
+                    Handle = c => {
+                        if (SDL_RaiseWindow != null)
+                            SDL_RaiseWindow(null, Celeste.Instance.Window.Handle);
+                        else
+                            SetForegroundWindow(Celeste.Instance.Window.Handle);
+
+                        Write(c, "OK");
+                    }
+                },
+
+                new RCEndPoint {
                     Path = "/respawn",
                     Name = "Respawn",
                     InfoHTML = "Restart the current screen, respawning the player.",
@@ -395,6 +410,17 @@ header {
                 },
 
             };
+
+            #endregion
+
+            #region Default RCEndPoint Handler Helpers
+
+            [DllImport("user32.dll")]
+            [return: MarshalAs(UnmanagedType.Bool)]
+            private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+            private static Type SDL = typeof(Game).Assembly.GetType("SDL2.SDL");
+            private static FastReflectionDelegate SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.GetFastDelegate();
 
             #endregion
 
