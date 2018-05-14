@@ -91,7 +91,7 @@ namespace Celeste.Mod.Core {
         public int ExampleInGameSlider { get; set; } = 5;
         */
 
-        public void CreateLaunchInDebugMode(TextMenu menu, bool inGame) {
+        public void CreateLaunchInDebugModeEntry(TextMenu menu, bool inGame) {
             if (inGame || typeof(Settings).GetField("LaunchInDebugMode") == null)
                 return;
 
@@ -102,7 +102,7 @@ namespace Celeste.Mod.Core {
             );
         }
 
-        public void CreateLaunchWithFMODLiveUpdate(TextMenu menu, bool inGame) {
+        public void CreateLaunchWithFMODLiveUpdateEntry(TextMenu menu, bool inGame) {
             if (inGame || typeof(Settings).GetField("LaunchWithFMODLiveUpdate") == null)
                 return;
 
