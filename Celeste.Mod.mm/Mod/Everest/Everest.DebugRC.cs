@@ -466,8 +466,13 @@ header {
                 public string Area { get; set; }
                 public char Side { get; set; } = '?';
                 public string Level { get; set; }
+
+                public string MapBinName { get; set; }
+                public string MapBinPath { get; set; }
+
                 public float X { get; set; }
                 public float Y { get; set; }
+
                 public string TP => string.IsNullOrEmpty(Area) ? "" : $"/tp?area={Area}&side={Side}&level={Level}&x={X.ToString(CultureInfo.InvariantCulture)}&y={Y.ToString(CultureInfo.InvariantCulture)}";
 
                 public SessionInfo(Level level) {
@@ -477,6 +482,9 @@ header {
                     Area = level.Session.Area.GetSID();
                     Side = (char) ('A' + level.Session.Area.Mode);
                     Level = level.Session.Level;
+
+                    MapBinName = level.Session.MapData.Filename;
+                    MapBinPath = level.Session.MapData.Filepath;
 
                     Vector2 pos = level.Tracker.GetEntity<Player>()?.Position ?? level.Session.RespawnPoint ?? Vector2.Zero;
                     pos -= level.Session.LevelData.Position;
