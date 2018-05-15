@@ -22,6 +22,7 @@ using System.Threading;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Runtime.InteropServices;
+using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -242,6 +243,15 @@ header {
                 },
 
                 new RCEndPoint {
+                    Path = "/session",
+                    Name = "Session Info",
+                    InfoHTML = "Basic player session info.",
+                    Handle = c => {
+                         Write(c, YamlHelper.Serializer.Serialize(new SessionInfo(Engine.Scene as Level)));
+                    }
+                },
+
+                new RCEndPoint {
                     Path = "/focus",
                     Name = "Focus Game",
                     InfoHTML = "Refocus the game window. Doesn't work on Windows 10.",
@@ -334,15 +344,18 @@ header {
                             SaveData.InitializeDebugMode();
                         Session session = (Engine.Scene as Level)?.Session;
 
-                        float x, y;
+                        float x = 0;
+                        float y = 0;
+                        bool hasXY =
+                            float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
+                            float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y);
 
                         // Special case: Update X and Y in existing session.
                         if (string.IsNullOrEmpty(data["area"]) &&
                             string.IsNullOrEmpty(data["side"]) &&
                             string.IsNullOrEmpty(data["level"]) &&
                             data["forcenew"]?.ToLowerInvariant() != "true" &&
-                            float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
-                            float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y)
+                            hasXY
                         ) {
                             if (session == null) {
                                 c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
@@ -424,8 +437,7 @@ header {
                         }
                         session.Level = level.Name;
 
-                        if (float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
-                            float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y)) {
+                        if (hasXY) {
                             session.RespawnPoint = level.Position + new Vector2(x, y);
                         } else {
                             session.RespawnPoint = null;
@@ -448,6 +460,31 @@ header {
 
             private static Type SDL = typeof(Game).Assembly.GetType("SDL2.SDL");
             private static FastReflectionDelegate SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.GetFastDelegate();
+
+            private class SessionInfo {
+
+                public string Area { get; set; }
+                public char Side { get; set; } = '?';
+                public string Level { get; set; }
+                public float X { get; set; }
+                public float Y { get; set; }
+                public string TP => string.IsNullOrEmpty(Area) ? "" : $"/tp?area={Area}&side={Side}&level={Level}&x={X.ToString(CultureInfo.InvariantCulture)}&y={Y.ToString(CultureInfo.InvariantCulture)}";
+
+                public SessionInfo(Level level) {
+                    if (level?.Session == null)
+                        return;
+
+                    Area = level.Session.Area.GetSID();
+                    Side = (char) ('A' + level.Session.Area.Mode);
+                    Level = level.Session.Level;
+
+                    Vector2 pos = level.Tracker.GetEntity<Player>()?.Position ?? level.Session.RespawnPoint ?? Vector2.Zero;
+                    pos -= level.Session.LevelData.Position;
+                    X = pos.X;
+                    Y = pos.Y;
+                }
+
+            }
 
             #endregion
 
