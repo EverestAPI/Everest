@@ -467,8 +467,7 @@ header {
                 public char Side { get; set; } = '?';
                 public string Level { get; set; }
 
-                public string MapBinName { get; set; }
-                public string MapBinPath { get; set; }
+                public string MapBin { get; set; }
 
                 public float X { get; set; }
                 public float Y { get; set; }
@@ -483,8 +482,7 @@ header {
                     Side = (char) ('A' + level.Session.Area.Mode);
                     Level = level.Session.Level;
 
-                    MapBinName = level.Session.MapData.Filename;
-                    MapBinPath = level.Session.MapData.Filepath;
+                    MapBin = level.Session.MapData.Filename;
 
                     Vector2 pos = level.Tracker.GetEntity<Player>()?.Position ?? level.Session.RespawnPoint ?? Vector2.Zero;
                     pos -= level.Session.LevelData.Position;
