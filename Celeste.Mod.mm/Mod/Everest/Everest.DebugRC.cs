@@ -334,6 +334,34 @@ header {
                             SaveData.InitializeDebugMode();
                         Session session = (Engine.Scene as Level)?.Session;
 
+                        float x, y;
+
+                        // Special case: Update X and Y in existing session.
+                        if (string.IsNullOrEmpty(data["area"]) &&
+                            string.IsNullOrEmpty(data["side"]) &&
+                            string.IsNullOrEmpty(data["level"]) &&
+                            data["forcenew"]?.ToLowerInvariant() != "true" &&
+                            float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
+                            float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y)
+                        ) {
+                            if (session == null) {
+                                c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                                Write(c, $"ERROR: In-level (x-y-only) tp outside of level.");
+                                return;
+                            }
+
+                            Vector2 pos = session.LevelData.Position + new Vector2(x, y);
+                            session.RespawnPoint = pos;
+                            Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
+                            if (player != null) {
+                                player.Position = pos;
+                            } else {
+                                Engine.Scene = new LevelLoader(session, session.RespawnPoint);
+                            }
+                            Write(c, "OK");
+                            return;
+                        }
+
                         string sid = data["area"];
                         if (string.IsNullOrEmpty(sid))
                             sid = session.Area.GetSID();
@@ -396,10 +424,9 @@ header {
                         }
                         session.Level = level.Name;
 
-                        float x, y;
                         if (float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
                             float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y)) {
-                            session.RespawnPoint = new Vector2(x, y);
+                            session.RespawnPoint = level.Position + new Vector2(x, y);
                         } else {
                             session.RespawnPoint = null;
                         }
