@@ -90,6 +90,7 @@ namespace Celeste.Mod {
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
                 Directory.CreateDirectory(PathContent = Path.Combine(PathGame, "ModContent"));
+                Directory.CreateDirectory(Path.Combine(PathContent, "Maps")); // Because some people are unable to spell Maps with a capital M.
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathGame, "ModDUMP"));
 
                 if (_DumpAll)

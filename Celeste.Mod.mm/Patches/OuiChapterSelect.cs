@@ -57,7 +57,9 @@ namespace Celeste {
             EaseCamera();
             display = true;
 
-            journalEnabled = Celeste.PlayMode == Celeste.PlayModes.Debug || (SaveData.Instance?.CheatMode ?? false);
+            currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+
+            journalEnabled = string.IsNullOrEmpty(currentLevelSet) || Celeste.PlayMode == Celeste.PlayModes.Debug || (SaveData.Instance?.CheatMode ?? false);
             for (int i = 0; i <= SaveData.Instance.UnlockedAreas && !journalEnabled; i++)
                 if (SaveData.Instance.Areas[i].Modes[0].TimePlayed > 0L && !AreaData.Get(i).Interlude)
                     journalEnabled = true;
@@ -66,14 +68,14 @@ namespace Celeste {
             if (from is OuiChapterPanel)
                 (unselected = icons[area]).Unselect();
 
-            currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
                 AreaData area = AreaData.Areas[icon.Area];
                 if (area.GetLevelSet() != currentLevelSet)
                     continue;
 
                 int index = area.ToKey().ID;
-                if (index <= Math.Max(1, SaveData.Instance.UnlockedAreas) && icon != unselected) {
+                if ((string.IsNullOrEmpty(currentLevelSet) || index <= Math.Max(1, SaveData.Instance.UnlockedAreas))
+                    && icon != unselected) {
                     icon.Position = icon.HiddenPosition;
                     icon.Show();
                     icon.AssistModeUnlockable = false;
