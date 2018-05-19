@@ -129,7 +129,7 @@ namespace Celeste {
                     return true;
                 }
 
-                level.Add(new DustRotateSpinner(entityData, offset));
+                level.Add(new BladeRotateSpinner(entityData, offset));
                 return true;
             }
 
