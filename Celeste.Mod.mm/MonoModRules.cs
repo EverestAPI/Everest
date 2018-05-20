@@ -161,15 +161,19 @@ namespace MonoMod {
 
             // Set any flags based on the version.
             if (version < new Version(1, 1, 9, 2)) {
-                MonoModRule.Flag.Set("LacksIntroSkip", true);
-                MonoModRule.Flag.Set("HasIntroSkip", false);
+                MonoModRule.Flag.Set("Lacks:IntroSkip", true);
+                MonoModRule.Flag.Set("Has:IntroSkip", false);
 
             } else {
                 // Current version.
-                MonoModRule.Flag.Set("LacksIntroSkip", false);
-                MonoModRule.Flag.Set("HasIntroSkip", true);
+                MonoModRule.Flag.Set("Lacks:IntroSkip", false);
+                MonoModRule.Flag.Set("Has:IntroSkip", true);
             }
 
+            TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings")?.Resolve();
+            MonoModRule.Flag.Set("Fill:EnumSpeedrunType", settings.FindField("SpeedrunClock").FieldType.FullName != "Celeste.SpeedrunType");
+            MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode") == null);
+            MonoModRule.Flag.Set("Fill:LaunchWithFMODLiveUpdate", settings.FindField("LaunchWithFMODLiveUpdate") == null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

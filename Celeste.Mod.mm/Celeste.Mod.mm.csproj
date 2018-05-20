@@ -113,6 +113,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Patches\Compat\SettingsCompat.cs" />
     <Compile Include="Mod\Core\CoreModuleSaveData.cs" />
     <Compile Include="Mod\Core\CoreModuleSettings.cs" />
     <Compile Include="Mod\Entities\CustomMemorialText.cs" />

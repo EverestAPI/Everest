@@ -23,7 +23,7 @@ namespace Celeste {
         private bool audioStarted;
         private bool dialogLoaded;
         private bool ready;
-        [MonoModIfFlag("HasIntroSkip")]
+        [MonoModIfFlag("Has:IntroSkip")]
         private bool skipped;
 
         private List<MTexture> loadingTextures;
@@ -119,14 +119,14 @@ namespace Celeste {
             loaded = true;
         }
 
-        [MonoModIfFlag("HasIntroSkip")]
+        [MonoModIfFlag("Has:IntroSkip")]
         private void SkipIntro() {
             skipped = true;
         }
 
         // If we're on a version < 1.1.9.2, relink all SkipIntro calls to SkipIntroOld.
 
-        [MonoModIfFlag("LacksIntroSkip")]
+        [MonoModIfFlag("Lacks:IntroSkip")]
         [MonoModHook("System.Void Celeste.GameLoader::SkipIntro()")]
         private void SkipIntroOld() {
             introRoutine.Cancel();
@@ -134,7 +134,7 @@ namespace Celeste {
             handler.Add(new Coroutine(FastIntroRoutine()));
         }
 
-        [MonoModIfFlag("LacksIntroSkip")]
+        [MonoModIfFlag("Lacks:IntroSkip")]
         public IEnumerator FastIntroRoutine() {
             if (!loaded) {
                 loadingTextures = GFX.Overworld.GetAtlasSubtextures("loading/");
