@@ -159,19 +159,19 @@ namespace MonoMod {
                 version = new Version(versionInts[0], versionInts[1], versionInts[2], versionInts[3]);
             }
 
-            // Set any flags based on the version.
+            // Set up any flags.
+
             if (version < new Version(1, 1, 9, 2)) {
                 MonoModRule.Flag.Set("Lacks:IntroSkip", true);
                 MonoModRule.Flag.Set("Has:IntroSkip", false);
-
             } else {
-                // Current version.
                 MonoModRule.Flag.Set("Lacks:IntroSkip", false);
                 MonoModRule.Flag.Set("Has:IntroSkip", true);
             }
 
-            TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings")?.Resolve();
-            MonoModRule.Flag.Set("Fill:EnumSpeedrunType", settings.FindField("SpeedrunClock").FieldType.FullName != "Celeste.SpeedrunType");
+            MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType") != null);
+
+            TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings").Resolve();
             MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode") == null);
             MonoModRule.Flag.Set("Fill:LaunchWithFMODLiveUpdate", settings.FindField("LaunchWithFMODLiveUpdate") == null);
         }

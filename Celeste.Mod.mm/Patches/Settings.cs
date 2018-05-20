@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    [MonoModPatch("Settings")]
-    class SettingsCompat {
+    class patch_Settings : Settings {
 
         [MonoModIgnore]
-        public bool SpeedrunClock;
-        [MonoModIfFlag("Fill:EnumSpeedrunType")]
-        public patch_SpeedrunType SpeedrunClockProxy {
+        public new bool SpeedrunClock;
+        [MonoModIfFlag("Fill:SpeedrunType")]
+        public patch_SpeedrunType SpeedrunClock_Typed {
             get {
                 return SpeedrunClock ? patch_SpeedrunType.Chapter : patch_SpeedrunType.Off;
             }
@@ -23,7 +22,7 @@ namespace Celeste {
         }
 
         [MonoModIfFlag("Fill:LaunchInDebugMode")]
-        public bool LaunchInDebugMode {
+        public new bool LaunchInDebugMode {
             get {
                 return false;
             }
@@ -32,7 +31,7 @@ namespace Celeste {
         }
 
         [MonoModIfFlag("Fill:LaunchWithFMODLiveUpdate")]
-        public bool LaunchWithFMODLiveUpdate {
+        public new bool LaunchWithFMODLiveUpdate {
             get {
                 return false;
             }
@@ -42,7 +41,7 @@ namespace Celeste {
 
     }
 
-    [MonoModIfFlag("Fill:EnumSpeedrunType")]
+    [MonoModIfFlag("Fill:SpeedrunType")]
     enum patch_SpeedrunType {
         [XmlEnum("false")]
         Off,
