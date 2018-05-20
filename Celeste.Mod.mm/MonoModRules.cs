@@ -169,7 +169,7 @@ namespace MonoMod {
                 MonoModRule.Flag.Set("Has:IntroSkip", true);
             }
 
-            MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType") != null);
+            MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType") == null);
 
             TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings").Resolve();
             MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode") == null);

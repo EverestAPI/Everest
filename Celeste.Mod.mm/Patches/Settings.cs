@@ -12,6 +12,7 @@ namespace Celeste {
         [MonoModIgnore]
         public new bool SpeedrunClock;
         [MonoModIfFlag("Fill:SpeedrunType")]
+        [MonoModHook("Celeste.SpeedrunType Celeste.Settings::SpeedrunClock")]
         public patch_SpeedrunType SpeedrunClock_Typed {
             [MonoModIfFlag("Fill:SpeedrunType")]
             get {
