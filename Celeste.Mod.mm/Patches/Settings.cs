@@ -13,9 +13,11 @@ namespace Celeste {
         public new bool SpeedrunClock;
         [MonoModIfFlag("Fill:SpeedrunType")]
         public patch_SpeedrunType SpeedrunClock_Typed {
+            [MonoModIfFlag("Fill:SpeedrunType")]
             get {
                 return SpeedrunClock ? patch_SpeedrunType.Chapter : patch_SpeedrunType.Off;
             }
+            [MonoModIfFlag("Fill:SpeedrunType")]
             set {
                 SpeedrunClock = value != patch_SpeedrunType.Off;
             }
@@ -23,18 +25,22 @@ namespace Celeste {
 
         [MonoModIfFlag("Fill:LaunchInDebugMode")]
         public new bool LaunchInDebugMode {
+            [MonoModIfFlag("Fill:LaunchInDebugMode")]
             get {
                 return false;
             }
+            [MonoModIfFlag("Fill:LaunchInDebugMode")]
             set {
             }
         }
 
         [MonoModIfFlag("Fill:LaunchWithFMODLiveUpdate")]
         public new bool LaunchWithFMODLiveUpdate {
+            [MonoModIfFlag("Fill:LaunchWithFMODLiveUpdate")]
             get {
                 return false;
             }
+            [MonoModIfFlag("Fill:LaunchWithFMODLiveUpdate")]
             set {
             }
         }
