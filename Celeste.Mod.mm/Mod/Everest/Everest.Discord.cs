@@ -30,9 +30,10 @@ namespace Celeste.Mod {
                     DynDll.DllMap["discord-rpc"] = CoreModule.Settings.DiscordLib;
                 else if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     DynDll.DllMap["discord-rpc"] = "discord-rpc.dll";
-                else if (Environment.OSVersion.Platform == PlatformID.MacOSX)
+                else if (Environment.OSVersion.Platform == PlatformID.MacOSX) {
                     DynDll.DllMap["discord-rpc"] = "libdiscord-rpc.dylib";
-                else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    // FIXME: macOS doesn't see libdiscord-rpc.dylib wherever Celeste.exe is.
+                } else if (Environment.OSVersion.Platform == PlatformID.Unix)
                     DynDll.DllMap["discord-rpc"] = "libdiscord-rpc.so";
 
                 string discordID = "430794114037055489";

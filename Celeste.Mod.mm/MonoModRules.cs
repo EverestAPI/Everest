@@ -98,13 +98,13 @@ namespace MonoMod {
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
-            if (Celeste.Scope != MonoModRule.Modder.Module)
-                return;
             if (Celeste == null)
                 return;
-            IsCeleste = true;
+            IsCeleste = Celeste.Scope == MonoModRule.Modder.Module;
 
-            MonoModRule.Modder.PostProcessors += PostProcessor;
+            if (IsCeleste) {
+                MonoModRule.Modder.PostProcessors += PostProcessor;
+            }
 
             // Get version - used to set any MonoMod flags.
 
