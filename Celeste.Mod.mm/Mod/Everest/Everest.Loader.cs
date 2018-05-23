@@ -105,14 +105,18 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
-                        if (entry.FileName == "multimetadata.yaml") {
+                        if (entry.FileName == "multimetadata.yaml" ||
+                            entry.FileName == "everest.yaml" ||
+                            entry.FileName == "everest.yml") {
                             using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 try {
-                                    multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
-                                    foreach (EverestModuleMetadata multimeta in multimetas) {
-                                        multimeta.PathArchive = archive;
-                                        multimeta.PostParse();
+                                    if (!reader.EndOfStream) {
+                                        multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                                        foreach (EverestModuleMetadata multimeta in multimetas) {
+                                            multimeta.PathArchive = archive;
+                                            multimeta.PostParse();
+                                        }
                                     }
                                 } catch (Exception e) {
                                     Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {archive}: {e}");
@@ -186,13 +190,19 @@ namespace Celeste.Mod {
                     }
 
                 metaPath = Path.Combine(dir, "multimetadata.yaml");
+                if (!File.Exists(metaPath))
+                    metaPath = Path.Combine(dir, "everest.yaml");
+                if (!File.Exists(metaPath))
+                    metaPath = Path.Combine(dir, "everest.yml");
                 if (File.Exists(metaPath))
                     using (StreamReader reader = new StreamReader(metaPath)) {
                         try {
-                            multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
-                            foreach (EverestModuleMetadata multimeta in multimetas) {
-                                multimeta.PathDirectory = dir;
-                                multimeta.PostParse();
+                            if (!reader.EndOfStream) {
+                                multimetas = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata[]>(reader);
+                                foreach (EverestModuleMetadata multimeta in multimetas) {
+                                    multimeta.PathDirectory = dir;
+                                    multimeta.PostParse();
+                                }
                             }
                         } catch (Exception e) {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {dir}: {e}");
