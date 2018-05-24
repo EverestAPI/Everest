@@ -50,6 +50,7 @@ namespace Celeste {
     }
 
     [MonoModIfFlag("Fill:SpeedrunType")]
+    [MonoModHook("Celeste.patch_SpeedrunType")] // Workaround for MonoMod not realizing that patch_SpeedrunType became SpeedrunType during PrePatch
     enum patch_SpeedrunType {
         [XmlEnum("false")]
         Off,
