@@ -130,7 +130,6 @@ namespace Celeste {
 
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
-                        Path = asset.PathMapped.Substring(5),
                         Inventory = PlayerInventory.Default,
                         AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
                     }
@@ -179,7 +178,7 @@ namespace Celeste {
                         area.ColorGrade = meta.ColorGrade;
 
                     area.Mode = MapMeta.Convert(meta.Modes) ?? area.Mode;
-
+                    
                     if (!string.IsNullOrEmpty(meta.Wipe)) {
                         Type type = Assembly.GetEntryAssembly().GetType(meta.Wipe);
                         ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
@@ -208,6 +207,9 @@ namespace Celeste {
 
                     area.SetCompleteScreenMeta(meta.CompleteScreen);
                 }
+
+                if (string.IsNullOrEmpty(area.Mode[0].Path))
+                    area.Mode[0].Path = asset.PathMapped.Substring(5);
 
                 // Some of the game's code checks for [1] / [2] explicitly.
                 // Let's just provide null modes to fill any gaps.
