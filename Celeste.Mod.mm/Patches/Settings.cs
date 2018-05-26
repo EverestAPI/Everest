@@ -14,14 +14,14 @@ namespace Celeste {
         [MonoModIfFlag("Fill:SpeedrunType")]
         [MonoModHook("Celeste.SpeedrunType Celeste.Settings::SpeedrunClock")]
         [XmlIgnore]
-        public patch_SpeedrunType SpeedrunClock_Typed {
+        public fill_SpeedrunType SpeedrunClock_Typed {
             [MonoModIfFlag("Fill:SpeedrunType")]
             get {
-                return SpeedrunClock ? patch_SpeedrunType.Chapter : patch_SpeedrunType.Off;
+                return SpeedrunClock ? fill_SpeedrunType.Chapter : fill_SpeedrunType.Off;
             }
             [MonoModIfFlag("Fill:SpeedrunType")]
             set {
-                SpeedrunClock = value != patch_SpeedrunType.Off;
+                SpeedrunClock = value != fill_SpeedrunType.Off;
             }
         }
 
@@ -50,8 +50,8 @@ namespace Celeste {
     }
 
     [MonoModIfFlag("Fill:SpeedrunType")]
-    [MonoModHook("Celeste.patch_SpeedrunType")] // Workaround for MonoMod not realizing that patch_SpeedrunType became SpeedrunType during PrePatch
-    enum patch_SpeedrunType {
+    [MonoModHook("Celeste.SpeedrunType")]
+    enum fill_SpeedrunType {
         [XmlEnum("false")]
         Off,
         [XmlEnum("true")]
