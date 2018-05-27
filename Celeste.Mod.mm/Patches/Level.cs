@@ -71,16 +71,6 @@ namespace Celeste {
 
             Player player = Tracker.GetEntity<Player>();
 
-            Vector2 inside = direction * 4f;
-            if (direction == Vector2.UnitY)
-                inside = direction * 12f;
-
-            Vector2 playerTo = player.Position;
-            while (direction.X != 0f && playerTo.Y >= Bounds.Bottom)
-                playerTo.Y -= 1f;
-            while (!IsInBounds(playerTo, inside))
-                playerTo += direction;
-
             Vector2 playerPos = player.Position;
             DateTime playerStuck = DateTime.UtcNow;
 
@@ -89,7 +79,7 @@ namespace Celeste {
                     playerStuck = DateTime.UtcNow;
                 playerPos = player.Position;
 
-                if ((DateTime.UtcNow - playerStuck).TotalSeconds > 2D && !player.TransitionTo(playerTo, direction)) {
+                if ((DateTime.UtcNow - playerStuck).TotalSeconds >= 5D) {
                     // Player stuck in Gay Baby Jail - force-reload the level.
                     Session.Level = next.Name;
                     Session.RespawnPoint = Session.LevelData.Spawns.ClosestTo(player.Position);
