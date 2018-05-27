@@ -8,6 +8,7 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Celeste {
@@ -57,6 +58,49 @@ namespace Celeste {
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
+        private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
+        private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
+            IEnumerator orig = orig_TransitionRoutine(next, direction);
+
+            // Don't perform any Gay Baby Jail checks in vanilla maps.
+            if (Session.Area.GetSID() == "Celeste") {
+                while (orig.MoveNext())
+                    yield return orig.Current;
+                yield break;
+            }
+
+            Player player = Tracker.GetEntity<Player>();
+
+            Vector2 inside = direction * 4f;
+            if (direction == Vector2.UnitY)
+                inside = direction * 12f;
+
+            Vector2 playerTo = player.Position;
+            while (direction.X != 0f && playerTo.Y >= Bounds.Bottom)
+                playerTo.Y -= 1f;
+            while (!IsInBounds(playerTo, inside))
+                playerTo += direction;
+
+            Vector2 playerPos = player.Position;
+            DateTime playerStuck = DateTime.UtcNow;
+
+            while (orig.MoveNext()) {
+                if (playerPos != player.Position)
+                    playerStuck = DateTime.UtcNow;
+                playerPos = player.Position;
+
+                if ((DateTime.UtcNow - playerStuck).TotalSeconds > 2D && !player.TransitionTo(playerTo, direction)) {
+                    // Player stuck in Gay Baby Jail - force-reload the level.
+                    Session.Level = next.Name;
+                    Session.RespawnPoint = Session.LevelData.Spawns.ClosestTo(player.Position);
+                    Engine.Scene = new LevelLoader(Session, Session.RespawnPoint);
+                    yield break;
+                }
+
+                yield return orig.Current;
+            }
+        }
+
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
@@ -68,6 +112,9 @@ namespace Celeste {
         public static bool LoadCustomEntity(EntityData entityData, Level level) {
             LevelData levelData = level.Session.LevelData;
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
+
+            if (Everest.Events.Level.LoadEntity(level, levelData, offset, entityData))
+                return true;
 
             // Everest comes with a few core utility entities out of the box.
 
@@ -133,7 +180,7 @@ namespace Celeste {
                 return true;
             }
 
-            return Everest.Events.Level.LoadEntity(level, levelData, offset, entityData);
+            return false;
         }
 
     }
