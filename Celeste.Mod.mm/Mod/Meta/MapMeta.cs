@@ -18,6 +18,7 @@ namespace Celeste.Mod.Meta {
         public string CompleteScreenName { get; set; } = null;
 
         public int CassetteCheckpointIndex { get; set; } = 0;
+        public int StartStrawberries { get; set; } = 0;
 
         public string TitleBaseColor { get; set; } = null;
         public string TitleAccentColor { get; set; } = null;
@@ -121,7 +122,7 @@ namespace Celeste.Mod.Meta {
         public CheckpointData Convert()
             => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert()) {
                 Strawberries = Strawberries,
-                Flags = new HashSet<string>(Flags),
+                Flags = new HashSet<string>(Flags ?? new string[0]),
                 CoreMode = CoreMode
             };
     }
