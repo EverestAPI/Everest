@@ -18,6 +18,9 @@ namespace Celeste {
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
 
+        private static int diedInGBJ = 0;
+        private int isInGBJ;
+
         public bool IsIntroState {
             get {
                 int state = StateMachine.State;
@@ -33,7 +36,28 @@ namespace Celeste {
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
             orig_Added(scene);
+
+            isInGBJ = int.MaxValue;
+
+            Level level = Scene as Level;
+            if (level != null) {
+                isInGBJ = 0;
+            }
+
             Everest.Events.Player.Spawn(this);
+        }
+
+        public extern void orig_Update();
+        public override void Update() {
+            orig_Update();
+
+            Level level = Scene as Level;
+            if (level == null)
+                return;
+            if (level.CanPause && isInGBJ < int.MaxValue)
+                isInGBJ++;
+            if (isInGBJ >= 5)
+                diedInGBJ = 0;
         }
 
         [MonoModReplace]
@@ -44,6 +68,16 @@ namespace Celeste {
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
 
         new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
+            Level level = Scene as Level;
+
+            if (isInGBJ < 2 && level != null) {
+                diedInGBJ++;
+                if (diedInGBJ == 2 && level.Session.Area.GetSID() != "Celeste") {
+                    level.Pause();
+                    return null;
+                }
+            }
+
             PlayerDeadBody orig = orig_Die(direction, evenIfInvincible, registerDeathInStats);
             Everest.Events.Player.Die(this);
             return orig;
