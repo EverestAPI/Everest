@@ -119,7 +119,11 @@ namespace Celeste.Mod.Meta {
         public string[] Flags { get; set; }
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
-            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert());
+            => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert()) {
+                Strawberries = Strawberries,
+                Flags = new HashSet<string>(Flags),
+                CoreMode = CoreMode
+            };
     }
     public class MapMetaMountain {
         public MapMetaMountainCamera Idle { get; set; } = null;
