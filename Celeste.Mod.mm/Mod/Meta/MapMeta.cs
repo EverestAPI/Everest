@@ -18,7 +18,6 @@ namespace Celeste.Mod.Meta {
         public string CompleteScreenName { get; set; } = null;
 
         public int CassetteCheckpointIndex { get; set; } = 0;
-        public int StartStrawberries { get; set; } = 0;
 
         public string TitleBaseColor { get; set; } = null;
         public string TitleAccentColor { get; set; } = null;

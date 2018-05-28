@@ -76,6 +76,8 @@ namespace Celeste.Mod {
             }
 
             private static void OnGameExit() {
+                if (DiscordRpc.Initialize == null)
+                    return;
                 DiscordRpc.Shutdown();
             }
 
@@ -133,6 +135,10 @@ namespace Celeste.Mod {
 
                 DiscordPresence.details = FillText(details, session, area);
                 DiscordPresence.state = FillText(state, session, area);
+
+                if (DiscordRpc.Initialize == null)
+                    return;
+
                 DiscordRpc.UpdatePresence(DiscordPresence);
             }
 
