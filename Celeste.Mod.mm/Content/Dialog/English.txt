@@ -20,7 +20,7 @@
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain.
-	POSTCARD_LEVELLOADFAILED= 	{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please submit your {#44adf7}log.txt{#}{n}to the map builder.
+	POSTCARD_LEVELLOADFAILED= 	{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please send your {#44adf7}log.txt{#}{n}to the map builder.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH

@@ -392,11 +392,24 @@ namespace Celeste {
         [XmlIgnore]
         public int UnlockedModes {
             get {
-                if (TotalHeartGems >= 16) {
+                int offset = AreaOffset;
+
+                int maxHeartGems;
+                if (Name == "Celeste") {
+                    maxHeartGems = 16;
+                } else {
+                    maxHeartGems = 0;
+                    for (int i = 0; i <= MaxArea; i++) {
+                        if (!AreaData.Areas[offset + i].Interlude) {
+                            maxHeartGems += 2;
+                        }
+                    }
+                }
+
+                if (TotalHeartGems >= maxHeartGems) {
                     return 3;
                 }
 
-                int offset = AreaOffset;
                 for (int i = 0; i <= MaxArea; i++) {
                     if (!AreaData.Areas[offset + i].Interlude && AreasIncludingCeleste[i].Cassette) {
                         return 2;
