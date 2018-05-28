@@ -119,7 +119,7 @@ namespace Monocle {
         }
 
         private void Preload() {
-            if (!(CoreModule.Settings?.LazyLoading ?? false)) {
+            if (!CoreModule.Settings.LazyLoading) {
                 Reload();
                 return;
             }

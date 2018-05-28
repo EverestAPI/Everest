@@ -24,7 +24,8 @@ namespace Celeste.Mod.Core {
         public static CoreModule Instance;
 
         public override Type SettingsType => typeof(CoreModuleSettings);
-        public static CoreModuleSettings Settings => (CoreModuleSettings) Instance._Settings;
+        // Default values for anything using Settings too early (f.e. --dump-all)
+        public static CoreModuleSettings Settings => (CoreModuleSettings) Instance?._Settings ?? new CoreModuleSettings();
 
         public override Type SaveDataType => typeof(CoreModuleSaveData);
         public static CoreModuleSaveData SaveData => (CoreModuleSaveData) Instance._SaveData;
