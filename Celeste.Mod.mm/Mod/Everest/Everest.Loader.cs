@@ -274,6 +274,9 @@ namespace Celeste.Mod {
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
 
+                if (string.IsNullOrEmpty(meta.DLL))
+                    return;
+
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
