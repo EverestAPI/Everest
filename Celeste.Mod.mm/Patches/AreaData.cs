@@ -23,7 +23,7 @@ namespace Celeste {
             get {
                 string sid = SID;
                 if (string.IsNullOrEmpty(sid))
-                    return "";
+                    return "Celeste";
                 int lastIndexOfSlash = sid.LastIndexOf('/');
                 if (lastIndexOfSlash == -1)
                     return "";
@@ -77,7 +77,9 @@ namespace Celeste {
 
         [MonoModReplace]
         public static new AreaData Get(AreaKey area) {
-            return Get(area.GetSID()); // ?? Get(area.ID);
+            if (area.GetSID() == null)
+                return Get(area.ID);
+            return Get(area.GetSID());
         }
 
         [MonoModReplace]
@@ -106,7 +108,6 @@ namespace Celeste {
 
             foreach (ModAsset asset in Everest.Content.ListMaps) {
                 string path = asset.PathMapped.Substring(5);
-                MapMeta meta = asset.GetMeta<MapMeta>();
 
                 AreaData area = new AreaData();
 
@@ -130,8 +131,7 @@ namespace Celeste {
 
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
-                        Inventory = PlayerInventory.Default,
-                        AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
+                        Inventory = PlayerInventory.Default
                     }
                 };
 
@@ -147,66 +147,8 @@ namespace Celeste {
                 area.CassseteNoteColor = Calc.HexToColor("33a9ee");
                 area.CassetteSong = Sfxs.cas_01_forsaken_city;
 
-                // Custom values.
-                if (meta != null) {
-                    if (!string.IsNullOrEmpty(meta.Name))
-                        area.Name = meta.Name;
-
-                    if (!string.IsNullOrEmpty(meta.SID))
-                        area.SetSID(meta.SID);
-
-                    if (!string.IsNullOrEmpty(meta.Icon) && GFX.Gui.Has(meta.Icon))
-                        area.Icon = meta.Icon;
-
-                    area.Interlude = meta.Interlude;
-                    if (!string.IsNullOrEmpty(meta.CompleteScreenName))
-                        area.CompleteScreenName = meta.CompleteScreenName;
-
-                    area.CassetteCheckpointIndex = meta.CassetteCheckpointIndex;
-
-                    if (!string.IsNullOrEmpty(meta.TitleBaseColor))
-                        area.TitleBaseColor = Calc.HexToColor(meta.TitleBaseColor);
-                    if (!string.IsNullOrEmpty(meta.TitleAccentColor))
-                        area.TitleAccentColor = Calc.HexToColor(meta.TitleAccentColor);
-                    if (!string.IsNullOrEmpty(meta.TitleTextColor))
-                        area.TitleTextColor = Calc.HexToColor(meta.TitleTextColor);
-
-                    area.IntroType = meta.IntroType;
-
-                    area.Dreaming = meta.Dreaming;
-                    if (!string.IsNullOrEmpty(meta.ColorGrade))
-                        area.ColorGrade = meta.ColorGrade;
-
-                    area.Mode = MapMeta.Convert(meta.Modes) ?? area.Mode;
-                    
-                    if (!string.IsNullOrEmpty(meta.Wipe)) {
-                        Type type = Assembly.GetEntryAssembly().GetType(meta.Wipe);
-                        ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
-                        if (type != null && ctor != null) {
-                            area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
-                        }
-                    }
-
-                    area.DarknessAlpha = meta.DarknessAlpha;
-                    area.BloomBase = meta.BloomBase;
-                    area.BloomStrength = meta.BloomStrength;
-
-                    if (!string.IsNullOrEmpty(meta.Jumpthru))
-                        area.Jumpthru = meta.Jumpthru;
-
-                    if (!string.IsNullOrEmpty(meta.CassetteNoteColor))
-                        area.CassseteNoteColor = Calc.HexToColor(meta.CassetteNoteColor);
-                    if (!string.IsNullOrEmpty(meta.CassetteSong))
-                        area.CassetteSong = meta.CassetteSong;
-
-                    area.MountainIdle = meta.Mountain?.Idle?.Convert() ?? area.MountainIdle;
-                    area.MountainSelect = meta.Mountain?.Select?.Convert() ?? area.MountainSelect;
-                    area.MountainZoom = meta.Mountain?.Zoom?.Convert() ?? area.MountainZoom;
-                    area.MountainCursor = meta.Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
-                    area.MountainState = meta.Mountain?.State ?? area.MountainState;
-
-                    area.SetCompleteScreenMeta(meta.CompleteScreen);
-                }
+                // Custom values can be set via the MapMeta.
+                asset.GetMeta<MapMeta>()?.ApplyTo(area);
 
                 if (string.IsNullOrEmpty(area.Mode[0].Path))
                     area.Mode[0].Path = asset.PathMapped.Substring(5);
@@ -217,6 +159,10 @@ namespace Celeste {
                     ModeProperties[] larger = new ModeProperties[3];
                     for (int i = 0; i < area.Mode.Length; i++)
                         larger[i] = area.Mode[i];
+                    for (int i = area.Mode.Length; i < larger.Length; i++)
+                        larger[i] = new ModeProperties {
+                            Inventory = PlayerInventory.Default
+                        };
                     area.Mode = larger;
                 }
 
@@ -244,16 +190,6 @@ namespace Celeste {
                 }
             }
 
-            // Remove AreaDatas which are now a mode of another AreaData.
-            for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == area.Mode[0].Path));
-                if (otherIndex != -1 && otherIndex != i) {
-                    Areas.RemoveAt(i);
-                    i--;
-                }
-            }
-
             // Update old MapData areas and load any new areas.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
@@ -271,6 +207,18 @@ namespace Celeste {
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
+                }
+            }
+
+            // Remove AreaDatas which are now a mode of another AreaData.
+            // This happens late as the map data (.bin) can contain additional metadata.
+            // TODO: Automatically assign B and C sides to A side .bin by name and lack of data.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == area.Mode[0].Path));
+                if (otherIndex != -1 && otherIndex != i) {
+                    Areas.RemoveAt(i);
+                    i--;
                 }
             }
         }

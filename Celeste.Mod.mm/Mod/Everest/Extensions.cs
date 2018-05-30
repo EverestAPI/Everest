@@ -267,5 +267,63 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
+        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref string value) {
+            if (el.HasAttr(name)) {
+                value = el.Attr(name);
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref bool value) {
+            if (el.HasAttr(name)) {
+                value = el.AttrBool(name);
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref float value) {
+            if (el.HasAttr(name)) {
+                value = el.AttrFloat(name);
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref int value) {
+            if (el.HasAttr(name)) {
+                value = int.Parse(el.Attr(name));
+                return true;
+            }
+            return false;
+        }
+
+        internal static bool AttrIf(this BinaryPacker.Element el, string name, Action<string> value) {
+            if (el.HasAttr(name)) {
+                value(el.Attr(name));
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrIfBool(this BinaryPacker.Element el, string name, Action<bool> value) {
+            if (el.HasAttr(name)) {
+                value(el.AttrBool(name));
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrIfFloat(this BinaryPacker.Element el, string name, Action<float> value) {
+            if (el.HasAttr(name)) {
+                value(el.AttrFloat(name));
+                return true;
+            }
+            return false;
+        }
+        internal static bool AttrIfInt(this BinaryPacker.Element el, string name, Action<int> value) {
+            if (el.HasAttr(name)) {
+                value(int.Parse(el.Attr(name)));
+                return true;
+            }
+            return false;
+        }
+
     }
 }

@@ -71,7 +71,7 @@ namespace Celeste {
             get {
                 string sid = SID;
                 if (string.IsNullOrEmpty(sid))
-                    return "";
+                    return "Celeste";
                 int lastIndexOfSlash = sid.LastIndexOf('/');
                 if (lastIndexOfSlash == -1)
                     return "";

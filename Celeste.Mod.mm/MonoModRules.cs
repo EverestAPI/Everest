@@ -233,14 +233,31 @@ namespace MonoMod {
 
             ProxyFileCalls(method, attrib);
 
+            MethodDefinition m_Process = method.DeclaringType.FindMethod("Celeste.BinaryPacker/Element _Process(Celeste.BinaryPacker/Element,Celeste.MapData)");
+            if (m_Process == null)
+                return;
+
             bool pop = false;
-            foreach (Instruction instr in method.Body.Instructions) {
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
                 if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "Corrupted Level Data")
                     pop = true;
 
                 if (pop && instr.OpCode == OpCodes.Throw) {
                     instr.OpCode = OpCodes.Pop;
                     pop = false;
+                }
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.BinaryPacker/Element Celeste.BinaryPacker::FromBinary(System.String)") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_Process));
+                    instri++;
                 }
             }
 

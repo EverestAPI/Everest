@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
+using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -9,6 +11,13 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod.Meta {
     // MapMeta and anything related doesn't need interfaces.
     public class MapMeta : IMeta {
+
+        public MapMeta() {
+        }
+
+        public MapMeta(BinaryPacker.Element meta) {
+            Parse(meta);
+        }
 
         public string Name { get; set; } = null;
         public string SID { get; set; } = null;
@@ -45,6 +54,100 @@ namespace Celeste.Mod.Meta {
         public MapMetaMountain Mountain { get; set; } = null;
 
         public MapMetaCompleteScreen CompleteScreen { get; set; } = null;
+
+        public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIf("Name", v => Name = v);
+            meta.AttrIf("SID", v => SID = v);
+            meta.AttrIf("Icon", v => Icon = v);
+
+            meta.AttrIfBool("Interlude", v => Interlude = v);
+            meta.AttrIf("CompleteScreenName", v => CompleteScreenName = v);
+
+            meta.AttrIfInt("CassetteCheckpointIndex", v => CassetteCheckpointIndex = v);
+
+            meta.AttrIf("TitleBaseColor", v => TitleBaseColor = v);
+            meta.AttrIf("TitleAccentColor", v => TitleAccentColor = v);
+            meta.AttrIf("TitleTextColor", v => TitleTextColor = v);
+
+            meta.AttrIf("IntroType", v => IntroType = (Player.IntroTypes) Enum.Parse(typeof(Player.IntroTypes), v));
+
+            meta.AttrIfBool("Dreaming", v => Dreaming = v);
+
+            meta.AttrIf("ColorGrade", v => ColorGrade = v);
+
+            meta.AttrIf("Wipe", v => Wipe = v);
+
+            meta.AttrIfFloat("DarknessAlpha", (float v) => DarknessAlpha = v);
+            meta.AttrIfFloat("BloomBase", (float v) => BloomBase = v);
+            meta.AttrIfFloat("BloomStrength", (float v) => BloomStrength = v);
+
+            meta.AttrIf("Jumpthru", v => Jumpthru = v);
+
+            meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
+            meta.AttrIf("CassetteSong", v => CassetteSong = v);
+
+            // TODO: Parse MapMeta A mode, Mountain and CompleteScreen
+        }
+
+        public void ApplyTo(AreaData area) {
+            if (!string.IsNullOrEmpty(Name))
+                area.Name = Name;
+
+            if (!string.IsNullOrEmpty(SID))
+                area.SetSID(SID);
+
+            if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
+                area.Icon = Icon;
+
+            area.Interlude = Interlude;
+            if (!string.IsNullOrEmpty(CompleteScreenName))
+                area.CompleteScreenName = CompleteScreenName;
+
+            area.CassetteCheckpointIndex = CassetteCheckpointIndex;
+
+            if (!string.IsNullOrEmpty(TitleBaseColor))
+                area.TitleBaseColor = Calc.HexToColor(TitleBaseColor);
+            if (!string.IsNullOrEmpty(TitleAccentColor))
+                area.TitleAccentColor = Calc.HexToColor(TitleAccentColor);
+            if (!string.IsNullOrEmpty(TitleTextColor))
+                area.TitleTextColor = Calc.HexToColor(TitleTextColor);
+
+            area.IntroType = IntroType;
+
+            area.Dreaming = Dreaming;
+            if (!string.IsNullOrEmpty(ColorGrade))
+                area.ColorGrade = ColorGrade;
+
+            area.Mode = Convert(Modes) ?? area.Mode;
+
+            if (!string.IsNullOrEmpty(Wipe)) {
+                Type type = Assembly.GetEntryAssembly().GetType(Wipe);
+                ConstructorInfo ctor = type?.GetConstructor(new Type[] { typeof(Scene), typeof(bool), typeof(Action) });
+                if (type != null && ctor != null) {
+                    area.Wipe = (scene, wipeIn, onComplete) => ctor.Invoke(new object[] { scene, wipeIn, onComplete });
+                }
+            }
+
+            area.DarknessAlpha = DarknessAlpha;
+            area.BloomBase = BloomBase;
+            area.BloomStrength = BloomStrength;
+
+            if (!string.IsNullOrEmpty(Jumpthru))
+                area.Jumpthru = Jumpthru;
+
+            if (!string.IsNullOrEmpty(CassetteNoteColor))
+                area.CassseteNoteColor = Calc.HexToColor(CassetteNoteColor);
+            if (!string.IsNullOrEmpty(CassetteSong))
+                area.CassetteSong = CassetteSong;
+
+            area.MountainIdle = Mountain?.Idle?.Convert() ?? area.MountainIdle;
+            area.MountainSelect = Mountain?.Select?.Convert() ?? area.MountainSelect;
+            area.MountainZoom = Mountain?.Zoom?.Convert() ?? area.MountainZoom;
+            area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
+            area.MountainState = Mountain?.State ?? area.MountainState;
+
+            area.SetCompleteScreenMeta(CompleteScreen);
+        }
 
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
             if (meta == null || meta.Length == 0)
@@ -96,7 +199,7 @@ namespace Celeste.Mod.Meta {
         public ModeProperties Convert()
             => new ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),
-                Checkpoints = MapMeta.Convert(Checkpoints) ?? new CheckpointData[0],
+                Checkpoints = MapMeta.Convert(Checkpoints), // Can be null.
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData,
                 Inventory = MapMeta.GetInventory(Inventory) ?? PlayerInventory.Default,
                 Path = Path,
@@ -113,14 +216,12 @@ namespace Celeste.Mod.Meta {
         public string Level { get; set; }
         public string Name { get; set; }
         public bool Dreaming { get; set; }
-        public int Strawberries { get; set; }
         public string Inventory { get; set; }
         public MapMetaAudioState AudioState { get; set; }
         public string[] Flags { get; set; }
         public Session.CoreModes? CoreMode { get; set; }
         public CheckpointData Convert()
             => new CheckpointData(Level, Name, MapMeta.GetInventory(Inventory), Dreaming, AudioState?.Convert()) {
-                Strawberries = Strawberries,
                 Flags = new HashSet<string>(Flags ?? new string[0]),
                 CoreMode = CoreMode
             };
