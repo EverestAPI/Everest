@@ -46,6 +46,8 @@ namespace Celeste.Mod.Meta {
 
         public string Jumpthru { get; set; } = null;
 
+        public Session.CoreModes CoreMode { get; set; }
+
         public string CassetteNoteColor { get; set; } = null;
         public string CassetteSong { get; set; } = null;
 
@@ -69,7 +71,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("TitleAccentColor", v => TitleAccentColor = v);
             meta.AttrIf("TitleTextColor", v => TitleTextColor = v);
 
-            meta.AttrIf("IntroType", v => IntroType = (Player.IntroTypes) Enum.Parse(typeof(Player.IntroTypes), v));
+            meta.AttrIf("IntroType", v => IntroType = (Player.IntroTypes) Enum.Parse(typeof(Player.IntroTypes), v, true));
 
             meta.AttrIfBool("Dreaming", v => Dreaming = v);
 
@@ -82,6 +84,8 @@ namespace Celeste.Mod.Meta {
             meta.AttrIfFloat("BloomStrength", (float v) => BloomStrength = v);
 
             meta.AttrIf("Jumpthru", v => Jumpthru = v);
+
+            meta.AttrIf("CoreMode", v => CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
 
             meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
             meta.AttrIf("CassetteSong", v => CassetteSong = v);
@@ -134,6 +138,8 @@ namespace Celeste.Mod.Meta {
 
             if (!string.IsNullOrEmpty(Jumpthru))
                 area.Jumpthru = Jumpthru;
+
+            area.CoreMode = CoreMode;
 
             if (!string.IsNullOrEmpty(CassetteNoteColor))
                 area.CassseteNoteColor = Calc.HexToColor(CassetteNoteColor);

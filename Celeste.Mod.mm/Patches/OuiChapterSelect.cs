@@ -3,6 +3,7 @@
 using Celeste.Mod;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -33,6 +34,8 @@ namespace Celeste {
         private float maplistEase;
         private float levelsetEase;
         private string currentLevelSet;
+
+        private KeyboardState _keys;
 
         private extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -114,6 +117,11 @@ namespace Celeste {
         public override void Update() {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
+
+            KeyboardState keysPrev = _keys;
+            KeyboardState keys = Keyboard.GetState();
+            _keys = keys;
+
             if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
                 Overworld.Maddy.Hide(true);
                 Audio.Play(Sfxs.ui_main_button_select);
@@ -134,6 +142,13 @@ namespace Celeste {
                     Audio.Play(Sfxs.ui_world_chapter_pane_expand);
                     Audio.Play(Sfxs.ui_world_icon_roll_right);
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
+                    return;
+                }
+
+                if (keys[Keys.F5] == KeyState.Down && keysPrev[Keys.F5] == KeyState.Up) {
+                    Audio.Play(Sfxs.ui_world_journal_select);
+                    Audio.Play(Sfxs.ui_world_whoosh_1000ms_forward);
+                    Overworld.Goto<OuiHelper_ChapterSelect_Reload>();
                     return;
                 }
                 // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.

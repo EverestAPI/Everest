@@ -43,7 +43,6 @@ namespace Celeste.Mod.UI {
                 Audio.Play(Sfxs.ui_world_chapter_pane_contract);
             }
             Overworld.Goto<OuiChapterSelect>();
-            yield break;
         }
 
         public override IEnumerator Leave(Oui next) {
