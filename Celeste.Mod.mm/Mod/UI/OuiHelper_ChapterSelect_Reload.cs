@@ -17,6 +17,15 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Enter(Oui from) {
             yield return 0.25f;
 
+            Audio.Play(Sfxs.ui_world_whoosh_400ms_back);
+            Overworld.Goto<OuiChapterSelect>();
+        }
+
+        public override IEnumerator Leave(Oui next) {
+            yield break;
+        }
+
+        public static void Reload() {
             // ChapterSelect only updates the ID.
             AreaKey lastArea = AreaData.Get(SaveData.Instance.LastArea.ID).ToKey();
             // Note: SaveData.Instance.LastArea is reset by AreaData.Interlude_Safe -> SaveData.LevelSetStats realizing that AreaOffset == -1
@@ -33,15 +42,11 @@ namespace Celeste.Mod.UI {
             SaveData.Instance.BeforeSave();
             SaveData.Instance.AfterInitialize();
 
-            if (Overworld.Mountain.Area >= AreaData.Areas.Count)
-                Overworld.Mountain.EaseCamera(0, AreaData.Areas[0].MountainIdle, null, true);
-
-            Audio.Play(Sfxs.ui_world_whoosh_400ms_back);
-            Overworld.Goto<OuiChapterSelect>();
-        }
-
-        public override IEnumerator Leave(Oui next) {
-            yield break;
+            Overworld overworld = (Engine.Scene.Entities.FindFirst<Oui>())?.Overworld;
+            if (overworld == null)
+                return;
+            if (overworld.Mountain.Area >= AreaData.Areas.Count)
+                overworld.Mountain.EaseCamera(0, AreaData.Areas[0].MountainIdle, null, true);
         }
 
     }

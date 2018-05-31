@@ -38,6 +38,12 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
+            menu.Add(new TextMenu.Button("maplist_reload").Pressed(() => {
+                Audio.Play(Sfxs.ui_world_journal_select);
+                OuiHelper_ChapterSelect_Reload.Reload();
+                ReloadItems();
+            }));
+
             sets.Clear();
             foreach (AreaData area in AreaData.Areas) {
                 string levelSet = area.GetLevelSet();
@@ -219,10 +225,11 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
-            if (menu != null && menu.Focused &&
-                Selected && Input.MenuCancel.Pressed) {
-                Audio.Play(Sfxs.ui_main_button_back);
-                Overworld.Goto<OuiChapterSelect>();
+            if (menu != null && menu.Focused && Selected) {
+                if (Input.MenuCancel.Pressed) {
+                    Audio.Play(Sfxs.ui_main_button_back);
+                    Overworld.Goto<OuiChapterSelect>();
+                }
             }
 
             base.Update();
