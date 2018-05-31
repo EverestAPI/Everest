@@ -131,7 +131,8 @@ namespace Celeste {
 
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
-                        Inventory = PlayerInventory.Default
+                        Inventory = PlayerInventory.Default,
+                        AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
                     }
                 };
 
@@ -159,10 +160,6 @@ namespace Celeste {
                     ModeProperties[] larger = new ModeProperties[3];
                     for (int i = 0; i < area.Mode.Length; i++)
                         larger[i] = area.Mode[i];
-                    for (int i = area.Mode.Length; i < larger.Length; i++)
-                        larger[i] = new ModeProperties {
-                            Inventory = PlayerInventory.Default
-                        };
                     area.Mode = larger;
                 }
 
