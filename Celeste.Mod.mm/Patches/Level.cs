@@ -63,7 +63,7 @@ namespace Celeste {
             IEnumerator orig = orig_TransitionRoutine(next, direction);
 
             // Don't perform any Gay Baby Jail checks in vanilla maps.
-            if (Session.Area.GetSID() == "Celeste") {
+            if (Session.Area.GetLevelSet() == "Celeste") {
                 while (orig.MoveNext())
                     yield return orig.Current;
                 yield break;
@@ -167,6 +167,14 @@ namespace Celeste {
                 }
 
                 level.Add(new BladeRotateSpinner(entityData, offset));
+                return true;
+            }
+
+            if (entityData.Name == "checkpoint" &&
+                entityData.Position == Vector2.Zero) {
+                // Workaround for mod levels containing a checkpoint at (0, 0):
+                // Create the checkpoint and avoid the start position update in orig_Load.
+                level.Add(new Checkpoint(entityData, offset));
                 return true;
             }
 

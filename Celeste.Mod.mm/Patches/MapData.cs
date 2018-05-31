@@ -32,13 +32,13 @@ namespace Celeste {
             }
         }
 
-        private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self)
-            => ((patch_MapData) self).Process(root);
+        private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self) {
+            if (self.Area.GetLevelSet() == "Celeste")
+                return root;
+            return ((patch_MapData) self).Process(root);
+        }
 
         private BinaryPacker.Element Process(BinaryPacker.Element root) {
-            if (Area.GetSID() == "Celeste")
-                return root;
-
             foreach (BinaryPacker.Element el in root.Children) {
                 switch (el.Name) {
                     case "levels":
@@ -71,7 +71,21 @@ namespace Celeste {
             int strawberryInCheckpoint = 0;
 
             foreach (BinaryPacker.Element level in levels.Children) {
+                string[] levelTags = level.Attr("name").Split(':');
+                level.Attributes["name"] = levelTags[0];
+
                 string levelName = level.Attr("name").Replace("lvl_", "");
+
+                BinaryPacker.Element entities = level.Children.First(el => el.Name == "entities");
+
+                if (levelTags.Contains("cp"))
+                    entities.Children.Add(new BinaryPacker.Element {
+                        Name = "checkpoint",
+                        Attributes = {
+                            { "x", "0" },
+                            { "y", "0" }
+                        }
+                    });
 
                 foreach (BinaryPacker.Element levelChild in level.Children) {
                     switch (levelChild.Name) {

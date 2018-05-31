@@ -72,7 +72,7 @@ namespace Celeste {
 
             if (isInGBJ < 2 && level != null) {
                 diedInGBJ++;
-                if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetSID() != "Celeste") {
+                if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetLevelSet() != "Celeste") {
                     level.Pause();
                     return null;
                 }
