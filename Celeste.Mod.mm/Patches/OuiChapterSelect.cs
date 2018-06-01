@@ -146,7 +146,7 @@ namespace Celeste {
                 }
 
                 if (keys[Keys.F5] == KeyState.Down && keysPrev[Keys.F5] == KeyState.Up) {
-                    Audio.Play(Sfxs.ui_world_journal_select);
+                    Audio.Play(Sfxs.ui_postgame_unlock_newchapter);
                     Audio.Play(Sfxs.ui_world_whoosh_1000ms_forward);
                     Overworld.Goto<OuiHelper_ChapterSelect_Reload>();
                     return;

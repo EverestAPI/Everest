@@ -39,7 +39,7 @@ namespace Celeste.Mod.UI {
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
             menu.Add(new TextMenu.Button(Dialog.Clean("maplist_reload")).Pressed(() => {
-                Audio.Play(Sfxs.ui_world_journal_select);
+                Audio.Play(Sfxs.ui_postgame_unlock_newchapter);
                 OuiHelper_ChapterSelect_Reload.Reload();
                 Overworld.Goto<OuiMapList>();
             }));
@@ -132,7 +132,7 @@ namespace Celeste.Mod.UI {
 
                 if (area.Icon != "areas/null")
                     button.Icon = area.Icon;
-                button.IconWidth = 128f;
+                button.IconWidth = 64f;
 
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     button.Disabled = true;
