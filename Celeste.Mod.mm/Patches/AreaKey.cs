@@ -35,8 +35,7 @@ namespace Celeste {
         public string SID {
             get {
                 string value = _SID;
-                if ((SIDID != ID || string.IsNullOrEmpty(value)) && ID != -1)
-                    // We don't actually check if we're in bounds as we want an exception.
+                if ((SIDID != ID || string.IsNullOrEmpty(value)) && 0 <= ID && ID < AreaData.Areas.Count)
                     value = AreaData.Areas[ID].GetSID();
                 return value;
             }

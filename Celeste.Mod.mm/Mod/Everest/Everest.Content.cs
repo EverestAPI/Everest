@@ -371,7 +371,7 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="meta">The content mod to crawl through.</param>
             public static void Crawl(ContentModMetadata meta) {
-                if (Mods.Contains(meta))
+                if (!Mods.Contains(meta))
                     Mods.Add(meta);
 
                 if (meta.PathDirectory != null) {
