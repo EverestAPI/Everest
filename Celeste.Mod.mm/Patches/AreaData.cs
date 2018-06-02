@@ -31,7 +31,7 @@ namespace Celeste {
             }
         }
 
-        public MapMetaCompleteScreen CompleteScreenMeta;
+        public MapMeta Meta;
 
         // Required for the journal to hide areas outside of the current levelset.
 
@@ -265,15 +265,15 @@ namespace Celeste {
         }
 
         /// <summary>
-        /// Get the custom complete screen if it has been loaded from the .meta or set otherwise.
+        /// Get the custom metadata if it has been loaded from the .meta or set otherwise.
         /// </summary>
-        public static MapMetaCompleteScreen GetCompleteScreenMeta(this AreaData self)
-            => ((patch_AreaData) self).CompleteScreenMeta;
+        public static MapMeta GetMeta(this AreaData self)
+            => ((patch_AreaData) self).Meta;
         /// <summary>
-        /// Set the custom complete screen.
+        /// Set the custom metadata.
         /// </summary>
-        public static AreaData SetCompleteScreenMeta(this AreaData self, MapMetaCompleteScreen value) {
-            ((patch_AreaData) self).CompleteScreenMeta = value;
+        public static AreaData SetMeta(this AreaData self, MapMeta value) {
+            ((patch_AreaData) self).Meta = value;
             return self;
         }
 

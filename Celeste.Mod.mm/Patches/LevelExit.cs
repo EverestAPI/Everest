@@ -40,7 +40,7 @@ namespace Celeste {
         private void LoadCompleteThread() {
             AreaData area = AreaData.Get(session);
 
-            if ((completeMeta = area.GetCompleteScreenMeta()) != null && completeMeta.Atlas != null) {
+            if ((completeMeta = area.GetMeta()?.CompleteScreen) != null && completeMeta.Atlas != null) {
                 completeAtlas = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", completeMeta.Atlas), Atlas.AtlasDataFormat.PackerNoAtlas);
 
             } else if ((completeXml = area.CompleteScreenXml) != null && completeXml.HasAttr("atlas")) {

@@ -20,6 +20,16 @@ namespace Celeste {
 
         public SubHudRenderer SubHudRenderer;
 
+        public new Vector2 DefaultSpawnPoint {
+            [MonoModReplace]
+            get {
+                if (Session.Area.GetLevelSet() == "Celeste")
+                    return GetSpawnPoint(new Vector2(Bounds.Left, Bounds.Bottom));
+
+                return Session.LevelData.Spawns[0];
+            }
+        }
+
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();

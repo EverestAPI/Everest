@@ -57,6 +57,8 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaCompleteScreen CompleteScreen { get; set; } = null;
 
+        public MapMetaCassetteModifier CassetteModifier { get; set; } = null;
+
         public void Parse(BinaryPacker.Element meta) {
             meta.AttrIf("Name", v => Name = v);
             meta.AttrIf("SID", v => SID = v);
@@ -152,7 +154,7 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
-            area.SetCompleteScreenMeta(CompleteScreen);
+            area.SetMeta(this);
         }
 
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
@@ -267,5 +269,14 @@ namespace Celeste.Mod.Meta {
         public float Alpha { get; set; } = 1f;
         [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
+    }
+
+    public class MapMetaCassetteModifier : IMeta {
+        public float TempoMult { get; set; } = 1f;
+        public int LeadBeats { get; set; } = 16;
+        public int BeatsPerTick { get; set; } = 4;
+        public int TicksPerSwap { get; set; } = 2;
+        public int Blocks { get; set; } = 2;
+        public int BeatsMax { get; set; } = 256;
     }
 }
