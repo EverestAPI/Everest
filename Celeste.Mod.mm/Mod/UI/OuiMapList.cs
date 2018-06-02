@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.UI {
     public class OuiMapList : Oui {
 
+        private MountainCamera cameraStart;
+        private MountainCamera cameraEnd;
+
         public List<OuiChapterSelectIcon> OuiIcons;
 
         private TextMenu menu;
@@ -199,6 +202,12 @@ namespace Celeste.Mod.UI {
             menu.Visible = (Visible = true);
             menu.Focused = false;
 
+            cameraStart = Overworld.Mountain.UntiltedCamera;
+            cameraEnd = cameraStart;
+            cameraEnd.Position = cameraEnd.Position + -cameraStart.Rotation.Forward() * 1f;
+            Overworld.Mountain.EaseCamera(Overworld.Mountain.Area, cameraEnd, 2f);
+            Overworld.Mountain.AllowUserRotation = false;
+
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = offScreenX + -1920f * Ease.CubeOut(p);
                 alpha = Ease.CubeOut(p);
@@ -214,6 +223,8 @@ namespace Celeste.Mod.UI {
                 Overworld.Maddy.Show = true;
             menu.Focused = false;
 
+            Overworld.Mountain.EaseCamera(Overworld.Mountain.Area, cameraStart, 0.4f);
+
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = onScreenX + 1920f * Ease.CubeIn(p);
                 alpha = 1f - Ease.CubeIn(p);
@@ -227,7 +238,10 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (menu != null && menu.Focused && Selected) {
-                if (Input.MenuCancel.Pressed) {
+                Overworld.Maddy.Show = false;
+
+                if (Input.MenuCancel.Pressed ||
+                    Input.Pause.Pressed || Input.ESC.Pressed) {
                     Audio.Play(Sfxs.ui_main_button_back);
                     Overworld.Goto<OuiChapterSelect>();
                 }
