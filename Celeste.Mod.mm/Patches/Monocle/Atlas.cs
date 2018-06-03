@@ -359,6 +359,12 @@ namespace Monocle {
                 VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
                 MTexture mtex;
                 MTextureMeta meta = asset.GetMeta<MTextureMeta>();
+                if (meta != null) {
+                    if (meta.Width == 0)
+                        meta.Width = vtex.Width;
+                    if (meta.Height == 0)
+                        meta.Height = vtex.Height;
+                }
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
                 MTexture existing;
