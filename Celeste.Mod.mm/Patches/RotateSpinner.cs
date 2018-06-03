@@ -54,6 +54,7 @@ namespace Celeste {
             // Note: Calc.Percent previously ignored subtracting zeroAt from oneAt when dividing.
             // We thus need to feed it back in.
             rotationPercent = EaserInverse(Calc.Percent(angle, 4.712389f, -1.57079637f + 4.712389f));
+            Position = center + Calc.AngleToVector(Angle, length);
         }
 
         // public extern void orig_Awake(Scene scene);
