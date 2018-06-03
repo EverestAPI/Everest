@@ -82,11 +82,13 @@ namespace Celeste {
                 Audio.Play("event:/game/general/cassette_block_switch_2");
                 Input.Rumble(RumbleStrength.Medium, RumbleLength.Short);
 
-            } else if ((beatIndex + 1) % (beatsPerTick * ticksPerSwap) == 0) {
-                SetWillActivate((currentIndex + 1) % blocks);
-
-            } else if (beatIndex % beatsPerTick == 0) {
-                Audio.Play("event:/game/general/cassette_block_switch_1");
+            } else {
+                if ((beatIndex + 1) % (beatsPerTick * ticksPerSwap) == 0) {
+                    SetWillActivate((currentIndex + 1) % blocks);
+                }
+                if (beatIndex % beatsPerTick == 0) {
+                    Audio.Play("event:/game/general/cassette_block_switch_1");
+                }
             }
 
             if (leadBeats > 0) {
