@@ -59,7 +59,7 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaCassetteModifier CassetteModifier { get; set; } = null;
 
-        public bool FixRotateSpinnerAngles { get; set; } = true;
+        public bool FixRotateSpinnerAngle { get; set; } = true;
 
         public void Parse(BinaryPacker.Element meta) {
             meta.AttrIf("Name", v => Name = v);
@@ -94,7 +94,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
             meta.AttrIf("CassetteSong", v => CassetteSong = v);
 
-            meta.AttrIfBool("FixRotateSpinnerAngles", v => FixRotateSpinnerAngles = v);
+            meta.AttrIfBool("FixRotateSpinnerAngles", v => FixRotateSpinnerAngle = v);
 
             // TODO: Parse MapMeta A mode, Mountain and CompleteScreen
         }

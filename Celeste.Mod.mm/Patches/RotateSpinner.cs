@@ -19,9 +19,12 @@ namespace Celeste {
     // : Entity because there's no original Awake method to hook, thus base.Awake must be Entity::Awake.
     class patch_RotateSpinner : Entity {
 
-        // extern get is invalid.
-        [MonoModIgnore]
-        public float Angle => MathHelper.Lerp(4.712389f, -1.57079637f, Easer(rotationPercent));
+        public float Angle => 
+            fixAngle ? 
+            MathHelper.Lerp(MathHelper.Pi, -MathHelper.Pi, Easer(rotationPercent)) :
+            MathHelper.Lerp(4.712389f, -1.57079637f, Easer(rotationPercent));
+
+        private bool fixAngle;
 
         private Vector2 center;
         private float rotationPercent;
@@ -59,10 +62,12 @@ namespace Celeste {
             base.Awake(scene);
 
             MapMeta meta = AreaData.Get((Scene as Level).Session.Area).GetMeta();
-            if (meta?.FixRotateSpinnerAngles ?? false) {
+            fixAngle = meta?.FixRotateSpinnerAngle ?? false;
+
+            if (fixAngle) {
                 float angle = Calc.Angle(startCenter, startPosition);
                 angle = Calc.WrapAngle(angle);
-                rotationPercent = EaserInverse(Calc.Percent(angle, -MathHelper.Pi, MathHelper.Pi));
+                rotationPercent = EaserInverse(Calc.Percent(angle, MathHelper.Pi, -MathHelper.Pi));
                 Position = center + Calc.AngleToVector(Angle, length);
             }
         }
