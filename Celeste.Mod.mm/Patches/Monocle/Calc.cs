@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
@@ -52,6 +53,12 @@ namespace Monocle {
         public static extern bool orig_XMLExists(string filename);
         public static bool XMLExists(string filename) {
             return true;
+        }
+
+        [MonoModReplace]
+        public static float Percent(float num, float zeroAt, float oneAt) {
+            // return MathHelper.Clamp((num - zeroAt) / oneAt, 0f, 1f);
+            return MathHelper.Clamp((num - zeroAt) / (oneAt - zeroAt), 0f, 1f);
         }
 
     }

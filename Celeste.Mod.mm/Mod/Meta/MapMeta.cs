@@ -59,6 +59,8 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaCassetteModifier CassetteModifier { get; set; } = null;
 
+        public bool FixRotateSpinnerAngles { get; set; } = true;
+
         public void Parse(BinaryPacker.Element meta) {
             meta.AttrIf("Name", v => Name = v);
             meta.AttrIf("SID", v => SID = v);
@@ -91,6 +93,8 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
             meta.AttrIf("CassetteSong", v => CassetteSong = v);
+
+            meta.AttrIfBool("FixRotateSpinnerAngles", v => FixRotateSpinnerAngles = v);
 
             // TODO: Parse MapMeta A mode, Mountain and CompleteScreen
         }
@@ -248,7 +252,7 @@ namespace Celeste.Mod.Meta {
             => new MountainCamera(Position?.ToVector3() ?? Vector3.Zero, Target?.ToVector3() ?? Vector3.Zero);
     }
 
-    public class MapMetaCompleteScreen : IMeta {
+    public class MapMetaCompleteScreen {
         public string Atlas { get; set; }
         [YamlIgnore] public Vector2 Start => StartArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Start")] public float[] StartArray { get; set; }
@@ -271,7 +275,7 @@ namespace Celeste.Mod.Meta {
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
     }
 
-    public class MapMetaCassetteModifier : IMeta {
+    public class MapMetaCassetteModifier {
         public float TempoMult { get; set; } = 1f;
         public int LeadBeats { get; set; } = 16;
         public int BeatsPerTick { get; set; } = 4;

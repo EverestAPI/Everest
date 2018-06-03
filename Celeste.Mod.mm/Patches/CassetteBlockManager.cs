@@ -36,12 +36,6 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_CassetteBlockManager(string levelID);
-        [MonoModConstructor]
-        public void ctor_CassetteBlockManager(string levelID) {
-            orig_ctor_CassetteBlockManager(levelID);
-        }
-
         public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
             orig_Awake(scene);

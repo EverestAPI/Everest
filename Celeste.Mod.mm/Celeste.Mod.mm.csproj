@@ -114,6 +114,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
+    <Compile Include="Patches\RotateSpinner.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\CassetteBlockManager.cs" />
     <Compile Include="Patches\Settings.cs" />
