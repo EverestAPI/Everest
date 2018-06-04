@@ -123,6 +123,10 @@ namespace MiniInstaller {
                 LogLine("Creating backup orig directory");
                 Directory.CreateDirectory(PathOrig);
                 File.Copy(PathCelesteExe, Path.Combine(PathOrig, "Celeste.exe"));
+                if (File.Exists(PathCelesteExe + ".pdb"))
+                    File.Copy(PathCelesteExe + ".pdb", Path.Combine(PathOrig, "Celeste.exe.pdb"));
+                if (File.Exists(Path.ChangeExtension(PathCelesteExe, "mdb")))
+                    File.Copy(Path.ChangeExtension(PathCelesteExe, "mdb"), Path.Combine(PathOrig, "Celeste.mdb"));
             }
         }
 

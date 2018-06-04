@@ -43,6 +43,7 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.Button(Dialog.Clean("maplist_reload")).Pressed(() => {
                 Audio.Play(Sfxs.ui_postgame_unlock_newchapter);
+                Overworld.Mountain.UntiltedCamera = cameraStart;
                 OuiHelper_ChapterSelect_Reload.Reload();
                 Overworld.Goto<OuiMapList>();
             }));
@@ -218,12 +219,14 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play(Sfxs.ui_main_whoosh_large_out);
-            if (Overworld != null)
-                Overworld.Maddy.Show = true;
             menu.Focused = false;
 
-            Overworld.Mountain.EaseCamera(Overworld.Mountain.Area, cameraStart, 0.4f);
+            Audio.Play(Sfxs.ui_main_whoosh_large_out);
+
+            if (Overworld != null) {
+                Overworld.Maddy.Show = true;
+                Overworld.Mountain.EaseCamera(Overworld.Mountain.Area, cameraStart, 0.4f);
+            }
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = onScreenX + 1920f * Ease.CubeIn(p);
