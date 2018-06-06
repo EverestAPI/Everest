@@ -188,6 +188,23 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "triggerSpikesOriginalUp") {
+                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Up));
+                return true;
+            }
+            if (entityData.Name == "triggerSpikesOriginalDown") {
+                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Down));
+                return true;
+            }
+            if (entityData.Name == "triggerSpikesOriginalLeft") {
+                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Left));
+                return true;
+            }
+            if (entityData.Name == "triggerSpikesOriginalRight") {
+                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Right));
+                return true;
+            }
+
             return false;
         }
 
