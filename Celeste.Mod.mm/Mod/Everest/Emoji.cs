@@ -141,6 +141,8 @@ namespace Celeste.Mod {
         /// <param name="text"></param>
         /// <returns></returns>
         public static string Apply(string text) {
+            if (text == null)
+                return text;
             // TODO: This trashes the GC and doesn't allow escaping!
             foreach (KeyValuePair<string, int> kvp in _IDs)
                 text = text.Replace(":" + kvp.Key + ":", ((char) (Start + kvp.Value)).ToString());
