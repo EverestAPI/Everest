@@ -17,13 +17,16 @@ using System.Xml.Serialization;
 namespace Celeste {
     static class patch_UserIO {
 
-        private static extern string orig_GetSavePath();
-        private static string GetSavePath() {
-            string fallback = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Saves");
+        private static extern string orig_GetSavePath(string dir);
+        private static string GetSavePath(string dir) {
+            string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
+            if (!string.IsNullOrEmpty(env))
+                return Path.Combine(env, dir);
+
             try {
-                return orig_GetSavePath();
+                return orig_GetSavePath(dir);
             } catch (NotSupportedException) {
-                return fallback;
+                return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dir);
             }
         }
 

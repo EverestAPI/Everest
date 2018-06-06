@@ -47,7 +47,13 @@ namespace Celeste {
         public extern void orig_ctor_Celeste();
         [MonoModConstructor]
         public void ctor_Celeste() {
-            orig_ctor_Celeste();
+            if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1") {
+                Instance = this;
+                Version = new Version(0, 0, 0, 0);
+                Console.WriteLine("CELESTE HEADLESS VIA EVEREST");
+            } else {
+                orig_ctor_Celeste();
+            }
             try {
                 Everest.Boot();
             } catch (Exception e) {

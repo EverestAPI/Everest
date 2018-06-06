@@ -46,7 +46,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest version.
         /// </summary>
-        public static string VersionCelesteString => $"{Engine.Instance.Version} [Everest: {VersionString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version} [Everest: {VersionString}]";
 
         /// <summary>
         /// The command line arguments passed when launching the game.
@@ -109,6 +109,9 @@ namespace Celeste.Mod {
                 else if (arg == "--dump-all")
                     Content._DumpAll = true;
 
+                else if (arg == "--headless")
+                    Environment.SetEnvironmentVariable("EVEREST_HEADLESS", "1");
+
             }
         }
 
@@ -130,12 +133,14 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            // Initialize the content helper.
-            Content.Initialize();
+            if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") != "1") {
+                // Initialize the content helper.
+                Content.Initialize();
 
-            // Initialize all main managers before loading any mods.
-            TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
-            // Don't add it yet, though - add it in Initialize.
+                // Initialize all main managers before loading any mods.
+                TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
+                // Don't add it yet, though - add it in Initialize.
+            }
 
             // Register our core module and load any other modules.
             new CoreModule().Register();
