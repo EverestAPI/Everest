@@ -205,9 +205,11 @@ namespace Celeste.Mod.Meta {
         public MapMetaAudioState AudioState { get; set; }
         public MapMetaCheckpointData[] Checkpoints { get; set; }
         public bool IgnoreLevelAudioLayerData { get; set; }
-        public string Inventory { get; set; }
+        public string Inventory { get; set; } = "Default";
         public string Path { get; set; }
         public string PoemID { get; set; }
+
+        public string StartLevel { get; set; }
         public ModeProperties Convert()
             => new ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),

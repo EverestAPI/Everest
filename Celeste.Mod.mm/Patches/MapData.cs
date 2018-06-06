@@ -16,6 +16,16 @@ using System.Xml;
 namespace Celeste {
     class patch_MapData : MapData {
 
+        public MapMetaModeProperties Meta {
+            get {
+                MapMeta metaAll = AreaData.Get(Area).GetMeta();
+                return
+                    (metaAll?.Modes?.Length ?? 0) > (int) Area.Mode ?
+                    metaAll.Modes[(int) Area.Mode] :
+                    null;
+            }
+        }
+
         public patch_MapData(AreaKey area)
             : base(area) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -30,6 +40,21 @@ namespace Celeste {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();
             }
+        }
+
+        public extern LevelData orig_StartLevel();
+        public new LevelData StartLevel() {
+            MapMetaModeProperties meta = Meta;
+            if (meta != null) {
+                if (!string.IsNullOrEmpty(meta.StartLevel)) {
+                    LevelData level = Levels.FirstOrDefault(_ => _.Name == meta.StartLevel);
+                    if (level != null)
+                        return level;
+                }
+                    
+            }
+
+            return orig_StartLevel() ?? Levels[0];
         }
 
         private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self) {

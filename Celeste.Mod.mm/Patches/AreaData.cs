@@ -195,6 +195,8 @@ namespace Celeste {
                     area.Mode[0].MapData.Area = area.ToKey();
                 else
                     area.Mode[0].MapData = new MapData(area.ToKey());
+                if (string.IsNullOrEmpty(area.Mode[0].PoemID))
+                    area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
                 if (area.Interlude)
                     continue;
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
@@ -204,6 +206,8 @@ namespace Celeste {
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
+                    if (string.IsNullOrEmpty(area.Mode[mode].PoemID))
+                        area.Mode[mode].PoemID = area.GetSID().DialogKeyify() + "_" + (char) ('A' + mode);
                 }
             }
 
