@@ -42,6 +42,8 @@ namespace Celeste.Mod.Entities {
             : base(position) {
             this.size = size;
             this.direction = direction;
+            this.overrideType = overrideType;
+
             switch (direction) {
                 case Directions.Up:
                     outwards = new Vector2(0f, -1f);
@@ -179,29 +181,29 @@ namespace Celeste.Mod.Entities {
             switch (direction) {
                 case Directions.Up:
                     if (player.Speed.Y >= 0f) {
-                        minIndex = (int) ((player.Left - Left) / 4f);
-                        maxIndex = (int) ((player.Right - Left) / 4f);
+                        minIndex = (int) ((player.Left - Left) / 8f);
+                        maxIndex = (int) ((player.Right - Left) / 8f);
                     }
                     break;
 
                 case Directions.Down:
                     if (player.Speed.Y <= 0f) {
-                        minIndex = (int) ((player.Left - Left) / 4f);
-                        maxIndex = (int) ((player.Right - Left) / 4f);
+                        minIndex = (int) ((player.Left - Left) / 8f);
+                        maxIndex = (int) ((player.Right - Left) / 8f);
                     }
                     break;
 
                 case Directions.Left:
                     if (player.Speed.X >= 0f) {
-                        minIndex = (int) ((player.Top - Top) / 4f);
-                        maxIndex = (int) ((player.Bottom - Top) / 4f);
+                        minIndex = (int) ((player.Top - Top) / 8f);
+                        maxIndex = (int) ((player.Bottom - Top) / 8f);
                     }
                     break;
 
                 case Directions.Right:
                     if (player.Speed.X <= 0f) {
-                        minIndex = (int) ((player.Top - Top) / 4f);
-                        maxIndex = (int) ((player.Bottom - Top) / 4f);
+                        minIndex = (int) ((player.Top - Top) / 8f);
+                        maxIndex = (int) ((player.Bottom - Top) / 8f);
                     }
                     break;
             }
