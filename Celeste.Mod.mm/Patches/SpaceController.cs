@@ -35,7 +35,7 @@ namespace Celeste {
                         { "lerpStrength", "1" },
                     },
                     Nodes = new Vector2[] {
-                        new Vector2(160f, level.Bounds.Height / 2f + 32f)
+                        new Vector2(160f, level.Bounds.Height / 2f)
                     }
                 },
                 level.LevelOffset
