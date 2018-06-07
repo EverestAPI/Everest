@@ -47,7 +47,7 @@ namespace Celeste {
             blocks = 2;
             beatsMax = 256;
 
-            MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session.Area).GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session).GetMeta()?.CassetteModifier;
             if (meta != null) {
                 tempoMult = meta.TempoMult;
                 leadBeats = meta.LeadBeats;

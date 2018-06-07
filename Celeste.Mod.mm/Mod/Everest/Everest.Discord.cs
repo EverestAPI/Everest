@@ -129,7 +129,7 @@ namespace Celeste.Mod {
                 string area = "";
 
                 if (session != null) {
-                    area = AreaDataExt.Get(session.Area.GetSID()).Name;
+                    area = AreaData.Get(session).Name;
                     area = area?.DialogCleanOrNull(language) ?? area;
                 }
 

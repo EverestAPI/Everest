@@ -62,7 +62,7 @@ namespace Celeste {
             // orig_Awake(scene);
             base.Awake(scene);
 
-            MapMeta meta = AreaData.Get((Scene as Level).Session.Area).GetMeta();
+            MapMeta meta = AreaData.Get((Scene as Level).Session).GetMeta();
             fixAngle = meta?.FixRotateSpinnerAngle ?? false;
 
             if (fixAngle) {

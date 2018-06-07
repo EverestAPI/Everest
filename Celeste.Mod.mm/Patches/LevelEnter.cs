@@ -34,7 +34,7 @@ namespace Celeste {
                 return ErrorRoutine(message);
             }
 
-            if (AreaData.Get(session.Area) == null) {
+            if (AreaData.Get(session) == null) {
                 string message = Dialog.Get("postcard_levelgone")
                     .Replace("((player))", SaveData.Instance.Name)
                     .Replace("((sid))", session.Area.GetSID())
@@ -65,7 +65,7 @@ namespace Celeste {
             public void ctor_BSideTitle(Session session) {
                 orig_ctor_BSideTitle(session);
 
-                AreaData area = AreaData.Get(session.Area);
+                AreaData area = AreaData.Get(session);
                 if (string.IsNullOrEmpty(artist) || Dialog.Has(area.Name + "_remix_artist"))
                     artist = Dialog.Get(area.Name + "_remix_artist");
                 if (string.IsNullOrEmpty(album) || Dialog.Has(area.Name + "_remix_album"))

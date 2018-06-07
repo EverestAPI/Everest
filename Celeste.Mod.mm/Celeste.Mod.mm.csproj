@@ -205,6 +205,7 @@
     <Compile Include="Patches\OuiChapterSelect.cs" />
     <Compile Include="Patches\OverworldLoader.cs" />
     <Compile Include="Patches\Overworld.cs" />
+    <Compile Include="Patches\SpaceController.cs" />
     <Compile Include="Patches\Strawberry.cs" />
     <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />
