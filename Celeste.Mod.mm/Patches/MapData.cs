@@ -115,7 +115,15 @@ namespace Celeste {
 
                 if (level.AttrBool("space") &&
                     !levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
-                    !triggers.Children.Any(el => el.Name == "cameraTargetTrigger"))
+                    !triggers.Children.Any(el => el.Name == "cameraTargetTrigger")) {
+
+                    // Camera centers tile-perfectly on uneven heights.
+                    int heightForCenter = (int) level.Attributes["height"];
+                    heightForCenter /= 8;
+                    if (heightForCenter % 2 == 0)
+                        heightForCenter--;
+                    heightForCenter *= 8;
+
                     triggers.Children.Add(new BinaryPacker.Element {
                         Name = "cameraTargetTrigger",
                         Attributes = {
@@ -128,14 +136,14 @@ namespace Celeste {
                         },
                         Children = {
                             new BinaryPacker.Element {
-                                Name = "node",
                                 Attributes = {
                                     { "x", 160f },
-                                    { "y", level.AttrFloat("height") / 2f }
+                                    { "y", heightForCenter / 2f }
                                 }
                             }
                         }
                     });
+                }
 
                 foreach (BinaryPacker.Element levelChild in level.Children) {
                     switch (levelChild.Name) {
