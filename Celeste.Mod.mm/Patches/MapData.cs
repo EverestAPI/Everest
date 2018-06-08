@@ -102,13 +102,38 @@ namespace Celeste {
                 string levelName = level.Attr("name").Replace("lvl_", "");
 
                 BinaryPacker.Element entities = level.Children.First(el => el.Name == "entities");
+                BinaryPacker.Element triggers = level.Children.First(el => el.Name == "triggers");
 
-                if (levelTags.Contains("cp"))
+                if (levelTags.Contains("checkpoint") || levelTags.Contains("cp"))
                     entities.Children.Add(new BinaryPacker.Element {
                         Name = "checkpoint",
                         Attributes = {
                             { "x", "0" },
                             { "y", "0" }
+                        }
+                    });
+
+                if (level.AttrBool("space") &&
+                    !levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
+                    !triggers.Children.Any(el => el.Name == "cameraTargetTrigger"))
+                    triggers.Children.Add(new BinaryPacker.Element {
+                        Name = "cameraTargetTrigger",
+                        Attributes = {
+                            { "x", 0f },
+                            { "y", 0f },
+                            { "width", level.Attributes["width"] },
+                            { "height", level.Attributes["height"] },
+                            { "yOnly", true },
+                            { "lerpStrength", 1f }
+                        },
+                        Children = {
+                            new BinaryPacker.Element {
+                                Name = "node",
+                                Attributes = {
+                                    { "x", 160f },
+                                    { "y", level.AttrFloat("height") / 2f }
+                                }
+                            }
                         }
                     });
 

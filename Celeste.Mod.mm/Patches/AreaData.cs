@@ -191,14 +191,25 @@ namespace Celeste {
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 area.ID = i;
+
+                // Add the A side MapData or update its area key.
                 if (area.Mode[0].MapData != null)
                     area.Mode[0].MapData.Area = area.ToKey();
                 else
                     area.Mode[0].MapData = new MapData(area.ToKey());
-                if (string.IsNullOrEmpty(area.Mode[0].PoemID))
-                    area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
+
                 if (area.Interlude)
                     continue;
+                
+                // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
+                if (area.Mode[0].PoemID == null)
+                    area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
+                if (area.Mode[1] != null &&
+                    area.Mode[1].PoemID == null) {
+                    area.Mode[1].PoemID = area.GetSID().DialogKeyify() + "_B";
+                }
+
+                // Update all other existing mode's area keys.
                 for (int mode = 1; mode < area.Mode.Length; mode++) {
                     if (area.Mode[mode] == null)
                         continue;
@@ -206,8 +217,6 @@ namespace Celeste {
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
-                    if (string.IsNullOrEmpty(area.Mode[mode].PoemID))
-                        area.Mode[mode].PoemID = area.GetSID().DialogKeyify() + "_" + (char) ('A' + mode);
                 }
             }
 
