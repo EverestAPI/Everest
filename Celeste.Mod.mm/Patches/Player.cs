@@ -19,7 +19,7 @@ namespace Celeste {
         private bool wasDashB;
 
         private static int diedInGBJ = 0;
-        private int isInGBJ;
+        private int framesAlive;
 
         public bool IsIntroState {
             get {
@@ -37,11 +37,11 @@ namespace Celeste {
         public override void Added(Scene scene) {
             orig_Added(scene);
 
-            isInGBJ = int.MaxValue;
+            framesAlive = int.MaxValue;
 
             Level level = Scene as Level;
             if (level != null) {
-                isInGBJ = 0;
+                framesAlive = 0;
             }
 
             Everest.Events.Player.Spawn(this);
@@ -54,9 +54,9 @@ namespace Celeste {
             Level level = Scene as Level;
             if (level == null)
                 return;
-            if (level.CanPause && isInGBJ < int.MaxValue)
-                isInGBJ++;
-            if (isInGBJ >= 5)
+            if (level.CanPause && framesAlive < int.MaxValue)
+                framesAlive++;
+            if (framesAlive >= 8)
                 diedInGBJ = 0;
         }
 
@@ -70,7 +70,9 @@ namespace Celeste {
         new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
             Level level = Scene as Level;
 
-            if (isInGBJ < 2 && level != null) {
+            // 2 catches spawn-blade-kill GBJs.
+            // 4 catches spawn-OOB-kill GBJs.
+            if (framesAlive < 6 && level != null) {
                 diedInGBJ++;
                 if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetLevelSet() != "Celeste") {
                     level.Pause();
