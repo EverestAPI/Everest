@@ -32,12 +32,12 @@ namespace Celeste.Mod {
                 public readonly string Name;
                 public readonly string Branch;
                 public readonly string URL;
-                public readonly Version Version;
-                public Entry(string name, string branch, string url, Version version) {
+                public readonly int Build;
+                public Entry(string name, string branch, string url, int version) {
                     Name = name;
                     Branch = branch ?? "";
                     URL = url;
-                    Version = version;
+                    Build = version;
                 }
             }
 
@@ -110,7 +110,7 @@ namespace Celeste.Mod {
                     entries.Sort((a, b) => {
                         if (a.Branch != b.Branch)
                             return -(branchFirsts[a.Branch] - branchFirsts[b.Branch]);
-                        return -a.Version.CompareTo(b.Version);
+                        return -a.Build.CompareTo(b.Build);
                     });
                     Entries = new ReadOnlyCollection<Entry>(entries);
                     return this;
@@ -158,7 +158,7 @@ namespace Celeste.Mod {
                     if (all.Count == 0)
                         return;
                     all.Sort((a, b) => {
-                        return -a.Version.CompareTo(b.Version);
+                        return -a.Build.CompareTo(b.Build);
                     });
                     Newest = all[0];
                 });
@@ -193,17 +193,11 @@ namespace Celeste.Mod {
                         name = name.Substring(0, indexOfBranch);
                     }
 
-                    Version version;
-                    if (split.Length == 3)
-                        version = new Version(split[2]);
-                    else
-                        version = new Version(0, 0, int.Parse(Regex.Match(split[1], @"\d+").Value));
-
-                    return new Entry(name, branch, url, version);
+                    return new Entry(name, branch, url, int.Parse(Regex.Match(split[1], @"\d+").Value));
                 };
 
             public static Entry Newest { get; internal set; }
-            public static bool HasUpdate => Newest != null && Newest.Version > Version;
+            public static bool HasUpdate => Newest != null && Newest.Build > Build;
 
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
                 if (!Flags.SupportUpdatingEverest) {

@@ -204,7 +204,7 @@ namespace Celeste.Mod.Core {
 
             if (!inGame) {
                 if (Everest.Updater.HasUpdate) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Version.ToString())).Pressed(() => {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
                         Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
                     }));
                 }

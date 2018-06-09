@@ -32,7 +32,7 @@
 	MODOPTIONS_TITLE= 										EVEREST
 
 # Core Module Options
-	MODOPTIONS_COREMODULE_UPDATE= 							Update to v.((version))
+	MODOPTIONS_COREMODULE_UPDATE= 							Update to \#((version))
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						~Version List~
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_LAUNCHINDEBUGMODE= 				Launch as Debug Build
@@ -73,7 +73,7 @@
 # Updater
 	UPDATER_TITLE= 					UPDATER
 	UPDATER_VERSIONS_TITLE= 		VERSION LIST
-	UPDATER_VERSIONS_CURRENT= 		Installed: v.((version))
+	UPDATER_VERSIONS_CURRENT= 		Installed: \#((version))
 	UPDATER_VERSIONS_REQUESTING= 	Refreshing...
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.

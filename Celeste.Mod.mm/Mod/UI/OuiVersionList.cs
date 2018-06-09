@@ -31,7 +31,7 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.Header(Dialog.Clean("updater_versions_title")));
 
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("updater_versions_current").Replace("((version))", Everest.VersionString)));
+            menu.Add(new TextMenu.SubHeader(Dialog.Clean("updater_versions_current").Replace("((version))", Everest.BuildString)));
 
             ReloadItems();
 

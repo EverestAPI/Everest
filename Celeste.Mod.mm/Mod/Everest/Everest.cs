@@ -25,11 +25,19 @@ namespace Celeste.Mod {
         /// </summary>
         // The following line gets replaced by Travis automatically.
         public readonly static string VersionString = "0.0.0-dev";
+        /// <summary>
+        /// The currently installed Everest build in string form.
+        /// </summary>
+        public readonly static string BuildString;
 
         /// <summary>
         /// The currently installed Everest version.
         /// </summary>
         public readonly static Version Version;
+        /// <summary>
+        /// The currently installed Everest build.
+        /// </summary>
+        public readonly static int Build;
         /// <summary>
         /// The currently installed Everest version suffix. For "1.2.3-a-b", this is "a-b"
         /// </summary>
@@ -44,9 +52,9 @@ namespace Celeste.Mod {
         public readonly static string VersionCommit;
 
         /// <summary>
-        /// The currently present Celeste version combined with the currently installed Everest version.
+        /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version} [Everest: {VersionString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version} [Everest: {BuildString}]";
 
         /// <summary>
         /// The command line arguments passed when launching the game.
@@ -75,13 +83,17 @@ namespace Celeste.Mod {
             int versionSplitIndex = VersionString.IndexOf('-');
             if (versionSplitIndex == -1) {
                 Version = new Version(VersionString);
+                Build = Version.Minor;
                 VersionSuffix = "";
                 VersionTag = "";
                 VersionCommit = "";
+                BuildString = Build.ToString();
 
             } else {
                 Version = new Version(VersionString.Substring(0, versionSplitIndex));
+                Build = Version.Minor;
                 VersionSuffix = VersionString.Substring(versionSplitIndex + 1);
+                BuildString = Version.Minor + "-" + VersionSuffix;
                 versionSplitIndex = VersionSuffix.IndexOf('-');
                 if (versionSplitIndex == -1) {
                     VersionTag = VersionSuffix;
