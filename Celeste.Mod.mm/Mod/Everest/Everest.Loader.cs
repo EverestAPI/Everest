@@ -152,9 +152,9 @@ namespace Celeste.Mod {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
+                } else {
+                    LoadModDelayed(meta, contentCrawl);
                 }
-
-                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
@@ -224,9 +224,9 @@ namespace Celeste.Mod {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
+                } else {
+                    LoadModDelayed(meta, contentCrawl);
                 }
-
-                LoadModDelayed(meta, contentCrawl);
             }
 
             /// <summary>
@@ -249,7 +249,9 @@ namespace Celeste.Mod {
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep)) {
                         Logger.Log(LogLevel.Info, "loader", $"Dependency {dep} of mod {meta} not loaded! Delaying.");
-                        Delayed.Add(Tuple.Create(meta, callback));
+                        lock (Delayed) {
+                            Delayed.Add(Tuple.Create(meta, callback));
+                        }
                         return;
                     }
 
