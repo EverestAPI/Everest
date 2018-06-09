@@ -32,7 +32,6 @@ namespace Celeste.Mod.UI {
                 ImageOutline = true,
                 ImageScale = 0.5f
             });
-            menu.Add(new TextMenu.SubHeader($"v.{Everest.VersionString}"));
 
             Everest.InvokeTyped(
                 "CreateModMenuSection",
