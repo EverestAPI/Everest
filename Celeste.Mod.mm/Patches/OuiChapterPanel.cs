@@ -23,7 +23,10 @@ namespace Celeste {
                 result = area.GetSID();
             if (level != null)
                 result = result + "_" + level;
-            return result;
+
+            if (GFX.Checkpoints.Has(result))
+                return result;
+            return $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/{level ?? "start"}";
         }
 
         public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
