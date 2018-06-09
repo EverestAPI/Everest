@@ -36,6 +36,8 @@ namespace Celeste {
                 ID_Unsafe = value;
                 if (ID_Unsafe != -1)
                     SID = AreaData.Areas[ID_Unsafe].GetSID();
+                else
+                    SID = null;
             }
         }
 
@@ -64,6 +66,9 @@ namespace Celeste {
         // - iterates by values of AreaMode
         [MonoModReplace]
         public new void CleanCheckpoints() {
+            if (string.IsNullOrEmpty(SID) && (ID_Unsafe < 0 || AreaData.Areas.Count <= ID_Unsafe))
+                throw new Exception($"SaveData contains invalid AreaStats with no SID and out-of-range ID of {ID_Unsafe} / {AreaData.Areas.Count}");
+
             AreaData area = AreaData.Get(ID);
 
             for (int i = 0; i < Modes.Length; i++) {
