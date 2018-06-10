@@ -230,12 +230,20 @@ namespace MiniInstaller {
 
         static Assembly LazyLoadAssembly(string path) {
             LogLine($"Lazily loading {path}");
-            Assembly asm = Assembly.LoadFile(path);
-            AppDomain.CurrentDomain.TypeResolve += (object sender, ResolveEventArgs args) => {
-                return asm.GetType(args.Name) != null ? asm : null;
+            ResolveEventHandler tmpResolver = (s, e) => {
+                string asmPath = Path.Combine(Path.GetDirectoryName(path), new AssemblyName(e.Name).Name + ".dll");
+                if (!File.Exists(asmPath))
+                    return null;
+                return Assembly.LoadFrom(asmPath);
             };
-            AppDomain.CurrentDomain.AssemblyResolve += (object sender, ResolveEventArgs args) => {
-                return args.Name == asm.FullName || args.Name == asm.GetName().Name ? asm : null;
+            AppDomain.CurrentDomain.AssemblyResolve += tmpResolver;
+            Assembly asm = Assembly.LoadFrom(path);
+            AppDomain.CurrentDomain.AssemblyResolve -= tmpResolver;
+            AppDomain.CurrentDomain.TypeResolve += (s, e) => {
+                return asm.GetType(e.Name) != null ? asm : null;
+            };
+            AppDomain.CurrentDomain.AssemblyResolve += (s, e) => {
+                return e.Name == asm.FullName || e.Name == asm.GetName().Name ? asm : null;
             };
             return asm;
         }
