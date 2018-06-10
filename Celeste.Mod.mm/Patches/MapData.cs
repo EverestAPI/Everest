@@ -126,7 +126,8 @@ namespace Celeste {
                     }
 
                     if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
-                        !triggers.Children.Any(el => el.Name == "cameraTargetTrigger")) {
+                        !triggers.Children.Any(el => el.Name == "cameraTargetTrigger") &&
+                        !entities.Children.Any(el => el.Name == "spaceControllerBlocker")) {
 
                         // Camera centers tile-perfectly on uneven heights.
                         int heightForCenter = (int) level.Attributes["height"];
