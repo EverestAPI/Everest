@@ -80,3 +80,6 @@
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
 	UPDATER_SRC_TRAVIS= 			Automatic Builds
+
+# Misc
+	UI_GIVEUP_HINT=			Your progress is saved, but you'll need to restart at the last :checkpoint:

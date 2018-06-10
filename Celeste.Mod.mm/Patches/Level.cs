@@ -10,6 +10,7 @@ using MonoMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -48,18 +49,32 @@ namespace Celeste {
             orig_Pause(startIndex, minimal, quickReset);
 
             if (!quickReset) {
-                // Iterate over the added Entities and grab the first TextMenu.
-                List<Entity> added = Entities.GetToAdd();
-                foreach (Entity entity in added) {
-                    if (!(entity is TextMenu))
-                        continue;
-                    TextMenu menu = (TextMenu) entity;
+                TextMenu menu = Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) as TextMenu;
+                if (menu != null)
                     Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
-                    break;
-                }
             }
 
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
+        }
+
+        private extern void orig_GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint);
+        private void GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint) {
+            GiveUpHint hint = null;
+            if (!restartArea && !showHint) {
+                // The game originally doesn't show a hint when exiting to the map.
+                Add(hint = new GiveUpHint());
+            }
+
+            orig_GiveUp(returnIndex, restartArea, minimal, showHint);
+
+            TextMenu menu = Entities.GetToAdd().LastOrDefault(e => e is TextMenu) as TextMenu;
+            if (menu == null)
+                return;
+
+            Action removeHint = () => hint?.RemoveSelf();
+            menu.OnPause += removeHint;
+            menu.OnESC += removeHint;
+            menu.OnCancel += removeHint;
         }
 
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);

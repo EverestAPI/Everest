@@ -138,16 +138,17 @@ namespace MiniInstaller {
                     string fileGame = Path.Combine(PathGame, fileRelative);
                     if (File.Exists(fileGame)) {
                         LogLine($"Deleting existing {fileGame}");
-                        File.Delete(fileGame);
+                        File.Move(fileGame, fileGame + ".del");
+                        File.Delete(fileGame + ".del");
                     }
                     // We can't move MiniInstaller.exe while it's running.
                     if (fileRelative == "MiniInstaller.exe") {
                         // Copy it instead.
-                        LogLine($"{fileUpdate} +> {fileGame}");
+                        LogLine($"Copying {fileUpdate} +> {fileGame}");
                         File.Copy(fileUpdate, fileGame);
                     } else {
-                        // Move all other files, though.
-                        LogLine($"{fileUpdate} -> {fileGame}");
+                        // Move all other files.
+                        LogLine($"Moving {fileUpdate} -> {fileGame}");
                         File.Move(fileUpdate, fileGame);
                     }
                 }

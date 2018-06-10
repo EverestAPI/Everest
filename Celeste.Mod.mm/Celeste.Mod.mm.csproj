@@ -113,6 +113,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Entities\GiveUpHint.cs" />
     <Compile Include="Mod\Entities\SpaceControllerBlocker.cs" />
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
@@ -252,6 +253,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\gladbw.m.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\gladbw.m.png</LogicalName>
+    </EmbeddedResource>
+	<EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
