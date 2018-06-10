@@ -113,28 +113,39 @@ namespace Celeste {
                         }
                     });
 
-                if (level.AttrBool("space") &&
-                    !levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
-                    !triggers.Children.Any(el => el.Name == "cameraTargetTrigger")) {
+                if (level.AttrBool("space")) {
+                    if (level.AttrBool("spaceSkipWrap") || levelTags.Contains("nospacewrap") || levelTags.Contains("nsw"))
+                        entities.Children.Add(new BinaryPacker.Element {
+                            Name = "spaceControllerBlocker"
+                        });
+                    if (level.AttrBool("spaceSkipGravity") || levelTags.Contains("nospacegravity") || levelTags.Contains("nsg")) {
+                        entities.Children.Add(new BinaryPacker.Element {
+                            Name = "spaceController"
+                        });
+                        level.Attributes["space"] = false;
+                    }
 
-                    // Camera centers tile-perfectly on uneven heights.
-                    int heightForCenter = (int) level.Attributes["height"];
-                    heightForCenter /= 8;
-                    if (heightForCenter % 2 == 0)
-                        heightForCenter--;
-                    heightForCenter *= 8;
+                    if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
+                        !triggers.Children.Any(el => el.Name == "cameraTargetTrigger")) {
 
-                    triggers.Children.Add(new BinaryPacker.Element {
-                        Name = "cameraTargetTrigger",
-                        Attributes = {
-                            { "x", 0f },
-                            { "y", 0f },
-                            { "width", level.Attributes["width"] },
-                            { "height", level.Attributes["height"] },
-                            { "yOnly", true },
-                            { "lerpStrength", 1f }
-                        },
-                        Children = {
+                        // Camera centers tile-perfectly on uneven heights.
+                        int heightForCenter = (int) level.Attributes["height"];
+                        heightForCenter /= 8;
+                        if (heightForCenter % 2 == 0)
+                            heightForCenter--;
+                        heightForCenter *= 8;
+
+                        triggers.Children.Add(new BinaryPacker.Element {
+                            Name = "cameraTargetTrigger",
+                            Attributes = {
+                                { "x", 0f },
+                                { "y", 0f },
+                                { "width", level.Attributes["width"] },
+                                { "height", level.Attributes["height"] },
+                                { "yOnly", true },
+                                { "lerpStrength", 1f }
+                            },
+                            Children = {
                             new BinaryPacker.Element {
                                 Attributes = {
                                     { "x", 160f },
@@ -142,7 +153,8 @@ namespace Celeste {
                                 }
                             }
                         }
-                    });
+                        });
+                    }
                 }
 
                 foreach (BinaryPacker.Element levelChild in level.Children) {

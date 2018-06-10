@@ -118,6 +118,15 @@ namespace Celeste {
 
             // Everest comes with a few core utility entities out of the box.
 
+            if (entityData.Name == "spaceController") {
+                level.Add(new SpaceController());
+                return true;
+            }
+            if (entityData.Name == "spaceControllerBlocker") {
+                level.Add(new SpaceControllerBlocker());
+                return true;
+            }
+
             if (entityData.Name == "levelFlagTrigger") {
                 level.Add(new LevelFlagTrigger(entityData, offset));
                 return true;
