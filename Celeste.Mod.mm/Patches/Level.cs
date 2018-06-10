@@ -181,8 +181,9 @@ namespace Celeste {
             }
 
             if (entityData.Name == "checkpoint" &&
-                entityData.Position == Vector2.Zero) {
-                // Workaround for mod levels containing a checkpoint at (0, 0):
+                entityData.Position == Vector2.Zero &&
+                !entityData.Bool("allowOrigin")) {
+                // Workaround for mod levels with old versions of Ahorn containing a checkpoint at (0, 0):
                 // Create the checkpoint and avoid the start position update in orig_Load.
                 level.Add(new Checkpoint(entityData, offset));
                 return true;
