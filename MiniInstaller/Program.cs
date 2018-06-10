@@ -112,7 +112,7 @@ namespace MiniInstaller {
             if (!CanReadWrite(PathCelesteExe)) {
                 LogLine("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
-                    Thread.Sleep(1000);
+                    Thread.Sleep(5000);
             }
         }
 

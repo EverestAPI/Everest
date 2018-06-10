@@ -176,7 +176,7 @@ namespace Celeste {
             modAreas.Sort(AreaComparison);
             Areas.AddRange(modAreas);
 
-            // Find duplicates and remove the earlier copy.
+            // Find duplicates and remove any earlier copies.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
                 int otherIndex = Areas.FindIndex(other => other.GetSID() == area.GetSID());
@@ -230,6 +230,12 @@ namespace Celeste {
                     Areas.RemoveAt(i);
                     i--;
                 }
+            }
+
+            // Fix all area IDs again after removing B and C sides.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                area.ID = i;
             }
         }
 
