@@ -1,4 +1,5 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Mod.Core;
+using FMOD.Studio;
 using Microsoft.Xna.Framework.Graphics;
 using System;
 using System.Collections.Generic;
@@ -89,18 +90,15 @@ namespace Celeste.Mod {
             bool dependsOnAPI = false;
             foreach (EverestModuleMetadata dep in Dependencies) {
                 if (dep.Name == "API")
-                    dep.Name = "Everest";
-                if (dep.Name == "Everest") {
+                    dep.Name = CoreModule.Instance.Metadata.Name;
+                if (dep.Name == CoreModule.Instance.Metadata.Name) {
                     dependsOnAPI = true;
                     break;
                 }
             }
             if (!dependsOnAPI) {
-                Logger.Log(LogLevel.Warn, "loader", "No dependency to API found in " + ToString() + "! Adding dependency to API 1.0...");
-                Dependencies.Insert(0, new EverestModuleMetadata() {
-                    Name = "API",
-                    Version = new Version(1, 0)
-                });
+                // Logger.Log(LogLevel.Warn, "loader", $"No dependency to API found in {this}! Adding dependency to {CoreModule.Instance.Metadata}");
+                Dependencies.Insert(0, CoreModule.Instance.Metadata);
             }
         }
 
