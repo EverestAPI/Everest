@@ -224,7 +224,7 @@ namespace MiniInstaller {
                 return Assembly.LoadFrom(asmPath);
             };
             AppDomain.CurrentDomain.AssemblyResolve += tmpResolver;
-            Assembly asm = Assembly.LoadFrom(path);
+            Assembly asm = Assembly.Load(Path.GetFileNameWithoutExtension(path));
             AppDomain.CurrentDomain.AssemblyResolve -= tmpResolver;
             AppDomain.CurrentDomain.TypeResolve += (s, e) => {
                 return asm.GetType(e.Name) != null ? asm : null;
