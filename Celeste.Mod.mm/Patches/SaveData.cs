@@ -218,15 +218,15 @@ namespace Celeste {
                 // Sort
                 areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
                 // Remove leftovers
-                while (areas.Count > count)
+                while (areas.Count > 0 && ((patch_AreaStats) areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
                     areas.RemoveAt(areas.Count - 1);
-                // Resync SIDs
-                for (int i = 0; i < areas.Count; i++)
-                    ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
-                // Fill
+                // Fill gaps
                 for (int i = 0; i < count; i++)
                     if (i >= areas.Count || areas[i].ID != offset + i)
                         areas.Insert(i, new AreaStats(offset + i));
+                // Resync SIDs
+                for (int i = 0; i < areas.Count; i++)
+                    ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
 
                 int lastCompleted = -1;
                 for (int i = 0; i < count; i++) {

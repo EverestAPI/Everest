@@ -171,9 +171,7 @@ namespace Celeste {
             }
 
 
-            // Sort and merge modAreas into Areas. Makes for easier levelset handling.
-            Areas.Sort(AreaComparison);
-            modAreas.Sort(AreaComparison);
+            // Merge modAreas into Areas.
             Areas.AddRange(modAreas);
 
             // Find duplicates and remove any earlier copies.
@@ -227,6 +225,9 @@ namespace Celeste {
                 }
             }
 
+            // Sort areas.
+            Areas.Sort(AreaComparison);
+
             // Update old MapData areas and load any new areas.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
@@ -262,10 +263,21 @@ namespace Celeste {
         }
 
         private static int AreaComparison(AreaData a, AreaData b) {
-            if (string.IsNullOrEmpty(a.GetLevelSet()) && !string.IsNullOrEmpty(b.GetLevelSet()))
-                return 1;
-            if (!string.IsNullOrEmpty(a.GetLevelSet()) && string.IsNullOrEmpty(b.GetLevelSet()))
+            string aSet = a.GetLevelSet();
+            string bSet = b.GetLevelSet();
+
+            // Celeste appears before everything else.
+            if (aSet == "Celeste" && bSet != "Celeste")
                 return -1;
+            if (aSet != "Celeste" && bSet == "Celeste")
+                return 1;
+
+            // Uncategorized appears after everything else.
+            if (string.IsNullOrEmpty(aSet) && !string.IsNullOrEmpty(bSet))
+                return 1;
+            if (!string.IsNullOrEmpty(aSet) && string.IsNullOrEmpty(bSet))
+                return -1;
+
             return string.Compare(a.GetSID(), b.GetSID());
         }
 
