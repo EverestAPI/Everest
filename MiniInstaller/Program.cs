@@ -136,14 +136,8 @@ namespace MiniInstaller {
                 foreach (string fileUpdate in Directory.GetFiles(PathUpdate)) {
                     string fileRelative = fileUpdate.Substring(PathUpdate.Length + 1);
                     string fileGame = Path.Combine(PathGame, fileRelative);
-                    if (File.Exists(fileGame)) {
-                        LogLine($"Deleting existing {fileGame}");
-                        // Workaround for possible FS issues.
-                        File.Move(fileGame, fileGame + ".del");
-                        File.Delete(fileGame + ".del");
-                    }
                     LogLine($"Copying {fileUpdate} +> {fileGame}");
-                    File.Copy(fileUpdate, fileGame);
+                    File.Copy(fileUpdate, fileGame, true);
                 }
             }
         }
