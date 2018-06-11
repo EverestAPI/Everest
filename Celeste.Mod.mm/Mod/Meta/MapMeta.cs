@@ -128,7 +128,12 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
 
-            area.Mode = Convert(Modes) ?? area.Mode;
+            ModeProperties[] modes = area.Mode;
+            area.Mode = Convert(Modes) ?? modes;
+            if (modes != null)
+                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
+                    if (area.Mode[i] == null)
+                        area.Mode[i] = modes[i];
 
             if (!string.IsNullOrEmpty(Wipe)) {
                 Type type = Assembly.GetEntryAssembly().GetType(Wipe);

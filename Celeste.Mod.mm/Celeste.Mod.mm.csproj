@@ -207,6 +207,7 @@
     <Compile Include="Patches\OuiChapterSelect.cs" />
     <Compile Include="Patches\OverworldLoader.cs" />
     <Compile Include="Patches\Overworld.cs" />
+    <Compile Include="Patches\FireBall.cs" />
     <Compile Include="Patches\Strawberry.cs" />
     <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />
@@ -254,7 +255,7 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\gladbw.m.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\gladbw.m.png</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png">
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">

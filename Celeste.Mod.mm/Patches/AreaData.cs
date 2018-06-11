@@ -187,6 +187,46 @@ namespace Celeste {
                 }
             }
 
+            // Remove AreaDatas which are now a mode of another AreaData.
+            // This can happen late as the map data (.bin) can contain additional metadata.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                string path = area.Mode[0].Path;
+                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == path));
+                if (otherIndex != -1 && otherIndex != i) {
+                    Areas.RemoveAt(i);
+                    i--;
+                    continue;
+                }
+
+                // Also check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
+                for (int ii = 0; ii < Areas.Count; ii++) {
+                    AreaData other = Areas[ii];
+                    if (!other.HasMode(AreaMode.BSide) && path == (other.Mode[0].Path + "-B")) {
+                        if (other.Mode[1] == null)
+                            other.Mode[1] = new ModeProperties {
+                                Inventory = PlayerInventory.Default,
+                                AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
+                            };
+                        other.Mode[1].Path = path;
+                        Areas.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+                    if (!other.HasMode(AreaMode.CSide) && path == (other.Mode[0].Path + "-C")) {
+                        if (other.Mode[2] == null)
+                            other.Mode[2] = new ModeProperties {
+                                Inventory = PlayerInventory.Default,
+                                AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
+                            };
+                        other.Mode[2].Path = path;
+                        Areas.RemoveAt(i);
+                        i--;
+                        break;
+                    }
+                }
+            }
+
             // Update old MapData areas and load any new areas.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
@@ -218,24 +258,6 @@ namespace Celeste {
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
-            }
-
-            // Remove AreaDatas which are now a mode of another AreaData.
-            // This happens late as the map data (.bin) can contain additional metadata.
-            // TODO: Automatically assign B and C sides to A side .bin by name and lack of data.
-            for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == area.Mode[0].Path));
-                if (otherIndex != -1 && otherIndex != i) {
-                    Areas.RemoveAt(i);
-                    i--;
-                }
-            }
-
-            // Fix all area IDs again after removing B and C sides.
-            for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                area.ID = i;
             }
         }
 

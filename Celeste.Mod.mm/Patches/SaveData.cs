@@ -208,17 +208,21 @@ namespace Celeste {
                     continue;
                 }
 
+                // Refresh all stat IDs based on their SIDs, sort, fill and remove leftovers.
+                // Temporarily use ID_Unsafe; later ID_Safe to ID_Unsafe to resync the SIDs.
+                // This keeps the stats bound to their SIDs, not their indices, while removing non-existent areas.
+                for (int i = 0; i < areas.Count; i++)
+                    ((patch_AreaStats) areas[i]).ID_Unsafe = AreaDataExt.Get(areas[i])?.ID ?? int.MaxValue;
+                areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
+                for (int i = 0; i < areas.Count; i++)
+                    ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
+
                 int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
-                while (areas.Count < count) {
-                    areas.Add(new AreaStats(offset + areas.Count));
-                }
-                while (areas.Count > count) {
+                for (int i = 0; i < count; i++)
+                    if (i >= areas.Count || areas[i].ID != offset + i)
+                        areas.Insert(i, new AreaStats(offset + i));
+                while (areas.Count > count)
                     areas.RemoveAt(areas.Count - 1);
-                }
-                for (int i = 0; i < count; i++) {
-                    areas[i].SetSID(AreaData.Get(offset + i).GetSID());
-                    areas[i].ID = offset + i;
-                }
 
                 int lastCompleted = -1;
                 for (int i = 0; i < count; i++) {
