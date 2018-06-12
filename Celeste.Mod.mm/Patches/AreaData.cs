@@ -88,6 +88,8 @@ namespace Celeste {
         }
 
         public static AreaData Get(AreaStats stats) {
+            if (stats.GetSID() == null)
+                return Get(stats.ID);
             return Get(stats.GetSID());
         }
 
