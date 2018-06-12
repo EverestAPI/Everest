@@ -222,7 +222,7 @@ namespace Celeste {
                     areas.RemoveAt(areas.Count - 1);
                 // Fill gaps
                 for (int i = 0; i < count; i++)
-                    if (i >= areas.Count || areas[i].ID != offset + i)
+                    if (i >= areas.Count || ((patch_AreaStats) areas[i]).ID_Unsafe != offset + i)
                         areas.Insert(i, new AreaStats(offset + i));
                 // Resync SIDs
                 for (int i = 0; i < areas.Count; i++)
