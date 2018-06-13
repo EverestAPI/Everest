@@ -215,6 +215,7 @@ namespace Celeste.Mod.Meta {
         public string PoemID { get; set; }
 
         public string StartLevel { get; set; }
+        public bool? HeartIsEnd { get; set; } = null;
         public ModeProperties Convert()
             => new ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),

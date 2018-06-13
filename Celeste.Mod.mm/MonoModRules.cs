@@ -53,6 +53,12 @@ namespace MonoMod {
     class PatchErrorLogWriteAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the heart gem collection routine instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchHeartGemCollectRoutine")]
+    class PatchHeartGemCollectRoutineAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -519,6 +525,64 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Pop));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_Everest_get_VersionCelesteString));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_this = null;
+            FieldDefinition f_completeArea = null;
+
+            MethodDefinition m_IsCompleteArea = method.DeclaringType.FindMethod("System.Boolean IsCompleteArea(System.Boolean)");
+            if (m_IsCompleteArea == null)
+                return;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                f_completeArea = method.DeclaringType.FindField("<completeArea>5__4");
+                break;
+            }
+
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                // Pre-process the bool on stack before
+                // stfld	bool Celeste.HeartGem/'<CollectRoutine>d__29'::'<completeArea>5__4'
+                // No need to check for the full name when the field name itself is compiler-generated.
+                if (instr.OpCode == OpCodes.Stfld && (instr.Operand as FieldReference)?.Name == "<completeArea>5__4"
+                ) {
+                    // After stfld, grab the result, process it, store.
+                    instri++;
+                    // Push this on stack and duplicate, keeping a copy for stfld later.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Dup));
+                    instri++;
+                    // Grab this from this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                    instri++;
+                    // Push completeArea on stack.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_completeArea));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsCompleteArea));
+                    instri++;
+                    // Store.
+                    instrs.Insert(instri, il.Create(OpCodes.Stfld, f_completeArea));
                     instri++;
                 }
 

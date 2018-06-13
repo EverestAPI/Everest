@@ -208,6 +208,7 @@
     <Compile Include="Patches\OverworldLoader.cs" />
     <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\FireBall.cs" />
+    <Compile Include="Patches\HeartGem.cs" />
     <Compile Include="Patches\Strawberry.cs" />
     <Compile Include="Patches\UserIO.cs" />
     <Compile Include="Patches\SaveData.cs" />

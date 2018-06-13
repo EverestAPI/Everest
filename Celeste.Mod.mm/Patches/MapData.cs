@@ -51,7 +51,7 @@ namespace Celeste {
                     if (level != null)
                         return level;
                 }
-                    
+
             }
 
             return orig_StartLevel() ?? Levels[0];
@@ -214,6 +214,18 @@ namespace Celeste {
                 // TODO: Assign B and C side MapDatas to existing area's modes.
             }
         }
+
+    }
+    public static class MapDataExt {
+
+        // Mods can't access patch_ classes directly.
+        // We thus expose any new members through extensions.
+
+        /// <summary>
+        /// Get the mod mode metadata of the map.
+        /// </summary>
+        public static MapMetaModeProperties GetMeta(this MapData self)
+            => ((patch_MapData) self).Meta;
 
     }
 }
