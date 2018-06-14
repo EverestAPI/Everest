@@ -353,11 +353,11 @@ header {
                             float.TryParse(data["x"], NumberStyles.Float, CultureInfo.InvariantCulture, out x) &&
                             float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y);
 
+                        string levelName = data["level"];
+
                         // Special case: Update X and Y in existing session.
                         if (string.IsNullOrEmpty(data["area"]) &&
                             string.IsNullOrEmpty(data["side"]) &&
-                            string.IsNullOrEmpty(data["level"]) &&
-                            // data["forcenew"]?.ToLowerInvariant() != "true" && // Cruor sent true for whatever reason...
                             hasXY
                         ) {
                             if (session == null) {
@@ -369,6 +369,19 @@ header {
                             Vector2 pos = session.LevelData.Position + new Vector2(x, y);
                             session.RespawnPoint = pos;
                             Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
+                            if (!string.IsNullOrEmpty(data["level"])) {
+                                if ((
+                                    session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) ??
+                                    session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == "lvl_" + levelName)
+                                ) == null) {
+                                    c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                                    Write(c, $"ERROR: Area {session.Area.GetSID()} side {(char) ('A' + (int) session.Area.Mode)} doesn't have level {levelName}");
+                                    return;
+                                }
+
+                                session.Level = levelName;
+                                player = null;
+                            }
                             if (player != null) {
                                 player.Position = pos;
                             } else {
@@ -411,7 +424,6 @@ header {
                             return;
                         }
 
-                        string levelName = data["level"];
                         if (string.IsNullOrEmpty(levelName)) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: No level given.");
