@@ -308,7 +308,7 @@ header {
                         }
 
                         string sideStr = data["side"];
-                        if (!string.IsNullOrEmpty(sideStr)) {
+                        if (string.IsNullOrEmpty(sideStr)) {
                             foreach (ModeProperties mode in area.Mode)
                                 mode?.MapData?.Reload();
                             Write(c, "OK");
@@ -325,7 +325,10 @@ header {
                         if (area.Mode[side] == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Area {sid} doesn't have side {(char) ('A' + side)}.");
+                            return;
                         }
+
+                        area.Mode[side].MapData.Reload();
 
                         Write(c, "OK");
                     }
@@ -354,7 +357,7 @@ header {
                         if (string.IsNullOrEmpty(data["area"]) &&
                             string.IsNullOrEmpty(data["side"]) &&
                             string.IsNullOrEmpty(data["level"]) &&
-                            data["forcenew"]?.ToLowerInvariant() != "true" &&
+                            // data["forcenew"]?.ToLowerInvariant() != "true" && // Cruor sent true for whatever reason...
                             hasXY
                         ) {
                             if (session == null) {
@@ -412,12 +415,14 @@ header {
                         if (string.IsNullOrEmpty(levelName)) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: No level given.");
+                            return;
                         }
 
                         ModeProperties mode = area.Mode[side];
                         if (mode == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Area {sid} doesn't have side {(char) ('A' + side)}.");
+                            return;
                         }
 
                         LevelData level =
@@ -426,6 +431,7 @@ header {
                         if (level == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Area {sid} side {(char) ('A' + side)} doesn't have level {levelName}");
+                            return;
                         }
 
                         if (session == null ||
