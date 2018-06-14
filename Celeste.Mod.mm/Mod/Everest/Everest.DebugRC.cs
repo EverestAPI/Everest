@@ -354,6 +354,8 @@ header {
                             float.TryParse(data["y"], NumberStyles.Float, CultureInfo.InvariantCulture, out y);
 
                         string levelName = data["level"];
+                        if (levelName != null && levelName.StartsWith("lvl_"))
+                            levelName = levelName.Substring(4);
 
                         // Special case: Update X and Y in existing session.
                         if (string.IsNullOrEmpty(data["area"]) &&
@@ -370,10 +372,7 @@ header {
                             session.RespawnPoint = pos;
                             Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
                             if (!string.IsNullOrEmpty(data["level"])) {
-                                if ((
-                                    session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) ??
-                                    session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == "lvl_" + levelName)
-                                ) == null) {
+                                if (session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) == null) {
                                     c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                                     Write(c, $"ERROR: Area {session.Area.GetSID()} side {(char) ('A' + (int) session.Area.Mode)} doesn't have level {levelName}");
                                     return;
@@ -437,9 +436,7 @@ header {
                             return;
                         }
 
-                        LevelData level =
-                            mode.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) ??
-                            mode.MapData.Levels.FirstOrDefault(lvl => lvl.Name == "lvl_" + levelName);
+                        LevelData level = mode.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName);
                         if (level == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Area {sid} side {(char) ('A' + side)} doesn't have level {levelName}");
@@ -453,7 +450,7 @@ header {
                         ) {
                             session = new Session(area.ToKey(), level.Name);
                         }
-                        session.Level = level.Name;
+                        session.Level = levelName;
 
                         if (hasXY) {
                             session.RespawnPoint = level.Position + new Vector2(x, y);
