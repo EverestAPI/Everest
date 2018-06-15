@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
+using Celeste.Mod.Core;
 
 namespace Celeste {
     class patch_OuiTitleScreen : OuiTitleScreen {
@@ -38,6 +40,24 @@ namespace Celeste {
         public extern void orig_Update();
         public override void Update() {
             orig_Update();
+
+            // Slightly dirty place to perform this, but oh well...
+            if (CoreModule.Settings.QuickRestart != null) {
+                int slot = CoreModule.Settings.QuickRestart.Value;
+                CoreModule.Settings.QuickRestart = null;
+                CoreModule.Instance.SaveSettings();
+                SaveData save = UserIO.Load<SaveData>(SaveData.GetFilename(slot));
+                if (save != null) {
+                    SaveData.Start(save, slot);
+                    if (slot == 4)
+                        save.DebugMode = true;
+                    if (save.CurrentSession?.InArea ?? false) {
+                        Engine.Scene = new LevelLoader(save.CurrentSession);
+                    } else {
+                        Overworld.Goto<OuiChapterSelect>();
+                    }
+                }
+            }
 
             if (!updateChecked && Everest.Updater.HasUpdate && alpha >= 1f) {
                 updateChecked = true;

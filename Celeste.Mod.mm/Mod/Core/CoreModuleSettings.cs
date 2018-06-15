@@ -78,6 +78,9 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
 
+        [SettingIgnore]
+        public int? QuickRestart { get; set; }
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;

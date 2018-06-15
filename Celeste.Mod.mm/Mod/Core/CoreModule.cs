@@ -14,6 +14,8 @@ using System.Reflection;
 using System.IO;
 using Celeste.Mod.Helpers;
 using MonoMod.Utils;
+using Microsoft.Xna.Framework.Input;
+using System.Threading;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -68,16 +70,26 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Initialize() {
-            // F5 - Reload and restart the current screen.
+            // F5: Reload and restart the current screen.
             Engine.Commands.FunctionKeyActions[4] = () => {
+                // CTRL + F5: Quick-restart the entire game.
+                if (MInput.Keyboard.Check(Keys.LeftControl) ||
+                    MInput.Keyboard.Check(Keys.Right)) {
+                    Scene scene = new Scene();
+                    scene.HelperEntity.Add(new Coroutine(QuickFullRestartRoutine()));
+                    Engine.Scene = scene;
+                    return;
+                }
+
                 Level level = Engine.Scene as Level;
                 if (level == null)
                     return;
+
                 AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
                 Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
             };
 
-            // F6 - Open map editor for current level.
+            // F6: Open map editor for current level.
             Engine.Commands.FunctionKeyActions[5] = () => {
                 Level level = Engine.Scene as Level;
                 if (level == null)
@@ -224,6 +236,39 @@ namespace Celeste.Mod.Core {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
                 }));
             }
+        }
+
+        private IEnumerator QuickFullRestartRoutine() {
+            SaveData save = global::Celeste.SaveData.Instance;
+            if (save != null) {
+                Settings.QuickRestart = save.FileSlot;
+                save.BeforeSave();
+                UserIO.Save<SaveData>(global::Celeste.SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
+                SaveSettings();
+            }
+
+            Everest.Events.Celeste.OnShutdown += () => {
+                AudioExt.System?.release();
+                Thread offspring = new Thread(() => {
+                    System.Diagnostics.Process game = new System.Diagnostics.Process();
+                    // If the game was installed via Steam, it should restart in a Steam context on its own.
+                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        // The Linux and macOS versions come with a wrapping bash script.
+                        game.StartInfo.FileName = "bash";
+                        game.StartInfo.Arguments = "\"" + Path.Combine(Everest.PathGame, "Celeste") + "\"";
+                    } else {
+                        game.StartInfo.FileName = Path.Combine(Everest.PathGame, "Celeste.exe");
+                    }
+                    game.StartInfo.WorkingDirectory = Everest.PathGame;
+                    game.Start();
+                });
+                offspring.Start();
+            };
+
+            Engine.Instance.Exit();
+
+            yield break;
         }
 
     }
