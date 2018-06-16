@@ -368,10 +368,9 @@ header {
                                 return;
                             }
 
-                            Vector2 pos = session.LevelData.Position + new Vector2(x, y);
-                            session.RespawnPoint = pos;
                             Player player = (Engine.Scene as Level)?.Tracker.GetEntity<Player>();
-                            if (!string.IsNullOrEmpty(data["level"])) {
+                            bool reload = false;
+                            if (!string.IsNullOrEmpty(levelName) && session.Level != levelName) {
                                 if (session.MapData.Levels.FirstOrDefault(lvl => lvl.Name == levelName) == null) {
                                     c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                                     Write(c, $"ERROR: Area {session.Area.GetSID()} side {(char) ('A' + (int) session.Area.Mode)} doesn't have level {levelName}");
@@ -379,12 +378,15 @@ header {
                                 }
 
                                 session.Level = levelName;
-                                player = null;
+                                reload = true;
                             }
-                            if (player != null) {
-                                player.Position = pos;
-                            } else {
-                                Engine.Scene = new LevelLoader(session, session.RespawnPoint);
+
+                            Vector2 pos = session.LevelData.Position + new Vector2(x, y);
+                            session.RespawnPoint = pos;
+                            player.Position = pos;
+                            if (reload) {
+                                Engine.Scene.Paused = true;
+                                Engine.Scene = new LevelLoader(session, pos);
                             }
                             Write(c, "OK");
                             return;
