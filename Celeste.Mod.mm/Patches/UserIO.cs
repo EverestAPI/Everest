@@ -30,5 +30,22 @@ namespace Celeste {
             }
         }
 
+        /*
+        // Old:
+        public static T Load<T>(string path) where T : class
+        // New:
+        public static T Load<T>(string path, bool backup = false) where T : class
+        */
+
+        // V2 is present, fill V1 for old mods.
+        [MonoModIfFlag("V2:UserIOLoad")]
+        public static T Load<T>(string path) where T : class
+            => Load<T>(path, false);
+
+        // V1 is present, fill V2 for new mods.
+        [MonoModIfFlag("V1:UserIOLoad")]
+        public static T Load<T>(string path, bool backup = false) where T : class
+            => Load<T>(path);
+
     }
 }

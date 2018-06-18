@@ -180,6 +180,11 @@ namespace MonoMod {
             TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings").Resolve();
             MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode")?.SafeResolve() == null);
             MonoModRule.Flag.Set("Fill:LaunchWithFMODLiveUpdate", settings.FindField("LaunchWithFMODLiveUpdate")?.SafeResolve() == null);
+
+            TypeDefinition userio = MonoModRule.Modder.FindType("Celeste.UserIO").Resolve();
+            MethodDefinition userio_load = userio.FindMethod("Load");
+            MonoModRule.Flag.Set("V1:UserIOLoad", userio_load.Parameters.Count == 1);
+            MonoModRule.Flag.Set("V2:UserIOLoad", userio_load.Parameters.Count == 2);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
