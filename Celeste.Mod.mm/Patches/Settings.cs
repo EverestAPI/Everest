@@ -12,8 +12,8 @@ namespace Celeste {
         [MonoModIgnore]
         public new bool SpeedrunClock;
         [MonoModIfFlag("Fill:SpeedrunType")]
-        [MonoModHook("Celeste.SpeedrunType Celeste.Settings::SpeedrunClock")]
-        [MonoModHook("Celeste.fill_SpeedrunType Celeste.Settings::SpeedrunClock")]
+        [MonoModLinkFrom("Celeste.SpeedrunType Celeste.Settings::SpeedrunClock")]
+        [MonoModLinkFrom("Celeste.fill_SpeedrunType Celeste.Settings::SpeedrunClock")]
         [XmlIgnore]
         public fill_SpeedrunType fill_SpeedrunClock {
             [MonoModIfFlag("Fill:SpeedrunType")]
@@ -51,7 +51,7 @@ namespace Celeste {
     }
 
     [MonoModIfFlag("Fill:SpeedrunType")]
-    [MonoModHook("Celeste.SpeedrunType")]
+    [MonoModLinkFrom("Celeste.SpeedrunType")]
     enum fill_SpeedrunType {
         [XmlEnum("false")]
         Off,

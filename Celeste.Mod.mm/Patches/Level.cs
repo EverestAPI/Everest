@@ -142,8 +142,9 @@ namespace Celeste {
                 return true;
             }
 
-            if (entityData.Name == "levelFlagTrigger") {
-                level.Add(new LevelFlagTrigger(entityData, offset));
+            if (entityData.Name == "levelFlagTrigger" || // Incorrect old name
+                entityData.Name == "flagTrigger") {
+                level.Add(new FlagTrigger(entityData, offset));
                 return true;
             }
 
@@ -227,6 +228,11 @@ namespace Celeste {
             }
             if (entityData.Name == "triggerSpikesOriginalRight") {
                 level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Right));
+                return true;
+            }
+
+            if (entityData.Name == "darkChaserEnd") {
+                level.Add(new BadelineOldsiteEnd(entityData, offset));
                 return true;
             }
 

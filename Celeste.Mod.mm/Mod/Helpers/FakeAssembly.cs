@@ -23,7 +23,7 @@ namespace Celeste.Mod.Helpers {
         }
 
         private static FakeAssembly _EntryAssembly;
-        [MonoModHook("System.Reflection.Assembly System.Reflection.Assembly::GetEntryAssembly()")]
+        [MonoModLinkFrom("System.Reflection.Assembly System.Reflection.Assembly::GetEntryAssembly()")]
         public static Assembly GetFakeEntryAssembly()
             => _EntryAssembly != null ? _EntryAssembly : (_EntryAssembly = new FakeAssembly(typeof(Celeste).Assembly));
 

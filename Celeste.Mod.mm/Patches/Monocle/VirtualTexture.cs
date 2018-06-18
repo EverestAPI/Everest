@@ -23,14 +23,14 @@ namespace Monocle {
         public string Path { get; private set; }
         private Color color;
 
-        [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture_Unsafe")]
+        [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture_Unsafe")]
         public Texture2D Texture;
 
         [MonoModRemove]
         public Texture2D Texture_Unsafe;
 
         private bool _Texture_Reloading;
-        [MonoModHook("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
+        [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
                 if (_Texture_Reloading || !CoreModule.Settings.LazyLoading)

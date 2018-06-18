@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
-    /// A general purpose level flag setting trigger, to be used by custom maps.
+    /// A general purpose flag setting trigger, to be used by custom maps.
     /// 
     /// Checks for the following new attributes:
     /// - `string flag`
@@ -20,7 +20,7 @@ namespace Celeste.Mod.Entities {
     /// - `int death_count` (default: `-1`)
     /// </summary>
     [Tracked]
-    public class LevelFlagTrigger : Trigger {
+    public class FlagTrigger : Trigger {
 
         private string flag;
         private bool state;
@@ -30,7 +30,7 @@ namespace Celeste.Mod.Entities {
 
         private bool triggered = false;
 
-        public LevelFlagTrigger(EntityData data, Vector2 offset)
+        public FlagTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
             flag = data.Attr("flag");
             state = data.Bool("state");

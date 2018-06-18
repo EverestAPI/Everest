@@ -113,10 +113,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\GiveUpHint.cs" />
     <Compile Include="Mod\Entities\SpaceControllerBlocker.cs" />
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
+    <Compile Include="Patches\BadelineOldsite.cs" />
     <Compile Include="Patches\RotateSpinner.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\CassetteBlockManager.cs" />
@@ -126,7 +128,7 @@
     <Compile Include="Mod\Entities\CustomMemorialText.cs" />
     <Compile Include="Mod\Entities\CustomMemorial.cs" />
     <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
-    <Compile Include="Mod\Entities\LevelFlagTrigger.cs" />
+    <Compile Include="Mod\Entities\FlagTrigger.cs" />
     <Compile Include="Mod\Everest\Emoji.cs" />
     <Compile Include="Mod\Everest\Everest.DebugRC.cs" />
     <Compile Include="Mod\Everest\Everest.Discord.cs" />

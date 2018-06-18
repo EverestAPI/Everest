@@ -59,6 +59,12 @@ namespace MonoMod {
     class PatchHeartGemCollectRoutineAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Badeline chase routine instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchBadelineChaseRoutine")]
+    class PatchBadelineChaseRoutineAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -588,6 +594,60 @@ namespace MonoMod {
                     instri++;
                     // Store.
                     instrs.Insert(instri, il.Create(OpCodes.Stfld, f_completeArea));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchBadelineChaseRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_this = null;
+
+            MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean _IsChaseEnd(System.Boolean,Celeste.BadelineOldsite)");
+            if (m_IsChaseEnd == null)
+                return;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+
+                /* We expect something similar enough to the following:
+                ldfld	string Celeste.Session::Level
+                ldstr	"2"
+                call	bool [mscorlib]System.String::op_Equality(string, string) // We're here
+
+                Note that MonoMod requires the full type names (System.String instead of string)
+                */
+                // No need to check for the full name when the field name itself is compiler-generated.
+                if (instri > 3 &&
+                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "System.String Celeste.Session::Level" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldstr && (instrs[instri - 1].Operand as string) == "2" &&
+                    instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.String::op_Equality(System.String,System.String)"
+                ) {
+                    // After ==, process the result.
+                    instri++;
+                    // Push this and grab this from this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsChaseEnd));
                     instri++;
                 }
 

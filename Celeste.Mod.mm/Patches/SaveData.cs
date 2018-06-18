@@ -48,37 +48,37 @@ namespace Celeste {
 
         // We want use LastArea_Safe instead of LastArea to avoid breaking vanilla Celeste.
 
-        [MonoModHook("Celeste.AreaKey Celeste.SaveData::LastArea_Unsafe")]
+        [MonoModLinkFrom("Celeste.AreaKey Celeste.SaveData::LastArea_Unsafe")]
         public new AreaKey LastArea;
 
         [MonoModRemove]
         public AreaKey LastArea_Unsafe;
 
-        [MonoModHook("Celeste.AreaKey Celeste.SaveData::LastArea")]
+        [MonoModLinkFrom("Celeste.AreaKey Celeste.SaveData::LastArea")]
         public AreaKey LastArea_Safe;
 
         // We want use CurrentSession_Safe instead of CurrentSession to avoid breaking vanilla Celeste.
 
-        [MonoModHook("Celeste.Session Celeste.SaveData::CurrentSession_Unsafe")]
+        [MonoModLinkFrom("Celeste.Session Celeste.SaveData::CurrentSession_Unsafe")]
         public new Session CurrentSession;
 
         [MonoModRemove]
         public Session CurrentSession_Unsafe;
 
-        [MonoModHook("Celeste.Session Celeste.SaveData::CurrentSession")]
+        [MonoModLinkFrom("Celeste.Session Celeste.SaveData::CurrentSession")]
         public Session CurrentSession_Safe;
 
         // Legacy code should benefit from the new LevelSetStats.
 
         [XmlAttribute]
-        [MonoModHook("System.Int32 Celeste.SaveData::UnlockedAreas_Unsafe")]
+        [MonoModLinkFrom("System.Int32 Celeste.SaveData::UnlockedAreas_Unsafe")]
         public new int UnlockedAreas;
 
         [MonoModRemove]
         public int UnlockedAreas_Unsafe;
 
         [XmlIgnore]
-        [MonoModHook("System.Int32 Celeste.SaveData::UnlockedAreas")]
+        [MonoModLinkFrom("System.Int32 Celeste.SaveData::UnlockedAreas")]
         public int UnlockedAreas_Safe {
             get {
                 if (LevelSet == "Celeste")
@@ -96,14 +96,14 @@ namespace Celeste {
 
 
         [XmlAttribute]
-        [MonoModHook("System.Int32 Celeste.SaveData::TotalStrawberries_Unsafe")]
+        [MonoModLinkFrom("System.Int32 Celeste.SaveData::TotalStrawberries_Unsafe")]
         public new int TotalStrawberries;
 
         [MonoModRemove]
         public int TotalStrawberries_Unsafe;
 
         [XmlIgnore]
-        [MonoModHook("System.Int32 Celeste.SaveData::TotalStrawberries")]
+        [MonoModLinkFrom("System.Int32 Celeste.SaveData::TotalStrawberries")]
         public int TotalStrawberries_Safe {
             get {
                 if (LevelSet == "Celeste")
@@ -121,14 +121,14 @@ namespace Celeste {
 
 
         [XmlAttribute]
-        [MonoModHook("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
         public new List<AreaStats> Areas;
 
         [MonoModRemove]
         public List<AreaStats> Areas_Unsafe;
 
         [XmlIgnore]
-        [MonoModHook("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas")]
         public List<AreaStats> Areas_Safe {
             get {
                 List<AreaStats> areasAll = new List<AreaStats>(Areas_Unsafe);

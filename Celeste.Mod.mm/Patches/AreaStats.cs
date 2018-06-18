@@ -18,14 +18,14 @@ namespace Celeste {
     class patch_AreaStats : AreaStats {
 
         [XmlAttribute]
-        [MonoModHook("System.Int32 Celeste.AreaStats::ID_Unsafe")]
+        [MonoModLinkFrom("System.Int32 Celeste.AreaStats::ID_Unsafe")]
         public new int ID;
 
         [MonoModRemove]
         public int ID_Unsafe;
 
         [XmlIgnore]
-        [MonoModHook("System.Int32 Celeste.AreaStats::ID")]
+        [MonoModLinkFrom("System.Int32 Celeste.AreaStats::ID")]
         public int ID_Safe {
             get {
                 if (!string.IsNullOrEmpty(SID))

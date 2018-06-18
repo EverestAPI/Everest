@@ -127,7 +127,7 @@ namespace Celeste {
         // If we're on a version < 1.1.9.2, relink all SkipIntro calls to SkipIntroOld.
 
         [MonoModIfFlag("Lacks:IntroSkip")]
-        [MonoModHook("System.Void Celeste.GameLoader::SkipIntro()")]
+        [MonoModLinkFrom("System.Void Celeste.GameLoader::SkipIntro()")]
         private void SkipIntroOld() {
             introRoutine.Cancel();
             introRoutine = null;
