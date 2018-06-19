@@ -28,7 +28,8 @@ namespace Celeste.Mod.Helpers {
             => _EntryAssembly != null ? _EntryAssembly : (_EntryAssembly = new FakeAssembly(typeof(Celeste).Assembly));
 
         [MonoModLinkTo("System.Reflection.Assembly", "System.Reflection.Assembly GetEntryAssembly()")]
-        public static Assembly GetActualEntryAssembly() => GetActualEntryAssembly();
+        [MonoModRemove]
+        public extern static Assembly GetActualEntryAssembly();
 
         public override Type[] GetTypes() {
             HashSet<Assembly> added = new HashSet<Assembly>();

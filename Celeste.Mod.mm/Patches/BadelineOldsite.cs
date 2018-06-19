@@ -27,9 +27,10 @@ namespace Celeste {
         }
 
         // We're hooking the original Added, thus can't call base (Monocle.Entity::Added) without a small workaround.
-        // Note that this proxy call must be static, otherwise a callvirt gets emitted.
-        [MonoModLinkTo("Monocle.Entity", "System.Void Added(Monocle.Scene)")]
-        public static void base_Added(Entity self, Scene scene) { }
+        [MonoModLinkTo("Monocle.Entity", "Added")]
+        [MonoModForceCall]
+        [MonoModRemove]
+        public extern void base_Added(Scene scene);
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
             Level level = scene as Level;
@@ -38,7 +39,7 @@ namespace Celeste {
                 return;
             }
 
-            base_Added(this, scene);
+            base_Added(scene);
             Add(new Coroutine(StartChasingRoutine(level)));
         }
 
