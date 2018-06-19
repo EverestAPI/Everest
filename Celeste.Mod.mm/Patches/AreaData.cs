@@ -109,7 +109,7 @@ namespace Celeste {
             List<AreaData> modAreas = new List<AreaData>();
 
             foreach (ModAsset asset in Everest.Content.ListMaps) {
-                string path = asset.PathMapped.Substring(5);
+                string path = asset.PathVirtual.Substring(5);
 
                 AreaData area = new AreaData();
 
@@ -154,7 +154,7 @@ namespace Celeste {
                 asset.GetMeta<MapMeta>()?.ApplyTo(area);
 
                 if (string.IsNullOrEmpty(area.Mode[0].Path))
-                    area.Mode[0].Path = asset.PathMapped.Substring(5);
+                    area.Mode[0].Path = asset.PathVirtual.Substring(5);
 
                 // Some of the game's code checks for [1] / [2] explicitly.
                 // Let's just provide null modes to fill any gaps.

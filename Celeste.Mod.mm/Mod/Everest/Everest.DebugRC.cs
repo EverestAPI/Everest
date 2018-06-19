@@ -25,6 +25,16 @@ using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    public class RCEndPoint {
+        public string Path;
+        public string PathHelp;
+        public string PathExample;
+        public string Name;
+        public string InfoHTML;
+
+        public Action<HttpListenerContext> Handle;
+    }
+
     public static partial class Everest {
         public static class DebugRC {
 

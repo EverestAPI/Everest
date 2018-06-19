@@ -17,38 +17,31 @@ using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
 
 namespace Celeste.Mod {
-    public class ModAsset {
+    public abstract class ModAsset {
 
         /// <summary>
-        /// The mod asset source.
+        /// The mod asset's source.
         /// </summary>
-        public SourceType Source;
+        public ModContent Source;
+
         /// <summary>
         /// The type matching the mod asset.
         /// </summary>
-        public Type AssetType = null;
+        public Type Type = null;
         /// <summary>
         /// The original file extension.
         /// </summary>
-        public string AssetFormat = null;
+        public string Format = null;
 
         /// <summary>
-        /// The virtual path to the asset, matching the mapping path.
+        /// The virtual / mapped asset path.
         /// </summary>
-        public string PathMapped;
-        /// <summary>
-        /// The path to the source file, or the path to the source entry in an container.
-        /// </summary>
-        public string PathSource;
-        /// <summary>
-        /// The path to the source archive.
-        /// </summary>
-        public string PathArchive;
+        public string PathVirtual;
 
         /// <summary>
-        /// The containing assembly.
+        /// The "children" assets in f.e. directory type "assets."
         /// </summary>
-        public Assembly Assembly;
+        public List<ModAsset> Children = new List<ModAsset>();
 
         /// <summary>
         /// If the asset is a section of a larger file, the asset starting offset.
@@ -60,47 +53,24 @@ namespace Celeste.Mod {
         public int SectionLength;
 
         /// <summary>
-        /// The "children" assets in f.e. directory type "assets."
-        /// </summary>
-        public List<ModAsset> Children = new List<ModAsset>();
-
-        /// <summary>
         /// A stream to read the asset data from.
-        /// If the asset is a section of a larger file, LimitedStream is used.
         /// </summary>
-        public Stream Stream {
+        public virtual Stream Stream {
             get {
-                Stream stream = null;
-                if (Source == SourceType.Filesystem) {
-                    if (File.Exists(PathSource))
-                        stream = File.OpenRead(PathSource);
+                Stream stream;
+                bool isSection;
+                Open(out stream, out isSection);
 
-                } else if (Source == SourceType.Zip) {
-                    string file = PathSource.Replace('\\', '/');
-                    using (ZipFile zip = new ZipFile(PathArchive)) {
-                        foreach (ZipEntry entry in zip.Entries) {
-                            if (entry.FileName.Replace('\\', '/') == file) {
-                                stream = entry.ExtractStream();
-                                break;
-                            }
-                        }
-                    }
-
-                } else if (Source == SourceType.Assembly) {
-                    stream = Assembly.GetManifestResourceStream(PathSource);
-                }
-
-                if (stream == null || SectionLength == 0) {
+                if (stream == null || SectionLength == 0 || isSection)
                     return stream;
-                }
                 return new LimitedStream(stream, SectionOffset, SectionLength);
             }
         }
 
         /// <summary>
-        /// The asset contents.
+        /// The contents of the asset.
         /// </summary>
-        public byte[] Data {
+        public virtual byte[] Data {
             get {
                 using (Stream stream = Stream) {
                     if (stream is MemoryStream) {
@@ -119,33 +89,16 @@ namespace Celeste.Mod {
             }
         }
 
-        public ModAsset() {
-            Source = SourceType.None;
+        protected ModAsset(ModContent source) {
+            Source = source;
         }
 
-        public ModAsset(string file)
-            : this(file, 0, 0) {
-        }
-        public ModAsset(string file, long offset, int length)
-            : this() {
-            Source = SourceType.Filesystem;
-            PathSource = file;
-            SectionOffset = offset;
-            SectionLength = length;
-        }
-
-        public ModAsset(string zip, string file)
-            : this(file) {
-            Source = SourceType.Zip;
-            PathArchive = zip;
-            PathSource = file;
-        }
-
-        public ModAsset(Assembly assembly, string file)
-            : this(file) {
-            Source = SourceType.Assembly;
-            Assembly = assembly;
-        }
+        /// <summary>
+        /// Open a stream to read the asset data from.
+        /// </summary>
+        /// <param name="stream">The resulting stream.</param>
+        /// <param name="isSection">Is the stream already a section (SectionOffset and SectionLength)?</param>
+        protected abstract void Open(out Stream stream, out bool isSection);
 
         /// <summary>
         /// Deserialize the asset using a deserializer based on the AssetType (f.e. AssetTypeYaml -> YamlDotNet).
@@ -154,7 +107,7 @@ namespace Celeste.Mod {
         /// <param name="result">The asset in its deserialized (object) form.</param>
         /// <returns>True if deserializing the asset succeeded, false otherwise.</returns>
         public bool TryDeserialize<T>(out T result) {
-            if (AssetType == typeof(AssetTypeYaml)) {
+            if (Type == typeof(AssetTypeYaml)) {
                 using (StreamReader reader = new StreamReader(Stream))
                     result = YamlHelper.Deserializer.Deserialize<T>(reader);
                 return true;
@@ -185,7 +138,7 @@ namespace Celeste.Mod {
         /// <returns>True if deserializing the meta asset succeeded, false otherwise.</returns>
         public bool TryGetMeta<T>(out T meta) {
             ModAsset metaAsset;
-            if (Everest.Content.TryGet(PathMapped + ".meta", out metaAsset) &&
+            if (Everest.Content.TryGet(PathVirtual + ".meta", out metaAsset) &&
                 metaAsset.TryDeserialize(out meta)
             )
                 return true;
@@ -204,12 +157,89 @@ namespace Celeste.Mod {
             return meta;
         }
 
-        public enum SourceType {
-            None,
-            Filesystem,
-            Zip,
-            Assembly,
+    }
+
+    public abstract class ModAsset<T> : ModAsset where T : ModContent {
+        public new T Source => base.Source as T;
+        protected ModAsset(T source)
+            : base(source) {
+        }
+    }
+
+    public sealed class ModAssetBranch : ModAsset {
+        public ModAssetBranch()
+            : base(null) {
         }
 
+        protected override void Open(out Stream stream, out bool isSection) {
+            throw new InvalidOperationException();
+        }
+    }
+
+    public class FileSystemModAsset : ModAsset<FileSystemModContent> {
+        /// <summary>
+        /// The path to the source file.
+        /// </summary>
+        public string Path;
+
+        public FileSystemModAsset(FileSystemModContent source, string path)
+            : base(source) {
+            Path = path;
+        }
+
+        protected override void Open(out Stream stream, out bool isSection) {
+            if (!File.Exists(Path)) {
+                stream = null;
+                isSection = false;
+                return;
+            }
+
+            stream = File.OpenRead(Path);
+            isSection = false;
+        }
+    }
+
+    public class AssemblyModAsset : ModAsset<AssemblyModContent> {
+        /// <summary>
+        /// The name of the resource in the assembly.
+        /// </summary>
+        public string ResourceName;
+
+        public AssemblyModAsset(AssemblyModContent source, string resourceName)
+            : base(source) {
+            ResourceName = resourceName;
+        }
+
+        protected override void Open(out Stream stream, out bool isSection) {
+            stream = Source.Assembly.GetManifestResourceStream(ResourceName);
+            isSection = false;
+        }
+    }
+
+    public class ZipModAsset : ModAsset<ZipModContent> {
+        /// <summary>
+        /// The path to the source file inside the archive.
+        /// </summary>
+        public string Path;
+
+        public ZipModAsset(ZipModContent source, string path)
+            : base(source) {
+            Path = path;
+        }
+
+        protected override void Open(out Stream stream, out bool isSection) {
+            string file = Path.Replace('\\', '/');
+            using (ZipFile zip = new ZipFile(Source.Path)) {
+                foreach (ZipEntry entry in zip.Entries) {
+                    if (entry.FileName.Replace('\\', '/') == file) {
+                        stream = entry.ExtractStream();
+                        isSection = false;
+                        return;
+                    }
+                }
+            }
+
+            throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
+        }
     }
 }

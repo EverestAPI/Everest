@@ -137,9 +137,7 @@ namespace Celeste.Mod {
                         meta.Icon = icon;
                 }
 
-                ContentModMetadata contentMeta = new ContentModMetadata {
-                    PathArchive = archive
-                };
+                ZipModContent contentMeta = new ZipModContent(archive);
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -209,9 +207,7 @@ namespace Celeste.Mod {
                         }
                     }
 
-                ContentModMetadata contentMeta = new ContentModMetadata {
-                    PathDirectory = dir
-                };
+                FileSystemModContent contentMeta = new FileSystemModContent(dir);
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -320,9 +316,7 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                Content.Crawl(new ContentModMetadata {
-                    Assembly = asm
-                });
+                Content.Crawl(new AssemblyModContent(asm));
 
                 Type[] types;
                 try {

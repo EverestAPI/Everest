@@ -72,7 +72,7 @@ namespace Monocle {
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
-            Name = metadata.PathMapped;
+            Name = metadata.PathVirtual;
             Preload();
         }
 
@@ -148,7 +148,7 @@ namespace Monocle {
                 }
 
             } else if (Metadata != null) {
-                if (Metadata.AssetFormat == "png") {
+                if (Metadata.Format == "png") {
                     // Hard.
                     using (Stream stream = Metadata.Stream)
                         GetSizeFromPNG(stream);

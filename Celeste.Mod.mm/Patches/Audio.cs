@@ -56,7 +56,7 @@ namespace Celeste {
         }
 
         public static Bank IngestBank(ModAsset asset) {
-            Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathMapped);
+            Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathVirtual);
 
             Bank bank;
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))
@@ -66,7 +66,7 @@ namespace Celeste {
             system.loadBankMemory(asset.Data, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
 
             ModAsset assetGUIDs;
-            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathMapped + ".guids", out assetGUIDs)) {
+            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out assetGUIDs)) {
                 IngestGUIDs(assetGUIDs);
             }
 
@@ -75,7 +75,7 @@ namespace Celeste {
         }
 
         public static void IngestGUIDs(ModAsset asset) {
-            Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathMapped);
+            Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
             using (StreamReader reader = new StreamReader(asset.Stream)) {
                 string line;

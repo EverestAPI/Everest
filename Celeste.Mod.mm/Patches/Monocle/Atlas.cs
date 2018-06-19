@@ -327,15 +327,15 @@ namespace Monocle {
         /// </summary>
         public static void Ingest(this Atlas self, ModAsset asset) {
             // Crawl through all child assets.
-            if (asset.AssetType == typeof(AssetTypeDirectory)) {
+            if (asset.Type == typeof(AssetTypeDirectory)) {
                 foreach (ModAsset child in asset.Children)
                     self.Ingest(child);
                 return;
             }
 
             // Forcibly add the mod content to the atlas.
-            if (asset.AssetType == typeof(Texture2D)) {
-                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathMapped}");
+            if (asset.Type == typeof(Texture2D)) {
+                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathVirtual}");
 
                 string parentPath = self.GetDataPath();
                 if (parentPath.StartsWith(Everest.Content.PathContentOrig))
@@ -343,7 +343,7 @@ namespace Monocle {
                 parentPath = parentPath.Replace('\\', '/');
 
                 bool lq = false;
-                string path = asset.PathMapped;
+                string path = asset.PathVirtual;
 
                 if (path.StartsWith(parentPath + "LQ/")) {
                     lq = true;

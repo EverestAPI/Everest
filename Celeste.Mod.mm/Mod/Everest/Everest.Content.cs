@@ -32,6 +32,97 @@ namespace Celeste.Mod {
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
 
+    // Source types.
+    public abstract class ModContent {
+        public List<ModAsset> List = new List<ModAsset>();
+        public Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
+
+        protected abstract void Crawl();
+        internal void _Crawl() => Crawl();
+
+        protected void Add(string path, ModAsset asset) {
+            asset = Everest.Content.Add(path, asset);
+            List.Add(asset);
+            Map[asset.PathVirtual] = asset;
+        }
+    }
+
+    public class FileSystemModContent : ModContent {
+        /// <summary>
+        /// The path to the mod directory.
+        /// </summary>
+        public string Path;
+
+        public FileSystemModContent(string path) {
+            Path = path;
+        }
+
+        protected override void Crawl() => Crawl(null);
+
+        protected virtual void Crawl(string dir, string root = null) {
+            if (dir == null)
+                dir = Path;
+            if (root == null)
+                root = dir;
+            string[] files = Directory.GetFiles(dir);
+            for (int i = 0; i < files.Length; i++) {
+                string file = files[i];
+                Add(file.Substring(root.Length + 1), new FileSystemModAsset(this, file));
+            }
+            files = Directory.GetDirectories(dir);
+            for (int i = 0; i < files.Length; i++) {
+                string file = files[i];
+                Crawl(file, root);
+            }
+        }
+    }
+
+    public class AssemblyModContent : ModContent {
+        /// <summary>
+        /// The assembly containing the mod content as resources.
+        /// </summary>
+        public Assembly Assembly;
+
+        public AssemblyModContent(Assembly asm) {
+            Assembly = asm;
+        }
+
+        protected override void Crawl() {
+            string[] resourceNames = Assembly.GetManifestResourceNames();
+            for (int i = 0; i < resourceNames.Length; i++) {
+                string name = resourceNames[i];
+                int indexOfContent = name.IndexOf("Content");
+                if (indexOfContent < 0)
+                    continue;
+                name = name.Substring(indexOfContent + 8);
+                Add(name, new AssemblyModAsset(this, resourceNames[i]));
+            }
+        }
+    }
+
+    public class ZipModContent : ModContent {
+        /// <summary>
+        /// The path to the archive containing the mod content.
+        /// </summary>
+        public string Path;
+
+        public ZipModContent(string path) {
+            Path = path;
+        }
+
+        protected override void Crawl() {
+            using (ZipFile zip = new ZipFile(Path)) {
+                foreach (ZipEntry entry in zip.Entries) {
+                    string entryName = entry.FileName.Replace('\\', '/');
+                    if (entryName.EndsWith("/"))
+                        continue;
+                    Add(entryName, new ZipModAsset(this, entryName));
+                }
+            }
+        }
+    }
+
+    // Main helper type.
     public static partial class Everest {
         public static class Content {
 
@@ -57,7 +148,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// List of all currently loaded content mods.
             /// </summary>
-            public readonly static List<ContentModMetadata> Mods = new List<ContentModMetadata>();
+            public readonly static List<ModContent> Mods = new List<ModContent>();
 
             /// <summary>
             /// Mod content mapping. Use Everest.Content.Add, Get, and TryGet where applicable instead.
@@ -96,12 +187,8 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
-                Crawl(new ContentModMetadata {
-                    Assembly = typeof(Everest).Assembly
-                });
-                Crawl(new ContentModMetadata {
-                    PathDirectory = PathContent
-                });
+                Crawl(new AssemblyModContent(typeof(Everest).Assembly));
+                Crawl(new FileSystemModContent(PathContent));
             }
 
             /// <summary>
@@ -145,9 +232,9 @@ namespace Celeste.Mod {
             public static bool TryGet<T>(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
-                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata.AssetType == typeof(T))
+                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
                     return true;
-                if (Map.TryGetValue(path, out metadata) && metadata.AssetType == typeof(T))
+                if (Map.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
                     return true;
 
                 metadata = null;
@@ -180,7 +267,6 @@ namespace Celeste.Mod {
             /// Gets the list of all Dialog-related ModAssets mapped to the given relative path.
             /// </summary>
             /// <param name="path">The relative asset path.</param>
-            /// <param name="metadata">The resulting mod asset meta list.</param>
             /// <returns>The resulting mod asset meta list, or null.</returns>
             public static List<ModAsset> GetDialogs(string path) {
                 List<ModAsset> metadata;
@@ -197,10 +283,10 @@ namespace Celeste.Mod {
             public static ModAsset Add(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
                 
-                if (metadata.AssetType == null)
-                    path = GuessType(path, out metadata.AssetType, out metadata.AssetFormat);
+                if (metadata.Type == null)
+                    path = GuessType(path, out metadata.Type, out metadata.Format);
 
-                metadata.PathMapped = path;
+                metadata.PathVirtual = path;
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
                 ModAsset metadataPrev;
@@ -208,12 +294,12 @@ namespace Celeste.Mod {
                     metadataPrev = null;
 
                 // Hardcoded case: Store audio banks in a list of banks to preload.
-                if (metadata.AssetType == typeof(AssetTypeBank)) {
+                if (metadata.Type == typeof(AssetTypeBank)) {
                     ListBanks.Add(metadata);
                 }
                 
                 // Hardcoded case: Handle dialog .txts separately.
-                if (metadata.AssetType == typeof(AssetTypeDialog)) {
+                if (metadata.Type == typeof(AssetTypeDialog)) {
                     // Store multiple AssetMetadatas in a list per path.
                     List<ModAsset> dialogs;
                     if (!MapDialogs.TryGetValue(path, out dialogs)) {
@@ -223,10 +309,10 @@ namespace Celeste.Mod {
                     dialogs.Add(metadata);
                 }
                 // Hardcoded case: Handle maps separately.
-                else if (metadata.AssetType == typeof(AssetTypeMap)) {
+                else if (metadata.Type == typeof(AssetTypeMap)) {
                     // Store all maps in a single shared list.
                     // Note that we only store the last added item.
-                    int index = ListMaps.FindIndex(other => other.PathMapped == metadata.PathMapped);
+                    int index = ListMaps.FindIndex(other => other.PathVirtual == metadata.PathVirtual);
                     if (index == -1)
                         index = ListMaps.Count;
                     ListMaps.Insert(index, metadata);
@@ -234,7 +320,7 @@ namespace Celeste.Mod {
                     Map[path] = metadata;
                 }
                 // Hardcoded case: Handle directories separately.
-                else if (metadata.AssetType == typeof(AssetTypeDirectory))
+                else if (metadata.Type == typeof(AssetTypeDirectory))
                     MapDirs[path] = metadata;
                 else
                     Map[path] = metadata;
@@ -245,9 +331,9 @@ namespace Celeste.Mod {
                     string pathDir = Path.GetDirectoryName(path).Replace('\\', '/');
                     ModAsset metadataDir;
                     if (!MapDirs.TryGetValue(pathDir, out metadataDir)) {
-                        metadataDir = new ModAsset(pathDir) {
-                            Source = ModAsset.SourceType.None,
-                            AssetType = typeof(AssetTypeDirectory)
+                        metadataDir = new ModAssetBranch {
+                            PathVirtual = pathDir,
+                            Type = typeof(AssetTypeDirectory)
                         };
                         Add(pathDir, metadataDir);
                     }
@@ -370,62 +456,10 @@ namespace Celeste.Mod {
             /// Crawl through the content mod and automatically fill the mod asset map.
             /// </summary>
             /// <param name="meta">The content mod to crawl through.</param>
-            public static void Crawl(ContentModMetadata meta) {
+            public static void Crawl(ModContent meta) {
                 if (!Mods.Contains(meta))
                     Mods.Add(meta);
-
-                if (meta.PathDirectory != null) {
-                    if (Directory.Exists(meta.PathDirectory))
-                        Crawl(meta, meta.PathDirectory);
-
-                } else if (meta.PathArchive != null) {
-                    if (File.Exists(meta.PathArchive))
-                        using (ZipFile zip = new ZipFile(meta.PathArchive))
-                            Crawl(meta, meta.PathArchive, zip);
-
-                } else if (meta.Assembly != null)
-                    Crawl(meta, meta.Assembly);
-            }
-
-            internal static void Crawl(ContentModMetadata meta, string dir, string root = null) {
-                if (root == null)
-                    root = dir;
-                string[] files = Directory.GetFiles(dir);
-                for (int i = 0; i < files.Length; i++) {
-                    string file = files[i];
-                    Add(file.Substring(root.Length + 1), new ModAsset(file));
-                }
-                files = Directory.GetDirectories(dir);
-                for (int i = 0; i < files.Length; i++) {
-                    string file = files[i];
-                    Crawl(meta, file, root);
-                }
-            }
-
-            internal static void Crawl(ContentModMetadata meta, Assembly asm) {
-                if (meta == null)
-                    Mods.Add(meta = new ContentModMetadata {
-                        Assembly = asm
-                    });
-
-                string[] resourceNames = asm.GetManifestResourceNames();
-                for (int i = 0; i < resourceNames.Length; i++) {
-                    string name = resourceNames[i];
-                    int indexOfContent = name.IndexOf("Content");
-                    if (indexOfContent < 0)
-                        continue;
-                    name = name.Substring(indexOfContent + 8);
-                    Add(name, new ModAsset(asm, resourceNames[i]));
-                }
-            }
-
-            internal static void Crawl(ContentModMetadata meta, string archive, ZipFile zip) {
-                foreach (ZipEntry entry in zip.Entries) {
-                    string entryName = entry.FileName.Replace('\\', '/');
-                    if (entryName.EndsWith("/"))
-                        continue;
-                    Add(entryName, new ModAsset(archive, entryName));
-                }
+                meta._Crawl();
             }
 
             /// <summary>
@@ -462,12 +496,12 @@ namespace Celeste.Mod {
                     ModAsset mapping;
 
                     mapping = Get(assetName + "LQ", true);
-                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                    if (mapping != null && mapping.Type == typeof(AssetTypeDirectory)) {
                         atlas.Ingest(mapping);
                     }
 
                     mapping = Get(assetName, true);
-                    if (mapping != null && mapping.AssetType == typeof(AssetTypeDirectory)) {
+                    if (mapping != null && mapping.Type == typeof(AssetTypeDirectory)) {
                         atlas.Ingest(mapping);
                     }
 
@@ -584,24 +618,5 @@ namespace Celeste.Mod {
             }
 
         }
-    }
-
-    public class ContentModMetadata {
-
-        /// <summary>
-        /// The path to the ZIP of the mod, if this is a .zip mod.
-        /// </summary>
-        public virtual string PathArchive { get; set; }
-
-        /// <summary>
-        /// The path to the directory of the mod, if this is a directory mod.
-        /// </summary>
-        public virtual string PathDirectory { get; set; }
-
-        /// <summary>
-        /// The assembly containing the resources, if the source is an assembly.
-        /// </summary>
-        public virtual Assembly Assembly { get; set; }
-
     }
 }
