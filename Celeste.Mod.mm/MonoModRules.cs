@@ -674,7 +674,6 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-
                 /* We expect something similar enough to the following:
                 ldfld	Celeste.AreaMode Celeste.AreaKey::Mode
                 ldc.i4.0
@@ -688,13 +687,37 @@ namespace MonoMod {
                     instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
                     instr.OpCode == OpCodes.Cgt_Un
                 ) {
-                    // After > process the result.
+                    // Process the result after >
                     instri++;
                     // Push this.
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
                     instri++;
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_IsSmall));
+                    instri++;
+                }
+
+                // Alternatively:
+
+                /* We expect something similar enough to the following:
+                ldfld	Celeste.AreaMode Celeste.AreaKey::Mode
+                brfalse.s	// We're here
+
+                Note that MonoMod requires the full type names (System.String instead of string)
+                */
+                // No need to check for the full name when the field name itself is compiler-generated.
+                if (instri > 2 &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    instr.OpCode == OpCodes.Brfalse_S
+                ) {
+                    // Process the result before !=
+                    // Push this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsSmall));
+                    instri++;
+                    // Skip brfalse.s
                     instri++;
                 }
 
