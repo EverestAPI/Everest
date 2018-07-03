@@ -133,27 +133,26 @@ namespace Celeste {
 
             // Everest comes with a few core utility entities out of the box.
 
-            if (entityData.Name == "spaceController") {
+            if (entityData.Name == "everest/spaceController") {
                 level.Add(new SpaceController());
                 return true;
             }
-            if (entityData.Name == "spaceControllerBlocker") {
+            if (entityData.Name == "everest/spaceControllerBlocker") {
                 level.Add(new SpaceControllerBlocker());
                 return true;
             }
 
-            if (entityData.Name == "levelFlagTrigger" || // Incorrect old name
-                entityData.Name == "flagTrigger") {
+            if (entityData.Name == "everest/flagTrigger") {
                 level.Add(new FlagTrigger(entityData, offset));
                 return true;
             }
 
-            if (entityData.Name == "customCoreMessage") {
+            if (entityData.Name == "everest/coreMessage") {
                 level.Add(new CustomCoreMessage(entityData, offset));
                 return true;
             }
 
-            if (entityData.Name == "customMemorial") {
+            if (entityData.Name == "everest/memorial") {
                 level.Add(new CustomMemorial(entityData, offset));
                 return true;
             }
@@ -174,6 +173,8 @@ namespace Celeste {
                     color = CrystalColor.Red;
                 else if (level.Session.Area.ID == 6)
                     color = CrystalColor.Purple;
+                else if ("core".Equals(entityData.Attr("color"), StringComparison.InvariantCultureIgnoreCase))
+                    color = (CrystalColor) (-1);
                 else if (!Enum.TryParse(entityData.Attr("color"), true, out color))
                     color = CrystalColor.Blue;
 

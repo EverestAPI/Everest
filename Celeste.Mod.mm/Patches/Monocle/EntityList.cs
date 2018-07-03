@@ -6,7 +6,7 @@ namespace Monocle {
     // No public constructors.
     class patch_EntityList {
 
-        // We're effectively in Coroutine, but still need to "expose" private fields to our mod.
+        // We're effectively in EntityList, but still need to "expose" private fields to our mod.
         private List<Entity> toAdd;
         public List<Entity> ToAdd => toAdd;
 

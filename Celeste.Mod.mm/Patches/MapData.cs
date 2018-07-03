@@ -116,18 +116,18 @@ namespace Celeste {
                 if (level.AttrBool("space")) {
                     if (level.AttrBool("spaceSkipWrap") || levelTags.Contains("nospacewrap") || levelTags.Contains("nsw"))
                         entities.Children.Add(new BinaryPacker.Element {
-                            Name = "spaceControllerBlocker"
+                            Name = "everest/spaceControllerBlocker"
                         });
                     if (level.AttrBool("spaceSkipGravity") || levelTags.Contains("nospacegravity") || levelTags.Contains("nsg")) {
                         entities.Children.Add(new BinaryPacker.Element {
-                            Name = "spaceController"
+                            Name = "everest/spaceController"
                         });
                         level.Attributes["space"] = false;
                     }
 
                     if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
                         !triggers.Children.Any(el => el.Name == "cameraTargetTrigger") &&
-                        !entities.Children.Any(el => el.Name == "spaceControllerBlocker")) {
+                        !entities.Children.Any(el => el.Name == "everest/spaceControllerBlocker")) {
 
                         // Camera centers tile-perfectly on uneven heights.
                         int heightForCenter = (int) level.Attributes["height"];
