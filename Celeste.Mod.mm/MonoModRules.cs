@@ -65,6 +65,12 @@ namespace MonoMod {
     class PatchBadelineChaseRoutineAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Cloud.Added method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchCloudAdded")]
+    class PatchCloudAddedAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -608,7 +614,7 @@ namespace MonoMod {
             if (m_IsChaseEnd == null)
                 return;
 
-            // The gem collection routine is stored in a compiler-generated method.
+            // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
                     continue;
@@ -648,6 +654,47 @@ namespace MonoMod {
                     instri++;
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_IsChaseEnd));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchCloudAdded(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_IsSmall = method.DeclaringType.FindMethod("System.Boolean _IsSmall(System.Boolean,Celeste.Cloud)");
+            if (m_IsSmall == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+
+                /* We expect something similar enough to the following:
+                ldfld	Celeste.AreaMode Celeste.AreaKey::Mode
+                ldc.i4.0
+                cgt.un	// We're here
+
+                Note that MonoMod requires the full type names (System.String instead of string)
+                */
+                // No need to check for the full name when the field name itself is compiler-generated.
+                if (instri > 3 &&
+                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
+                    instr.OpCode == OpCodes.Cgt_Un
+                ) {
+                    // After > process the result.
+                    instri++;
+                    // Push this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsSmall));
                     instri++;
                 }
 

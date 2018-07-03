@@ -119,6 +119,8 @@
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Patches\BadelineOldsite.cs" />
+    <Compile Include="Patches\Cloud.cs" />
+    <Compile Include="Patches\CrystalStaticSpinner.cs" />
     <Compile Include="Patches\RotateSpinner.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\CassetteBlockManager.cs" />

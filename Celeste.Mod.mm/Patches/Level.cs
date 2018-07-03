@@ -237,6 +237,14 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "cloud") {
+                patch_Cloud cloud = new Cloud(entityData, offset) as patch_Cloud;
+                if (entityData.Has("small"))
+                    cloud.Small = entityData.Bool("small");
+                level.Add(cloud);
+                return true;
+            }
+
             return false;
         }
 
