@@ -81,7 +81,7 @@ namespace Celeste.Mod.UI {
             Visible = false;
         }
 
-        public OuiModOptionString Init<T>(string value, Action<string> onValueChange,int maxValueLength = 12) where T : Oui {
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength = 12) where T : Oui {
             _Value = StartingValue = value;
             OnValueChange = onValueChange;
 
@@ -199,7 +199,7 @@ namespace Celeste.Mod.UI {
 
             } else if (c == ' ') {
                 // Space - append.
-                if (Value.Length < 12) {
+                if (Value.Length < MaxValueLength) {
                     Audio.Play(Sfxs.ui_main_rename_entry_space);
                     Value += c;
                 } else {
@@ -208,7 +208,7 @@ namespace Celeste.Mod.UI {
 
             } else if (!char.IsControl(c)) {
                 // Any other character - append.
-                if (Value.Length < 12 && ActiveFont.FontSize.Characters.ContainsKey(c)) {
+                if (Value.Length < MaxValueLength && ActiveFont.FontSize.Characters.ContainsKey(c)) {
                     Audio.Play(Sfxs.ui_main_rename_entry_char);
                     Value += c;
                 } else {

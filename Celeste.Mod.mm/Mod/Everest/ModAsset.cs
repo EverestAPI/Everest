@@ -199,6 +199,29 @@ namespace Celeste.Mod {
         }
     }
 
+    public class MapBinsInModsModAsset : ModAsset<MapBinsInModsModContent> {
+        /// <summary>
+        /// The path to the source file.
+        /// </summary>
+        public string Path;
+
+        public MapBinsInModsModAsset(MapBinsInModsModContent source, string path)
+            : base(source) {
+            Path = path;
+        }
+
+        protected override void Open(out Stream stream, out bool isSection) {
+            if (!File.Exists(Path)) {
+                stream = null;
+                isSection = false;
+                return;
+            }
+
+            stream = File.OpenRead(Path);
+            isSection = false;
+        }
+    }
+
     public class AssemblyModAsset : ModAsset<AssemblyModContent> {
         /// <summary>
         /// The name of the resource in the assembly.

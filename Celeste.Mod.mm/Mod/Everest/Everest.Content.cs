@@ -40,7 +40,7 @@ namespace Celeste.Mod {
         protected abstract void Crawl();
         internal void _Crawl() => Crawl();
 
-        protected void Add(string path, ModAsset asset) {
+        protected virtual void Add(string path, ModAsset asset) {
             asset = Everest.Content.Add(path, asset);
             List.Add(asset);
             Map[asset.PathVirtual] = asset;
@@ -73,6 +73,27 @@ namespace Celeste.Mod {
             for (int i = 0; i < files.Length; i++) {
                 string file = files[i];
                 Crawl(file, root);
+            }
+        }
+    }
+
+    public class MapBinsInModsModContent : ModContent {
+        /// <summary>
+        /// The path to the mod directory.
+        /// </summary>
+        public string Path;
+
+        public MapBinsInModsModContent(string path) {
+            Path = path;
+        }
+
+        protected override void Crawl() {
+            string[] files = Directory.GetFiles(Path);
+            for (int i = 0; i < files.Length; i++) {
+                string file = files[i];
+                if (!file.EndsWith(".bin"))
+                    continue;
+                Add("Maps/" + file.Substring(Path.Length + 1), new MapBinsInModsModAsset(this, file));
             }
         }
     }
@@ -137,10 +158,6 @@ namespace Celeste.Mod {
             /// </summary>
             public static string PathContentOrig { get; internal set; }
             /// <summary>
-            /// The path to the Everest /ModContent directory.
-            /// </summary>
-            public static string PathContent { get; internal set; }
-            /// <summary>
             /// The path to the Everest /ModDUMP directory.
             /// </summary>
             public static string PathDUMP { get; internal set; }
@@ -180,15 +197,13 @@ namespace Celeste.Mod {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
-                Directory.CreateDirectory(PathContent = Path.Combine(PathGame, "ModContent"));
-                Directory.CreateDirectory(Path.Combine(PathContent, "Maps")); // Because some people are unable to spell Maps with a capital M.
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathGame, "ModDUMP"));
 
                 if (_DumpAll)
                     DumpAll();
 
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly));
-                Crawl(new FileSystemModContent(PathContent));
+                Crawl(new MapBinsInModsModContent(Path.Combine(PathGame, "Mods")));
             }
 
             /// <summary>

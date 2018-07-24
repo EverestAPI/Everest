@@ -58,8 +58,10 @@ namespace Celeste {
                 Everest.Boot();
             } catch (Exception e) {
                 e.LogDetailed();
+                /*
                 ErrorLog.Write(e);
                 ErrorLog.Open();
+                */
                 throw;
             }
         }
