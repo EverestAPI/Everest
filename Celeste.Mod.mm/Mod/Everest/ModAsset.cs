@@ -108,8 +108,13 @@ namespace Celeste.Mod {
         /// <returns>True if deserializing the asset succeeded, false otherwise.</returns>
         public bool TryDeserialize<T>(out T result) {
             if (Type == typeof(AssetTypeYaml)) {
-                using (StreamReader reader = new StreamReader(Stream))
-                    result = YamlHelper.Deserializer.Deserialize<T>(reader);
+                try {
+                    using (StreamReader reader = new StreamReader(Stream))
+                        result = YamlHelper.Deserializer.Deserialize<T>(reader);
+                } catch {
+                    result = default(T);
+                    return false;
+                }
                 return true;
             }
 

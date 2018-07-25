@@ -96,7 +96,22 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIfBool("FixRotateSpinnerAngles", v => FixRotateSpinnerAngle = v);
 
-            // TODO: Parse MapMeta A mode, Mountain and CompleteScreen
+            BinaryPacker.Element child;
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "cassettemodifier");
+            if (child != null)
+                CassetteModifier = new MapMetaCassetteModifier(child);
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "modes");
+            if (child != null) {
+                Modes = new MapMetaModeProperties[3];
+                for (int i = 0; i < child.Children.Count; i++) {
+                    Modes[i] = new MapMetaModeProperties(child.Children[i]);
+                }
+                for (int i = child.Children.Count; i < Modes.Length; i++) {
+                    Modes[i] = null;
+                }
+            }
         }
 
         public void ApplyTo(AreaData area) {
@@ -207,6 +222,13 @@ namespace Celeste.Mod.Meta {
 
     }
     public class MapMetaModeProperties {
+        public MapMetaModeProperties() {
+        }
+
+        public MapMetaModeProperties(BinaryPacker.Element meta) {
+            Parse(meta);
+        }
+
         public MapMetaAudioState AudioState { get; set; }
         public MapMetaCheckpointData[] Checkpoints { get; set; }
         public bool IgnoreLevelAudioLayerData { get; set; }
@@ -216,6 +238,7 @@ namespace Celeste.Mod.Meta {
 
         public string StartLevel { get; set; }
         public bool? HeartIsEnd { get; set; } = null;
+
         public ModeProperties Convert()
             => new ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),
@@ -225,14 +248,61 @@ namespace Celeste.Mod.Meta {
                 Path = Path,
                 PoemID = PoemID
             };
+
+        public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIfBool("IgnoreLevelAudioLayerData", v => IgnoreLevelAudioLayerData = v);
+            meta.AttrIf("Inventory", v => Inventory = v);
+            meta.AttrIf("Path", v => Path = v);
+            meta.AttrIf("PoemID", v => PoemID = v);
+            meta.AttrIf("StartLevel", v => StartLevel = v);
+            meta.AttrIf("HeartIsEnd", v => HeartIsEnd = string.IsNullOrEmpty(v) ? (bool?) null : (bool) bool.Parse(v));
+
+            BinaryPacker.Element child;
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "audiostate");
+            if (child != null)
+                AudioState = new MapMetaAudioState(child);
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "checkpoints");
+            if (child != null) {
+                Checkpoints = new MapMetaCheckpointData[child.Children.Count];
+                for (int i = 0; i < Checkpoints.Length; i++) {
+                    Checkpoints[i] = new MapMetaCheckpointData(child.Children[i]);
+                }
+            }
+        }
+
+        public void ApplyTo(AreaData area, AreaMode mode) {
+            area.GetMeta().Modes[(int) mode] = this;
+            area.Mode[(int) mode] = Convert();
+        }
     }
     public class MapMetaAudioState {
+        public MapMetaAudioState() {
+        }
+
+        public MapMetaAudioState(BinaryPacker.Element meta) {
+            Parse(meta);
+        }
+
         public string Music { get; set; }
         public string Ambience { get; set; }
         public AudioState Convert()
             => new AudioState(Music, Ambience);
+
+        public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIf("Music", v => Music = v);
+            meta.AttrIf("Ambience", v => Ambience = v);
+        }
     }
     public class MapMetaCheckpointData {
+        public MapMetaCheckpointData() {
+        }
+
+        public MapMetaCheckpointData(BinaryPacker.Element meta) {
+            Parse(meta);
+        }
+
         public string Level { get; set; }
         public string Name { get; set; }
         public bool Dreaming { get; set; }
@@ -245,6 +315,28 @@ namespace Celeste.Mod.Meta {
                 Flags = new HashSet<string>(Flags ?? new string[0]),
                 CoreMode = CoreMode
             };
+
+        public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIf("Level", v => Level = v);
+            meta.AttrIf("Name", v => Name = v);
+            meta.AttrIfBool("Dreaming", v => Dreaming = v);
+            meta.AttrIf("Inventory", v => Inventory = v);
+            meta.AttrIf("CoreMode", v => CoreMode = string.IsNullOrEmpty(v) ? (Session.CoreModes?) null : (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
+
+            BinaryPacker.Element child;
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "audiostate");
+            if (child != null)
+                AudioState = new MapMetaAudioState(child);
+
+            child = meta.Children.FirstOrDefault(el => el.Name == "flags");
+            if (child != null) {
+                Flags = new string[child.Children.Count];
+                for (int i = 0; i < Flags.Length; i++) {
+                    Flags[i] = child.Children[i].Attr("innerText");
+                }
+            }
+        }
     }
     public class MapMetaMountain {
         public MapMetaMountainCamera Idle { get; set; } = null;
@@ -284,11 +376,27 @@ namespace Celeste.Mod.Meta {
     }
 
     public class MapMetaCassetteModifier {
+        public MapMetaCassetteModifier() {
+        }
+
+        public MapMetaCassetteModifier(BinaryPacker.Element meta) {
+            Parse(meta);
+        }
+
         public float TempoMult { get; set; } = 1f;
         public int LeadBeats { get; set; } = 16;
         public int BeatsPerTick { get; set; } = 4;
         public int TicksPerSwap { get; set; } = 2;
         public int Blocks { get; set; } = 2;
         public int BeatsMax { get; set; } = 256;
+
+        public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIfFloat("TempoMult", v => TempoMult = v);
+            meta.AttrIfInt("LeadBeats", v => LeadBeats = v);
+            meta.AttrIfInt("BeatsPerTick", v => BeatsPerTick = v);
+            meta.AttrIfInt("TicksPerSwap", v => TicksPerSwap = v);
+            meta.AttrIfInt("Blocks", v => Blocks = v);
+            meta.AttrIfInt("BeatsMax", v => BeatsMax = v);
+        }
     }
 }

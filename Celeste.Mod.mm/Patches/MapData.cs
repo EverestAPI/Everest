@@ -206,13 +206,19 @@ namespace Celeste {
             AreaData area = AreaData.Get(Area);
             ModeProperties mode = area.Mode[(int) Area.Mode];
 
-            new MapMeta(meta).ApplyTo(area);
-            Area = area.ToKey();
-
             string sideAttr = meta.Attr("Side", "a").ToLowerInvariant();
-            if (sideAttr != "a") {
-                // TODO: Assign B and C side MapDatas to existing area's modes.
+            if (sideAttr.Length == 0)
+                sideAttr = "a";
+            if (sideAttr == "a") {
+                new MapMeta(meta).ApplyTo(area);
+                Area = area.ToKey();
             }
+
+            meta = meta.Children.FirstOrDefault(el => el.Name == "mapmeta");
+            if (meta == null)
+                return;
+
+            new MapMetaModeProperties(meta).ApplyTo(area, (AreaMode) (sideAttr[0] - 'a'));
         }
 
     }

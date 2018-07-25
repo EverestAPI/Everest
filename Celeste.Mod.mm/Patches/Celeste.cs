@@ -57,6 +57,11 @@ namespace Celeste {
             try {
                 Everest.Boot();
             } catch (Exception e) {
+                if (e is OutOfMemoryException && CoreModule.Instance?._Settings != null) {
+                    CoreModule.Settings.LazyLoading = true;
+                    CoreModule.Instance.SaveSettings();
+                }
+
                 e.LogDetailed();
                 /*
                 ErrorLog.Write(e);
