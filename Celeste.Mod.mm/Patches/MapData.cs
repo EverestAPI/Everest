@@ -214,7 +214,7 @@ namespace Celeste {
                 Area = area.ToKey();
             }
 
-            meta = meta.Children.FirstOrDefault(el => el.Name == "mapmeta");
+            meta = meta.Children.FirstOrDefault(el => el.Name == "mode");
             if (meta == null)
                 return;
 

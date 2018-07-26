@@ -102,9 +102,9 @@ namespace Celeste.Mod.Meta {
             if (child != null)
                 CassetteModifier = new MapMetaCassetteModifier(child);
 
+            Modes = new MapMetaModeProperties[3];
             child = meta.Children.FirstOrDefault(el => el.Name == "modes");
             if (child != null) {
-                Modes = new MapMetaModeProperties[3];
                 for (int i = 0; i < child.Children.Count; i++) {
                     Modes[i] = new MapMetaModeProperties(child.Children[i]);
                 }
