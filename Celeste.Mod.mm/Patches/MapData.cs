@@ -68,11 +68,11 @@ namespace Celeste {
                 switch (el.Name) {
                     case "levels":
                         ProcessLevels(el);
-                        break;
+                        continue;
 
                     case "meta":
                         ProcessMeta(el);
-                        break;
+                        continue;
                 }
             }
 
