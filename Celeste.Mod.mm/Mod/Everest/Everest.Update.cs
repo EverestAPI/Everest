@@ -400,7 +400,7 @@ namespace Celeste.Mod {
                             installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
                             installer.StartInfo.FileName = "mono";
                             if (File.Exists("/bin/sh")) {
-                                installer.StartInfo.Arguments = $"-c \"{installer.StartInfo.FileName} {installer.StartInfo.Arguments.Replace('\"', '\'')}\"";
+                                installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; {installer.StartInfo.FileName} {installer.StartInfo.Arguments.Replace('\"', '\'')}\"";
                                 installer.StartInfo.FileName = "/bin/sh";
                             }
                         }
