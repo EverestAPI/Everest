@@ -274,7 +274,18 @@ namespace Celeste.Mod.Meta {
 
         public void ApplyTo(AreaData area, AreaMode mode) {
             area.GetMeta().Modes[(int) mode] = this;
-            area.Mode[(int) mode] = Convert();
+            ModeProperties props = area.Mode[(int) mode];
+            if (props != null) {
+                props.AudioState = AudioState?.Convert() ?? props.AudioState;
+                props.Checkpoints = MapMeta.Convert(Checkpoints) ?? props.Checkpoints;
+                props.IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData;
+                props.Inventory = MapMeta.GetInventory(Inventory) ?? props.Inventory;
+                props.Path = Path ?? props.Path;
+                props.PoemID = PoemID ?? props.PoemID;
+            } else {
+                props = Convert();
+            }
+            area.Mode[(int) mode] = props;
         }
     }
     public class MapMetaAudioState {
