@@ -74,7 +74,7 @@ namespace Celeste.Mod.Core {
             Engine.Commands.FunctionKeyActions[4] = () => {
                 // CTRL + F5: Quick-restart the entire game.
                 if (MInput.Keyboard.Check(Keys.LeftControl) ||
-                    MInput.Keyboard.Check(Keys.Right)) {
+                    MInput.Keyboard.Check(Keys.RightControl)) {
                     Scene scene = new Scene();
                     scene.HelperEntity.Add(new Coroutine(QuickFullRestartRoutine()));
                     Engine.Scene = scene;

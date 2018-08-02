@@ -204,12 +204,9 @@ namespace Celeste {
 
         private void ProcessMeta(BinaryPacker.Element meta) {
             AreaData area = AreaData.Get(Area);
-            ModeProperties mode = area.Mode[(int) Area.Mode];
+            AreaMode mode = Area.Mode;
 
-            string sideAttr = meta.Attr("Side", "a").ToLowerInvariant();
-            if (sideAttr.Length == 0)
-                sideAttr = "a";
-            if (sideAttr == "a") {
+            if (mode == AreaMode.Normal) {
                 new MapMeta(meta).ApplyTo(area);
                 Area = area.ToKey();
             }
@@ -218,7 +215,7 @@ namespace Celeste {
             if (meta == null)
                 return;
 
-            new MapMetaModeProperties(meta).ApplyTo(area, (AreaMode) (sideAttr[0] - 'a'));
+            new MapMetaModeProperties(meta).ApplyTo(area, mode);
         }
 
     }

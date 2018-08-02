@@ -151,14 +151,22 @@ namespace Celeste {
                 area.CassetteSong = Sfxs.cas_01_forsaken_city;
 
                 // Custom values can be set via the MapMeta.
-                (asset.GetMeta<MapMeta>() ?? new MapMeta())?.ApplyTo(area);
+                MapMeta meta = asset.GetMeta<MapMeta>() ?? new MapMeta();
+                meta?.ApplyTo(area);
 
                 if (string.IsNullOrEmpty(area.Mode[0].Path))
                     area.Mode[0].Path = asset.PathVirtual.Substring(5);
 
-                // Some of the game's code checks for [1] / [2] explicitly.
-                // Let's just provide null modes to fill any gaps.
-                if (area.Mode.Length < 3) {
+		// Some of the game's code checks for [1] / [2] explicitly.
+		// Let's just provide null modes to fill any gaps.
+                meta.Modes = meta.Modes ?? new MapMetaModeProperties[3];
+                if (meta.Modes.Length < 3) {
+                    MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
+                    for (int i = 0; i < meta.Modes.Length; i++)
+                        larger[i] = meta.Modes[i];
+                    meta.Modes = larger;
+                }
+		if (area.Mode.Length < 3) {
                     ModeProperties[] larger = new ModeProperties[3];
                     for (int i = 0; i < area.Mode.Length; i++)
                         larger[i] = area.Mode[i];

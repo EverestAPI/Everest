@@ -231,19 +231,19 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaAudioState AudioState { get; set; }
         public MapMetaCheckpointData[] Checkpoints { get; set; }
-        public bool IgnoreLevelAudioLayerData { get; set; }
-        public string Inventory { get; set; } = "Default";
+        public bool? IgnoreLevelAudioLayerData { get; set; }
+        public string Inventory { get; set; }
         public string Path { get; set; }
         public string PoemID { get; set; }
 
         public string StartLevel { get; set; }
-        public bool? HeartIsEnd { get; set; } = null;
+        public bool? HeartIsEnd { get; set; }
 
         public ModeProperties Convert()
             => new ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),
                 Checkpoints = MapMeta.Convert(Checkpoints), // Can be null.
-                IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData,
+                IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData ?? false,
                 Inventory = MapMeta.GetInventory(Inventory) ?? PlayerInventory.Default,
                 Path = Path,
                 PoemID = PoemID
@@ -278,7 +278,7 @@ namespace Celeste.Mod.Meta {
             if (props != null) {
                 props.AudioState = AudioState?.Convert() ?? props.AudioState;
                 props.Checkpoints = MapMeta.Convert(Checkpoints) ?? props.Checkpoints;
-                props.IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData;
+                props.IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData ?? props.IgnoreLevelAudioLayerData;
                 props.Inventory = MapMeta.GetInventory(Inventory) ?? props.Inventory;
                 props.Path = Path ?? props.Path;
                 props.PoemID = PoemID ?? props.PoemID;
