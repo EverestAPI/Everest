@@ -267,6 +267,15 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
+        internal static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
+            object obj;
+            if (!el.Attributes.TryGetValue(name, out obj))
+                return defaultValue;
+            if (obj is int)
+                return (int) obj;
+            return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
+        }
+
         internal static bool AttrRef(this BinaryPacker.Element el, string name, ref string value) {
             if (el.HasAttr(name)) {
                 value = el.Attr(name);

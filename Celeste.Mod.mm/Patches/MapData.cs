@@ -165,13 +165,21 @@ namespace Celeste {
                                 switch (entity.Name) {
                                     case "checkpoint":
                                         if (checkpointsAuto != null) {
-                                            checkpointsAuto.Add(new CheckpointData(
+                                            CheckpointData c = new CheckpointData(
                                                 levelName,
                                                 (area.GetSID() + "_" + levelName).DialogKeyify(),
-                                                null,
-                                                area.Dreaming,
+                                                MapMeta.GetInventory(entity.Attr("inventory")),
+                                                entity.Attr("dreaming") == "" ? area.Dreaming : entity.AttrBool("dreaming"),
                                                 null
-                                            ));
+                                            );
+                                            int id = entity.AttrInt("checkpointID", -1);
+                                            if (id == -1) {
+                                                checkpointsAuto.Add(c);
+                                            } else {
+                                                while (checkpointsAuto.Count <= id)
+                                                    checkpointsAuto.Add(null);
+                                                checkpointsAuto[id] = c;
+                                            }
                                         }
                                         checkpoint++;
                                         strawberryInCheckpoint = 0;
@@ -183,9 +191,9 @@ namespace Celeste {
                                         break;
 
                                     case "strawberry":
-                                        if (!entity.HasAttr("checkpointID"))
+                                        if (entity.AttrInt("checkpointID", -1) == -1)
                                             entity.Attributes["checkpointID"] = checkpoint;
-                                        if (!entity.HasAttr("order"))
+                                        if (entity.AttrInt("order", -1) == -1)
                                             entity.Attributes["order"] = strawberryInCheckpoint;
                                         strawberry++;
                                         strawberryInCheckpoint++;
@@ -199,7 +207,7 @@ namespace Celeste {
             }
 
             if (mode.Checkpoints == null)
-                mode.Checkpoints = checkpointsAuto.ToArray();
+                mode.Checkpoints = checkpointsAuto.Where(c => c != null).ToArray();
         }
 
         private void ProcessMeta(BinaryPacker.Element meta) {
