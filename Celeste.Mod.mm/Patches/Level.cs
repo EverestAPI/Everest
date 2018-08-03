@@ -35,6 +35,10 @@ namespace Celeste {
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
+        public override extern void Update();
+
         public extern void orig_RegisterAreaComplete();
         public new void RegisterAreaComplete() {
             bool completed = Completed;
