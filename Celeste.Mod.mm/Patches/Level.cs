@@ -119,8 +119,34 @@ namespace Celeste {
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
-            orig_LoadLevel(playerIntro, isFromLoader);
+            try {
+                orig_LoadLevel(playerIntro, isFromLoader);
+            } catch (Exception e) {
+                Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading level {Session.Area}");
+                e.LogDetailed();
+
+                string message = Dialog.Get("postcard_levelloadfailed");
+                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint"))
+                    message = Dialog.Get("postcard_levelnospawn");
+                message = message
+                    .Replace("((player))", SaveData.Instance.Name)
+                    .Replace("((sid))", Session.Area.GetSID());
+
+                Entity helperEntity = new Entity();
+                helperEntity.Add(new Coroutine(ErrorRoutine(message)));
+                Add(helperEntity);
+                return;
+            }
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
+        }
+
+        private IEnumerator ErrorRoutine(string message) {
+            yield return null;
+
+            Audio.SetMusic(null);
+
+            LevelEnterExt.ErrorMessage = message;
+            LevelEnter.Go(new Session(new AreaKey(1).SetSID("")), false);
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader

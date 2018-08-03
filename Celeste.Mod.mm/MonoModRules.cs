@@ -35,6 +35,12 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelUpdate")]
+    class PatchLevelUpdateAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLevelRender")]
@@ -344,6 +350,48 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ldstr, ""));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchLevelUpdate(MethodDefinition method, CustomAttribute attrib)
+        {
+            if (!method.HasBody)
+                return;
+
+            FieldDefinition f_SubHudRenderer = method.DeclaringType.FindField("SubHudRenderer");
+            if (f_SubHudRenderer == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()
+                ldc.i4.s 9
+                callvirt instance bool Monocle.MInput/KeyboardData::Pressed(valuetype [FNA]Microsoft.Xna.Framework.Input.Keys) // We're here
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 1 &&
+                    instri < instrs.Count - 2 &&
+                    instrs[instri - 2].OpCode == OpCodes.Call && (instrs[instri - 2].Operand as MethodReference)?.GetFindableID() == "Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()" &&
+                    instrs[instri - 1].GetIntOrNull() == 9 &&
+                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean Monocle.MInput/KeyboardData::Pressed(Microsoft.Xna.Framework.Input.Keys)"
+                ) {
+                    // Replace the offending instructions with a ldc.i4.0
+                    instri -= 2;
+
+                    instrs.RemoveAt(instri);
+                    instrs.RemoveAt(instri);
+                    instrs.RemoveAt(instri);
+                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
                     instri++;
                 }
 
