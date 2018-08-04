@@ -51,7 +51,7 @@ namespace Celeste {
             }
 
             // Load any additional banks.
-            foreach (ModAsset asset in Everest.Content.ListBanks)
+            foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank)))
                 IngestBank(asset);
         }
 

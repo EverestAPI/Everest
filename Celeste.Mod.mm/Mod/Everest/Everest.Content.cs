@@ -175,19 +175,6 @@ namespace Celeste.Mod {
             /// Mod content mapping, directories only. Use Everest.Content.Add, Get, and TryGet where applicable instead.
             /// </summary>
             public readonly static Dictionary<string, ModAsset> MapDirs = new Dictionary<string, ModAsset>();
-            /// <summary>
-            /// Mod dialog .txt mapping. Used as one path can map to multiple AssetMetadatas.
-            /// Use Everest.Content.Add, GetDialogs, and TryGetDialogs where applicable instead.
-            /// </summary>
-            public readonly static Dictionary<string, List<ModAsset>> MapDialogs = new Dictionary<string, List<ModAsset>>();
-            /// <summary>
-            /// List of all maps to be loaded by AreaData.Load
-            /// </summary>
-            public readonly static List<ModAsset> ListMaps = new List<ModAsset>();
-            /// <summary>
-            /// List of all banks to be loaded by Audio.Init
-            /// </summary>
-            public readonly static List<ModAsset> ListBanks = new List<ModAsset>();
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
             internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
@@ -269,27 +256,6 @@ namespace Celeste.Mod {
             }
 
             /// <summary>
-            /// Gets the list of all Dialog-related ModAssets mapped to the given relative path.
-            /// </summary>
-            /// <param name="path">The relative asset path.</param>
-            /// <param name="metadata">The resulting mod asset meta list.</param>
-            /// <returns>True if a mapping for the given path is present, false otherwise.</returns>
-            public static bool TryGetDialogs(string path, out List<ModAsset> metadata) {
-                path = path.Replace('\\', '/');
-                return MapDialogs.TryGetValue(path, out metadata);
-            }
-            /// <summary>
-            /// Gets the list of all Dialog-related ModAssets mapped to the given relative path.
-            /// </summary>
-            /// <param name="path">The relative asset path.</param>
-            /// <returns>The resulting mod asset meta list, or null.</returns>
-            public static List<ModAsset> GetDialogs(string path) {
-                List<ModAsset> metadata;
-                TryGetDialogs(path, out metadata);
-                return metadata;
-            }
-
-            /// <summary>
             /// Adds a new mapping for the given relative content path.
             /// </summary>
             /// <param name="path">The relative asset path.</param>
@@ -307,35 +273,9 @@ namespace Celeste.Mod {
                 ModAsset metadataPrev;
                 if (!Map.TryGetValue(path, out metadataPrev))
                     metadataPrev = null;
-
-                // Hardcoded case: Store audio banks in a list of banks to preload.
-                if (metadata.Type == typeof(AssetTypeBank)) {
-                    ListBanks.Add(metadata);
-                }
-                
-                // Hardcoded case: Handle dialog .txts separately.
-                if (metadata.Type == typeof(AssetTypeDialog)) {
-                    // Store multiple AssetMetadatas in a list per path.
-                    List<ModAsset> dialogs;
-                    if (!MapDialogs.TryGetValue(path, out dialogs)) {
-                        dialogs = new List<ModAsset>();
-                        MapDialogs[path] = dialogs;
-                    }
-                    dialogs.Add(metadata);
-                }
-                // Hardcoded case: Handle maps separately.
-                else if (metadata.Type == typeof(AssetTypeMap)) {
-                    // Store all maps in a single shared list.
-                    // Note that we only store the last added item.
-                    int index = ListMaps.FindIndex(other => other.PathVirtual == metadata.PathVirtual);
-                    if (index == -1)
-                        index = ListMaps.Count;
-                    ListMaps.Insert(index, metadata);
-                    // We also store the metadata as usual.
-                    Map[path] = metadata;
-                }
+                               
                 // Hardcoded case: Handle directories separately.
-                else if (metadata.Type == typeof(AssetTypeDirectory))
+                if (metadata.Type == typeof(AssetTypeDirectory))
                     MapDirs[path] = metadata;
                 else
                     Map[path] = metadata;
@@ -447,12 +387,13 @@ namespace Celeste.Mod {
             public static void Recrawl() {
                 Map.Clear();
                 MapDirs.Clear();
-                MapDialogs.Clear();
-                ListMaps.Clear();
-                ListBanks.Clear();
 
-                for (int i = 0; i < Mods.Count; i++)
-                    Crawl(Mods[i]);
+                for (int i = 0; i < Mods.Count; i++) {
+                    ModContent mod = Mods[i];
+                    mod.List.Clear();
+                    mod.Map.Clear();
+                    Crawl(mod);
+                }
             }
 
             /// <summary>

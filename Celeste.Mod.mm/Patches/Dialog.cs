@@ -38,8 +38,13 @@ namespace Celeste {
             if (path.EndsWith(".txt"))
                 path = path.Substring(0, path.Length - 4);
 
-            List<ModAsset> metas;
-            if (!Everest.Content.TryGetDialogs(path, out metas) || metas.Count == 0)
+            IEnumerable<ModAsset> metas = Everest.Content.Mods.Select(mod => {
+                ModAsset asset;
+                if (mod.Map.TryGetValue(path, out asset))
+                    return asset;
+                return null;
+            }).Where(asset => asset != null);
+            if (!metas.Any())
                 return language;
 
             foreach (ModAsset meta in metas) {

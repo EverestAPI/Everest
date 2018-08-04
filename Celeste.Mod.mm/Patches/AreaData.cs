@@ -108,7 +108,7 @@ namespace Celeste {
             // Separate array as we sort it afterwards.
             List<AreaData> modAreas = new List<AreaData>();
 
-            foreach (ModAsset asset in Everest.Content.ListMaps) {
+            foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeMap))) {
                 string path = asset.PathVirtual.Substring(5);
 
                 AreaData area = new AreaData();
