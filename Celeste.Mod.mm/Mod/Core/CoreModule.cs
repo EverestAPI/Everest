@@ -191,22 +191,22 @@ namespace Celeste.Mod.Core {
                 
                 level.Paused = true;
 
-			    TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
+                TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
 
-			    options.OnESC = options.OnCancel = () => {
-				    Audio.Play(Sfxs.ui_main_button_back);
-				    options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
-			    };
+                options.OnESC = options.OnCancel = () => {
+                    Audio.Play(Sfxs.ui_main_button_back);
+                    options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
+                };
 
-			    options.OnPause = () => {
-				    Audio.Play(Sfxs.ui_main_button_back);
-				    options.CloseAndRun(Everest.SaveSettings(), () => {
+                options.OnPause = () => {
+                    Audio.Play(Sfxs.ui_main_button_back);
+                    options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;
                         Engine.FreezeTimer = 0.15f;
                     });
-			    };
+                };
 
-			    level.Add(options);
+                level.Add(options);
             }));
         }
 

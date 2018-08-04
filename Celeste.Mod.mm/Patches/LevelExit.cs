@@ -17,7 +17,7 @@ namespace Celeste {
     class patch_LevelExit : LevelExit {
 
         // We're effectively in LevelExit, but still need to "expose" private fields to our mod.
-		private Session session;
+        private Session session;
         private XmlElement completeXml;
         private Atlas completeAtlas;
         private bool completeLoaded;

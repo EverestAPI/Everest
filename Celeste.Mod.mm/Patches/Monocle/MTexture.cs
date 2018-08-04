@@ -317,61 +317,61 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void Draw(Vector2 position) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, -DrawOffset / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (origin - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, Rectangle clip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
@@ -381,49 +381,49 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (Center - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawCentered(Vector2 position, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (Center - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
@@ -433,49 +433,49 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, Color.White, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, 0f, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
         [MonoModReplace]
         public new void DrawJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;			
+            float scaleFix = ScaleFix;            
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, ClipRect, color, rotation, (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
@@ -485,9 +485,9 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             Rectangle clip = ClipRect;
-			Vector2 offset = -DrawOffset / scaleFix;
+            Vector2 offset = -DrawOffset / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -500,9 +500,9 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -515,9 +515,9 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -530,10 +530,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -546,7 +546,7 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
             Vector2 offset = (origin - DrawOffset) / scaleFix;
@@ -562,10 +562,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -578,10 +578,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -594,10 +594,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -610,10 +610,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutline(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;						
+            float scaleFix = ScaleFix;                        
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (origin - DrawOffset) / scaleFix;
+            Vector2 offset = (origin - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -630,8 +630,8 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position) {
-		    float scaleFix = ScaleFix; Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -644,8 +644,8 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color) {
-		    float scaleFix = ScaleFix; Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -658,10 +658,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -674,10 +674,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -690,10 +690,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -706,10 +706,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -722,10 +722,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -738,10 +738,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (Center - DrawOffset) / scaleFix;
+            Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -758,9 +758,9 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -773,9 +773,9 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -788,10 +788,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -804,10 +804,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -820,10 +820,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, float scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -836,10 +836,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -852,10 +852,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {
@@ -868,10 +868,10 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineJustified(Vector2 position, Vector2 justify, Color color, Vector2 scale, float rotation, SpriteEffects flip) {
-			float scaleFix = ScaleFix;
+            float scaleFix = ScaleFix;
             scale *= scaleFix;
             Rectangle clip = ClipRect;
-			Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
+            Vector2 offset = (new Vector2(Width * justify.X, Height * justify.Y) - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
                     if (x != 0 || y != 0) {

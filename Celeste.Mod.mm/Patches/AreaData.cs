@@ -11,11 +11,47 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 
 namespace Celeste {
     class patch_AreaData : AreaData {
+
+        private static Regex ParseNameRegex = new Regex(@"^(?:(?<order>\d+)(?<side>[ABCHX]?)\-)?(?<name>.+?)(?:\-(?<sideAlt>[ABCHX]?))?$", RegexOptions.Compiled);
+        private static Dictionary<string, Match> ParseNameCache = new Dictionary<string, Match>();
+        private static Dictionary<string, AreaMode> ParseNameModes = new Dictionary<string, AreaMode>() {
+            { "A", AreaMode.Normal },
+            { "B", AreaMode.BSide },
+            { "H", AreaMode.BSide },
+            { "C", AreaMode.CSide },
+            { "X", AreaMode.CSide },
+        };
+        private static void ParseName(string sid, out int? order, out AreaMode side, out string name) {
+            int indexOfSlash = sid.LastIndexOf('\\');
+            if (indexOfSlash != -1)
+                sid = sid.Substring(indexOfSlash);
+            if (sid.EndsWith(".bin"))
+                sid = sid.Substring(0, sid.Length - 4);
+
+            Match match;
+            if (!ParseNameCache.TryGetValue(sid, out match))
+                ParseNameCache[sid] = match = ParseNameRegex.Match(sid);
+
+            int orderTmp;
+            if (int.TryParse(match.Groups["order"].Value, out orderTmp))
+                order = orderTmp;
+            else
+                order = null;
+
+            if (!ParseNameModes.TryGetValue(
+                    match.Groups["side"].Success ? match.Groups["side"].Value :
+                    match.Groups["sideAlt"].Success ? match.Groups["sideAlt"].Value :
+                    "", out side))
+                side = AreaMode.Normal;
+
+            name = match.Groups["name"].Value;
+        }
 
         public string SID;
 
@@ -157,8 +193,8 @@ namespace Celeste {
                 if (string.IsNullOrEmpty(area.Mode[0].Path))
                     area.Mode[0].Path = asset.PathVirtual.Substring(5);
 
-		// Some of the game's code checks for [1] / [2] explicitly.
-		// Let's just provide null modes to fill any gaps.
+                // Some of the game's code checks for [1] / [2] explicitly.
+                // Let's just provide null modes to fill any gaps.
                 meta.Modes = meta.Modes ?? new MapMetaModeProperties[3];
                 if (meta.Modes.Length < 3) {
                     MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
@@ -166,7 +202,7 @@ namespace Celeste {
                         larger[i] = meta.Modes[i];
                     meta.Modes = larger;
                 }
-		if (area.Mode.Length < 3) {
+                if (area.Mode.Length < 3) {
                     ModeProperties[] larger = new ModeProperties[3];
                     for (int i = 0; i < area.Mode.Length; i++)
                         larger[i] = area.Mode[i];
@@ -207,27 +243,27 @@ namespace Celeste {
                     continue;
                 }
 
+                int? order;
+                AreaMode side;
+                string name;
+                ParseName(path, out order, out side, out name);
+
                 // Also check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
                 for (int ii = 0; ii < Areas.Count; ii++) {
                     AreaData other = Areas[ii];
-                    if (!other.HasMode(AreaMode.BSide) && path == (other.Mode[0].Path + "-B")) {
-                        if (other.Mode[1] == null)
-                            other.Mode[1] = new ModeProperties {
+                    int? otherOrder;
+                    AreaMode otherSide;
+                    string otherName;
+                    ParseName(other.Mode[0].Path, out otherOrder, out otherSide, out otherName);
+
+                    if (order == otherOrder && name == otherName && side != otherSide &&
+                        !other.HasMode(side)) {
+                        if (other.Mode[(int) side] == null)
+                            other.Mode[(int) side] = new ModeProperties {
                                 Inventory = PlayerInventory.Default,
                                 AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
                             };
-                        other.Mode[1].Path = path;
-                        Areas.RemoveAt(i);
-                        i--;
-                        break;
-                    }
-                    if (!other.HasMode(AreaMode.CSide) && path == (other.Mode[0].Path + "-C")) {
-                        if (other.Mode[2] == null)
-                            other.Mode[2] = new ModeProperties {
-                                Inventory = PlayerInventory.Default,
-                                AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
-                            };
-                        other.Mode[2].Path = path;
+                        other.Mode[(int) side].Path = path;
                         Areas.RemoveAt(i);
                         i--;
                         break;
@@ -274,7 +310,9 @@ namespace Celeste {
 
         private static int AreaComparison(AreaData a, AreaData b) {
             string aSet = a.GetLevelSet();
+            string aSID = a.GetSID();
             string bSet = b.GetLevelSet();
+            string bSID = b.GetSID();
 
             // Celeste appears before everything else.
             if (aSet == "Celeste" && bSet != "Celeste")
@@ -288,7 +326,25 @@ namespace Celeste {
             if (!string.IsNullOrEmpty(aSet) && string.IsNullOrEmpty(bSet))
                 return -1;
 
-            return string.Compare(a.GetSID(), b.GetSID());
+            // Compare level sets alphabetically.
+            if (aSet != bSet)
+                return string.Compare(aSet, bSet);
+
+            int? aOrder;
+            AreaMode aSide;
+            string aName;
+            ParseName(aSID, out aOrder, out aSide, out aName);
+
+            int? bOrder;
+            AreaMode bSide;
+            string bName;
+            ParseName(bSID, out bOrder, out bSide, out bName);
+
+            if (aOrder != null && bOrder != null)
+                return aOrder.Value - bOrder.Value;
+
+            // Fallback.
+            return string.Compare(aName, bName);
         }
 
     }

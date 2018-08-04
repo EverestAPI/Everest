@@ -311,9 +311,9 @@ namespace MonoMod {
                 /* We expect something similar enough to the following:
                 ldwhatever the entityData into stack
                 ldfld     string Celeste.EntityData::Name // We're here
-				stloc*
-				ldloc*
-				call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
+                stloc*
+                ldloc*
+                call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
 
                 Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
                 */
@@ -413,11 +413,11 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 /* We expect something similar enough to the following:
-                brfalse.s	338 (0441) ldarg.0 
+                brfalse.s    338 (0441) ldarg.0 
                 ldarg.0
-                ldfld	class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
+                ldfld    class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
                 ldarg.0
-                callvirt	instance void Monocle.Renderer::Render(class Monocle.Scene)
+                callvirt    instance void Monocle.Renderer::Render(class Monocle.Scene)
 
                 Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
                 */
@@ -492,16 +492,16 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 /* We expect something similar enough to the following:
-        	    ldarg.0
-                callvirt	instance class Celeste.Level Celeste.LevelLoader::get_Level()
                 ldarg.0
-                callvirt	instance class Celeste.Level Celeste.LevelLoader::get_Level()
-                newobj	instance void Celeste.HudRenderer::.ctor() // We're here
+                callvirt    instance class Celeste.Level Celeste.LevelLoader::get_Level()
+                ldarg.0
+                callvirt    instance class Celeste.Level Celeste.LevelLoader::get_Level()
+                newobj    instance void Celeste.HudRenderer::.ctor() // We're here
                 dup
-                stloc.s	V_9 (9)
-                stfld	class Celeste.HudRenderer Celeste.Level::HudRenderer
-                ldloc.s	V_9 (9)
-                callvirt	instance void Monocle.Scene::Add(class Monocle.Renderer)
+                stloc.s    V_9 (9)
+                stfld    class Celeste.HudRenderer Celeste.Level::HudRenderer
+                ldloc.s    V_9 (9)
+                callvirt    instance void Monocle.Scene::Add(class Monocle.Renderer)
 
                 Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
                 */
@@ -624,7 +624,7 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 // Pre-process the bool on stack before
-                // stfld	bool Celeste.HeartGem/'<CollectRoutine>d__29'::'<completeArea>5__4'
+                // stfld    bool Celeste.HeartGem/'<CollectRoutine>d__29'::'<completeArea>5__4'
                 // No need to check for the full name when the field name itself is compiler-generated.
                 if (instr.OpCode == OpCodes.Stfld && (instr.Operand as FieldReference)?.Name == "<completeArea>5__4"
                 ) {
@@ -681,9 +681,9 @@ namespace MonoMod {
 
 
                 /* We expect something similar enough to the following:
-                ldfld	string Celeste.Session::Level
-                ldstr	"2"
-                call	bool [mscorlib]System.String::op_Equality(string, string) // We're here
+                ldfld    string Celeste.Session::Level
+                ldstr    "2"
+                call    bool [mscorlib]System.String::op_Equality(string, string) // We're here
 
                 Note that MonoMod requires the full type names (System.String instead of string)
                 */
@@ -723,9 +723,9 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 /* We expect something similar enough to the following:
-                ldfld	Celeste.AreaMode Celeste.AreaKey::Mode
+                ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
                 ldc.i4.0
-                cgt.un	// We're here
+                cgt.un    // We're here
 
                 Note that MonoMod requires the full type names (System.String instead of string)
                 */
@@ -748,8 +748,8 @@ namespace MonoMod {
                 // Alternatively:
 
                 /* We expect something similar enough to the following:
-                ldfld	Celeste.AreaMode Celeste.AreaKey::Mode
-                brfalse.s	// We're here
+                ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
+                brfalse.s    // We're here
 
                 Note that MonoMod requires the full type names (System.String instead of string)
                 */
