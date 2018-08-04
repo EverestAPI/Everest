@@ -20,15 +20,15 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_Decal(string texture, Vector2 position, Vector2 scale, int depth);
+        public extern void orig_ctor(string texture, Vector2 position, Vector2 scale, int depth);
         [MonoModConstructor]
-        public void ctor_Decal(string texture, Vector2 position, Vector2 scale, int depth) {
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth) {
             if (string.IsNullOrEmpty(Path.GetExtension(texture))) {
                 // Cruor temporarily broke decal paths in Maple / Ahorn.
                 texture += ".png";
             }
 
-            orig_ctor_Decal(texture, position, scale, depth);
+            orig_ctor(texture, position, scale, depth);
         }
 
     }

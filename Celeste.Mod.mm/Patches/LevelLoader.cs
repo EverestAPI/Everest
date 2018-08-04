@@ -18,12 +18,12 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_LevelLoader(Session session, Vector2? startPosition = default(Vector2?));
+        public extern void orig_ctor(Session session, Vector2? startPosition = default(Vector2?));
         [MonoModConstructor]
-        public void ctor_LevelLoader(Session session, Vector2? startPosition = default(Vector2?)) {
+        public void ctor(Session session, Vector2? startPosition = default(Vector2?)) {
             if (CoreModule.Settings.LazyLoading)
                 VirtualContentExt.UnloadOverworld();
-            orig_ctor_LevelLoader(session, startPosition);
+            orig_ctor(session, startPosition);
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...

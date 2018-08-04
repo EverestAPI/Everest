@@ -38,10 +38,10 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_RotateSpinner(EntityData data, Vector2 offset);
+        public extern void orig_ctor(EntityData data, Vector2 offset);
         [MonoModConstructor]
-        public void ctor_RotateSpinner(EntityData data, Vector2 offset) {
-            orig_ctor_RotateSpinner(data, offset);
+        public void ctor(EntityData data, Vector2 offset) {
+            orig_ctor(data, offset);
 
             startCenter = data.Nodes[0] + offset;
             startPosition = data.Position + offset;

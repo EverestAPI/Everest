@@ -25,10 +25,10 @@ namespace Celeste {
         private bool updateChecked;
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_OuiTitleScreen();
+        public extern void orig_ctor();
         [MonoModConstructor]
-        public void ctor_OuiTitleScreen() {
-            orig_ctor_OuiTitleScreen();
+        public void ctor() {
+            orig_ctor();
 
             version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
             updateTex = GFX.Gui["areas/new"];

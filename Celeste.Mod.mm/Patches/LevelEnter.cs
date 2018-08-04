@@ -60,10 +60,10 @@ namespace Celeste {
             private string artist;
             private string album;
 
-            public extern void orig_ctor_BSideTitle(Session session);
+            public extern void orig_ctor(Session session);
             [MonoModConstructor]
-            public void ctor_BSideTitle(Session session) {
-                orig_ctor_BSideTitle(session);
+            public void ctor(Session session) {
+                orig_ctor(session);
 
                 AreaData area = AreaData.Get(session);
                 if (string.IsNullOrEmpty(artist) || Dialog.Has(area.Name + "_remix_artist"))

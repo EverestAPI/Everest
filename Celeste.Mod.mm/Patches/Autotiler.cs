@@ -21,11 +21,11 @@ namespace Celeste {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_Autotiler(string filename);
+        public extern void orig_ctor(string filename);
         [MonoModConstructor]
-        public void ctor_Autotiler(string filename) {
+        public void ctor(string filename) {
             Filename = filename;
-            orig_ctor_Autotiler(filename);
+            orig_ctor(filename);
             Everest.Content.Process(this, filename);
         }
 

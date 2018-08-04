@@ -23,12 +23,12 @@ namespace Celeste {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_MainMenuSmallButton(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm);
+        public extern void orig_ctor(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm);
         [MonoModConstructor]
-        public void ctor_MainMenuSmallButton(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm) {
+        public void ctor(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm) {
             LabelName = labelName;
             IconName = iconName;
-            orig_ctor_MainMenuSmallButton(labelName, iconName, oui, targetPosition, tweenFrom, onConfirm);
+            orig_ctor(labelName, iconName, oui, targetPosition, tweenFrom, onConfirm);
         }
 
     }

@@ -21,18 +21,18 @@ namespace Monocle {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_SpriteBank(Atlas atlas, XmlDocument xml);
+        public extern void orig_ctor(Atlas atlas, XmlDocument xml);
         [MonoModConstructor]
-        public void ctor_SpriteBank(Atlas atlas, XmlDocument xml) {
-            orig_ctor_SpriteBank(atlas, xml);
+        public void ctor(Atlas atlas, XmlDocument xml) {
+            orig_ctor(atlas, xml);
             Everest.Content.Process(this, XMLPath);
         }
 
-        public extern void orig_ctor_SpriteBank(Atlas atlas, string xmlPath);
+        public extern void orig_ctor(Atlas atlas, string xmlPath);
         [MonoModConstructor]
-        public void ctor_SpriteBank(Atlas atlas, string xmlPath) {
+        public void ctor(Atlas atlas, string xmlPath) {
             XMLPath = xmlPath;
-            orig_ctor_SpriteBank(atlas, xmlPath);
+            orig_ctor(atlas, xmlPath);
         }
 
     }

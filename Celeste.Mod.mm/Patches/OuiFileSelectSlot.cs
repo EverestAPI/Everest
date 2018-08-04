@@ -20,14 +20,14 @@ namespace Celeste {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_OuiFileSelectSlot(int index, OuiFileSelect fileSelect, SaveData data);
+        public extern void orig_ctor(int index, OuiFileSelect fileSelect, SaveData data);
         [MonoModConstructor]
-        public void ctor_OuiFileSelectSlot(int index, OuiFileSelect fileSelect, SaveData data) {
+        public void ctor(int index, OuiFileSelect fileSelect, SaveData data) {
             // Temporarily set the current save data to the file slot's save data.
             // This enables filtering the areas by the save data's current levelset.
             SaveData prev = SaveData.Instance;
             SaveData.Instance = data;
-            orig_ctor_OuiFileSelectSlot(index, fileSelect, data);
+            orig_ctor(index, fileSelect, data);
             SaveData.Instance = prev;
         }
 

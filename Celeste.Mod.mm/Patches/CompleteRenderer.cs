@@ -37,13 +37,13 @@ namespace Celeste {
         // We're hooking the original constructor, but still need to call it somehow...
         [MonoModLinkTo("Celeste.CompleteRenderer", "System.Void .ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action)")]
         [MonoModRemove]
-        public extern void ctor_CompleteRenderer(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null);
+        public extern void ctor(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null);
 
         // Just adding another true constructor and calling : this(...) would result in a recursive self-invocation.
         [MonoModConstructor]
-        public void ctor_CompleteRenderer(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null, MapMetaCompleteScreen meta = null) {
+        public void ctor(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null, MapMetaCompleteScreen meta = null) {
             // Translates to : this(xml, atlas, delay, onDoneSlide)
-            ctor_CompleteRenderer(xml, atlas, delay, onDoneSlide);
+            ctor(xml, atlas, delay, onDoneSlide);
 
             this.meta = meta;
 

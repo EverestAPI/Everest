@@ -25,10 +25,10 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_CassetteBlock(Vector2 position, float width, float height, int index);
+        public extern void orig_ctor(Vector2 position, float width, float height, int index);
         [MonoModConstructor]
-        public void ctor_CassetteBlock(Vector2 position, float width, float height, int index) {
-            orig_ctor_CassetteBlock(position, width, height, index);
+        public void ctor(Vector2 position, float width, float height, int index) {
+            orig_ctor(position, width, height, index);
 
             // Original index == 2 color is too similar to index == 1
             if (index == 2)

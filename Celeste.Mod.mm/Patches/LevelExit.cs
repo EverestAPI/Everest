@@ -29,10 +29,10 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor_LevelExit(Mode mode, Session session, HiresSnow snow = null);
+        public extern void orig_ctor(Mode mode, Session session, HiresSnow snow = null);
         [MonoModConstructor]
-        public void ctor_LevelExit(Mode mode, Session session, HiresSnow snow = null) {
-            orig_ctor_LevelExit(mode, session, snow);
+        public void ctor(Mode mode, Session session, HiresSnow snow = null) {
+            orig_ctor(mode, session, snow);
             Everest.Events.Level.Exit(Engine.Scene as Level, this, mode, session, snow);
         }
 

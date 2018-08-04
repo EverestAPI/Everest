@@ -168,11 +168,11 @@ namespace Monocle {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor_MTexture(MTexture parent, int x, int y, int width, int height);
+        public extern void orig_ctor(MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]
-        public void ctor_MTexture(MTexture parent, int x, int y, int width, int height) {
+        public void ctor(MTexture parent, int x, int y, int width, int height) {
             ScaleSubtextureCoords(parent, ref x, ref y, ref width, ref height);
-            orig_ctor_MTexture(parent, x, y, width, height);
+            orig_ctor(parent, x, y, width, height);
             Parent = parent;
             HasRelativeRect = true;
             RelativeRectX = x;
@@ -181,10 +181,10 @@ namespace Monocle {
             RelativeRectHeight = height;
         }
 
-        public extern void orig_ctor_MTexture(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height);
+        public extern void orig_ctor(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height);
         [MonoModConstructor]
-        public void ctor_MTexture(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height) {
-            orig_ctor_MTexture(parent, atlasPath, clipRect, drawOffset, width, height);
+        public void ctor(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height) {
+            orig_ctor(parent, atlasPath, clipRect, drawOffset, width, height);
             Parent = parent;
             HasRelativeRect = true;
             RelativeRectX = clipRect.X;
