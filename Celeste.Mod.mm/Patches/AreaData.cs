@@ -38,19 +38,30 @@ namespace Celeste {
             if (!ParseNameCache.TryGetValue(sid, out match))
                 ParseNameCache[sid] = match = ParseNameRegex.Match(sid);
 
+            string rawOrder = match.Groups["order"].Value;
+            string rawSide = match.Groups["side"].Value;
+            if (string.IsNullOrEmpty(rawSide))
+                rawSide = match.Groups["sideAlt"].Value;
+            string rawName = match.Groups["name"].Value;
+
+            // Special case: 1-B, where 1 is order but should be name, and B is name but should be side
+            if (!string.IsNullOrEmpty(rawOrder) && !string.IsNullOrEmpty(rawName) &&
+                string.IsNullOrEmpty(rawSide) && ParseNameModes.ContainsKey(rawName)) {
+                rawSide = rawName;
+                rawName = rawOrder;
+                rawOrder = null;
+            }
+
             int orderTmp;
-            if (int.TryParse(match.Groups["order"].Value, out orderTmp))
+            if (int.TryParse(rawOrder, out orderTmp))
                 order = orderTmp;
             else
                 order = null;
 
-            if (!ParseNameModes.TryGetValue(
-                    match.Groups["side"].Success ? match.Groups["side"].Value :
-                    match.Groups["sideAlt"].Success ? match.Groups["sideAlt"].Value :
-                    "", out side))
+            if (!ParseNameModes.TryGetValue(rawSide, out side))
                 side = AreaMode.Normal;
 
-            name = match.Groups["name"].Value;
+            name = rawName;
         }
 
         public string SID;
