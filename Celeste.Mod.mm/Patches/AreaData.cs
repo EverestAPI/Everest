@@ -242,6 +242,9 @@ namespace Celeste {
                 }
             }
 
+            // Sort areas.
+            Areas.Sort(AreaComparison);
+
             // Remove AreaDatas which are now a mode of another AreaData.
             // This can happen late as the map data (.bin) can contain additional metadata.
             for (int i = 0; i < Areas.Count; i++) {
@@ -281,9 +284,6 @@ namespace Celeste {
                     }
                 }
             }
-
-            // Sort areas.
-            Areas.Sort(AreaComparison);
 
             // Update old MapData areas and load any new areas.
             for (int i = 0; i < Areas.Count; i++) {
