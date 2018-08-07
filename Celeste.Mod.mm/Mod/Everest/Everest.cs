@@ -79,6 +79,8 @@ namespace Celeste.Mod {
         /// </summary>
         public static string PathSettings { get; internal set; }
 
+        private static bool _SavingSettings;
+
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
             if (versionSplitIndex == -1) {
@@ -241,6 +243,15 @@ namespace Celeste.Mod {
         /// </summary>
         /// <returns>The routine enumerator.</returns>
         public static IEnumerator SaveSettings() {
+            if (_SavingSettings)
+                return _SaveNoSettings();
+            _SavingSettings = true;
+            // This is needed because the entity holding the routine could be removed,
+            // leaving this in a "hanging" state.
+            return new SafeRoutine(_SaveSettings());
+        }
+
+        private static IEnumerator _SaveSettings() {
             bool saving = true;
             RunThread.Start(() => {
                 Invoke("SaveSettings");
@@ -252,6 +263,12 @@ namespace Celeste.Mod {
                 yield return null;
             yield return UserIO.SaveHandler(false, true);
             SaveLoadIcon.Hide();
+
+            _SavingSettings = false;
+        }
+
+        private static IEnumerator _SaveNoSettings() {
+            yield break;
         }
 
         // A shared object a day keeps the GC away!
