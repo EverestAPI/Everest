@@ -46,13 +46,16 @@ namespace Celeste {
                 bool contained = Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu);
                 if (!Paused) {
                     if (contained) {
-                        // Remove the paused text menu if not paused anymore, just to be safe.
+                        // Remove the paused text menu if not paused anymore.
+                        // This fixes the core of the "menu storage" glitch.
                         PauseMainMenuOpen = false;
                         PauseMenu.RemoveSelf();
                     }
+                    // Make sure that there's no leftover reference.
                     PauseMenu = null;
                 } else if (Paused && !contained) {
                     // Make sure that there's no leftover reference.
+                    // This is required as submenus remove the PauseMenu and use the Pause method.
                     PauseMenu = null;
                 }
             }
@@ -69,6 +72,7 @@ namespace Celeste {
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
+            // Don't show the pause menu twice.
             if (PauseMenu != null && (Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu)))
                 return;
 

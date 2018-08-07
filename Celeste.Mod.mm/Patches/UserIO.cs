@@ -18,6 +18,9 @@ using System.Xml.Serialization;
 namespace Celeste {
     static class patch_UserIO {
 
+        [MonoModIgnore]
+        public static bool Saving { get; private set; }
+
         private static extern string orig_GetSavePath(string dir);
         private static string GetSavePath(string dir) {
             string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
@@ -33,9 +36,13 @@ namespace Celeste {
 
         public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
         public static IEnumerator SaveHandler(bool file, bool settings) {
-            if (UserIO.Saving)
+            if (Saving)
                 return SaveNonHandler();
-            return orig_SaveHandler(file, settings);
+            Saving = true; // Originally set in the coroutine, which is too late in case it gets added twice.
+            // Wrap the original SaveHandler in a SafeRoutine helper.
+            // This is needed because the entity holding the routine could be removed,
+            // leaving this in a "hanging" state.
+            return new SafeRoutine(orig_SaveHandler(file, settings));
         }
 
         private static IEnumerator SaveNonHandler() {
