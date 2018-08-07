@@ -88,7 +88,7 @@ namespace Celeste {
                     icon.AssistModeUnlockable = true;
                 }
 
-                // yield return 0.01f; // Originally returns 0.01f
+                yield return 0.01f;
             }
 
             if (from is OuiChapterPanel)
@@ -106,7 +106,7 @@ namespace Celeste {
                 if (selected != icon) {
                     icon.Hide();
                 }
-                // yield return 0.01f; // Originally returns 0.01f
+                yield return 0.01f;
             }
 
             Visible = false;

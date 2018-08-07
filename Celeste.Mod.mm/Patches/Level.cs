@@ -21,6 +21,8 @@ namespace Celeste {
 
         public SubHudRenderer SubHudRenderer;
 
+        public TextMenu PauseMenu;
+
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
             get {
@@ -35,9 +37,17 @@ namespace Celeste {
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
-        public override extern void Update();
+        public extern void orig_Update();
+        [PatchLevelUpdate]
+        public override void Update() {
+            orig_Update();
+
+            if (!Paused) {
+                // Remove the paused text menu if not paused anymore, just to be safe.
+                if (PauseMenu != null)
+                    Remove(PauseMenu);
+            }
+        }
 
         public extern void orig_RegisterAreaComplete();
         public new void RegisterAreaComplete() {
@@ -54,6 +64,7 @@ namespace Celeste {
 
             if (!quickReset) {
                 TextMenu menu = Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) as TextMenu;
+                PauseMenu = menu;
                 if (menu != null)
                     Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
             }
