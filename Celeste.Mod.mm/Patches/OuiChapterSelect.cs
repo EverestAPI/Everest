@@ -71,6 +71,7 @@ namespace Celeste {
             if (from is OuiChapterPanel)
                 (unselected = icons[area]).Unselect();
 
+            bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
                 AreaData area = AreaData.Areas[icon.Area];
                 if (area.GetLevelSet() != currentLevelSet)
@@ -88,7 +89,8 @@ namespace Celeste {
                     icon.AssistModeUnlockable = true;
                 }
 
-                // yield return 0.01f;
+                if (isVanilla)
+                    yield return 0.01f;
             }
 
             if (from is OuiChapterPanel)
@@ -102,11 +104,17 @@ namespace Celeste {
                 (selected = icons[area]).Select();
             }
 
+            bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
-                if (selected != icon) {
+                AreaData area = AreaData.Areas[icon.Area];
+                if (area.GetLevelSet() != currentLevelSet)
+                    continue;
+
+                if (selected != icon)
                     icon.Hide();
-                }
-                // yield return 0.01f;
+
+                if (isVanilla)
+                    yield return 0.01f;
             }
 
             Visible = false;

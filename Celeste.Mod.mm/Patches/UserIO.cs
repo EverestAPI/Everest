@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,17 @@ namespace Celeste {
             } catch (NotSupportedException) {
                 return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dir);
             }
+        }
+
+        public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
+        public static IEnumerator SaveHandler(bool file, bool settings) {
+            if (UserIO.Saving)
+                return SaveNonHandler();
+            return orig_SaveHandler(file, settings);
+        }
+
+        private static IEnumerator SaveNonHandler() {
+            yield break;
         }
 
         /*

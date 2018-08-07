@@ -42,13 +42,19 @@ namespace Celeste {
         public override void Update() {
             orig_Update();
 
-            if (!Paused) {
-                // Remove the paused text menu if not paused anymore, just to be safe.
-                if (PauseMenu != null && Entities.Contains(PauseMenu)) {
-                    PauseMainMenuOpen = false;
-                    PauseMenu.RemoveSelf();
+            if (PauseMenu != null) {
+                bool contained = Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu);
+                if (!Paused) {
+                    if (contained) {
+                        // Remove the paused text menu if not paused anymore, just to be safe.
+                        PauseMainMenuOpen = false;
+                        PauseMenu.RemoveSelf();
+                    }
+                    PauseMenu = null;
+                } else if (Paused && !contained) {
+                    // Make sure that there's no leftover reference.
+                    PauseMenu = null;
                 }
-                PauseMenu = null;
             }
         }
 
@@ -63,7 +69,7 @@ namespace Celeste {
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
-            if (PauseMenu != null && Entities.Contains(PauseMenu))
+            if (PauseMenu != null && (Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu)))
                 return;
 
             orig_Pause(startIndex, minimal, quickReset);
