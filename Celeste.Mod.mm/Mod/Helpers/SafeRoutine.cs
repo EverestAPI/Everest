@@ -8,6 +8,10 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /**
+     * Wrapper for IEnumerators which perform mission-critical operations and thus
+     * should continue running in the background, even when the entity has been removed.
+     */
     public class SafeRoutine : IEnumerator {
 
         private IEnumerator Inner;
@@ -31,11 +35,20 @@ namespace Celeste.Mod {
                 CoroutineEntity.Add(Coroutine = new Coroutine(Inner, true));
                 Engine.Scene.Add(CoroutineEntity);
             }
-            return !Coroutine.Finished;
+
+            bool finished = Coroutine.Finished;
+            if (finished) {
+                CoroutineEntity.RemoveSelf();
+                CoroutineEntity = null;
+            }
+            return !finished;
         }
 
         public void Reset() {
             Inner.Reset();
+            CoroutineEntity?.RemoveSelf();
+            Coroutine = null;
+            CoroutineEntity = null;
         }
 
     }
