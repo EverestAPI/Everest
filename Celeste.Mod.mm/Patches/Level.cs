@@ -47,8 +47,8 @@ namespace Celeste {
                 if (PauseMenu != null && Entities.Contains(PauseMenu)) {
                     PauseMainMenuOpen = false;
                     PauseMenu.RemoveSelf();
-                    PauseMenu = null;
                 }
+                PauseMenu = null;
             }
         }
 
