@@ -46,7 +46,7 @@ namespace Celeste {
                 // Remove the paused text menu if not paused anymore, just to be safe.
                 if (PauseMenu != null && Entities.Contains(PauseMenu)) {
                     PauseMainMenuOpen = false;
-                    PauseMenu.Remove();
+                    PauseMenu.RemoveSelf();
                     PauseMenu = null;
                 }
             }
