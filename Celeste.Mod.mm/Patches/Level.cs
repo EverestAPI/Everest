@@ -63,6 +63,9 @@ namespace Celeste {
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
+            if (PauseMenu != null && Entities.Contains(PauseMenu))
+                return;
+
             orig_Pause(startIndex, minimal, quickReset);
 
             if (!quickReset) {
