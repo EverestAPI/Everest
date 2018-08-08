@@ -97,7 +97,7 @@ namespace Celeste {
                         }
 
                         string[] splitByEqual = line.Split('=');
-                        string name = splitByEqual[0];
+                        string name = splitByEqual[0].Trim();
                         string value = (splitByEqual.Length > 1) ? splitByEqual[1].Trim() : "";
 
                         if (name.Equals("language", StringComparison.OrdinalIgnoreCase)) {
