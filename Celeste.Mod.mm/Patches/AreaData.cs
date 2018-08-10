@@ -351,10 +351,13 @@ namespace Celeste {
             string bName;
             ParseName(bSID, out bOrder, out bSide, out bName);
 
-            if (aOrder != null && bOrder != null)
+            if (aOrder != null && bOrder != null &&
+                aOrder.Value != bOrder.Value)
                 return aOrder.Value - bOrder.Value;
 
-            // Fallback.
+            if (aSide != bSide)
+                return aSide - bSide;
+
             return string.Compare(aName, bName);
         }
 
