@@ -203,6 +203,9 @@ namespace MonoMod {
             MethodDefinition userio_load = userio.FindMethod("Load");
             MonoModRule.Flag.Set("V1:UserIOLoad", userio_load.Parameters.Count == 1);
             MonoModRule.Flag.Set("V2:UserIOLoad", userio_load.Parameters.Count == 2);
+            MethodDefinition userio_saveroutine = userio.FindMethod("SaveRoutine");
+            MonoModRule.Flag.Set("V1:UserIOSave", userio_saveroutine == null);
+            MonoModRule.Flag.Set("V2:UserIOSave", userio_saveroutine != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

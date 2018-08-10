@@ -44,13 +44,12 @@ namespace Celeste {
 
         // The new SaveRoutine doesn't need to be patched.
         [MonoModIgnore]
-	[MonoModPublic]
-        public static extern IEnumerator SaveRoutine(bool file, bool settings);
+        private static extern IEnumerator SaveRoutine(bool file, bool settings);
 
         // V2 is present, provide V1 for old mods.
-        [MonoModIfFlag("V2:UserIOLoad")]
+        [MonoModIfFlag("V2:UserIOSave")]
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]
-        public static IEnumerator SaveHandlerForOldMods(bool file, bool settings) {
+        public static IEnumerator SaveHandlerLegacy(bool file, bool settings) {
             if (Saving)
                 return SaveNonHandler();
             Saving = true;
@@ -60,7 +59,7 @@ namespace Celeste {
 
         // V1 is present, relink from V2 for new mods and fix V1.
         public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
-        [MonoModIfFlag("V1:UserIOLoad")]
+        [MonoModIfFlag("V1:UserIOSave")]
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveRoutine(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandler(bool file, bool settings) {
             if (Saving)
@@ -70,6 +69,16 @@ namespace Celeste {
             // This is needed because the entity holding the routine could be removed,
             // leaving this in a "hanging" state.
             return new SafeRoutine(orig_SaveHandler(file, settings));
+        }
+        [MonoModIfFlag("V1:UserIOSave")]
+        [MonoModPatch("SaveHandler")]
+        public static void SaveHandlerShim(bool file, bool settings) {
+            if (Saving)
+                return;
+            Saving = true;
+            SafeRoutine wrap = new SafeRoutine(orig_SaveHandler(file, settings));
+            wrap.MoveNext();
+            wrap.CoroutineEntity.Add(new Coroutine(wrap));
         }
 
         private static IEnumerator SaveNonHandler() {

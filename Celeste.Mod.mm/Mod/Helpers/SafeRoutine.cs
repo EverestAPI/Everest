@@ -14,9 +14,9 @@ namespace Celeste.Mod {
      */
     public class SafeRoutine : IEnumerator {
 
-        private IEnumerator Inner;
-        private Entity CoroutineEntity;
-        private Coroutine Coroutine;
+        public IEnumerator Inner;
+        public Entity CoroutineEntity;
+        public Coroutine Coroutine;
 
         public object Current {
             get {
