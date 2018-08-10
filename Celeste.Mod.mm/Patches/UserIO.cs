@@ -44,7 +44,8 @@ namespace Celeste {
 
         // The new SaveRoutine doesn't need to be patched.
         [MonoModIgnore]
-        private static extern IEnumerator SaveRoutine(bool file, bool settings);
+	[MonoModPublic]
+        public static extern IEnumerator SaveRoutine(bool file, bool settings);
 
         // V2 is present, provide V1 for old mods.
         [MonoModIfFlag("V2:UserIOLoad")]
