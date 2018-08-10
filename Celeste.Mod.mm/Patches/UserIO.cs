@@ -34,7 +34,33 @@ namespace Celeste {
             }
         }
 
+        /*
+        // V1:
+        public static IEnumerator SaveHandler(bool file, bool settings)
+        // V2:
+        public static void SaveHandler(bool file, bool settings)
+        public static IEnumerator SaveRoutine(bool file, bool settings)
+        */
+
+        // The new SaveRoutine doesn't need to be patched.
+        [MonoModIgnore]
+        private static extern IEnumerator SaveRoutine(bool file, bool settings);
+
+        // V2 is present, provide V1 for old mods.
+        [MonoModIfFlag("V2:UserIOLoad")]
+        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]
+        public static IEnumerator SaveHandlerForOldMods(bool file, bool settings) {
+            if (Saving)
+                return SaveNonHandler();
+            Saving = true;
+            // Note how we're calling SaveRoutine, not orig_SaveHandler.
+            return new SafeRoutine(SaveRoutine(file, settings));
+        }
+
+        // V1 is present, relink from V2 for new mods and fix V1.
         public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
+        [MonoModIfFlag("V1:UserIOLoad")]
+        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveRoutine(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandler(bool file, bool settings) {
             if (Saving)
                 return SaveNonHandler();

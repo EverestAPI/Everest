@@ -46,7 +46,7 @@ namespace Celeste {
             startCenter = data.Nodes[0] + offset;
             startPosition = data.Position + offset;
 
-            // Celeste originally runs the following line in the constructor:
+            // Celeste before 1.2.4.0 originally runs the following line in the constructor:
             // rotationPercent = EaserInverse(Calc.Percent(angle, 4.712389f, -1.57079637f));
             // Unfortunately, that is wrong... but we need to preserve the original value.
             float angle = Calc.Angle(startCenter, startPosition);
@@ -55,15 +55,16 @@ namespace Celeste {
             // We thus need to feed it back in.
             rotationPercent = EaserInverse(Calc.Percent(angle, 4.712389f, -1.57079637f + 4.712389f));
             Position = center + Calc.AngleToVector(Angle, length);
+
+            // Note: Celeste 1.2.4.0 changes it to EaserInverse(Calc.Percent(num, -1.57079637f, 4.712389f))
+            // While correct with the original calculations, the mod fix is still preserved
+            // to maintain full compatibility with all older mod maps.
         }
 
-        // public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
-            // orig_Awake(scene);
             base.Awake(scene);
 
-            MapMeta meta = AreaData.Get((Scene as Level).Session).GetMeta();
-            fixAngle = meta?.FixRotateSpinnerAngle ?? false;
+            fixAngle = (Scene as Level).Session.Area.GetLevelSet() != "Celeste";
 
             if (fixAngle) {
                 float angle = Calc.Angle(startCenter, startPosition);
