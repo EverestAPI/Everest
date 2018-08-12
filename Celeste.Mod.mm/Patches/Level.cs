@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.UI;
 using FMOD.Studio;
@@ -21,8 +22,6 @@ namespace Celeste {
 
         public SubHudRenderer SubHudRenderer;
 
-        public TextMenu PauseMenu;
-
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
             get {
@@ -37,29 +36,8 @@ namespace Celeste {
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
 
-        public extern void orig_Update();
         [PatchLevelUpdate]
-        public override void Update() {
-            orig_Update();
-
-            if (PauseMenu != null) {
-                bool contained = Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu);
-                if (!Paused) {
-                    if (contained) {
-                        // Remove the paused text menu if not paused anymore.
-                        // This fixes the core of the "menu storage" glitch.
-                        PauseMainMenuOpen = false;
-                        PauseMenu.RemoveSelf();
-                    }
-                    // Make sure that there's no leftover reference.
-                    PauseMenu = null;
-                } else if (Paused && !contained) {
-                    // Make sure that there's no leftover reference.
-                    // This is required as submenus remove the PauseMenu and use the Pause method.
-                    PauseMenu = null;
-                }
-            }
-        }
+        public extern void Update();
 
         public extern void orig_RegisterAreaComplete();
         public new void RegisterAreaComplete() {
@@ -72,15 +50,10 @@ namespace Celeste {
 
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
-            // Don't show the pause menu twice.
-            if (PauseMenu != null && (Entities.Contains(PauseMenu) || Entities.GetToAdd().Contains(PauseMenu)))
-                return;
-
             orig_Pause(startIndex, minimal, quickReset);
 
             if (!quickReset) {
                 TextMenu menu = Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) as TextMenu;
-                PauseMenu = menu;
                 if (menu != null)
                     Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
             }
