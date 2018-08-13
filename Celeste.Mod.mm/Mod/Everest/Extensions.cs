@@ -127,7 +127,7 @@ namespace Celeste.Mod {
         /// <param name="input">The input string.</param>
         /// <returns>The Dialog-compatible key.</returns>
         public static string DialogKeyify(this string input)
-            => input.Replace('/', '_').Replace('-', '_').Replace('+', '_');
+            => input.Replace('/', '_').Replace('-', '_').Replace('+', '_').Replace(' ', '_');
 
         /// <summary>
         /// Get the dialog string for the given input key.
