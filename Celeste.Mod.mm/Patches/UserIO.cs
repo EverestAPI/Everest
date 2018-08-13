@@ -61,6 +61,7 @@ namespace Celeste {
         public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
         [MonoModIfFlag("V1:UserIOSave")]
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveRoutine(System.Boolean,System.Boolean)")]
+        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandlerLegacy(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandler(bool file, bool settings) {
             if (Saving)
                 return SaveNonHandler();
