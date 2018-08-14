@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -21,6 +22,10 @@ namespace Celeste {
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
+
+        private static int modBankHandleLast = 0x0ade;
+        private static Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
+        private static Dictionary<IntPtr, Stream> modBankStreams = new Dictionary<IntPtr, Stream>();
 
         [MonoModIgnore]
         internal static extern void CheckFmod(RESULT result);
@@ -62,8 +67,21 @@ namespace Celeste {
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))
                 return bank;
 
-            // TODO: Use loadBankCustom with BANK_INFO reading from stream.
-            system.loadBankMemory(asset.Data, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
+            IntPtr handle;
+            modBankAssets[handle = (IntPtr) (++modBankHandleLast)] = asset;
+            BANK_INFO info = new BANK_INFO() {
+                size = patch_Banks.SizeOfBankInfo,
+
+                userdata = handle,
+                userdatalength = 0,
+
+                opencallback = ModBankOpen,
+                closecallback = ModBankClose,
+                readcallback = ModBankRead,
+                seekcallback = ModBankSeek
+            };
+
+            system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
 
             ModAsset assetGUIDs;
             if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out assetGUIDs)) {
@@ -128,6 +146,8 @@ namespace Celeste {
             public static Dictionary<string, Bank> Banks = new Dictionary<string, Bank>();
             public static Dictionary<ModAsset, Bank> ModCache = new Dictionary<ModAsset, Bank>();
 
+            public readonly static int SizeOfBankInfo = Marshal.SizeOf(typeof(BANK_INFO));
+
             [MonoModReplace]
             public static Bank Load(string name, bool loadStrings) {
                 if (Banks == null)
@@ -164,6 +184,35 @@ namespace Celeste {
             }
 
         }
+
+        private readonly static FILE_OPENCALLBACK ModBankOpen = (StringWrapper name, ref uint filesize, ref IntPtr handle, IntPtr userdata) => {
+            Stream stream = modBankAssets[userdata].Stream;
+            filesize = (uint) stream.Length;
+            modBankStreams[handle = (IntPtr) (++modBankHandleLast)] = stream;
+            return RESULT.OK;
+        };
+
+        private readonly static FILE_CLOSECALLBACK ModBankClose = (IntPtr handle, IntPtr userdata) => {
+            modBankStreams[handle].Dispose();
+            modBankStreams[handle] = null;
+            return RESULT.OK;
+        };
+
+        private readonly static FILE_READCALLBACK ModBankRead = (IntPtr handle, IntPtr buffer, uint sizebytes, ref uint bytesread, IntPtr userdata) => {
+            Stream stream = modBankStreams[handle];
+            byte[] tmp = new byte[Math.Min(4096, sizebytes)];
+            int read;
+            while ((read = stream.Read(tmp, 0, Math.Min(tmp.Length, (int) (sizebytes - bytesread)))) > 0) {
+                Marshal.Copy(tmp, 0, (IntPtr) ((long) buffer + bytesread), read);
+                bytesread += (uint) read;
+            }
+            return RESULT.OK;
+        };
+
+        private readonly static FILE_SEEKCALLBACK ModBankSeek = (IntPtr handle, uint pos, IntPtr userdata) => {
+            modBankStreams[handle].Seek(pos, SeekOrigin.Begin);
+            return RESULT.OK;
+        };
 
     }
     public static class AudioExt {
