@@ -1,0 +1,69 @@
+﻿# Check English.txt for up-to-date notes.
+
+# Helper Postcards
+	POSTCARD_LEVELGONE= 		{big}Merci ((player))!{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.
+	POSTCARD_LEVELLOADFAILED= 	{big}Désolé!{/big}{n}Mais {#ff1144}((sid)){#}{n}n'a pas pu être chargé.{n}Envoyer votre {#44adf7}log.txt{#}{n}dans le créateur de maps.
+	POSTCARD_LEVELNOSPAWN= 		{big}Oops!{/big}{n}Quelqu'un à mal déplacé{n}votre {#44adf7}point de départ!{#}{n}Vérifiez si votre map{n}contient un {#44adf7}joueur.
+
+# Main Menu
+	MENU_TITLETOUCH= 		TOUCH
+	MENU_MAPLIST= 			Liste de maps
+	MENU_MODOPTIONS= 		Options des mods
+	MENU_PAUSE_MODOPTIONS= 	Options des mods
+
+# Mod Options
+	MODOPTIONS_TITLE= 										EVEREST
+
+# Core Module Options
+	MODOPTIONS_COREMODULE_UPDATE= 							Mise à jour ((version))
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						~Liste des versions~
+	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
+	MODOPTIONS_COREMODULE_LAUNCHINDEBUGMODE= 				Relancer en mode debug
+	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Relancer w/ FMOD Live Update
+	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				Relancer sans intro
+	MODOPTIONS_COREMODULE_INPUTGUI= 						Image d'inputs
+	MODOPTIONS_COREMODULE_INPUTGUI_= 						AUTO
+	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				CLAVIER
+	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						SWITCH
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			SWITCH L
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			SWITCH R
+	MODOPTIONS_COREMODULE_INPUTGUI_PS4= 					PS4
+	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBONE
+	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					TOUCH
+	MODOPTIONS_COREMODULE_LAZYLOADING=						Démarage lent
+	MODOPTIONS_COREMODULE_LQATLAS=							Préférer LQ atlases
+	MODOPTIONS_COREMODULE_NONTHREADEDGL=					GL non-traité
+	
+	MODOPTIONS_COREMODULE_RECRAWL= 							~Recharger aspects~
+
+	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
+
+# Sound Test
+	SOUNDTEST_TITLE=	TEST SONS
+
+# Maplist
+	MAPLIST_TITLE= 			LISTE DE MAPS
+	MAPLIST_FILTERS= 		Filtrer
+	MAPLIST_TYPE= 			De
+	MAPLIST_TYPE_ALLMODS= 	Tous les mods
+	MAPLIST_SIDE= 			Face
+	MAPLIST_RELOAD= 		Recharger
+	MAPLIST_LIST= 			Maps
+	MAPLIST_UNCATEGORIZED= 	Non-catégorisé
+
+	LEVELSET_CELESTE= 		Celeste
+	LEVELSET_= 				Non-catégorisé
+
+# Updater
+	UPDATER_TITLE= 					MISE À JOUR
+	UPDATER_VERSIONS_TITLE= 		LISTE DES VERSION
+	UPDATER_VERSIONS_CURRENT= 		Installer: ((version))
+	UPDATER_VERSIONS_REQUESTING= 	Rafraichir...
+	
+	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Erreur de chargement de la liste des version.
+	UPDATER_VERSIONS_ERR_FORMAT= 	Format inconnu.
+	
+	UPDATER_SRC_TRAVIS= 			Construction automatique
+
+# Misc
+	UI_GIVEUP_HINT=			Votre progression est sauvegardée, mais vous devez recommencer depuis le dernier :checkpoint:
