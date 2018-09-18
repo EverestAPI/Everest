@@ -1,4 +1,4 @@
-{ fetchNuGet, buildDotnetPackage, dotnetPackages }:
+{ fetchNuGet, buildDotnetPackage }:
 
 let
   HookedMethod = fetchNuGet {
@@ -46,9 +46,8 @@ in buildDotnetPackage rec {
     ln -sn ${ValueTuple}/lib/dotnet/System.ValueTuple packages/System.ValueTuple.${ValueTuple.version}
   '';
 
-#  Is this still necessary?
-#  postInstall = ''
-#    mkdir -pv "$out/lib/dotnet/${baseName}"
-#    sed -i '2i cd $1' $out/bin/miniinstaller
-#  '';
+  postInstall = ''
+    mkdir -pv "$out/lib/dotnet/${baseName}"
+    sed -i '2i cd $1' $out/bin/miniinstaller
+  '';
 }
