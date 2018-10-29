@@ -199,14 +199,13 @@ namespace Celeste {
         };
 
         private readonly static FILE_READCALLBACK ModBankRead = (IntPtr handle, IntPtr buffer, uint sizebytes, ref uint bytesread, IntPtr userdata) => {
-            Stream stream = modBankStreams[handle];
-            byte[] tmp = new byte[Math.Min(4096, sizebytes)];
-            int read;
-            while ((read = stream.Read(tmp, 0, Math.Min(tmp.Length, (int) (sizebytes - bytesread)))) > 0) {
-                Marshal.Copy(tmp, 0, (IntPtr) ((long) buffer + bytesread), read);
-                bytesread += (uint) read;
+            unsafe {
+                Stream stream = modBankStreams[handle];
+                using (UnmanagedMemoryStream target = new UnmanagedMemoryStream((byte*) buffer, 0, sizebytes, FileAccess.Write)) {
+                    stream.CopyTo(target);
+                    return RESULT.OK;
+                }
             }
-            return RESULT.OK;
         };
 
         private readonly static FILE_SEEKCALLBACK ModBankSeek = (IntPtr handle, uint pos, IntPtr userdata) => {
