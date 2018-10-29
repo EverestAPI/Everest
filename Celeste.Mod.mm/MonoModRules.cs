@@ -613,11 +613,11 @@ namespace MonoMod {
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
                 f_this = method.DeclaringType.FindField("<>4__this");
-                f_completeArea = method.DeclaringType.FindField("<completeArea>5__4");
+                f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
                 break;
             }
 
-            if (!method.HasBody)
+            if (!method.HasBody || f_completeArea == null)
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
@@ -628,7 +628,7 @@ namespace MonoMod {
                 // Pre-process the bool on stack before
                 // stfld    bool Celeste.HeartGem/'<CollectRoutine>d__29'::'<completeArea>5__4'
                 // No need to check for the full name when the field name itself is compiler-generated.
-                if (instr.OpCode == OpCodes.Stfld && (instr.Operand as FieldReference)?.Name == "<completeArea>5__4"
+                if (instr.OpCode == OpCodes.Stfld && (instr.Operand as FieldReference)?.Name == f_completeArea.Name
                 ) {
                     // After stfld, grab the result, process it, store.
                     instri++;
