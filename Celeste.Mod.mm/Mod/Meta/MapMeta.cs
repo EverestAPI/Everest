@@ -174,7 +174,22 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
-            area.SetMeta(this);
+            MapMeta meta = area.GetMeta();
+            if (meta == null) {
+                area.SetMeta(this);
+            } else {
+                if ((Modes?.Length ?? 0) != 0)
+                    meta.Modes = Modes;
+
+                if (Mountain != null)
+                    meta.Mountain = Mountain;
+
+                if (CompleteScreen != null)
+                    meta.CompleteScreen = CompleteScreen;
+
+                if (CassetteModifier != null)
+                    meta.CassetteModifier = CassetteModifier;
+            }
         }
 
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
