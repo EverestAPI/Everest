@@ -24,8 +24,13 @@ namespace Celeste {
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
 
         private static int modBankHandleLast = 0x0ade;
-        private static Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
-        private static Dictionary<IntPtr, Stream> modBankStreams = new Dictionary<IntPtr, Stream>();
+
+        private static readonly Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
+        private static readonly Dictionary<IntPtr, Queue<Stream>> modBankStreamPools = new Dictionary<IntPtr, Queue<Stream>>();
+        private static int modBankStreamPoolSize = 4; // A mod can set this via reflection. I don't care. -ade
+        private static readonly Dictionary<IntPtr, Dictionary<ulong, byte[]>> modBankCaches = new Dictionary<IntPtr, Dictionary<ulong, byte[]>>();
+
+        private static readonly Dictionary<IntPtr, Stream> modBankStreams = new Dictionary<IntPtr, Stream>();
 
         [MonoModIgnore]
         internal static extern void CheckFmod(RESULT result);
@@ -80,6 +85,11 @@ namespace Celeste {
                 readcallback = ModBankRead,
                 seekcallback = ModBankSeek
             };
+            Queue<Stream> pool = modBankStreamPools[handle] = new Queue<Stream>();
+            for (int i = 0; i < modBankStreamPoolSize; i++)
+                pool.Enqueue(asset.Stream);
+
+            modBankCaches[handle] = new Dictionary<ulong, byte[]>();
 
             system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
 
@@ -186,26 +196,52 @@ namespace Celeste {
         }
 
         private readonly static FILE_OPENCALLBACK ModBankOpen = (StringWrapper name, ref uint filesize, ref IntPtr handle, IntPtr userdata) => {
-            Stream stream = modBankAssets[userdata].Stream;
+            Stream stream;
+
+            Queue<Stream> pool = modBankStreamPools[handle];
+            if (pool.Count > 0)
+                stream = pool.Dequeue();
+            else
+                stream = modBankAssets[userdata].Stream;
+
             filesize = (uint) stream.Length;
             modBankStreams[handle = (IntPtr) (++modBankHandleLast)] = stream;
             return RESULT.OK;
         };
 
         private readonly static FILE_CLOSECALLBACK ModBankClose = (IntPtr handle, IntPtr userdata) => {
-            modBankStreams[handle].Dispose();
+            Stream stream = modBankStreams[handle];
+
+            Queue<Stream> pool = modBankStreamPools[handle];
+            if (pool.Count < modBankStreamPoolSize)
+                pool.Enqueue(stream);
+            else
+                stream.Dispose();
+
             modBankStreams[handle] = null;
             return RESULT.OK;
         };
 
         private readonly static FILE_READCALLBACK ModBankRead = (IntPtr handle, IntPtr buffer, uint sizebytes, ref uint bytesread, IntPtr userdata) => {
+            Dictionary<ulong, byte[]> cache = new Dictionary<ulong, byte[]>();
+
             Stream stream = modBankStreams[handle];
-            byte[] tmp = new byte[Math.Min(65536, sizebytes)];
+
+            ulong key = PackXY((uint) stream.Position, sizebytes);
+            if (cache.TryGetValue(key, out byte[] tmp)) {
+                Marshal.Copy(tmp, 0, buffer, tmp.Length);
+                bytesread += (uint) tmp.Length;
+                return RESULT.OK;
+            }
+
+            cache[key] = tmp = new byte[sizebytes];
+            
             int read;
             while ((read = stream.Read(tmp, 0, Math.Min(tmp.Length, (int) (sizebytes - bytesread)))) > 0) {
                 Marshal.Copy(tmp, 0, (IntPtr) ((long) buffer + bytesread), read);
                 bytesread += (uint) read;
             }
+            
             return RESULT.OK;
         };
 
@@ -213,6 +249,13 @@ namespace Celeste {
             modBankStreams[handle].Seek(pos, SeekOrigin.Begin);
             return RESULT.OK;
         };
+
+        private static ulong PackXY(uint x, uint y)
+            => y | (((ulong) x) << 32);
+        private static void UnpackXY(ulong value, out uint x, out uint y) {
+            y = (uint) (value & uint.MaxValue);
+            x = (uint) ((value & uint.MaxValue) >> 32);
+        }
 
     }
     public static class AudioExt {
