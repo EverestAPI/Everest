@@ -1,4 +1,4 @@
-{ fetchNuGet, buildDotnetPackage }:
+{ pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage }:
 
 let
   HookedMethod = fetchNuGet {
@@ -11,14 +11,14 @@ let
   Cecil = fetchNuGet {
     baseName = "Mono.Cecil";
     version = "0.10.0";
-    sha256 = "f4c64a1dd69df48fe50952a9ece8c1430e54650703be432c41c93b52802cb864";
+    sha256 = "0yg9c0papkdlvmhas5jh8d849hwmigam4whyljn6ig1npx6lmsik";
     outputFiles = [ "*" ];
   };
 
   ValueTuple = fetchNuGet {
     baseName = "System.ValueTuple";
     version = "4.4.0";
-    sha256 = "68c3ad8ff7deb843c13710fd115c8e8d64492f639fa434059e1440a311a04424";
+    sha256 = "0442bk4nk7ncd37qn1p5nbz297093vfcz5p0xl97q1gvcb7fyfsf";
     outputFiles = ["*"];
   };
 
@@ -51,4 +51,4 @@ in buildDotnetPackage rec {
     sed -i "2i cp -r $out/lib/dotnet/Everest/* "'$1' $out/bin/miniinstaller
     sed -i '2i cd $1' $out/bin/miniinstaller
   '';
-}
+} // { shell = import ./shell.nix; }
