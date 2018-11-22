@@ -188,6 +188,14 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.name == "everest/dialogtrigger")
+            {
+                int id = entityData.ID;
+                EntityID entityID = new EntityID(levelData.Name, id);
+                level.Add(new DialogCutsceneTrigger((entityData, offset, entityID)));
+                return true;
+            }
+
             // The following entities have hardcoded "attributes."
             // Everest allows custom maps to set them.
 
