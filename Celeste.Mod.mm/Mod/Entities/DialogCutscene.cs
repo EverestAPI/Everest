@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using Monocle;
 
-namespace Celeste.Mod.DialogCutsceneHelper
+namespace Celeste.Mod.Entities
 {
     public class DialogCutscene : CutsceneEntity
     {

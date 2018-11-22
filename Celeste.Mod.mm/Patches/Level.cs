@@ -192,7 +192,7 @@ namespace Celeste {
             {
                 int id = entityData.ID;
                 EntityID entityID = new EntityID(levelData.Name, id);
-                level.Add(new DialogCutsceneTrigger((entityData, offset, entityID)));
+                level.Add(new DialogCutsceneTrigger(entityData, offset, entityID));
                 return true;
             }
 

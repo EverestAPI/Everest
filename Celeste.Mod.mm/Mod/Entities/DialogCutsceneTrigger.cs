@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 
-namespace Celeste.Mod.DialogCutsceneHelper
+namespace Celeste.Mod.Entities
 {
     public class DialogCutsceneTrigger : Trigger
     {
