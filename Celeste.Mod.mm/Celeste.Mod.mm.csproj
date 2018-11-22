@@ -114,6 +114,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
+    <Compile Include="Mod\Entities\DialogCutscene.cs" />
+    <Compile Include="Mod\Entities\DialogCutsceneTrigger.cs" />
     <Compile Include="Mod\Entities\GiveUpHint.cs" />
     <Compile Include="Mod\Entities\SpaceControllerBlocker.cs" />
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
