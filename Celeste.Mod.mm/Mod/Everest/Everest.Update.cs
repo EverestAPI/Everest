@@ -370,14 +370,7 @@ namespace Celeste.Mod {
                         });
 
                         AppDomain.Unload(nest);
-                    } catch (Exception e) {
-                        progress.LogLine("MiniInstaller failed!");
-                        e.LogDetailed();
-                        progress.LogLine(errorHint);
-                        progress.Progress = 0;
-                        progress.ProgressMax = 1;
-                        return;
-                    }
+                    } catch {}
                 }
 
                 progress.Progress = 1;
@@ -413,23 +406,15 @@ namespace Celeste.Mod {
                         progress.Progress = 0;
                         progress.ProgressMax = 1;
                     }
-
                 } else {
-                    // On Linux / macOS, restart the game after it shuts down.
-                    Events.Celeste.OnShutdown += () => {
-                        Process game = new Process();
-                        // If the game was installed via Steam, it should restart in a Steam context on its own.
-                        if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                            Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                            // The Linux and macOS versions come with a wrapping bash script.
-                            game.StartInfo.FileName = "bash";
-                            game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";
-                        } else {
-                            game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
-                        }
-                        game.StartInfo.WorkingDirectory = PathGame;
-                        game.Start();
-                    };
+                    /*Process game = new Process();
+                    game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
+                    game.StartInfo.WorkingDirectory = PathGame;
+                    game.Start();
+                    Process.GetCurrentProcess().Kill();*/
+
+                    // I don't even know anymore
+                    Environment.Exit(42);
                 }
             }
 
@@ -456,11 +441,16 @@ namespace Celeste.Mod {
                         // f_LineLogger.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LineLogger.FieldType));
                         f_LineLogger.SetValue(null, new Action<string>(bridge.LogLine).CastDelegate(f_LineLogger.FieldType));
 
+                    object exitObject = null;
 
                     // Let's just run the mod installer... from our mod... while we're running the mod...
-                    object exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
-                    if (exitObject != null && exitObject is int && ((int) exitObject) != 0)
-                        throw new Exception($"Return code != 0, but {exitObject}");
+                    try {
+                        exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
+                    } catch {}
+
+                    if (exitObject != null && exitObject is int && ((int) exitObject) != 0) {
+                        //throw new Exception($"Return code != 0, but {exitObject}");
+                    } // :insanebadeline:
                 }
             }
 
