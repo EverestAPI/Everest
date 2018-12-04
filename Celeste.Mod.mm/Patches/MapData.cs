@@ -114,7 +114,6 @@ namespace Celeste {
                         levelName = levelName.Substring(4);
                     level.SetAttr("name", "lvl_" + levelName); // lvl_ was optional before Celeste 1.2.5.0 made it mandatory.
 
-
                     BinaryPacker.Element entities = level.Children.FirstOrDefault(el => el.Name == "entities");
                     BinaryPacker.Element triggers = level.Children.FirstOrDefault(el => el.Name == "triggers");
                     
@@ -255,6 +254,21 @@ namespace Celeste {
                 return;
 
             new MapMetaModeProperties(meta).ApplyTo(area, mode);
+        }
+
+        private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {
+            if (map.GetLength(0) <= y || map.GetLength(1) <= x) {
+                // Array.Resize is unavailable and Copy sees the entire array as one row.
+                EntityData[,] mapNew = new EntityData[y + 10, x + 25];
+                int ho = map.GetLength(1);
+                int hn = mapNew.GetLength(1);
+                int wo = map.GetLength(0);
+                for (int co = 0; co < wo; co++)
+                    Array.Copy(map, co * ho, mapNew, co * hn, ho);
+                map = mapNew;
+            }
+
+            return map[y, x];
         }
 
     }

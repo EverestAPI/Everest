@@ -208,9 +208,14 @@ namespace MonoMod {
             MonoModRule.Flag.Set("V2:UserIOSave", userio_saveroutine != null);
 
             TypeDefinition playerhair = MonoModRule.Modder.FindType("Celeste.PlayerHair").Resolve();
-            FieldDefinition sprite = userio.FindField("Sprite");
-            MonoModRule.Flag.Set("V1:PlayerHairSprite", sprite == null);
-            MonoModRule.Flag.Set("V2:PlayerHairSprite", sprite != null);
+            FieldDefinition playerhair_sprite = userio.FindField("Sprite");
+            MonoModRule.Flag.Set("V1:PlayerHairSprite", playerhair_sprite == null);
+            MonoModRule.Flag.Set("V2:PlayerHairSprite", playerhair_sprite != null);
+
+            TypeDefinition cassetteblock = MonoModRule.Modder.FindType("Celeste.CassetteBlock").Resolve();
+            MethodDefinition cassetteblock_ctor = cassetteblock.FindMethod(".ctor");
+            MonoModRule.Flag.Set("V1:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 4);
+            MonoModRule.Flag.Set("V2:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 5);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
@@ -274,6 +279,10 @@ namespace MonoMod {
             if (m_Process == null)
                 return;
 
+            MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[,]&,System.Int32,System.Int32)");
+            if (m_GrowAndGet == null)
+                return;
+
             bool pop = false;
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -294,6 +303,16 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_Process));
+                    instri++;
+                }
+
+                if (instri > 2 &&
+                    instrs[instri - 3].OpCode == OpCodes.Ldfld && (instrs[instri - 3].Operand as FieldReference)?.FullName == "Celeste.EntityData[,] Celeste.ModeProperties::StrawberriesByCheckpoint" &&
+                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.EntityData Celeste.EntityData[,]::Get(System.Int32,System.Int32)"
+                ) {
+                    instrs[instri - 3].OpCode = OpCodes.Ldflda;
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GrowAndGet;
                     instri++;
                 }
             }

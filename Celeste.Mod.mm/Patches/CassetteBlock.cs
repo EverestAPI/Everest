@@ -20,15 +20,27 @@ namespace Celeste {
 
         private Color color;
 
-        public patch_CassetteBlock(Vector2 position, float width, float height, int index)
-            : base(position, width, height, index) {
+        public patch_CassetteBlock(Vector2 position, float width, float height, int index, float tempo)
+            : base(position, width, height, index, tempo) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
         public extern void orig_ctor(Vector2 position, float width, float height, int index);
+        [MonoModIfFlag("V1:CassetteBlockCtor")]
         [MonoModConstructor]
         public void ctor(Vector2 position, float width, float height, int index) {
             orig_ctor(position, width, height, index);
+
+            // Original index == 2 color is too similar to index == 1
+            if (index == 2)
+                color = Calc.HexToColor("47cb83");
+        }
+
+        public extern void orig_ctor(Vector2 position, float width, float height, int index, float tempo);
+        [MonoModIfFlag("V2:CassetteBlockCtor")]
+        [MonoModConstructor]
+        public void ctor(Vector2 position, float width, float height, int index, float tempo) {
+            orig_ctor(position, width, height, index, tempo);
 
             // Original index == 2 color is too similar to index == 1
             if (index == 2)

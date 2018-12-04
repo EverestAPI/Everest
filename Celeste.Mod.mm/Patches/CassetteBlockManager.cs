@@ -31,8 +31,8 @@ namespace Celeste {
         private EventInstance sfx;
         private EventInstance snapshot;
 
-        public patch_CassetteBlockManager(string levelID)
-            : base(levelID) {
+        public patch_CassetteBlockManager()
+            : base() {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
