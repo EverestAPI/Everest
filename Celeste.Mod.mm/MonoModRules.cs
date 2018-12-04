@@ -206,6 +206,11 @@ namespace MonoMod {
             MethodDefinition userio_saveroutine = userio.FindMethod("SaveRoutine");
             MonoModRule.Flag.Set("V1:UserIOSave", userio_saveroutine == null);
             MonoModRule.Flag.Set("V2:UserIOSave", userio_saveroutine != null);
+
+            TypeDefinition playerhair = MonoModRule.Modder.FindType("Celeste.PlayerHair").Resolve();
+            FieldDefinition sprite = userio.FindField("Sprite");
+            MonoModRule.Flag.Set("V1:PlayerHairSprite", sprite == null);
+            MonoModRule.Flag.Set("V2:PlayerHairSprite", sprite != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

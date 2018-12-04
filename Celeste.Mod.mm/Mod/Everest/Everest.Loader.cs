@@ -242,6 +242,12 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                if (DependencyLoaded(meta)) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} already loaded!");
+                    return;
+                }
+
+
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep)) {
                         Logger.Log(LogLevel.Info, "loader", $"Dependency {dep} of mod {meta} not loaded! Delaying.");

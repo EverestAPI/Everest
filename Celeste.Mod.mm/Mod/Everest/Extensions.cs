@@ -267,37 +267,44 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
-        internal static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
+        public static BinaryPacker.Element SetAttr(this BinaryPacker.Element el, string name, object value) {
+            if (el.Attributes == null)
+                el.Attributes = new Dictionary<string, object>();
+            el.Attributes[name] = value;
+            return el;
+        }
+
+        public static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
             object obj;
-            if (!el.Attributes.TryGetValue(name, out obj))
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out obj))
                 return defaultValue;
             if (obj is int)
                 return (int) obj;
             return int.Parse(obj.ToString(), CultureInfo.InvariantCulture);
         }
 
-        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref string value) {
+        public static bool AttrRef(this BinaryPacker.Element el, string name, ref string value) {
             if (el.HasAttr(name)) {
                 value = el.Attr(name);
                 return true;
             }
             return false;
         }
-        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref bool value) {
+        public static bool AttrRef(this BinaryPacker.Element el, string name, ref bool value) {
             if (el.HasAttr(name)) {
                 value = el.AttrBool(name);
                 return true;
             }
             return false;
         }
-        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref float value) {
+        public static bool AttrRef(this BinaryPacker.Element el, string name, ref float value) {
             if (el.HasAttr(name)) {
                 value = el.AttrFloat(name);
                 return true;
             }
             return false;
         }
-        internal static bool AttrRef(this BinaryPacker.Element el, string name, ref int value) {
+        public static bool AttrRef(this BinaryPacker.Element el, string name, ref int value) {
             if (el.HasAttr(name)) {
                 value = int.Parse(el.Attr(name));
                 return true;
@@ -305,28 +312,28 @@ namespace Celeste.Mod {
             return false;
         }
 
-        internal static bool AttrIf(this BinaryPacker.Element el, string name, Action<string> value) {
+        public static bool AttrIf(this BinaryPacker.Element el, string name, Action<string> value) {
             if (el.HasAttr(name)) {
                 value(el.Attr(name));
                 return true;
             }
             return false;
         }
-        internal static bool AttrIfBool(this BinaryPacker.Element el, string name, Action<bool> value) {
+        public static bool AttrIfBool(this BinaryPacker.Element el, string name, Action<bool> value) {
             if (el.HasAttr(name)) {
                 value(el.AttrBool(name));
                 return true;
             }
             return false;
         }
-        internal static bool AttrIfFloat(this BinaryPacker.Element el, string name, Action<float> value) {
+        public static bool AttrIfFloat(this BinaryPacker.Element el, string name, Action<float> value) {
             if (el.HasAttr(name)) {
                 value(el.AttrFloat(name));
                 return true;
             }
             return false;
         }
-        internal static bool AttrIfInt(this BinaryPacker.Element el, string name, Action<int> value) {
+        public static bool AttrIfInt(this BinaryPacker.Element el, string name, Action<int> value) {
             if (el.HasAttr(name)) {
                 value(int.Parse(el.Attr(name)));
                 return true;

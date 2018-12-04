@@ -64,6 +64,9 @@ namespace Celeste {
         }
 
         private BinaryPacker.Element Process(BinaryPacker.Element root) {
+            if (root.Children == null)
+                return root;
+
             foreach (BinaryPacker.Element el in root.Children) {
                 switch (el.Name) {
                     case "levels":
@@ -72,6 +75,14 @@ namespace Celeste {
 
                     case "meta":
                         ProcessMeta(el);
+                        continue;
+
+                    // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
+                    // Let's "unoptimize" entities and triggers.
+                    case "Backgrounds":
+                    case "Foregrounds":
+                        if (el.Children == null)
+                            el.Children = new List<BinaryPacker.Element>();
                         continue;
                 }
             }
@@ -95,115 +106,135 @@ namespace Celeste {
             int strawberry = 0;
             int strawberryInCheckpoint = 0;
 
-            foreach (BinaryPacker.Element level in levels.Children) {
-                string[] levelTags = level.Attr("name").Split(':');
-                level.Attributes["name"] = levelTags[0];
+            if (levels.Children != null) {
+                foreach (BinaryPacker.Element level in levels.Children) {
+                    string[] levelTags = level.Attr("name").Split(':');
+                    string levelName = levelTags[0];
+                    if (levelName.StartsWith("lvl_"))
+                        levelName = levelName.Substring(4);
+                    level.SetAttr("name", "lvl_" + levelName); // lvl_ was optional before Celeste 1.2.5.0 made it mandatory.
 
-                string levelName = level.Attr("name").Replace("lvl_", "");
 
-                BinaryPacker.Element entities = level.Children.First(el => el.Name == "entities");
-                BinaryPacker.Element triggers = level.Children.First(el => el.Name == "triggers");
+                    BinaryPacker.Element entities = level.Children.FirstOrDefault(el => el.Name == "entities");
+                    BinaryPacker.Element triggers = level.Children.FirstOrDefault(el => el.Name == "triggers");
+                    
+                    // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
+                    // Let's "unoptimize" entities and triggers.
+                    if (entities == null)
+                        level.Children.Add(entities = new BinaryPacker.Element {
+                            Name = "entities"
+                        });
+                    if (entities.Children == null)
+                        entities.Children = new List<BinaryPacker.Element>();
 
-                if (levelTags.Contains("checkpoint") || levelTags.Contains("cp"))
-                    entities.Children.Add(new BinaryPacker.Element {
-                        Name = "checkpoint",
-                        Attributes = {
+                    if (triggers == null)
+                        level.Children.Add(triggers = new BinaryPacker.Element {
+                            Name = "triggers"
+                        });
+                    if (triggers.Children == null)
+                        triggers.Children = new List<BinaryPacker.Element>();
+
+                    if (levelTags.Contains("checkpoint") || levelTags.Contains("cp"))
+                        entities.Children.Add(new BinaryPacker.Element {
+                            Name = "checkpoint",
+                            Attributes = new Dictionary<string, object>() {
                             { "x", "0" },
                             { "y", "0" }
                         }
-                    });
-
-                if (level.AttrBool("space")) {
-                    if (level.AttrBool("spaceSkipWrap") || levelTags.Contains("nospacewrap") || levelTags.Contains("nsw"))
-                        entities.Children.Add(new BinaryPacker.Element {
-                            Name = "everest/spaceControllerBlocker"
                         });
-                    if (level.AttrBool("spaceSkipGravity") || levelTags.Contains("nospacegravity") || levelTags.Contains("nsg")) {
-                        entities.Children.Add(new BinaryPacker.Element {
-                            Name = "everest/spaceController"
-                        });
-                        level.Attributes["space"] = false;
-                    }
 
-                    if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
-                        !triggers.Children.Any(el => el.Name == "cameraTargetTrigger") &&
-                        !entities.Children.Any(el => el.Name == "everest/spaceControllerBlocker")) {
-
-                        // Camera centers tile-perfectly on uneven heights.
-                        int heightForCenter = (int) level.Attributes["height"];
-                        heightForCenter /= 8;
-                        if (heightForCenter % 2 == 0)
-                            heightForCenter--;
-                        heightForCenter *= 8;
-
-                        triggers.Children.Add(new BinaryPacker.Element {
-                            Name = "cameraTargetTrigger",
-                            Attributes = {
-                                { "x", 0f },
-                                { "y", 0f },
-                                { "width", level.Attributes["width"] },
-                                { "height", level.Attributes["height"] },
-                                { "yOnly", true },
-                                { "lerpStrength", 1f }
-                            },
-                            Children = {
-                            new BinaryPacker.Element {
-                                Attributes = {
-                                    { "x", 160f },
-                                    { "y", heightForCenter / 2f }
-                                }
-                            }
+                    if (level.AttrBool("space")) {
+                        if (level.AttrBool("spaceSkipWrap") || levelTags.Contains("nospacewrap") || levelTags.Contains("nsw"))
+                            entities.Children.Add(new BinaryPacker.Element {
+                                Name = "everest/spaceControllerBlocker"
+                            });
+                        if (level.AttrBool("spaceSkipGravity") || levelTags.Contains("nospacegravity") || levelTags.Contains("nsg")) {
+                            entities.Children.Add(new BinaryPacker.Element {
+                                Name = "everest/spaceController"
+                            });
+                            level.SetAttr("space", false);
                         }
-                        });
-                    }
-                }
 
-                foreach (BinaryPacker.Element levelChild in level.Children) {
-                    switch (levelChild.Name) {
-                        case "entities":
-                            foreach (BinaryPacker.Element entity in levelChild.Children) {
-                                switch (entity.Name) {
-                                    case "checkpoint":
-                                        if (checkpointsAuto != null) {
-                                            CheckpointData c = new CheckpointData(
-                                                levelName,
-                                                (area.GetSID() + "_" + levelName).DialogKeyify(),
-                                                MapMeta.GetInventory(entity.Attr("inventory")),
-                                                entity.Attr("dreaming") == "" ? area.Dreaming : entity.AttrBool("dreaming"),
-                                                null
-                                            );
-                                            int id = entity.AttrInt("checkpointID", -1);
-                                            if (id == -1) {
-                                                checkpointsAuto.Add(c);
-                                            } else {
-                                                while (checkpointsAuto.Count <= id)
-                                                    checkpointsAuto.Add(null);
-                                                checkpointsAuto[id] = c;
-                                            }
+                        if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
+                            !triggers.Children.Any(el => el.Name == "cameraTargetTrigger") &&
+                            !entities.Children.Any(el => el.Name == "everest/spaceControllerBlocker")) {
+
+                            // Camera centers tile-perfectly on uneven heights.
+                            int heightForCenter = level.AttrInt("height");
+                            heightForCenter /= 8;
+                            if (heightForCenter % 2 == 0)
+                                heightForCenter--;
+                            heightForCenter *= 8;
+
+                            triggers.Children.Add(new BinaryPacker.Element {
+                                Name = "cameraTargetTrigger",
+                                Attributes = new Dictionary<string, object>() {
+                                    { "x", 0f },
+                                    { "y", 0f },
+                                    { "width", level.AttrInt("width") },
+                                    { "height", level.AttrInt("height") },
+                                    { "yOnly", true },
+                                    { "lerpStrength", 1f }
+                                },
+                                Children = new List<BinaryPacker.Element>() {
+                                    new BinaryPacker.Element {
+                                        Attributes = new Dictionary<string, object>() {
+                                            { "x", 160f },
+                                            { "y", heightForCenter / 2f }
                                         }
-                                        checkpoint++;
-                                        strawberryInCheckpoint = 0;
-                                        break;
-
-                                    case "cassette":
-                                        if (area.CassetteCheckpointIndex == 0)
-                                            area.CassetteCheckpointIndex = checkpoint;
-                                        break;
-
-                                    case "strawberry":
-                                        if (entity.AttrInt("checkpointID", -1) == -1)
-                                            entity.Attributes["checkpointID"] = checkpoint;
-                                        if (entity.AttrInt("order", -1) == -1)
-                                            entity.Attributes["order"] = strawberryInCheckpoint;
-                                        strawberry++;
-                                        strawberryInCheckpoint++;
-                                        break;
+                                    }
                                 }
-                            }
-                            break;
+                            });
+                        }
                     }
-                }
 
+                    foreach (BinaryPacker.Element levelChild in level.Children) {
+                        switch (levelChild.Name) {
+                            case "entities":
+                                foreach (BinaryPacker.Element entity in levelChild.Children) {
+                                    switch (entity.Name) {
+                                        case "checkpoint":
+                                            if (checkpointsAuto != null) {
+                                                CheckpointData c = new CheckpointData(
+                                                    levelName,
+                                                    (area.GetSID() + "_" + levelName).DialogKeyify(),
+                                                    MapMeta.GetInventory(entity.Attr("inventory")),
+                                                    entity.Attr("dreaming") == "" ? area.Dreaming : entity.AttrBool("dreaming"),
+                                                    null
+                                                );
+                                                int id = entity.AttrInt("checkpointID", -1);
+                                                if (id == -1) {
+                                                    checkpointsAuto.Add(c);
+                                                } else {
+                                                    while (checkpointsAuto.Count <= id)
+                                                        checkpointsAuto.Add(null);
+                                                    checkpointsAuto[id] = c;
+                                                }
+                                            }
+                                            checkpoint++;
+                                            strawberryInCheckpoint = 0;
+                                            break;
+
+                                        case "cassette":
+                                            if (area.CassetteCheckpointIndex == 0)
+                                                area.CassetteCheckpointIndex = checkpoint;
+                                            break;
+
+                                        case "strawberry":
+                                            if (entity.AttrInt("checkpointID", -1) == -1)
+                                                entity.SetAttr("checkpointID", checkpoint);
+                                            if (entity.AttrInt("order", -1) == -1)
+                                                entity.SetAttr("order", strawberryInCheckpoint);
+                                            strawberry++;
+                                            strawberryInCheckpoint++;
+                                            break;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+
+                }
             }
 
             if (mode.Checkpoints == null)
@@ -219,7 +250,7 @@ namespace Celeste {
                 Area = area.ToKey();
             }
 
-            meta = meta.Children.FirstOrDefault(el => el.Name == "mode");
+            meta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
             if (meta == null)
                 return;
 

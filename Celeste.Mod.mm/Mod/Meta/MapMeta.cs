@@ -94,17 +94,17 @@ namespace Celeste.Mod.Meta {
 
             BinaryPacker.Element child;
 
-            child = meta.Children.FirstOrDefault(el => el.Name == "cassettemodifier");
+            child = meta.Children?.FirstOrDefault(el => el.Name == "cassettemodifier");
             if (child != null)
                 CassetteModifier = new MapMetaCassetteModifier(child);
 
             Modes = new MapMetaModeProperties[3];
-            child = meta.Children.FirstOrDefault(el => el.Name == "modes");
-            if (child != null) {
+            child = meta.Children?.FirstOrDefault(el => el.Name == "modes");
+            if (child != null && child.Children != null) {
                 for (int i = 0; i < child.Children.Count; i++) {
                     Modes[i] = new MapMetaModeProperties(child.Children[i]);
                 }
-                for (int i = child.Children.Count; i < Modes.Length; i++) {
+                for (int i = child.Children?.Count ?? 0; i < Modes.Length; i++) {
                     Modes[i] = null;
                 }
             }
@@ -270,13 +270,13 @@ namespace Celeste.Mod.Meta {
 
             BinaryPacker.Element child;
 
-            child = meta.Children.FirstOrDefault(el => el.Name == "audiostate");
+            child = meta.Children?.FirstOrDefault(el => el.Name == "audiostate");
             if (child != null)
                 AudioState = new MapMetaAudioState(child);
 
-            child = meta.Children.FirstOrDefault(el => el.Name == "checkpoints");
+            child = meta.Children?.FirstOrDefault(el => el.Name == "checkpoints");
             if (child != null) {
-                Checkpoints = new MapMetaCheckpointData[child.Children.Count];
+                Checkpoints = new MapMetaCheckpointData[child.Children?.Count ?? 0];
                 for (int i = 0; i < Checkpoints.Length; i++) {
                     Checkpoints[i] = new MapMetaCheckpointData(child.Children[i]);
                 }
@@ -347,13 +347,13 @@ namespace Celeste.Mod.Meta {
 
             BinaryPacker.Element child;
 
-            child = meta.Children.FirstOrDefault(el => el.Name == "audiostate");
+            child = meta.Children?.FirstOrDefault(el => el.Name == "audiostate");
             if (child != null)
                 AudioState = new MapMetaAudioState(child);
 
-            child = meta.Children.FirstOrDefault(el => el.Name == "flags");
+            child = meta.Children?.FirstOrDefault(el => el.Name == "flags");
             if (child != null) {
-                Flags = new string[child.Children.Count];
+                Flags = new string[child.Children?.Count ?? 0];
                 for (int i = 0; i < Flags.Length; i++) {
                     Flags[i] = child.Children[i].Attr("innerText");
                 }

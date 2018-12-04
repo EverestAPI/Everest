@@ -8,6 +8,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -16,11 +17,20 @@ namespace Celeste {
     class patch_PlayerHair : PlayerHair {
 
         // We're effectively in PlayerHair, but still need to "expose" private fields to our mod.
-        private PlayerSprite sprite;
-        public PlayerSprite Sprite => sprite;
         private List<MTexture> bangs;
         private float wave;
         public float Wave => wave;
+
+        // Celeste 1.1.3.0 (V1): private PlayerSprite sprite
+        [MonoModIfFlag("V1:UserIOSave")]
+        private PlayerSprite sprite;
+
+        // Celeste 1.2.5.0 (V2): public PlayerSprite Sprite
+        [MonoModIfFlag("V2:UserIOSave")]
+        [MonoModLinkFrom("Celeste.PlayerSprite Celeste.PlayerHair::sprite")]
+        private PlayerSprite Sprite; // Use most restrictive visibility.
+
+        internal PlayerSprite _Sprite => sprite;
 
         public patch_PlayerHair(PlayerSprite sprite)
             : base(sprite) {
@@ -69,6 +79,7 @@ namespace Celeste {
             }
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public MTexture GetHairTexture(int index) {
             if (index == 0)
                 return bangs[sprite.HairFrame];
@@ -79,6 +90,7 @@ namespace Celeste {
         private extern Vector2 GetHairScale(int index);
         public Vector2 PublicGetHairScale(int index) => GetHairScale(index);
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetHairColor(int index) {
             return Color * Alpha;
         }
@@ -111,7 +123,7 @@ namespace Celeste {
         /// Get the PlayerSprite which the PlayerHair belongs to.
         /// </summary>
         public static PlayerSprite GetSprite(this PlayerHair self)
-            => ((patch_PlayerHair) self).Sprite;
+            => ((patch_PlayerHair) self)._Sprite;
 
         /// <summary>
         /// Get the current wave, updated by Engine.DeltaTime * 4f each Update.

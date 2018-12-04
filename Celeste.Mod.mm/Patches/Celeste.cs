@@ -44,15 +44,16 @@ namespace Celeste {
         }
 
         // Patching constructors is ugly.
-        public extern void orig_ctor();
+        public extern void orig_ctor_Celeste();
         [MonoModConstructor]
+        [MonoModOriginalName("orig_ctor_Celeste")] // For Everest.Installer
         public void ctor() {
             if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1") {
                 Instance = this;
                 Version = new Version(0, 0, 0, 0);
                 Console.WriteLine("CELESTE HEADLESS VIA EVEREST");
             } else {
-                orig_ctor();
+                orig_ctor_Celeste();
             }
             try {
                 Everest.Boot();
