@@ -78,11 +78,16 @@ namespace Celeste {
                         continue;
 
                     // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
-                    // Let's "unoptimize" entities and triggers.
-                    case "Backgrounds":
-                    case "Foregrounds":
+                    // Let's "unoptimize" Style and its Backgrounds and Foregrounds.
+                    case "Style":
                         if (el.Children == null)
                             el.Children = new List<BinaryPacker.Element>();
+                        foreach (BinaryPacker.Element style in el.Children)
+                            if ((
+                                    style.Name == "Backgrounds" ||
+                                    style.Name == "Foregrounds"
+                                ) && style.Children == null)
+                                style.Children = new List<BinaryPacker.Element>();
                         continue;
                 }
             }

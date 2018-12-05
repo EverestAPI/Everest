@@ -8,6 +8,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
@@ -85,7 +86,9 @@ namespace Celeste {
             return orig;
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
+        [MethodImpl(MethodImplOptions.NoInlining)]
         private Color GetTrailColor(bool wasDashB) {
             return wasDashB ? NormalHairColor : UsedHairColor;
         }
