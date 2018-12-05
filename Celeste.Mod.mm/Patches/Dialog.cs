@@ -16,154 +16,80 @@ using System.Threading.Tasks;
 namespace Celeste {
     static class patch_Dialog {
 
-        // We're effectively in Dialog, but still need to "expose" private fields to our mod.
-        private static string[] LanguageDataVariables;
-        private static readonly Regex command;
-        private static readonly Regex insert;
-        private static readonly Regex variable;
-
         private static Language FallbackLanguage;
 
+        private static bool LoadOriginalLanguageFiles;
+        private static bool LoadModLanguageFiles;
+
+        public static extern void orig_Load();
+        public static void Load() {
+            LoadOriginalLanguageFiles = true;
+            LoadModLanguageFiles = false;
+
+            orig_Load();
+        }
+
         public static extern Language orig_LoadLanguage(string filename);
+        [PatchLoadLanguage] // Manually manipulate the method via MonoModRules
         public static Language LoadLanguage(string filename) {
             Language language = orig_LoadLanguage(filename);
 
-            if (language.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase))
+            if (language?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
                 FallbackLanguage = language;
 
-            string path = filename;
-            if (path.StartsWith(Everest.Content.PathContentOrig))
-                path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
-            path = path.Replace('\\', '/');
-            if (path.EndsWith(".txt"))
-                path = path.Substring(0, path.Length - 4);
+            return language;
+        }
 
-            IEnumerable<ModAsset> metas = Everest.Content.Mods.Select(mod => {
-                ModAsset asset;
-                if (mod.Map.TryGetValue(path, out asset))
-                    return asset;
-                return null;
-            }).Where(asset => asset != null);
-            if (!metas.Any())
-                return language;
+        public static extern void orig_InitLanguages();
+        public static void InitLanguages() {
+            LoadOriginalLanguageFiles = false;
+            LoadModLanguageFiles = true;
 
-            foreach (ModAsset meta in metas) {
-                string line;
-
-                string currentName = "";
-                StringBuilder builder = new StringBuilder();
-                string prev = "";
-                using (StreamReader reader = new StreamReader(meta.Stream))
-                    while (reader.Peek() != -1) {
-                        line = reader.ReadLine().Trim('\r', '\n').Trim();
-                        
-                        // The following is the original parser decompiled and formatted to our best understanding.
-
-                        // ???
-                        bool startsWithVariable = false;
-                        foreach (string variable in LanguageDataVariables) {
-                            if (!string.IsNullOrEmpty(variable) && line.StartsWith(variable, StringComparison.InvariantCultureIgnoreCase)) {
-                                startsWithVariable = true;
-                                break;
-                            }
-                        }
-                        if (!startsWithVariable) {
-                            line = Regex.Replace(line, @"\[unknown\]", @"", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, @"\[left\]", @"{left}", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, @"\[right\]", @"{right}", RegexOptions.IgnoreCase);
-                            line = Regex.Replace(line, @"\[(?<content>[^\[\\]*(?:\\.[^\]\\]*)*)\]", @"{portrait ${content}}");
-                        }
-
-                        if (line.Length <= 0)
-                            continue;
-                        if (line[0] == '#')
-                            continue;
-
-                        line = line.Replace("\\#", "#");
-                        bool isVariable = variable.IsMatch(line);
-                        if (!isVariable) {
-                            if (builder.Length > 0) {
-                                string built = builder.ToString();
-                                if (!built.EndsWith("{break}") && !built.EndsWith("{n}") && command.Replace(prev, "").Length > 0) {
-                                    builder.Append("{break}");
-                                }
-                            }
-                            builder.Append(line);
-                            goto Next;
-                        }
-
-                        if (!string.IsNullOrEmpty(currentName) && !language.Dialog.ContainsKey(currentName)) {
-                            language.Dialog.Add(currentName, builder.ToString());
-                        }
-
-                        string[] splitByEqual = line.Split('=');
-                        string name = splitByEqual[0].Trim();
-                        string value = (splitByEqual.Length > 1) ? splitByEqual[1].Trim() : "";
-
-                        if (name.Equals("language", StringComparison.OrdinalIgnoreCase)) {
-                            string[] splitByComma = value.Split(',');
-                            if (!Dialog.Languages.TryGetValue(splitByComma[0], out language)) {
-                                language = new Language();
-                                language.FontFace = null;
-                                language.Id = splitByComma[0];
-                                Dialog.Languages.Add(language.Id, language);
-                            }
-                            if (splitByComma.Length > 1) {
-                                language.Label = splitByComma[1];
-                            }
-                            goto Next;
-                        }
-
-                        if (name.Equals("icon", StringComparison.OrdinalIgnoreCase)) {
-                            VirtualTexture texture = VirtualContent.CreateTexture(Path.Combine("Dialog", value));
-                            language.Icon = new MTexture(texture);
-                            goto Next;
-                        }
-
-                        if (name.Equals("order", StringComparison.OrdinalIgnoreCase)) {
-                            language.Order = int.Parse(value);
-                            goto Next;
-                        }
-
-                        if (name.Equals("font", StringComparison.OrdinalIgnoreCase)) {
-                            string[] splitByComma = value.Split(',');
-                            language.FontFace = splitByComma[0];
-                            language.FontFaceSize = float.Parse(splitByComma[1], CultureInfo.InvariantCulture);
-                            goto Next;
-                        }
-
-                        if (name.Equals("SPLIT_REGEX", StringComparison.OrdinalIgnoreCase)) {
-                            language.SplitRegex = value;
-                            goto Next;
-                        }
-
-                        if (name.Equals("commas", StringComparison.OrdinalIgnoreCase)) {
-                            language.CommaCharacters = value;
-                            goto Next;
-                        }
-
-                        if (name.Equals("periods", StringComparison.OrdinalIgnoreCase)) {
-                            language.PeriodCharacters = value;
-                            goto Next;
-                        }
-
-                        currentName = name;
-                        builder.Clear();
-                        builder.Append(value);
-
-                        Next:
-                        prev = line;
-
-                    }
-
-                // The game originally also checks if the key already exists and uses Add(...).
-                if (!string.IsNullOrEmpty(currentName)/* && !language.Dialog.ContainsKey(currentName)*/) {
-                    // language.Dialog.Add(currentName, builder.ToString());
-                    language.Dialog[currentName] = builder.ToString();
-                }
+            foreach (ModAsset asset in Everest.Content.Map.Values) {
+                if (!asset.PathVirtual.StartsWith("Dialog/"))
+                    continue;
+                LoadLanguage(Path.Combine(Engine.ContentDirectory, "Dialog", asset.PathVirtual.Substring(7) + ".txt"));
             }
 
-            return language;
+            // Remove all empty dummy languages.
+            HashSet<string> dummies = new HashSet<string>();
+            foreach (Language lang in Dialog.Languages.Values)
+                if (lang.Dialog.Count == 0)
+                    dummies.Add(lang.Id);
+            foreach (string id in dummies)
+                Dialog.Languages.Remove(id);
+
+            orig_InitLanguages();
+        }
+
+        private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
+            if (LoadOriginalLanguageFiles && File.Exists(path))
+                foreach (string text in File.ReadLines(path, encoding))
+                    yield return text;
+
+            if (!LoadModLanguageFiles)
+                yield break;
+
+            path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
+            path = path.Replace('\\', '/');
+            path = path.Substring(0, path.Length - 4);
+            string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()},{path.Substring(7)}";
+            foreach (ModAsset asset in
+                Everest.Content.Mods
+                .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
+                .Where(asset => asset != null)
+            ) {
+                // Feed a dummy language line. All empty languages are removed afterwards.
+                yield return dummy;
+                using (StreamReader reader = new StreamReader(asset.Stream, encoding))
+                    while (reader.Peek() != -1)
+                        yield return reader.ReadLine().Trim('\r', '\n').Trim();
+            }
+        }
+
+        private static bool _ContainsKey(Dictionary<string, string> dialog, string key) {
+            dialog.Remove(key);
+            return false;
         }
 
         [MonoModReplace]

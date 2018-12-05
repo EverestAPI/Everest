@@ -110,6 +110,8 @@ namespace Celeste.Mod.Entities {
 
             Camera camera = level.Camera;
             Vector2 pos = new Vector2((Memorial.X - camera.X) * 6f, (Memorial.Y - camera.Y) * 6f - 350f - ActiveFont.LineHeight * 3.3f);
+            if (SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode)
+                pos.X = 1920f - pos.X;
             float alphaEased = Ease.CubeInOut(alpha);
             int length = (int) Math.Min(message.Length, index);
             int lineIndex = 0;

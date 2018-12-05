@@ -37,10 +37,12 @@ namespace Celeste.Mod.Entities {
         }
 
         public override void Render() {
-            Vector2 position = ((Level) Scene).Camera.Position;
-            Vector2 value = position + new Vector2(160f, 90f);
-            Vector2 position2 = (Position - position + (Position - value) * 0.2f) * 6f;
-            ActiveFont.Draw(text, position2, new Vector2(0.5f, 0.5f), Vector2.One * 1.25f, Color.White * alpha);
+            Vector2 cam = ((Level) Scene).Camera.Position;
+            Vector2 posTmp = cam + new Vector2(160f, 90f);
+            Vector2 pos = (Position - cam + (Position - posTmp) * 0.2f) * 6f;
+            if (SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode)
+                pos.X = 1920f - pos.X;
+            ActiveFont.Draw(text, pos, new Vector2(0.5f, 0.5f), Vector2.One * 1.25f, Color.White * alpha);
         }
 
     }

@@ -77,6 +77,12 @@ namespace MonoMod {
     class PatchCloudAddedAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Dialog.LoadLanguage method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLoadLanguage")]
+    class PatchLoadLanguageAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -795,6 +801,39 @@ namespace MonoMod {
                     instri++;
                 }
 
+            }
+
+        }
+
+        public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_GetLanguageText = method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
+            if (m_GetLanguageText == null)
+                return;
+
+            MethodDefinition m_ContainsKey = method.DeclaringType.FindMethod("System.Boolean _ContainsKey(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String)");
+            if (m_ContainsKey == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Collections.Generic.IEnumerable`1<System.String> System.IO.File::ReadLines(System.String,System.Text.Encoding)") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GetLanguageText;
+                }
+
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.Collections.Generic.Dictionary`2<System.String,System.String>::ContainsKey(TKey)") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_ContainsKey;
+                }
             }
 
         }

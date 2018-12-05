@@ -40,11 +40,11 @@ namespace Celeste {
         public override void Awake(Scene scene) {
             orig_Awake(scene);
 
-            tempoMult = 1f;
+            tempoMult = SceneAs<Level>().CassetteBlockTempo;
             leadBeats = 16;
             beatsPerTick = 4;
             ticksPerSwap = 2;
-            blocks = 2;
+            blocks = SceneAs<Level>().CassetteBlockBeats;
             beatsMax = 256;
 
             MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session).GetMeta()?.CassetteModifier;

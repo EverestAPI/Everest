@@ -31,9 +31,11 @@ namespace Celeste {
         public void ctor(Vector2 position, float width, float height, int index) {
             orig_ctor(position, width, height, index);
 
-            // Original index == 2 color is too similar to index == 1
+            // New colors from Celeste 1.2.5.0
             if (index == 2)
-                color = Calc.HexToColor("47cb83");
+                color = Calc.HexToColor("fcdc3a");
+            if (index == 3)
+                color = Calc.HexToColor("38e04e");
         }
 
         public extern void orig_ctor(Vector2 position, float width, float height, int index, float tempo);
@@ -42,9 +44,11 @@ namespace Celeste {
         public void ctor(Vector2 position, float width, float height, int index, float tempo) {
             orig_ctor(position, width, height, index, tempo);
 
-            // Original index == 2 color is too similar to index == 1
+            // New colors from Celeste 1.2.5.0
             if (index == 2)
-                color = Calc.HexToColor("47cb83");
+                color = Calc.HexToColor("fcdc3a");
+            if (index == 3)
+                color = Calc.HexToColor("38e04e");
         }
 
     }

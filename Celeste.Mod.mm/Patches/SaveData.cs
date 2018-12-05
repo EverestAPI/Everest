@@ -286,20 +286,29 @@ namespace Celeste {
                 }
             }
 
-            if (!AssistMode) {
-                Assists = default(Assists);
-            }
+            AssistModeChecks();
 
-            // Note to future person trying to disable this clamping:
-            // Audio snapshots matching the speed are being used.
-            // Removing this clamp kills the game.
-            if (Assists.GameSpeed == 0)
-                Assists.GameSpeed = 10;
-            if (Assists.GameSpeed < 5 || Assists.GameSpeed > 10) {
-                Assists.GameSpeed = 10;
-            }
+            if (Version != null) {
+                Version v = new Version(Version);
 
-            Everest.Invoke("LoadSaveData", FileSlot);
+                if (v < new Version(1, 2, 1, 1)) {
+                    for (int id = 0; id < Areas_Unsafe.Count; id++) {
+                        AreaStats area = Areas_Unsafe[id];
+                        if (area == null)
+                            continue;
+                        for (int modei = 0; modei < area.Modes.Length; modei++) {
+                            AreaModeStats mode = area.Modes[modei];
+                            if (mode == null)
+                                continue;
+                            if (mode.BestTime > 0L) {
+                                mode.SingleRunCompleted = true;
+                            }
+                            mode.BestTime = 0L;
+                            mode.BestFullClearTime = 0L;
+                        }
+                    }
+                }
+            }
         }
 
         public extern void orig_BeforeSave();

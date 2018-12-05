@@ -88,6 +88,7 @@ namespace Celeste {
             Audio.Banks.Music = Audio.Banks.Load("music", false);
             Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
             Audio.Banks.UI = Audio.Banks.Load("ui", false);
+            Audio.Banks.NewContent = Audio.Banks.Load("new_content", false);
             */
 
             Settings.Instance.ApplyVolumes();
