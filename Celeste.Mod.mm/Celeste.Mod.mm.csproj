@@ -123,6 +123,10 @@
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Patches\BadelineOldsite.cs" />
+    <Compile Include="Patches\CrumblePlatform.cs" />
+    <Compile Include="Patches\SinkingPlatform.cs" />
+    <Compile Include="Patches\MovingPlatform.cs" />
+    <Compile Include="Patches\Cobweb.cs" />
     <Compile Include="Patches\Cloud.cs" />
     <Compile Include="Patches\CrystalStaticSpinner.cs" />
     <Compile Include="Patches\RotateSpinner.cs" />

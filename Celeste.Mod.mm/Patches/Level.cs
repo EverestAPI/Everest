@@ -284,6 +284,38 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "cobweb") {
+                patch_Cobweb cobweb = new Cobweb(entityData, offset) as patch_Cobweb;
+                if (entityData.Has("color"))
+                    cobweb.OverrideColor = entityData.HexColor("color");
+                level.Add(cobweb);
+                return true;
+            }
+
+            if (entityData.Name == "movingPlatform") {
+                patch_MovingPlatform platform = new MovingPlatform(entityData, offset) as patch_MovingPlatform;
+                if (entityData.Has("texture"))
+                    platform.OverrideTexture = entityData.Attr("texture");
+                level.Add(platform);
+                return true;
+            }
+
+            if (entityData.Name == "sinkingPlatform") {
+                patch_SinkingPlatform platform = new SinkingPlatform(entityData, offset) as patch_SinkingPlatform;
+                if (entityData.Has("texture"))
+                    platform.OverrideTexture = entityData.Attr("texture");
+                level.Add(platform);
+                return true;
+            }
+
+            if (entityData.Name == "crumbleBlock") {
+                patch_CrumblePlatform platform = new CrumblePlatform(entityData, offset) as patch_CrumblePlatform;
+                if (entityData.Has("texture"))
+                    platform.OverrideTexture = entityData.Attr("texture");
+                level.Add(platform);
+                return true;
+            }
+
             return false;
         }
 
