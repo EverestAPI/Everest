@@ -316,6 +316,14 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "wire") {
+                Wire wire = new Wire(entityData, offset);
+                if (entityData.Has("color"))
+                    wire.Color = entityData.HexColor("color");
+                level.Add(wire);
+                return true;
+            }
+
             return false;
         }
 
