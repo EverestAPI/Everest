@@ -39,7 +39,11 @@ namespace Celeste {
             Audio.Banks.Music = Audio.Banks.Load("music", false);
             Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
             Audio.Banks.UI = Audio.Banks.Load("ui", false);
-            Audio.Banks.NewContent = Audio.Banks.Load("new_content", false);
+            try {
+                Audio.Banks.NewContent = Audio.Banks.Load("new_content", false);
+            } catch {
+                // Celeste pre 1.2.5.X doesn't ship with this bank.
+            }
 
             // Prepopulate cachedPaths, as it's being used directly.
             foreach (Bank bank in patch_Banks.Banks.Values) {
@@ -148,6 +152,10 @@ namespace Celeste {
             public static Dictionary<ModAsset, Bank> ModCache = new Dictionary<ModAsset, Bank>();
 
             public readonly static int SizeOfBankInfo = Marshal.SizeOf(typeof(BANK_INFO));
+
+            // Celeste pre 1.2.5.X doesn't ship with this bank.
+            // This should act as a no-op for Celeste 1.2.5.X+.
+            public static Bank NewContent;
 
             [MonoModReplace]
             public static Bank Load(string name, bool loadStrings) {
