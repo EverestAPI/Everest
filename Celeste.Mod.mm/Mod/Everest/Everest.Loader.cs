@@ -336,6 +336,8 @@ namespace Celeste.Mod {
                     Type type = types[i];
                     if (!typeof(EverestModule).IsAssignableFrom(type) || type.IsAbstract)
                         continue;
+                    if (typeof(NullModule).IsAssignableFrom(type))
+                        continue;
 
                     EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
                     mod.Metadata = meta;

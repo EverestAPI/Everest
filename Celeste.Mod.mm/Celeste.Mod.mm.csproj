@@ -113,6 +113,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />
     <Compile Include="Mod\Entities\DialogCutsceneTrigger.cs" />

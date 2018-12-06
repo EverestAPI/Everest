@@ -188,11 +188,9 @@ namespace Celeste {
                 return true;
             }
 
-            if (entityData.Name == "everest/dialogTrigger")
-            {
-                int id = entityData.ID;
-                EntityID entityID = new EntityID(levelData.Name, id);
-                level.Add(new DialogCutsceneTrigger(entityData, offset, entityID));
+            if (entityData.Name == "everest/dialogTrigger" ||
+                entityData.Name == "dialog/dialogtrigger") {
+                level.Add(new DialogCutsceneTrigger(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
                 return true;
             }
 

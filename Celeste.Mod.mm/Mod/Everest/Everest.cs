@@ -158,6 +158,13 @@ namespace Celeste.Mod {
 
             // Register our core module and load any other modules.
             new CoreModule().Register();
+
+            // Note: Everest fulfills some mod dependencies by itself.
+            new NullModule(new EverestModuleMetadata() {
+                Name = "DialogCutscene",
+                VersionString = "1.0.0"
+            }).Register();
+
             Loader.LoadAuto();
 
             // Also let all mods parse the arguments.
