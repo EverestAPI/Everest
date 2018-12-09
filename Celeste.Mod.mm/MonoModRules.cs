@@ -830,7 +830,7 @@ namespace MonoMod {
                     instr.Operand = m_GetLanguageText;
                 }
 
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.Collections.Generic.Dictionary`2<System.String,System.String>::ContainsKey(TKey)") {
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.Collections.Generic.Dictionary`2<System.String,System.String>::ContainsKey(System.Collections.Generic.Dictionary`2/TKey)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_ContainsKey;
                 }

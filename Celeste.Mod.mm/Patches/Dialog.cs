@@ -73,7 +73,7 @@ namespace Celeste {
             path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
             path = path.Replace('\\', '/');
             path = path.Substring(0, path.Length - 4);
-            string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()},{path.Substring(7)}";
+            string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()}";
             foreach (ModAsset asset in
                 Everest.Content.Mods
                 .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)

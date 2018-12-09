@@ -171,6 +171,29 @@ namespace Celeste {
             }
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<System.String> Celeste.SaveData::Poem_Unsafe")]
+        public new List<string> Poem;
+
+        [MonoModRemove]
+        public List<string> Poem_Unsafe;
+
+        [XmlIgnore]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<System.String> Celeste.SaveData::Poem")]
+        public List<string> Poem_Safe {
+            get {
+                if (LevelSet == "Celeste")
+                    return Poem_Unsafe;
+                return LevelSetStats.Poem;
+            }
+            set {
+                if (LevelSets == null || LevelSet == "Celeste") {
+                    Poem_Unsafe = value;
+                    return;
+                }
+                LevelSetStats.Poem = value;
+            }
+        }
+
         [MonoModReplace]
         public new void AfterInitialize() {
             // Vanilla / new saves don't have the LevelSets list.
@@ -379,6 +402,8 @@ namespace Celeste {
         public List<AreaStats> Areas = new List<AreaStats>();
         [XmlIgnore]
         public List<AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
+
+        public List<string> Poem = new List<string>();
 
         [XmlIgnore]
         [NonSerialized]

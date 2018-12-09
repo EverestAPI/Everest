@@ -66,15 +66,24 @@ namespace Celeste {
 
         public string SID;
 
+        private string _LevelSet;
+        private WeakReference _LevelSetSID;
         public string LevelSet {
             get {
                 string sid = SID;
+
+                if (ReferenceEquals(sid, _LevelSetSID?.Target))
+                    return _LevelSet;
+                _LevelSetSID = new WeakReference(sid);
+
                 if (string.IsNullOrEmpty(sid))
-                    return "Celeste";
+                    return _LevelSet = "Celeste";
+
                 int lastIndexOfSlash = sid.LastIndexOf('/');
                 if (lastIndexOfSlash == -1)
-                    return "";
-                return sid.Substring(0, lastIndexOfSlash);
+                    return _LevelSet = "";
+
+                return _LevelSet = sid.Substring(0, lastIndexOfSlash);
             }
         }
 
