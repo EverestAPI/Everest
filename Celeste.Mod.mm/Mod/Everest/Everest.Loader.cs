@@ -141,19 +141,25 @@ namespace Celeste.Mod {
                 }
 
                 ZipModContent contentMeta = new ZipModContent(archive);
+                EverestModuleMetadata contentMetaParent = null;
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
                         return;
+                    if (contentMetaParent != null)
+                        contentMeta.Name = contentMetaParent.Name;
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
 
                 if (multimetas != null) {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
+                        if (contentMetaParent == null)
+                            contentMetaParent = multimeta;
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
+                    contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
             }
@@ -211,19 +217,25 @@ namespace Celeste.Mod {
                     }
 
                 FileSystemModContent contentMeta = new FileSystemModContent(dir);
+                EverestModuleMetadata contentMetaParent = null;
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
                         return;
+                    if (contentMetaParent != null)
+                        contentMeta.Name = contentMetaParent.Name;
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
 
                 if (multimetas != null) {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
+                        if (contentMetaParent == null)
+                            contentMetaParent = multimeta;
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
+                    contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
             }
@@ -325,7 +337,9 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                Content.Crawl(new AssemblyModContent(asm));
+                Content.Crawl(new AssemblyModContent(asm) {
+                    Name = meta.Name
+                });
 
                 Type[] types;
                 try {

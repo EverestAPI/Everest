@@ -61,8 +61,6 @@ namespace Celeste.Mod {
         /// </summary>
         public string Path;
 
-        public override string DefaultName => System.IO.Path.GetFileName(Path);
-
         public FileSystemModContent(string path) {
             Path = path;
         }
@@ -202,7 +200,9 @@ namespace Celeste.Mod {
                 if (Flags.Disabled)
                     return;
 
-                Crawl(new AssemblyModContent(typeof(Everest).Assembly));
+                Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
+                    Name = "Everest"
+                });
                 Crawl(new MapBinsInModsModContent(Path.Combine(PathGame, "Mods")));
             }
 
@@ -281,7 +281,7 @@ namespace Celeste.Mod {
                     path = GuessType(path, out metadata.Type, out metadata.Format);
 
                 metadata.PathVirtual = path;
-                string prefix = metadata.Source.Name + ":";
+                string prefix = metadata.Source?.Name;
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
                 ModAsset metadataPrev;
@@ -291,10 +291,12 @@ namespace Celeste.Mod {
                 // Hardcoded case: Handle directories separately.
                 if (metadata.Type == typeof(AssetTypeDirectory)) {
                     MapDirs[path] = metadata;
-                    MapDirs[prefix + path] = metadata;
+                    if (prefix != null)
+                        MapDirs[prefix + ":" + path] = metadata;
                 } else {
                     Map[path] = metadata;
-                    Map[prefix + path] = metadata;
+                    if (prefix != null)
+                        Map[prefix + ":" + path] = metadata;
                 }
 
                 // If we're not already the highest level shadow "node"...
