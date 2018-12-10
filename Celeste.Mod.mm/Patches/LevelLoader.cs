@@ -26,6 +26,31 @@ namespace Celeste {
             if (CoreModule.Settings.LazyLoading)
                 VirtualContentExt.UnloadOverworld();
 
+            // Vanilla TileToIndex mappings.
+            SurfaceIndex.TileToIndex = new Dictionary<char, int> {
+                { '1', 3 },
+                { '3', 4 },
+                { '4', 7 },
+                { '5', 8 },
+                { '6', 8 },
+                { '7', 8 },
+                { '8', 8 },
+                { '9', 13 },
+                { 'a', 8 },
+                { 'b', 23 },
+                { 'c', 8 },
+                { 'd', 8 },
+                { 'e', 8 },
+                { 'f', 8 },
+                { 'g', 8 },
+                { 'h', 33 },
+                { 'i', 4 },
+                { 'j', 8 },
+                { 'k', 3 },
+                { 'l', 33 },
+                { 'm', 3 }
+            };
+
             AreaData area = AreaData.Get(session);
             MapMeta meta = area.GetMeta();
             string path;

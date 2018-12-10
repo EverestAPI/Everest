@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -27,6 +28,19 @@ namespace Celeste {
             Filename = filename;
             orig_ctor(filename);
             Everest.Content.Process(this, filename);
+        }
+
+        private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
+        private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
+            orig_ReadInto(data, tileset, xml);
+
+            if (xml.HasAttr("sound"))
+                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
+        }
+
+        // Required because TerrainType is private.
+        [MonoModIgnore]
+        private class patch_TerrainType {
         }
 
     }
