@@ -24,6 +24,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
     public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
     public sealed class AssetTypeXml { private AssetTypeXml() { } }
+    public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
@@ -361,6 +362,10 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeGUIDs);
                     file = file.Substring(0, file.Length - 4 - 6);
                     file += ".guids";
+
+                } else if (file.EndsWith(".txt")) {
+                    type = typeof(AssetTypeText);
+                    file = file.Substring(0, file.Length - 4);
 
                 } else if (OnGuessType != null) {
                     // Allow mods to parse custom types.

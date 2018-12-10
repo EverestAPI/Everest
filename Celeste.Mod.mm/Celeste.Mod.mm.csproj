@@ -126,6 +126,7 @@
     <Compile Include="Patches\BadelineOldsite.cs" />
     <Compile Include="Patches\CrumblePlatform.cs" />
     <Compile Include="Patches\EntityData.cs" />
+    <Compile Include="Patches\Pico8\Emulator.cs" />
     <Compile Include="Patches\SinkingPlatform.cs" />
     <Compile Include="Patches\MovingPlatform.cs" />
     <Compile Include="Patches\Cobweb.cs" />
