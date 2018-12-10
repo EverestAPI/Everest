@@ -35,6 +35,13 @@ namespace Celeste.Mod {
 
     // Source types.
     public abstract class ModContent {
+        public virtual string DefaultName { get; }
+        private string _Name;
+        public string Name {
+            get => _Name ?? DefaultName;
+            set => _Name = value;
+        }
+
         public List<ModAsset> List = new List<ModAsset>();
         public Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
@@ -53,6 +60,8 @@ namespace Celeste.Mod {
         /// The path to the mod directory.
         /// </summary>
         public string Path;
+
+        public override string DefaultName => System.IO.Path.GetFileName(Path);
 
         public FileSystemModContent(string path) {
             Path = path;
@@ -272,17 +281,21 @@ namespace Celeste.Mod {
                     path = GuessType(path, out metadata.Type, out metadata.Format);
 
                 metadata.PathVirtual = path;
+                string prefix = metadata.Source.Name + ":";
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
                 ModAsset metadataPrev;
                 if (!Map.TryGetValue(path, out metadataPrev))
                     metadataPrev = null;
-                               
+
                 // Hardcoded case: Handle directories separately.
-                if (metadata.Type == typeof(AssetTypeDirectory))
+                if (metadata.Type == typeof(AssetTypeDirectory)) {
                     MapDirs[path] = metadata;
-                else
+                    MapDirs[prefix + path] = metadata;
+                } else {
                     Map[path] = metadata;
+                    Map[prefix + path] = metadata;
+                }
 
                 // If we're not already the highest level shadow "node"...
                 if (path != "") {

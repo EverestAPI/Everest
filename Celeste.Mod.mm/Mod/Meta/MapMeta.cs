@@ -51,6 +51,9 @@ namespace Celeste.Mod.Meta {
         public string CassetteNoteColor { get; set; } = null;
         public string CassetteSong { get; set; } = null;
 
+        public string ForegroundTiles { get; set; } = null;
+        public string BackgroundTiles { get; set; } = null;
+
         public MapMetaModeProperties[] Modes { get; set; } = null;
 
         public MapMetaMountain Mountain { get; set; } = null;
@@ -91,6 +94,9 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
             meta.AttrIf("CassetteSong", v => CassetteSong = v);
+
+            meta.AttrIf("ForegroundTiles", v => ForegroundTiles = v);
+            meta.AttrIf("BackgroundTiles", v => BackgroundTiles = v);
 
             BinaryPacker.Element child;
 

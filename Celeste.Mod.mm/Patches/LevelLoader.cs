@@ -3,12 +3,14 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
+using Celeste.Mod.Meta;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
@@ -23,6 +25,21 @@ namespace Celeste {
         public void ctor(Session session, Vector2? startPosition = default(Vector2?)) {
             if (CoreModule.Settings.LazyLoading)
                 VirtualContentExt.UnloadOverworld();
+
+            AreaData area = AreaData.Get(session);
+            MapMeta meta = area.GetMeta();
+            string path;
+
+            path = meta.BackgroundTiles;
+            if (string.IsNullOrEmpty(path))
+                path = Path.Combine("Graphics", "BackgroundTiles.xml");
+            GFX.BGAutotiler = new Autotiler(path);
+
+            path = meta.ForegroundTiles;
+            if (string.IsNullOrEmpty(path))
+                path = Path.Combine("Graphics", "ForegroundTiles.xml");
+            GFX.FGAutotiler = new Autotiler(path);
+
             orig_ctor(session, startPosition);
         }
 
