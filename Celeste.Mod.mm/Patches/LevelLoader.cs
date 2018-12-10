@@ -30,12 +30,12 @@ namespace Celeste {
             MapMeta meta = area.GetMeta();
             string path;
 
-            path = meta.BackgroundTiles;
+            path = meta?.BackgroundTiles;
             if (string.IsNullOrEmpty(path))
                 path = Path.Combine("Graphics", "BackgroundTiles.xml");
             GFX.BGAutotiler = new Autotiler(path);
 
-            path = meta.ForegroundTiles;
+            path = meta?.ForegroundTiles;
             if (string.IsNullOrEmpty(path))
                 path = Path.Combine("Graphics", "ForegroundTiles.xml");
             GFX.FGAutotiler = new Autotiler(path);

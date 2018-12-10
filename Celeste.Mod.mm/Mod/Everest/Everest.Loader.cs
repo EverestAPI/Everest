@@ -212,7 +212,7 @@ namespace Celeste.Mod {
                                 }
                             }
                         } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {dir}: {e}");
+                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {dir}: {e}");
                         }
                     }
 
