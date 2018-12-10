@@ -144,6 +144,9 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
+            if (Everest.Flags.Disabled)
+                return;
+
             int index;
 
             // Find the options button and place our button below it.
@@ -167,6 +170,9 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
+            if (Everest.Flags.Disabled)
+                return;
+
             List<TextMenu.Item> items = menu.GetItems();
             int index;
 

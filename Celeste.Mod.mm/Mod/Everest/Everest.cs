@@ -126,6 +126,9 @@ namespace Celeste.Mod {
                 else if (arg == "--headless")
                     Environment.SetEnvironmentVariable("EVEREST_HEADLESS", "1");
 
+                else if (arg == "--everest-disabled" || arg == "--speedrun")
+                    Environment.SetEnvironmentVariable("EVEREST_DISABLED", "1");
+
             }
         }
 

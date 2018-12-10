@@ -30,7 +30,9 @@ namespace Celeste {
         public void ctor() {
             orig_ctor();
 
-            version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
+            if (!Everest.Flags.Disabled)
+                version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
+
             updateTex = GFX.Gui["areas/new"];
 
             // Initialize DebugRC here, as the play mode can change during the intro.

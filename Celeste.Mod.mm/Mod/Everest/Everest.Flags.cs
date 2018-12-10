@@ -40,6 +40,11 @@ namespace Celeste.Mod {
             public static bool IsFNADroid { get; private set; }
 
             /// <summary>
+            /// Is Everest itself disabled?
+            /// </summary>
+            public static bool Disabled { get; private set; }
+
+            /// <summary>
             /// Should the game avoid creating render targets if possible?
             /// </summary>
             public static bool AvoidRenderTargets { get; private set; }
@@ -67,6 +72,8 @@ namespace Celeste.Mod {
             public static bool SupportUpdatingEverest { get; private set; }
 
             internal static void Initialize() {
+                Disabled = Environment.GetEnvironmentVariable("EVEREST_DISABLED") == "1";
+
                 IsMono = Type.GetType("Mono.Runtime") != null;
 
                 IsFNADroid = Environment.GetEnvironmentVariable("FNADROID") == "1";

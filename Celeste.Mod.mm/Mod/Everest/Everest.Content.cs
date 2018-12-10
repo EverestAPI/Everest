@@ -190,6 +190,9 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
+                if (Flags.Disabled)
+                    return;
+
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly));
                 Crawl(new MapBinsInModsModContent(Path.Combine(PathGame, "Mods")));
             }
