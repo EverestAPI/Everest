@@ -54,7 +54,7 @@ namespace Celeste {
             // Remove all empty dummy languages.
             HashSet<string> dummies = new HashSet<string>();
             foreach (Language lang in Dialog.Languages.Values)
-                if (lang.Dialog.Count == 0)
+                if (lang.Dialog.Count == 0 || string.IsNullOrEmpty(lang.Label))
                     dummies.Add(lang.Id);
             foreach (string id in dummies)
                 Dialog.Languages.Remove(id);
