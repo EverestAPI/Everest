@@ -208,6 +208,8 @@ namespace Celeste {
         };
 
         private readonly static FILE_READCALLBACK ModBankRead = (IntPtr handle, IntPtr buffer, uint sizebytes, ref uint bytesread, IntPtr userdata) => {
+            bytesread = 0;
+
             Stream stream = modBankStreams[handle];
             byte[] tmp = new byte[Math.Min(65536, sizebytes)];
             int read;
@@ -215,6 +217,9 @@ namespace Celeste {
                 Marshal.Copy(tmp, 0, (IntPtr) ((long) buffer + bytesread), read);
                 bytesread += (uint) read;
             }
+
+            if (bytesread < sizebytes)
+                return RESULT.ERR_FILE_EOF;
             return RESULT.OK;
         };
 
