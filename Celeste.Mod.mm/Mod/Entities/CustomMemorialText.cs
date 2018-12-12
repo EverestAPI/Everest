@@ -23,10 +23,12 @@ namespace Celeste.Mod.Entities {
         private string message;
         private float alpha = 0f;
         private float timer = 0f;
-        private float widestCharacter = 0f;
+        private float[] lineWidths;
         private int firstLineLength;
         private SoundSource textSfx;
         private bool textSfxPlaying;
+
+        private Dictionary<int, PixelFontCharacter> charChars;
 
         public CustomMemorialText(CustomMemorial memorial, bool dreamy, string text)
             : base() {
@@ -40,13 +42,13 @@ namespace Celeste.Mod.Entities {
 
             firstLineLength = CountToNewline(0);
 
-            for (int i = 0; i < message.Length; i++) {
-                float width = ActiveFont.Measure(message[i]).X;
-                if (width > widestCharacter) {
-                    widestCharacter = width;
-                }
-            }
-            widestCharacter *= 0.9f;
+            string[] lines = text.Split('\n');
+            lineWidths = new float[lines.Length];
+
+            for (int i = 0; i < lines.Length; i++)
+                lineWidths[i] = ActiveFont.Measure(lines[i]).X;
+
+            charChars = ActiveFont.Font.Get(ActiveFont.BaseSize).Characters;
         }
 
         public override void Update() {
@@ -112,32 +114,52 @@ namespace Celeste.Mod.Entities {
             Vector2 pos = new Vector2((Memorial.X - camera.X) * 6f, (Memorial.Y - camera.Y) * 6f - 350f - ActiveFont.LineHeight * 3.3f);
             if (SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode)
                 pos.X = 1920f - pos.X;
+
             float alphaEased = Ease.CubeInOut(alpha);
+
             int length = (int) Math.Min(message.Length, index);
-            int lineIndex = 0;
-            float sink = 64f * (1f - alphaEased);
-            int lineLength = CountToNewline(0);
-            for (int i = 0; i < length; i++) {
-                char c = message[i];
-                if (c == '\n') {
-                    lineIndex = 0;
-                    lineLength = CountToNewline(i + 1);
-                    sink += ActiveFont.LineHeight * 1.1f;
-                    continue;
+
+            // Render the text twice. Once for the border, then once again properly.
+            for (int mode = 0; mode < 2; mode++) {
+                float sink = 64f * (1f - alphaEased);
+                int lineLength = CountToNewline(0);
+                int lineIndex = 0;
+                int line = 0;
+                float xNext = 0f;
+                for (int i = 0; i < length; i++) {
+                    char c = message[i];
+                    if (c == '\n') {
+                        lineIndex = 0;
+                        line++;
+                        lineLength = CountToNewline(i + 1);
+                        sink += ActiveFont.LineHeight * 1.1f;
+                        xNext = 0f;
+                        continue;
+                    }
+
+                    if (!charChars.TryGetValue(c, out PixelFontCharacter pfc))
+                        continue;
+
+                    float x = xNext - lineWidths[line] * 0.5f;
+                    xNext += pfc.XAdvance;
+                    if (i < message.Length - 1 && pfc.Kerning.TryGetValue(message[i + 1], out int kerning))
+                        xNext += kerning;
+
+                    float xScale = 1f;
+                    float yOffs = 0f;
+                    if (Dreamy && c != ' ' && c != '-' && c != '\n') {
+                        c = message[(i + (int) (Math.Sin((timer * 2f + i / 8f)) * 4.0) + message.Length) % message.Length];
+                        yOffs = (float) Math.Sin((timer * 2f + i / 8f)) * 8f;
+                        xScale = (Math.Sin((timer * 4f + i / 16f)) < 0.0) ? -1f : 1f;
+                    }
+
+                    if (mode == 0)
+                        ActiveFont.DrawOutline(c.ToString(), pos + new Vector2(x, sink + yOffs), new Vector2(0f, 1f), new Vector2(xScale, 1f), Color.Transparent, 2f, Color.Black * alphaEased);
+                    else
+                        ActiveFont.DrawOutline(c.ToString(), pos + new Vector2(x, sink + yOffs), new Vector2(0f, 1f), new Vector2(xScale, 1f), Color.White * alphaEased, 2f, Color.Transparent);
+                    
+                    lineIndex++;
                 }
-
-                float xJustify = 1f;
-                float x = -lineLength * widestCharacter / 2f + (lineIndex + 0.5f) * widestCharacter;
-                float yOffs = 0f;
-
-                if (Dreamy && c != ' ' && c != '-' && c != '\n') {
-                    c = message[(i + (int) (Math.Sin((timer * 2f + i / 8f)) * 4.0) + message.Length) % message.Length];
-                    yOffs = (float) Math.Sin((timer * 2f + i / 8f)) * 8f;
-                    xJustify = (Math.Sin((timer * 4f + i / 16f)) < 0.0) ? -1f : 1f;
-                }
-
-                ActiveFont.Draw(c, pos + new Vector2(x, sink + yOffs), new Vector2(0.5f, 1f), new Vector2(xJustify, 1f), Color.White * alphaEased);
-                lineIndex++;
             }
         }
 
