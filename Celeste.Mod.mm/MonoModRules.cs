@@ -83,6 +83,12 @@ namespace MonoMod {
     class PatchLoadLanguageAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Dialog.InitLanguages method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchInitLanguages")]
+    class PatchInitLanguagesAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -837,6 +843,31 @@ namespace MonoMod {
             }
 
         }
+
+
+        public static void PatchInitLanguages(MethodDefinition method, CustomAttribute attrib) {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instri > 4 &&
+                    instrs[instri - 3].OpCode == OpCodes.Ldc_I4_S && ((sbyte) instrs[instri - 3].Operand) == ((sbyte) '{') &&
+                    instrs[instri - 2].OpCode == OpCodes.Callvirt && (instrs[instri - 2].Operand as MethodReference)?.GetFindableID() == "System.Int32 System.String::IndexOf(System.Char)" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
+                    instr.OpCode == OpCodes.Cgt) {
+                    instrs[instri - 1].OpCode = OpCodes.Ldc_I4_M1;
+                }
+            }
+
+        }
+
 
         public static void RegisterLevelExitRoutine(MethodDefinition method, CustomAttribute attrib) {
             // Register it. Don't patch it directly as we require an explicit patching order.

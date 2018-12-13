@@ -41,6 +41,7 @@ namespace Celeste {
         }
 
         public static extern void orig_InitLanguages();
+        [PatchInitLanguages] // Manually manipulate the method via MonoModRules
         public static void InitLanguages() {
             LoadOriginalLanguageFiles = false;
             LoadModLanguageFiles = true;
