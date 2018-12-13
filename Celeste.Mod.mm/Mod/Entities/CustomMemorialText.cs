@@ -14,13 +14,15 @@ namespace Celeste.Mod.Entities {
     /// </summary>
     public class CustomMemorialText : Entity {
 
-        public bool Show;
-        public bool Dreamy;
-
         public CustomMemorial Memorial;
 
+        public bool Show;
+
+        public bool Dreamy;
+        public string Message;
+        public float Spacing;
+
         private float index;
-        private string message;
         private float alpha = 0f;
         private float timer = 0f;
         private float[] lineWidths;
@@ -30,7 +32,7 @@ namespace Celeste.Mod.Entities {
 
         private Dictionary<int, PixelFontCharacter> charChars;
 
-        public CustomMemorialText(CustomMemorial memorial, bool dreamy, string text)
+        public CustomMemorialText(CustomMemorial memorial, bool dreamy, string text, float spacing)
             : base() {
             AddTag(Tags.HUD);
             AddTag(Tags.PauseUpdate);
@@ -38,7 +40,8 @@ namespace Celeste.Mod.Entities {
 
             Dreamy = dreamy;
             Memorial = memorial;
-            message = text;
+            Message = text;
+            Spacing = spacing;
 
             firstLineLength = CountToNewline(0);
 
@@ -46,7 +49,7 @@ namespace Celeste.Mod.Entities {
             lineWidths = new float[lines.Length];
 
             for (int i = 0; i < lines.Length; i++)
-                lineWidths[i] = ActiveFont.Measure(lines[i]).X;
+                lineWidths[i] = ActiveFont.Measure(lines[i]).X + spacing * lines[i].Length;
 
             charChars = ActiveFont.Font.Get(ActiveFont.BaseSize).Characters;
         }
@@ -70,11 +73,11 @@ namespace Celeste.Mod.Entities {
             } else {
                 alpha = Calc.Approach(alpha, 1f, Engine.DeltaTime * 2f);
                 if (alpha >= 1f) {
-                    index = Calc.Approach(index, message.Length, 32f * Engine.DeltaTime);
+                    index = Calc.Approach(index, Message.Length, 32f * Engine.DeltaTime);
                 }
             }
 
-            if (Show && alpha >= 1f && index < message.Length) {
+            if (Show && alpha >= 1f && index < Message.Length) {
                 if (!textSfxPlaying) {
                     textSfxPlaying = true;
                     textSfx.Play(Dreamy ? Sfxs.ui_game_memorialdream_text_loop : Sfxs.ui_game_memorial_text_loop, null, 0f);
@@ -92,8 +95,8 @@ namespace Celeste.Mod.Entities {
 
         private int CountToNewline(int start) {
             int i;
-            for (i = start; i < message.Length; i++) {
-                if (message[i] == '\n') {
+            for (i = start; i < Message.Length; i++) {
+                if (Message[i] == '\n') {
                     break;
                 }
             }
@@ -117,7 +120,7 @@ namespace Celeste.Mod.Entities {
 
             float alphaEased = Ease.CubeInOut(alpha);
 
-            int length = (int) Math.Min(message.Length, index);
+            int length = (int) Math.Min(Message.Length, index);
 
             // Render the text twice. Once for the border, then once again properly.
             for (int mode = 0; mode < 2; mode++) {
@@ -127,7 +130,7 @@ namespace Celeste.Mod.Entities {
                 int line = 0;
                 float xNext = 0f;
                 for (int i = 0; i < length; i++) {
-                    char c = message[i];
+                    char c = Message[i];
                     if (c == '\n') {
                         lineIndex = 0;
                         line++;
@@ -142,13 +145,14 @@ namespace Celeste.Mod.Entities {
 
                     float x = xNext - lineWidths[line] * 0.5f;
                     xNext += pfc.XAdvance;
-                    if (i < message.Length - 1 && pfc.Kerning.TryGetValue(message[i + 1], out int kerning))
+                    if (i < Message.Length - 1 && pfc.Kerning.TryGetValue(Message[i + 1], out int kerning))
                         xNext += kerning;
+                    xNext += Spacing;
 
                     float xScale = 1f;
                     float yOffs = 0f;
                     if (Dreamy && c != ' ' && c != '-' && c != '\n') {
-                        c = message[(i + (int) (Math.Sin((timer * 2f + i / 8f)) * 4.0) + message.Length) % message.Length];
+                        c = Message[(i + (int) (Math.Sin((timer * 2f + i / 8f)) * 4.0) + Message.Length) % Message.Length];
                         yOffs = (float) Math.Sin((timer * 2f + i / 8f)) * 8f;
                         xScale = (Math.Sin((timer * 4f + i / 16f)) < 0.0) ? -1f : 1f;
                     }

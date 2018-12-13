@@ -25,8 +25,9 @@ namespace Celeste.Mod.Entities {
         private SoundSource loopingSfx;
 
         private string textText;
+        private float textSpacing;
 
-        public CustomMemorial(Vector2 position, string texture, string dialog)
+        public CustomMemorial(Vector2 position, string texture, string dialog, float spacing)
             : base(position) {
             Tag = Tags.PauseUpdate;
             if (!string.IsNullOrWhiteSpace(texture)) {
@@ -35,6 +36,7 @@ namespace Celeste.Mod.Entities {
             }
 
             textText = Dialog.Clean(dialog);
+            textSpacing = spacing;
 
             Depth = 100;
 
@@ -44,7 +46,7 @@ namespace Celeste.Mod.Entities {
         }
 
         public CustomMemorial(EntityData data, Vector2 offset)
-            : this(data.Position + offset, data.Attr("sprite", "scenery/memorial/memorial"), data.Attr("dialog", "memorial")) {
+            : this(data.Position + offset, data.Attr("sprite", "scenery/memorial/memorial"), data.Attr("dialog", "memorial"), data.Float("spacing", 8f)) {
         }
 
         public override void Added(Scene scene) {
@@ -52,7 +54,7 @@ namespace Celeste.Mod.Entities {
 
             Level level = (Level) scene;
 
-            level.Add(text = new CustomMemorialText(this, level.Session.Dreaming, textText));
+            level.Add(text = new CustomMemorialText(this, level.Session.Dreaming, textText, textSpacing));
 
             if (level.Session.Dreaming) {
                 Add(dreamyText = new Sprite(GFX.Game, "scenery/memorial/floatytext"));
