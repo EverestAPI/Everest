@@ -47,6 +47,9 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool LaunchWithoutIntro { get; set; } = false;
 
+        [SettingInGame(false)]
+        public bool ShowModOptionsInGame { get; set; } = true;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
