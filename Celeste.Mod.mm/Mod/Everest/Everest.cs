@@ -16,6 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -163,6 +164,10 @@ namespace Celeste.Mod {
             new CoreModule().Register();
 
             // Note: Everest fulfills some mod dependencies by itself.
+            new NullModule(new EverestModuleMetadata() {
+                Name = "Celeste",
+                VersionString = $"{Celeste.Instance.Version.ToString()}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")}"
+            }).Register();
             new NullModule(new EverestModuleMetadata() {
                 Name = "DialogCutscene",
                 VersionString = "1.0.0"

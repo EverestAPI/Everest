@@ -221,17 +221,13 @@ namespace Celeste.Mod.Core {
             LoadSettings();
 
             if (!inGame) {
-                if (Everest.Updater.HasUpdate) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
-                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
-                    }));
-                }
-
-                // Allow downgrading travis / dev builds.
-                if (Celeste.PlayMode == Celeste.PlayModes.Debug || Everest.VersionSuffix.StartsWith("travis-") || Everest.VersionSuffix == "dev") {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
-                        OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
-                    }));
+                lock (Everest.Loader.Delayed) {
+                    if (Everest.Loader.Delayed.Count > 0) {
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed)
+                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
+                    }
                 }
             }
 
@@ -240,6 +236,16 @@ namespace Celeste.Mod.Core {
             if (!inGame) {
                 menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
+                }));
+
+                if (Everest.Updater.HasUpdate) {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
+                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                    }));
+                }
+
+                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
+                    OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
             }
         }

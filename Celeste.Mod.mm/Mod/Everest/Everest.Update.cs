@@ -109,7 +109,7 @@ namespace Celeste.Mod {
                     }
                     entries.Sort((a, b) => {
                         if (a.Branch != b.Branch)
-                            return -(branchFirsts[a.Branch] - branchFirsts[b.Branch]);
+                            return -(branchFirsts[a.Branch].CompareTo(branchFirsts[b.Branch]));
                         return -a.Build.CompareTo(b.Build);
                     });
                     Entries = new ReadOnlyCollection<Entry>(entries);

@@ -34,7 +34,7 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update to ((version))
-	MODOPTIONS_COREMODULE_VERSIONLIST= 						~Version list~
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						Version list
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_LAUNCHINDEBUGMODE= 				Launch as debug build
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Launch w/ FMOD Live Update
@@ -55,6 +55,9 @@
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload assets~
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Sound test
+
+	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
+	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
 
 # Sound Test
 	SOUNDTEST_TITLE=	SOUND TEST

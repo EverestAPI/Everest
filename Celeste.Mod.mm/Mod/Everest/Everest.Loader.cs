@@ -398,12 +398,20 @@ namespace Celeste.Mod {
                     // Special case: Always true if version == 0.0.*
                     if (version.Major == 0 && version.Minor == 0)
                         return true;
+                    
                     // Major version, breaking changes, must match.
                     if (version.Major != depVersion.Major)
                         return false;
                     // Minor version, non-breaking changes, installed can't be lower than what we depend on.
                     if (version.Minor < depVersion.Minor)
                         return false;
+
+                    // "Build" is "PATCH" in semver, but we'll also check for it and "Revision".
+                    if (version.Build < depVersion.Build)
+                        return false;
+                    if (version.Revision < depVersion.Revision)
+                        return false;
+
                     return true;
                 }
 

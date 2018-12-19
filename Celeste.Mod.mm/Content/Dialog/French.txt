@@ -16,7 +16,7 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Mise à jour ((version))
-	MODOPTIONS_COREMODULE_VERSIONLIST= 						~Liste des versions~
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						Liste des versions
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_LAUNCHINDEBUGMODE= 				Relancer en mode debug
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Relancer w/ FMOD Live Update

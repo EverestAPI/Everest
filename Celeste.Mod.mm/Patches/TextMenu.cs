@@ -52,7 +52,7 @@ namespace Celeste {
         }
 
     }
-    public static class TextMenuExt {
+    public static partial class TextMenuExt {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.

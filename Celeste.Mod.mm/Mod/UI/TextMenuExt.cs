@@ -8,8 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste.Mod.UI {
-    public static class TextMenuExt {
+namespace Celeste {
+    public static partial class TextMenuExt {
 
         public static void DrawIcon(Vector2 position, string iconName, float? inputWidth, float inputHeight, bool outline, Color color, ref Vector2 textPosition) {
             if (iconName == null || !GFX.Gui.Has(iconName))
@@ -34,6 +34,8 @@ namespace Celeste.Mod.UI {
 
         public interface IItemExt {
 
+            Color TextColor { get; set; }
+
             string Icon { get; set; }
             float? IconWidth { get; set; }
             bool IconOutline { get; set; }
@@ -45,12 +47,15 @@ namespace Celeste.Mod.UI {
 
         public class ButtonExt : TextMenu.Button, IItemExt {
 
+            public Color TextColor { get; set; } = Color.White;
+            public Color TextColorDisabled { get; set; } = Color.DarkSlateGray;
+
             public string Icon { get; set; }
             public float? IconWidth { get; set; }
             public bool IconOutline { get; set; }
 
             public Vector2 Offset { get; set; }
-            public float Alpha { get; set; }
+            public float Alpha { get; set; } = 1f;
 
             public ButtonExt(string label, string icon = null)
                 : base(label) {
@@ -61,7 +66,7 @@ namespace Celeste.Mod.UI {
                 position += Offset;
                 float alpha = Container.Alpha * Alpha;
 
-                Color textColor = (Disabled ? Color.DarkSlateGray : highlighted ? Container.HighlightColor : Color.White) * alpha;
+                Color textColor = (Disabled ? TextColorDisabled : highlighted ? Container.HighlightColor : TextColor) * alpha;
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 bool flag = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
@@ -86,12 +91,18 @@ namespace Celeste.Mod.UI {
 
         public class SubHeaderExt : TextMenu.SubHeader, IItemExt {
 
+            public Color TextColor { get; set; } = Color.Gray;
+
             public string Icon { get; set; }
             public float? IconWidth { get; set; }
             public bool IconOutline { get; set; }
 
             public Vector2 Offset { get; set; }
-            public float Alpha { get; set; }
+            public float Alpha { get; set; } = 1f;
+
+            public float HeightExtra { get; set; } = 48f;
+
+            public override float Height() => base.Height() - 48f + HeightExtra;
 
             public SubHeaderExt(string title, string icon = null)
                 : base(title) {
@@ -104,7 +115,11 @@ namespace Celeste.Mod.UI {
 
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
-                Vector2 textPosition = position + (Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ? new Vector2(0f, 32f) : new Vector2(Container.Width * 0.5f, 32f));
+                Vector2 textPosition = position + (
+                    Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ?
+                    new Vector2(0f, MathHelper.Max(0f, 32f - 48f + HeightExtra)) :
+                    new Vector2(Container.Width * 0.5f, MathHelper.Max(0f, 32f - 48f + HeightExtra))
+                );
                 Vector2 justify = new Vector2(Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ? 0f : 0.5f, 0.5f);
 
                 DrawIcon(
@@ -117,10 +132,10 @@ namespace Celeste.Mod.UI {
                     ref textPosition
                 );
 
-                if (Title.Length < 0)
+                if (Title.Length <= 0)
                     return;
 
-                ActiveFont.DrawOutline(Title, textPosition, justify, Vector2.One * 0.6f, Color.Gray * alpha, 2f, strokeColor);
+                ActiveFont.DrawOutline(Title, textPosition, justify, Vector2.One * 0.6f, TextColor * alpha, 2f, strokeColor);
             }
 
         }
@@ -133,7 +148,7 @@ namespace Celeste.Mod.UI {
             public float ImageScale { get; set; } = 1f;
 
             public Vector2 Offset { get; set; }
-            public float Alpha { get; set; }
+            public float Alpha { get; set; } = 1f;
 
             public HeaderImage(string image = null) {
                 Image = image;
