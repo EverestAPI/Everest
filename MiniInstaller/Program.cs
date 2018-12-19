@@ -56,8 +56,6 @@ namespace MiniInstaller {
                     }
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe);
                     RunHookGen(PathCelesteExe);
-                    // TEMPORARY STEP until we've updated to HookedMethod 0.3.4
-                    RunMonoMod(Path.Combine(PathGame, "HookedMethod.dll"));
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
