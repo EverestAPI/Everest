@@ -17,6 +17,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
+using System.Globalization;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -150,6 +151,13 @@ namespace Celeste.Mod {
 
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
+
+            if (!Flags.Disabled) {
+                // 0.1 parses into 1 in regions using ,
+                // This also somehow sets the exception message language to English.
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+            }
 
             if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") != "1") {
                 // Initialize the content helper.
