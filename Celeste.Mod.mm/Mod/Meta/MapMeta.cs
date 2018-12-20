@@ -23,30 +23,30 @@ namespace Celeste.Mod.Meta {
         public string SID { get; set; } = null;
         public string Icon { get; set; } = null;
 
-        public bool Interlude { get; set; } = false;
+        public bool? Interlude { get; set; } = false;
         public string CompleteScreenName { get; set; } = null;
 
-        public int CassetteCheckpointIndex { get; set; } = 0;
+        public int? CassetteCheckpointIndex { get; set; } = 0;
 
         public string TitleBaseColor { get; set; } = null;
         public string TitleAccentColor { get; set; } = null;
         public string TitleTextColor { get; set; } = null;
 
-        public Player.IntroTypes IntroType { get; set; } = Player.IntroTypes.WakeUp;
+        public Player.IntroTypes? IntroType { get; set; } = Player.IntroTypes.WakeUp;
 
-        public bool Dreaming { get; set; } = false;
+        public bool? Dreaming { get; set; } = false;
 
         public string ColorGrade { get; set; } = null;
 
         public string Wipe { get; set; } = null;
 
-        public float DarknessAlpha { get; set; } = 0.05f;
-        public float BloomBase { get; set; } = 0f;
-        public float BloomStrength { get; set; } = 1f;
+        public float? DarknessAlpha { get; set; } = 0.05f;
+        public float? BloomBase { get; set; } = 0f;
+        public float? BloomStrength { get; set; } = 1f;
 
         public string Jumpthru { get; set; } = null;
 
-        public Session.CoreModes CoreMode { get; set; }
+        public Session.CoreModes? CoreMode { get; set; }
 
         public string CassetteNoteColor { get; set; } = null;
         public string CassetteSong { get; set; } = null;
@@ -126,11 +126,13 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
-            area.Interlude = Interlude;
+            if (Interlude != null)
+                area.Interlude = Interlude.Value;
             if (!string.IsNullOrEmpty(CompleteScreenName))
                 area.CompleteScreenName = CompleteScreenName;
 
-            area.CassetteCheckpointIndex = CassetteCheckpointIndex;
+            if (CassetteCheckpointIndex != null)
+                area.CassetteCheckpointIndex = CassetteCheckpointIndex.Value;
 
             if (!string.IsNullOrEmpty(TitleBaseColor))
                 area.TitleBaseColor = Calc.HexToColor(TitleBaseColor);
@@ -139,9 +141,11 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(TitleTextColor))
                 area.TitleTextColor = Calc.HexToColor(TitleTextColor);
 
-            area.IntroType = IntroType;
+            if (IntroType != null)
+                area.IntroType = IntroType.Value;
 
-            area.Dreaming = Dreaming;
+            if (Dreaming != null)
+                area.Dreaming = Dreaming.Value;
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
 
@@ -160,14 +164,18 @@ namespace Celeste.Mod.Meta {
                 }
             }
 
-            area.DarknessAlpha = DarknessAlpha;
-            area.BloomBase = BloomBase;
-            area.BloomStrength = BloomStrength;
+            if (DarknessAlpha != null)
+                area.DarknessAlpha = DarknessAlpha.Value;
+            if (BloomBase != null)
+                area.BloomBase = BloomBase.Value;
+            if (BloomStrength != null)
+                area.BloomStrength = BloomStrength.Value;
 
             if (!string.IsNullOrEmpty(Jumpthru))
                 area.Jumpthru = Jumpthru;
 
-            area.CoreMode = CoreMode;
+            if (CoreMode != null)
+                area.CoreMode = CoreMode.Value;
 
             if (!string.IsNullOrEmpty(CassetteNoteColor))
                 area.CassseteNoteColor = Calc.HexToColor(CassetteNoteColor);
