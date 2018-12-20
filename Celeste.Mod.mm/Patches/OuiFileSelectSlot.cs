@@ -86,11 +86,11 @@ namespace Celeste {
 
             Overworld overworld = fileSelect.Overworld;
             AreaData area = AreaData.Areas[SaveData.Instance.LastArea.ID];
-            if (NewGameLevelSet != null && NewGameLevelSet != "Celeste") {
+            if (area.GetLevelSet() != "Celeste") {
                 // Pretend that we've beaten Prologue.
                 LevelSetStats stats = SaveData.Instance.GetLevelSetStatsFor("Celeste");
                 stats.UnlockedAreas = 1;
-                stats.Areas[0].Modes[0].Completed = true;
+                stats.AreasIncludingCeleste[0].Modes[0].Completed = true;
             }
 
             yield return fileSelect.Leave(null);
