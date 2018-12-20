@@ -113,6 +113,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
+    <Compile Include="Mod\Entities\DestroyCrystalsTrigger.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />

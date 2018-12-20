@@ -1,33 +1,31 @@
 ﻿using Microsoft.Xna.Framework;
 
-namespace Celeste.Mod.Entities
-{
-    public class DialogCutsceneTrigger : Trigger
-    {
-        string dialogEntry;
+namespace Celeste.Mod.Entities {
+    public class DialogCutsceneTrigger : Trigger {
+
+        private string dialogEntry;
         private bool triggered;
         private EntityID id;
         private bool onlyOnce;
 
-        public DialogCutsceneTrigger(EntityData data, Vector2 offset, EntityID entId) : base(data, offset)
-        {
-            this.dialogEntry = data.Attr("dialogId", "");
-            this.onlyOnce = data.Bool("onlyOnce", true);
+        public DialogCutsceneTrigger(EntityData data, Vector2 offset, EntityID entId)
+            : base(data, offset) {
+            dialogEntry = data.Attr("dialogId");
+            onlyOnce = data.Bool("onlyOnce", true);
             triggered = false;
             id = entId;
         }
 
-        public override void OnEnter(Player player)
-        {
-            if (!triggered && !(base.Scene as Level).Session.GetFlag("DoNotLoad" + this.id))
-            {
-                triggered = true;
-                base.Scene.Add(new DialogCutscene(this.dialogEntry, player));
-                if (onlyOnce)
-                {
-                    (base.Scene as Level).Session.SetFlag("DoNotLoad" + this.id, true); //Sets flag to not load
-                }
-            }
+        public override void OnEnter(Player player) {
+            if (triggered || (Scene as Level).Session.GetFlag("DoNotLoad" + id))
+                return;
+            triggered = true;
+
+            Scene.Add(new DialogCutscene(dialogEntry, player));
+
+            if (onlyOnce)
+                (Scene as Level).Session.SetFlag("DoNotLoad" + id, true); // Sets flag to not load
         }
+
     }
 }

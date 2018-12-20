@@ -1,44 +1,38 @@
 ﻿using System.Collections;
 using Monocle;
 
-namespace Celeste.Mod.Entities
-{
-    public class DialogCutscene : CutsceneEntity
-    {
+namespace Celeste.Mod.Entities {
+    public class DialogCutscene : CutsceneEntity {
+
         private Player player;
         private string dialogEntry;
 
-        public DialogCutscene(string dialogID, Player playerEnt) : base(true, false)
-        {
+        public DialogCutscene(string dialogID, Player playerEnt) {
             dialogEntry = dialogID;
             player = playerEnt;
         }
 
-        public override void OnBegin(Level level)
-        {
-            base.Add(new Coroutine(this.Cutscene(level), true));
+        public override void OnBegin(Level level) {
+            Add(new Coroutine(Cutscene(level)));
         }
 
-        private IEnumerator Cutscene(Level level)
-        {
-            this.player.StateMachine.State = 11;
-            this.player.StateMachine.Locked = true;
-            this.player.ForceCameraUpdate = true;
-            yield return Textbox.Say(dialogEntry, null);
-            this.EndCutscene(level, true);
-            yield break;
+        private IEnumerator Cutscene(Level level) {
+            player.StateMachine.State = 11;
+            player.StateMachine.Locked = true;
+            player.ForceCameraUpdate = true;
+            yield return Textbox.Say(dialogEntry);
+
+            EndCutscene(level, true);
         }
 
-        public override void OnEnd(Level level)
-        {
-            this.player.StateMachine.Locked = false;
-            this.player.StateMachine.State = 0;
-            this.player.ForceCameraUpdate = false;
-            bool wasSkipped = this.WasSkipped;
-            if (wasSkipped)
-            {
-                level.Camera.Position = this.player.CameraTarget;
-            }
+        public override void OnEnd(Level level) {
+            player.StateMachine.Locked = false;
+            player.StateMachine.State = 0;
+            player.ForceCameraUpdate = false;
+
+            if (WasSkipped)
+                level.Camera.Position = player.CameraTarget;
         }
+
     }
 }

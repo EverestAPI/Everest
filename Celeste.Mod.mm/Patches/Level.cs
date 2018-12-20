@@ -194,6 +194,21 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "everest/destroyCrystalsTrigger" ||
+                entityData.Name == "everest/goAwaySpinnersTrigger" || // Cruor requested this, but he wrote Spinners meaning Crystals.
+                entityData.Name == "everest/goAwayCrystalsTrigger" || // Cruor requested this.
+                entityData.Name == "outback/destroycrystalstrigger") {
+                level.Add(new DestroyCrystalsTrigger(entityData, offset));
+                return true;
+            }
+
+            if (entityData.Name == "everest/completeAreaTrigger" ||
+                entityData.Name == "everest/getMeOutTrigger" || // Cruor requested this.
+                entityData.Name == "outback/completeareatrigger") {
+                level.Add(new CompleteAreaTrigger(entityData, offset));
+                return true;
+            }
+
             // The following entities have hardcoded "attributes."
             // Everest allows custom maps to set them.
 
