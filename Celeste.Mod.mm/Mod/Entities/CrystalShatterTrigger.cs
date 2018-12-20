@@ -8,28 +8,28 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
-    public class DestroyCrystalsTrigger : Trigger {
+    public class CrystalShatterTrigger : Trigger {
 
-        private DestroyTypes destructionType;
+        private Modes mode;
 
-        public DestroyCrystalsTrigger(EntityData data, Vector2 offset)
+        public CrystalShatterTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
-            destructionType = data.Enum("destroyEveryCrystal", DestroyTypes.InTrigger);
+            mode = data.Enum("mode", Modes.Contained);
         }
 
         public override void OnEnter(Player player) {
             base.OnEnter(player);
 
             foreach (CrystalStaticSpinner spinner in Scene.Entities.OfType<CrystalStaticSpinner>())
-                if (CollideCheck(spinner) || destructionType == DestroyTypes.EveryCrystal)
+                if (CollideCheck(spinner) || mode == Modes.All)
                     spinner.Destroy();
 
             RemoveSelf();
         }
 
-        public enum DestroyTypes {
-            InTrigger,
-            EveryCrystal,
+        public enum Modes {
+            Contained,
+            All,
         }
 
     }
