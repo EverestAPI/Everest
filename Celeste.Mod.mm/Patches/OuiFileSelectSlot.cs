@@ -90,6 +90,7 @@ namespace Celeste {
                 // Pretend that we've beaten Prologue.
                 LevelSetStats stats = SaveData.Instance.GetLevelSetStatsFor("Celeste");
                 stats.UnlockedAreas = 1;
+                stats.Areas[0].Modes[0].Completed = true;
             }
 
             yield return fileSelect.Leave(null);
