@@ -14,7 +14,10 @@ namespace Celeste.Mod.Entities {
 
         public CrystalShatterTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
-            mode = data.Enum("mode", Modes.Contained);
+            if (data.Has("destroyEveryCrystal"))
+                mode = (Modes) (int) data.Enum("destroyEveryCrystal", ModesLegacy.InTrigger);
+            if (data.Has("mode"))
+                mode = data.Enum("mode", Modes.Contained);
         }
 
         public override void OnEnter(Player player) {
@@ -30,6 +33,11 @@ namespace Celeste.Mod.Entities {
         public enum Modes {
             Contained,
             All,
+        }
+
+        private enum ModesLegacy {
+            InTrigger,
+            EveryCrystal,
         }
 
     }
