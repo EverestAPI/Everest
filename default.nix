@@ -1,13 +1,6 @@
 { pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage }:
 
 let
-  HookedMethod = fetchNuGet {
-    baseName = "HookedMethod";
-    version = "0.3.3-beta";
-    sha256 = "5abc349e55d57777fed6fc5d65cda4cc97aa8cb1dc87927dea7d4182f3fa57df";
-    outputFiles = [ "*" ];
-  };
-
   Cecil = fetchNuGet {
     baseName = "Mono.Cecil";
     version = "0.10.0";
@@ -18,7 +11,7 @@ let
   ValueTuple = fetchNuGet {
     baseName = "System.ValueTuple";
     version = "4.4.0";
-    sha256 = "0442bk4nk7ncd37qn1p5nbz297093vfcz5p0xl97q1gvcb7fyfsf";
+    sha256 = "1wydfgszs00yxga57sam66vzv9fshk2pw7gim57saplsnkfliaif";
     outputFiles = ["*"];
   };
 
@@ -30,7 +23,7 @@ in buildDotnetPackage rec {
   src = ./.;
 
   xBuildFiles = [ "Celeste.Mod.mm/Celeste.Mod.mm.csproj" "MiniInstaller/MiniInstaller.csproj" ];
-  outputFiles = [ "Celeste.Mod.mm/bin/Release/*" /* vim syntax bug workaround */ "MiniInstaller/bin/Release/*" /* vim syntax bug workaround */ ];
+  outputFiles = [ "Celeste.Mod.mm/bin/Release/*" "MiniInstaller/bin/Release/*" ];
 
   patchPhase = ''
     # $(SolutionDir) does not work for some reason
@@ -40,8 +33,7 @@ in buildDotnetPackage rec {
 
   preBuild = ''
     # Fake nuget restore, not very elegant but it works.
-    mkdir -p  packages
-    ln -sn ${HookedMethod}/lib/dotnet/HookedMethod packages/HookedMethod.${HookedMethod.version}
+    mkdir -p packages
     ln -sn ${Cecil}/lib/dotnet/Mono.Cecil packages/Mono.Cecil.${Cecil.version}
     ln -sn ${ValueTuple}/lib/dotnet/System.ValueTuple packages/System.ValueTuple.${ValueTuple.version}
   '';

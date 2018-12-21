@@ -37,7 +37,7 @@ namespace Celeste.Mod {
             internal static int DelayedLock;
 
             internal static void LoadAuto() {
-                Directory.CreateDirectory(PathMods = Path.Combine(PathGame, "Mods"));
+                Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
 
                 PathBlacklist = Path.Combine(PathMods, "blacklist.txt");
