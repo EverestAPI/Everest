@@ -53,6 +53,8 @@ namespace Celeste.Mod.Meta {
 
         public string ForegroundTiles { get; set; } = null;
         public string BackgroundTiles { get; set; } = null;
+        public string Sprites { get; set; } = null;
+        public string Portraits { get; set; } = null;
 
         public MapMetaModeProperties[] Modes { get; set; } = null;
 
@@ -97,6 +99,8 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIf("ForegroundTiles", v => ForegroundTiles = v);
             meta.AttrIf("BackgroundTiles", v => BackgroundTiles = v);
+            meta.AttrIf("Sprites", v => Sprites = v);
+            meta.AttrIf("Portraits", v => Portraits = v);
 
             BinaryPacker.Element child;
 
@@ -192,6 +196,18 @@ namespace Celeste.Mod.Meta {
             if (meta == null) {
                 area.SetMeta(this);
             } else {
+                if (!string.IsNullOrEmpty(ForegroundTiles))
+                    meta.ForegroundTiles = ForegroundTiles;
+
+                if (!string.IsNullOrEmpty(BackgroundTiles))
+                    meta.BackgroundTiles = BackgroundTiles;
+
+                if (!string.IsNullOrEmpty(Sprites))
+                    meta.Sprites = Sprites;
+
+                if (!string.IsNullOrEmpty(Portraits))
+                    meta.Portraits = Portraits;
+
                 if ((Modes?.Length ?? 0) != 0)
                     meta.Modes = Modes;
 

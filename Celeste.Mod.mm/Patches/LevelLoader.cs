@@ -65,6 +65,16 @@ namespace Celeste {
                 path = Path.Combine("Graphics", "ForegroundTiles.xml");
             GFX.FGAutotiler = new Autotiler(path);
 
+            path = meta?.Sprites;
+            if (string.IsNullOrEmpty(path))
+                path = Path.Combine("Graphics", "Sprites.xml");
+            GFX.SpriteBank = new SpriteBank(GFX.Game, path);
+
+            path = meta?.Portraits;
+            if (string.IsNullOrEmpty(path))
+                path = Path.Combine("Graphics", "Portraits.xml");
+            GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
+
             orig_ctor(session, startPosition);
         }
 
