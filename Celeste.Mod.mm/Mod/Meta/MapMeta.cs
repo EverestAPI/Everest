@@ -53,6 +53,7 @@ namespace Celeste.Mod.Meta {
 
         public string ForegroundTiles { get; set; } = null;
         public string BackgroundTiles { get; set; } = null;
+        public string AnimatedTiles { get; set; } = null;
         public string Sprites { get; set; } = null;
         public string Portraits { get; set; } = null;
 
@@ -99,6 +100,7 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIf("ForegroundTiles", v => ForegroundTiles = v);
             meta.AttrIf("BackgroundTiles", v => BackgroundTiles = v);
+            meta.AttrIf("AnimatedTiles", v => AnimatedTiles = v);
             meta.AttrIf("Sprites", v => Sprites = v);
             meta.AttrIf("Portraits", v => Portraits = v);
 
@@ -201,6 +203,9 @@ namespace Celeste.Mod.Meta {
 
                 if (!string.IsNullOrEmpty(BackgroundTiles))
                     meta.BackgroundTiles = BackgroundTiles;
+
+                if (!string.IsNullOrEmpty(AnimatedTiles))
+                    meta.AnimatedTiles = AnimatedTiles;
 
                 if (!string.IsNullOrEmpty(Sprites))
                     meta.Sprites = Sprites;

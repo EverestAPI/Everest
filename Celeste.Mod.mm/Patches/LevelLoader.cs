@@ -11,6 +11,7 @@ using Monocle;
 using MonoMod;
 using System.Collections.Generic;
 using System.IO;
+using System.Xml;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
@@ -64,6 +65,21 @@ namespace Celeste {
             if (string.IsNullOrEmpty(path))
                 path = Path.Combine("Graphics", "ForegroundTiles.xml");
             GFX.FGAutotiler = new Autotiler(path);
+
+            path = meta?.AnimatedTiles;
+            if (string.IsNullOrEmpty(path))
+                path = Path.Combine("Graphics", "AnimatedTiles.xml");
+            GFX.AnimatedTilesBank = new AnimatedTilesBank();
+            XmlElement animatedData = Calc.LoadContentXML(path)["Data"];
+            foreach (XmlElement el in animatedData)
+                if (el != null)
+                    GFX.AnimatedTilesBank.Add(
+                        el.Attr("name"),
+                        el.AttrFloat("delay", 0f),
+                        el.AttrVector2("posX", "posY", Vector2.Zero),
+                        el.AttrVector2("origX", "origY", Vector2.Zero),
+                        GFX.Game.GetAtlasSubtextures(el.Attr("path"))
+                    );
 
             path = meta?.Sprites;
             if (string.IsNullOrEmpty(path))
