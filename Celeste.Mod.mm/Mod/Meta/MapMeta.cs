@@ -284,6 +284,7 @@ namespace Celeste.Mod.Meta {
 
         public string StartLevel { get; set; }
         public bool? HeartIsEnd { get; set; }
+        public bool? SeekerSlowdown { get; set; }
 
         public ModeProperties Convert()
             => new ModeProperties() {
@@ -301,7 +302,8 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("Path", v => Path = v);
             meta.AttrIf("PoemID", v => PoemID = v);
             meta.AttrIf("StartLevel", v => StartLevel = v);
-            meta.AttrIf("HeartIsEnd", v => HeartIsEnd = string.IsNullOrEmpty(v) ? (bool?) null : (bool) bool.Parse(v));
+            meta.AttrIfBool("HeartIsEnd", v => HeartIsEnd = v);
+            meta.AttrIfBool("SeekerSlowdown", v => SeekerSlowdown = v);
 
             BinaryPacker.Element child;
 
@@ -378,7 +380,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("Name", v => Name = v);
             meta.AttrIfBool("Dreaming", v => Dreaming = v);
             meta.AttrIf("Inventory", v => Inventory = v);
-            meta.AttrIf("CoreMode", v => CoreMode = string.IsNullOrEmpty(v) ? (Session.CoreModes?) null : (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
+            meta.AttrIf("CoreMode", v => CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
 
             BinaryPacker.Element child;
 

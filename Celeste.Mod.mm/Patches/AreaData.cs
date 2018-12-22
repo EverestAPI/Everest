@@ -234,6 +234,15 @@ namespace Celeste {
                     Areas.Add(area);
                 else
                     modAreas.Add(area);
+
+                // Some special handling.
+                area.OnLevelBegin = (level) => {
+                    MapMeta levelMeta = AreaData.Get(level.Session).GetMeta();
+                    MapMetaModeProperties levelMetaMode = level.Session.MapData.GetMeta();
+
+                    if (levelMetaMode?.SeekerSlowdown ?? false)
+                        level.Add(new SeekerEffectsController());
+                };
             }
 
 
