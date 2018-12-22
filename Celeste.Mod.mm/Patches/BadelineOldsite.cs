@@ -21,9 +21,19 @@ namespace Celeste {
         private bool following;
         private bool ignorePlayerAnim;
 
+        private bool canChangeMusic;
+
         public patch_BadelineOldsite(Vector2 position, int index)
             : base(position, index) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        public extern void orig_ctor(EntityData data, Vector2 offset, int index);
+        [MonoModConstructor]
+        public void ctor(EntityData data, Vector2 offset, int index) {
+            orig_ctor(data, offset, index);
+
+            canChangeMusic = data.Bool("canChangeMusic", true);
         }
 
         // We're hooking the original Added, thus can't call base (Monocle.Entity::Added) without a small workaround.
@@ -84,6 +94,16 @@ namespace Celeste {
                 return true;
 
             return false;
+        }
+
+        private static bool _CanChangeMusic(bool value, BadelineOldsite self)
+            => (self as patch_BadelineOldsite).CanChangeMusic(value);
+        public bool CanChangeMusic(bool value) {
+            Level level = Scene as Level;
+            if (level.Session.Area.GetLevelSet() == "Celeste")
+                return value;
+
+            return canChangeMusic;
         }
 
     }

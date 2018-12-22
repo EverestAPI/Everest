@@ -71,6 +71,12 @@ namespace MonoMod {
     class PatchBadelineChaseRoutineAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Badeline boss OnPlayer method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchBadelineBossOnPlayer")]
+    class PatchBadelineBossOnPlayerAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Cloud.Added method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchCloudAdded")]
@@ -700,6 +706,10 @@ namespace MonoMod {
             if (m_IsChaseEnd == null)
                 return;
 
+            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean _CanChangeMusic(System.Boolean,Celeste.BadelineOldsite)");
+            if (m_CanChangeMusic == null)
+                return;
+
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
@@ -717,14 +727,6 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-
-                /* We expect something similar enough to the following:
-                ldfld    string Celeste.Session::Level
-                ldstr    "2"
-                call    bool [mscorlib]System.String::op_Equality(string, string) // We're here
-
-                Note that MonoMod requires the full type names (System.String instead of string)
-                */
                 // No need to check for the full name when the field name itself is compiler-generated.
                 if (instri > 3 &&
                     instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "System.String Celeste.Session::Level" &&
@@ -740,6 +742,55 @@ namespace MonoMod {
                     instri++;
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_IsChaseEnd));
+                    instri++;
+                }
+
+                if (instri > 3 &&
+                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
+                    instr.OpCode == OpCodes.Ceq
+                ) {
+                    // After ==, process the result.
+                    instri++;
+                    // Push this and grab this from this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
+                    instri++;
+                }
+
+            }
+
+        }
+
+        public static void PatchBadelineBossOnPlayer(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean _CanChangeMusic(System.Boolean,Celeste.FinalBoss)");
+            if (m_CanChangeMusic == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instri > 3 &&
+                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
+                    instr.OpCode == OpCodes.Ceq
+                ) {
+                    // After ==, process the result.
+                    instri++;
+                    // Grab this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
                     instri++;
                 }
 
