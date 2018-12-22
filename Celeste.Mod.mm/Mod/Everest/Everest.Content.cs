@@ -192,7 +192,7 @@ namespace Celeste.Mod {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
-                Directory.CreateDirectory(PathDUMP = Path.Combine(PathGame, "ModDUMP"));
+                Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
 
                 if (_DumpAll)
                     DumpAll();
@@ -203,7 +203,7 @@ namespace Celeste.Mod {
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
                     Name = "Everest"
                 });
-                Crawl(new MapBinsInModsModContent(Path.Combine(PathGame, "Mods")));
+                Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
 
             /// <summary>

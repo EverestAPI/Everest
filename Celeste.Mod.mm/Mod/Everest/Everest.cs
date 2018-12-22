@@ -80,6 +80,14 @@ namespace Celeste.Mod {
         /// The path to the Everest /ModSettings directory.
         /// </summary>
         public static string PathSettings { get; internal set; }
+        /// <summary>
+        /// Whether XDG paths should be used.
+        /// </summary>
+        public static bool XDGPaths { get; internal set; }
+        /// <summary>
+        /// Path to Everest base location. Defaults to the game directory.
+        /// </summary>
+        public static string PathEverest { get; internal set; }
 
         private static bool _SavingSettings;
 
@@ -146,7 +154,16 @@ namespace Celeste.Mod {
             }
 
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
-            PathSettings = Path.Combine(PathGame, "ModSettings");
+            if (!File.Exists(Path.Combine(PathGame, "EverestXDGFlag"))) {
+                XDGPaths = false;
+                PathEverest = PathGame;
+            } else {
+                XDGPaths = true;
+                var dataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                Directory.CreateDirectory(PathEverest = Path.Combine(dataDir, "Everest"));
+                Directory.CreateDirectory(Path.Combine(dataDir, "Everest", "Mods")); // Make sure it exists before content gets initialized
+            }
+            PathSettings = Path.Combine(PathEverest, "ModSettings");
             Directory.CreateDirectory(PathSettings);
 
             // Before even initializing anything else, make sure to prepare any static flags.
