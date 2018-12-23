@@ -35,7 +35,7 @@ namespace Celeste.Mod.Helpers {
             HashSet<Assembly> added = new HashSet<Assembly>();
             List<Type> types = new List<Type>();
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 if (added.Contains(asm))
                     continue;
@@ -49,7 +49,7 @@ namespace Celeste.Mod.Helpers {
             HashSet<Assembly> added = new HashSet<Assembly>();
             List<Type> types = new List<Type>();
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 if (added.Contains(asm))
                     continue;
@@ -61,7 +61,7 @@ namespace Celeste.Mod.Helpers {
 
         public override Type GetType(string name) {
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 Type type = asm.GetType(name, false);
                 if (type != null)
@@ -72,7 +72,7 @@ namespace Celeste.Mod.Helpers {
 
         public override Type GetType(string name, bool throwOnError) {
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 Type type = asm.GetType(name, false);
                 if (type != null)
@@ -83,7 +83,7 @@ namespace Celeste.Mod.Helpers {
 
         public override Type GetType(string name, bool throwOnError, bool ignoreCase) {
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 Type type = asm.GetType(name, false, ignoreCase);
                 if (type != null)
@@ -94,7 +94,7 @@ namespace Celeste.Mod.Helpers {
 
         public override bool IsDefined(Type attributeType, bool inherit) {
             // Everest.Modules contains CoreModule, which is inside the executing assembly.
-            foreach (EverestModule module in Everest.Modules) {
+            foreach (EverestModule module in Everest._Modules) {
                 Assembly asm = module.GetType().Assembly;
                 if (asm.IsDefined(attributeType, inherit))
                     return true;

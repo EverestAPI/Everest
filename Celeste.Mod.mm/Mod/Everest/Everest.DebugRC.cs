@@ -253,6 +253,54 @@ header {
                 },
 
                 new RCEndPoint {
+                    Path = "/hotswap",
+                    Name = "Hotswap",
+                    InfoHTML = "Restart the entire game real quick.",
+                    Handle = c => {
+                        Write(c, "OK.");
+                        QuickFullRestart();
+                    }
+                },
+
+                new RCEndPoint {
+                    Path = "/list",
+                    PathHelp = "/list?type={mods|modcontent} (Example: ?type=mods)",
+                    PathExample = "/list?type=mods",
+                    Name = "List Info",
+                    InfoHTML = "List some basic info.",
+                    Handle = c => {
+                        StringBuilder builder = new StringBuilder();
+
+                        NameValueCollection data = ParseQueryString(c.Request.RawUrl);
+
+                        switch (data["type"]) {
+                            case "mods":
+                                lock (_Modules) {
+                                    foreach (EverestModule module in _Modules) {
+                                        builder.AppendLine(module.Metadata.Name);
+                                    }
+                                }
+                                break;
+
+                            case "modcontent":
+                                lock (Content.Map) {
+                                    foreach (ModAsset asset in Content.Map.Values) {
+                                        builder.AppendLine(asset.PathVirtual);
+                                    }
+                                }
+                                break;
+
+                            default:
+                                c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
+                                builder.Append($"ERROR: Invalid type: {data["type"] ?? "NULL"}");
+                                break;
+                        }
+
+                        Write(c, builder.ToString());
+                    }
+                },
+
+                new RCEndPoint {
                     Path = "/session",
                     Name = "Session Info",
                     InfoHTML = "Basic player session info.",

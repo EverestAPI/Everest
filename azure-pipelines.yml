@@ -60,3 +60,8 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     artifactName: 'main'
     publishLocation: 'Container'
+
+- task: PowerShell@2
+  displayName: 'Run azure-pipelines-postbuild.ps1'
+  inputs:
+    filePath: 'azure-pipelines-postbuild.ps1'

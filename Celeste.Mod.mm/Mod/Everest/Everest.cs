@@ -68,7 +68,7 @@ namespace Celeste.Mod {
         /// A collection of all currently loaded EverestModules (mods).
         /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
-        private static List<EverestModule> _Modules = new List<EverestModule>();
+        internal static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
         private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
         private static List<IDictionary<string, FastReflectionDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, FastReflectionDelegate>>();
@@ -77,6 +77,7 @@ namespace Celeste.Mod {
         /// The path to the directory holding Celeste.exe
         /// </summary>
         public static string PathGame { get; internal set; }
+
         /// <summary>
         /// The path to the Everest /ModSettings directory.
         /// </summary>
@@ -270,7 +271,7 @@ namespace Celeste.Mod {
             Queue<string> args = new Queue<string>(Args);
             while (args.Count > 0) {
                 string arg = args.Dequeue();
-                foreach (EverestModule mod in Modules) {
+                foreach (EverestModule mod in _Modules) {
                     if (mod.ParseArg(arg, args))
                         break;
                 }
@@ -383,6 +384,45 @@ namespace Celeste.Mod {
         }
 
         private static IEnumerator _SaveNoSettings() {
+            yield break;
+        }
+
+        public static void QuickFullRestart() {
+            Scene scene = new Scene();
+            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart()));
+            Engine.Scene = scene;
+        }
+
+        private static IEnumerator _QuickFullRestart() {
+            SaveData save = SaveData.Instance;
+            if (save != null) {
+                CoreModule.Settings.QuickRestart = save.FileSlot;
+                save.BeforeSave();
+                UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
+                CoreModule.Instance.SaveSettings();
+            }
+
+            Events.Celeste.OnShutdown += () => {
+                AudioExt.System?.release();
+                Thread offspring = new Thread(() => {
+                    Process game = new Process();
+                    // If the game was installed via Steam, it should restart in a Steam context on its own.
+                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        // The Linux and macOS versions come with a wrapping bash script.
+                        game.StartInfo.FileName = "bash";
+                        game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";
+                    } else {
+                        game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
+                    }
+                    game.StartInfo.WorkingDirectory = PathGame;
+                    game.Start();
+                });
+                offspring.Start();
+            };
+
+            Engine.Instance.Exit();
+
             yield break;
         }
 
