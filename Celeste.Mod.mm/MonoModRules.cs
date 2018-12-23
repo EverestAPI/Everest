@@ -217,6 +217,9 @@ namespace MonoMod {
             MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode")?.SafeResolve() == null);
             MonoModRule.Flag.Set("Fill:LaunchWithFMODLiveUpdate", settings.FindField("LaunchWithFMODLiveUpdate")?.SafeResolve() == null);
 
+            TypeDefinition savedata = MonoModRule.Modder.FindType("Celeste.SaveData").Resolve();
+            MonoModRule.Flag.Set("Fill:AssistModeChecks", savedata.FindMethod("AssistModeChecks")?.SafeResolve() == null);
+
             TypeDefinition userio = MonoModRule.Modder.FindType("Celeste.UserIO").Resolve();
             MethodDefinition userio_load = userio.FindMethod("Load");
             MonoModRule.Flag.Set("V1:UserIOLoad", userio_load.Parameters.Count == 1);
