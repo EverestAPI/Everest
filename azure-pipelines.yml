@@ -15,13 +15,22 @@ variables:
   buildConfiguration: 'Release'
 
 steps:
+# Environment setup.
 - task: NuGetToolInstaller@0
+  displayName: 'Install: NuGet'
 
+# Pre-build steps.
 - task: NuGetCommand@2
+  displayName: 'nuget: Restore'
   inputs:
     restoreSolution: '$(solution)'
+- task: PowerShell@2
+  displayName: 'Run: PowerShell: azure-pipelines-prebuild.ps1'
+  inputs:
+    filePath: 'azure-pipelines-prebuild.ps1'
 
 - task: VSBuild@1
+  displayName: 'vs: Build'
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
