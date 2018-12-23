@@ -46,8 +46,9 @@ namespace Celeste {
                 identicon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
         }
 
+        public extern void orig_End();
         public override void End() {
-            base.End();
+            orig_End();
 
             if (Everest.Flags.Disabled)
                 return;
