@@ -341,7 +341,7 @@ namespace Celeste {
 
             if (Assists.GameSpeed == 0)
                 Assists.GameSpeed = 10;
-            if (Assists.GameSpeed < 5 || Assists.GameSpeed > 10) {
+            if (Assists.GameSpeed < 5 || Assists.GameSpeed > 10)
                 Assists.GameSpeed = 10;
         }
 
