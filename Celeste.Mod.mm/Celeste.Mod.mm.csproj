@@ -48,10 +48,6 @@
       <HintPath>..\lib-stripped\FNA.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="HookedMethod, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\HookedMethod.0.3.3-beta\lib\net45\HookedMethod.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="I18N">
       <HintPath>..\lib\I18N.dll</HintPath>
     </Reference>
@@ -69,6 +65,9 @@
     </Reference>
     <Reference Include="I18N.West">
       <HintPath>..\lib\I18N.West.dll</HintPath>
+    </Reference>
+    <Reference Include="Jdenticon, Version=2.2.1.0, Culture=neutral, PublicKeyToken=3fcf9f6e3475a4f8, processorArchitecture=MSIL">
+      <HintPath>..\packages\Jdenticon-net.2.2.1\lib\net45\Jdenticon.dll</HintPath>
     </Reference>
     <Reference Include="Mono.Cecil, Version=0.10.0.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <HintPath>$(SolutionDir)\packages\Mono.Cecil.0.10.0\lib\net35\Mono.Cecil.dll</HintPath>
@@ -103,10 +102,6 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.ValueTuple">
-      <HintPath>$(SolutionDir)\packages\System.ValueTuple.4.4.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="YamlDotNet">
       <HintPath>..\lib\YamlDotNet.dll</HintPath>

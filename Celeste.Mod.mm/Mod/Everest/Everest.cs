@@ -18,6 +18,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -88,6 +89,71 @@ namespace Celeste.Mod {
         /// Path to Everest base location. Defaults to the game directory.
         /// </summary>
         public static string PathEverest { get; internal set; }
+
+        private static byte[] _InstallationHash;
+        public static byte[] InstallationHash {
+            get {
+                if (_InstallationHash != null)
+                    return _InstallationHash;
+
+                using (HashAlgorithm hasher = SHA256.Create()) {
+                    List<byte> data = new List<byte>(512);
+
+                    void AddFile(string path) {
+                        using (FileStream fs = File.OpenRead(path))
+                            AddStream(fs);
+                    }
+                    void AddStream(Stream stream) {
+                        data.AddRange(hasher.ComputeHash(stream));
+                    }
+
+                    /* Note:
+                     * I've decided to disable adding Celeste itself into the master hash
+                     * as Everest updates and XNA vs FNA would just affect it too wildly.
+                     * -ade
+                     */
+                    /*
+                    string pathCeleste = typeof(Celeste).Assembly.Location;
+                    if (!string.IsNullOrEmpty(pathCeleste))
+                        AddFile(pathCeleste);
+                    */
+
+                    // Add all mod containers (or .DLLs).
+                    lock (_Modules) {
+                        foreach (EverestModule mod in _Modules) {
+                            EverestModuleMetadata meta = mod.Metadata;
+                            if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                                AddFile(meta.PathArchive);
+                                continue;
+                            }
+                            if (!string.IsNullOrEmpty(meta.DLL)) {
+                                AddFile(meta.DLL);
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Add all map .bins
+                    foreach (ModAsset asset in Content.Map.Values) {
+                        if (asset.Type != typeof(AssetTypeMap))
+                            continue;
+                        using (Stream stream = asset.Stream)
+                            AddStream(stream);
+                    }
+
+                    // Return the final hash.
+                    return _InstallationHash = hasher.ComputeHash(data.ToArray());
+                }
+            }
+        }
+        public static string InstallationHashShort {
+            get {
+                // MD5 the installation hash.
+                using (HashAlgorithm hasher = MD5.Create()) {
+                    return hasher.ComputeHash(InstallationHash).ToHexadecimalString();
+                }
+            }
+        }
 
         private static bool _SavingSettings;
 
@@ -214,6 +280,7 @@ namespace Celeste.Mod {
             Updater.RequestAll();
         }
 
+        internal static bool _Initialized;
         internal static void Initialize() {
             // Initialize misc stuff.
             TextInput.Initialize(Celeste.Instance);
@@ -223,6 +290,10 @@ namespace Celeste.Mod {
             Celeste.Instance.Components.Add(TouchInputManager.Instance);
 
             Invoke("Initialize");
+            _Initialized = true;
+
+            // Pre-generate the hash.
+            _InstallationHash = InstallationHash;
         }
 
         /// <summary>
@@ -239,6 +310,10 @@ namespace Celeste.Mod {
 
             module.LoadSettings();
             module.Load();
+            if (_Initialized)
+                module.Initialize();
+
+            _InstallationHash = null;
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
 
