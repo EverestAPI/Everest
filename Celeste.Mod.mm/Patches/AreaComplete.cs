@@ -42,7 +42,7 @@ namespace Celeste {
 
             versionFull = $"{Celeste.Instance.Version}\n{Everest.BuildString}";
 
-            using (Stream stream = Identicon.FromValue(Everest.InstallationHash, size: 100).SaveAsPng())
+            using (Stream stream = Identicon.FromHash(Everest.InstallationHash, 100).SaveAsPng())
                 identicon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
         }
 
