@@ -52,7 +52,8 @@ namespace Celeste {
             if (Everest.Flags.Disabled)
                 return;
 
-            identicon.Dispose();
+            identicon?.Dispose();
+            identicon = null;
         }
 
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
@@ -65,10 +66,13 @@ namespace Celeste {
 
             orig_VersionNumberAndVariants(versionFull, ease, alpha);
 
+            if (identicon == null)
+                return;
+
             identiconSine += Engine.RawDeltaTime;
-            const float amplitude = 4f;
-            const int sliceSize = 3;
-            const float sliceAdd = 0.13f;
+            const float amplitude = 5f;
+            const int sliceSize = 2;
+            const float sliceAdd = 0.1f;
 
             Vector2 position = new Vector2(1920f * 0.5f, 1080f - 150f);
             Rectangle clipRect = identicon.Bounds;
