@@ -130,11 +130,11 @@ namespace Celeste.Mod {
 
             public static List<Source> Sources = new List<Source>() {
                 new Source {
-                    NameDialog = "updater_src_travis",
+                    NameDialog = "updater_src_buildbot",
 
                     Index = "https://ams3.digitaloceanspaces.com/lollyde/everest-travis/builds_index.txt",
 
-                    IsCurrent = () => VersionSuffix.StartsWith("travis-"),
+                    IsCurrent = () => VersionSuffix.StartsWith("travis-") || VersionSuffix.StartsWith("azure-"),
 
                     ParseLine = CommonLineParser("https://ams3.digitaloceanspaces.com")
                 }

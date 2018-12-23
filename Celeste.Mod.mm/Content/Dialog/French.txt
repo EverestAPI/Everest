@@ -63,7 +63,7 @@
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Erreur de chargement de la liste des version.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Format inconnu.
 	
-	UPDATER_SRC_TRAVIS= 			Construction automatique
+	UPDATER_SRC_BUILDBOT= 			Construction automatique
 
 # Misc
 	UI_GIVEUP_HINT=			Votre progression est sauvegardée, mais vous devez recommencer depuis le dernier :checkpoint:

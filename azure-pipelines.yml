@@ -5,6 +5,7 @@
 
 trigger:
 - master
+- stable
 
 pool:
   vmImage: 'VS2017-Win2016'
@@ -14,24 +15,48 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
+name: '$(Date:yy.MM.dd)$(Rev:.rr)'
+
 steps:
 # Environment setup.
 - task: NuGetToolInstaller@0
-  displayName: 'Install: NuGet'
+  displayName: 'Install NuGet'
 
 # Pre-build steps.
 - task: NuGetCommand@2
-  displayName: 'nuget: Restore'
+  displayName: 'Restore NuGet packages'
   inputs:
     restoreSolution: '$(solution)'
 - task: PowerShell@2
-  displayName: 'Run: PowerShell: azure-pipelines-prebuild.ps1'
+  displayName: 'Run azure-pipelines-prebuild.ps1'
   inputs:
     filePath: 'azure-pipelines-prebuild.ps1'
 
+# Build.
 - task: VSBuild@1
-  displayName: 'vs: Build'
+  displayName: 'Build'
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
+
+# Create and "publish" main artifact.
+- task: CopyFiles@2
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  displayName: 'Pack artifact'
+  continueOnError: true
+  inputs:
+    sourceFolder: '$(Agent.BuildDirectory)'
+    contents: '**/bin/**/*'
+    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    cleanTargetFolder: true
+    overWrite: true
+    flattenFolders: true
+- task: PublishBuildArtifacts@1
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  displayName: 'Publish artifact'
+  continueOnError: true
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: 'main'
+    publishLocation: 'Container'

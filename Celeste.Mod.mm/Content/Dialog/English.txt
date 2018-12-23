@@ -84,7 +84,7 @@
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
-	UPDATER_SRC_TRAVIS= 			Automatic builds
+	UPDATER_SRC_BUILDBOT= 			Automatic builds
 
 # Misc
 	UI_GIVEUP_HINT=			Your progress is saved, but you'll need to restart at the last :checkpoint:

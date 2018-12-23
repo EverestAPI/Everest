@@ -26,7 +26,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently installed Everest version in string form.
         /// </summary>
-        // The following line gets replaced by Travis automatically.
+        // The following line gets replaced by the buildbot automatically.
         public readonly static string VersionString = "0.0.0-dev";
         /// <summary>
         /// The currently installed Everest build in string form.
