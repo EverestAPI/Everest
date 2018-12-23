@@ -1,5 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+#pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
@@ -19,7 +20,7 @@ namespace Celeste {
         private MainMenuClimb climbButton;
 
         public extern void orig_CreateButtons();
-        public void CreateButtons() {
+        public new void CreateButtons() {
             orig_CreateButtons();
 
             Everest.Events.MainMenu.CreateButtons(this, buttons);

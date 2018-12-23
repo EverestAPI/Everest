@@ -20,8 +20,6 @@ namespace Celeste.Mod.Entities {
         private string text;
         private float alpha;
 
-        private bool triggered = false;
-
         public CustomCoreMessage(EntityData data, Vector2 offset)
             : base(data.Position + offset) {
             Tag = Tags.HUD;

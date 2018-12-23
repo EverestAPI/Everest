@@ -8,13 +8,13 @@ using System;
 namespace Monocle {
     class patch_Engine : Engine {
 
-        public static int ViewWidth { get; private set; }
+        public static new int ViewWidth { get; private set; }
         public static void SetViewWidth(int value) => ViewWidth = value;
 
-        public static int ViewHeight { get; private set; }
+        public static new int ViewHeight { get; private set; }
         public static void SetViewHeight(int value) => ViewHeight = value;
 
-        public static Viewport Viewport { get; private set; }
+        public static new Viewport Viewport { get; private set; }
         public static void SetViewport(Viewport value) => Viewport = value;
 
         public patch_Engine(int width, int height, int windowWidth, int windowHeight, string windowTitle, bool fullscreen)

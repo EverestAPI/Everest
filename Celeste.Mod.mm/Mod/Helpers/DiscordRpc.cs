@@ -163,7 +163,7 @@ namespace Celeste.Mod.Helpers {
             /// </summary>
             /// <param name="input">String to convert</param>
             /// <param name="maxbytes">Max number of bytes to use</param>
-            /// <returns>Pointer to the UTF-8 representation of <see cref="input"/></returns>
+            /// <returns>Pointer to the UTF-8 representation of input</returns>
             private IntPtr StrToPtr(string input, int maxbytes) {
                 if (string.IsNullOrEmpty(input)) return IntPtr.Zero;
                 var convstr = StrClampBytes(input, maxbytes);
@@ -178,7 +178,7 @@ namespace Celeste.Mod.Helpers {
             /// Convert string to UTF-8 and add null termination
             /// </summary>
             /// <param name="toconv">string to convert</param>
-            /// <returns>UTF-8 representation of <see cref="toconv"/> with added null termination</returns>
+            /// <returns>UTF-8 representation of toconv with added null termination</returns>
             private static string StrToUtf8NullTerm(string toconv) {
                 var str = toconv.Trim();
                 var bytes = Encoding.Default.GetBytes(str);
@@ -193,7 +193,7 @@ namespace Celeste.Mod.Helpers {
             /// </summary>
             /// <param name="toclamp">string to clamp</param>
             /// <param name="maxbytes">max bytes the resulting string should have (including null termination)</param>
-            /// <returns>null terminated string with a byte length less or equal to <see cref="maxbytes"/></returns>
+            /// <returns>null terminated string with a byte length less or equal to maxbytes</returns>
             private static string StrClampBytes(string toclamp, int maxbytes) {
                 var str = StrToUtf8NullTerm(toclamp);
                 var strbytes = Encoding.UTF8.GetBytes(str);

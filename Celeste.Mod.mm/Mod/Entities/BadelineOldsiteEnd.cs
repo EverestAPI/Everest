@@ -9,10 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
-    [Tracked]
     /// <summary>
     /// Custom "end zone" for BadelineOldsite in custom levels.
     /// </summary>
+    [Tracked]
     public class BadelineOldsiteEnd : Entity {
 
         public BadelineOldsiteEnd(Vector2 position, int width, int height)

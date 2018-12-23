@@ -289,7 +289,9 @@ namespace Celeste.Mod.Entities {
         private struct SpikeInfo {
             public TriggerSpikesOriginal Parent;
             public int Index;
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
             public int TextureIndex;
+#pragma warning restore CS0649 // Field is never assigned to, and will always have its default value
 
             public Vector2 Position;
 

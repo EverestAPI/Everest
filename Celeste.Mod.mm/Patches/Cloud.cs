@@ -27,7 +27,7 @@ namespace Celeste {
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchCloudAdded] // ... except for manually manipulating the method via MonoModRules
-        public extern void Added(Scene scene);
+        public extern new void Added(Scene scene);
 
         private static bool _IsSmall(bool value, Cloud self)
             => (self as patch_Cloud).IsSmall(value);
