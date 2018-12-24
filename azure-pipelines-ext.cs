@@ -18,7 +18,7 @@ public class EverestPS {
             : base(true) {
         }
         public override byte[] GetBytes(string s) {
-            return base.GetBytes(s?.Replace("\\", "/"));
+            return base.GetBytes(s.Replace("\\", "/"));
         }
     }
     public static UTF8Encoding ZipPathEncoding = new ZipPathEncoder();
