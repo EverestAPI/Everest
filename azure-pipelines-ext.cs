@@ -204,7 +204,7 @@ public class EverestPS {
 ");
 
             foreach (string line in File.ReadLines(pathBuilds, Encoding.UTF8)) {
-                string[] split = line.Trim().Split(" ");
+                string[] split = line.Trim().Split(' ');
                 writer.Write("<li><a href=\""+split[0]+"\">"+split[1]+"</a></li>");
             }
 
