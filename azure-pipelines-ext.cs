@@ -10,6 +10,9 @@ using System.Security.Cryptography;
 using System.Globalization;
 using System.Net;
 using System.IO.Compression;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Linq;
 
 public class EverestPS {
 
@@ -58,8 +61,13 @@ public class EverestPS {
             request.Headers.Add("Authorization", "AWS "+key+signature);
             request.ContentLength = streamFile.Length;
 
-            using (Stream streamS3 = request.GetRequestStream()) {
-                streamFile.CopyTo(streamS3);
+            using (Stream streamPut = request.GetRequestStream())
+                streamFile.CopyTo(streamPut);
+            using (WebResponse response = request.GetResponse())
+            using (Stream streamGet = response.GetResponseStream())
+            using (Stream streamOut = Console.OpenStandardOutput()) {
+                streamGet.CopyTo(streamOut);
+                streamOut.Flush();
             }
         }
     }
@@ -223,10 +231,14 @@ public class EverestPS {
                     <ul>
 ");
 
-            foreach (string line in File.ReadLines(pathBuilds, Encoding.UTF8)) {
-                string[] split = line.Trim().Split(' ');
-                writer.Write("<li><a href=\""+split[0]+"\">"+split[1]+"</a></li>");
-            }
+            // This can be optimized...
+            List<string[]> lines =
+                File.ReadLines(pathBuilds, Encoding.UTF8)
+                .Select(line => line.Trim().Split(' '))
+                .OrderBy(line => int.Parse(Regex.Match(line[1], @"\d+").Value))
+                .ToList();
+            foreach (string[] line in lines)
+                writer.Write("<li><a href=\""+line[0]+"\">"+line[1]+"</a></li>");
 
             writer.Write(
 @"
