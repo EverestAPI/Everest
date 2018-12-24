@@ -48,14 +48,15 @@ public class EverestPS {
 
         string pathFull = Path.Combine(path, file);
         DateTime date = DateTime.UtcNow;
-        string dateString = date.ToString("R", CultureInfo.InvariantCulture);
+        string dateString = date.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
         using (FileStream streamFile = File.OpenRead(pathFull)) {
-            string signature = ToHMACSHA1(secret, "PUT\n\n"+contentType+"\n"+ dateString + "\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
+            string signature = ToHMACSHA1(secret, "PUT\n\n"+contentType+"\n"+dateString+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
 
             HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
             request.Method = "PUT";
             request.Host = bucket+".ams3.digitaloceanspaces.com";
             request.Date = date;
+            request.Headers.Add("X-Amz-Date", dateString); // .NET formats the date differently.
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
             request.Headers.Add("Authorization", "AWS "+key+":"+signature);
