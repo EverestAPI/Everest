@@ -1,3 +1,4 @@
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -Path "azure-pipelines-ext.cs"
 
 $BuildNumber = [string]([int]$env:BUILD_BUILDID + [int]$env:BUILD_BUILDIDOFFSET)
