@@ -27,8 +27,6 @@ public class EverestPS {
     }
     public static UTF8Encoding ZipPathEncoding = new ZipPathEncoder();
 
-    private static MethodInfo m_Headers_AddWithoutValidate;
-
     public static void Zip(string dir, string file) {
         ZipFile.CreateFromDirectory(dir, file, CompressionLevel.Optimal, false, ZipPathEncoding);
     }
@@ -38,35 +36,27 @@ public class EverestPS {
             wc.DownloadFile(url, file);
     }
 
-    public static string ToHMACSHA1(string key, string dataToSign) {
-        using (HMACSHA1 hmac = new HMACSHA1(UTF8Encoding.UTF8.GetBytes(key))) {
-            return Convert.ToBase64String(hmac.ComputeHash(UTF8Encoding.UTF8.GetBytes(dataToSign)));
-        }
-    }
-
     public static void PutS3(string key, string secret, string path, string file, string awsPath, string contentType) {
         const string bucket = "lollyde";
-        const string aclKey = "x-amz-acl";
-        const string aclValue = "public-read";
 
-        string pathFull = Path.Combine(path, file);
-        DateTime date = DateTime.UtcNow;
-        string dateString = date.ToString("ddd,' 'dd' 'MMM' 'yyyy' 'HH':'mm':'ss", CultureInfo.InvariantCulture)+" +0000";
-        using (FileStream streamFile = File.OpenRead(pathFull)) {
-            string signature = ToHMACSHA1(secret, "PUT\n\n"+contentType+"\n"+dateString+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
-
-            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
+        using (FileStream streamFile = File.OpenRead(Path.Combine(path, file))) {
+            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://" + bucket + ".ams3.digitaloceanspaces.com" + awsPath + file);
             request.Method = "PUT";
             request.Host = bucket+".ams3.digitaloceanspaces.com";
-            // request.Date = date;
-            // .NET formats the date differently.
-            if (m_Headers_AddWithoutValidate == null)
-                m_Headers_AddWithoutValidate = request.Headers.GetType().GetMethod("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
-            m_Headers_AddWithoutValidate.Invoke(request.Headers, new[] { "Date", dateString });
+            // request.Date = date; // .NET formats the date differently.
+            request.Headers.Add("X-Amz-Date", DateTime.UtcNow.ToString("ddd,' 'dd' 'MMM' 'yyyy' 'HH':'mm':'ss", CultureInfo.InvariantCulture) + " +0000");
             request.ContentType = contentType;
-            request.Headers.Add(aclKey, aclValue);
-            request.Headers.Add("Authorization", "AWS "+key+":"+signature);
             request.ContentLength = streamFile.Length;
+            request.Headers.Add("X-Amz-ACL", "public-read");
+            request.Headers.Add("Authorization", GetSignature(
+                secret,
+                request.Method + "\n" +
+                request.Headers.Get("Content-MD5") + "\n" +
+                request.ContentType + "\n" +
+                request.Headers.Get("Date") + "\n" +
+                GatherAmzHeaderData(request) +
+                "/" + bucket + awsPath + file
+            ));
 
             using (Stream streamPut = request.GetRequestStream())
                 streamFile.CopyTo(streamPut);
@@ -77,6 +67,27 @@ public class EverestPS {
                 streamOut.Flush();
             }
         }
+    }
+    private static string GatherAmzHeaderData(HttpWebRequest request) {
+        SortedDictionary<string, string> tmp = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string _key in request.Headers.Keys) {
+            string key = _key.ToLower();
+            if (!key.StartsWith("x-amz"))
+                continue;
+            if (key == "x-amz-meta-reviewedby" && tmp.ContainsKey(key))
+                tmp[key] = tmp[key] + "," + request.Headers.Get(key);
+            else
+                tmp[key] = request.Headers.Get(key);
+        }
+
+        StringBuilder builder = new StringBuilder();
+        foreach (KeyValuePair<string, string> pair in tmp)
+            builder.Append(pair.Key).Append(":").Append(pair.Value).Append("\n");
+        return builder.ToString();
+    }
+    private static string GetSignature(string secret, string signature) {
+        using (HMACSHA1 hmac = new HMACSHA1(UTF8Encoding.UTF8.GetBytes(secret)))
+            return Convert.ToBase64String(hmac.ComputeHash(UTF8Encoding.UTF8.GetBytes(signature)));
     }
 
     public static void RebuildHTML(string pathBuilds, string pathHTML) {
