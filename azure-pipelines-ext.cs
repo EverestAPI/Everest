@@ -252,6 +252,7 @@ public class EverestPS {
             List<string[]> lines =
                 File.ReadLines(pathBuilds, Encoding.UTF8)
                 .Select(line => line.Trim().Split(' '))
+                .Where(line => line.Length == 2)
                 .OrderBy(line => int.Parse(Regex.Match(line[1], @"\d+").Value))
                 .ToList();
             foreach (string[] line in lines)
