@@ -1,6 +1,8 @@
 // This file is used in the Azure Pipelines PowerShell scripts via:
 // Add-Type -Path "azure-pipelines-ext.cs"
 
+// Note that this file is restricted to C# 5.0
+
 using System;
 using System.IO;
 using System.Text;
@@ -24,15 +26,15 @@ public class EverestPS {
         string pathFull = Path.Combine(path, file);
         string date = DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture);
         using (FileStream streamFile = File.OpenRead(pathFull)) {
-            string signature = ToHMACSHA1(Environment.GetEnvironmentVariable("S3SECRET"), $"PUT\n\n{contentType}\n{date}\n{aclKey}:{aclValue}\n/{bucket}{awsPath}{file}");
+            string signature = ToHMACSHA1(Environment.GetEnvironmentVariable("S3SECRET"), "PUT\n\n"+contentType+"\n"+date+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
 
-            HttpWebRequest request = (HttpWebRequest) WebRequest.Create($"https://{bucket}.ams3.digitaloceanspaces.com/{awsPath}{file}");
+            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
             request.Method = "PUT";
-            request.Host = $"{bucket}.ams3.digitaloceanspaces.com";
+            request.Host = bucket+".ams3.digitaloceanspaces.com";
             request.Date = date;
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
-            request.Headers.Add("Authorization", $"AWS {Environment.GetEnvironmentVariable("S3KEY")}:{signature}");
+            request.Headers.Add("Authorization", "AWS "+Environment.GetEnvironmentVariable("S3KEY")+signature);
             request.ContentLength = streamFile.Length;
 
             using (Stream streamS3 = request.GetRequestStream()) {
@@ -202,7 +204,7 @@ public class EverestPS {
 
             foreach (string line in File.ReadLines(pathBuilds, Encoding.UTF8)) {
                 string[] split = line.Trim().Split(" ");
-                writer.Write($@"<li><a href=""{split[0]}"">{split[1]}</a></li>");
+                writer.Write("<li><a href=\""+split[0]+"\">"+split[1]+"</a></li>");
             }
 
             writer.Write(
