@@ -58,7 +58,7 @@ public class EverestPS {
             request.Date = date;
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
-            request.Headers.Add("Authorization", "AWS "+key+signature);
+            request.Headers.Add("Authorization", "AWS "+key+":"+signature);
             request.ContentLength = streamFile.Length;
 
             using (Stream streamPut = request.GetRequestStream())
