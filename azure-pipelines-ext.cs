@@ -27,6 +27,11 @@ public class EverestPS {
         ZipFile.CreateFromDirectory(dir, file, CompressionLevel.Optimal, false, ZipPathEncoding);
     }
 
+    public static void Get(string url, string file) {
+        using (WebClient wc = new WebClient())
+            wc.DownloadFile(url, file);
+    }
+
     public static string ToHMACSHA1(string key, string dataToSign) {
         using (HMACSHA1 hmac = new HMACSHA1(UTF8Encoding.UTF8.GetBytes(key))) {
             return Convert.ToBase64String(hmac.ComputeHash(UTF8Encoding.UTF8.GetBytes(dataToSign)));

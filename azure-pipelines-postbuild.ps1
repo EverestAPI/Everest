@@ -13,16 +13,16 @@ if ($Suffix -eq "-master") {
 
 $ZIP="build-$BuildNumber$Suffix.zip"
 
-echo "Create .zip"
+echo "Creating .zip"
 [EverestPS]::Zip($env:Build_ArtifactStagingDirectory, $ZIP)
 
 echo "Pushing .zip to S3"
 [EverestPS]::PutS3($S3Key, $S3Secret, ".", $ZIP, "/everest-travis/", "application/x-compressed-zip")
 
-echo "Get latest builds_index.txt"
-Invoke-WebRequest -Uri "https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt" -OutFile "builds_index.txt"
+echo "Getting latest builds_index.txt"
+[EverestPS]::Get("https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt", "builds_index.txt")
 
-echo "Update builds_index.txt"
+echo "Updating builds_index.txt"
 Add-Content builds_index.txt "/lollyde/everest-travis/$ZIP $ZIP`n"
 
 echo "Pushing builds_index.txt to S3"
