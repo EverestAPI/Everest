@@ -31,7 +31,8 @@ public class EverestPS {
             HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
             request.Method = "PUT";
             request.Host = bucket+".ams3.digitaloceanspaces.com";
-            request.Date = date;
+            // request.Date = date; // Expects DateTime
+            request.Headers.Add("Date", date);
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
             request.Headers.Add("Authorization", "AWS "+Environment.GetEnvironmentVariable("S3KEY")+signature);
