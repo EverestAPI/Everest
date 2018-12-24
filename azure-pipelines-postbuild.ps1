@@ -9,6 +9,9 @@ if ($Suffix -eq "-master") {
 
 $ZIP="build-$BuildNumber$Suffix.zip"
 
+echo "Create .zip"
+[EverestPS]::Zip($env:BUILD_ARTIFACTSTAGINGDIRECTORY, $ZIP)
+
 echo "Get latest builds_index.txt"
 Invoke-WebRequest -Uri "https://lollyde.ams3.digitaloceanspaces.com/everest-travis/builds_index.txt" -OutFile "builds_index.txt"
 

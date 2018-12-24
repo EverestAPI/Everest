@@ -9,8 +9,23 @@ using System.Text;
 using System.Security.Cryptography;
 using System.Globalization;
 using System.Net;
+using System.IO.Compression;
 
 public class EverestPS {
+
+    class ZipPathEncoder : UTF8Encoding {
+        public ZipPathEncoder()
+            : base(true) {
+        }
+        public override byte[] GetBytes(string s) {
+            return base.GetBytes(s.Replace("\\", "/"));
+        }
+    }
+    public static UTF8Encoding ZipPathEncoding = new ZipPathEncoder();
+
+    public static void Zip(string dir, string file) {
+        ZipFile.CreateFromDirectory(dir, file, CompressionLevel.Optimal, false, ZipPathEncoding);
+    }
 
     public static string ToHMACSHA1(string key, string dataToSign) {
         using (HMACSHA1 hmac = new HMACSHA1(UTF8Encoding.UTF8.GetBytes(key))) {
