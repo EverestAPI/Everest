@@ -1,5 +1,5 @@
-param([string]$S3Key="")
-param([string]$S3Secret="")
+$S3Key=$args[0]
+$S3Secret=$args[1]
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -Path "azure-pipelines-ext.cs" -ReferencedAssemblies "System.IO.Compression.FileSystem"
