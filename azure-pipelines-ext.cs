@@ -40,15 +40,14 @@ public class EverestPS {
         const string bucket = "lollyde";
 
         using (FileStream streamFile = File.OpenRead(Path.Combine(path, file))) {
-            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://" + bucket + ".ams3.digitaloceanspaces.com" + awsPath + file);
+            HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://ams3.digitaloceanspaces.com/" + bucket + awsPath + file);
             request.Method = "PUT";
-            request.Host = bucket+".ams3.digitaloceanspaces.com";
             // request.Date = date; // .NET formats the date differently.
-            request.Headers.Add("X-Amz-Date", DateTime.UtcNow.ToString("ddd,' 'dd' 'MMM' 'yyyy' 'HH':'mm':'ss", CultureInfo.InvariantCulture) + " +0000");
+            request.Headers.Add("x-amz-date", DateTime.UtcNow.ToString("ddd,' 'dd' 'MMM' 'yyyy' 'HH':'mm':'ss", CultureInfo.InvariantCulture) + " +0000");
             request.ContentType = contentType;
             request.ContentLength = streamFile.Length;
-            request.Headers.Add("X-Amz-ACL", "public-read");
-            request.Headers.Add("Authorization", GetSignature(
+            request.Headers.Add("x-amz-acl", "public-read");
+            request.Headers.Add("Authorization", "AWS " + key + ":" + GetSignature(
                 secret,
                 request.Method + "\n" +
                 request.Headers.Get("Content-MD5") + "\n" +
@@ -70,11 +69,11 @@ public class EverestPS {
     }
     private static string GatherAmzHeaderData(HttpWebRequest request) {
         SortedDictionary<string, string> tmp = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string _key in request.Headers.Keys) {
-            string key = _key.ToLower();
-            if (!key.StartsWith("x-amz"))
+        foreach (string key in request.Headers.Keys) {
+            string keyLow = key.ToLower();
+            if (!keyLow.StartsWith("x-amz"))
                 continue;
-            if (key == "x-amz-meta-reviewedby" && tmp.ContainsKey(key))
+            if (keyLow == "x-amz-meta-reviewedby" && tmp.ContainsKey(key))
                 tmp[key] = tmp[key] + "," + request.Headers.Get(key);
             else
                 tmp[key] = request.Headers.Get(key);
