@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Linq;
+using System.Reflection;
 
 public class EverestPS {
 
@@ -25,6 +26,8 @@ public class EverestPS {
         }
     }
     public static UTF8Encoding ZipPathEncoding = new ZipPathEncoder();
+
+    private static MethodInfo m_Headers_AddWithoutValidate;
 
     public static void Zip(string dir, string file) {
         ZipFile.CreateFromDirectory(dir, file, CompressionLevel.Optimal, false, ZipPathEncoding);
@@ -48,15 +51,18 @@ public class EverestPS {
 
         string pathFull = Path.Combine(path, file);
         DateTime date = DateTime.UtcNow;
-        string dateString = date.ToString("yyyyMMdd'T'HHmmss'Z'", CultureInfo.InvariantCulture);
+        string dateString = date.ToString("ddd,' 'dd' 'MMM' 'yyyy' 'HH':'mm':'ss", CultureInfo.InvariantCulture)+" +0000";
         using (FileStream streamFile = File.OpenRead(pathFull)) {
             string signature = ToHMACSHA1(secret, "PUT\n\n"+contentType+"\n"+dateString+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
 
             HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
             request.Method = "PUT";
             request.Host = bucket+".ams3.digitaloceanspaces.com";
-            request.Date = date;
-            request.Headers.Add("X-Amz-Date", dateString); // .NET formats the date differently.
+            // request.Date = date;
+            // .NET formats the date differently.
+            if (m_Headers_AddWithoutValidate == null)
+                m_Headers_AddWithoutValidate = request.Headers.GetType().GetMethod("AddWithoutValidate", BindingFlags.Instance | BindingFlags.NonPublic);
+            m_Headers_AddWithoutValidate.Invoke(request.Headers, new[] { "Date", dateString });
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
             request.Headers.Add("Authorization", "AWS "+key+":"+signature);
