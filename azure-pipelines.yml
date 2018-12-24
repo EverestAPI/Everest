@@ -15,7 +15,7 @@ variables:
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
-name: '$(Build.BuildId)+$(Build.BuildIdOffset)@$(Date:yy.MM.dd)$(Rev:.rr)'
+name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
 steps:
 # Environment setup.
