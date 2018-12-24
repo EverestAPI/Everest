@@ -65,3 +65,4 @@ steps:
   displayName: 'Run azure-pipelines-postbuild.ps1'
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
+    arguments: '-S3Key $(S3KEY) -S3Secret $(S3SECRET)'

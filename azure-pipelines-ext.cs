@@ -18,7 +18,7 @@ public class EverestPS {
             : base(true) {
         }
         public override byte[] GetBytes(string s) {
-            return base.GetBytes(s.Replace("\\", "/"));
+            return base.GetBytes(s?.Replace("\\", "/"));
         }
     }
     public static UTF8Encoding ZipPathEncoding = new ZipPathEncoder();
@@ -33,7 +33,7 @@ public class EverestPS {
         }
     }
 
-    public static void PutS3(string path, string file, string awsPath, string contentType) {
+    public static void PutS3(string key, string secret, string path, string file, string awsPath, string contentType) {
         const string bucket = "lollyde";
         const string aclKey = "x-amz-acl";
         const string aclValue = "public-read";
@@ -41,7 +41,7 @@ public class EverestPS {
         string pathFull = Path.Combine(path, file);
         string date = DateTime.UtcNow.ToString("R", CultureInfo.InvariantCulture);
         using (FileStream streamFile = File.OpenRead(pathFull)) {
-            string signature = ToHMACSHA1(Environment.GetEnvironmentVariable("S3SECRET"), "PUT\n\n"+contentType+"\n"+date+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
+            string signature = ToHMACSHA1(secret, "PUT\n\n"+contentType+"\n"+date+"\n"+aclKey+":"+aclValue+"\n/"+bucket+awsPath+file);
 
             HttpWebRequest request = (HttpWebRequest) WebRequest.Create("https://"+bucket+".ams3.digitaloceanspaces.com/"+awsPath+file);
             request.Method = "PUT";
@@ -50,7 +50,7 @@ public class EverestPS {
             request.Headers.Add("Date", date);
             request.ContentType = contentType;
             request.Headers.Add(aclKey, aclValue);
-            request.Headers.Add("Authorization", "AWS "+Environment.GetEnvironmentVariable("S3KEY")+signature);
+            request.Headers.Add("Authorization", "AWS "+key+signature);
             request.ContentLength = streamFile.Length;
 
             using (Stream streamS3 = request.GetRequestStream()) {
