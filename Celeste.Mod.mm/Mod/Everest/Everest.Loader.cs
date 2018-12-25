@@ -31,7 +31,18 @@ namespace Celeste.Mod {
             /// <summary>
             /// The currently loaded mod blacklist.
             /// </summary>
-            public static ReadOnlyCollection<string> Blacklist => _Blacklist.AsReadOnly();
+            public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
+
+            /// <summary>
+            /// The path to the Everest /Mods/whitelist.txt file.
+            /// </summary>
+            public static string PathWhitelist { get; internal set; }
+            internal static string NameWhitelist;
+            internal static List<string> _Whitelist = new List<string>();
+            /// <summary>
+            /// The currently loaded mod whitelist.
+            /// </summary>
+            public static ReadOnlyCollection<string> Whitelist => _Whitelist?.AsReadOnly();
 
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
@@ -51,6 +62,13 @@ namespace Celeste.Mod {
                     }
                 }
 
+                if (!string.IsNullOrEmpty(NameWhitelist)) {
+                    PathWhitelist = Path.Combine(PathMods, NameWhitelist);
+                    if (File.Exists(PathWhitelist)) {
+                        _Whitelist = File.ReadAllLines(PathBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                    }
+                }
+
                 if (Flags.Disabled)
                     return;
 
@@ -59,12 +77,16 @@ namespace Celeste.Mod {
                     string file = Path.GetFileName(files[i]);
                     if (!file.EndsWith(".zip") || _Blacklist.Contains(file))
                         continue;
+                    if (_Whitelist != null && !_Whitelist.Contains(file))
+                        continue;
                     LoadZip(file);
                 }
                 files = Directory.GetDirectories(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
                     if (file == "Cache" || _Blacklist.Contains(file))
+                        continue;
+                    if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
                     LoadDir(file);
                 }

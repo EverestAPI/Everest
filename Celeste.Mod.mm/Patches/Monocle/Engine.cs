@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
@@ -27,7 +28,11 @@ namespace Monocle {
             try {
                 Run();
             } catch (Exception e) {
-                e.LogDetailed();
+                if (e is OutOfMemoryException && CoreModule.Instance?._Settings != null && !CoreModule.Settings.LazyLoading) {
+                    CoreModule.Settings.LazyLoading = true;
+                    CoreModule.Instance.SaveSettings();
+                }
+
                 ErrorLog.Write(e);
                 ErrorLog.Open();
             }
