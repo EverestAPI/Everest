@@ -21,7 +21,7 @@ namespace Celeste.Mod.UI {
         public int Progress;
         public int ProgressMax;
 
-        private Action exit;
+        public event Action OnFinish;
 
         private float alpha = 0f;
         private float time = 0f;
@@ -45,7 +45,7 @@ namespace Celeste.Mod.UI {
             Progress = 0;
             ProgressMax = max;
 
-            exit = () => Overworld.Goto<T>();
+            OnFinish += () => Overworld.Goto<T>();
 
             if (task.Status == TaskStatus.Created)
                 task.Start();
@@ -120,7 +120,7 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Task != null && (Task.IsCompleted || Task.IsCanceled || Task.IsFaulted)) {
-                exit?.Invoke();
+                OnFinish?.Invoke();
                 Task = null;
             }
 

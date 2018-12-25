@@ -222,31 +222,8 @@ namespace Celeste.Mod {
                 // Last line printed on error.
                 const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
 
-                // Check if we're on an OS which supports manipulating Celeste.exe while it's used.
-                bool canModWhileAlive =
-                    Environment.OSVersion.Platform == PlatformID.Unix;
-
-                if (canModWhileAlive) {
-                    // Check if we can even read-write the file.
-                    Exception eLast = null;
-                    string path = typeof(Celeste).Assembly.Location;
-                    for (int i = 2048; i > -1; --i) {
-                        try {
-                            using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite))
-                                break;
-                        } catch (Exception e) {
-                            eLast = e;
-                        }
-                    }
-                    if (eLast != null) {
-                        progress.LogLine("Note: You're on a platform that should support\nread-writing Celeste while running, but it doesn't.\nCheck your log.txt to find out why.\n");
-                        Logger.Log(LogLevel.Warn, "updater", $"Failed read-writing {path} on platform that should support it: " + eLast.ToString());
-                        canModWhileAlive = false;
-                    }
-                }
-
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
-                string extractedPath = canModWhileAlive ? PathGame : Path.Combine(PathGame, "everest-update");
+                string extractedPath = Path.Combine(PathGame, "everest-update");
 
                 progress.LogLine($"Updating to {version.Name} (branch: {version.Branch}) @ {version.URL}");
 
@@ -344,78 +321,37 @@ namespace Celeste.Mod {
                 progress.LogLine("Extraction finished.");
 
                 // Load MiniInstaller and run it in a new app domain on systems supporting this.
-                if (canModWhileAlive) {
-                    progress.LogLine("Starting MiniInstaller");
-                    progress.Progress = 0;
-                    progress.ProgressMax = 0;
-                    Directory.SetCurrentDirectory(PathGame);
-
-                    try {
-                        AppDomainSetup nestInfo = new AppDomainSetup();
-                        nestInfo.ApplicationBase = Path.GetDirectoryName(extractedPath);
-
-                        AppDomain nest = AppDomain.CreateDomain(
-                            AppDomain.CurrentDomain.FriendlyName + " - MiniInstaller",
-                            AppDomain.CurrentDomain.Evidence,
-                            nestInfo,
-                            AppDomain.CurrentDomain.PermissionSet
-                        );
-
-                        // nest.DoCallBack(Boot);
-                        ((MiniInstallerProxy) nest.CreateInstanceFromAndUnwrap(
-                            typeof(MiniInstallerProxy).Assembly.Location,
-                            typeof(MiniInstallerProxy).FullName
-                        )).Boot(new MiniInstallerBridge {
-                            Progress = progress,
-                            ExtractedPath = extractedPath
-                        });
-
-                        AppDomain.Unload(nest);
-                    } catch {}
-                }
-
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
                 progress.LogLine("Restarting");
-                for (int i = 5; i > 0; --i) {
+                for (int i = 3; i > 0; --i) {
                     progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
                     Thread.Sleep(1000);
                 }
                 progress.Lines[progress.Lines.Count - 1] = $"Restarting";
 
                 // Start MiniInstaller in a separate process on systems that don't support modding the game while it'S alive.
-                if (!canModWhileAlive) {
-                    try {
-                        // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
-                        // Run MiniInstaller "out of body."
-                        Process installer = new Process();
-                        installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
-                        if (Type.GetType("Mono.Runtime") != null) {
-                            installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
-                            installer.StartInfo.FileName = "mono";
-                            if (File.Exists("/bin/sh")) {
-                                installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; {installer.StartInfo.FileName} {installer.StartInfo.Arguments.Replace('\"', '\'')}\"";
-                                installer.StartInfo.FileName = "/bin/sh";
-                            }
+                try {
+                    // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
+                    // Run MiniInstaller "out of body."
+                    Process installer = new Process();
+                    installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
+                    if (Type.GetType("Mono.Runtime") != null) {
+                        installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
+                        installer.StartInfo.FileName = "mono";
+                        if (File.Exists("/bin/sh")) {
+                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; {installer.StartInfo.FileName} {installer.StartInfo.Arguments.Replace('\"', '\'')}\"";
+                            installer.StartInfo.FileName = "/bin/sh";
                         }
-                        installer.StartInfo.WorkingDirectory = extractedPath;
-                        installer.Start();
-                    } catch (Exception e) {
-                        progress.LogLine("Starting installer failed!");
-                        e.LogDetailed();
-                        progress.LogLine(errorHint);
-                        progress.Progress = 0;
-                        progress.ProgressMax = 1;
                     }
-                } else {
-                    /*Process game = new Process();
-                    game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                    game.StartInfo.WorkingDirectory = PathGame;
-                    game.Start();
-                    Process.GetCurrentProcess().Kill();*/
-
-                    // I don't even know anymore
-                    Environment.Exit(42);
+                    installer.StartInfo.WorkingDirectory = extractedPath;
+                    installer.Start();
+                } catch (Exception e) {
+                    progress.LogLine("Starting installer failed!");
+                    e.LogDetailed();
+                    progress.LogLine(errorHint);
+                    progress.Progress = 0;
+                    progress.ProgressMax = 1;
                 }
             }
 
