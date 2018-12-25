@@ -142,7 +142,7 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
-            if (Everest.Flags.Disabled)
+            if (Everest.Flags.IsDisabled)
                 return;
 
             int index;
@@ -168,7 +168,7 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
-            if (Everest.Flags.Disabled || !Settings.ShowModOptionsInGame)
+            if (Everest.Flags.IsDisabled || !Settings.ShowModOptionsInGame)
                 return;
 
             List<TextMenu.Item> items = menu.GetItems();

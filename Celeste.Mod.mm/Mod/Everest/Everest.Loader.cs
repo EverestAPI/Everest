@@ -69,7 +69,7 @@ namespace Celeste.Mod {
                     }
                 }
 
-                if (Flags.Disabled)
+                if (Flags.IsDisabled)
                     return;
 
                 string[] files = Directory.GetFiles(PathMods);
@@ -98,7 +98,7 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="archive">The path to the mod .zip archive.</param>
             public static void LoadZip(string archive) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
@@ -191,7 +191,7 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="dir">The path to the mod directory.</param>
             public static void LoadDir(string dir) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
@@ -269,7 +269,7 @@ namespace Celeste.Mod {
             /// <param name="meta">Metadata of the mod to load.</param>
             /// <param name="callback">Callback to be executed after the mod has been loaded. Executed immediately if meta == null.</param>
             public static void LoadModDelayed(EverestModuleMetadata meta, Action callback) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
@@ -304,7 +304,7 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="meta">Metadata of the mod to load.</param>
             public static void LoadMod(EverestModuleMetadata meta) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
@@ -357,7 +357,7 @@ namespace Celeste.Mod {
             /// <param name="meta">The mod metadata, preferably from the mod metadata.yaml file.</param>
             /// <param name="asm">The mod assembly, preferably relinked.</param>
             public static void LoadModAssembly(EverestModuleMetadata meta, Assembly asm) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
@@ -394,7 +394,7 @@ namespace Celeste.Mod {
             /// <param name="meta">The metadata of the mod listing the dependencies.</param>
             /// <returns>True if the dependencies have already been loaded by Everest, false otherwise.</returns>
             public static bool DependenciesLoaded(EverestModuleMetadata meta) {
-                if (Flags.Disabled || !Flags.SupportRuntimeMods) {
+                if (Flags.IsDisabled || !Flags.SupportRuntimeMods) {
                     return false;
                 }
 

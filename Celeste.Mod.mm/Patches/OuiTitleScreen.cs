@@ -32,7 +32,7 @@ namespace Celeste {
         public void ctor() {
             orig_ctor();
 
-            if (!Everest.Flags.Disabled)
+            if (!Everest.Flags.IsDisabled)
                 version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
 
             updateTex = GFX.Gui["areas/new"];

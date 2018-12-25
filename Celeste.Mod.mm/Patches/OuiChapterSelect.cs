@@ -128,7 +128,7 @@ namespace Celeste {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
 
-            if (Everest.Flags.Disabled) {
+            if (Everest.Flags.IsDisabled) {
                 orig_Update();
                 return;
             }
@@ -189,7 +189,7 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-            if (Everest.Flags.Disabled) {
+            if (Everest.Flags.IsDisabled) {
                 orig_Render();
                 return;
             }

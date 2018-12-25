@@ -21,6 +21,11 @@ namespace Celeste.Mod {
         public static class Flags {
 
             /// <summary>
+            /// Is Everest running headlessly?
+            /// </summary>
+            public static bool IsHeadless { get; private set; }
+
+            /// <summary>
             /// Is the game running using Mono?
             /// </summary>
             public static bool IsMono { get; private set; }
@@ -42,7 +47,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// Is Everest itself disabled?
             /// </summary>
-            public static bool Disabled { get; private set; }
+            public static bool IsDisabled { get; private set; }
 
             /// <summary>
             /// Should the game avoid creating render targets if possible?
@@ -72,7 +77,9 @@ namespace Celeste.Mod {
             public static bool SupportUpdatingEverest { get; private set; }
 
             internal static void Initialize() {
-                Disabled = Environment.GetEnvironmentVariable("EVEREST_DISABLED") == "1";
+                IsHeadless = Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1";
+
+                IsDisabled = Environment.GetEnvironmentVariable("EVEREST_DISABLED") == "1";
 
                 IsMono = Type.GetType("Mono.Runtime") != null;
 

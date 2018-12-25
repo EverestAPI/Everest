@@ -239,14 +239,14 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            if (!Flags.Disabled) {
+            if (!Flags.IsDisabled) {
                 // 0.1 parses into 1 in regions using ,
                 // This also somehow sets the exception message language to English.
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             }
 
-            if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") != "1") {
+            if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
 
@@ -269,6 +269,11 @@ namespace Celeste.Mod {
             }).Register();
 
             Loader.LoadAuto();
+
+            if (Flags.IsHeadless) {
+                // Load stray .bins afterwards.
+                Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
+            }
 
             // Also let all mods parse the arguments.
             Queue<string> args = new Queue<string>(Args);

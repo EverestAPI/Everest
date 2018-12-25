@@ -37,7 +37,7 @@ namespace Celeste {
         public override void Begin() {
             base.Begin();
 
-            if (Everest.Flags.Disabled)
+            if (Everest.Flags.IsDisabled)
                 return;
 
             if (Settings.Instance.SpeedrunClock > SpeedrunType.Off) {
@@ -52,7 +52,7 @@ namespace Celeste {
         public override void End() {
             orig_End();
 
-            if (Everest.Flags.Disabled)
+            if (Everest.Flags.IsDisabled)
                 return;
 
             identicon?.Dispose();
@@ -62,7 +62,7 @@ namespace Celeste {
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
         [MonoModNoNew]
         public static void VersionNumberAndVariants(string version, float ease, float alpha) {
-            if (Everest.Flags.Disabled) {
+            if (Everest.Flags.IsDisabled) {
                 orig_VersionNumberAndVariants(version, ease, alpha);
                 return;
             }

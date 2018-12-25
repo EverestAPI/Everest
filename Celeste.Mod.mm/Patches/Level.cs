@@ -67,7 +67,7 @@ namespace Celeste {
         private extern void orig_GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint);
         private void GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint) {
             GiveUpHint hint = null;
-            if (!Everest.Flags.Disabled && !restartArea && !showHint) {
+            if (!Everest.Flags.IsDisabled && !restartArea && !showHint) {
                 // The game originally doesn't show a hint when exiting to the map.
                 Add(hint = new GiveUpHint());
             }

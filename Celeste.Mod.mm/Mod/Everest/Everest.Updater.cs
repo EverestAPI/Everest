@@ -141,7 +141,7 @@ namespace Celeste.Mod {
             };
 
             public static Task RequestAll() {
-                if (Flags.Disabled || !Flags.SupportUpdatingEverest)
+                if (Flags.IsDisabled || !Flags.SupportUpdatingEverest)
                     return new Task(() => { });
 
                 Task[] tasks = new Task[Sources.Count];

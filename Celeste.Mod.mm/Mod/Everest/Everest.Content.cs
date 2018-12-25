@@ -200,13 +200,12 @@ namespace Celeste.Mod {
                 if (_DumpAll)
                     DumpAll();
 
-                if (Flags.Disabled)
+                if (Flags.IsDisabled)
                     return;
 
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
                     Name = "Everest"
                 });
-                Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
 
             /// <summary>
