@@ -242,9 +242,11 @@ public class EverestPS {
         <div id=""main-wrapper"">
             <div id=""main"">
                 <article class=""centered"">
-                    <h3>Everest autobuild archives</h3>
-                    <p>Each .zip can be used to update or manually install Everest.</p>
-                    <p><b>Note:</b> This service will possibly be replaced with the artifacts provided by <a href=""https://dev.azure.com/EverestAPI/Everest/_build?definitionId=1""Azure Pipelines</a> soon(tm).</p>
+                    <div id=""info"" class=""sticky"">
+                        <h3>Everest autobuild archives</h3>
+                        <p>Each .zip can be used to update or manually install Everest.</p>
+                        <p><b>Note:</b> This service will possibly be replaced with the artifacts provided by <a href=""https://dev.azure.com/EverestAPI/Everest/_build?definitionId=1"">Azure Pipelines</a> soon(tm).</p>
+                    </div>
                     <ul>
 ");
 
