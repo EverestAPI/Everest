@@ -69,10 +69,17 @@ namespace Monocle {
 
             int viewScale = 1;
 
-            string mouseText = $"Cursor @\n screen: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
+            string mouseText = "";
 
-            if (Engine.Scene is Level) {
-                Level level = (Level) Engine.Scene;
+            Level level = Engine.Scene as Level;
+
+            if (level != null) {
+                mouseText += $"Area: {level.Session.Level} @ {level.Session.Area}\n";
+            }
+
+            mouseText += $"Cursor @\n screen: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
+
+            if (level != null) {
                 Camera cam = level.Camera;
                 viewScale = (int) Math.Round(Engine.Instance.GraphicsDevice.PresentationParameters.BackBufferWidth / (float) cam.Viewport.Width);
                 Vector2 mouseWorldPosition = mousePosition;
