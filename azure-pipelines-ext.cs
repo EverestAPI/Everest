@@ -215,7 +215,7 @@ public class EverestPS {
                 display: inline-block;
             }
             a:not(.no-invert)::after {
-                content: "";
+                content: """";
                 position: absolute;
                 top: -8px;
                 left: -8px;
