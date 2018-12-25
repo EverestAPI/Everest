@@ -23,7 +23,7 @@ echo "Getting latest builds_index.txt"
 [EverestPS]::Get("https://ams3.digitaloceanspaces.com/lollyde/everest-travis/builds_index.txt", "builds_index.txt")
 
 echo "Updating builds_index.txt"
-Add-Content builds_index.txt "/lollyde/everest-travis/$ZIP $ZIP`n"
+Add-Content -Path builds_index.txt -Value "/lollyde/everest-travis/$ZIP $ZIP`n" -NoNewline
 
 echo "Pushing builds_index.txt to S3"
 [EverestPS]::PutS3($S3Key, $S3Secret, ".", "builds_index.txt", "/everest-travis/", "text/plain")
