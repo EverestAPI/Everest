@@ -160,7 +160,7 @@ namespace Celeste.Mod {
                         return;
 
                     Newest = all[0];
-                    if (!HasUpdate)
+                    if (Newest.Build < Build)
                         Newest = all.OrderByDescending(entry => entry.Build).First();
                 });
             }
