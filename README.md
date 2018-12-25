@@ -4,7 +4,7 @@
 
 ----
 
-[![Build Status](https://travis-ci.org/EverestAPI/Everest.svg?branch=master)](https://travis-ci.org/EverestAPI/Everest)
+[![Build Status](https://dev.azure.com/EverestAPI/Everest/_apis/build/status/EverestAPI.Everest?branchName=master)](https://dev.azure.com/EverestAPI/Everest/_build/latest?definitionId=1?branchName=master)
 
 [**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
 
