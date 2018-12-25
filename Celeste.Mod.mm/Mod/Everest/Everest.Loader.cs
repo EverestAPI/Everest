@@ -38,7 +38,7 @@ namespace Celeste.Mod {
             /// </summary>
             public static string PathWhitelist { get; internal set; }
             internal static string NameWhitelist;
-            internal static List<string> _Whitelist = new List<string>();
+            internal static List<string> _Whitelist;
             /// <summary>
             /// The currently loaded mod whitelist.
             /// </summary>
