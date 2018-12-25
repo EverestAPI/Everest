@@ -151,7 +151,7 @@
     <Compile Include="Mod\Everest\TextInput.cs" />
     <Compile Include="Mod\Helpers\XNAFormsHook.cs" />
     <Compile Include="Mod\Helpers\Commands.cs" />
-    <Compile Include="Mod\Everest\Everest.Update.cs" />
+    <Compile Include="Mod\Everest\Everest.Updater.cs" />
     <Compile Include="Mod\Helpers\FakeAssembly.cs" />
     <Compile Include="Mod\Helpers\RelinkerSymbolReaderProvider.cs" />
     <Compile Include="Mod\Module\EverestModuleBinarySaveData.cs" />

@@ -155,12 +155,13 @@ namespace Celeste.Mod {
                             continue;
                         all.AddRange(source.Entries);
                     }
+
                     if (all.Count == 0)
                         return;
-                    all.Sort((a, b) => {
-                        return -a.Build.CompareTo(b.Build);
-                    });
+
                     Newest = all[0];
+                    if (!HasUpdate)
+                        Newest = all.OrderByDescending(entry => entry.Build).First();
                 });
             }
 
