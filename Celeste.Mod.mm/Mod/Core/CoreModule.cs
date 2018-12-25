@@ -227,6 +227,12 @@ namespace Celeste.Mod.Core {
                             menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
                     }
                 }
+
+                if (Everest.Updater.HasUpdate) {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
+                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                    }));
+                }
             }
 
             base.CreateModMenuSection(menu, inGame, snapshot);
@@ -235,12 +241,6 @@ namespace Celeste.Mod.Core {
                 menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
                 }));
-
-                if (Everest.Updater.HasUpdate) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
-                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
-                    }));
-                }
 
                 menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();

@@ -33,7 +33,7 @@
 	MODOPTIONS_TITLE= 										EVEREST
 
 # Core Module Options
-	MODOPTIONS_COREMODULE_UPDATE= 							Update to ((version))
+	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Version list
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_LAUNCHINDEBUGMODE= 				Launch as debug build
