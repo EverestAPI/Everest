@@ -362,43 +362,6 @@ namespace Celeste.Mod {
                     return response.ContentLength;
             }
 
-            class MiniInstallerProxy : MarshalByRefObject {
-                public void Boot(MiniInstallerBridge bridge) {
-                    Assembly installerAssembly = Assembly.LoadFrom(Path.Combine(bridge.ExtractedPath, "MiniInstaller.exe"));
-                    Type installerType = installerAssembly.GetType("MiniInstaller.Program");
-
-                    // Set up any fields which we can set up by Everest.
-                    /*
-                    FieldInfo f_AsmMonoMod = installerType.GetField("AsmMonoMod");
-                    if (f_AsmMonoMod != null)
-                        f_AsmMonoMod.SetValue(null, typeof(MonoModder).Assembly);
-                    */
-                    FieldInfo f_LineLogger = installerType.GetField("LineLogger");
-                    if (f_LineLogger != null)
-                        // f_LineLogger.SetValue(null, new Action<string>(_ => progress.LogLine(_)).CastDelegate(f_LineLogger.FieldType));
-                        f_LineLogger.SetValue(null, new Action<string>(bridge.LogLine).CastDelegate(f_LineLogger.FieldType));
-
-                    object exitObject = null;
-
-                    // Let's just run the mod installer... from our mod... while we're running the mod...
-                    try {
-                        exitObject = installerAssembly.EntryPoint.Invoke(null, new object[] { new string[] { } });
-                    } catch {}
-
-                    if (exitObject != null && exitObject is int && ((int) exitObject) != 0) {
-                        //throw new Exception($"Return code != 0, but {exitObject}");
-                    } // :insanebadeline:
-                }
-            }
-
-            class MiniInstallerBridge : MarshalByRefObject {
-                internal volatile OuiLoggedProgress Progress;
-                public string ExtractedPath { get; set; }
-                public void LogLine(string line) {
-                    Progress.LogLine(line);
-                }
-            }
-
         }
     }
 }

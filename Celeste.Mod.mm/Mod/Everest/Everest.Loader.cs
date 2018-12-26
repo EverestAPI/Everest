@@ -65,7 +65,7 @@ namespace Celeste.Mod {
                 if (!string.IsNullOrEmpty(NameWhitelist)) {
                     PathWhitelist = Path.Combine(PathMods, NameWhitelist);
                     if (File.Exists(PathWhitelist)) {
-                        _Whitelist = File.ReadAllLines(PathBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                        _Whitelist = File.ReadAllLines(PathWhitelist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
                 }
 
