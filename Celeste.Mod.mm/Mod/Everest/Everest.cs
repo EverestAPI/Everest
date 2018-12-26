@@ -206,7 +206,7 @@ namespace Celeste.Mod {
                 else if (arg == "--everest-disabled" || arg == "--speedrun")
                     Environment.SetEnvironmentVariable("EVEREST_DISABLED", "1");
 
-                else if (arg == "--whitelist" && queue.Count > 1)
+                else if (arg == "--whitelist" && queue.Count >= 1)
                     Loader.NameWhitelist = queue.Dequeue();
 
             }
