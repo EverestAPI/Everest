@@ -270,7 +270,7 @@ namespace Celeste.Mod {
 
             Loader.LoadAuto();
 
-            if (Flags.IsHeadless) {
+            if (!Flags.IsHeadless) {
                 // Load stray .bins afterwards.
                 Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
