@@ -4,6 +4,7 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
@@ -23,6 +24,30 @@ namespace Monocle {
         private static bool reloading;
 
         // Allow loading VirtualTextures from modded AssetMetadatas.
+
+
+        [MonoModReplace]
+        public static VirtualTexture CreateTexture(string path) {
+            VirtualTexture vt;
+
+            // Trim the file extension, as we don't store it in our mod content mappings.
+            string dir = Path.GetDirectoryName(path);
+            string pathMod = Path.GetFileNameWithoutExtension(path);
+            if (!string.IsNullOrEmpty(dir))
+                pathMod = Path.Combine(dir, pathMod);
+            // We use / instead of \ in mod content paths.
+            pathMod = pathMod.Replace('\\', '/');
+
+            ModAsset asset;
+            if (Everest.Content.TryGet<Texture2D>(pathMod, out asset)) {
+                vt = (VirtualTexture) (object) new patch_VirtualTexture(asset);
+            } else {
+                vt = (VirtualTexture) (object) new patch_VirtualTexture(path);
+            }
+
+            assets.Add(vt);
+            return vt;
+        }
 
         public static VirtualTexture CreateTexture(ModAsset metadata) {
             VirtualTexture virtualTexture = (VirtualTexture) (object) new patch_VirtualTexture(metadata);
