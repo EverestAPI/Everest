@@ -19,9 +19,35 @@ using System.Xml;
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
+
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
+        private static List<VirtualAsset> assets;
         public string Path { get; private set; }
         private Color color;
+
+        [MonoModReplace]
+        public static VirtualTexture CreateTexture(string path) {
+            VirtualTexture vt;
+
+            // Trim the file extension, as we don't store it in our mod content mappings.
+            string dir = System.IO.Path.GetDirectoryName(path);
+            string pathMod = System.IO.Path.GetFileNameWithoutExtension(path);
+            if (!string.IsNullOrEmpty(dir))
+                pathMod = System.IO.Path.Combine(dir, pathMod);
+            // We use / instead of \ in mod content paths.
+            pathMod = pathMod.Replace('\\', '/');
+
+            ModAsset asset;
+            if (Everest.Content.TryGet<Texture2D>(pathMod, out asset)) {
+                vt = (VirtualTexture) (object) new patch_VirtualTexture(asset);
+            } else {
+                vt = (VirtualTexture) (object) new patch_VirtualTexture(path);
+
+            }
+
+            assets.Add(vt);
+            return vt;
+        }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture_Unsafe")]
         public Texture2D Texture;
