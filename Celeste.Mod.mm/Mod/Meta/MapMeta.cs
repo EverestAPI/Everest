@@ -19,51 +19,51 @@ namespace Celeste.Mod.Meta {
             Parse(meta);
         }
 
-        public string Name { get; set; } = null;
-        public string SID { get; set; } = null;
-        public string Icon { get; set; } = null;
+        public string Name { get; set; }
+        public string SID { get; set; }
+        public string Icon { get; set; }
 
-        public bool? Interlude { get; set; } = false;
-        public string CompleteScreenName { get; set; } = null;
+        public bool? Interlude { get; set; }
+        public string CompleteScreenName { get; set; }
 
-        public int? CassetteCheckpointIndex { get; set; } = 0;
+        public int? CassetteCheckpointIndex { get; set; }
 
-        public string TitleBaseColor { get; set; } = null;
-        public string TitleAccentColor { get; set; } = null;
-        public string TitleTextColor { get; set; } = null;
+        public string TitleBaseColor { get; set; }
+        public string TitleAccentColor { get; set; }
+        public string TitleTextColor { get; set; }
 
-        public Player.IntroTypes? IntroType { get; set; } = Player.IntroTypes.WakeUp;
+        public Player.IntroTypes? IntroType { get; set; }
 
         public bool? Dreaming { get; set; } = false;
 
-        public string ColorGrade { get; set; } = null;
+        public string ColorGrade { get; set; }
 
-        public string Wipe { get; set; } = null;
+        public string Wipe { get; set; }
 
-        public float? DarknessAlpha { get; set; } = 0.05f;
-        public float? BloomBase { get; set; } = 0f;
-        public float? BloomStrength { get; set; } = 1f;
+        public float? DarknessAlpha { get; set; }
+        public float? BloomBase { get; set; }
+        public float? BloomStrength { get; set; }
 
-        public string Jumpthru { get; set; } = null;
+        public string Jumpthru { get; set; }
 
         public Session.CoreModes? CoreMode { get; set; }
 
-        public string CassetteNoteColor { get; set; } = null;
-        public string CassetteSong { get; set; } = null;
+        public string CassetteNoteColor { get; set; }
+        public string CassetteSong { get; set; }
 
-        public string ForegroundTiles { get; set; } = null;
-        public string BackgroundTiles { get; set; } = null;
-        public string AnimatedTiles { get; set; } = null;
-        public string Sprites { get; set; } = null;
-        public string Portraits { get; set; } = null;
+        public string ForegroundTiles { get; set; }
+        public string BackgroundTiles { get; set; }
+        public string AnimatedTiles { get; set; }
+        public string Sprites { get; set; }
+        public string Portraits { get; set; }
 
-        public MapMetaModeProperties[] Modes { get; set; } = null;
+        public MapMetaModeProperties[] Modes { get; set; }
 
-        public MapMetaMountain Mountain { get; set; } = null;
+        public MapMetaMountain Mountain { get; set; }
 
-        public MapMetaCompleteScreen CompleteScreen { get; set; } = null;
+        public MapMetaCompleteScreen CompleteScreen { get; set; }
 
-        public MapMetaCassetteModifier CassetteModifier { get; set; } = null;
+        public MapMetaCassetteModifier CassetteModifier { get; set; }
 
         public void Parse(BinaryPacker.Element meta) {
             meta.AttrIf("Name", v => Name = v);

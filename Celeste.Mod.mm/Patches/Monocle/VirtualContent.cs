@@ -25,7 +25,6 @@ namespace Monocle {
 
         // Allow loading VirtualTextures from modded AssetMetadatas.
 
-
         [MonoModReplace]
         public static VirtualTexture CreateTexture(string path) {
             VirtualTexture vt;

@@ -180,6 +180,8 @@ namespace Celeste {
                 if (!GFX.Gui.Has(area.Icon))
                     area.Icon = "areas/null";
 
+                area.Interlude = false;
+
                 area.TitleBaseColor = Calc.HexToColor("6c7c81");
                 area.TitleAccentColor = Calc.HexToColor("2f344b");
                 area.TitleTextColor = Color.White;
@@ -209,8 +211,14 @@ namespace Celeste {
                 area.CassetteSong = Sfxs.cas_01_forsaken_city;
 
                 // Custom values can be set via the MapMeta.
-                MapMeta meta = asset.GetMeta<MapMeta>() ?? new MapMeta();
-                meta?.ApplyTo(area);
+                MapMeta meta = new MapMeta();
+                meta.ApplyTo(area);
+                MapMeta metaLoaded = asset.GetMeta<MapMeta>();
+                if (metaLoaded != null) {
+                    area.SetMeta(null);
+                    metaLoaded.ApplyTo(area);
+                    meta = metaLoaded;
+                }
 
                 if (string.IsNullOrEmpty(area.Mode[0].Path))
                     area.Mode[0].Path = asset.PathVirtual.Substring(5);
