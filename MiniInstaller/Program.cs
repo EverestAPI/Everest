@@ -15,6 +15,7 @@ namespace MiniInstaller {
         public static string PathUpdate;
         public static string PathGame;
         public static string PathCelesteExe;
+        public static string PathEverestExe;
         public static string PathOrig;
         public static string PathLog;
 
@@ -54,8 +55,8 @@ namespace MiniInstaller {
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
                     }
-                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathCelesteExe);
-                    RunHookGen(PathCelesteExe);
+                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
+                    RunHookGen(PathEverestExe, PathCelesteExe);
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -97,6 +98,11 @@ namespace MiniInstaller {
                 return;
             }
 
+            PathEverestExe = Path.Combine(PathGame, "Everest.exe");
+            if (!File.Exists(PathEverestExe)) {
+                PathEverestExe = PathCelesteExe;
+            }
+
             PathOrig = Path.Combine(PathGame, "orig");
             PathLog = Path.Combine(PathGame, "miniinstaller-log.txt");
 
@@ -107,7 +113,7 @@ namespace MiniInstaller {
         }
 
         public static void WaitForGameExit() {
-            if (!CanReadWrite(PathCelesteExe)) {
+            if (!CanReadWrite(PathEverestExe)) {
                 LogLine("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(5000);
@@ -178,12 +184,12 @@ namespace MiniInstaller {
             File.Move(asmTo + ".tmp", asmTo);
         }
 
-        public static void RunHookGen(string asm) {
+        public static void RunHookGen(string asm, string target) {
             LogLine($"Running MonoMod.RuntimeDetour.HookGen for {asm}");
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm } });
+            AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
         }
 
         public static void StartGame() {
@@ -194,9 +200,9 @@ namespace MiniInstaller {
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 // The Linux and macOS versions come with a wrapping bash script.
                 game.StartInfo.FileName = "bash";
-                game.StartInfo.Arguments = "\"" + PathCelesteExe.Substring(0, PathCelesteExe.Length - 4) + "\"";
+                game.StartInfo.Arguments = "\"" + PathEverestExe.Substring(0, PathEverestExe.Length - 4) + "\"";
             } else {
-                game.StartInfo.FileName = PathCelesteExe;
+                game.StartInfo.FileName = PathEverestExe;
             }
             game.StartInfo.WorkingDirectory = PathGame;
             game.Start();

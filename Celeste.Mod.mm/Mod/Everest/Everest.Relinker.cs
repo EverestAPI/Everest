@@ -36,13 +36,7 @@ namespace Celeste.Mod {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) }
             };
-            internal static ModuleDefinition RuntimeRuleContainer = ModuleDefinition.ReadModule(
-                Path.Combine(
-                    Path.GetDirectoryName(typeof(Celeste).Assembly.Location),
-                    Path.GetFileNameWithoutExtension(typeof(Celeste).Assembly.Location) + ".Mod.mm.dll"
-                ),
-                new ReaderParameters(ReadingMode.Immediate)
-            );
+            internal static bool RuntimeRulesParsed = false;
 
             private static Dictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
             public static Dictionary<string, ModuleDefinition> SharedRelinkModuleMap {
@@ -221,9 +215,24 @@ namespace Celeste.Mod {
 
                     modder.MapDependencies();
 
-                    if (RuntimeRuleContainer != null) {
-                        modder.ParseRules(RuntimeRuleContainer);
-                        RuntimeRuleContainer = null;
+                    if (!RuntimeRulesParsed) {
+                        RuntimeRulesParsed = true;
+                        string rulesPath = Path.Combine(
+                            Path.GetDirectoryName(typeof(Celeste).Assembly.Location),
+                            Path.GetFileNameWithoutExtension(typeof(Celeste).Assembly.Location) + ".Mod.mm.dll"
+                        );
+                        if (!File.Exists(rulesPath)) {
+                            // Fallback if someone renamed Celeste.exe
+                            rulesPath = Path.Combine(
+                                Path.GetDirectoryName(typeof(Celeste).Assembly.Location),
+                                "Celeste.Mod.mm.dll"
+                            );
+                        }
+                        if (File.Exists(rulesPath)) {
+                            ModuleDefinition rules = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
+                            modder.ParseRules(rules);
+                            rules.Dispose(); // Is this safe?
+                        }
                     }
 
                     prePatch?.Invoke(modder);
