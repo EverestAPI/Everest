@@ -19,9 +19,7 @@ using System.Xml;
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
-
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
-        private static List<VirtualAsset> assets;
         public string Path { get; private set; }
         private Color color;
 
