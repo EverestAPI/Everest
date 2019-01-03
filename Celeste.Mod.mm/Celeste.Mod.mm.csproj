@@ -108,6 +108,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
