@@ -180,6 +180,11 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "everest/changeInventoryTrigger") {
+                level.Add(new ChangeInventoryTrigger(entityData, offset));
+                return true;
+            }
+
             if (entityData.Name == "everest/coreMessage") {
                 level.Add(new CustomCoreMessage(entityData, offset));
                 return true;
