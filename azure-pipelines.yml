@@ -58,6 +58,7 @@ steps:
     publishLocation: 'Container'
 
 - task: PowerShell@2
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   displayName: 'Run azure-pipelines-postbuild.ps1'
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
