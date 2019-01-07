@@ -239,7 +239,7 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            if (!Flags.IsDisabled) {
+            if (!Flags.IsDisabled && !Flags.IsDisabled) {
                 // 0.1 parses into 1 in regions using ,
                 // This also somehow sets the exception message language to English.
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -270,7 +270,7 @@ namespace Celeste.Mod {
 
             Loader.LoadAuto();
 
-            if (!Flags.IsHeadless) {
+            if (!Flags.IsHeadless && !Flags.IsDisabled) {
                 // Load stray .bins afterwards.
                 Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
@@ -293,7 +293,9 @@ namespace Celeste.Mod {
         internal static void Initialize() {
             // Initialize misc stuff.
             TextInput.Initialize(Celeste.Instance);
-            Discord.Initialize();
+            if (!Flags.IsDisabled) {
+                Discord.Initialize();
+            }
 
             // Add the previously created managers.
             Celeste.Instance.Components.Add(TouchInputManager.Instance);
