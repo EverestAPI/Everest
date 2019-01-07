@@ -413,15 +413,13 @@ namespace Celeste.Mod {
             }
 
             Events.Celeste.OnShutdown += () => {
-                AudioExt.System?.release();
                 Thread offspring = new Thread(() => {
                     Process game = new Process();
                     // If the game was installed via Steam, it should restart in a Steam context on its own.
                     if (Environment.OSVersion.Platform == PlatformID.Unix ||
                         Environment.OSVersion.Platform == PlatformID.MacOSX) {
                         // The Linux and macOS versions come with a wrapping bash script.
-                        game.StartInfo.FileName = "bash";
-                        game.StartInfo.Arguments = "\"" + Path.Combine(PathGame, "Celeste") + "\"";
+                        game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
                     } else {
                         game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
                     }
@@ -429,6 +427,7 @@ namespace Celeste.Mod {
                     game.Start();
                 });
                 offspring.Start();
+                AudioExt.System?.release();
             };
 
             Engine.Instance.Exit();

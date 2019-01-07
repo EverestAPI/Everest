@@ -330,18 +330,17 @@ namespace Celeste.Mod {
                 }
                 progress.Lines[progress.Lines.Count - 1] = $"Restarting";
 
-                // Start MiniInstaller in a separate process on systems that don't support modding the game while it'S alive.
+                // Start MiniInstaller in a separate process.
                 try {
-                    // We're on Windows or another OS which doesn't support manipulating Celeste.exe while it's used.
-                    // Run MiniInstaller "out of body."
                     Process installer = new Process();
-                    installer.StartInfo.FileName = Path.Combine(extractedPath, "MiniInstaller.exe");
+                    string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
+                    installer.StartInfo.FileName = installerPath;
                     if (Type.GetType("Mono.Runtime") != null) {
-                        installer.StartInfo.Arguments = $"\"{installer.StartInfo.FileName}\"";
                         installer.StartInfo.FileName = "mono";
+                        installer.StartInfo.Arguments = $"\"{installerPath}\"";
                         if (File.Exists("/bin/sh")) {
-                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; {installer.StartInfo.FileName} {installer.StartInfo.Arguments.Replace('\"', '\'')}\"";
                             installer.StartInfo.FileName = "/bin/sh";
+                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; mono MiniInstaller.exe\"";
                         }
                     }
                     installer.StartInfo.WorkingDirectory = extractedPath;

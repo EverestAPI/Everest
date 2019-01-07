@@ -199,8 +199,9 @@ namespace MiniInstaller {
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 // The Linux and macOS versions come with a wrapping bash script.
-                game.StartInfo.FileName = "bash";
-                game.StartInfo.Arguments = "\"" + PathEverestExe.Substring(0, PathEverestExe.Length - 4) + "\"";
+                game.StartInfo.FileName = PathEverestExe.Substring(0, PathEverestExe.Length - 4);
+                if (!File.Exists(game.StartInfo.FileName))
+                    game.StartInfo.FileName = PathCelesteExe.Substring(0, PathCelesteExe.Length - 4);
             } else {
                 game.StartInfo.FileName = PathEverestExe;
             }
