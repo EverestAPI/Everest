@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
+#pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
@@ -21,6 +22,12 @@ namespace Celeste {
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
+
+
+        // These two fields are missing before Celeste 1.2.5.0.
+        // This is only here because Leo bugged me enough to add this here.
+        private new float CassetteBlockTempo;
+        private new int CassetteBlockBeats;
 
         public SubHudRenderer SubHudRenderer;
 
@@ -126,6 +133,11 @@ namespace Celeste {
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
+            // These two fields are missing before Celeste 1.2.5.0.
+            // This is only here because Leo bugged me enough to add this here.
+            CassetteBlockTempo = 1f;
+            CassetteBlockBeats = 2;
+
             try {
                 orig_LoadLevel(playerIntro, isFromLoader);
             } catch (Exception e) {
