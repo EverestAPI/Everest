@@ -219,9 +219,15 @@ namespace Celeste {
                 return true;
             }
 
-            if (entityData.Name == "everest/completeAreaTrigger" ||
-                entityData.Name == "outback/completeareatrigger") {
-                level.Add(new CompleteAreaTrigger(entityData, offset));
+            if (entityData.Name == "everest/lavaBlockerTrigger" ||
+                entityData.Name == "cavern/lavablockertrigger") {
+                level.Add(new LavaBlockerTrigger(entityData, offset));
+                return true;
+            }
+
+            if (entityData.Name == "everest/coreModeTrigger" ||
+                entityData.Name == "cavern/coremodetrigger") {
+                level.Add(new CoreModeTrigger(entityData, offset));
                 return true;
             }
 

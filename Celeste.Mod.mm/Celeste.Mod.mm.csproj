@@ -111,6 +111,8 @@
     <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
+    <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
+    <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />
@@ -126,6 +128,7 @@
     <Compile Include="Patches\CrumblePlatform.cs" />
     <Compile Include="Patches\EntityData.cs" />
     <Compile Include="Patches\Pico8\Emulator.cs" />
+    <Compile Include="Patches\IntroCar.cs" />
     <Compile Include="Patches\SinkingPlatform.cs" />
     <Compile Include="Patches\MovingPlatform.cs" />
     <Compile Include="Patches\Cobweb.cs" />
