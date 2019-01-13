@@ -9,13 +9,13 @@ namespace Celeste.Mod.Entities {
         }
 
         public override void OnEnter(Player player) {
-            Level level = base.SceneAs<Level>();
-            if (level.CoreMode != mode) {
-                level.CoreMode = mode;
-                Input.Rumble(RumbleStrength.Medium, RumbleLength.Medium);
-                level.Flash(Color.White * 0.15f, true);
-                Celeste.Freeze(0.05f);
-            }
+            Level level = Scene as Level;
+            if (level.CoreMode == mode)
+                return;
+            level.CoreMode = mode;
+            Input.Rumble(RumbleStrength.Medium, RumbleLength.Medium);
+            level.Flash(Color.White * 0.15f, true);
+            Celeste.Freeze(0.05f);
         }
     }
 }
