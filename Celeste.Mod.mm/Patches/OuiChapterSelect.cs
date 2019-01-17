@@ -48,8 +48,12 @@ namespace Celeste {
             // Do we even need to do anything here?
         }
 
-        [MonoModIgnore]
-        private extern void EaseCamera();
+        [MonoModReplace]
+        private void EaseCamera() {
+            AreaData areaData = AreaData.Areas[area];
+            Overworld.Mountain.EaseCamera(area, areaData.MountainIdle, null, true, areaData.GetMeta()?.Mountain?.Rotate ?? areaData.GetLevelSet() == "Celeste" && area == 10);
+            Overworld.Mountain.Model.EaseState(areaData.MountainState);
+        }
 
         [MonoModReplace]
         public override IEnumerator Enter(Oui from) {

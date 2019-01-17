@@ -20,18 +20,18 @@ namespace Celeste {
 
         // Celeste 1.2.6.X comes with a new parameter.
 
-        [MonoModLinkTo("Celeste.MountainRenderer", "System.Single EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable<System.Single>,System.Boolean)")]
+        [MonoModLinkTo("Celeste.MountainRenderer", "System.Single EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean)")]
         [MonoModIgnore]
         public extern float EaseCameraOld(int area, MountainCamera transform, float? duration = null, bool nearTarget = true);
 
         [MonoModIfFlag("V1:EaseCamera")]
-        [MonoModPatch("EaseCamera")]
+        [MonoModLinkFrom("System.Single Celeste.MountainRenderer::EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean,System.Boolean)")]
         public float EaseCameraShim(int area, MountainCamera transform, float? duration = null, bool nearTarget = true, bool targetRotate = false) {
             return EaseCameraOld(area, transform, duration, nearTarget);
         }
 
         [MonoModIfFlag("V2:EaseCamera")]
-        [MonoModPatch("EaseCamera")]
+        [MonoModLinkFrom("System.Single Celeste.MountainRenderer::EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean)")]
         public float EaseCameraShim(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {
             return EaseCamera(area, transform, duration, nearTarget);
         }
