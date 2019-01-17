@@ -61,7 +61,7 @@ namespace Celeste {
 
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
         [MonoModNoNew]
-        public static void VersionNumberAndVariants(string version, float ease, float alpha) {
+        public static new void VersionNumberAndVariants(string version, float ease, float alpha) {
             if (Everest.Flags.IsDisabled) {
                 orig_VersionNumberAndVariants(version, ease, alpha);
                 return;

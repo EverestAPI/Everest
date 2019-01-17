@@ -237,6 +237,11 @@ namespace MonoMod {
             MethodDefinition cassetteblock_ctor = cassetteblock.FindMethod(".ctor");
             MonoModRule.Flag.Set("V1:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 4);
             MonoModRule.Flag.Set("V2:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 5);
+
+            TypeDefinition mountainrenderer = MonoModRule.Modder.FindType("Celeste.MountainRenderer").Resolve();
+            MethodDefinition mountainrenderer_easecamera = cassetteblock.FindMethod("EaseCamera");
+            MonoModRule.Flag.Set("V1:EaseCamera", cassetteblock_ctor.Parameters.Count == 4);
+            MonoModRule.Flag.Set("V2:EaseCamera", cassetteblock_ctor.Parameters.Count == 5);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
