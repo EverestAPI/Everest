@@ -217,6 +217,9 @@ namespace Celeste.Mod {
 
                     if (!RuntimeRulesParsed) {
                         RuntimeRulesParsed = true;
+
+                        InitMMSharedData();
+
                         string rulesPath = Path.Combine(
                             Path.GetDirectoryName(typeof(Celeste).Assembly.Location),
                             Path.GetFileNameWithoutExtension(typeof(Celeste).Assembly.Location) + ".Mod.mm.dll"
@@ -368,6 +371,14 @@ namespace Celeste.Mod {
                     if (a[i].Trim() != b[i].Trim())
                         return false;
                 return true;
+            }
+
+            [PatchInitMMSharedData]
+            private static void InitMMSharedData() {
+                // This method is automatically filled via MonoModRules.
+            }
+            private static void SetMMSharedData(string key, bool value) {
+                MonoModExt.SharedData[key] = value;
             }
 
         }

@@ -95,6 +95,12 @@ namespace MonoMod {
     class PatchInitLanguagesAttribute : Attribute { }
 
     /// <summary>
+    /// Automatically fill InitMMSharedData based on the current patch flags.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchInitMMSharedData")]
+    class PatchInitMMSharedDataAttribute : Attribute { }
+
+    /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
     [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
@@ -242,6 +248,10 @@ namespace MonoMod {
             MethodDefinition mountainrenderer_easecamera = cassetteblock.FindMethod("EaseCamera");
             MonoModRule.Flag.Set("V1:EaseCamera", cassetteblock_ctor.Parameters.Count == 4);
             MonoModRule.Flag.Set("V2:EaseCamera", cassetteblock_ctor.Parameters.Count == 5);
+
+            TypeDefinition theocrystalcontroller = MonoModRule.Modder.FindType("Celeste.TheoCrystalCollider")?.Resolve();
+            MonoModRule.Flag.Set("V1:TheoCrystalCollider", theocrystalcontroller != null);
+            MonoModRule.Flag.Set("V2:TheoCrystalCollider", theocrystalcontroller == null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
@@ -925,6 +935,29 @@ namespace MonoMod {
                 }
             }
 
+        }
+
+
+        public static void PatchInitMMSharedData(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_Set = method.DeclaringType.FindMethod("System.Void SetMMSharedData(System.String,System.Boolean)");
+            if (m_Set == null)
+                return;
+
+            if (!method.HasBody)
+                return;
+
+            method.Body.Instructions.Clear();
+            ILProcessor il = method.Body.GetILProcessor();
+
+            foreach (KeyValuePair<string, object> kvp in MonoModExt.SharedData) {
+                if (!(kvp.Value is bool))
+                    return;
+                il.Emit(OpCodes.Ldstr, kvp.Key);
+                il.Emit((bool) kvp.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                il.Emit(OpCodes.Call, m_Set);
+            }
+
+            il.Emit(OpCodes.Ret);
         }
 
 
