@@ -850,7 +850,6 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Ceq));
-                    instri++;
                     // After ==, process the result.
                     instri++;
                     // Grab this.
