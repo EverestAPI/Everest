@@ -780,6 +780,30 @@ namespace MonoMod {
                     instri++;
                 }
 
+                // Alternatively:
+
+                if (instri > 2 &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
+                ) {
+                    // Move before brfalse
+                    instri--;
+                    // Insert == 0
+                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ceq));
+                    instri++;
+                    // After ==, process the result.
+                    // Grab this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
+                    instri++;
+                    // Move back to brfalse
+                    instri++;
+                }
+
             }
 
         }
@@ -809,6 +833,30 @@ namespace MonoMod {
                     instri++;
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
+                    instri++;
+                }
+
+                // Alternatively:
+
+                if (instri > 2 &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
+                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
+                ) {
+                    // Move before brfalse
+                    instri--;
+                    // Insert == 0
+                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ceq));
+                    instri++;
+                    // After ==, process the result.
+                    // Grab this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Process.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
+                    instri++;
+                    // Move back to brfalse
                     instri++;
                 }
 
@@ -863,7 +911,7 @@ namespace MonoMod {
                 // No need to check for the full name when the field name itself is compiler-generated.
                 if (instri > 2 &&
                     instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    instr.OpCode == OpCodes.Brfalse_S
+                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
                 ) {
                     // Process the result before !=
                     // Push this.
