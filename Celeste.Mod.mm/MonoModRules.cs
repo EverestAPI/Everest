@@ -786,8 +786,7 @@ namespace MonoMod {
                     instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
                     (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
                 ) {
-                    // Move before brtrue
-                    instri--;
+                    // Before brtrue
                     // Insert == 0
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
                     instri++;
@@ -846,8 +845,7 @@ namespace MonoMod {
                     instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
                     (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
                 ) {
-                    // Move before brtrue
-                    instri--;
+                    // Before brtrue
                     // Insert == 0
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
                     instri++;
