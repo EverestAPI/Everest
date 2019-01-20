@@ -784,9 +784,9 @@ namespace MonoMod {
 
                 if (instri > 2 &&
                     instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
+                    (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
                 ) {
-                    // Move before brfalse
+                    // Move before brtrue
                     instri--;
                     // Insert == 0
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
@@ -800,8 +800,10 @@ namespace MonoMod {
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
                     instri++;
-                    // Move back to brfalse
+                    // Move back to brtrue
                     instri++;
+                    // Replace brtrue with brfalse
+                    instr.OpCode = OpCodes.Brfalse;
                 }
 
             }
@@ -840,9 +842,9 @@ namespace MonoMod {
 
                 if (instri > 2 &&
                     instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
+                    (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
                 ) {
-                    // Move before brfalse
+                    // Move before brtrue
                     instri--;
                     // Insert == 0
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
@@ -856,8 +858,10 @@ namespace MonoMod {
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
                     instri++;
-                    // Move back to brfalse
+                    // Move back to brtrue
                     instri++;
+                    // Replace brtrue with brfalse
+                    instr.OpCode = OpCodes.Brfalse;
                 }
 
             }
