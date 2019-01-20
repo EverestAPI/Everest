@@ -174,7 +174,6 @@ namespace Celeste {
                 // Default values.
 
                 area.SetSID(path);
-
                 area.Name = path;
                 area.Icon = "areas/" + path.ToLowerInvariant();
                 if (!GFX.Gui.Has(area.Icon))

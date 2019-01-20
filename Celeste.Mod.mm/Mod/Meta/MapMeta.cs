@@ -19,12 +19,14 @@ namespace Celeste.Mod.Meta {
             Parse(meta);
         }
 
-        public string Name { get; set; }
-        public string SID { get; set; }
+        // The following properties have been banned as they have been heavily misused in the past.
+        // public string Name { get; set; }
+        // public string CompleteScreenName { get; set; }
+        // public string SID { get; set; }
+
         public string Icon { get; set; }
 
         public bool? Interlude { get; set; }
-        public string CompleteScreenName { get; set; }
 
         public int? CassetteCheckpointIndex { get; set; }
 
@@ -66,12 +68,9 @@ namespace Celeste.Mod.Meta {
         public MapMetaCassetteModifier CassetteModifier { get; set; }
 
         public void Parse(BinaryPacker.Element meta) {
-            meta.AttrIf("Name", v => Name = v);
-            meta.AttrIf("SID", v => SID = v);
             meta.AttrIf("Icon", v => Icon = v);
 
             meta.AttrIfBool("Interlude", v => Interlude = v);
-            meta.AttrIf("CompleteScreenName", v => CompleteScreenName = v);
 
             meta.AttrIfInt("CassetteCheckpointIndex", v => CassetteCheckpointIndex = v);
 
@@ -123,19 +122,11 @@ namespace Celeste.Mod.Meta {
         }
 
         public void ApplyTo(AreaData area) {
-            if (!string.IsNullOrEmpty(Name))
-                area.Name = Name;
-
-            if (!string.IsNullOrEmpty(SID))
-                area.SetSID(SID);
-
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
             if (Interlude != null)
                 area.Interlude = Interlude.Value;
-            if (!string.IsNullOrEmpty(CompleteScreenName))
-                area.CompleteScreenName = CompleteScreenName;
 
             if (CassetteCheckpointIndex != null)
                 area.CassetteCheckpointIndex = CassetteCheckpointIndex.Value;
