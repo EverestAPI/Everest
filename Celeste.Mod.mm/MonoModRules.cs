@@ -792,10 +792,12 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
                     instri++;
                     instrs.Insert(instri, il.Create(OpCodes.Ceq));
-                    instri++;
                     // After ==, process the result.
-                    // Grab this.
+                    instri++;
+                    // Push this and grab this from this.
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
                     instri++;
                     // Process.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
@@ -852,6 +854,7 @@ namespace MonoMod {
                     instrs.Insert(instri, il.Create(OpCodes.Ceq));
                     instri++;
                     // After ==, process the result.
+                    instri++;
                     // Grab this.
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
                     instri++;
