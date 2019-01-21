@@ -75,6 +75,11 @@ namespace Celeste.Mod {
         /// </summary>
         public virtual List<EverestModuleMetadata> Dependencies { get; set; } = new List<EverestModuleMetadata>();
 
+        /// <summary>
+        /// The runtime mod hash. Might not be determined by all mod content.
+        /// </summary>
+        public virtual byte[] Hash { get; set; }
+
         public override string ToString() {
             return Name + " " + Version;
         }

@@ -65,6 +65,11 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool NonThreadedGL { get; set; } = false;
 
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool UnpackFMODBanks { get; set; } = true;
+
         public string InputGui { get; set; } = "";
 
         [SettingIgnore]

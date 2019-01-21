@@ -162,6 +162,43 @@ namespace Celeste.Mod {
             return meta;
         }
 
+        /// <summary>
+        /// Cache the file and return a cached path.
+        /// </summary>
+        /// <returns>The cached file path.</returns>
+        public virtual string GetCachedPath() {
+            EverestModuleMetadata mod = Source?.Mod;
+            if (mod == null)
+                throw new NullReferenceException("Cannot cache mod-less assets");
+
+            string path = Path.Combine(Everest.Loader.PathCache, mod.Name, PathVirtual.Replace('/', Path.DirectorySeparatorChar));
+            string pathSum = path + ".sum";
+
+            string sum = mod.Hash.ToHexadecimalString();
+
+            if (File.Exists(path)) {
+                if (File.Exists(pathSum) && File.ReadAllText(pathSum) == sum)
+                    return path;
+                File.Delete(pathSum);
+                File.Delete(path);
+            }
+
+            string dir = Path.GetDirectoryName(path);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            WriteCache(path);
+            File.WriteAllText(pathSum, sum);
+
+            return path;
+        }
+
+        protected virtual void WriteCache(string path) {
+            using (Stream streamIn = Stream)
+            using (Stream streamOut = File.OpenWrite(path))
+                streamIn.CopyTo(streamOut);
+        }
+
     }
 
     public abstract class ModAsset<T> : ModAsset where T : ModContent {
@@ -202,6 +239,10 @@ namespace Celeste.Mod {
             stream = File.OpenRead(Path);
             isSection = false;
         }
+
+        public override string GetCachedPath() {
+            return Path;
+        }
     }
 
     public class MapBinsInModsModAsset : ModAsset<MapBinsInModsModContent> {
@@ -224,6 +265,10 @@ namespace Celeste.Mod {
 
             stream = File.OpenRead(Path);
             isSection = false;
+        }
+
+        public override string GetCachedPath() {
+            return Path;
         }
     }
 

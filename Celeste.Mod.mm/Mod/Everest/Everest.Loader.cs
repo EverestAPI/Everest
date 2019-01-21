@@ -168,8 +168,10 @@ namespace Celeste.Mod {
                 Action contentCrawl = () => {
                     if (contentMeta == null)
                         return;
-                    if (contentMetaParent != null)
+                    if (contentMetaParent != null) {
+                        contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
+                    }
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -181,6 +183,14 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
+                    if (meta == null) {
+                        meta = new EverestModuleMetadata() {
+                            Name = "_zip_" + Path.GetFileNameWithoutExtension(archive),
+                            VersionString = "0.0.0-dummy",
+                            PathArchive = archive
+                        };
+                        meta.PostParse();
+                    }
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
@@ -244,8 +254,10 @@ namespace Celeste.Mod {
                 Action contentCrawl = () => {
                     if (contentMeta == null)
                         return;
-                    if (contentMetaParent != null)
+                    if (contentMetaParent != null) {
+                        contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
+                    }
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -257,6 +269,14 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
+                    if (meta == null) {
+                        meta = new EverestModuleMetadata() {
+                            Name = "_dir_" + Path.GetFileName(dir),
+                            VersionString = "0.0.0-dummy",
+                            PathDirectory = dir
+                        };
+                        meta.PostParse();
+                    }
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
@@ -363,6 +383,7 @@ namespace Celeste.Mod {
                 }
 
                 Content.Crawl(new AssemblyModContent(asm) {
+                    Mod = meta,
                     Name = meta.Name
                 });
 

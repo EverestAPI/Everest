@@ -91,60 +91,79 @@ namespace Celeste.Mod {
         /// </summary>
         public static string PathEverest { get; internal set; }
 
+        /// <summary>
+        /// The hasher used to determine the mod and installation hashes.
+        /// </summary>
+        public readonly static HashAlgorithm ChecksumHasher = SHA256.Create();
+
+        /// <summary>
+        /// Get the checksum for a given file.
+        /// </summary>
+        /// <param name="path">The file path.</param>
+        /// <returns>A checksum.</returns>
+        public static byte[] GetChecksum(string path) {
+            using (FileStream fs = File.OpenRead(path))
+                return ChecksumHasher.ComputeHash(fs);
+        }
+
+        /// <summary>
+        /// Get the checksum for a given mod. Might not be determined by the entire mod content.
+        /// </summary>
+        /// <param name="meta">The mod.</param>
+        /// <returns>A checksum.</returns>
+        public static byte[] GetChecksum(EverestModuleMetadata meta) {
+            if (!string.IsNullOrEmpty(meta.PathArchive))
+                return GetChecksum(meta.PathArchive);
+            if (!string.IsNullOrEmpty(meta.DLL))
+                return GetChecksum(meta.DLL);
+            return new byte[0];
+        }
+
         private static byte[] _InstallationHash;
         public static byte[] InstallationHash {
             get {
                 if (_InstallationHash != null)
                     return _InstallationHash;
 
-                using (HashAlgorithm hasher = SHA256.Create()) {
-                    List<byte> data = new List<byte>(512);
+                List<byte> data = new List<byte>(512);
 
-                    void AddFile(string path) {
-                        using (FileStream fs = File.OpenRead(path))
-                            AddStream(fs);
-                    }
-                    void AddStream(Stream stream) {
-                        data.AddRange(hasher.ComputeHash(stream));
-                    }
-
-                    /* Note:
-                     * I've decided to disable adding Celeste itself into the master hash
-                     * as Everest updates and XNA vs FNA would just affect it too wildly.
-                     * -ade
-                     */
-                    /*
-                    string pathCeleste = typeof(Celeste).Assembly.Location;
-                    if (!string.IsNullOrEmpty(pathCeleste))
-                        AddFile(pathCeleste);
-                    */
-
-                    // Add all mod containers (or .DLLs).
-                    lock (_Modules) {
-                        foreach (EverestModule mod in _Modules) {
-                            EverestModuleMetadata meta = mod.Metadata;
-                            if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                                AddFile(meta.PathArchive);
-                                continue;
-                            }
-                            if (!string.IsNullOrEmpty(meta.DLL)) {
-                                AddFile(meta.DLL);
-                                continue;
-                            }
-                        }
-                    }
-
-                    // Add all map .bins
-                    foreach (ModAsset asset in Content.Map.Values) {
-                        if (asset.Type != typeof(AssetTypeMap))
-                            continue;
-                        using (Stream stream = asset.Stream)
-                            AddStream(stream);
-                    }
-
-                    // Return the final hash.
-                    return _InstallationHash = hasher.ComputeHash(data.ToArray());
+                void AddFile(string path) {
+                    using (FileStream fs = File.OpenRead(path))
+                        AddStream(fs);
                 }
+                void AddStream(Stream stream) {
+                    data.AddRange(ChecksumHasher.ComputeHash(stream));
+                }
+
+                /* Note:
+                    * I've decided to disable adding Celeste itself into the master hash
+                    * as Everest updates and XNA vs FNA would just affect it too wildly.
+                    * -ade
+                    */
+                /*
+                string pathCeleste = typeof(Celeste).Assembly.Location;
+                if (!string.IsNullOrEmpty(pathCeleste))
+                    AddFile(pathCeleste);
+                */
+
+                // Add all mod containers (or .DLLs).
+                lock (_Modules) {
+                    foreach (EverestModule mod in _Modules) {
+                        data.AddRange(mod.Metadata.Hash);
+                        EverestModuleMetadata meta = mod.Metadata;
+                    }
+                }
+
+                // Add all map .bins
+                foreach (ModAsset asset in Content.Map.Values) {
+                    if (asset.Type != typeof(AssetTypeMap))
+                        continue;
+                    using (Stream stream = asset.Stream)
+                        AddStream(stream);
+                }
+
+                // Return the final hash.
+                return _InstallationHash = ChecksumHasher.ComputeHash(data.ToArray());
             }
         }
         public static string InstallationHashShort {
@@ -325,6 +344,9 @@ namespace Celeste.Mod {
                 module.Initialize();
 
             _InstallationHash = null;
+
+            EverestModuleMetadata meta = module.Metadata;
+            meta.Hash = GetChecksum(meta);
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
 

@@ -25,15 +25,13 @@ namespace Celeste {
         public extern float EaseCameraOld(int area, MountainCamera transform, float? duration = null, bool nearTarget = true);
 
         [MonoModIfFlag("V1:EaseCamera")]
-        [MonoModLinkFrom("System.Single Celeste.MountainRenderer::EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean,System.Boolean)")]
-        public float EaseCameraShim(int area, MountainCamera transform, float? duration = null, bool nearTarget = true, bool targetRotate = false) {
+        public new float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true, bool targetRotate = false) {
             return EaseCameraOld(area, transform, duration, nearTarget);
         }
 
         [MonoModIfFlag("V2:EaseCamera")]
-        [MonoModLinkFrom("System.Single Celeste.MountainRenderer::EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean)")]
-        public float EaseCameraShim(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {
-            return EaseCamera(area, transform, duration, nearTarget);
+        public float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {
+            return EaseCamera(area, transform, duration, nearTarget, false);
         }
 
     }

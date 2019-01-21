@@ -160,10 +160,10 @@ namespace Celeste.Mod {
 
                 string[] checksums = new string[2 + (checksumsExtra?.Length ?? 0)];
                 if (GameChecksum == null)
-                    GameChecksum = GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location);
+                    GameChecksum = Everest.GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString();
                 checksums[0] = GameChecksum;
 
-                checksums[1] = GetChecksum(meta);
+                checksums[1] = Everest.GetChecksum(meta).ToHexadecimalString();
 
                 if (checksumsExtra != null)
                     for (int i = 0; i < checksumsExtra.Length; i++) {
@@ -337,22 +337,24 @@ namespace Celeste.Mod {
             public static string GetCachedPath(EverestModuleMetadata meta)
                 => Path.Combine(Loader.PathCache, meta.Name + "." + Path.GetFileNameWithoutExtension(meta.DLL) + ".dll");
 
+            [Obsolete("Use meta.Hash instead.")]
             /// <summary>
             /// Get the checksum for a given mod's .dll or the containing .zip
             /// </summary>
             /// <param name="meta">The mod metadata.</param>
-            /// <returns>A checksum to be used with other Relinker methods.</returns>
+            /// <returns>A checksum.</returns>
             public static string GetChecksum(EverestModuleMetadata meta) {
                 string path = meta.PathArchive;
                 if (string.IsNullOrEmpty(path))
                     path = meta.DLL;
                 return GetChecksum(path);
             }
+            [Obsolete("Use Everest.GetChecksum instead.")]
             /// <summary>
-            /// Get the checksum for a given path.
+            /// Get the checksum for a given file.
             /// </summary>
-            /// <param name="path">The filepath.</param>
-            /// <returns>A checksum to be used with other Relinker methods.</returns>
+            /// <param name="path">The file path.</param>
+            /// <returns>A checksum.</returns>
             public static string GetChecksum(string path) {
                 using (FileStream fs = File.OpenRead(path))
                     return ChecksumHasher.ComputeHash(fs).ToHexadecimalString();

@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using FMOD;
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Input;
@@ -74,21 +75,26 @@ namespace Celeste {
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))
                 return bank;
 
-            IntPtr handle;
-            modBankAssets[handle = (IntPtr) (++modBankHandleLast)] = asset;
-            BANK_INFO info = new BANK_INFO() {
-                size = patch_Banks.SizeOfBankInfo,
+            if (CoreModule.Settings.UnpackFMODBanks) {
+                system.loadBankFile(asset.GetCachedPath(), LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
 
-                userdata = handle,
-                userdatalength = 0,
+            } else {
+                IntPtr handle;
+                modBankAssets[handle = (IntPtr) (++modBankHandleLast)] = asset;
+                BANK_INFO info = new BANK_INFO() {
+                    size = patch_Banks.SizeOfBankInfo,
 
-                opencallback = ModBankOpen,
-                closecallback = ModBankClose,
-                readcallback = ModBankRead,
-                seekcallback = ModBankSeek
-            };
+                    userdata = handle,
+                    userdatalength = 0,
 
-            system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
+                    opencallback = ModBankOpen,
+                    closecallback = ModBankClose,
+                    readcallback = ModBankRead,
+                    seekcallback = ModBankSeek
+                };
+
+                system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
+            }
 
             ModAsset assetGUIDs;
             if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out assetGUIDs)) {

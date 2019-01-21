@@ -17,6 +17,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     // Special meta types.
@@ -41,6 +42,8 @@ namespace Celeste.Mod {
             get => _Name ?? DefaultName;
             set => _Name = value;
         }
+
+        public EverestModuleMetadata Mod;
 
         public List<ModAsset> List = new List<ModAsset>();
         public Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
@@ -204,7 +207,8 @@ namespace Celeste.Mod {
                     return;
 
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
-                    Name = "Everest"
+                    Name = "Everest",
+                    // Mod = CoreModule.Instance.Metadata // Can't actually set Mod this early.
                 });
             }
 
