@@ -149,7 +149,7 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
-                        if (entry.FileName == "icon.png") {
+                        if (entry.FileName.ToLower() == "icon.png") {
                             using (Stream stream = entry.ExtractStream())
                                 icon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
                             continue;
