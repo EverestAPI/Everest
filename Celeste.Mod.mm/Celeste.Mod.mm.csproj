@@ -112,6 +112,7 @@
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
     <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
+    <Compile Include="Mod\Entities\CustomNPC.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />

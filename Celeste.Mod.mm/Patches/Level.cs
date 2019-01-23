@@ -207,6 +207,11 @@ namespace Celeste {
                 return true;
             }
 
+            if (entityData.Name == "everest/npc") {
+                level.Add(new CustomNPC(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
+                return true;
+            }
+
             if (entityData.Name == "everest/dialogTrigger" ||
                 entityData.Name == "dialog/dialogtrigger") {
                 level.Add(new DialogCutsceneTrigger(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
