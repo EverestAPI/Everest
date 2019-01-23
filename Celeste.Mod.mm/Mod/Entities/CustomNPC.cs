@@ -51,7 +51,7 @@ namespace Celeste.Mod.Entities {
                 scale.Y = -1;
 
             string extension = Path.GetExtension(spritePath);
-            if (!string.IsNullOrEmpty(spritePath))
+            if (!string.IsNullOrEmpty(extension))
                 spritePath = spritePath.Replace(extension, "");
             spritePath = Path.Combine("characters", spritePath).Replace('\\', '/');
             name = Regex.Replace(spritePath, "\\d+$", string.Empty);
