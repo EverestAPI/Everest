@@ -28,8 +28,8 @@ namespace Celeste.Mod.Entities {
 
         private Coroutine talkRoutine;
 
-        public Action<int> OnStart;
-        public Action OnEnd;
+        public event Action<int> OnStart;
+        public event Action OnEnd;
 
         public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
             this.id = id;
@@ -133,6 +133,7 @@ namespace Celeste.Mod.Entities {
             } else if (Session.GetCounter(id + "DialogCounter") > dialogs.Length - 1 || dialogs.Length == 1) {
                 Session.SetCounter(id + "DialogCounter", 0);
             }
+            OnEnd?.Invoke();
         }
 
         private IEnumerator Talk(Player player) {
