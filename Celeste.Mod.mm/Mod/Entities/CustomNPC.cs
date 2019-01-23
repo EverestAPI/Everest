@@ -17,33 +17,33 @@ namespace Celeste.Mod.Entities {
         private string name;
         private EntityID id;
         private bool approachWhenTalking;
-        private int distanceWhenApproaching;
+        private int approachDistance;
 
         private string[] dialogs;
 
         private bool animated = false;
         private float frame;
         private Vector2 scale = new Vector2(1, 1);
-        private Vector2 spriteOffset = Vector2.Zero;
         private Vector2 indicatorOffset = Vector2.Zero;
 
         private Coroutine talkRoutine;
 
+        public Action<int> OnStart;
+        public Action OnEnd;
+
         public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
             this.id = id;
 
-            spritePath = data.Attr("spriteName", ""); // Path is from Graphics/Atlases/Gameplay/characters
+            spritePath = data.Attr("sprite", ""); // Path is from Graphics/Atlases/Gameplay/characters
             spriteRate = data.Int("spriteRate", 1);
             dialogEntry = data.Attr("dialogId", "");
             dialogs = dialogEntry.Split(',');
             onlyOnce = data.Bool("onlyOnce", true);
             endLevel = data.Bool("endLevel", false);
-            spriteOffset.X = data.Float("spriteOffsetX", 0);
-            spriteOffset.Y = data.Float("spriteOffsetY", 0);
             indicatorOffset.X = data.Float("indicatorOffsetX", 0);
             indicatorOffset.Y = data.Float("indicatorOffsetY", 0);
             approachWhenTalking = data.Bool("approachWhenTalking", false);
-            distanceWhenApproaching = data.Int("distanceWhenApproaching", 16);
+            approachDistance = data.Int("approachDistance", 16);
 
             if (data.Bool("flipX", false))
                 scale.X = -1;
@@ -57,7 +57,7 @@ namespace Celeste.Mod.Entities {
             name = Regex.Replace(spritePath, "\\d+$", string.Empty);
 
             textures = GFX.Game.GetAtlasSubtextures(name);
-            if (textures.Count > 1)
+            if (textures != null && textures.Count > 1)
                 animated = true;
 
             frame = 0;
@@ -69,9 +69,18 @@ namespace Celeste.Mod.Entities {
             if ((scene as Level).Session.GetFlag("DoNotTalk" + id))
                 return;
 
+            // Determine the talker bounds and coordinates based on the first animation frame.
+
+            float width = 0;
+            float height = 0;
+            if (textures != null && textures.Count > 0) {
+                width = textures[0].Width * scale.X;
+                height = textures[0].Height * scale.Y;
+            }
+
             Add(Talker = new TalkComponent(
-                new Rectangle(-24, -8, 48, 8),
-                new Vector2(-0.5f + indicatorOffset.X, -20f + indicatorOffset.Y),
+                new Rectangle(-(int) width / 2 - 48, (int) -height - 16, (int) width + 96, (int) height + 32),
+                new Vector2(-0.5f + indicatorOffset.X, -height / 2 + indicatorOffset.Y),
                 OnTalk
             ));
         }
@@ -79,19 +88,17 @@ namespace Celeste.Mod.Entities {
         public override void Update() {
             base.Update();
 
-            if (animated) {
+            if (animated && textures != null && textures.Count > 0) {
                 frame += spriteRate * Engine.DeltaTime;
                 frame %= textures.Count;
             }
         }
 
         public override void Render() {
-            MTexture mtexture = textures[(int) frame];
-            mtexture.Draw(
-                Position + new Vector2(0, -8) + spriteOffset,
-                new Vector2(mtexture.Width / 2f, mtexture.Height / 2f),
-                Color.White, scale
-            );
+            if (textures != null && textures.Count > 0) {
+                MTexture mtexture = textures[(int) frame];
+                mtexture.DrawJustified(Position, new Vector2(0.5f, 1.0f), Color.White, scale);
+            }
         }
 
         private void OnTalk(Player player) {
@@ -99,6 +106,7 @@ namespace Celeste.Mod.Entities {
                 (Scene as Level).Session.SetFlag("DoNotTalk" + id, true); // Sets flag to not load
             }
             player.StateMachine.State = Player.StDummy;
+            OnStart?.Invoke(Session.GetCounter(id + "DialogCounter"));
             Level.StartCutscene(OnTalkEnd);
             Add(talkRoutine = new Coroutine(Talk(player)));
         }
@@ -130,16 +138,15 @@ namespace Celeste.Mod.Entities {
         private IEnumerator Talk(Player player) {
             if (approachWhenTalking) {
                 if (scale.X > 0) {
-                    yield return PlayerApproachRightSide(player, true, distanceWhenApproaching);
+                    yield return PlayerApproachRightSide(player, true, approachDistance);
                 } else {
-                    yield return PlayerApproachLeftSide(player, true, distanceWhenApproaching);
+                    yield return PlayerApproachLeftSide(player, true, approachDistance);
                 }
 
             }
             yield return Textbox.Say(dialogs[Session.GetCounter(id + "DialogCounter")], null);
             Level.EndCutscene();
             OnTalkEnd(Level);
-            yield break;
         }
     }
 }

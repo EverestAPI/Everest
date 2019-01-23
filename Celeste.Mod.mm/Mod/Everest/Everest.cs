@@ -127,10 +127,12 @@ namespace Celeste.Mod {
 
                 List<byte> data = new List<byte>(512);
 
+                /*
                 void AddFile(string path) {
                     using (FileStream fs = File.OpenRead(path))
                         AddStream(fs);
                 }
+                */
                 void AddStream(Stream stream) {
                     data.AddRange(ChecksumHasher.ComputeHash(stream));
                 }
