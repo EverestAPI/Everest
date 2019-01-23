@@ -28,11 +28,17 @@ namespace Celeste.Mod.Entities {
         private Vector2 indicatorOffset = Vector2.Zero;
 
         private Coroutine talkRoutine;
+        
+        private string trigger;
+        
+        public static Dictionary<string, Action> StartTriggers = new Dictionary<string, Action>();
+        public static Dictionary<string, Action> EndTriggers = new Dictionary<string, Action>();
 
         public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
             this.id = id;
 
             spritePath = data.Attr("spriteName", ""); // Path is from Graphics/Atlases/Gameplay/characters
+            trigger = data.Attr("trigger", "");
             spriteRate = data.Int("spriteRate", 1);
             dialogEntry = data.Attr("dialogId", "");
             dialogs = dialogEntry.Split(',');
@@ -99,6 +105,7 @@ namespace Celeste.Mod.Entities {
                 (Scene as Level).Session.SetFlag("DoNotTalk" + id, true); // Sets flag to not load
             }
             player.StateMachine.State = Player.StDummy;
+            if (!string.IsNullOrEmpty(trigger) && StartTriggers.ContainsKey(trigger)) StartTriggers[trigger]();
             Level.StartCutscene(OnTalkEnd);
             Add(talkRoutine = new Coroutine(Talk(player)));
         }
@@ -125,6 +132,7 @@ namespace Celeste.Mod.Entities {
             } else if (Session.GetCounter(id + "DialogCounter") > dialogs.Length - 1 || dialogs.Length == 1) {
                 Session.SetCounter(id + "DialogCounter", 0);
             }
+            if (!string.IsNullOrEmpty(trigger) && EndTriggers.ContainsKey(trigger)) EndTriggers[trigger]();
         }
 
         private IEnumerator Talk(Player player) {
