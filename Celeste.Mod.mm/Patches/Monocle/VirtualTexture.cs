@@ -127,7 +127,7 @@ namespace Monocle {
             // Preload the width / height, and if needed, the entire texture.
 
             if (!string.IsNullOrEmpty(Path)) {
-                string extension = System.IO.Path.GetExtension(Path);
+                string extension = System.IO.Path.GetExtension(Path).ToLower();
                 if (extension == ".data") {
                     // Easy.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
