@@ -345,49 +345,45 @@ namespace Celeste.Mod {
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
-                if (file.EndsWith(".dll")) {
+                if (file.EndsWith(".dll", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeAssembly);
 
-                } else if (file.EndsWith(".png")) {
+                } else if (file.EndsWith(".png", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(Texture2D);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".obj")) {
+                } else if (file.EndsWith(".obj", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".yaml")) {
+                } else if (file.EndsWith(".yaml", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
                     format = ".yml";
-                } else if (file.EndsWith(".yml")) {
+                } else if (file.EndsWith(".yml", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".xml")) {
+                } else if (file.EndsWith(".xml", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeXml);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
+                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeDialog);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.StartsWith("Maps/") && file.EndsWith(".bin")) {
+                } else if (file.StartsWith("Maps/") && file.EndsWith(".bin", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeMap);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".bank")) {
+                } else if (file.EndsWith(".bank", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeBank);
                     file = file.Substring(0, file.Length - 5);
-                } else if (file.EndsWith(".guids.txt")) {
-                    type = typeof(AssetTypeGUIDs);
-                    file = file.Substring(0, file.Length - 4);
-                } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                } else if (file.EndsWith(".guids.txt", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeGUIDs);
                     file = file.Substring(0, file.Length - 4 - 6);
                     file += ".guids";
-
-                } else if (file.EndsWith(".txt")) {
+                } else if (file.EndsWith(".txt", StringComparison.CurrentCultureIgnoreCase)) {
                     type = typeof(AssetTypeText);
                     file = file.Substring(0, file.Length - 4);
 
