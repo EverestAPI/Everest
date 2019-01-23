@@ -38,10 +38,10 @@ namespace Celeste.Mod.Entities {
             dialogs = dialogEntry.Split(',');
             onlyOnce = data.Bool("onlyOnce", true);
             endLevel = data.Bool("endLevel", false);
-            spriteOffset.X = data.Float("spriteXOffset", 0);
-            spriteOffset.Y = data.Float("spriteYOffset", 0);
-            indicatorOffset.X = data.Float("indicatorXOffset", 0);
-            indicatorOffset.Y = data.Float("indicatorYOffset", 0);
+            spriteOffset.X = data.Float("spriteOffsetX", 0);
+            spriteOffset.Y = data.Float("spriteOffsetY", 0);
+            indicatorOffset.X = data.Float("indicatorOffsetX", 0);
+            indicatorOffset.Y = data.Float("indicatorOffsetY", 0);
             approachWhenTalking = data.Bool("approachWhenTalking", false);
             distanceWhenApproaching = data.Int("distanceWhenApproaching", 16);
 
