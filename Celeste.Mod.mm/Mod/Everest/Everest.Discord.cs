@@ -103,11 +103,12 @@ namespace Celeste.Mod {
                 UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame);
             }
 
-            private static string FillText(string text, Session session, string area) {
+            private static string FillText(string text, Session session, string area, int areaNum) {
                 if (text == null || session == null)
                     return text;
                 return text
                     .Replace("((area))", area)
+                    .Replace("((areanum))", areaNum == -1 ? "" : areaNum.ToString())
                     .Replace("((side))", ((char) ('A' + (int) session.Area.Mode)).ToString())
                     .Replace("((deaths))", session.Deaths.ToString())
                     .Replace("((strawberries))", session.Strawberries.Count.ToString())
@@ -127,14 +128,19 @@ namespace Celeste.Mod {
                     session = (Engine.Scene as Level)?.Session;
 
                 string area = "";
+                int num = 0;
 
                 if (session != null) {
                     area = AreaData.Get(session).Name;
                     area = area?.DialogCleanOrNull(language) ?? area;
+                    num = AreaData.Get(session).ID;
+                    if (num == 8) num = -1;
+                    if (num == 9) num = 8;
+                    if (num > 9) num = -1;
                 }
 
-                DiscordPresence.details = FillText(details, session, area);
-                DiscordPresence.state = FillText(state, session, area);
+                DiscordPresence.details = FillText(details, session, area, num);
+                DiscordPresence.state = FillText(state, session, area, num);
 
                 if (DiscordRpc.Initialize == null)
                     return;
