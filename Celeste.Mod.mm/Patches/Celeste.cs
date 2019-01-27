@@ -50,7 +50,8 @@ namespace Celeste {
         [MonoModConstructor]
         [MonoModOriginalName("orig_ctor_Celeste")] // For Everest.Installer
         public void ctor() {
-            if (Everest.Flags.IsHeadless) {
+            // Everest.Flags aren't initialized this early.
+            if (Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1") {
                 Instance = this;
                 Version = new Version(0, 0, 0, 0);
                 Console.WriteLine("CELESTE HEADLESS VIA EVEREST");
