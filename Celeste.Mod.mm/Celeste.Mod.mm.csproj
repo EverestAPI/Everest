@@ -321,6 +321,9 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
+      <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\lib-ext\discord-rpc.dll">
