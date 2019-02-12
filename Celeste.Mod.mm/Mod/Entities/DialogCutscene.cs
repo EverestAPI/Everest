@@ -5,11 +5,13 @@ namespace Celeste.Mod.Entities {
     public class DialogCutscene : CutsceneEntity {
 
         private Player player;
-        private string dialogEntry;
+        private string dialogID;
+        private bool endLevel;
 
-        public DialogCutscene(string dialogID, Player playerEnt) {
-            dialogEntry = dialogID;
-            player = playerEnt;
+        public DialogCutscene(string dialogID, Player player, bool endLevel) {
+            this.dialogID = dialogID;
+            this.player = player;
+            this.endLevel = endLevel;
         }
 
         public override void OnBegin(Level level) {
@@ -20,7 +22,7 @@ namespace Celeste.Mod.Entities {
             player.StateMachine.State = 11;
             player.StateMachine.Locked = true;
             player.ForceCameraUpdate = true;
-            yield return Textbox.Say(dialogEntry);
+            yield return Textbox.Say(dialogID);
 
             EndCutscene(level, true);
         }
@@ -32,6 +34,12 @@ namespace Celeste.Mod.Entities {
 
             if (WasSkipped)
                 level.Camera.Position = player.CameraTarget;
+
+            if (endLevel) {
+                level.CompleteArea();
+                player.StateMachine.State = Player.StDummy;
+                RemoveSelf();
+            }
         }
 
     }

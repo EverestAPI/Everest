@@ -58,25 +58,29 @@ namespace Celeste {
 
         public extern IEnumerator orig_Enter(Oui from);
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnTextInput;
+            if (!Everest.Flags.IsDisabled)
+                TextInput.OnInput += OnTextInput;
             return orig_Enter(from);
         }
 
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
-            TextInput.OnInput -= OnTextInput;
+            if (!Everest.Flags.IsDisabled)
+                TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);
         }
 
         public extern void orig_Update();
         public override void Update() {
             bool wasFocused = Focused;
-            // Only "focus" if the input method is a gamepad, not a keyboard.
-            Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+            if (!Everest.Flags.IsDisabled) {
+                // Only "focus" if the input method is a gamepad, not a keyboard.
+                Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+            }
 
             orig_Update();
 
-            if (wasFocused && !Focused) {
+            if (!Everest.Flags.IsDisabled && wasFocused && !Focused) {
                 if (Input.ESC)
                     Cancel();
             }
@@ -94,7 +98,7 @@ namespace Celeste {
         public override void Render() {
             int prevIndex = index;
             // Only "focus" if the input method is a gamepad, not a keyboard.
-            if (!MInput.GamePads[Input.Gamepad].Attached)
+            if (!Everest.Flags.IsDisabled && !MInput.GamePads[Input.Gamepad].Attached)
                 index = -1;
 
             orig_Render();
@@ -105,7 +109,7 @@ namespace Celeste {
         private extern void orig_DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false);
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
             // Only draw "interactively" if the input method is a gamepad, not a keyboard.
-            if (!MInput.GamePads[Input.Gamepad].Attached) {
+            if (!Everest.Flags.IsDisabled && !MInput.GamePads[Input.Gamepad].Attached) {
                 selected = false;
                 disabled = true;
             }

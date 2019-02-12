@@ -7,11 +7,13 @@ namespace Celeste.Mod.Entities {
         private bool triggered;
         private EntityID id;
         private bool onlyOnce;
+        private bool endLevel;
 
         public DialogCutsceneTrigger(EntityData data, Vector2 offset, EntityID entId)
             : base(data, offset) {
             dialogEntry = data.Attr("dialogId");
             onlyOnce = data.Bool("onlyOnce", true);
+            endLevel = data.Bool("endLevel", false);
             triggered = false;
             id = entId;
         }
@@ -21,7 +23,7 @@ namespace Celeste.Mod.Entities {
                 return;
             triggered = true;
 
-            Scene.Add(new DialogCutscene(dialogEntry, player));
+            Scene.Add(new DialogCutscene(dialogEntry, player, endLevel));
 
             if (onlyOnce)
                 (Scene as Level).Session.SetFlag("DoNotLoad" + id, true); // Sets flag to not load
