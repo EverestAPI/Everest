@@ -213,7 +213,8 @@ namespace Celeste {
             }
 
             if (entityData.Name == "everest/dialogTrigger" ||
-                entityData.Name == "dialog/dialogtrigger") {
+                entityData.Name == "dialog/dialogtrigger" ||
+                entityData.Name == "cavern/dialogtrigger") {
                 level.Add(new DialogCutsceneTrigger(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
                 return true;
             }
