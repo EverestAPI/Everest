@@ -192,7 +192,8 @@ namespace Celeste.Mod.Core {
             menu.Insert(index, itemModOptions = new TextMenu.Button(Dialog.Clean("menu_pause_modoptions")).Pressed(() => {
                 int returnIndex = menu.IndexOf(itemModOptions);
                 menu.RemoveSelf();
-                
+
+                level.PauseMainMenuOpen = false;
                 level.Paused = true;
 
                 TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
