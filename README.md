@@ -15,7 +15,7 @@ Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding ut
 [![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
 
 ### Mod Development:
-Use [RainbowMod](https://github.com/EverestAPI/RainbowMod) and [MadelineEnergySelector](https://github.com/EverestAPI/MadelineEnergySelector) as an example mods. They already contains:
+Use [Fabeline](https://github.com/EverestAPI/RainbowMod) as an example mod. It already contains:
 - Everest as a submodule
 - The required references (`lib/`, `lib-stripped/`) with "Copy Local" set to "False"
 - The mod `metadata.yaml`
