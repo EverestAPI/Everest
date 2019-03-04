@@ -28,38 +28,69 @@ namespace Monocle {
             get {
                 VirtualTexture texture = OverrideTexture?.Texture ?? Parent?.Texture ?? orig_get_Texture();
                 // Reset caches whenever the texture is used by the game, f.e. on render.
+                // FIXME: Enable resetting caches again, but less aggressively!
+                /*
                 _CachedOverrideTexture = null;
                 _CachedOverrideMeta = null;
+                */
                 return texture;
             }
             set {
-                if (OverrideTexture != null)
-                    OverrideTexture.Texture = value;
+                MTextureOverride layer = OverrideTexture;
+                if (layer != null)
+                    layer.Texture = value;
                 else
                     orig_set_Texture(value);
             }
         }
         public extern Rectangle orig_get_ClipRect();
         public extern void orig_set_ClipRect(Rectangle value);
+        private Rectangle _ClipRectLastParentRect;
+        private Vector2 _ClipRectLastParentOffset;
+        private int _ClipRectLastX;
+        private int _ClipRectLastY;
+        private int _ClipRectLastWidth;
+        private int _ClipRectLastHeight;
+        private Rectangle _ClipRect;
         public new Rectangle ClipRect {
             get {
                 MTextureOverride layer = OverrideTexture;
                 if (layer != null && layer.ForceClipRect)
                     return layer.ClipRect;
 
-                if (Parent != null) {
-                    Rectangle parentRect = Parent.ClipRect;
+                MTexture parent = Parent;
+                if (parent != null) {
                     if (!HasRelativeRect)
-                        return parentRect;
+                        return parent.ClipRect;
 
-                    return Parent.GetRelativeRect(RelativeRectX, RelativeRectY, RelativeRectWidth, RelativeRectHeight);
+                    Rectangle parentRect = parent.ClipRect;
+                    Vector2 parentOffset = parent.DrawOffset;
+
+                    if (_ClipRectLastParentRect == parentRect &&
+                        _ClipRectLastParentOffset == parentOffset &&
+                        _ClipRectLastX == RelativeRectX &&
+                        _ClipRectLastY == RelativeRectY &&
+                        _ClipRectLastWidth == RelativeRectWidth &&
+                        _ClipRectLastHeight == RelativeRectHeight)
+                        return _ClipRect;
+
+                    _ClipRectLastParentRect = parentRect;
+                    _ClipRectLastParentOffset = parentOffset;
+
+                    return _ClipRect = parent.GetRelativeRect(
+                        _ClipRectLastX = RelativeRectX,
+                        _ClipRectLastY = RelativeRectY,
+                        _ClipRectLastWidth = RelativeRectWidth,
+                        _ClipRectLastHeight = RelativeRectHeight
+                    );
                 }
 
-                return layer?.ClipRect ?? orig_get_ClipRect();
+                return layer != null ? layer.ClipRect : orig_get_ClipRect();
             }
             set {
-                if (OverrideTexture != null)
-                    OverrideTexture.ClipRect = value;
+                MTextureOverride layer = OverrideTexture;
+                if (layer != null)
+                    layer.ClipRect = value;
                 else
                     orig_set_ClipRect(value);
             }
@@ -68,11 +99,16 @@ namespace Monocle {
         public extern void orig_set_DrawOffset(Vector2 value);
         public new Vector2 DrawOffset {
             get {
-                return OverrideMeta?.DrawOffset ?? orig_get_DrawOffset();
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    return layer.DrawOffset;
+                else
+                    return orig_get_DrawOffset();
             }
             set {
-                if (OverrideMeta != null)
-                    OverrideMeta.DrawOffset = value;
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    layer.DrawOffset = value;
                 else
                     orig_set_DrawOffset(value);
             }
@@ -81,11 +117,16 @@ namespace Monocle {
         public extern void orig_set_Width(int value);
         public new int Width {
             get {
-                return OverrideMeta?.Width ?? orig_get_Width();
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    return layer.Width;
+                else
+                    return orig_get_Width();
             }
             set {
-                if (OverrideMeta != null)
-                    OverrideMeta.Width = value;
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    layer.Width = value;
                 else
                     orig_set_Width(value);
             }
@@ -94,21 +135,26 @@ namespace Monocle {
         public extern void orig_set_Height(int value);
         public new int Height {
             get {
-                return OverrideMeta?.Height ?? orig_get_Height();
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    return layer.Height;
+                else
+                    return orig_get_Height();
             }
             set {
-                if (OverrideMeta != null)
-                    OverrideMeta.Height = value;
+                MTextureOverride layer = OverrideMeta;
+                if (layer != null)
+                    layer.Height = value;
                 else
                     orig_set_Height(value);
             }
         }
 
         public new Vector2 Center => new Vector2(Width * 0.5f, Height * 0.5f);
-        public new float LeftUV => ClipRect.Left / (float) (Parent?.Width ?? _Texture.Width);
-        public new float RightUV => ClipRect.Right / (float) (Parent?.Width ?? _Texture.Width);
-        public new float TopUV => ClipRect.Top / (float) (Parent?.Height ?? _Texture.Height);
-        public new float BottomUV => ClipRect.Bottom / (float) (Parent?.Height ?? _Texture.Height);
+        public new float LeftUV => ClipRect.Left / (float) (Parent != null ? Parent.Width : _Texture.Width);
+        public new float RightUV => ClipRect.Right / (float) (Parent != null ? Parent.Width : _Texture.Width);
+        public new float TopUV => ClipRect.Top / (float) (Parent != null ? Parent.Height : _Texture.Height);
+        public new float BottomUV => ClipRect.Bottom / (float) (Parent != null ? Parent.Height : _Texture.Height);
 
         protected int _OverrideCount = 0;
         protected MTextureOverride[] _Overrides;
@@ -116,7 +162,8 @@ namespace Monocle {
         protected MTextureOverride _CachedOverrideTexture;
         public MTextureOverride OverrideTexture {
             get {
-                if (!(_CachedOverrideTexture?.Texture?.IsDisposed ?? true))
+                VirtualTexture cachedTex = _CachedOverrideTexture?.Texture;
+                if (cachedTex != null ? !cachedTex.IsDisposed : false)
                     return _CachedOverrideTexture;
                 if (_OverrideCount == 0)
                     return null;
@@ -258,17 +305,28 @@ namespace Monocle {
             return sub;
         }
 
-
         [MonoModReplace]
         public new Rectangle GetRelativeRect(int cx, int cy, int cw, int ch) {
             Rectangle parentRect = ClipRect;
             Vector2 parentOffset = DrawOffset;
-            int a = (int) (parentRect.X - parentOffset.X + cx);
-            int b = (int) (parentRect.Y - parentOffset.Y + cy);
-            int x = (int) MathHelper.Clamp(a, parentRect.Left, parentRect.Right);
-            int y = (int) MathHelper.Clamp(b, parentRect.Top, parentRect.Bottom);
-            int w = Math.Max(0, Math.Min(a + cw, parentRect.Right) - x);
-            int h = Math.Max(0, Math.Min(b + ch, parentRect.Bottom) - y);
+
+            int parentX = parentRect.X;
+            int parentY = parentRect.Y;
+            int parentW = parentRect.Width;
+            int parentH = parentRect.Height;
+            int parentR = parentX + parentW;
+            int parentB = parentY + parentH;
+
+            int parentOX = (int) parentOffset.X;
+            int parentOY = (int) parentOffset.Y;
+
+            int a = parentX - parentOX + cx;
+            int b = parentY - parentOY + cy;
+            int x = Math.Max(parentX, Math.Min(a, parentR));
+            int y = Math.Max(parentY, Math.Min(b, parentB));
+            int w = Math.Max(0, Math.Min(a + cw, parentR) - x);
+            int h = Math.Max(0, Math.Min(b + ch, parentB) - y);
+
             return new Rectangle(x, y, w, h);
         }
 
