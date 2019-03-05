@@ -23,9 +23,15 @@ namespace Celeste.Mod.Entities {
         public override void OnEnter(Player player) {
             base.OnEnter(player);
 
-            foreach (CrystalStaticSpinner spinner in Scene.Entities.OfType<CrystalStaticSpinner>())
-                if (CollideCheck(spinner) || mode == Modes.All)
-                    spinner.Destroy();
+            List<CrystalStaticSpinner> spinners = Scene.Entities.OfType<CrystalStaticSpinner>().ToList();
+            if (spinners.Count > 0) {
+                if (mode == Modes.All)
+                    Audio.Play("event:/game/06_reflection/boss_spikes_burst");
+                    
+                foreach (CrystalStaticSpinner spinner in spinners)
+                    if (CollideCheck(spinner) || mode == Modes.All)
+                        spinner.Destroy();
+            }
 
             RemoveSelf();
         }
