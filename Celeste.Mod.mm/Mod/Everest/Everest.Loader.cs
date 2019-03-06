@@ -453,9 +453,9 @@ namespace Celeste.Mod {
                         return false;
 
                     // "Build" is "PATCH" in semver, but we'll also check for it and "Revision".
-                    if (version.Build < depVersion.Build)
+                    if (version.Minor == depVersion.Minor && version.Build < depVersion.Build)
                         return false;
-                    if (version.Revision < depVersion.Revision)
+                    if (version.Minor == depVersion.Minor && version.Build == depVersion.Build && version.Revision < depVersion.Revision)
                         return false;
 
                     return true;
