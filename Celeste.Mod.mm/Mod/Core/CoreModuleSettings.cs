@@ -52,7 +52,7 @@ namespace Celeste.Mod.Core {
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
-        [SettingIgnore] // TODO: Show as advanced setting.
+        // TODO: Show as advanced setting.
         public bool LazyLoading { get; set; } = false;
 
         [SettingNeedsRelaunch]
@@ -69,6 +69,11 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool UnpackFMODBanks { get; set; } = true;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool DisableAntiSoftlock { get; set; } = true;
 
         public string InputGui { get; set; } = "";
 

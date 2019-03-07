@@ -101,8 +101,8 @@ namespace Celeste {
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
             IEnumerator orig = orig_TransitionRoutine(next, direction);
 
-            // Don't perform any Gay Baby Jail checks in vanilla maps.
-            if (Session.Area.GetLevelSet() == "Celeste") {
+            // Don't perform any GBJ checks in vanilla maps.
+            if (Session.Area.GetLevelSet() == "Celeste" && !CoreModule.Settings.DisableAntiSoftlock) {
                 while (orig.MoveNext())
                     yield return orig.Current;
                 yield break;
@@ -119,7 +119,7 @@ namespace Celeste {
                 playerPos = player.Position;
 
                 if ((DateTime.UtcNow - playerStuck).TotalSeconds >= 5D) {
-                    // Player stuck in Gay Baby Jail - force-reload the level.
+                    // Player stuck in GBJ - force-reload the level.
                     Session.Level = next.Name;
                     Session.RespawnPoint = Session.LevelData.Spawns.ClosestTo(player.Position);
                     Engine.Scene = new LevelLoader(Session, Session.RespawnPoint);
