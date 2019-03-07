@@ -22,6 +22,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -49,7 +50,10 @@ namespace Celeste.Mod {
 
                 public Func<bool> IsCurrent;
 
+                public Func<string, List<Entry>> ParseData;
+#pragma warning disable CS0649
                 public Func<string, Entry> ParseLine;
+#pragma warning restore CS0649
 
                 public virtual ReadOnlyCollection<Entry> Entries { get; protected set; }
 
@@ -78,20 +82,30 @@ namespace Celeste.Mod {
                     }
 
                     List<Entry> entries = new List<Entry>();
-                    string[] lines = data.Split('\n');
-                    for (int i = 0; i < lines.Length; i++) {
-                        string line = lines[i].Trim('\r', '\n').Trim();
-                        if (line.Length == 0 || line.StartsWith("#"))
-                            continue;
-
+                    if (ParseData != null) {
                         try {
-                            Entry entry = ParseLine(line);
-                            if (entry != null)
-                                entries.Add(entry);
+                            entries.AddRange(ParseData(data));
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_format";
                             Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
                             return this;
+                        }
+                    } else {
+                        string[] lines = data.Split('\n');
+                        for (int i = 0; i < lines.Length; i++) {
+                            string line = lines[i].Trim('\r', '\n').Trim();
+                            if (line.Length == 0 || line.StartsWith("#"))
+                                continue;
+
+                            try {
+                                Entry entry = ParseLine(line);
+                                if (entry != null)
+                                    entries.Add(entry);
+                            } catch (Exception e) {
+                                ErrorDialog = "updater_versions_err_format";
+                                Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
+                                return this;
+                            }
                         }
                     }
 
@@ -132,11 +146,11 @@ namespace Celeste.Mod {
                 new Source {
                     NameDialog = "updater_src_buildbot",
 
-                    Index = "https://ams3.digitaloceanspaces.com/lollyde/everest-travis/builds_index.txt",
+                    Index = "https://dev.azure.com/EverestAPI/Everest/_apis/build/builds?api-version=5.0",
 
-                    IsCurrent = () => VersionSuffix.StartsWith("travis-") || VersionSuffix.StartsWith("azure-"),
+                    IsCurrent = () => VersionSuffix.StartsWith("azure-"),
 
-                    ParseLine = CommonLineParser("https://ams3.digitaloceanspaces.com")
+                    ParseData = AzureDataParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", 700)
                 }
             };
 
@@ -197,6 +211,29 @@ namespace Celeste.Mod {
                     return new Entry(name, branch, url, int.Parse(Regex.Match(split[1], @"\d+").Value));
                 };
 
+            private static Func<string, List<Entry>> AzureDataParser(string artifactFormat, int offset)
+                => (dataRaw) => {
+                    List<Entry> entries = new List<Entry>();
+
+                    JObject root = JObject.Parse(dataRaw);
+                    JArray list = root["value"] as JArray;
+                    foreach (JObject build in list) {
+                        if (build["status"].ToObject<string>() != "completed" || build["result"].ToObject<string>() != "succeeded")
+                            continue;
+
+                        string reason = build["reason"].ToObject<string>();
+                        if (reason != "manual" && reason != "individualCI")
+                            continue;
+
+                        int id = build["id"].ToObject<int>();
+                        string branch = build["sourceBranch"].ToObject<string>().Replace("refs/heads/", "");
+                        string url = string.Format(artifactFormat, id);
+                        entries.Add(new Entry((id + offset).ToString(), branch, url, id + offset));
+                    }
+
+                    return entries;
+                };
+
             public static Entry Newest { get; internal set; }
             public static bool HasUpdate => Newest != null && Newest.Build > Build;
 
@@ -249,13 +286,15 @@ namespace Celeste.Mod {
 
                         byte[] buffer = new byte[4096];
                         DateTime timeLastSpeed = timeStart;
-                        int read;
+                        int read = 1;
                         int readForSpeed = 0;
                         int pos = 0;
                         int speed = 0;
+                        int count = 0;
                         TimeSpan td;
-                        while (pos < length) {
-                            read = input.Read(buffer, 0, (int) Math.Min(buffer.Length, length - pos));
+                        while (read > 0) {
+                            count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
+                            read = input.Read(buffer, 0, count);
                             output.Write(buffer, 0, read);
                             pos += read;
                             readForSpeed += read;
@@ -267,9 +306,14 @@ namespace Celeste.Mod {
                                 timeLastSpeed = DateTime.Now;
                             }
 
-                            progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int) Math.Floor(100D * (pos / (double) length)))}% @ {speed} KiB/s";
-                            progress.Progress = pos;
+                            if (length > 0) {
+                                progress.Lines[progress.Lines.Count - 1] =
+                                    $"Downloading: {((int) Math.Floor(100D * (pos / (double) length)))}% @ {speed} KiB/s";
+                                progress.Progress = pos;
+                            } else {
+                                progress.Lines[progress.Lines.Count - 1] =
+                                    $"Downloading: {((int) Math.Floor(pos / 1000D))}KiB @ {speed} KiB/s";
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -299,14 +343,18 @@ namespace Celeste.Mod {
                                 continue;
                             }
 
-                            string fullPath = Path.Combine(extractedPath, entry.FileName);
+                            string entryName = entry.FileName;
+                            if (entryName.StartsWith("main/"))
+                                entryName = entryName.Substring(5);
+                            string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
                                 Directory.CreateDirectory(fullDir);
                             if (File.Exists(fullPath))
                                 File.Delete(fullPath);
                             progress.LogLine($"{entry.FileName} -> {fullPath}");
-                            entry.Extract(extractedPath); // Confusingly enough, this takes the base directory.
+                            using (Stream stream = File.OpenWrite(fullPath))
+                                entry.Extract(stream);
                             progress.Progress++;
                         }
                     }
@@ -320,7 +368,6 @@ namespace Celeste.Mod {
                 }
                 progress.LogLine("Extraction finished.");
 
-                // Load MiniInstaller and run it in a new app domain on systems supporting this.
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
                 progress.LogLine("Restarting");
@@ -355,10 +402,14 @@ namespace Celeste.Mod {
             }
 
             private static long _ContentLength(string url) {
-                HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                request.Method = "HEAD";
-                using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
-                    return response.ContentLength;
+                try {
+                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                    request.Method = "HEAD";
+                    using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
+                        return response.ContentLength;
+                } catch (Exception) {
+                    return 0;
+                }
             }
 
         }
