@@ -73,7 +73,7 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool DisableAntiSoftlock { get; set; } = true;
+        public bool DisableAntiSoftlock { get; set; } = false;
 
         public string InputGui { get; set; } = "";
 
