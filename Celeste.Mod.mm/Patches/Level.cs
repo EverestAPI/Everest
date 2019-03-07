@@ -102,7 +102,7 @@ namespace Celeste {
             IEnumerator orig = orig_TransitionRoutine(next, direction);
 
             // Don't perform any GBJ checks in vanilla maps.
-            if (Session.Area.GetLevelSet() == "Celeste" && !CoreModule.Settings.DisableAntiSoftlock) {
+            if (Session.Area.GetLevelSet() == "Celeste" || CoreModule.Settings.DisableAntiSoftlock) {
                 while (orig.MoveNext())
                     yield return orig.Current;
                 yield break;
