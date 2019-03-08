@@ -132,9 +132,11 @@
     <Compile Include="Patches\CrumblePlatform.cs" />
     <Compile Include="Patches\EntityData.cs" />
     <Compile Include="Patches\IntroCrusher.cs" />
+    <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
     <Compile Include="Patches\Pico8\Emulator.cs" />
     <Compile Include="Patches\IntroCar.cs" />
+    <Compile Include="Patches\Session.cs" />
     <Compile Include="Patches\SinkingPlatform.cs" />
     <Compile Include="Patches\MovingPlatform.cs" />
     <Compile Include="Patches\Cobweb.cs" />
