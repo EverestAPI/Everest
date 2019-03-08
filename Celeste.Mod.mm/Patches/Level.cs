@@ -13,7 +13,6 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
@@ -137,6 +136,13 @@ namespace Celeste {
             // This is only here because Leo bugged me enough to add this here.
             CassetteBlockTempo = 1f;
             CassetteBlockBeats = 2;
+            
+            // Read player introType from metadata as player enter the C-Side
+            if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
+                && Session.Area.Mode == AreaMode.CSide
+                && AreaData.GetMode(Session.Area).GetMapMeta().OverrideASideMeta
+                && AreaData.Get(Session.Area).GetMeta().IntroType is Player.IntroTypes introType)
+                playerIntro = introType;
 
             try {
                 orig_LoadLevel(playerIntro, isFromLoader);

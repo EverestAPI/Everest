@@ -250,15 +250,27 @@ namespace Celeste {
             AreaMode mode = Area.Mode;
 
             if (mode == AreaMode.Normal) {
-                new MapMeta(meta).ApplyTo(area);
+                MapMeta mapMeta = new MapMeta(meta);
+                mapMeta.ApplyTo(area);
                 Area = area.ToKey();
+                
+                // Metadata for A-Side is stored.
+                area.Mode[(int) AreaMode.Normal].SetMapMeta(mapMeta); 
             }
 
-            meta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
-            if (meta == null)
+            BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
+            if (modeMeta == null)
                 return;
 
-            new MapMetaModeProperties(meta).ApplyTo(area, mode);
+            new MapMetaModeProperties(modeMeta).ApplyTo(area, mode);
+
+            // Metadata for B-Side and C-Side are parsed and stored.
+            if (mode != AreaMode.Normal) {
+                MapMeta mapMeta = new MapMeta(meta) {
+                    Modes = area.GetMeta().Modes
+                };
+                area.Mode[(int) mode].SetMapMeta(mapMeta);
+            }
         }
 
         private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {
