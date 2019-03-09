@@ -257,6 +257,8 @@ namespace Celeste.Mod.Meta {
                     return PlayerInventory.Prologue;
                 case "TheSummit":
                     return PlayerInventory.TheSummit;
+                case "Farewell":
+                    return PlayerInventory.Farewell;
             }
             return null;
         }
