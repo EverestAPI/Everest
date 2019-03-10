@@ -5,16 +5,9 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_Player : Player {
@@ -87,6 +80,17 @@ namespace Celeste {
             PlayerDeadBody orig = orig_Die(direction, evenIfInvincible, registerDeathInStats);
             Everest.Events.Player.Die(this);
             return orig;
+        }
+
+        private extern void orig_BoostBegin();
+        private void BoostBegin() {
+            if (SceneAs<Level>()?.Session.MapData.GetMeta()?.TheoInBubble ?? false) {
+                RefillDash();
+                RefillStamina();
+            }
+            else {
+                orig_BoostBegin();
+            }
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

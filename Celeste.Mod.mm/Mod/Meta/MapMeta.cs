@@ -282,6 +282,7 @@ namespace Celeste.Mod.Meta {
         public string StartLevel { get; set; }
         public bool? HeartIsEnd { get; set; }
         public bool? SeekerSlowdown { get; set; }
+        public bool? TheoInBubble { get; set; }
 
         public ModeProperties Convert()
             => new ModeProperties() {
@@ -301,6 +302,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("StartLevel", v => StartLevel = v);
             meta.AttrIfBool("HeartIsEnd", v => HeartIsEnd = v);
             meta.AttrIfBool("SeekerSlowdown", v => SeekerSlowdown = v);
+            meta.AttrIfBool("TheoInBubble", v => TheoInBubble = v);
 
             BinaryPacker.Element child;
 
