@@ -25,7 +25,7 @@
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Celeste.Mod.mm.xml</DocumentationFile>
     <NoWarn>CS1591</NoWarn>
-    <OutputPath>..\..\..\..\..\celeste-xna\</OutputPath>
+    <OutputPath>bin\Debug\</OutputPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <OutputPath Condition=" '$(TravisCore)' == '' ">bin\Release\</OutputPath>
