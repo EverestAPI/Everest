@@ -58,6 +58,7 @@ namespace Celeste.Mod.Meta {
         public string AnimatedTiles { get; set; }
         public string Sprites { get; set; }
         public string Portraits { get; set; }
+        public bool OverrideASideMeta { get; set; }
 
         public MapMetaModeProperties[] Modes { get; set; }
 
@@ -102,6 +103,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("AnimatedTiles", v => AnimatedTiles = v);
             meta.AttrIf("Sprites", v => Sprites = v);
             meta.AttrIf("Portraits", v => Portraits = v);
+            meta.AttrIfBool("OverrideASideMeta", v => OverrideASideMeta = v);
 
             BinaryPacker.Element child;
 
@@ -121,7 +123,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area) {
+        public void ApplyTo(AreaData area, bool isOverride = false) {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
@@ -146,12 +148,14 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
 
-            ModeProperties[] modes = area.Mode;
-            area.Mode = Convert(Modes) ?? modes;
-            if (modes != null)
-                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
-                    if (area.Mode[i] == null)
-                        area.Mode[i] = modes[i];
+            if (!isOverride) {
+                ModeProperties[] modes = area.Mode;
+                area.Mode = Convert(Modes) ?? modes;
+                if (modes != null)
+                    for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
+                        if (area.Mode[i] == null)
+                            area.Mode[i] = modes[i];
+            }
 
             if (!string.IsNullOrEmpty(Wipe)) {
                 Type type = Assembly.GetEntryAssembly().GetType(Wipe);
@@ -186,7 +190,7 @@ namespace Celeste.Mod.Meta {
             area.MountainState = Mountain?.State ?? area.MountainState;
 
             MapMeta meta = area.GetMeta();
-            if (meta == null) {
+            if (meta == null || isOverride) {
                 area.SetMeta(this);
             } else {
                 if (!string.IsNullOrEmpty(ForegroundTiles))
@@ -253,6 +257,8 @@ namespace Celeste.Mod.Meta {
                     return PlayerInventory.Prologue;
                 case "TheSummit":
                     return PlayerInventory.TheSummit;
+                case "Farewell":
+                    return PlayerInventory.Farewell;
             }
             return null;
         }
@@ -276,6 +282,7 @@ namespace Celeste.Mod.Meta {
         public string StartLevel { get; set; }
         public bool? HeartIsEnd { get; set; }
         public bool? SeekerSlowdown { get; set; }
+        public bool? TheoInBubble { get; set; }
 
         public ModeProperties Convert()
             => new ModeProperties() {
@@ -295,6 +302,7 @@ namespace Celeste.Mod.Meta {
             meta.AttrIf("StartLevel", v => StartLevel = v);
             meta.AttrIfBool("HeartIsEnd", v => HeartIsEnd = v);
             meta.AttrIfBool("SeekerSlowdown", v => SeekerSlowdown = v);
+            meta.AttrIfBool("TheoInBubble", v => TheoInBubble = v);
 
             BinaryPacker.Element child;
 

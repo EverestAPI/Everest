@@ -35,6 +35,9 @@ namespace Celeste {
         public extern void orig_ctor(Mode mode, Session session, HiresSnow snow = null);
         [MonoModConstructor]
         public void ctor(Mode mode, Session session, HiresSnow snow = null) {
+            // Restore to metadata of A-Side.
+            AreaData.Get(session).TryOverrideMeta(AreaMode.Normal);
+            
             orig_ctor(mode, session, snow);
             Everest.Events.Level.Exit(Engine.Scene as Level, this, mode, session, snow);
         }

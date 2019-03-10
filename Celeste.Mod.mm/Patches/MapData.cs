@@ -67,14 +67,14 @@ namespace Celeste {
             if (root.Children == null)
                 return root;
 
+            // make sure parse meta first, because checkpoint entity needs to read meta
+            if(root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta) 
+                ProcessMeta(meta);
+            
             foreach (BinaryPacker.Element el in root.Children) {
                 switch (el.Name) {
                     case "levels":
                         ProcessLevels(el);
-                        continue;
-
-                    case "meta":
-                        ProcessMeta(el);
                         continue;
 
                     // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
@@ -199,13 +199,21 @@ namespace Celeste {
                                     switch (entity.Name) {
                                         case "checkpoint":
                                             if (checkpointsAuto != null) {
+                                                MapMeta modeMeta = area.GetModeMeta(Area.Mode);
                                                 CheckpointData c = new CheckpointData(
                                                     levelName,
                                                     (area.GetSID() + "_" + levelName).DialogKeyify(),
                                                     MapMeta.GetInventory(entity.Attr("inventory")),
-                                                    entity.Attr("dreaming") == "" ? area.Dreaming : entity.AttrBool("dreaming"),
+                                                    entity.Attr("dreaming") == "" ? modeMeta.Dreaming.Value : entity.AttrBool("dreaming"),
                                                     null
                                                 );
+                                                if (entity.Attr("coreMode") == "") {
+                                                    c.CoreMode = modeMeta.CoreMode;
+                                                }
+                                                else {
+                                                    entity.AttrIf("coreMode", v => c.CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
+                                                }
+                                                
                                                 int id = entity.AttrInt("checkpointID", -1);
                                                 if (id == -1) {
                                                     checkpointsAuto.Add(c);
@@ -220,7 +228,7 @@ namespace Celeste {
                                             break;
 
                                         case "cassette":
-                                            if (area.CassetteCheckpointIndex == 0)
+                                            if (area.CassetteCheckpointIndex < 0)
                                                 area.CassetteCheckpointIndex = checkpoint;
                                             break;
 
@@ -250,15 +258,27 @@ namespace Celeste {
             AreaMode mode = Area.Mode;
 
             if (mode == AreaMode.Normal) {
-                new MapMeta(meta).ApplyTo(area);
+                MapMeta mapMeta = new MapMeta(meta);
+                mapMeta.ApplyTo(area);
                 Area = area.ToKey();
+                
+                // Metadata for A-Side is stored.
+                area.Mode[(int) AreaMode.Normal].SetMapMeta(mapMeta); 
             }
 
-            meta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
-            if (meta == null)
+            BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
+            if (modeMeta == null)
                 return;
 
-            new MapMetaModeProperties(meta).ApplyTo(area, mode);
+            new MapMetaModeProperties(modeMeta).ApplyTo(area, mode);
+
+            // Metadata for B-Side and C-Side are parsed and stored.
+            if (mode != AreaMode.Normal) {
+                MapMeta mapMeta = new MapMeta(meta) {
+                    Modes = area.GetMeta().Modes
+                };
+                area.Mode[(int) mode].SetMapMeta(mapMeta);
+            }
         }
 
         private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {

@@ -436,6 +436,39 @@ namespace Celeste {
             ((patch_AreaData) self).Meta = value;
             return self;
         }
+        
+        /// <summary>
+        /// Get the custom metadata of the mode if OverrideASideMeta is enabled. 
+        /// </summary>
+        public static MapMeta GetModeMeta(this AreaData self, AreaMode value) {
+            if (self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta) {
+                if (value != AreaMode.Normal && mapMeta.OverrideASideMeta)
+                    return mapMeta;
+                
+                return self.Mode[(int) AreaMode.Normal].GetMapMeta();
+            }
+            
+            return self.GetMeta();
+        }
 
+        /// <summary>
+        /// Apply the metadata of the mode to the area if OverrideASideMeta is enabled.
+        /// </summary>
+        public static bool TryOverrideMeta(this AreaData self, AreaMode value) {
+            patch_AreaData areaData = (patch_AreaData) self;
+
+            if (areaData.LevelSet == "Celeste")
+                return false;
+
+            if (!(self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta)) {
+                return false;
+            }
+
+            if (value != AreaMode.Normal && !mapMeta.OverrideASideMeta)
+                return false;
+                
+            mapMeta.ApplyTo(areaData, true);
+            return true;
+        }
     }
 }
