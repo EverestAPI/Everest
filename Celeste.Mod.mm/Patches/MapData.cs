@@ -228,7 +228,7 @@ namespace Celeste {
                                             break;
 
                                         case "cassette":
-                                            if (area.CassetteCheckpointIndex == 0)
+                                            if (area.CassetteCheckpointIndex < 0)
                                                 area.CassetteCheckpointIndex = checkpoint;
                                             break;
 
