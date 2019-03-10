@@ -14,6 +14,7 @@ using MonoMod;
 using System;
 using System.Collections;
 using System.Linq;
+using Celeste.Mod.Meta;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -140,8 +141,8 @@ namespace Celeste {
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
                 && Session.Area.Mode == AreaMode.CSide
-                && AreaData.GetMode(Session.Area).GetMapMeta().OverrideASideMeta
-                && AreaData.Get(Session.Area).GetMeta().IntroType is Player.IntroTypes introType)
+                && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && mapMeta.OverrideASideMeta
+                && AreaData.Get(Session.Area)?.GetMeta()?.IntroType is Player.IntroTypes introType)
                 playerIntro = introType;
 
             try {
