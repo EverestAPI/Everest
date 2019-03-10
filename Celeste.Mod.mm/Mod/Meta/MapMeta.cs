@@ -183,42 +183,45 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(CassetteSong))
                 area.CassetteSong = CassetteSong;
 
-            area.MountainIdle = Mountain?.Idle?.Convert() ?? area.MountainIdle;
-            area.MountainSelect = Mountain?.Select?.Convert() ?? area.MountainSelect;
-            area.MountainZoom = Mountain?.Zoom?.Convert() ?? area.MountainZoom;
-            area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
-            area.MountainState = Mountain?.State ?? area.MountainState;
+            if (!isOverride) {
+                area.MountainIdle = Mountain?.Idle?.Convert() ?? area.MountainIdle;
+                area.MountainSelect = Mountain?.Select?.Convert() ?? area.MountainSelect;
+                area.MountainZoom = Mountain?.Zoom?.Convert() ?? area.MountainZoom;
+                area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
+                area.MountainState = Mountain?.State ?? area.MountainState;
 
-            MapMeta meta = area.GetMeta();
-            if (meta == null || isOverride) {
-                area.SetMeta(this);
-            } else {
-                if (!string.IsNullOrEmpty(ForegroundTiles))
-                    meta.ForegroundTiles = ForegroundTiles;
+                MapMeta meta = area.GetMeta();
+                if (meta == null || isOverride) {
+                    area.SetMeta(this);
+                }
+                else {
+                    if (!string.IsNullOrEmpty(ForegroundTiles))
+                        meta.ForegroundTiles = ForegroundTiles;
 
-                if (!string.IsNullOrEmpty(BackgroundTiles))
-                    meta.BackgroundTiles = BackgroundTiles;
+                    if (!string.IsNullOrEmpty(BackgroundTiles))
+                        meta.BackgroundTiles = BackgroundTiles;
 
-                if (!string.IsNullOrEmpty(AnimatedTiles))
-                    meta.AnimatedTiles = AnimatedTiles;
+                    if (!string.IsNullOrEmpty(AnimatedTiles))
+                        meta.AnimatedTiles = AnimatedTiles;
 
-                if (!string.IsNullOrEmpty(Sprites))
-                    meta.Sprites = Sprites;
+                    if (!string.IsNullOrEmpty(Sprites))
+                        meta.Sprites = Sprites;
 
-                if (!string.IsNullOrEmpty(Portraits))
-                    meta.Portraits = Portraits;
+                    if (!string.IsNullOrEmpty(Portraits))
+                        meta.Portraits = Portraits;
 
-                if ((Modes?.Length ?? 0) != 0)
-                    meta.Modes = Modes;
+                    if ((Modes?.Length ?? 0) != 0)
+                        meta.Modes = Modes;
 
-                if (Mountain != null)
-                    meta.Mountain = Mountain;
+                    if (Mountain != null)
+                        meta.Mountain = Mountain;
 
-                if (CompleteScreen != null)
-                    meta.CompleteScreen = CompleteScreen;
+                    if (CompleteScreen != null)
+                        meta.CompleteScreen = CompleteScreen;
 
-                if (CassetteModifier != null)
-                    meta.CassetteModifier = CassetteModifier;
+                    if (CassetteModifier != null)
+                        meta.CassetteModifier = CassetteModifier;
+                }
             }
         }
 

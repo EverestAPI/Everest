@@ -142,7 +142,7 @@ namespace Celeste {
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
                 && Session.Area.Mode == AreaMode.CSide
                 && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && mapMeta.OverrideASideMeta
-                && AreaData.Get(Session.Area)?.GetMeta()?.IntroType is Player.IntroTypes introType)
+                && mapMeta.IntroType is Player.IntroTypes introType)
                 playerIntro = introType;
 
             try {
