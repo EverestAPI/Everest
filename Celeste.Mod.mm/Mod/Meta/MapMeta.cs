@@ -191,7 +191,7 @@ namespace Celeste.Mod.Meta {
                 area.MountainState = Mountain?.State ?? area.MountainState;
 
                 MapMeta meta = area.GetMeta();
-                if (meta == null || isOverride) {
+                if (meta == null) {
                     area.SetMeta(this);
                 }
                 else {

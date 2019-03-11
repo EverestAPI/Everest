@@ -8,9 +8,7 @@ namespace Celeste {
 
         [MonoModConstructor]
         public void ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null) {
-            if(area.Mode != AreaMode.Normal)
-                AreaData.Get(area).TryOverrideMeta(area.Mode);
-            
+            AreaData.Get(area).TryOverrideMeta(area.Mode);
             orig_ctor(area, checkpoint, oldStats);
         }
     }
