@@ -413,6 +413,12 @@ namespace Celeste {
         /// </summary>
         public static string GetLevelSet(this AreaData self)
             => ((patch_AreaData) self).LevelSet;
+        
+        /// <summary>
+        /// Check if the area is official.
+        /// </summary>
+        public static bool IsOfficialLevelSet(this AreaData self)
+            => ((patch_AreaData) self).LevelSet == "Celeste";
 
         /// <summary>
         /// Get the SID (string ID) of the area.
