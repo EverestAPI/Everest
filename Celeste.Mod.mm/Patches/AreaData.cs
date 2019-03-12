@@ -465,6 +465,9 @@ namespace Celeste {
         /// </summary>
         public static void RestoreASideAreaData(this AreaData self) {
             AreaData backup = self.GetASideAreaDataBackup();
+            if (backup == null)
+                return;
+            
             self.IntroType = backup.IntroType;
             self.ColorGrade = backup.ColorGrade;
             self.DarknessAlpha = backup.DarknessAlpha;
