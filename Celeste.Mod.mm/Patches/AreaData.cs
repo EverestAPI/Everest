@@ -501,7 +501,7 @@ namespace Celeste {
             
             if (!mapMeta.OverrideASideMeta) return;
 
-            mapMeta.ApplyTo(areaData, true);
+            mapMeta.ApplyToForOverride(areaData);
         }
     }
 }
