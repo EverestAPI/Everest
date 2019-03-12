@@ -88,6 +88,9 @@ namespace Celeste {
                 return _LevelSet = sid.Substring(0, lastIndexOfSlash);
             }
         }
+        
+        // Used for Override A-Side Meta, Only back up useful data.
+        public AreaData ASideAreaDataBackup;
 
         public MapMeta Meta;
 
@@ -438,14 +441,40 @@ namespace Celeste {
         }
         
         /// <summary>
+        /// Get the A-Side's area data backup.
+        /// </summary>
+        public static AreaData GetASideAreaDataBackup(this AreaData self)
+            => ((patch_AreaData) self).ASideAreaDataBackup;
+        
+        /// <summary>
+        /// Set the A-Side's area data backup.
+        /// </summary>
+        public static AreaData SetASideAreaDataBackup(this AreaData self, AreaData value) {
+            ((patch_AreaData) self).ASideAreaDataBackup = value;
+            return self;
+        }
+        
+        /// <summary>
+        /// Restore A-Side's area data from backup.
+        /// </summary>
+        public static void RestoreASideAreaData(this AreaData self) {
+            AreaData backup = self.GetASideAreaDataBackup();
+            self.IntroType = backup.IntroType;
+            self.ColorGrade = backup.ColorGrade;
+            self.DarknessAlpha = backup.DarknessAlpha;
+            self.BloomBase = backup.BloomBase;
+            self.BloomStrength = backup.BloomStrength;
+            self.CoreMode = backup.CoreMode;
+            self.Dreaming = backup.Dreaming;
+        }
+        
+        /// <summary>
         /// Get the custom metadata of the mode if OverrideASideMeta is enabled. 
         /// </summary>
         public static MapMeta GetModeMeta(this AreaData self, AreaMode value) {
             if (self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta) {
                 if (value != AreaMode.Normal && mapMeta.OverrideASideMeta)
                     return mapMeta;
-                
-                return self.Mode[(int) AreaMode.Normal].GetMapMeta();
             }
             
             return self.GetMeta();
@@ -454,21 +483,19 @@ namespace Celeste {
         /// <summary>
         /// Apply the metadata of the mode to the area if OverrideASideMeta is enabled.
         /// </summary>
-        public static bool TryOverrideMeta(this AreaData self, AreaMode value) {
+        public static void OverrideASideMeta(this AreaData self, AreaMode value) {
             patch_AreaData areaData = (patch_AreaData) self;
 
-            if (areaData.LevelSet == "Celeste")
-                return false;
+            if (areaData.LevelSet == "Celeste") return;
 
-            if (!(self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta)) {
-                return false;
-            }
+            if (value == AreaMode.Normal) return;
 
-            if (value != AreaMode.Normal && !mapMeta.OverrideASideMeta)
-                return false;
-                
+            if (!(self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta))
+                return;
+            
+            if (!mapMeta.OverrideASideMeta) return;
+
             mapMeta.ApplyTo(areaData, true);
-            return true;
         }
     }
 }

@@ -204,11 +204,11 @@ namespace Celeste {
                                                     levelName,
                                                     (area.GetSID() + "_" + levelName).DialogKeyify(),
                                                     MapMeta.GetInventory(entity.Attr("inventory")),
-                                                    entity.Attr("dreaming") == "" ? modeMeta.Dreaming.Value : entity.AttrBool("dreaming"),
+                                                    entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? area.Dreaming : entity.AttrBool("dreaming"),
                                                     null
                                                 );
                                                 if (entity.Attr("coreMode") == "") {
-                                                    c.CoreMode = modeMeta.CoreMode;
+                                                    c.CoreMode = modeMeta.CoreMode ?? area.CoreMode;
                                                 }
                                                 else {
                                                     entity.AttrIf("coreMode", v => c.CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
@@ -258,12 +258,19 @@ namespace Celeste {
             AreaMode mode = Area.Mode;
 
             if (mode == AreaMode.Normal) {
-                MapMeta mapMeta = new MapMeta(meta);
-                mapMeta.ApplyTo(area);
+                new MapMeta(meta).ApplyTo(area);
                 Area = area.ToKey();
                 
-                // Metadata for A-Side is stored.
-                area.Mode[(int) AreaMode.Normal].SetMapMeta(mapMeta); 
+                // Backup A-Side's Metadata. Only back up useful data.
+                area.SetASideAreaDataBackup(new AreaData {
+                    IntroType = area.IntroType,
+                    ColorGrade = area.ColorGrade,
+                    DarknessAlpha = area.DarknessAlpha,
+                    BloomBase = area.BloomBase,
+                    BloomStrength = area.BloomStrength,
+                    CoreMode = area.CoreMode,
+                    Dreaming = area.Dreaming
+                });
             }
 
             BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
