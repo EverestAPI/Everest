@@ -123,7 +123,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area, bool isOverride = false) {
+        public void ApplyTo(AreaData area) {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 

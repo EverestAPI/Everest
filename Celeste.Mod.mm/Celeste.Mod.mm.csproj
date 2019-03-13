@@ -133,6 +133,7 @@
     <Compile Include="Patches\CrumblePlatform.cs" />
     <Compile Include="Patches\EntityData.cs" />
     <Compile Include="Patches\IntroCrusher.cs" />
+    <Compile Include="Patches\LevelData.cs" />
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
