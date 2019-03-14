@@ -236,6 +236,7 @@
     <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\FireBall.cs" />
     <Compile Include="Patches\HeartGem.cs" />
+    <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
     <Compile Include="Patches\TheoCrystalCollider.cs" />
     <Compile Include="Patches\Strawberry.cs" />
