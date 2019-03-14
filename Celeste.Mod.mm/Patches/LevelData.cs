@@ -2,10 +2,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MonoMod;
 
 namespace Celeste {
     public class patch_LevelData : LevelData {
+        private static readonly string[] BerryNames = {"strawberry", "goldenBerry", "memorialTextController"};
+
         public patch_LevelData(BinaryPacker.Element data) : base(data) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
@@ -24,14 +27,14 @@ namespace Celeste {
             int maxId = 0;
             foreach (EntityData entityData in Entities) {
                 // Do not touch the strawberries, because save data need them.
-                if (entityData.Name == "strawberry") {
+                if (BerryNames.Contains(entityData.Name)) {
                     maxId = Math.Max(maxId, entityData.ID);
                 }
                 else {
                     others.Add(entityData);
                 }
             }
-            
+
             others.AddRange(Triggers);
             foreach (EntityData entityData in others) {
                 maxId++;
