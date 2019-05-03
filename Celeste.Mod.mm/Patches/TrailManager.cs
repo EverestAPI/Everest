@@ -1,5 +1,6 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
 
@@ -12,7 +13,7 @@ namespace Celeste {
                 orig_Init(manager, index, position, sprite, hair, color, duration, depth);
 
                 // Fixed an issue with vanilla itself, player's body trail is always facing right 
-                if (sprite != null && hair != null) {
+                if (!Everest.Flags.IsDisabled && sprite != null && hair != null) {
                     SpriteScale.X = SpriteScale.Abs().X * (int) hair.Facing;
                 }
             }

@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Celeste.Mod;
 using MonoMod;
 
 namespace Celeste {
@@ -18,7 +19,8 @@ namespace Celeste {
         [MonoModConstructor]
         public void ctor(BinaryPacker.Element data) {
             orig_ctor(data);
-            MakeIdUnique();
+            if(!Everest.Flags.IsDisabled)
+                MakeIdUnique();
         }
 
         private void MakeIdUnique() {
