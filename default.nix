@@ -1,6 +1,13 @@
 { pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage }:
 
 let
+  Jdenticon = fetchNuGet {
+    baseName = "Jdenticon-net";
+    version = "2.2.1";
+    sha256 = "1li1flpfpj8dwz7sy5imbvgwpqxzn7nqk2znr21rx2sn761029vz";
+    outputFiles = ["*"];
+  };
+
   Cecil = fetchNuGet {
     baseName = "Mono.Cecil";
     version = "0.10.0";
@@ -8,16 +15,16 @@ let
     outputFiles = [ "*" ];
   };
 
-  ValueTuple = fetchNuGet {
-    baseName = "System.ValueTuple";
-    version = "4.4.0";
-    sha256 = "1wydfgszs00yxga57sam66vzv9fshk2pw7gim57saplsnkfliaif";
+  Json = fetchNuGet {
+    baseName = "Newtonsoft.Json";
+    version  = "12.0.1";
+    sha256 = "11f30cfxwn0z1hr5y69hxac0yyjz150ar69nvqhn18n9k92zfxz1";
     outputFiles = ["*"];
   };
 
 in buildDotnetPackage rec {
   baseName = "Everest";
-  version = "0.0.0";
+  version = pkgs.lib.commitIdFromGitRepo ./.git;
   name = "${baseName}-dev-${version}";
 
   src = ./.;
@@ -34,8 +41,9 @@ in buildDotnetPackage rec {
   preBuild = ''
     # Fake nuget restore, not very elegant but it works.
     mkdir -p packages
+    ln -sn ${Jdenticon}/lib/dotnet/Jdenticon-net packages/Jdenticon-net.${Jdenticon.version}
     ln -sn ${Cecil}/lib/dotnet/Mono.Cecil packages/Mono.Cecil.${Cecil.version}
-    ln -sn ${ValueTuple}/lib/dotnet/System.ValueTuple packages/System.ValueTuple.${ValueTuple.version}
+    ln -sn ${Json}/lib/dotnet/Newtonsoft.Json packages/Newtonsoft.Json.${Json.version}
   '';
 
   postInstall = ''
