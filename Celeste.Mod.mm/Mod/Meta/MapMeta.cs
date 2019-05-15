@@ -123,7 +123,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area, bool isOverride = false) {
+        public void ApplyTo(AreaData area) {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
@@ -148,14 +148,12 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
 
-            if (!isOverride) {
-                ModeProperties[] modes = area.Mode;
-                area.Mode = Convert(Modes) ?? modes;
-                if (modes != null)
-                    for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
-                        if (area.Mode[i] == null)
-                            area.Mode[i] = modes[i];
-            }
+            ModeProperties[] modes = area.Mode;
+            area.Mode = Convert(Modes) ?? modes;
+            if (modes != null)
+                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
+                    if (area.Mode[i] == null)
+                        area.Mode[i] = modes[i];
 
             if (!string.IsNullOrEmpty(Wipe)) {
                 Type type = Assembly.GetEntryAssembly().GetType(Wipe);
@@ -183,46 +181,67 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(CassetteSong))
                 area.CassetteSong = CassetteSong;
 
-            if (!isOverride) {
-                area.MountainIdle = Mountain?.Idle?.Convert() ?? area.MountainIdle;
-                area.MountainSelect = Mountain?.Select?.Convert() ?? area.MountainSelect;
-                area.MountainZoom = Mountain?.Zoom?.Convert() ?? area.MountainZoom;
-                area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
-                area.MountainState = Mountain?.State ?? area.MountainState;
+            area.MountainIdle = Mountain?.Idle?.Convert() ?? area.MountainIdle;
+            area.MountainSelect = Mountain?.Select?.Convert() ?? area.MountainSelect;
+            area.MountainZoom = Mountain?.Zoom?.Convert() ?? area.MountainZoom;
+            area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
+            area.MountainState = Mountain?.State ?? area.MountainState;
 
-                MapMeta meta = area.GetMeta();
-                if (meta == null || isOverride) {
-                    area.SetMeta(this);
-                }
-                else {
-                    if (!string.IsNullOrEmpty(ForegroundTiles))
-                        meta.ForegroundTiles = ForegroundTiles;
-
-                    if (!string.IsNullOrEmpty(BackgroundTiles))
-                        meta.BackgroundTiles = BackgroundTiles;
-
-                    if (!string.IsNullOrEmpty(AnimatedTiles))
-                        meta.AnimatedTiles = AnimatedTiles;
-
-                    if (!string.IsNullOrEmpty(Sprites))
-                        meta.Sprites = Sprites;
-
-                    if (!string.IsNullOrEmpty(Portraits))
-                        meta.Portraits = Portraits;
-
-                    if ((Modes?.Length ?? 0) != 0)
-                        meta.Modes = Modes;
-
-                    if (Mountain != null)
-                        meta.Mountain = Mountain;
-
-                    if (CompleteScreen != null)
-                        meta.CompleteScreen = CompleteScreen;
-
-                    if (CassetteModifier != null)
-                        meta.CassetteModifier = CassetteModifier;
-                }
+            MapMeta meta = area.GetMeta();
+            if (meta == null) {
+                area.SetMeta(this);
             }
+            else {
+                if (!string.IsNullOrEmpty(ForegroundTiles))
+                    meta.ForegroundTiles = ForegroundTiles;
+
+                if (!string.IsNullOrEmpty(BackgroundTiles))
+                    meta.BackgroundTiles = BackgroundTiles;
+
+                if (!string.IsNullOrEmpty(AnimatedTiles))
+                    meta.AnimatedTiles = AnimatedTiles;
+
+                if (!string.IsNullOrEmpty(Sprites))
+                    meta.Sprites = Sprites;
+
+                if (!string.IsNullOrEmpty(Portraits))
+                    meta.Portraits = Portraits;
+
+                if ((Modes?.Length ?? 0) != 0)
+                    meta.Modes = Modes;
+
+                if (Mountain != null)
+                    meta.Mountain = Mountain;
+
+                if (CompleteScreen != null)
+                    meta.CompleteScreen = CompleteScreen;
+
+                if (CassetteModifier != null)
+                    meta.CassetteModifier = CassetteModifier;
+            }
+        }
+
+        public void ApplyToForOverride(AreaData area) {
+            if (IntroType != null)
+                area.IntroType = IntroType.Value;
+
+            if (Dreaming != null)
+                area.Dreaming = Dreaming.Value;
+            
+            if (!string.IsNullOrEmpty(ColorGrade))
+                area.ColorGrade = ColorGrade;
+
+            if (DarknessAlpha != null)
+                area.DarknessAlpha = DarknessAlpha.Value;
+            
+            if (BloomBase != null)
+                area.BloomBase = BloomBase.Value;
+            
+            if (BloomStrength != null)
+                area.BloomStrength = BloomStrength.Value;
+
+            if (CoreMode != null)
+                area.CoreMode = CoreMode.Value;
         }
 
         public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
