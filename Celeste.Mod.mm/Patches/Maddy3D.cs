@@ -12,17 +12,14 @@ namespace Celeste {
         private extern void orig_SetRunAnim();
 
         private void SetRunAnim() {
-            AreaData areaData = AreaData.Get(Renderer.Area);
-            if (areaData.IsOfficialLevelSet()) {
+            if (Renderer.Area < 0 || AreaData.Get(Renderer.Area).IsOfficialLevelSet()) {
                 orig_SetRunAnim();
             }
+            else if (AreaData.Get(Renderer.Area).Mode[0].Inventory.Dashes > 1) {
+                frames = GFX.Mountain.GetAtlasSubtextures("marker/runNoBackpack");
+            }
             else {
-                if (areaData.Mode[0].Inventory.Dashes > 1) {
-                    frames = GFX.Mountain.GetAtlasSubtextures("marker/runNoBackpack");
-                }
-                else {
-                    frames = GFX.Mountain.GetAtlasSubtextures("marker/runBackpack");
-                }
+                frames = GFX.Mountain.GetAtlasSubtextures("marker/runBackpack");
             }
         }
     }
