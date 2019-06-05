@@ -16,6 +16,9 @@ using System.Xml;
 namespace Celeste {
     class patch_CompleteRenderer : CompleteRenderer {
 
+        [MonoModIgnore]
+        public bool HasUI { get; private set; }
+
         private MapMetaCompleteScreen meta;
 
         private static XmlElement _FakeXML;
@@ -56,6 +59,7 @@ namespace Celeste {
                 if (meta.Layers != null && meta.Layers.Length > 0) {
                     foreach (MapMetaCompleteScreenLayer layer in meta.Layers) {
                         if (!string.IsNullOrEmpty(layer.Type) && layer.Type.Equals("ui", StringComparison.CurrentCultureIgnoreCase)) {
+                            HasUI = true;
                             Layers.Add(new UILayerNoXML(this, layer));
                             continue;
                         }
