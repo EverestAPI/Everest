@@ -122,7 +122,6 @@ namespace Celeste {
         }
 
 
-        [XmlAttribute]
         [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
         public new List<AreaStats> Areas;
 
