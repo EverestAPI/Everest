@@ -315,7 +315,7 @@ namespace MonoMod {
             if (m_Process == null)
                 return;
 
-            MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[,]&,System.Int32,System.Int32)");
+            MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[0...,0...]&,System.Int32,System.Int32)");
             if (m_GrowAndGet == null)
                 return;
 
@@ -343,8 +343,8 @@ namespace MonoMod {
                 }
 
                 if (instri > 2 &&
-                    instrs[instri - 3].OpCode == OpCodes.Ldfld && (instrs[instri - 3].Operand as FieldReference)?.FullName == "Celeste.EntityData[,] Celeste.ModeProperties::StrawberriesByCheckpoint" &&
-                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.EntityData Celeste.EntityData[,]::Get(System.Int32,System.Int32)"
+                    instrs[instri - 3].OpCode == OpCodes.Ldfld && (instrs[instri - 3].Operand as FieldReference)?.FullName == "Celeste.EntityData[0...,0...] Celeste.ModeProperties::StrawberriesByCheckpoint" &&
+                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.EntityData Celeste.EntityData[0...,0...]::Get(System.Int32,System.Int32)"
                 ) {
                     instrs[instri - 3].OpCode = OpCodes.Ldflda;
                     instr.OpCode = OpCodes.Call;
