@@ -72,7 +72,6 @@ namespace Celeste {
 
         // Legacy code should benefit from the new LevelSetStats.
 
-        [XmlAttribute]
         [MonoModLinkFrom("System.Int32 Celeste.SaveData::UnlockedAreas_Unsafe")]
         public new int UnlockedAreas;
 
@@ -97,7 +96,6 @@ namespace Celeste {
         }
 
 
-        [XmlAttribute]
         [MonoModLinkFrom("System.Int32 Celeste.SaveData::TotalStrawberries_Unsafe")]
         public new int TotalStrawberries;
 
@@ -122,7 +120,6 @@ namespace Celeste {
         }
 
 
-        [XmlAttribute]
         [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
         public new List<AreaStats> Areas;
 
