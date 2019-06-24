@@ -38,9 +38,8 @@ namespace Celeste.Mod {
                 } else if (Environment.OSVersion.Platform == PlatformID.Unix)
                     lib = "libdiscord-rpc.so";
 
-                DynDll.Mappings["discord-rpc"] = new DynDllMapping() {
-                    ResolveAs = lib
-                };
+                if (!string.IsNullOrEmpty(lib))
+                    DynDll.DllMap["discord-rpc"] = lib;
 
                 string discordID = "430794114037055489";
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))
