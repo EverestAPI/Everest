@@ -26,15 +26,21 @@ namespace Celeste.Mod {
             public static DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
 
             public static void Initialize() {
+
+                string lib = null;
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordLib))
-                    DynDll.DllMap["discord-rpc"] = CoreModule.Settings.DiscordLib;
+                    lib = CoreModule.Settings.DiscordLib;
                 else if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                    DynDll.DllMap["discord-rpc"] = "discord-rpc.dll";
+                    lib = "discord-rpc.dll";
                 else if (Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                    DynDll.DllMap["discord-rpc"] = "libdiscord-rpc.dylib";
+                    lib = "libdiscord-rpc.dylib";
                     // FIXME: macOS doesn't see libdiscord-rpc.dylib wherever Celeste.exe is.
                 } else if (Environment.OSVersion.Platform == PlatformID.Unix)
-                    DynDll.DllMap["discord-rpc"] = "libdiscord-rpc.so";
+                    lib = "libdiscord-rpc.so";
+
+                DynDll.Mappings["discord-rpc"] = new DynDllMapping() {
+                    ResolveAs = lib
+                };
 
                 string discordID = "430794114037055489";
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))

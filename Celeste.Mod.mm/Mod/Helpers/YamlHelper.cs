@@ -8,8 +8,8 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod {
     public static class YamlHelper {
 
-        public static Deserializer Deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
-        public static Serializer Serializer = new SerializerBuilder().EmitDefaults().Build();
+        public static IDeserializer Deserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
+        public static ISerializer Serializer = new SerializerBuilder().EmitDefaults().Build();
 
     }
 }
