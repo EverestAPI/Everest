@@ -17,7 +17,7 @@ namespace Celeste {
     class patch_CompleteRenderer : CompleteRenderer {
 
         [MonoModIgnore]
-        public bool HasUI { get; private set; }
+        public new bool HasUI { get; private set; }
 
         private MapMetaCompleteScreen meta;
 
