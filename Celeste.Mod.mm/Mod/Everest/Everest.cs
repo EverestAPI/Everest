@@ -245,6 +245,20 @@ namespace Celeste.Mod {
             }
 
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+
+            // .NET hates it when strong-named dependencies get updated.
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName asmName = new AssemblyName(asmArgs.Name);
+                if (!asmName.Name.StartsWith("Mono.Cecil"))
+                    return null;
+
+                Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
+                if (asm != null)
+                    return asm;
+
+                return Assembly.LoadFrom(Path.Combine(PathGame, asmName.Name + ".dll"));
+            };
+
             if (!File.Exists(Path.Combine(PathGame, "EverestXDGFlag"))) {
                 XDGPaths = false;
                 PathEverest = PathGame;

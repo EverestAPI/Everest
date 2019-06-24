@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Celeste.Mod.Helpers;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -236,6 +237,18 @@ namespace Celeste.Mod {
                             modder.ParseRules(rules);
                             rules.Dispose(); // Is this safe?
                         }
+
+                        // Fix old mods built against HookIL instead of ILContext.
+                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.ILManipulator"] = "MonoMod.Cil.ILContext/Manipulator";
+                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookIL"] = "MonoMod.Cil.ILContext";
+                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookILCursor"] = "MonoMod.Cil.ILCursor";
+                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookILLabel"] = "MonoMod.Cil.ILLabel";
+                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookExtensions"] = "MonoMod.Cil.ILPatternMatchingExt";
+
+                        _Shim("MonoMod.Cil.ILCursor", typeof(ILCursorShim));
+
+                        // If no entry for MonoMod.Utils exists already, add one.
+                        modder.MapDependency(_Modder.Module, "MonoMod.Utils");
                     }
 
                     prePatch?.Invoke(modder);
@@ -266,6 +279,13 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
                     e.LogDetailed();
                     return null;
+                }
+            }
+
+
+            private static void _Shim(string fromType, Type toType) {
+                foreach (MethodInfo to in toType.GetMethods(BindingFlags.Public | BindingFlags.Static)) {
+                    _Modder.RelinkMap[to.GetFindableID(type: fromType, proxyMethod: true, simple: true)] = new RelinkMapEntry(toType.FullName, to.GetFindableID(withType: false, simple: true));
                 }
             }
 
