@@ -71,6 +71,9 @@ namespace Celeste.Mod {
                 }
             } catch {
             }
+
+            if (_Settings == null)
+                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
         }
 
         /// <summary>

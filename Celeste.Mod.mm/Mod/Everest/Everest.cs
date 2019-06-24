@@ -216,6 +216,9 @@ namespace Celeste.Mod {
                 if (arg == "--debug")
                     Celeste.PlayMode = Celeste.PlayModes.Debug;
 
+                else if (arg == "--debugger")
+                    Debugger.Launch();
+
                 else if (arg == "--dump")
                     Content.DumpOnLoad = true;
                 else if (arg == "--dump-all")
@@ -249,7 +252,7 @@ namespace Celeste.Mod {
             // .NET hates it when strong-named dependencies get updated.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
                 AssemblyName asmName = new AssemblyName(asmArgs.Name);
-                if (!asmName.Name.StartsWith("Mono.Cecil"))
+                if (!asmName.Name.StartsWith("Mono.Cecil") && !asmName.Name.StartsWith("YamlDotNet"))
                     return null;
 
                 Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
