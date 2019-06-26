@@ -57,6 +57,7 @@ namespace MiniInstaller {
                     }
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
+                    MakeLargeAddressAware(PathEverestExe);
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -190,6 +191,40 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
+        }
+
+        // Based on https://github.com/RomSteady/RomTerraria/blob/c017139c54b82fa86c1e645be5b51656e637d449/RTRewriter/Cecil/Rewriter.cs#L37
+        public static void MakeLargeAddressAware(string asm) {
+            // https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#characteristics
+            const ushort IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020;
+            using (FileStream stream = File.Open(asm, FileMode.Open, FileAccess.ReadWrite))
+            using (BinaryReader reader = new BinaryReader(stream))
+            using (BinaryWriter writer = new BinaryWriter(stream)) {
+                // Check for MZ header.
+                if (reader.ReadInt16() != 0x5A4D)
+                    return;
+
+                // Skip to the PE header, then check for it.
+                reader.BaseStream.Position = 0x3C;
+                reader.BaseStream.Position = reader.ReadInt32();
+                if (reader.ReadInt32() != 0x4550)
+                    return;
+
+                // Go to the "characteristics" in the header.
+                reader.BaseStream.Position += 0x12;
+
+                // Set the IMAGE_FILE_LARGE_ADDRESS_AWARE flag if not already set.
+                long pos = reader.BaseStream.Position;
+                ushort flags = reader.ReadUInt16();
+                if ((flags & IMAGE_FILE_LARGE_ADDRESS_AWARE) == IMAGE_FILE_LARGE_ADDRESS_AWARE)
+                    return;
+
+                flags |= IMAGE_FILE_LARGE_ADDRESS_AWARE;
+
+                writer.Seek((int) pos, SeekOrigin.Begin);
+                writer.Write(flags);
+                writer.Flush();
+            }
         }
 
         public static void StartGame() {
