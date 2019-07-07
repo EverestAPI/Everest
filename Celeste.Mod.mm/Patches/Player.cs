@@ -17,6 +17,18 @@ namespace Celeste {
 
         private static int diedInGBJ = 0;
         private int framesAlive;
+        private Level level;
+        
+        public new int MaxDashes {
+            get {
+                if (SaveData.Instance.Assists.DashMode != Assists.DashModes.Normal && level?.InCutscene == false) {
+                    return 2;
+                }
+
+                return Inventory.Dashes;
+            }
+        }
+
 
         public bool IsIntroState {
             get {
