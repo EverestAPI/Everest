@@ -39,7 +39,9 @@ namespace Celeste.Mod {
                     lib = "libdiscord-rpc.so";
 
                 if (!string.IsNullOrEmpty(lib))
-                    DynDll.DllMap["discord-rpc"] = lib;
+                    DynDll.Mappings["discord-rpc"] = new DynDllMapping() {
+                        ResolveAs = lib
+                    };
 
                 string discordID = "430794114037055489";
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))
@@ -48,6 +50,7 @@ namespace Celeste.Mod {
                 try {
                     typeof(DiscordRpc).ResolveDynDllImports();
                 } catch (EntryPointNotFoundException) {
+                } catch (DllNotFoundException) {
                 }
                 if (DiscordRpc.Initialize == null) {
                     Logger.Log(LogLevel.Info, "discord", "Discord_Initialize not found - skipping Discord Rich Presence.");

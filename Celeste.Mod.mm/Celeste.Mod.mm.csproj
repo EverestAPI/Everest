@@ -70,29 +70,29 @@
     <Reference Include="Jdenticon, Version=2.2.1.0, Culture=neutral, PublicKeyToken=3fcf9f6e3475a4f8, processorArchitecture=MSIL">
       <HintPath>..\packages\Jdenticon-net.2.2.1\lib\net45\Jdenticon.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil, Version=0.10.3.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.3\lib\net40\Mono.Cecil.dll</HintPath>
+    <Reference Include="Mono.Cecil, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.10.3.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.3\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.10.3.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.3\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.10.3.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.3\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod, Version=19.4.10.9, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.19.4.10.9\lib\net35\MonoMod.exe</HintPath>
+    <Reference Include="MonoMod, Version=19.7.4.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.19.7.4.3\lib\net35\MonoMod.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour, Version=19.4.10.9, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.19.4.10.9\lib\net35\MonoMod.RuntimeDetour.dll</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour, Version=19.7.4.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.19.7.4.3\lib\net35\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=19.4.10.9, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.19.4.10.9\lib\net35\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=19.7.4.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.19.7.4.3\lib\net35\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.Utils, Version=19.4.10.9, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.Utils.19.4.10.9\lib\net35\MonoMod.Utils.dll</HintPath>
+    <Reference Include="MonoMod.Utils, Version=19.7.4.3, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.Utils.19.7.4.3\lib\net35\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -114,7 +114,7 @@
     <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
     <Compile Include="Mod\Entities\CustomNPC.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
-    <Compile Include="Mod\Helpers\ILCursorShim.cs" />
+    <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />
