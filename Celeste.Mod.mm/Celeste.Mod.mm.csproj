@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -233,6 +233,7 @@
     <Compile Include="Patches\Overworld.cs" />
     <Compile Include="Patches\FireBall.cs" />
     <Compile Include="Patches\HeartGem.cs" />
+    <Compile Include="Patches\TheoCrystal.cs" />
     <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
     <Compile Include="Patches\TheoCrystalCollider.cs" />
