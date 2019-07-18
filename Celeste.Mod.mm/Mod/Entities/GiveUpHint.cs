@@ -12,7 +12,7 @@ namespace Celeste.Mod.Entities {
     /// <summary>
     /// Semi-internal entity that shows a hint when giving up.
     /// </summary>
-    public class GiveUpHint : Entity {
+    internal class GiveUpHint : Entity {
 
         private string text;
 

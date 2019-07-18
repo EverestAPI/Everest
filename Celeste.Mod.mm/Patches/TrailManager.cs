@@ -4,12 +4,14 @@ using System;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 
 namespace Celeste {
     public class patch_TrailManager : TrailManager {
         public class patch_Snapshot : Snapshot {
             public extern void orig_Init(TrailManager manager, int index, Vector2 position, Image sprite, PlayerHair hair, Color color, float duration, int depth);
 
+            [MonoModIfFlag("Fill:TrailInitFix")]
             public new void Init(TrailManager manager, int index, Vector2 position, Image sprite, PlayerHair hair, Color color, float duration, int depth) {
                 orig_Init(manager, index, position, sprite, hair, color, duration, depth);
 
@@ -17,7 +19,7 @@ namespace Celeste {
                 // It has been fixed since version 1.2.9.1
                 // http://www.celestegame.com/temp/changelog_tech_test.txt
                 // Fixed rendering bug where Madeline's dash trail could face the wrong way
-                if (!Everest.Flags.IsDisabled && sprite != null && hair != null && Engine.Instance.Version < new Version(1, 2, 9, 1)) {
+                if (!Everest.Flags.IsDisabled && sprite != null && hair != null) {
                     SpriteScale.X = SpriteScale.Abs().X * (int) hair.Facing;
                 }
             }

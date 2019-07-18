@@ -217,6 +217,14 @@ namespace MonoMod {
                 MonoModRule.Flag.Set("Has:IntroSkip", true);
             }
 
+            if (version < new Version(1, 2, 9, 1)) {
+                MonoModRule.Flag.Set("Fill:TrailInitFix", true);
+                MonoModRule.Flag.Set("Fill:ReturnToMapHint", true);
+            } else {
+                MonoModRule.Flag.Set("Fill:TrailInitFix", false);
+                MonoModRule.Flag.Set("Fill:ReturnToMapHint", false);
+            }
+
             MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType")?.SafeResolve() == null);
 
             TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings").Resolve();

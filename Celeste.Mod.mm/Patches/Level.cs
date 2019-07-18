@@ -72,6 +72,7 @@ namespace Celeste {
         }
 
         private extern void orig_GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint);
+        [MonoModIfFlag("Fill:ReturnToMapHint")]
         private void GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint) {
             GiveUpHint hint = null;
             if (!Everest.Flags.IsDisabled && !restartArea && !showHint) {
