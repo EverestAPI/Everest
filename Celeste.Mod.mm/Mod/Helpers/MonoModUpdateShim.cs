@@ -23,6 +23,7 @@ namespace Celeste.Mod.Helpers {
 
         public static class _ILCursor {
             public static void Remove(ILCursor c) => c.Remove();
+            [ShimFromAttribute("System.Void MonoMod.Cil.ILCursor::GotoLabel(MonoMod.Cil.ILLabel)")]
             public static void GotoLabel(ILCursor c, ILLabel label) => c.GotoLabel(label);
             public static void MoveAfterLabel(ILCursor c) => c.MoveAfterLabels();
             public static void MoveBeforeLabel(ILCursor c) => c.MoveBeforeLabels();
