@@ -224,6 +224,8 @@ namespace MonoMod {
                 MonoModRule.Flag.Set("Fill:TrailInitFix", false);
                 MonoModRule.Flag.Set("Fill:ReturnToMapHint", false);
             }
+            
+            MonoModRule.Flag.Set("Fill:TheoCrystalDesyncFix", version <= new Version(1, 2, 9, 1));
 
             MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType")?.SafeResolve() == null);
 

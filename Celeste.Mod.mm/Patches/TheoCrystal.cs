@@ -5,6 +5,7 @@ using System;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 
 namespace Celeste {
     class patch_TheoCrystal : TheoCrystal {
@@ -17,8 +18,9 @@ namespace Celeste {
 
         public extern void orig_HitSpinner(Entity spinner);
 
+        [MonoModIfFlag("Fill:TheoCrystalDesyncFix")]
         public new void HitSpinner(Entity spinner) {
-            if (Engine.Instance.Version > new Version(1, 2, 9, 1) || Everest.Flags.IsDisabled) {
+            if (Everest.Flags.IsDisabled) {
                 orig_HitSpinner(spinner);
                 return;
             }
