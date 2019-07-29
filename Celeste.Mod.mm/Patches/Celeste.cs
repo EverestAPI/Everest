@@ -27,7 +27,7 @@ namespace Celeste {
         public static void Main(string[] args) {
             if (File.Exists("log.txt"))
                 File.Delete("log.txt");
-            using (Stream fileStream = new FileStream("log.txt", FileMode.Open, FileAccess.Write, FileShare.ReadWrite))
+            using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter {
                 STDOUT = Console.Out,
