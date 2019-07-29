@@ -49,8 +49,7 @@ namespace Celeste.Mod {
 
                 try {
                     typeof(DiscordRpc).ResolveDynDllImports();
-                } catch (EntryPointNotFoundException) {
-                } catch (DllNotFoundException) {
+                } catch {
                 }
                 if (DiscordRpc.Initialize == null) {
                     Logger.Log(LogLevel.Info, "discord", "Discord_Initialize not found - skipping Discord Rich Presence.");
