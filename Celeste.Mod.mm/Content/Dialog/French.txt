@@ -38,6 +38,10 @@
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 
+	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
+	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
+	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND=					non trouvé(s)
+
 # Sound Test
 	SOUNDTEST_TITLE=	TEST SONS
 
