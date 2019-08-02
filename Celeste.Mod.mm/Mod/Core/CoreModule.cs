@@ -246,7 +246,9 @@ namespace Celeste.Mod.Core {
                                 }
                             }
 
-                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
+                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
+                                HeightExtra = 0f, TextColor = Color.PaleVioletRed
+                            });
                         }
                     }
                 }
