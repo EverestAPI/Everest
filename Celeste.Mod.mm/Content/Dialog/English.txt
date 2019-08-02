@@ -58,6 +58,7 @@
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
+	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 					not found
 
 # Sound Test
 	SOUNDTEST_TITLE=	SOUND TEST
