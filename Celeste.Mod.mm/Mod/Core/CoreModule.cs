@@ -224,8 +224,32 @@ namespace Celeste.Mod.Core {
                     if (Everest.Loader.Delayed.Count > 0) {
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed)
-                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
+
+                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
+                            string missingDepsString = "";
+                            if(mod.Item1.Dependencies != null) {
+                                // check for missing dependencies
+                                List<EverestModuleMetadata> missingDependencies = mod.Item1.Dependencies
+                                    .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+
+                                if(missingDependencies.Count != 0) {
+                                    // format their names and versions, and join all of them in a single string
+                                    missingDepsString = string.Join(", ", missingDependencies.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
+
+                                    // ensure that string is not too long, or else it would break the display
+                                    if (missingDepsString.Length > 40) {
+                                        missingDepsString = missingDepsString.Substring(0, 40) + "...";
+                                    }
+
+                                    // wrap that in a " ({list} not found)" message
+                                    missingDepsString = $" ({missingDepsString} {Dialog.Clean("modoptions_coremodule_notloaded_notfound")})";
+                                }
+                            }
+
+                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
+                                HeightExtra = 0f, TextColor = Color.PaleVioletRed
+                            });
+                        }
                     }
                 }
 
