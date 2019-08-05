@@ -88,7 +88,7 @@ namespace Celeste.Mod {
 
                 IsMobile = IsAndroid;
 
-                AvoidRenderTargets = IsMobile;
+                AvoidRenderTargets = IsMobile || Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
                 PreferLazyLoading = IsMobile;
                 PreferLQAtlas = IsMobile;
 

@@ -10,6 +10,7 @@
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
     <OutputPath Condition=" '$(TravisCore)' == 'true' ">Artifact\</OutputPath>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -70,6 +71,9 @@
     <Reference Include="Jdenticon, Version=2.2.1.0, Culture=neutral, PublicKeyToken=3fcf9f6e3475a4f8, processorArchitecture=MSIL">
       <HintPath>..\packages\Jdenticon-net.2.2.1\lib\net45\Jdenticon.dll</HintPath>
     </Reference>
+    <Reference Include="KeraLua, Version=1.0.19.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
+      <HintPath>..\packages\KeraLua.1.0.19\lib\net45\KeraLua.dll</HintPath>
+    </Reference>
     <Reference Include="Mono.Cecil, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
@@ -97,6 +101,9 @@
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="NLua, Version=1.4.20.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLua.1.4.20\lib\net45\NLua.dll</HintPath>
+    </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>..\lib-stripped\Steamworks.NET.dll</HintPath>
       <Private>False</Private>
@@ -114,7 +121,10 @@
     <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
     <Compile Include="Mod\Entities\CustomNPC.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
+    <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
+    <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
     <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
+    <Compile Include="Mod\Module\LuaModule.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />
@@ -332,6 +342,9 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
       <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Lua\bootstrap.lua">
+      <LogicalName>Content\Lua\bootstrap.lua</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\lib-ext\discord-rpc.dll">
@@ -374,4 +387,25 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\KeraLua.1.0.19\build\net45\KeraLua.targets" Condition="Exists('..\packages\KeraLua.1.0.19\build\net45\KeraLua.targets')" />
+  <ItemGroup>
+    <Content Include="..\packages\KeraLua.1.0.19\runtimes\linux-x64\native\liblua53.so">
+      <Link>lib64\liblua53.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\packages\KeraLua.1.0.19\runtimes\osx\native\liblua53.dylib">
+      <Link>liblua53.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\packages\KeraLua.1.0.19\runtimes\win-x86\native\lua53.dll">
+      <Link>lua53.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\KeraLua.1.0.19\build\net45\KeraLua.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\KeraLua.1.0.19\build\net45\KeraLua.targets'))" />
+  </Target>
 </Project>

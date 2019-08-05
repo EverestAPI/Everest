@@ -262,6 +262,15 @@ namespace Celeste.Mod {
                 return Assembly.LoadFrom(Path.Combine(PathGame, asmName.Name + ".dll"));
             };
 
+            // Preload some basic dependencies.
+            Assembly.Load("FNA");
+            Assembly.Load("MonoMod.RuntimeDetour");
+            Assembly.Load("MonoMod.Utils");
+            Assembly.Load("Mono.Cecil");
+            Assembly.Load("YamlDotNet");
+            Assembly.Load("Newtonsoft.Json");
+            Assembly.Load("Jdenticon");
+
             if (!File.Exists(Path.Combine(PathGame, "EverestXDGFlag"))) {
                 XDGPaths = false;
                 PathEverest = PathGame;
@@ -305,6 +314,8 @@ namespace Celeste.Mod {
                 Name = "DialogCutscene",
                 VersionString = "1.0.0"
             }).Register();
+
+            LuaLoader.Initialize();
 
             Loader.LoadAuto();
 
