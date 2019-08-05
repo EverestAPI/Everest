@@ -70,7 +70,41 @@ namespace Celeste.Mod {
                     return reader.ReadToEnd();
             };
 
-            private static Func<MethodBase, LuaFunction, Hook> _Hook = (from, to) => {
+            private static Func<string, string, LuaFunction, Hook> _Hook = (fromTypeName, fromID, to) => {
+                Type fromType = Type.GetType(fromTypeName);
+                if (fromType == null) {
+                    foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+                        Type type = asm.GetType(fromTypeName);
+                        if (type != null) {
+                            fromType = type;
+                            break;
+                        }
+                    }
+                }
+
+                MethodBase from = null;
+                IEnumerable<MethodBase> methods =
+                    fromType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Cast<MethodBase>()
+                    .Concat(fromType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static));
+
+                if (!fromID.Contains(" ")) {
+                    foreach (MethodInfo method in methods) {
+                        if (method.GetFindableID(withType: false, simple: true) == fromID) {
+                            from = method;
+                            break;
+                        }
+                    }
+                }
+
+                if (from == null) {
+                    foreach (MethodInfo method in methods) {
+                        if (method.GetFindableID(withType: false) == fromID) {
+                            from = method;
+                            break;
+                        }
+                    }
+                }
+
                 ParameterInfo[] args = from.GetParameters();
                 Type[] argTypes;
                 Type[] argTypesOrig;

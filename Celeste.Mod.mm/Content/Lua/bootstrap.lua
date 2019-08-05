@@ -79,8 +79,7 @@ local function init(_preload, _vfs, hook)
 
     --[[
     local color = require("Microsoft.Xna.Framework.Color")
-    local h = hook(
-        luanet.ctype(require("Celeste.PlayerHair")):GetMethod("GetHairColor"),
+    hook("Celeste.PlayerHair", "GetHairColor",
         function(orig, self, index)
             return color(123, 234, 0, 255)
         end
