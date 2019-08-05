@@ -263,7 +263,6 @@ namespace Celeste.Mod {
             };
 
             // Preload some basic dependencies.
-            Assembly.Load("FNA");
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
             Assembly.Load("Mono.Cecil");

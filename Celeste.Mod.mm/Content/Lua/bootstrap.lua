@@ -85,7 +85,7 @@ local function init(_preload, _vfs, hook)
             return color(123, 234, 0, 255)
         end
     )
-    ]]--
+    --]]
 end
 
 return init, luanet.load_assembly
