@@ -11,6 +11,7 @@ using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using MonoMod.Cil;
 using Mono.Cecil.Cil;
+using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -18,28 +19,88 @@ namespace Celeste.Mod {
 
             public static Lua Context { get; private set; }
 
+            public static readonly CachedNamespace Global = new CachedNamespace(null, null);
+            private static readonly Dictionary<string, CachedNamespace> _AllNamespaces = new Dictionary<string, CachedNamespace>();
+            private static readonly Dictionary<string, CachedType> _AllTypes = new Dictionary<string, CachedType>();
+            private static readonly HashSet<string> _Preloaded = new HashSet<string>();
+
             private static readonly MethodInfo m_LuaFunction_Call = typeof(LuaFunction).GetMethod("Call");
+
+            internal static void Initialize() {
+                Stream stream = null;
+                string text;
+                try {
+                    string pathOverride = Path.Combine(PathEverest, "bootstrap.lua");
+                    if (File.Exists(pathOverride)) {
+                        Logger.Log("Everest.LuaLoader", "Found external Lua bootstrap script.");
+                        stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
+
+                    } else if (Content.TryGet<AssetTypeLua>("Lua/bootstrap", out ModAsset asset)) {
+                        Logger.Log("Everest.LuaLoader", "Found built-in Lua bootstrap script.");
+                        stream = asset.Stream;
+                    }
+
+                    if (stream == null) {
+                        Logger.Log(LogLevel.Warn, "Everest.LuaLoader", "Lua bootstrap script not found, disabling Lua mod support.");
+                        return;
+                    }
+
+                    Logger.Log("Everest.LuaLoader", "Creating Lua context and running Lua bootstrap script.");
+
+                    using (StreamReader reader = new StreamReader(stream))
+                        text = reader.ReadToEnd();
+
+                } finally {
+                    stream?.Dispose();
+                }
+
+                Context = new Lua();
+                Context.UseTraceback = true;
+
+                object[] rva = Context.DoString(text, "bootstrap");
+
+                LuaFunction load_assembly = (LuaFunction) rva[1];
+                _LoadAssembly = name => load_assembly.Call(name);
+
+                _AllNamespaces[""] = Global;
+                foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
+                     _Precache(asm);
+                }
+
+                LuaFunction init = (LuaFunction) rva[0];
+                rva = init.Call(_Preload, _VFS);
+                if (rva != null) {
+                    foreach (object rv in rva)
+                        Console.WriteLine(rv);
+                }
+            }
 
             private static Func<string, bool> _Preload = name => {
                 if (string.IsNullOrEmpty(name))
                     return false;
 
+                if (_Preloaded.Contains(name))
+                    return true;
+
                 Type type = Type.GetType(name);
                 if (type != null) {
-                    _LoadAssembly(type.Assembly.FullName);
+                    _Preloaded.Add(name);
+                    _Preloaded.Add(type.FullName);
+                    _Precache(type.Assembly);
                     return true;
                 }
 
                 Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (Assembly asm in asms) {
-                    if (asm.GetName().Name == name) {
-                        _LoadAssembly(asm.FullName);
+                    if (asm.GetName().Name == name || asm.FullName == name) {
+                        _Precache(asm);
                         return true;
                     }
 
                     type = asm.GetType(name);
                     if (type != null) {
-                        _LoadAssembly(asm.FullName);
+                        _Preloaded.Add(type.FullName);
+                        _Precache(asm);
                         return true;
                     }
                 }
@@ -50,7 +111,8 @@ namespace Celeste.Mod {
                         if (!expType.IsPublic)
                             continue;
                         if (expType.FullName.StartsWith(name)) {
-                            _LoadAssembly(asm.FullName);
+                            _Preloaded.Add(name);
+                            _Precache(asm);
                             return true;
                         }
                     }
@@ -58,6 +120,47 @@ namespace Celeste.Mod {
 
                 return false;
             };
+
+            private static void _Precache(Assembly asm) {
+                _Preloaded.Add(asm.GetName().Name);
+                _Preloaded.Add(asm.FullName);
+
+                try {
+                    _LoadAssembly(asm.FullName);
+                } catch {
+                    // no-op.
+                }
+
+                foreach (Type type in asm.GetTypes()) {
+                    if (!type.IsPublic)
+                        continue;
+
+                    _Preloaded.Add(type.FullName);
+
+                    if (!_AllNamespaces.TryGetValue(type.Namespace ?? "", out CachedNamespace cns)) {
+                        string ns = type.Namespace;
+                        CachedNamespace cnsPrev = Global;
+                        for (int i = 0, iPrev = -1; i != -1; iPrev = i, cnsPrev = cns) {
+                            i = ns.IndexOf('.', iPrev + 1);
+                            string part = i == -1 ? ns.Substring(iPrev + 1) : ns.Substring(iPrev + 1, i - iPrev - 1);
+
+                            if (cnsPrev.NamespaceMap.TryGetValue(part, out cns))
+                                continue;
+
+                            cns = new CachedNamespace(cnsPrev, part);
+                            cnsPrev.NamespaceMap[part] = cns;
+                            _AllNamespaces[cns.FullName] = cns;
+                        }
+                    }
+
+                    if (!_AllTypes.TryGetValue(type.FullName, out CachedType ctype)) {
+                        string part = type.Name;
+                        ctype = new CachedType(cns, part, type);
+                        cns.TypeMap[part] = ctype;
+                        _AllTypes[ctype.FullName] = ctype;
+                    }
+                }
+            }
 
             private static Func<string, string> _VFS = name => {
                 if (string.IsNullOrEmpty(name))
@@ -190,50 +293,6 @@ namespace Celeste.Mod {
             };
 
             private static Action<string> _LoadAssembly;
-
-            internal static void Initialize() {
-                Stream stream = null;
-                string text;
-                try {
-                    string pathOverride = Path.Combine(PathEverest, "bootstrap.lua");
-                    if (File.Exists(pathOverride)) {
-                        Logger.Log("Everest.LuaLoader", "Found external Lua bootstrap script.");
-                        stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
-
-                    } else if (Content.TryGet<AssetTypeLua>("Lua/bootstrap", out ModAsset asset)) {
-                        Logger.Log("Everest.LuaLoader", "Found built-in Lua bootstrap script.");
-                        stream = asset.Stream;
-                    }
-
-                    if (stream == null) {
-                        Logger.Log(LogLevel.Warn, "Everest.LuaLoader", "Lua bootstrap script not found, disabling Lua mod support.");
-                        return;
-                    }
-
-                    Logger.Log("Everest.LuaLoader", "Creating Lua context and running Lua bootstrap script.");
-
-                    using (StreamReader reader = new StreamReader(stream))
-                        text = reader.ReadToEnd();
-
-                } finally {
-                    stream?.Dispose();
-                }
-
-                Context = new Lua();
-                Context.UseTraceback = true;
-
-                object[] rva = Context.DoString(text, "bootstrap");
-
-                LuaFunction load_assembly = (LuaFunction) rva[1];
-                _LoadAssembly = name => load_assembly.Call(name);
-                
-                LuaFunction init = (LuaFunction) rva[0];
-                rva = init.Call(_Preload, _VFS, _Hook);
-                if (rva != null) {
-                    foreach (object rv in rva)
-                        Console.WriteLine(rv);
-                }
-            }
 
         }
     }
