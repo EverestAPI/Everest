@@ -4,6 +4,7 @@ using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;

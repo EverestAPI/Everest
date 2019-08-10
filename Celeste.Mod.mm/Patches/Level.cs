@@ -15,6 +15,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using Celeste.Mod.Meta;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Level : Level {

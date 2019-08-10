@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using MonoMod.Utils;
 
 namespace Celeste.Mod {
     public static partial class Everest {

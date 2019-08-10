@@ -3,6 +3,7 @@
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 
 namespace Monocle {

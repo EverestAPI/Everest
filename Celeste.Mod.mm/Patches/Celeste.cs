@@ -9,11 +9,13 @@ using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,6 +27,10 @@ namespace Celeste {
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
+            if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                AllocConsole();
+            }
+
             if (File.Exists("log.txt"))
                 File.Delete("log.txt");
             using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
@@ -44,6 +50,9 @@ namespace Celeste {
                 logWriter.STDOUT = null;
             }
         }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool AllocConsole();
 
         // Patching constructors is ugly.
         public extern void orig_ctor_Celeste();
