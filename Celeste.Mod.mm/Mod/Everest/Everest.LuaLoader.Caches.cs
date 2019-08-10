@@ -27,7 +27,7 @@ namespace Celeste.Mod {
                 public readonly Dictionary<string, CachedType> TypeMap = new Dictionary<string, CachedType>();
                 public CachedType[] Types => TypeMap.Values.ToArray();
 
-                public object[] All => TypeMap.Values.Cast<object>().Concat(NamespaceMap.Values).ToArray();
+                public int Count => NamespaceMap.Count + TypeMap.Count;
 
                 public CachedNamespace(CachedNamespace ns, string name) {
                     Name = name;
@@ -50,15 +50,44 @@ namespace Celeste.Mod {
 
             public class CachedType {
                 public readonly string Name;
-                public readonly CachedNamespace Parent;
+                public readonly CachedNamespace Namespace;
+                public readonly CachedType Parent;
                 public readonly string FullName;
                 public readonly Type Type;
+                public readonly ProxyType ProxyType;
 
-                public CachedType(CachedNamespace ns, string name, Type type) {
-                    Name = name;
-                    Parent = ns;
-                    FullName = ns?.Name == null ? name : (ns.FullName + "." + name);
+                public readonly Dictionary<string, CachedType> NestedTypeMap = new Dictionary<string, CachedType>();
+                public CachedType[] NestedTypes => NestedTypeMap.Values.ToArray();
+
+                private CachedType(Type type) {
+                    Name = type.Name;
                     Type = type;
+                    ProxyType = new ProxyType(type);
+                    FullName = type.FullName;
+
+                    _Crawl();
+                }
+
+                public CachedType(CachedNamespace ns, Type type)
+                    : this(type) {
+                    Namespace = ns;
+                }
+
+                public CachedType(CachedType parent, Type type)
+                    : this(type) {
+                    Parent = parent;
+                }
+
+                private void _Crawl() {
+                    foreach (Type type in Type.GetNestedTypes()) {
+                        if (!type.IsNestedPublic)
+                            continue;
+
+                        string part = type.Name;
+                        CachedType ctype = new CachedType(this, type);
+                        NestedTypeMap[part] = ctype;
+                        AllTypes[ctype.FullName] = ctype;
+                    }
                 }
             }
 

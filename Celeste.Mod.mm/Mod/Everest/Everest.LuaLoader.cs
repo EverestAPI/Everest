@@ -20,8 +20,8 @@ namespace Celeste.Mod {
             public static Lua Context { get; private set; }
 
             public static readonly CachedNamespace Global = new CachedNamespace(null, null);
-            private static readonly Dictionary<string, CachedNamespace> _AllNamespaces = new Dictionary<string, CachedNamespace>();
-            private static readonly Dictionary<string, CachedType> _AllTypes = new Dictionary<string, CachedType>();
+            public static readonly Dictionary<string, CachedNamespace> AllNamespaces = new Dictionary<string, CachedNamespace>();
+            public static readonly Dictionary<string, CachedType> AllTypes = new Dictionary<string, CachedType>();
             private static readonly HashSet<string> _Preloaded = new HashSet<string>();
 
             private static readonly MethodInfo m_LuaFunction_Call = typeof(LuaFunction).GetMethod("Call");
@@ -30,22 +30,22 @@ namespace Celeste.Mod {
                 Stream stream = null;
                 string text;
                 try {
-                    string pathOverride = Path.Combine(PathEverest, "bootstrap.lua");
+                    string pathOverride = Path.Combine(PathEverest, "boot.lua");
                     if (File.Exists(pathOverride)) {
-                        Logger.Log("Everest.LuaLoader", "Found external Lua bootstrap script.");
+                        Logger.Log("Everest.LuaLoader", "Found external Lua boot script.");
                         stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
 
-                    } else if (Content.TryGet<AssetTypeLua>("Lua/bootstrap", out ModAsset asset)) {
-                        Logger.Log("Everest.LuaLoader", "Found built-in Lua bootstrap script.");
+                    } else if (Content.TryGet<AssetTypeLua>("Lua/boot", out ModAsset asset)) {
+                        Logger.Log("Everest.LuaLoader", "Found built-in Lua boot script.");
                         stream = asset.Stream;
                     }
 
                     if (stream == null) {
-                        Logger.Log(LogLevel.Warn, "Everest.LuaLoader", "Lua bootstrap script not found, disabling Lua mod support.");
+                        Logger.Log(LogLevel.Warn, "Everest.LuaLoader", "Lua boot script not found, disabling Lua mod support.");
                         return;
                     }
 
-                    Logger.Log("Everest.LuaLoader", "Creating Lua context and running Lua bootstrap script.");
+                    Logger.Log("Everest.LuaLoader", "Creating Lua context and running Lua boot script.");
 
                     using (StreamReader reader = new StreamReader(stream))
                         text = reader.ReadToEnd();
@@ -57,22 +57,23 @@ namespace Celeste.Mod {
                 Context = new Lua();
                 Context.UseTraceback = true;
 
-                object[] rva = Context.DoString(text, "bootstrap");
+                object[] rva = Context.DoString(text, "boot");
 
                 LuaFunction load_assembly = (LuaFunction) rva[1];
                 _LoadAssembly = name => load_assembly.Call(name);
 
-                _AllNamespaces[""] = Global;
+                AllNamespaces[""] = Global;
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
                      _Precache(asm);
                 }
 
                 LuaFunction init = (LuaFunction) rva[0];
-                rva = init.Call(_Preload, _VFS);
+                rva = init.Call(_Preload, _VFS, _Hook);
                 if (rva != null) {
                     foreach (object rv in rva)
                         Console.WriteLine(rv);
                 }
+
             }
 
             private static Func<string, bool> _Preload = name => {
@@ -137,7 +138,7 @@ namespace Celeste.Mod {
 
                     _Preloaded.Add(type.FullName);
 
-                    if (!_AllNamespaces.TryGetValue(type.Namespace ?? "", out CachedNamespace cns)) {
+                    if (!AllNamespaces.TryGetValue(type.Namespace ?? "", out CachedNamespace cns)) {
                         string ns = type.Namespace;
                         CachedNamespace cnsPrev = Global;
                         for (int i = 0, iPrev = -1; i != -1; iPrev = i, cnsPrev = cns) {
@@ -149,15 +150,15 @@ namespace Celeste.Mod {
 
                             cns = new CachedNamespace(cnsPrev, part);
                             cnsPrev.NamespaceMap[part] = cns;
-                            _AllNamespaces[cns.FullName] = cns;
+                            AllNamespaces[cns.FullName] = cns;
                         }
                     }
 
-                    if (!_AllTypes.TryGetValue(type.FullName, out CachedType ctype)) {
+                    if (!AllTypes.TryGetValue(type.FullName, out CachedType ctype)) {
                         string part = type.Name;
-                        ctype = new CachedType(cns, part, type);
+                        ctype = new CachedType(cns, type);
                         cns.TypeMap[part] = ctype;
-                        _AllTypes[ctype.FullName] = ctype;
+                        AllTypes[ctype.FullName] = ctype;
                     }
                 }
             }
@@ -173,41 +174,7 @@ namespace Celeste.Mod {
                     return reader.ReadToEnd();
             };
 
-            private static Func<string, string, LuaFunction, Hook> _Hook = (fromTypeName, fromID, to) => {
-                Type fromType = Type.GetType(fromTypeName);
-                if (fromType == null) {
-                    foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-                        Type type = asm.GetType(fromTypeName);
-                        if (type != null) {
-                            fromType = type;
-                            break;
-                        }
-                    }
-                }
-
-                MethodBase from = null;
-                IEnumerable<MethodBase> methods =
-                    fromType.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static).Cast<MethodBase>()
-                    .Concat(fromType.GetConstructors(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static));
-
-                if (!fromID.Contains(" ")) {
-                    foreach (MethodInfo method in methods) {
-                        if (method.GetFindableID(withType: false, simple: true) == fromID) {
-                            from = method;
-                            break;
-                        }
-                    }
-                }
-
-                if (from == null) {
-                    foreach (MethodInfo method in methods) {
-                        if (method.GetFindableID(withType: false) == fromID) {
-                            from = method;
-                            break;
-                        }
-                    }
-                }
-
+            private static Func<MethodBase, LuaFunction, Hook> _Hook = (from, to) => {
                 ParameterInfo[] args = from.GetParameters();
                 Type[] argTypes;
                 Type[] argTypesOrig;
