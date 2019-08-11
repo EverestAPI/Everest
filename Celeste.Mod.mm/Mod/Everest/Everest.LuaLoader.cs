@@ -62,6 +62,9 @@ namespace Celeste.Mod {
                 LuaFunction load_assembly = (LuaFunction) rva[1];
                 _LoadAssembly = name => load_assembly.Call(name);
 
+                LuaFunction require = (LuaFunction) rva[2];
+                _Require = name => require.Call(name);
+
                 AllNamespaces[""] = Global;
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
                      _Precache(asm);
@@ -251,7 +254,7 @@ namespace Celeste.Mod {
 
                 // NLua hates DynamicMethods.
                 string dmdType = Environment.GetEnvironmentVariable("MONOMOD_DMD_TYPE");
-                Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", "MethodBuilder");
+                Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", "Cecil");
                 try {
                     return new Hook(from, proxy);
                 } finally {
@@ -260,6 +263,9 @@ namespace Celeste.Mod {
             };
 
             private static Action<string> _LoadAssembly;
+
+            private static Func<string, object[]> _Require;
+            public static object[] Require(string name) => _Require(name);
 
         }
     }

@@ -315,9 +315,9 @@ namespace Celeste.Mod {
                         return;
                     }
 
-                LoadMod(meta);
-
                 callback?.Invoke();
+
+                LoadMod(meta);
             }
 
             /// <summary>
@@ -336,15 +336,10 @@ namespace Celeste.Mod {
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
 
-                if (string.IsNullOrEmpty(meta.DLL)) {
-                    // Register a null module for content mods.
-                    new NullModule(meta).Register();
-                    return;
-                }
-
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                    bool returnEarly = false;
                     using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                         foreach (ZipEntry entry in zip.Entries) {
                             string entryName = entry.FileName.Replace('\\', '/');
@@ -357,19 +352,39 @@ namespace Celeste.Mod {
                                     }
                                 }
                             }
+
+                            if (entryName == "main.lua") {
+                                new LuaModule(meta).Register();
+                                returnEarly = true;
+                            }
                         }
                     }
 
+                    if (returnEarly)
+                        return;
+
                 } else {
-                    if (meta.Prelinked)
-                        asm = Assembly.LoadFrom(meta.DLL);
-                    else
-                        using (FileStream stream = File.OpenRead(meta.DLL))
-                            asm = Relinker.GetRelinkedAssembly(meta, stream);
+                    if (!string.IsNullOrEmpty(meta.DLL) && File.Exists(meta.DLL)) {
+                        if (meta.Prelinked)
+                            asm = Assembly.LoadFrom(meta.DLL);
+                        else
+                            using (FileStream stream = File.OpenRead(meta.DLL))
+                                asm = Relinker.GetRelinkedAssembly(meta, stream);
+                    }
+
+                    if (File.Exists(Path.Combine(meta.PathDirectory, "main.lua"))) {
+                        new LuaModule(meta).Register();
+                        return;
+                    }
                 }
 
-                if (asm != null)
-                    LoadModAssembly(meta, asm);
+                if (asm == null) {
+                    // Register a null module for content mods.
+                    new NullModule(meta).Register();
+                    return;
+                }
+
+                LoadModAssembly(meta, asm);
             }
 
             /// <summary>

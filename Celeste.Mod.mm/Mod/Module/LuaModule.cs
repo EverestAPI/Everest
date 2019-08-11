@@ -23,7 +23,7 @@ namespace Celeste.Mod {
         public LuaModule(EverestModuleMetadata metadata) {
             Metadata = metadata;
 
-            Everest.LuaLoader.Context.DoFile(metadata.DLL);
+            Everest.LuaLoader.Require(metadata.Name + ":main");
         }
 
         public override void Load() {

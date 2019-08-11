@@ -325,7 +325,6 @@ function mtType:__index(key)
     local status, value = pcall(function() return proxy[members and members[1].Name or key] end)
 
     if not status and members and not members[1].IsStatic then
-        -- FIXME: Allow accessing instance methods via (static) type tables!
         return marshalToLua["luaNet_function"]({}, nil, members)
     end
 
@@ -408,6 +407,13 @@ end
 function mtFunction:__call(...)
     local overloads = rawget(self, _node)
     local proxy = rawget(self, _proxy)
+    if not proxy then
+        local self = ...
+        if self then
+            return self[overloads[1].Name](...)
+        end
+        error("C# instance methods require an instance to be called with!", 2)
+    end
 
     local args = table.pack(...)
     for _, overload in ipairs(overloads) do
@@ -438,6 +444,9 @@ local function loaderVirtualFS(name)
     local status, data = pcall(vfs, name)
     if not status then
         return data
+    end
+    if not data then
+        return "Packed Lua script not found: " .. name
     end
 
     return assert(load(data, name))
@@ -471,7 +480,6 @@ local function init(_preload, _vfs, _hook)
     print(V2.length(v))
     print(V2.length({1, 2.5}))
 
-    local color = microsoft.xna.framework.color
     celeste.playerHair.getHairColor:hook(
         function(orig, self, index)
             return {123, 234, 0, 255}
@@ -481,4 +489,4 @@ local function init(_preload, _vfs, _hook)
 
 end
 
-return init, luanet.load_assembly
+return init, luanet.load_assembly, require

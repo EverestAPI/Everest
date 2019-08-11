@@ -343,8 +343,8 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
       <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="Content\Lua\bootstrap.lua">
-      <LogicalName>Content\Lua\bootstrap.lua</LogicalName>
+    <EmbeddedResource Include="Content\Lua\boot.lua">
+      <LogicalName>Content\Lua\boot.lua</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
