@@ -441,7 +441,7 @@ end
 -- require() loader for .lua files inside of mod containers
 local vfs
 local function loaderVirtualFS(name)
-    local status, data = pcall(vfs, name)
+    local status, data = pcall(vfs, debug.getinfo(2, "S").source, name)
     if not status then
         return data
     end

@@ -195,6 +195,8 @@ namespace Celeste.Mod {
             internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
             internal readonly static List<WeakReference> LoadedAssets = new List<WeakReference>();
 
+            internal readonly static char[] DirSplit = { '/' };
+
             internal static void Initialize() {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
@@ -254,6 +256,26 @@ namespace Celeste.Mod {
             public static bool TryGet<T>(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
+                List<string> parts = new List<string>(path.Split(DirSplit, StringSplitOptions.RemoveEmptyEntries));
+                for (int i = 0; i < parts.Count; i++) {
+                    string part = parts[i];
+
+                    if (part == "..") {
+                        parts.RemoveAt(i);
+                        parts.RemoveAt(i - 1);
+                        i -= 2;
+                        continue;
+                    }
+
+                    if (part == ".") {
+                        parts.RemoveAt(i);
+                        i -= 1;
+                        continue;
+                    }
+                }
+
+                path = string.Join("/", parts);
+
                 if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
                     return true;
                 if (Map.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
@@ -299,11 +321,11 @@ namespace Celeste.Mod {
                 if (metadata.Type == typeof(AssetTypeDirectory)) {
                     MapDirs[path] = metadata;
                     if (prefix != null)
-                        MapDirs[prefix + ":" + path] = metadata;
+                        MapDirs[$"{prefix}:/{path}"] = metadata;
                 } else {
                     Map[path] = metadata;
                     if (prefix != null)
-                        Map[prefix + ":" + path] = metadata;
+                        Map[$"{prefix}:/{path}"] = metadata;
                 }
 
                 // If we're not already the highest level shadow "node"...

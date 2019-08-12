@@ -166,16 +166,36 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static Func<string, string> _VFS = name => {
+            private static Func<string, string, string> _VFS = (ctx, name) => {
                 if (string.IsNullOrEmpty(name))
                     return null;
 
-                if (!Content.TryGet<AssetTypeLua>(name, out ModAsset asset))
-                    return null;
+                name = name.Replace('.', '/');
 
+                if (!string.IsNullOrEmpty(ctx)) {
+                    int indexOfColon = ctx.IndexOf(':');
+                    if (indexOfColon == -1) {
+                        ctx = null;
+                    } else {
+                        ctx = ctx.Substring(0, indexOfColon + 1);
+                    }
+                }
+
+                ModAsset asset;
+
+                if ((string.IsNullOrEmpty(ctx) || !name.Contains(":")) && !Content.TryGet<AssetTypeLua>(ctx + "/" + name, out asset))
+                    return ReadText(asset);
+
+                if (Content.TryGet<AssetTypeLua>(name, out asset))
+                    return ReadText(asset);
+
+                return null;
+            };
+
+            private static string ReadText(ModAsset asset) {
                 using (StreamReader reader = new StreamReader(asset.Stream))
                     return reader.ReadToEnd();
-            };
+            }
 
             private static Func<MethodBase, LuaFunction, Hook> _Hook = (from, to) => {
                 ParameterInfo[] args = from.GetParameters();
