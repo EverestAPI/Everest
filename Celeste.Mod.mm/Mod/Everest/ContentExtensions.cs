@@ -44,11 +44,37 @@ namespace Celeste.Mod {
             input.Texture.Texture.GetData(dataInput);
             Color[] dataOutput = new Color[input.ClipRect.Width * input.ClipRect.Height];
 
-            for (int y = 0; y < input.ClipRect.Height; y++)
-                for (int x = 0; x < input.ClipRect.Width; x++)
+            for (int y = input.ClipRect.Height - 1; y > -1; y--)
+                for (int x = input.ClipRect.Width - 1; x > -1; x--)
                     dataOutput[y * input.ClipRect.Width + x] = dataInput[(input.ClipRect.Y + y) * input.Texture.Texture.Width + input.ClipRect.X + x];
 
             Texture2D output = new Texture2D(Celeste.Instance.GraphicsDevice, input.ClipRect.Width, input.ClipRect.Height);
+            output.SetData(dataOutput);
+            return output;
+        }
+
+        /// <summary>
+        /// Create a new, standalone copy of the region accessed via the MTexture, with padding.
+        /// </summary>
+        /// <param name="input">The input texture.</param>
+        /// <returns>The output texture, matching the input MTexture's Width and Height, with padding.</returns>
+        public static Texture2D GetPaddedSubtextureCopy(this MTexture input) {
+            if (input == null)
+                return null;
+            // TODO: Non-copy-to-CPU codepath!
+
+            Color[] dataInput = new Color[input.Texture.Texture.Width * input.Texture.Texture.Height];
+            input.Texture.Texture.GetData(dataInput);
+            Color[] dataOutput = new Color[input.Width * input.Height];
+
+            int xo = (int) Math.Round(input.DrawOffset.X);
+            int yo = (int) Math.Round(input.DrawOffset.Y) * input.Width;
+
+            for (int y = input.ClipRect.Height - 1; y > -1; y--)
+                for (int x = input.ClipRect.Width - 1; x > -1; x--)
+                    dataOutput[y * input.Width + x + yo + xo] = dataInput[(input.ClipRect.Y + y) * input.Texture.Texture.Width + input.ClipRect.X + x];
+
+            Texture2D output = new Texture2D(Celeste.Instance.GraphicsDevice, input.Width, input.Height);
             output.SetData(dataOutput);
             return output;
         }

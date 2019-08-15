@@ -585,9 +585,10 @@ namespace Celeste.Mod {
                 } else if (asset is MTexture) {
                     MTexture tex = (MTexture) asset;
                     // Always copy even if !.IsSubtexture() as we need to Postdivide()
-                    using (Texture2D region = tex.GetSubtextureCopy().Postdivide())
+                    using (Texture2D region = tex.GetPaddedSubtextureCopy().Postdivide())
                         Dump(assetName, region);
 
+                    /*
                     if (tex.DrawOffset.X != 0 || tex.DrawOffset.Y != 0 ||
                         tex.Width != tex.ClipRect.Width || tex.Height != tex.ClipRect.Height
                     ) {
@@ -598,6 +599,7 @@ namespace Celeste.Mod {
                             Height = tex.Height
                         });
                     }
+                    */
 
                 } else if (asset is Atlas) {
                     Atlas atlas = (Atlas) asset;
