@@ -28,10 +28,14 @@ namespace Monocle {
             try {
                 Run();
             } catch (Exception e) {
+                // Lazy loading can cause some issues, f.e. vanishing outlines on dust bunnies.
+                // It thus shouldn't be enabled automatically.
+                /*
                 if (e is OutOfMemoryException && CoreModule.Instance?._Settings != null && !CoreModule.Settings.LazyLoading) {
                     CoreModule.Settings.LazyLoading = true;
                     CoreModule.Instance.SaveSettings();
                 }
+                */
 
                 ErrorLog.Write(e);
                 ErrorLog.Open();

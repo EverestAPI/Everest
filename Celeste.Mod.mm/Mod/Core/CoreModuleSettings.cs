@@ -50,10 +50,16 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool ShowModOptionsInGame { get; set; } = true;
 
+        [SettingIgnore]
+        public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
-        // TODO: Show as advanced setting.
-        public bool LazyLoading { get; set; } = false;
+        [SettingIgnore] // TODO: Show as advanced setting.
+        [YamlIgnore]
+        public bool LazyLoading {
+            get => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs;
+            set => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs = value;
+        }
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
