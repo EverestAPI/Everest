@@ -46,11 +46,16 @@ namespace Celeste {
             LoadOriginalLanguageFiles = false;
             LoadModLanguageFiles = true;
 
+            // Check all installed mods to find out which languages exist.
+            HashSet<string> languagesToLoad = new HashSet<string>();
             foreach (ModAsset asset in Everest.Content.Map.Values) {
-                if (!asset.PathVirtual.StartsWith("Dialog/"))
-                    continue;
-                LoadLanguage(Path.Combine(Engine.ContentDirectory, "Dialog", asset.PathVirtual.Substring(7) + ".txt"));
+                if (asset.PathVirtual.StartsWith("Dialog/"))
+                    languagesToLoad.Add(asset.PathVirtual.Substring(7));
             }
+
+            // Load all languages that were found.
+            foreach (string language in languagesToLoad)
+                LoadLanguage(Path.Combine(Engine.ContentDirectory, "Dialog", language + ".txt"));
 
             // Remove all empty dummy languages.
             HashSet<string> dummies = new HashSet<string>();
