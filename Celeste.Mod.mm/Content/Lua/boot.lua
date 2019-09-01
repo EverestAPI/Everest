@@ -46,7 +46,7 @@ local function getMembers(ctype, key)
     
     local field = type:GetField(key) or type:GetField(keySharp)
     if field then
-        return { field }, field.PropertyType
+        return { field }, field.FieldType
     end
 
     local all = type:GetMembers()
