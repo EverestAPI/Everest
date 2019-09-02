@@ -27,8 +27,31 @@ namespace Celeste {
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
+            if (File.Exists("launch.txt")) {
+                args =
+                    File.ReadAllLines("launch.txt")
+                    .Select(l => l.Trim())
+                    .Where(l => !l.StartsWith("#"))
+                    .SelectMany(l => l.Split(' '))
+                    .Concat(args)
+                    .ToArray();
+            } else {
+                using (StreamWriter writer = File.CreateText("launch.txt")) {
+                    writer.WriteLine("# Add any launch flags here. Lines starting with # are ignored.");
+                    writer.WriteLine();
+                    writer.WriteLine("# If you're having graphics issues with the FNA version on Windows,");
+                    writer.WriteLine("# remove the # from the following line to enable using Direct3D.");
+                    writer.WriteLine("#--d3d");
+                }
+            }
+
             if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
                 AllocConsole();
+            }
+
+            if ((args.Contains("--angle") || args.Contains("--d3d") || args.Contains("--d3d11")) && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_ES3", "1");
+                Environment.SetEnvironmentVariable("SDL_OPENGL_ES_DRIVER", "1");
             }
 
             if (File.Exists("log.txt"))
