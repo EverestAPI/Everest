@@ -37,7 +37,7 @@ namespace Celeste {
                     .ToArray();
             } else {
                 using (StreamWriter writer = File.CreateText("launch.txt")) {
-                    writer.WriteLine("# Add any launch flags here. Lines starting with # are ignored.");
+                    writer.WriteLine("# Add any Everest launch flags here. Lines starting with # are ignored.");
                     writer.WriteLine();
                     writer.WriteLine("# If you're having graphics issues with the FNA version on Windows,");
                     writer.WriteLine("# remove the # from the following line to enable using Direct3D.");
