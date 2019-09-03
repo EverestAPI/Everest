@@ -256,7 +256,13 @@ namespace Celeste.Mod {
 
                     modder.AutoPatch();
 
-                    modder.Write();
+                    try {
+                        modder.WriterParameters.WriteSymbols = true;
+                        modder.Write();
+                    } catch {
+                        modder.WriterParameters.WriteSymbols = false;
+                        modder.Write();
+                    }
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}");
                     e.LogDetailed();
