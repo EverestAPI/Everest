@@ -47,7 +47,7 @@ namespace Celeste {
                     writer.WriteLine();
                     writer.WriteLine("# If you've got an Intel GPU, are using the FNA version on Windows and");
                     writer.WriteLine("# are 100% sure that you want to use Intel's possibly broken OpenGL drivers,");
-                    writer.WriteLine("# remove the # from the following line to disable .");
+                    writer.WriteLine("# remove the # from the following line to revert to using OpenGL.");
                     writer.WriteLine("#--no-d3d");
                     writer.WriteLine();
                 }
