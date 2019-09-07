@@ -13,8 +13,10 @@ using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -42,6 +44,12 @@ namespace Celeste {
                     writer.WriteLine("# If you're having graphics issues with the FNA version on Windows,");
                     writer.WriteLine("# remove the # from the following line to enable using Direct3D.");
                     writer.WriteLine("#--d3d");
+                    writer.WriteLine();
+                    writer.WriteLine("# If you've got an Intel GPU, are using the FNA version on Windows and");
+                    writer.WriteLine("# are 100% sure that you want to use Intel's possibly broken OpenGL drivers,");
+                    writer.WriteLine("# remove the # from the following line to disable .");
+                    writer.WriteLine("#--no-d3d");
+                    writer.WriteLine();
                 }
             }
 
@@ -49,9 +57,32 @@ namespace Celeste {
                 AllocConsole();
             }
 
-            if ((args.Contains("--angle") || args.Contains("--d3d") || args.Contains("--d3d11")) && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_ES3", "1");
-                Environment.SetEnvironmentVariable("SDL_OPENGL_ES_DRIVER", "1");
+            // PlatformHelper is part of MonoMod.
+            // Environment.OSVersion.Platform is good enough as well, but Everest consistently uses PlatformHelper.
+            // The following is based off of https://github.com/FNA-XNA/FNA/wiki/4:-FNA-and-Windows-API#direct3d-support
+            if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                bool useD3D = args.Contains("--d3d");
+
+                try {
+                    // Keep all usage of System.Management in a separate method.
+                    // Member references are resolved as soon as a method is called.
+                    // This means that if System.Management cannot be found due to 
+                    // f.e. the use of MonoKickstart, this method won't even get as
+                    // far as checking the platform.
+                    if (DoesGPUHaveBadOpenGLDrivers())
+                        useD3D = true;
+                } catch {
+                    // Silently catch all exceptions: Method and type load errors,
+                    // permission / access related exceptions and whatnot.
+                }
+
+                if (args.Contains("--no-d3d"))
+                    useD3D = false;
+
+                if (useD3D) {
+                    Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_ES3", "1");
+                    Environment.SetEnvironmentVariable("SDL_OPENGL_ES_DRIVER", "1");
+                }
             }
 
             if (File.Exists("log.txt"))
@@ -72,6 +103,45 @@ namespace Celeste {
                 Console.SetOut(logWriter.STDOUT);
                 logWriter.STDOUT = null;
             }
+        }
+
+        private static bool DoesGPUHaveBadOpenGLDrivers() {
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from Win32_VideoController")) {
+                // The current machine can have more than one GPU installed.
+                // Let's iterate through all GPUs to catch them all, as we can't
+                // control which GPU will be used to render the game at runtime.
+                foreach (ManagementObject obj in searcher.Get()) {
+                    // We can't TryGet, so let's iterate through all available props.
+                    foreach (PropertyData prop in obj.Properties) {
+                        string key = prop.Name;
+                        if (string.IsNullOrEmpty(key))
+                            continue;
+
+                        // At least one of those contains "Intel"
+                        if (key.Equals("AdapterCompatibility", StringComparison.InvariantCultureIgnoreCase) &&
+                            key.Equals("Caption", StringComparison.InvariantCultureIgnoreCase) &&
+                            key.Equals("Description", StringComparison.InvariantCultureIgnoreCase) &&
+                            key.Equals("VideoProcessor", StringComparison.InvariantCultureIgnoreCase)
+                        )
+                            continue;
+
+                        // The value can be a non-string and / or null.
+                        string value = prop.Value?.ToString();
+                        if (string.IsNullOrEmpty(value))
+                            continue;
+
+                        if (value.IndexOf("Intel", StringComparison.InvariantCultureIgnoreCase) == -1)
+                            continue;
+
+                        // Good job, this machine has got an Intel GPU and we don't
+                        // know if the installed drivers are good enough or not!
+                        // Gonna use ANGLE by default on this setup...
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]
