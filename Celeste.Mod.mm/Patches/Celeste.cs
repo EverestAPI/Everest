@@ -106,11 +106,15 @@ namespace Celeste {
         }
 
         private static bool DoesGPUHaveBadOpenGLDrivers() {
+            bool isBad = false;
+
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from Win32_VideoController")) {
+
                 // The current machine can have more than one GPU installed.
                 // Let's iterate through all GPUs to catch them all, as we can't
                 // control which GPU will be used to render the game at runtime.
                 foreach (ManagementObject obj in searcher.Get()) {
+
                     // We can't TryGet, so let's iterate through all available props.
                     foreach (PropertyData prop in obj.Properties) {
                         string key = prop.Name;
@@ -130,18 +134,28 @@ namespace Celeste {
                         if (string.IsNullOrEmpty(value))
                             continue;
 
-                        if (value.IndexOf("Intel", StringComparison.InvariantCultureIgnoreCase) == -1)
-                            continue;
+                        if (value.IndexOf("Intel", StringComparison.InvariantCultureIgnoreCase) != -1) {
+                            // Good job, this machine has got an Intel GPU and we don't
+                            // know if the installed drivers are good enough or not.
 
-                        // Good job, this machine has got an Intel GPU and we don't
-                        // know if the installed drivers are good enough or not!
-                        // Gonna use ANGLE by default on this setup...
-                        return true;
+                            // Someone reported lag when using ANGLE with an HD Graphics
+                            // 4000 and using the latest drivers (2019).
+                            // Meanwhile, someone else reported graphics issues with an
+                            // HD Graphics 5500 which were fixed by using ANGLE.
+                            // I regret my life decisions.
+                            if (value == "Intel(R) HD Graphics 4000") {
+                                isBad = false;
+                                break; // Don't check this GPU's props any further.
+                            }
+
+                            // Gonna use ANGLE by default on this setup...
+                            isBad = true;
+                        }
                     }
                 }
             }
 
-            return false;
+            return isBad;
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]
