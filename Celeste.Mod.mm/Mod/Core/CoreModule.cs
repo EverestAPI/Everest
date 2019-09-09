@@ -135,6 +135,12 @@ namespace Celeste.Mod.Core {
                 MTN.LoadData();
             }
             // Otherwise loaded in GameLoader.LoadThread
+
+            // Celeste 1.3.0.0 gets rid of those.
+            for (int i = 0; i <= 29; i++)
+                GFX.Game[$"objects/checkpoint/flag{i:D2}"] = GFX.Game["util/pixel"];
+            for (int i = 0; i <= 27; i++)
+                GFX.Game[$"objects/checkpoint/obelisk{i:D2}"] = GFX.Game["util/pixel"];
         }
 
         public override void Unload() {
