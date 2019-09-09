@@ -65,11 +65,13 @@ namespace Celeste {
             public extern void orig_ctor(Session session);
             [MonoModConstructor]
             public void ctor(Session session) {
+                // Initialize the artist. If we are in a vanilla level, it will be replaced afterwards.
+                AreaData area = AreaData.Get(session);
+                artist = Dialog.Get(area.Name + "_remix_artist");
+
                 orig_ctor(session);
 
-                AreaData area = AreaData.Get(session);
-                if (string.IsNullOrEmpty(artist) || Dialog.Has(area.Name + "_remix_artist"))
-                    artist = Dialog.Get(area.Name + "_remix_artist");
+                // Replace the album if defined in the language file.
                 if (string.IsNullOrEmpty(album) || Dialog.Has(area.Name + "_remix_album"))
                     album = Dialog.Get(area.Name + "_remix_album");
             }
