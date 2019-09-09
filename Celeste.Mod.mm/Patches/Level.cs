@@ -268,7 +268,8 @@ namespace Celeste {
             }
 
             if (entityData.Name == "trackSpinner") {
-                if (level.Session.Area.ID == 10) {
+                if (level.Session.Area.ID == 10 ||
+                    entityData.Bool("star")) {
                     level.Add(new StarTrackSpinner(entityData, offset));
                     return true;
                 } else if (level.Session.Area.ID == 3 ||
@@ -283,7 +284,8 @@ namespace Celeste {
             }
 
             if (entityData.Name == "rotateSpinner") {
-                if(level.Session.Area.ID == 10) {
+                if (level.Session.Area.ID == 10 ||
+                    entityData.Bool("star")) {
                     level.Add(new StarRotateSpinner(entityData, offset));
                     return true;
                 } else if (level.Session.Area.ID == 3 ||
