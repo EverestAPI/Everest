@@ -83,16 +83,10 @@ namespace MonoMod {
     class PatchCloudAddedAttribute : Attribute { }
 
     /// <summary>
-    /// Patch the Dialog.LoadLanguage method instead of reimplementing it in Everest.
+    /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLoadLanguage")]
     class PatchLoadLanguageAttribute : Attribute { }
-
-    /// <summary>
-    /// Patch the Dialog.InitLanguages method instead of reimplementing it in Everest.
-    /// </summary>
-    [MonoModCustomMethodAttribute("PatchInitLanguages")]
-    class PatchInitLanguagesAttribute : Attribute { }
 
     /// <summary>
     /// Automatically fill InitMMSharedData based on the current patch flags.
@@ -943,9 +937,6 @@ namespace MonoMod {
         }
 
         public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
-
             if (!method.HasBody)
                 return;
 
@@ -974,31 +965,6 @@ namespace MonoMod {
             }
 
         }
-
-
-        public static void PatchInitLanguages(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
-
-            if (!method.HasBody)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instri > 4 &&
-                    instrs[instri - 3].OpCode == OpCodes.Ldc_I4_S && ((sbyte) instrs[instri - 3].Operand) == ((sbyte) '{') &&
-                    instrs[instri - 2].OpCode == OpCodes.Callvirt && (instrs[instri - 2].Operand as MethodReference)?.GetFindableID() == "System.Int32 System.String::IndexOf(System.Char)" &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
-                    instr.OpCode == OpCodes.Cgt) {
-                    instrs[instri - 1].OpCode = OpCodes.Ldc_I4_M1;
-                }
-            }
-
-        }
-
 
         public static void PatchInitMMSharedData(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_Set = method.DeclaringType.FindMethod("System.Void SetMMSharedData(System.String,System.Boolean)");

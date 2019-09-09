@@ -18,34 +18,10 @@ namespace Celeste {
 
         private static Language FallbackLanguage;
 
-        private static bool LoadOriginalLanguageFiles;
-        private static bool LoadModLanguageFiles;
-
         public static extern void orig_Load();
         public static void Load() {
-            LoadOriginalLanguageFiles = true;
-            LoadModLanguageFiles = false;
-
-            orig_Load();
-        }
-
-        public static extern Language orig_LoadLanguage(string filename);
-        [PatchLoadLanguage] // Manually manipulate the method via MonoModRules
-        public static Language LoadLanguage(string filename) {
-            Language language = orig_LoadLanguage(filename);
-            language.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
-
-            if (language?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
-                FallbackLanguage = language;
-
-            return language;
-        }
-
-        public static extern void orig_InitLanguages();
-        [PatchInitLanguages] // Manually manipulate the method via MonoModRules
-        public static void InitLanguages() {
-            LoadOriginalLanguageFiles = false;
-            LoadModLanguageFiles = true;
+            patch_Language.LoadOriginalLanguageFiles = true;
+            patch_Language.LoadModLanguageFiles = true;
 
             // Check all installed mods to find out which languages exist.
             HashSet<string> languagesToLoad = new HashSet<string>();
@@ -66,41 +42,19 @@ namespace Celeste {
             foreach (string id in dummies)
                 Dialog.Languages.Remove(id);
 
-            orig_InitLanguages();
+            orig_Load();
         }
 
-        private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
-            if (LoadOriginalLanguageFiles && File.Exists(path))
-                foreach (string text in File.ReadLines(path, encoding))
-                    yield return text;
+        public static extern Language orig_LoadLanguage(string filename);
+        [PatchLoadLanguage] // Manually manipulate the method via MonoModRules
+        public static Language LoadLanguage(string filename) {
+            Language language = orig_LoadLanguage(filename);
+            language.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
 
-            if (!LoadModLanguageFiles)
-                yield break;
+            if (language?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
+                FallbackLanguage = language;
 
-            path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
-            path = path.Replace('\\', '/');
-            path = path.Substring(0, path.Length - 4);
-            string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()}";
-            foreach (ModAsset asset in
-                Everest.Content.Mods
-                .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null)
-            ) {
-                // Feed a dummy language line. All empty languages are removed afterwards.
-                yield return dummy;
-                using (StreamReader reader = new StreamReader(asset.Stream, encoding))
-                    while (reader.Peek() != -1)
-                        yield return reader.ReadLine().Trim('\r', '\n').Trim();
-                
-                // Feed a new key to be sure that the last key in the file is cut off.
-                // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
-                yield return "EVEREST_SPLIT_BETWEEN_FILES= New file";
-            }
-        }
-
-        private static bool _ContainsKey(Dictionary<string, string> dialog, string key) {
-            dialog.Remove(key);
-            return false;
+            return language;
         }
 
         [MonoModReplace]
