@@ -78,6 +78,11 @@ namespace Celeste {
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
+        // Needed for older mods.
+        public void NextColorGrade(string next) {
+            NextColorGrade(next, 1f);
+        }
+
         private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
             IEnumerator orig = orig_TransitionRoutine(next, direction);
