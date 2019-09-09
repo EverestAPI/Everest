@@ -252,6 +252,8 @@ namespace Celeste {
                     color = CrystalColor.Red;
                 else if (level.Session.Area.ID == 6)
                     color = CrystalColor.Purple;
+                else if (level.Session.Area.ID == 10)
+                    color = CrystalColor.Rainbow;
                 else if ("core".Equals(entityData.Attr("color"), StringComparison.InvariantCultureIgnoreCase))
                     color = (CrystalColor) (-1);
                 else if (!Enum.TryParse(entityData.Attr("color"), true, out color))
@@ -262,7 +264,10 @@ namespace Celeste {
             }
 
             if (entityData.Name == "trackSpinner") {
-                if (level.Session.Area.ID == 3 ||
+                if (level.Session.Area.ID == 10) {
+                    level.Add(new StarTrackSpinner(entityData, offset));
+                    return true;
+                } else if (level.Session.Area.ID == 3 ||
                     (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
                     entityData.Bool("dust")) {
                     level.Add(new DustTrackSpinner(entityData, offset));
@@ -274,7 +279,10 @@ namespace Celeste {
             }
 
             if (entityData.Name == "rotateSpinner") {
-                if (level.Session.Area.ID == 3 ||
+                if(level.Session.Area.ID == 10) {
+                    level.Add(new StarRotateSpinner(entityData, offset));
+                    return true;
+                } else if (level.Session.Area.ID == 3 ||
                     (level.Session.Area.ID == 7 && level.Session.Level.StartsWith("d-")) ||
                     entityData.Bool("dust")) {
                     level.Add(new DustRotateSpinner(entityData, offset));
