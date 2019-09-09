@@ -48,8 +48,10 @@ namespace Celeste {
                 { 'i', 4 },
                 { 'j', 8 },
                 { 'k', 3 },
-                { 'l', 33 },
-                { 'm', 3 }
+                { 'l', 25 },
+                { 'm', 44 },
+                { 'n', 40 },
+                { 'o', 43 }
             };
 
             AreaData area = AreaData.Get(session);
