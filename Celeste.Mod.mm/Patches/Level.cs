@@ -59,6 +59,15 @@ namespace Celeste {
             }
         }
 
+        // Needed for older mods.
+        public void NextColorGrade(string next) {
+            NextColorGrade(next, 1f);
+        }
+
+        public ScreenWipe CompleteArea(bool spotlightWipe = true, bool skipScreenWipe = false) {
+            return CompleteArea(spotlightWipe, skipScreenWipe, false);
+        }
+
         public extern void orig_Pause(int startIndex = 0, bool minimal = false, bool quickReset = false);
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
@@ -76,11 +85,6 @@ namespace Celeste {
         public new void TransitionTo(LevelData next, Vector2 direction) {
             orig_TransitionTo(next, direction);
             Everest.Events.Level.TransitionTo(this, next, direction);
-        }
-
-        // Needed for older mods.
-        public void NextColorGrade(string next) {
-            NextColorGrade(next, 1f);
         }
 
         private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
