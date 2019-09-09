@@ -200,6 +200,9 @@ namespace Monocle {
         protected int RelativeRectWidth;
         protected int RelativeRectHeight;
 
+        // Needed for mods which were built against old versions.
+        public string get_AtlasPath() => AtlasPath;
+
         // Patching constructors is ugly.
         public extern void orig_ctor(MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]

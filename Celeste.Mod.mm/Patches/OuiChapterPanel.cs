@@ -26,11 +26,13 @@ namespace Celeste {
             string result = area.ToString();
             if (area.GetLevelSet() != "Celeste")
                 result = area.GetSID();
+
             if (level != null)
                 result = result + "_" + level;
 
             if (MTN.Checkpoints.Has(result))
                 return result;
+
             return $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/{level ?? "start"}";
         }
 
