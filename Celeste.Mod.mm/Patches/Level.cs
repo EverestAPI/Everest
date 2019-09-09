@@ -72,27 +72,6 @@ namespace Celeste {
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
         }
 
-        private extern void orig_GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint);
-        [MonoModIfFlag("Fill:ReturnToMapHint")]
-        private void GiveUp(int returnIndex, bool restartArea, bool minimal, bool showHint) {
-            GiveUpHint hint = null;
-            if (!Everest.Flags.IsDisabled && !restartArea && !showHint) {
-                // The game originally doesn't show a hint when exiting to the map.
-                Add(hint = new GiveUpHint());
-            }
-
-            orig_GiveUp(returnIndex, restartArea, minimal, showHint);
-
-            TextMenu menu = Entities.GetToAdd().LastOrDefault(e => e is TextMenu) as TextMenu;
-            if (menu == null)
-                return;
-
-            Action removeHint = () => hint?.RemoveSelf();
-            menu.OnPause += removeHint;
-            menu.OnESC += removeHint;
-            menu.OnCancel += removeHint;
-        }
-
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
         public new void TransitionTo(LevelData next, Vector2 direction) {
             orig_TransitionTo(next, direction);
@@ -343,7 +322,7 @@ namespace Celeste {
             if (entityData.Name == "cobweb") {
                 patch_Cobweb cobweb = new Cobweb(entityData, offset) as patch_Cobweb;
                 if (entityData.Has("color"))
-                    cobweb.OverrideColor = entityData.HexColor("color");
+                    cobweb.OverrideColors = entityData.Attr("color")?.Split(',').Select(s => Calc.HexToColor(s)).ToArray();
                 level.Add(cobweb);
                 return true;
             }

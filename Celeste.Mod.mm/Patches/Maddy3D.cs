@@ -16,10 +16,10 @@ namespace Celeste {
                 orig_SetRunAnim();
             }
             else if (AreaData.Get(Renderer.Area).Mode[0].Inventory.Dashes > 1) {
-                frames = GFX.Mountain.GetAtlasSubtextures("marker/runNoBackpack");
+                frames = MTN.Mountain.GetAtlasSubtextures("marker/runNoBackpack");
             }
             else {
-                frames = GFX.Mountain.GetAtlasSubtextures("marker/runBackpack");
+                frames = MTN.Mountain.GetAtlasSubtextures("marker/runBackpack");
             }
         }
     }

@@ -19,7 +19,7 @@ namespace Celeste.Mod.UI {
 
             Reload();
 
-            Audio.Play(Sfxs.ui_world_whoosh_400ms_back);
+            Audio.Play(SFX.ui_world_whoosh_400ms_back);
             Overworld.Goto<OuiChapterSelect>();
         }
 

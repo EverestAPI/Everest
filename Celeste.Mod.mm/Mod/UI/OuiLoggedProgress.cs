@@ -95,7 +95,7 @@ namespace Celeste.Mod.UI {
 
             Audio.SetMusic(audioPrevMusic);
             Audio.SetAmbience(audioPrevAmbience);
-            Audio.Play(Sfxs.ui_main_whoosh_large_out);
+            Audio.Play(SFX.ui_main_whoosh_large_out);
 
             for (float t = 0f; t < 1f; t += Engine.DeltaTime * 4f) {
                 alpha = 1f - Ease.CubeIn(t);

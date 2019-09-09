@@ -131,7 +131,6 @@
     <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
     <Compile Include="Mod\Entities\DialogCutscene.cs" />
     <Compile Include="Mod\Entities\DialogCutsceneTrigger.cs" />
-    <Compile Include="Mod\Entities\GiveUpHint.cs" />
     <Compile Include="Mod\Entities\SpaceControllerBlocker.cs" />
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\Helpers\EndUserException.cs" />
@@ -148,6 +147,8 @@
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
+    <Compile Include="Patches\Postcard.cs" />
+    <Compile Include="Patches\ReturnMapHint.cs" />
     <Compile Include="Patches\Pico8\Emulator.cs" />
     <Compile Include="Patches\IntroCar.cs" />
     <Compile Include="Patches\Session.cs" />
@@ -157,7 +158,6 @@
     <Compile Include="Patches\Cloud.cs" />
     <Compile Include="Patches\CrystalStaticSpinner.cs" />
     <Compile Include="Patches\RotateSpinner.cs" />
-    <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\CassetteBlockManager.cs" />
     <Compile Include="Patches\Settings.cs" />
     <Compile Include="Mod\Core\CoreModuleSaveData.cs" />
@@ -222,7 +222,7 @@
     <Compile Include="Patches\Monocle\PixelFontSize.cs" />
     <Compile Include="Patches\Fonts.cs" />
     <Compile Include="Patches\OuiFileNaming.cs" />
-    <Compile Include="Patches\Sfxs.cs" />
+    <Compile Include="Patches\SFX.cs" />
     <Compile Include="Patches\Audio.cs" />
     <Compile Include="Patches\FMOD\Studio\EventDescription.cs" />
     <Compile Include="Patches\GameplayRenderer.cs" />
@@ -248,7 +248,6 @@
     <Compile Include="Patches\FireBall.cs" />
     <Compile Include="Patches\HeartGem.cs" />
     <Compile Include="Patches\TheoCrystal.cs" />
-    <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
     <Compile Include="Patches\TheoCrystalCollider.cs" />
     <Compile Include="Patches\Strawberry.cs" />

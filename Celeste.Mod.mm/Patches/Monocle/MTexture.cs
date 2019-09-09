@@ -200,20 +200,6 @@ namespace Monocle {
         protected int RelativeRectWidth;
         protected int RelativeRectHeight;
 
-        public extern string orig_get_AtlasPath();
-        public extern void orig_set_AtlasPath(string value);
-        public new string AtlasPath {
-            get {
-                return OverrideMeta?.AtlasPath ?? Parent?.AtlasPath ?? orig_get_AtlasPath();
-            }
-            set {
-                if (OverrideMeta != null)
-                    OverrideMeta.AtlasPath = value;
-                else
-                    orig_set_AtlasPath(value);
-            }
-        }
-
         // Patching constructors is ugly.
         public extern void orig_ctor(MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]

@@ -196,7 +196,7 @@ namespace Celeste {
                 area.Mode = new ModeProperties[] {
                     new ModeProperties {
                         Inventory = PlayerInventory.Default,
-                        AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
+                        AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                     }
                 };
 
@@ -210,7 +210,7 @@ namespace Celeste {
                 area.Jumpthru = "wood";
 
                 area.CassseteNoteColor = Calc.HexToColor("33a9ee");
-                area.CassetteSong = Sfxs.cas_01_forsaken_city;
+                area.CassetteSong = SFX.cas_01_forsaken_city;
 
                 // Custom values can be set via the MapMeta.
                 MapMeta meta = new MapMeta();
@@ -305,7 +305,7 @@ namespace Celeste {
                         if (other.Mode[(int) side] == null)
                             other.Mode[(int) side] = new ModeProperties {
                                 Inventory = PlayerInventory.Default,
-                                AudioState = new AudioState(Sfxs.music_city, Sfxs.env_amb_00_main)
+                                AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                             };
                         other.Mode[(int) side].Path = path;
                         Areas.RemoveAt(i);
@@ -332,7 +332,8 @@ namespace Celeste {
                 // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
                 if (area.Mode[0].PoemID == null)
                     area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
-                if (area.Mode[1] != null &&
+                if (area.Mode.Length > 1 &&
+                    area.Mode[1] != null &&
                     area.Mode[1].PoemID == null) {
                     area.Mode[1].PoemID = area.GetSID().DialogKeyify() + "_B";
                 }

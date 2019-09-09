@@ -16,20 +16,21 @@ using System.Threading.Tasks;
 namespace Celeste {
     class patch_Language : Language {
 
-        internal static bool LoadOriginalLanguageFiles;
-        internal static bool LoadModLanguageFiles;
+        internal static Language LoadingLanguage;
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLoadLanguage] // ... except for manually manipulating the method via MonoModRules
-        public static extern Language FromTxt(string path);
+        public static extern Language orig_FromTxt(string path);
+        [PatchLoadLanguage]
+        public static new Language FromTxt(string path) {
+            Language lang = orig_FromTxt(path);
+            LoadingLanguage = null;
+            return lang;
+        }
 
         private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
-            if (LoadOriginalLanguageFiles && File.Exists(path))
+            bool ready = File.Exists(path);
+            if (ready)
                 foreach (string text in File.ReadLines(path, encoding))
                     yield return text;
-
-            if (!LoadModLanguageFiles)
-                yield break;
 
             path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
             path = path.Replace('\\', '/');
@@ -40,8 +41,11 @@ namespace Celeste {
                 .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
                 .Where(asset => asset != null)
             ) {
-                // Feed a dummy language line. All empty languages are removed afterwards.
-                yield return dummy;
+                if (!ready) {
+                    ready = true;
+                    // Feed a dummy language line. All empty languages are removed afterwards.
+                    yield return dummy;
+                }
                 using (StreamReader reader = new StreamReader(asset.Stream, encoding))
                     while (reader.Peek() != -1)
                         yield return reader.ReadLine().Trim('\r', '\n').Trim();
@@ -52,9 +56,8 @@ namespace Celeste {
             }
         }
 
-        private static bool _ContainsKey(Dictionary<string, string> dialog, string key) {
-            dialog.Remove(key);
-            return false;
+        private static Language _NewLanguage() {
+            return LoadingLanguage ?? (LoadingLanguage = new Language());
         }
 
     }

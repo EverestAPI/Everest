@@ -33,6 +33,7 @@ namespace Celeste.Mod {
         private static List<string> _Registered = new List<string>();
         private static Dictionary<string, int> _IDs = new Dictionary<string, int>();
         private static List<bool> _IsMonochrome = new List<bool>();
+        private static List<PixelFontCharacter> _Chars = new List<PixelFontCharacter>();
 
         private static bool Initialized = false;
         private static Queue<KeyValuePair<string, MTexture>> Queue = new Queue<KeyValuePair<string, MTexture>>();
@@ -96,9 +97,17 @@ namespace Celeste.Mod {
                 _IsMonochrome[id] = monochrome;
             }
 
-            foreach (PixelFont font in Fonts.Faces.Values) {
-                foreach (PixelFontSize size in font.Sizes) {
-                    PixelFontCharacter c = new PixelFontCharacter(Start + id, emoji, xml);
+            _Chars.Add(new PixelFontCharacter(Start + id, emoji, xml));
+        }
+
+        /// <summary>
+        /// Fill a font with emoji.
+        /// </summary>
+        /// <param name="font">The font to fill.</param>
+        public static void Fill(PixelFont font) {
+            Auto();
+            foreach (PixelFontSize size in font.Sizes) {
+                foreach (PixelFontCharacter c in _Chars) {
                     size.Characters[c.Character] = c;
                 }
             }

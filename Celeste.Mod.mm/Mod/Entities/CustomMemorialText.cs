@@ -80,7 +80,7 @@ namespace Celeste.Mod.Entities {
             if (Show && alpha >= 1f && index < Message.Length) {
                 if (!textSfxPlaying) {
                     textSfxPlaying = true;
-                    textSfx.Play(Dreamy ? Sfxs.ui_game_memorialdream_text_loop : Sfxs.ui_game_memorial_text_loop, null, 0f);
+                    textSfx.Play(Dreamy ? SFX.ui_game_memorialdream_text_loop : SFX.ui_game_memorial_text_loop, null, 0f);
                     textSfx.Param("end", 0f);
                 }
 

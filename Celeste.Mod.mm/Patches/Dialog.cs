@@ -20,19 +20,7 @@ namespace Celeste {
 
         public static extern void orig_Load();
         public static void Load() {
-            patch_Language.LoadOriginalLanguageFiles = true;
-            patch_Language.LoadModLanguageFiles = true;
-
-            // Check all installed mods to find out which languages exist.
-            HashSet<string> languagesToLoad = new HashSet<string>();
-            foreach (ModAsset asset in Everest.Content.Map.Values) {
-                if (asset.PathVirtual.StartsWith("Dialog/"))
-                    languagesToLoad.Add(asset.PathVirtual.Substring(7));
-            }
-
-            // Load all languages that were found.
-            foreach (string language in languagesToLoad)
-                LoadLanguage(Path.Combine(Engine.ContentDirectory, "Dialog", language + ".txt"));
+            orig_Load();
 
             // Remove all empty dummy languages.
             HashSet<string> dummies = new HashSet<string>();
@@ -41,15 +29,13 @@ namespace Celeste {
                     dummies.Add(lang.Id);
             foreach (string id in dummies)
                 Dialog.Languages.Remove(id);
-
-            orig_Load();
         }
 
         public static extern Language orig_LoadLanguage(string filename);
-        [PatchLoadLanguage] // Manually manipulate the method via MonoModRules
         public static Language LoadLanguage(string filename) {
             Language language = orig_LoadLanguage(filename);
-            language.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+            language?.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+            language?.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
 
             if (language?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
                 FallbackLanguage = language;

@@ -22,7 +22,6 @@ namespace Celeste.Mod {
 
         public VirtualTexture Texture;
         public Rectangle ClipRect;
-        public string AtlasPath;
         public Vector2 DrawOffset;
         public int Width;
         public int Height;

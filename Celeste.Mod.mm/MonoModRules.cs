@@ -211,14 +211,6 @@ namespace MonoMod {
                 MonoModRule.Flag.Set("Has:IntroSkip", true);
             }
 
-            if (version < new Version(1, 2, 9, 1)) {
-                MonoModRule.Flag.Set("Fill:TrailInitFix", true);
-                MonoModRule.Flag.Set("Fill:ReturnToMapHint", true);
-            } else {
-                MonoModRule.Flag.Set("Fill:TrailInitFix", false);
-                MonoModRule.Flag.Set("Fill:ReturnToMapHint", false);
-            }
-            
             MonoModRule.Flag.Set("Fill:TheoCrystalDesyncFix", version <= new Version(1, 2, 9, 1));
 
             MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType")?.SafeResolve() == null);
@@ -937,15 +929,15 @@ namespace MonoMod {
         }
 
         public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
 
             MethodDefinition m_GetLanguageText = method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
             if (m_GetLanguageText == null)
                 return;
 
-            MethodDefinition m_ContainsKey = method.DeclaringType.FindMethod("System.Boolean _ContainsKey(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String)");
-            if (m_ContainsKey == null)
+            MethodDefinition m_NewLanguage = method.DeclaringType.FindMethod("Celeste.Language _NewLanguage()");
+            if (m_NewLanguage == null)
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
@@ -958,9 +950,9 @@ namespace MonoMod {
                     instr.Operand = m_GetLanguageText;
                 }
 
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.Collections.Generic.Dictionary`2<System.String,System.String>::ContainsKey(System.Collections.Generic.Dictionary`2<System.String,System.String>/!0)") {
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.Language::.ctor()") {
                     instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_ContainsKey;
+                    instr.Operand = m_NewLanguage;
                 }
             }
 

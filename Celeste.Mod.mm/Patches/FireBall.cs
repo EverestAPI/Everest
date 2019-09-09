@@ -20,8 +20,8 @@ namespace Celeste {
         private Vector2[] nodes;
         private float[] lengths;
 
-        public patch_FireBall(Vector2[] nodes, int amount, int index, float offset, float speedMult)
-            : base(nodes, amount, index, offset, speedMult) {
+        public patch_FireBall(Vector2[] nodes, int amount, int index, float offset, float speedMult, bool notCoreMode)
+            : base(nodes, amount, index, offset, speedMult, notCoreMode) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 

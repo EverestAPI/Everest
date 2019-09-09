@@ -18,7 +18,7 @@ using Celeste.Mod.Meta;
 namespace Celeste {
     class patch_Cobweb : Cobweb {
 
-        public Color? OverrideColor;
+        public Color[] OverrideColors;
 
         public patch_Cobweb(EntityData data, Vector2 offset)
             : base(data, offset) {
@@ -29,13 +29,13 @@ namespace Celeste {
         public override void Added(Scene scene) {
             AreaData area = AreaData.Get(scene);
 
-            Color prevColor = area.CobwebColor;
-            if (OverrideColor != null)
-                area.CobwebColor = OverrideColor.Value;
+            Color[] prevColors = area.CobwebColor;
+            if (OverrideColors != null)
+                area.CobwebColor = OverrideColors;
 
             orig_Added(scene);
 
-            area.CobwebColor = prevColor;
+            area.CobwebColor = prevColors;
         }
 
     }

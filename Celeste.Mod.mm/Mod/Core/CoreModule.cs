@@ -16,6 +16,7 @@ using Celeste.Mod.Helpers;
 using MonoMod.Utils;
 using Microsoft.Xna.Framework.Input;
 using System.Threading;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -127,10 +128,11 @@ namespace Celeste.Mod.Core {
                 Celeste.HudTarget = null;
             }
 
-            if (GFX.MountainTerrain == null && Settings.NonThreadedGL) {
-                GFX.MountainTerrain = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain.obj"));
-                GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
-                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
+            if (Settings.NonThreadedGL) {
+                GFX.Load();
+                MTN.Load();
+                GFX.LoadData();
+                MTN.LoadData();
             }
             // Otherwise loaded in GameLoader.LoadThread
         }
@@ -161,8 +163,8 @@ namespace Celeste.Mod.Core {
                 index = buttons.Count - 1;
 
             buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions", menu, Vector2.Zero, Vector2.Zero, () => {
-                Audio.Play(Sfxs.ui_main_button_select);
-                Audio.Play(Sfxs.ui_main_whoosh_large_in);
+                Audio.Play(SFX.ui_main_button_select);
+                Audio.Play(SFX.ui_main_whoosh_large_in);
                 menu.Overworld.Goto<OuiModOptions>();
             }));
         }
@@ -199,12 +201,12 @@ namespace Celeste.Mod.Core {
                 TextMenu options = OuiModOptions.CreateMenu(true, LevelExt.PauseSnapshot);
 
                 options.OnESC = options.OnCancel = () => {
-                    Audio.Play(Sfxs.ui_main_button_back);
+                    Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
                 };
 
                 options.OnPause = () => {
-                    Audio.Play(Sfxs.ui_main_button_back);
+                    Audio.Play(SFX.ui_main_button_back);
                     options.CloseAndRun(Everest.SaveSettings(), () => {
                         level.Paused = false;
                         Engine.FreezeTimer = 0.15f;

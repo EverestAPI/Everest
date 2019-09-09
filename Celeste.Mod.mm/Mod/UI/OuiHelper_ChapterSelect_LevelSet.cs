@@ -38,9 +38,9 @@ namespace Celeste.Mod.UI {
 
             Done:
             if (Direction > 0) {
-                Audio.Play(Sfxs.ui_world_chapter_pane_expand);
+                Audio.Play(SFX.ui_world_chapter_pane_expand);
             } else {
-                Audio.Play(Sfxs.ui_world_chapter_pane_contract);
+                Audio.Play(SFX.ui_world_chapter_pane_contract);
             }
             Overworld.Goto<OuiChapterSelect>();
         }

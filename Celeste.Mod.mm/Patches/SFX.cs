@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 using System.Xml;
 
 namespace Celeste {
-    static class patch_Sfxs {
+    static class patch_SFX {
 
         private static Dictionary<string, string> byHandle;
 

@@ -82,7 +82,7 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Leave(Oui next) {
             Audio.SetMusic(audioPrevMusic);
             Audio.SetAmbience(audioPrevAmbience);
-            Audio.Play(Sfxs.ui_main_whoosh_large_out);
+            Audio.Play(SFX.ui_main_whoosh_large_out);
 
             if (playing != null)
                 Audio.Stop(playing);
@@ -108,12 +108,12 @@ namespace Celeste.Mod.UI {
             if (Input.MenuRight.Pressed && selectedDigit < (digits.Length - 1)) {
                 selectedDigit = Math.Min(selectedDigit + 1, (digits.Length - 1));
                 wigglerDigits[selectedDigit].Start();
-                Audio.Play(Sfxs.ui_main_roll_down);
+                Audio.Play(SFX.ui_main_roll_down);
 
             } else if (Input.MenuLeft.Pressed && selectedDigit > 0) {
                 selectedDigit = Math.Max(selectedDigit - 1, 0);
                 wigglerDigits[selectedDigit].Start();
-                Audio.Play(Sfxs.ui_main_roll_up);
+                Audio.Play(SFX.ui_main_roll_up);
 
             } else if (Input.MenuDown.Pressed) {
                 UpdateDigits(selectedDigit, -1);
@@ -129,7 +129,7 @@ namespace Celeste.Mod.UI {
 
             } else if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
                 Focused = false;
-                Audio.Play(Sfxs.ui_main_button_back);
+                Audio.Play(SFX.ui_main_button_back);
                 Overworld.Goto<OuiModOptions>();
             }
 
@@ -161,9 +161,9 @@ namespace Celeste.Mod.UI {
 
             wigglerPath.Start();
             if (dir < 0)
-                Audio.Play(Sfxs.ui_main_button_toggle_off);
+                Audio.Play(SFX.ui_main_button_toggle_off);
             else
-                Audio.Play(Sfxs.ui_main_button_toggle_on);
+                Audio.Play(SFX.ui_main_button_toggle_on);
             UpdateSelectedPath();
         }
 

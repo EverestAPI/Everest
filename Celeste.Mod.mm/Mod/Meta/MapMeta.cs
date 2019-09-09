@@ -308,7 +308,7 @@ namespace Celeste.Mod.Meta {
 
         public ModeProperties Convert()
             => new ModeProperties() {
-                AudioState = AudioState?.Convert() ?? new AudioState(Sfxs.music_city, Sfxs.env_amb_01_main),
+                AudioState = AudioState?.Convert() ?? new AudioState(SFX.music_city, SFX.env_amb_01_main),
                 Checkpoints = MapMeta.Convert(Checkpoints), // Can be null.
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData ?? false,
                 Inventory = MapMeta.GetInventory(Inventory) ?? PlayerInventory.Default,

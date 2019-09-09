@@ -50,7 +50,7 @@ namespace Celeste {
         private IEnumerator ErrorRoutine(string message) {
             yield return 1f;
 
-            Add(postcard = new Postcard(message));
+            Add(postcard = new Postcard(message, "event:/ui/main/postcard_csides_in", "event:/ui/main/postcard_csides_out"));
             yield return postcard.DisplayRoutine();
 
             SaveData.Instance.CurrentSession = new Session(AreaKey.Default);

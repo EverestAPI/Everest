@@ -143,8 +143,8 @@ namespace Celeste {
 
             if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
                 Overworld.Maddy.Hide(true);
-                Audio.Play(Sfxs.ui_main_button_select);
-                Audio.Play(Sfxs.ui_main_whoosh_large_in);
+                Audio.Play(SFX.ui_main_button_select);
+                Audio.Play(SFX.ui_main_whoosh_large_in);
                 OuiMapList list = Overworld.Goto<OuiMapList>();
                 list.OuiIcons = icons;
                 return;
@@ -152,21 +152,21 @@ namespace Celeste {
 
             if (Focused && display && !disableInput && inputDelay <= 0f) {
                 if (Input.MenuUp.Pressed) {
-                    Audio.Play(Sfxs.ui_world_chapter_pane_contract);
-                    Audio.Play(Sfxs.ui_world_icon_roll_left);
+                    Audio.Play(SFX.ui_world_chapter_pane_contract);
+                    Audio.Play(SFX.ui_world_icon_roll_left);
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = -1;
                     return;
                 }
                 if (Input.MenuDown.Pressed) {
-                    Audio.Play(Sfxs.ui_world_chapter_pane_expand);
-                    Audio.Play(Sfxs.ui_world_icon_roll_right);
+                    Audio.Play(SFX.ui_world_chapter_pane_expand);
+                    Audio.Play(SFX.ui_world_icon_roll_right);
                     Overworld.Goto<OuiHelper_ChapterSelect_LevelSet>().Direction = +1;
                     return;
                 }
 
                 if (keys[Keys.F5] == KeyState.Down && keysPrev[Keys.F5] == KeyState.Up) {
-                    Audio.Play(Sfxs.ui_postgame_unlock_newchapter);
-                    Audio.Play(Sfxs.ui_world_whoosh_1000ms_forward);
+                    Audio.Play(SFX.ui_postgame_unlock_newchapter);
+                    Audio.Play(SFX.ui_world_whoosh_1000ms_forward);
                     Overworld.Goto<OuiHelper_ChapterSelect_Reload>();
                     return;
                 }

@@ -85,14 +85,14 @@ namespace Celeste.Mod.Entities {
             text.Show = player != null && CollideCheck(player);
 
             if (text.Show && !wasShowing) {
-                Audio.Play(dreaming ? Sfxs.ui_game_memorialdream_text_in : Sfxs.ui_game_memorial_text_in);
+                Audio.Play(dreaming ? SFX.ui_game_memorialdream_text_in : SFX.ui_game_memorial_text_in);
                 if (dreaming) {
-                    loopingSfx.Play(Sfxs.ui_game_memorialdream_loop, null, 0f);
+                    loopingSfx.Play(SFX.ui_game_memorialdream_loop, null, 0f);
                     loopingSfx.Param("end", 0f);
                 }
 
             } else if (!text.Show && wasShowing) {
-                Audio.Play(dreaming ? Sfxs.ui_game_memorialdream_text_out : Sfxs.ui_game_memorial_text_out);
+                Audio.Play(dreaming ? SFX.ui_game_memorialdream_text_out : SFX.ui_game_memorial_text_out);
                 loopingSfx.Param("end", 1f);
                 loopingSfx.Stop(true);
             }

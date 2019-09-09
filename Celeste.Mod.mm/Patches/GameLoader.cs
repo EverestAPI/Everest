@@ -11,6 +11,7 @@ using MonoMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -80,46 +81,42 @@ namespace Celeste {
 
         [MonoModReplace]
         private void LoadThread() {
-            Console.WriteLine("GAME DISPLAYED : " + Stopwatch.ElapsedMilliseconds + "ms");
             MInput.Disabled = true;
+            Stopwatch timer = Stopwatch.StartNew();
 
             Audio.Init();
-
             // Original code loads audio banks here.
-            /*
-            Audio.Banks.Master = Audio.Banks.Load("Master Bank", true);
-            Audio.Banks.Music = Audio.Banks.Load("music", false);
-            Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
-            Audio.Banks.UI = Audio.Banks.Load("ui", false);
-            Audio.Banks.NewContent = Audio.Banks.Load("new_content", false);
-            */
-
             Settings.Instance.ApplyVolumes();
             audioLoaded = true;
-
-            Fonts.Load(); // Luckily, the textures for the fonts are preloaded.
-            Dialog.Load();
-            dialogLoaded = true;
-
-            MInput.Disabled = false;
-
-            if (!GFX.LoadedMainContent) {
-                throw new Exception("GFX not loaded!");
-            }
-            GFX.LoadData(); // Load all related GFX metadata.
-
-            AreaData.Load();
+            Console.WriteLine(" - AUDIO LOAD: " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
 
             if (!CoreModule.Settings.NonThreadedGL) {
-                GFX.MountainTerrain = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain.obj"));
-                GFX.MountainBuildings = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "buildings.obj"));
-                GFX.MountainCoreWall = ObjModel.Create(Path.Combine(Engine.ContentDirectory, "Overworld", "mountain_wall.obj"));
+                GFX.Load();
+                MTN.Load();
+                GFX.LoadData();
+                MTN.LoadData();
             }
             // Otherwise loaded in CoreModule.LoadContent
 
-            Console.WriteLine("LOADED : " + Stopwatch.ElapsedMilliseconds + "ms");
-            Stopwatch.Stop();
-            Stopwatch = null;
+            timer = Stopwatch.StartNew();
+            Fonts.Prepare();
+            Dialog.Load();
+            Fonts.Load(Dialog.Languages["english"].FontFace);
+            Fonts.Load(Dialog.Languages[Settings.Instance.Language].FontFace);
+            dialogLoaded = true;
+            Console.WriteLine(" - DIA/FONT LOAD: " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
+            MInput.Disabled = false;
+
+            timer = Stopwatch.StartNew();
+            AreaData.Load();
+            Console.WriteLine(" - LEVELS LOAD: " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
+
+            Console.WriteLine("DONE LOADING (in " + Celeste.LoadTimer.ElapsedMilliseconds + "ms)");
+            Celeste.LoadTimer.Stop();
+            Celeste.LoadTimer = null;
             loaded = true;
         }
 
@@ -141,7 +138,7 @@ namespace Celeste {
         [MonoModIfFlag("Lacks:IntroSkip")]
         public IEnumerator FastIntroRoutine() {
             if (!loaded) {
-                loadingTextures = GFX.Overworld.GetAtlasSubtextures("loading/");
+                loadingTextures = OVR.Atlas.GetAtlasSubtextures("loading/");
 
                 Image img = new Image(loadingTextures[0]);
                 img.CenterOrigin();

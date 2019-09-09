@@ -28,9 +28,9 @@ namespace Celeste {
                 // Backspace - trim.
                 if (Name.Length > 0) {
                     Name = Name.Substring(0, Name.Length - 1);
-                    Audio.Play(Sfxs.ui_main_rename_entry_backspace);
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
 
             } else if (c == (char) 127) {
@@ -39,19 +39,19 @@ namespace Celeste {
             } else if (c == ' ') {
                 // Space - append.
                 if (Name.Length < 12 && Name.Length > 0) {
-                    Audio.Play(Sfxs.ui_main_rename_entry_space);
+                    Audio.Play(SFX.ui_main_rename_entry_space);
                     Name += c;
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
 
             } else if (!char.IsControl(c)) {
                 // Any other character - append.
                 if (Name.Length < 12 && ActiveFont.FontSize.Characters.ContainsKey(c)) {
-                    Audio.Play(Sfxs.ui_main_rename_entry_char);
+                    Audio.Play(SFX.ui_main_rename_entry_char);
                     Name += c;
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
             }
         }

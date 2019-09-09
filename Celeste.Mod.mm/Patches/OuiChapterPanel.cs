@@ -19,13 +19,17 @@ namespace Celeste {
 
         [MonoModReplace]
         public static new string GetCheckpointPreviewName(AreaKey area, string level) {
+            return _GetCheckpointPreviewName(area, level);
+        }
+
+        internal static string _GetCheckpointPreviewName(AreaKey area, string level) {
             string result = area.ToString();
-            if (area.ID >= 10)
+            if (area.GetLevelSet() != "Celeste")
                 result = area.GetSID();
             if (level != null)
                 result = result + "_" + level;
 
-            if (GFX.Checkpoints.Has(result))
+            if (MTN.Checkpoints.Has(result))
                 return result;
             return $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/{level ?? "start"}";
         }

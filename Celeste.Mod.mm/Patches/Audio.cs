@@ -42,11 +42,8 @@ namespace Celeste {
             Audio.Banks.Music = Audio.Banks.Load("music", false);
             Audio.Banks.Sfxs = Audio.Banks.Load("sfx", false);
             Audio.Banks.UI = Audio.Banks.Load("ui", false);
-            try {
-                Audio.Banks.NewContent = Audio.Banks.Load("new_content", false);
-            } catch {
-                // Celeste pre 1.2.5.X doesn't ship with this bank.
-            }
+            Audio.Banks.DlcMusic = Audio.Banks.Load("dlc_music", false);
+            Audio.Banks.DlcSfxs = Audio.Banks.Load("dlc_sfx", false);
 
             // Prepopulate cachedPaths, as it's being used directly.
             foreach (Bank bank in patch_Banks.Banks.Values) {

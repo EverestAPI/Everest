@@ -42,7 +42,7 @@ namespace Celeste.Mod.UI {
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
             menu.Add(new TextMenu.Button(Dialog.Clean("maplist_reload")).Pressed(() => {
-                Audio.Play(Sfxs.ui_postgame_unlock_newchapter);
+                Audio.Play(SFX.ui_postgame_unlock_newchapter);
                 Overworld.Mountain.UntiltedCamera = cameraStart;
                 OuiHelper_ChapterSelect_Reload.Reload();
                 Overworld.Goto<OuiMapList>();
@@ -221,7 +221,7 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Leave(Oui next) {
             menu.Focused = false;
 
-            Audio.Play(Sfxs.ui_main_whoosh_large_out);
+            Audio.Play(SFX.ui_main_whoosh_large_out);
 
             if (Overworld != null) {
                 Overworld.Maddy.Show = true;
@@ -245,7 +245,7 @@ namespace Celeste.Mod.UI {
 
                 if (Input.MenuCancel.Pressed ||
                     Input.Pause.Pressed || Input.ESC.Pressed) {
-                    Audio.Play(Sfxs.ui_main_button_back);
+                    Audio.Play(SFX.ui_main_button_back);
                     Overworld.Goto<OuiChapterSelect>();
                 }
             }
@@ -261,7 +261,7 @@ namespace Celeste.Mod.UI {
 
         public void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
-            Audio.Play(Sfxs.ui_world_icon_select);
+            Audio.Play(SFX.ui_world_icon_select);
             SaveData.Instance.LastArea = area.ToKey(mode);
             if (OuiIcons != null && area.ID < OuiIcons.Count)
                 OuiIcons[area.ID].Select();
@@ -271,7 +271,7 @@ namespace Celeste.Mod.UI {
 
         public void Start(AreaData area, AreaMode mode = AreaMode.Normal, string checkpoint = null) {
             Focused = false;
-            Audio.Play(Sfxs.ui_world_chapter_checkpoint_start);
+            Audio.Play(SFX.ui_world_chapter_checkpoint_start);
             Add(new Coroutine(StartRoutine(area, mode, checkpoint)));
         }
 

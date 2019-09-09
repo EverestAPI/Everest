@@ -189,9 +189,9 @@ namespace Celeste.Mod.UI {
                 // Backspace - trim.
                 if (Value.Length > 0) {
                     Value = Value.Substring(0, Value.Length - 1);
-                    Audio.Play(Sfxs.ui_main_rename_entry_backspace);
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
 
             } else if (c == (char) 127) {
@@ -200,19 +200,19 @@ namespace Celeste.Mod.UI {
             } else if (c == ' ') {
                 // Space - append.
                 if (Value.Length < MaxValueLength) {
-                    Audio.Play(Sfxs.ui_main_rename_entry_space);
+                    Audio.Play(SFX.ui_main_rename_entry_space);
                     Value += c;
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
 
             } else if (!char.IsControl(c)) {
                 // Any other character - append.
                 if (Value.Length < MaxValueLength && ActiveFont.FontSize.Characters.ContainsKey(c)) {
-                    Audio.Play(Sfxs.ui_main_rename_entry_char);
+                    Audio.Play(SFX.ui_main_rename_entry_char);
                     Value += c;
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
             }
         }
@@ -240,7 +240,7 @@ namespace Celeste.Mod.UI {
                     } while (letters[line][index] == ' ');
                 }
                 wiggler.Start();
-                Audio.Play(Sfxs.ui_main_rename_entry_roll);
+                Audio.Play(SFX.ui_main_rename_entry_roll);
 
             } else if (Input.MenuLeft.Pressed && (optionsIndex > 0 || !selectingOptions)) {
                 if (selectingOptions) {
@@ -251,7 +251,7 @@ namespace Celeste.Mod.UI {
                     } while (letters[line][index] == ' ');
                 }
                 wiggler.Start();
-                Audio.Play(Sfxs.ui_main_rename_entry_roll);
+                Audio.Play(SFX.ui_main_rename_entry_roll);
 
             } else if (Input.MenuDown.Pressed && !selectingOptions) {
                 int lineNext = line + 1;
@@ -286,7 +286,7 @@ namespace Celeste.Mod.UI {
                 }
 
                 wiggler.Start();
-                Audio.Play(Sfxs.ui_main_rename_entry_roll);
+                Audio.Play(SFX.ui_main_rename_entry_roll);
 
             } else if ((Input.MenuUp.Pressed || (selectingOptions && Value.Length <= 0 && optionsIndex > 0)) && (line > 0 || selectingOptions)) {
                 if (selectingOptions) {
@@ -310,7 +310,7 @@ namespace Celeste.Mod.UI {
                     index--;
                 }
                 wiggler.Start();
-                Audio.Play(Sfxs.ui_main_rename_entry_roll);
+                Audio.Play(SFX.ui_main_rename_entry_roll);
 
             } else if (Input.MenuConfirm.Pressed) {
                 if (selectingOptions) {
@@ -326,9 +326,9 @@ namespace Celeste.Mod.UI {
                 } else if (Value.Length < MaxValueLength) {
                     Value += letters[line][index].ToString();
                     wiggler.Start();
-                    Audio.Play(Sfxs.ui_main_rename_entry_char);
+                    Audio.Play(SFX.ui_main_rename_entry_char);
                 } else {
-                    Audio.Play(Sfxs.ui_main_button_invalid);
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
 
             } else if (Input.MenuCancel.Pressed) {
@@ -360,18 +360,18 @@ namespace Celeste.Mod.UI {
             if (Value.Length < MaxValueLength) {
                 Value += " ";
                 wiggler.Start();
-                Audio.Play(Sfxs.ui_main_rename_entry_char);
+                Audio.Play(SFX.ui_main_rename_entry_char);
             } else {
-                Audio.Play(Sfxs.ui_main_button_invalid);
+                Audio.Play(SFX.ui_main_button_invalid);
             }
         }
 
         private void Backspace() {
             if (Value.Length > 0) {
                 Value = Value.Substring(0, Value.Length - 1);
-                Audio.Play(Sfxs.ui_main_rename_entry_backspace);
+                Audio.Play(SFX.ui_main_rename_entry_backspace);
             } else {
-                Audio.Play(Sfxs.ui_main_button_invalid);
+                Audio.Play(SFX.ui_main_button_invalid);
             }
         }
 
@@ -379,9 +379,9 @@ namespace Celeste.Mod.UI {
             if (Value.Length >= 1) {
                 Focused = false;
                 exit?.Invoke();
-                Audio.Play(Sfxs.ui_main_rename_entry_accept);
+                Audio.Play(SFX.ui_main_rename_entry_accept);
             } else {
-                Audio.Play(Sfxs.ui_main_button_invalid);
+                Audio.Play(SFX.ui_main_button_invalid);
             }
         }
 
@@ -389,7 +389,7 @@ namespace Celeste.Mod.UI {
             Value = StartingValue;
             Focused = false;
             exit?.Invoke();
-            Audio.Play(Sfxs.ui_main_button_back);
+            Audio.Play(SFX.ui_main_button_back);
         }
 
         public override void Render() {
