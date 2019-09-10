@@ -23,6 +23,7 @@ namespace Monocle {
 
         // We're effectively in Atlas, but still need to "expose" private fields to our mod.
         private Dictionary<string, MTexture> textures;
+        private Dictionary<string, string> links = new Dictionary<string, string>();
         public Dictionary<string, MTexture> Textures => textures;
 
         public static Dictionary<string, MTexture> VTextureToMTextureMap;
@@ -203,6 +204,14 @@ namespace Monocle {
                                 );
                             }
                         }
+                        if (stream.Position < stream.Length && reader.ReadString() == "LINKS") {
+                            short count = reader.ReadInt16();
+                            for (int i = 0; i < count; i++) {
+                                string key = reader.ReadString();
+                                string value = reader.ReadString();
+                                atlas.links.Add(key, value);
+                            }
+                        }
                     }
                     break;
 
@@ -231,7 +240,16 @@ namespace Monocle {
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".data"));
                                 atlas.textures[name] = VTextureToMTextureMap[texV.Name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                atlas.textures[name].AtlasPath = name;
                                 atlas.Sources.Add(texV);
+                            }
+                        }
+                        if (stream.Position < stream.Length && reader.ReadString() == "LINKS") {
+                            short count = reader.ReadInt16();
+                            for (int i = 0; i < count; i++) {
+                                string key = reader.ReadString();
+                                string value = reader.ReadString();
+                                atlas.links.Add(key, value);
                             }
                         }
                     }
