@@ -37,6 +37,10 @@ namespace Celeste {
         public override void Begin() {
             base.Begin();
 
+            InitAreaCompleteInfoForEverest();
+        }
+
+        public static void InitAreaCompleteInfoForEverest() {
             if (Everest.Flags.IsDisabled)
                 return;
 
@@ -52,6 +56,10 @@ namespace Celeste {
         public override void End() {
             orig_End();
 
+            DisposeAreaCompleteInfoForEverest();
+        }
+
+        public static void DisposeAreaCompleteInfoForEverest() {
             if (Everest.Flags.IsDisabled)
                 return;
 

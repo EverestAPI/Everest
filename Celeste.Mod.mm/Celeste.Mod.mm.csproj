@@ -251,6 +251,7 @@
     <Compile Include="Patches\HeartGem.cs" />
     <Compile Include="Patches\Dust.cs" />
     <Compile Include="Patches\Debris.cs" />
+    <Compile Include="Patches\CS10_Ending.cs" />
     <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\TheoCrystal.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
