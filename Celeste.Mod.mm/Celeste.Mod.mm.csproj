@@ -137,6 +137,7 @@
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
+    <Compile Include="Patches\Holdable.cs" />
     <Compile Include="Patches\Language.cs" />
     <Compile Include="Patches\FinalBoss.cs" />
     <Compile Include="Patches\BadelineOldsite.cs" />
@@ -249,6 +250,7 @@
     <Compile Include="Patches\FireBall.cs" />
     <Compile Include="Patches\HeartGem.cs" />
     <Compile Include="Patches\Dust.cs" />
+    <Compile Include="Patches\Debris.cs" />
     <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\TheoCrystal.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
