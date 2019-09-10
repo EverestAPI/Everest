@@ -83,10 +83,15 @@ namespace Celeste {
                         GFX.Game.GetAtlasSubtextures(el.Attr("path"))
                     );
 
+            GFX.SpriteBank = new SpriteBank(GFX.Game, Path.Combine("Graphics", "Sprites.xml"));
+
             path = meta?.Sprites;
-            if (string.IsNullOrEmpty(path))
-                path = Path.Combine("Graphics", "Sprites.xml");
-            GFX.SpriteBank = new SpriteBank(GFX.Game, path);
+            if (!string.IsNullOrEmpty(path)) {
+                SpriteBank bankOrig = GFX.SpriteBank;
+                SpriteBank bankMod = new SpriteBank(GFX.Game, path);
+                foreach (KeyValuePair<string, SpriteData> kvp in bankMod.SpriteData)
+                    bankOrig.SpriteData[kvp.Key] = kvp.Value;
+            }
 
             path = meta?.Portraits;
             if (string.IsNullOrEmpty(path))
