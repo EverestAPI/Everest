@@ -23,8 +23,9 @@ namespace Celeste {
         private float tempoMult;
         private int beatsPerTick;
         private int ticksPerSwap;
-        private int blocks;
-        private int beatsMax;
+        private int maxBeat;
+        private int beatIndexMax;
+        private bool isLevelMusic;
 
         private int currentIndex;
         private int beatIndex;
@@ -42,12 +43,9 @@ namespace Celeste {
         public override void Awake(Scene scene) {
             orig_Awake(scene);
 
-            tempoMult = SceneAs<Level>().CassetteBlockTempo;
-            leadBeats = 16;
             beatsPerTick = 4;
             ticksPerSwap = 2;
-            blocks = SceneAs<Level>().CassetteBlockBeats;
-            beatsMax = 256;
+            beatIndexMax = 256;
 
             MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session).GetMeta()?.CassetteModifier;
             if (meta != null) {
@@ -55,8 +53,8 @@ namespace Celeste {
                 leadBeats = meta.LeadBeats;
                 beatsPerTick = meta.BeatsPerTick;
                 ticksPerSwap = meta.TicksPerSwap;
-                blocks = meta.Blocks;
-                beatsMax = meta.BeatsMax;
+                maxBeat = meta.Blocks;
+                beatIndexMax = meta.BeatsMax;
             }
         }
 
@@ -69,20 +67,21 @@ namespace Celeste {
 
             beatTimer -= 0.166666672f;
             beatIndex++;
-            beatIndex %= beatsMax;
+            beatIndex %= beatIndexMax;
 
             if (beatIndex % (beatsPerTick * ticksPerSwap) == 0) {
                 currentIndex++;
-                currentIndex %= blocks;
+                currentIndex %= maxBeat;
                 SetActiveIndex(currentIndex);
-                Audio.Play("event:/game/general/cassette_block_switch_2");
+                if(!isLevelMusic)
+                    Audio.Play("event:/game/general/cassette_block_switch_2");
                 Input.Rumble(RumbleStrength.Medium, RumbleLength.Short);
 
             } else {
                 if ((beatIndex + 1) % (beatsPerTick * ticksPerSwap) == 0) {
-                    SetWillActivate((currentIndex + 1) % blocks);
+                    SetWillActivate((currentIndex + 1) % maxBeat);
                 }
-                if (beatIndex % beatsPerTick == 0) {
+                if (beatIndex % beatsPerTick == 0 && !isLevelMusic) {
                     Audio.Play("event:/game/general/cassette_block_switch_1");
                 }
             }
@@ -91,27 +90,30 @@ namespace Celeste {
                 leadBeats--;
                 if (leadBeats == 0) {
                     beatIndex = 0;
-                    sfx.start();
+                    if(!isLevelMusic)
+                        sfx.start();
                 }
             }
 
             if (leadBeats <= 0) {
-                sfx.setParameterValue("sixteenth_note", beatIndex + 1);
+                sfx.setParameterValue("sixteenth_note", GetSixteenthNote());
             }
         }
 
         [MonoModReplace]
         public new void OnLevelStart() {
-            /*
-            if (beatIndex % 8 >= 5) {
-                currentIndex = 0;
-            } else {
-                currentIndex = 1;
-            }
-            */
+            maxBeat = SceneAs<Level>().CassetteBlockBeats;
+            tempoMult = SceneAs<Level>().CassetteBlockTempo;
 
-            // This is accurate to the above original code, but could result in a few edge case inaccuracies with custom values.
-            currentIndex = blocks - 1 - ((beatIndex / beatsPerTick) % blocks);
+            if (SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
+                if (beatIndex % 8 >= 5) {
+                    currentIndex = maxBeat - 2;
+                } else {
+                    currentIndex = maxBeat - 1;
+                }
+            } else {
+                currentIndex = maxBeat - 1 - ((beatIndex / beatsPerTick) % maxBeat);
+            }
 
             SilentUpdateBlocks();
         }
