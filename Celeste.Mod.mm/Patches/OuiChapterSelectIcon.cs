@@ -20,6 +20,9 @@ namespace Celeste {
         private bool hidden;
         public bool IsHidden => hidden;
 
+        private bool selected;
+        public bool IsSelected => selected;
+
         public patch_OuiChapterSelectIcon(int area, MTexture front, MTexture back)
             : base(area, front, back) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -31,8 +34,11 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        public static bool IsHidden(this OuiChapterSelectIcon self)
+        public static bool GetIsHidden(this OuiChapterSelectIcon self)
             => ((patch_OuiChapterSelectIcon) self).IsHidden;
+
+        public static bool GetIsSelected(this OuiChapterSelectIcon self)
+            => ((patch_OuiChapterSelectIcon) self).IsSelected;
 
     }
 }

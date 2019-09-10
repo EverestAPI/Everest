@@ -398,6 +398,8 @@ namespace Celeste {
             get {
                 if (Name == "Celeste" && SaveData != null)
                     return SaveData.UnlockedAreas_Unsafe;
+                if (string.IsNullOrEmpty(Name))
+                    return MaxArea;
                 return Calc.Clamp(_UnlockedAreas, 0, AreasIncludingCeleste?.Count ?? 0);
             }
             set {
@@ -526,6 +528,12 @@ namespace Celeste {
                 value += TotalStrawberries / 175f * 55f;
                 value += TotalCassettes / 8f * 7f;
                 value += TotalCompletions / 8f * 14f;
+
+                if (value < 0f)
+                    value = 0f;
+                else if (value > 100f)
+                    value = 100f;
+
                 return (int) value;
             }
         }
