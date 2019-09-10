@@ -137,6 +137,7 @@
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
+    <Compile Include="Patches\DashBlock.cs" />
     <Compile Include="Patches\Holdable.cs" />
     <Compile Include="Patches\Language.cs" />
     <Compile Include="Patches\FinalBoss.cs" />

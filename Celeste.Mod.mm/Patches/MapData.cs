@@ -290,6 +290,11 @@ namespace Celeste {
         }
 
         private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {
+            if (y < 0)
+                y = -x;
+            if (x < 0)
+                x = -x;
+
             if (map.GetLength(0) <= y || map.GetLength(1) <= x) {
                 // Array.Resize is unavailable and Copy sees the entire array as one row.
                 EntityData[,] mapNew = new EntityData[y + 10, x + 25];
