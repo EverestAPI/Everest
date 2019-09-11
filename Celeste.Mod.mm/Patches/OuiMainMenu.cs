@@ -45,7 +45,7 @@ namespace Celeste {
                     pos.X -= 140f;
 
                 button.UpButton = i > 0 ? buttons[i - 1] : buttons[buttons.Count - 1];
-                button.DownButton = i < buttons.Count - 1 ? buttons[i + 1] : buttons[1];
+                button.DownButton = i < buttons.Count - 1 ? buttons[i + 1] : buttons[0];
 
                 // Add button if missing.
                 if (!Scene.Entities.Contains(button))

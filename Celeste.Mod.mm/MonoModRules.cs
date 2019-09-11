@@ -201,6 +201,11 @@ namespace MonoMod {
                 version = new Version(versionInts[0], versionInts[1], versionInts[2], versionInts[3]);
             }
 
+            Version versionMin = new Version(1, 3, 0, 0);
+            if (version < versionMin) {
+                throw new Exception($"Your version of Celeste ({version}) is outdated! Please update to Celeste {versionMin} or newer.");
+            }
+
             // Set up any flags.
 
             if (version < new Version(1, 1, 9, 2)) {
