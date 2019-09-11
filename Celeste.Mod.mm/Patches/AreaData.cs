@@ -114,6 +114,24 @@ namespace Celeste {
             }
         }
 
+        [MonoModLinkFrom("System.Boolean Celeste.AreaData::IsFinal_Unsafe")]
+        public new bool IsFinal;
+
+        [MonoModRemove]
+        public bool IsFinal_Unsafe;
+
+        [MonoModLinkFrom("System.Boolean Celeste.AreaData::IsFinal")]
+        public bool IsFinal_Safe {
+            get {
+                return
+                    IsFinal_Unsafe &&
+                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() == LevelSet);
+            }
+            set {
+                IsFinal_Unsafe = value;
+            }
+        }
+
         [MonoModReplace]
         public static new AreaData Get(Scene scene) {
             AreaData result;
