@@ -9,6 +9,7 @@ using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -89,8 +90,23 @@ namespace Celeste {
             if (!string.IsNullOrEmpty(path)) {
                 SpriteBank bankOrig = GFX.SpriteBank;
                 SpriteBank bankMod = new SpriteBank(GFX.Game, path);
-                foreach (KeyValuePair<string, SpriteData> kvp in bankMod.SpriteData)
-                    bankOrig.SpriteData[kvp.Key] = kvp.Value;
+
+                foreach (KeyValuePair<string, SpriteData> kvpBank in bankMod.SpriteData) {
+                    string key = kvpBank.Key;
+                    SpriteData valueMod = kvpBank.Value;
+
+                    if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
+                        IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
+                        IDictionary animsMod = valueMod.Sprite.GetAnimations();
+
+                        foreach (DictionaryEntry kvpAnim in animsMod) {
+                            animsOrig[kvpAnim.Key] = kvpAnim.Value;
+                        }
+
+                    } else {
+                        bankOrig.SpriteData[key] = valueMod;
+                    }
+                }
             }
 
             path = meta?.Portraits;
