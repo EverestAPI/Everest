@@ -72,11 +72,13 @@ namespace Celeste {
 
         [MonoModReplace]
         private IEnumerator StartRoutine(string checkpoint = null) {
+            EnteringChapter = true;
             Overworld.Maddy.Hide(false);
             Overworld.Mountain.EaseCamera(Area.ID, Data.MountainZoom, 1f);
             Add(new Coroutine(EaseOut(false)));
             yield return 0.2f;
 
+            ScreenWipe.WipeColor = Color.Black;
             AreaData.Get(Area).Wipe(Overworld, false, null);
             Audio.SetMusic(null);
             Audio.SetAmbience(null);
