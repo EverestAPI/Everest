@@ -183,6 +183,7 @@ namespace Celeste {
                     area.Icon = "areas/null";
 
                 area.Interlude = false;
+                area.CanFullClear = true;
 
                 area.TitleBaseColor = Calc.HexToColor("6c7c81");
                 area.TitleAccentColor = Calc.HexToColor("2f344b");
