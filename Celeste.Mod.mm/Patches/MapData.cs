@@ -291,7 +291,7 @@ namespace Celeste {
 
         private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {
             if (y < 0)
-                y = -x;
+                y = -y;
             if (x < 0)
                 x = -x;
 
