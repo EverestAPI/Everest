@@ -56,6 +56,11 @@ namespace Celeste {
             Everest.Events.Player.Spawn(this);
         }
 
+        [MonoModReplace]
+        private void CreateTrail() {
+            TrailManager.Add(this, GetCurrentTrailColor(), 1f);
+        }
+
         public extern void orig_Update();
         public override void Update() {
             orig_Update();
@@ -69,14 +74,8 @@ namespace Celeste {
                 diedInGBJ = 0;
         }
 
-        [MonoModReplace]
-        private void CreateTrail() {
-            TrailManager.Add(this, GetCurrentTrailColor(), 1f);
-        }
-
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
-
-        new public PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
+        public new PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
             Level level = Scene as Level;
 
             // 2 catches spawn-blade-kill GBJs.
