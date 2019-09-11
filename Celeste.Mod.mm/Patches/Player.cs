@@ -112,6 +112,10 @@ namespace Celeste {
             return wasDashB ? NormalHairColor : UsedHairColor;
         }
 
+        public Vector2 ExplodeLaunch(Vector2 from, bool snapUp = true) {
+            return ExplodeLaunch(from, snapUp, false);
+        }
+
     }
     public static class PlayerExt {
 

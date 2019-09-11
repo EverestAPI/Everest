@@ -60,6 +60,7 @@ namespace Celeste {
             // Fix "out of bounds" level selection.
             int areaOffs = SaveData.Instance.GetLevelSetStats().AreaOffset;
             int areaMax = Math.Max(areaOffs, SaveData.Instance.UnlockedAreas);
+            int areaUnclamp = area;
             area = Calc.Clamp(area, areaOffs, areaMax);
 
             Visible = true;
@@ -74,8 +75,11 @@ namespace Celeste {
                     journalEnabled = true;
 
             OuiChapterSelectIcon unselected = null;
-            if (from is OuiChapterPanel)
-                (unselected = icons[area]).Unselect();
+            if (from is OuiChapterPanel) {
+                (unselected = icons[areaUnclamp]).Unselect();
+                if (areaUnclamp != area)
+                    unselected.Hide();
+            }
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
@@ -170,17 +174,25 @@ namespace Celeste {
                     Overworld.Goto<OuiHelper_ChapterSelect_Reload>();
                     return;
                 }
+
                 // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.
-                if (Input.MenuLeft.Pressed &&
-                    (area > 0) &&
-                    icons[area - 1].IsHidden()
-                ) {
+                int offs = SaveData.Instance.GetLevelSetStats().AreaOffset;
+                if (area < offs) {
+                    area = offs;
+                } else {
+                    if (area > SaveData.Instance.MaxArea) {
+                        area = SaveData.Instance.MaxArea;
+                    }
+                    while (area > 0 && icons[area].GetIsHidden()) {
+                        area--;
+                    }
+                }
+
+                if (Input.MenuLeft.Pressed && (area - 1 < 0 || icons[area - 1].GetIsHidden())) {
                     return;
                 }
-                if (Input.MenuRight.Pressed &&
-                    (area < SaveData.Instance.UnlockedAreas || (SaveData.Instance.AssistMode && area == SaveData.Instance.UnlockedAreas && area < SaveData.Instance.MaxArea)) &&
-                    icons[area + 1].IsHidden()
-                ) {
+
+                if (Input.MenuRight.Pressed && (area + 1 >= icons.Count || icons[area + 1].GetIsHidden())) {
                     return;
                 }
             }
