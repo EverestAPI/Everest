@@ -35,6 +35,12 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchBackdropParser")]
+    class PatchBackdropParserAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLevelUpdate")]
@@ -81,6 +87,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute("PatchCloudAdded")]
     class PatchCloudAddedAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the RainFG.Render method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchRainFGRender")]
+    class PatchRainFGRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
@@ -418,6 +430,46 @@ namespace MonoMod {
                     instri++;
                 }
 
+            }
+
+        }
+
+        public static void PatchBackdropParser(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_LoadCustomBackdrop = method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
+            if (m_LoadCustomBackdrop == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+
+            // Load custom backdrop at the beginning of the method.
+            // If it's been loaded, skip to backdrop setup.
+
+            Instruction origStart = instrs[0];
+
+            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_1));
+            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_2));
+            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_0));
+            il.InsertBefore(origStart, il.Create(OpCodes.Call, m_LoadCustomBackdrop));
+            il.InsertBefore(origStart, il.Create(OpCodes.Dup));
+            il.InsertBefore(origStart, il.Create(OpCodes.Stloc_0));
+
+            Instruction branchCustomToSetup = il.Create(OpCodes.Nop);
+            branchCustomToSetup.OpCode = OpCodes.Brtrue;
+            branchCustomToSetup.Operand = null;
+            il.InsertBefore(origStart, branchCustomToSetup);
+
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode != OpCodes.Ldstr || instr.Operand as string != "tag")
+                    continue;
+
+                branchCustomToSetup.Operand = instr.Previous;
+                break;
             }
 
         }
@@ -932,6 +984,30 @@ namespace MonoMod {
 
             }
 
+        }
+
+        public static void PatchRainFGRender(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_GetColor = method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Color _GetColor(System.String,Celeste.RainFG)");
+            if (m_GetColor == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "Microsoft.Xna.Framework.Color Monocle.Calc::HexToColor(System.String)") {
+                    // Push this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Replace the method call.
+                    instr.Operand = m_GetColor;
+                    instri++;
+                }
+            }
         }
 
         public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {

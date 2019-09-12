@@ -289,6 +289,10 @@ namespace Celeste {
             }
         }
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchBackdropParser] // ... except for manually manipulating the method via MonoModRules
+        private extern Backdrop ParseBackdrop(BinaryPacker.Element child, BinaryPacker.Element above);
+
         private static EntityData _GrowAndGet(ref EntityData[,] map, int y, int x) {
             if (y < 0)
                 y = -y;
@@ -307,6 +311,21 @@ namespace Celeste {
             }
 
             return map[y, x];
+        }
+
+        public static Backdrop LoadCustomBackdrop(BinaryPacker.Element child, BinaryPacker.Element above, MapData map) {
+            Backdrop backdropFromMod = Everest.Events.Level.LoadBackdrop(map, child, above);
+            if (backdropFromMod != null)
+                return backdropFromMod;
+
+            if (child.Name.Equals("rain", StringComparison.OrdinalIgnoreCase)) {
+                patch_RainFG rain = new patch_RainFG();
+                if (child.HasAttr("color"))
+                    rain.Color = Calc.HexToColor(child.Attr("color"));
+                return rain;
+            }
+
+            return null;
         }
 
     }

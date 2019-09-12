@@ -76,6 +76,11 @@ namespace Celeste.Mod {
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
 
+                public delegate Backdrop LoadBackdropHandler(MapData map, BinaryPacker.Element child, BinaryPacker.Element above);
+                public static event LoadBackdropHandler OnLoadBackdrop;
+                internal static Backdrop LoadBackdrop(MapData map, BinaryPacker.Element child, BinaryPacker.Element above)
+                    => OnLoadBackdrop?.InvokeWhileNull<Backdrop>(map, child, above);
+
                 public delegate void LoadLevelHandler(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader);
                 public static event LoadLevelHandler OnLoadLevel;
                 internal static void LoadLevel(_Level level, _Player.IntroTypes playerIntro, bool isFromLoader)
