@@ -63,5 +63,11 @@ namespace Celeste {
             Visible = false;
         }
 
+        public override void Render() {
+            if (!Visible)
+                return;
+            base.Render();
+        }
+
     }
 }

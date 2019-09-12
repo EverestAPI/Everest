@@ -25,6 +25,7 @@ namespace Celeste {
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
+        public static Dictionary<string, EventDescription> cachedModEvents = new Dictionary<string, EventDescription>();
 
         private static int modBankHandleLast = 0x0ade;
         private static Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
@@ -122,8 +123,9 @@ namespace Celeste {
 
                     EventDescription _event;
                     if (system.getEventByID(id, out _event) <= RESULT.OK) {
-                        Audio.cachedEventDescriptions[path] = _event;
+                        _event.unloadSampleData();
                         cachedPaths[id] = path;
+                        cachedModEvents[path] = _event;
                     }
                     // TODO: Ingest buses and vcas
                 }
@@ -151,16 +153,40 @@ namespace Celeste {
             return cachedPaths[id] = path;
         }
 
+        [MonoModReplace]
+        public static EventDescription GetEventDescription(string path) {
+            EventDescription desc = null;
+            if (path == null || Audio.cachedEventDescriptions.TryGetValue(path, out desc))
+                return desc;
+
+            RESULT status;
+
+            if (cachedModEvents.TryGetValue(path, out desc)) {
+                status = RESULT.OK;
+            } else {
+                status = system.getEvent(path, out desc);
+            }
+
+            if (status == RESULT.OK) {
+                desc.loadSampleData();
+                Audio.cachedEventDescriptions.Add(path, desc);
+
+            } else if (status == RESULT.ERR_EVENT_NOTFOUND) {
+                Logger.Log("Audio", $"Event not found: {path}");
+
+            } else {
+                throw new Exception("FMOD getEvent failed: " + status);
+            }
+
+            return desc;
+        }
+
         public static class patch_Banks {
 
             public static Dictionary<string, Bank> Banks = new Dictionary<string, Bank>();
             public static Dictionary<ModAsset, Bank> ModCache = new Dictionary<ModAsset, Bank>();
 
             public readonly static int SizeOfBankInfo = Marshal.SizeOf(typeof(BANK_INFO));
-
-            // Celeste pre 1.2.5.X doesn't ship with this bank.
-            // This should act as a no-op for Celeste 1.2.5.X+.
-            public static Bank NewContent;
 
             [MonoModReplace]
             public static Bank Load(string name, bool loadStrings) {
