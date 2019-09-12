@@ -282,10 +282,10 @@ namespace Celeste {
             // Order the levelsets to appear just as their areas appear in AreaData.Areas
             LevelSets.Sort((set1, set2) => set1.AreaOffset.CompareTo(set2.AreaOffset));
 
-            // Carry over any progress from vanilla saves.
-            if (LastArea_Unsafe.ID != 0)
+            // If there is no mod progress, carry over any progress from vanilla saves.
+            if (LastArea_Safe.ID == 0)
                 LastArea_Safe = LastArea_Unsafe;
-            if (CurrentSession_Unsafe != null)
+            if (CurrentSession_Safe == null)
                 CurrentSession_Safe = CurrentSession_Unsafe;
 
             // Trick unmodded instances of Celeste to thinking that we last selected prologue / played no level.
