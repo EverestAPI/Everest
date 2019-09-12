@@ -12,7 +12,7 @@ namespace Celeste.Mod.Helpers {
     /// </summary>
     public static class FileProxy {
 
-        private static string _Modize(string path) {
+        internal static string _Modize(string path) {
             // Trim the file extension, as we don't store it in our mod content mappings.
             string dir = Path.GetDirectoryName(path);
             path = Path.GetFileNameWithoutExtension(path);
@@ -44,6 +44,14 @@ namespace Celeste.Mod.Helpers {
                 return new FileProxyStream(meta.Stream);
 
             return File.OpenRead(path);
+        }
+
+        public static byte[] ReadAllBytes(string path) {
+            ModAsset meta;
+            if (Everest.Content.TryGet(_Modize(path), out meta))
+                return meta.Data;
+
+            return File.ReadAllBytes(path);
         }
 
     }

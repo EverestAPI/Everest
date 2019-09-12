@@ -132,7 +132,9 @@ namespace MonoMod {
         static TypeDefinition Level;
 
         static TypeDefinition FileProxy;
+        static TypeDefinition DirectoryProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new Dictionary<string, MethodDefinition>();
+        static IDictionary<string, MethodDefinition> DirectoryProxyCache = new Dictionary<string, MethodDefinition>();
 
         static List<MethodDefinition> LevelExitRoutines = new List<MethodDefinition>();
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
@@ -277,6 +279,11 @@ namespace MonoMod {
             if (FileProxy == null)
                 return;
 
+            if (DirectoryProxy == null)
+                DirectoryProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.DirectoryProxy")?.Resolve();
+            if (DirectoryProxy == null)
+                return;
+
             foreach (Instruction instr in method.Body.Instructions) {
                 // System.IO.File.* calls are always static calls.
                 if (instr.OpCode != OpCodes.Call)
@@ -284,12 +291,20 @@ namespace MonoMod {
 
                 // We only want to replace System.IO.File.* calls.
                 MethodReference calling = instr.Operand as MethodReference;
-                if (calling?.DeclaringType?.FullName != "System.IO.File")
-                    continue;
+                MethodDefinition replacement = null;
 
-                MethodDefinition replacement;
-                if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
-                    FileProxyCache[calling.GetFindableID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetFindableID(withType: false));
+                if (calling?.DeclaringType?.FullName == "System.IO.File") {
+                    if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
+                        FileProxyCache[calling.GetFindableID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetFindableID(withType: false));
+
+                } else if (calling?.DeclaringType?.FullName == "System.IO.Directory") {
+                    if (!DirectoryProxyCache.TryGetValue(calling.Name, out replacement))
+                        DirectoryProxyCache[calling.GetFindableID(withType: false)] = replacement = DirectoryProxy.FindMethod(calling.GetFindableID(withType: false));
+
+                } else {
+                    continue;
+                }
+
                 if (replacement == null)
                     continue; // We haven't got any replacement.
 

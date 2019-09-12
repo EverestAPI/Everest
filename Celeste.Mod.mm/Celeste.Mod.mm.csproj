@@ -125,6 +125,7 @@
     <Compile Include="Mod\Everest\Everest.LuaLoader.Caches.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
+    <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
     <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
     <Compile Include="Mod\Module\LuaModule.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\Checkpoint.cs" />
+    <Compile Include="Patches\Commands.cs" />
     <Compile Include="Patches\DashBlock.cs" />
     <Compile Include="Patches\AudioState.cs" />
     <Compile Include="Patches\Monocle\Sprite.cs" />
@@ -153,6 +155,7 @@
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
+    <Compile Include="Patches\PreviewRecording.cs" />
     <Compile Include="Patches\Postcard.cs" />
     <Compile Include="Patches\ReturnMapHint.cs" />
     <Compile Include="Patches\Pico8\Emulator.cs" />
@@ -257,6 +260,7 @@
     <Compile Include="Patches\Debris.cs" />
     <Compile Include="Patches\CS10_Ending.cs" />
     <Compile Include="Patches\RainFG.cs" />
+    <Compile Include="Patches\PlaybackData.cs" />
     <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\TheoCrystal.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
