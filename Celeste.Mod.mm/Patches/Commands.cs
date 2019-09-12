@@ -19,6 +19,15 @@ namespace Celeste {
     static class patch_Commands {
 
         [MonoModReplace]
+        [Command("capture", "capture the last ~200 frames of player movement to a file")]
+        private static void CmdCapture(string filename) {
+            Player player = Engine.Scene.Tracker.GetEntity<Player>();
+            if (player != null) {
+                PlaybackData.Export(player.ChaserStates, Path.Combine(Everest.Content.PathContentOrig, "Tutorials", filename + ".bin"));
+            }
+        }
+
+        [MonoModReplace]
         [ProxyFileCalls]
         [Command("playback", "play back the file name")]
         private static void CmdPlayback(string filename) {
