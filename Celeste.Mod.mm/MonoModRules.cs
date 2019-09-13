@@ -268,6 +268,10 @@ namespace MonoMod {
             TypeDefinition theocrystalcontroller = MonoModRule.Modder.FindType("Celeste.TheoCrystalCollider")?.Resolve();
             MonoModRule.Flag.Set("V1:TheoCrystalCollider", theocrystalcontroller != null);
             MonoModRule.Flag.Set("V2:TheoCrystalCollider", theocrystalcontroller == null);
+
+            bool isWindows = PlatformHelper.Is(Platform.Windows);
+            MonoModRule.Flag.Set("OS:Windows", isWindows);
+            MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

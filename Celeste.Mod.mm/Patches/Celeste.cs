@@ -56,7 +56,7 @@ namespace Celeste {
             if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
                 AllocConsole();
             }
-
+            
             // PlatformHelper is part of MonoMod.
             // Environment.OSVersion.Platform is good enough as well, but Everest consistently uses PlatformHelper.
             // The following is based off of https://github.com/FNA-XNA/FNA/wiki/4:-FNA-and-Windows-API#direct3d-support
@@ -105,6 +105,14 @@ namespace Celeste {
             }
         }
 
+        [MonoModIfFlag("OS:NotWindows")]
+        [MonoModLinkFrom("System.Boolean Celeste.Celeste::DoesGPUHaveBadOpenGLDrivers()")]
+        private static bool StubBadOpenGLDriversCheck() {
+            // since we are not on Windows, assume the OpenGL drivers are good.
+            return false;
+        }
+
+        [MonoModIfFlag("OS:Windows")]
         private static bool DoesGPUHaveBadOpenGLDrivers() {
             bool isBad = false;
 
