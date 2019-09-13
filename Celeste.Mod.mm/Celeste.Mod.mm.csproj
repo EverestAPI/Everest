@@ -142,6 +142,7 @@
     <Compile Include="Patches\Commands.cs" />
     <Compile Include="Patches\DashBlock.cs" />
     <Compile Include="Patches\AudioState.cs" />
+    <Compile Include="Patches\DreamBlock.cs" />
     <Compile Include="Patches\Monocle\Sprite.cs" />
     <Compile Include="Patches\Holdable.cs" />
     <Compile Include="Patches\Language.cs" />
