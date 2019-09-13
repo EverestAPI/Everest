@@ -53,6 +53,8 @@ namespace Celeste.Mod.Meta {
         public string CassetteNoteColor { get; set; }
         public string CassetteSong { get; set; }
 
+        public string PostcardSoundID { get; set; }
+
         public string ForegroundTiles { get; set; }
         public string BackgroundTiles { get; set; }
         public string AnimatedTiles { get; set; }
@@ -97,6 +99,8 @@ namespace Celeste.Mod.Meta {
 
             meta.AttrIf("CassetteNoteColor", v => CassetteNoteColor = v);
             meta.AttrIf("CassetteSong", v => CassetteSong = v);
+
+            meta.AttrIf("PostcardSoundID", v => PostcardSoundID = v);
 
             meta.AttrIf("ForegroundTiles", v => ForegroundTiles = v);
             meta.AttrIf("BackgroundTiles", v => BackgroundTiles = v);

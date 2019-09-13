@@ -22,7 +22,7 @@ namespace Celeste {
 
         // 1.3.0.0 gets rid of the 1-arg ctor.
         // We're adding a new ctor, thus can't call the constructor (Celeste.Postcard::.ctor) without a small workaround.
-        [MonoModLinkTo("Celeste.Postcard", ".ctor")]
+        [MonoModLinkTo("Celeste.Postcard", "System.Void .ctor(System.String,System.String,System.String)")]
         [MonoModForceCall]
         [MonoModRemove]
         public extern void ctor(string msg, string sfxEventIn, string sfxEventOut);

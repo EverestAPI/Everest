@@ -22,6 +22,8 @@ namespace Celeste {
 
         private Postcard postcard;
 
+        private bool fromSaveData;
+
         extern public static void orig_Go(Session session, bool fromSaveData);
         public static void Go(Session session, bool fromSaveData) {
             orig_Go(session, fromSaveData);
@@ -44,6 +46,16 @@ namespace Celeste {
                 return ErrorRoutine(message);
             }
 
+            AreaData areaData = AreaData.Get(session);
+            MapMeta areaMeta = areaData.GetMeta();
+            if (areaMeta != null && areaData.GetLevelSet() != "Celeste" &&
+                Dialog.Has(areaData.Name + "_postcard") &&
+                session.StartedFromBeginning && !fromSaveData &&
+                session.Area.Mode == AreaMode.Normal &&
+                (!SaveData.Instance.Areas[session.Area.ID].Modes[0].Completed || SaveData.Instance.DebugMode)) {
+                return EnterWithPostcardRoutine(Dialog.Get(areaData.Name + "_postcard"), areaMeta.PostcardSoundID);
+            }
+
             return orig_Routine();
         }
 
@@ -56,6 +68,25 @@ namespace Celeste {
             SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
             SaveData.Instance.LastArea = AreaKey.None;
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaComplete);
+        }
+
+        private IEnumerator EnterWithPostcardRoutine(string message, string soundId) {
+            yield return 1f;
+
+            if (string.IsNullOrEmpty(soundId))
+                soundId = "csides";
+
+            string prefix = "event:/ui/main/postcard_";
+            if (int.TryParse(soundId, out int areaId))
+                prefix += "ch";
+            prefix += soundId;
+
+            Add(postcard = new Postcard(message, prefix + "_in", prefix + "_out"));
+            yield return postcard.DisplayRoutine();
+
+            IEnumerator inner = orig_Routine();
+            while (inner.MoveNext())
+                yield return inner.Current;
         }
 
         private class patch_BSideTitle : Entity {
