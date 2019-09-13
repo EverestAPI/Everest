@@ -156,6 +156,14 @@ namespace Celeste {
                                 break; // Don't check this GPU's props any further.
                             }
 
+                            // Someone reported the following crash using ANGLE:
+                            // Mobile Intel(R) 4 Series Express Chipset Family
+                            // NoSuitableGraphicsDeviceException: Could not create GLES window surface
+                            if (value == "Mobile Intel(R) 4 Series Express Chipset Family") {
+                                isBad = false;
+                                break; // Don't check this GPU's props any further.
+                            }
+
                             // Gonna use ANGLE by default on this setup...
                             isBad = true;
                         }
