@@ -30,9 +30,9 @@ namespace Celeste {
             { "X", AreaMode.CSide },
         };
         private static void ParseName(string sid, out int? order, out AreaMode side, out string name) {
-            int indexOfSlash = sid.LastIndexOf('\\');
+            int indexOfSlash = sid.Replace('\\', '/').LastIndexOf('/');
             if (indexOfSlash != -1)
-                sid = sid.Substring(indexOfSlash);
+                sid = sid.Substring(indexOfSlash + 1);
             if (sid.EndsWith(".bin"))
                 sid = sid.Substring(0, sid.Length - 4);
 
@@ -401,12 +401,13 @@ namespace Celeste {
             string bName;
             ParseName(bSID, out bOrder, out bSide, out bName);
 
-            if (aOrder != null && bOrder != null &&
-                aOrder.Value != bOrder.Value)
-                return aOrder.Value - bOrder.Value;
+            if (aOrder != null && bOrder != null) {
+                if (aOrder.Value != bOrder.Value)
+                    return aOrder.Value - bOrder.Value;
 
-            if (aSide != bSide)
-                return aSide - bSide;
+                if (aSide != bSide)
+                    return aSide - bSide;
+            }
 
             return string.Compare(aName, bName);
         }
