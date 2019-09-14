@@ -48,6 +48,13 @@ namespace Celeste.Mod {
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
 
+            /// <summary>
+            /// All mods on this list with a version lower than the specified version will never load.
+            /// </summary>
+            internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
+                { "SpeedrunTool", new Version(1, 5, 7) } // Many, MANY people have got 1.5.6 or older installed, which no longer works with Celeste 1.3.0.0
+            };
+
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
@@ -302,6 +309,11 @@ namespace Celeste.Mod {
 
                 if (DependencyLoaded(meta)) {
                     Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} already loaded!");
+                    return;
+                }
+
+                if (PermanentBlacklist.TryGetValue(meta.Name, out Version minver) && meta.Version < minver) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} permanently blacklisted by Everest!");
                     return;
                 }
 
