@@ -20,14 +20,57 @@ namespace Celeste.Mod.Core {
         // Example runtime setting that only shows up in the menu, not the settings file.
         // [SettingName("modoptions_coremodule_launchindebugmode")]
         [YamlIgnore]
-        [SettingNeedsRelaunch]
-        [SettingInGame(false)]
-        public bool LaunchInDebugMode {
+        public bool DebugMode {
             get {
                 return Settings.Instance.LaunchInDebugMode;
             }
             set {
+                if (Settings.Instance.LaunchInDebugMode == value)
+                    return;
                 Settings.Instance.LaunchInDebugMode = value;
+
+                if (value) {
+                    Celeste.PlayMode = Celeste.PlayModes.Debug;
+                    Engine.Commands.Enabled = true;
+
+                } else {
+                    Celeste.PlayMode = Celeste.PlayModes.Normal;
+                    Engine.Commands.Enabled = false;
+                }
+
+                Overworld oui = Engine.Scene as Overworld;
+                if (oui != null) {
+                    oui.UIs.Remove(oui.GetUI<OuiTitleScreen>());
+                    Oui title = new OuiTitleScreen() {
+                        Visible = false
+                    };
+                    title.IsStart(oui, Overworld.StartMode.MainMenu);
+                    oui.Add(title);
+                    oui.UIs.Add(title);
+
+                    OuiMainMenu main = oui.GetUI<OuiMainMenu>();
+
+                    MenuButton selected = null;
+                    foreach (MenuButton button in main.GetButtons()) {
+                        if (!button.Selected)
+                            continue;
+                        selected = button;
+                        break;
+                    }
+
+                    main.CreateButtons();
+
+                    if (selected is MainMenuClimb) {
+                        foreach (MenuButton button in main.GetButtons()) {
+                            button.SetSelected(button is MainMenuClimb);
+                        }
+                    } else {
+                        string selectedLabel = (selected as MainMenuSmallButton)?.GetLabelName();
+                        foreach (MenuButton button in main.GetButtons()) {
+                            button.SetSelected((button as MainMenuSmallButton)?.GetLabelName() == selectedLabel);
+                        }
+                    }
+                }
             }
         }
 
@@ -112,28 +155,6 @@ namespace Celeste.Mod.Core {
         [SettingInGame(true)]
         public int ExampleInGameSlider { get; set; } = 5;
         */
-
-        public void CreateLaunchInDebugModeEntry(TextMenu menu, bool inGame) {
-            if (inGame || typeof(Settings).GetField("LaunchInDebugMode") == null)
-                return;
-
-            menu.Add(
-                new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_launchindebugmode"), LaunchInDebugMode)
-                .Change(v => LaunchInDebugMode = v)
-                .NeedsRelaunch()
-            );
-        }
-
-        public void CreateLaunchWithFMODLiveUpdateEntry(TextMenu menu, bool inGame) {
-            if (inGame || typeof(Settings).GetField("LaunchWithFMODLiveUpdate") == null)
-                return;
-
-            menu.Add(
-                new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_launchwithfmodliveupdate"), LaunchWithFMODLiveUpdate)
-                .Change(v => LaunchWithFMODLiveUpdate = v)
-                .NeedsRelaunch()
-            );
-        }
 
         public void CreateInputGuiEntry(TextMenu menu, bool inGame) {
             // Get all Input GUI prefixes and add a slider for switching between them.
