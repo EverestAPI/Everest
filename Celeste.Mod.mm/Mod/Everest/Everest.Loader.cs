@@ -52,7 +52,12 @@ namespace Celeste.Mod {
             /// All mods on this list with a version lower than the specified version will never load.
             /// </summary>
             internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
-                { "SpeedrunTool", new Version(1, 5, 7) } // Many, MANY people have got 1.5.6 or older installed, which no longer works with Celeste 1.3.0.0
+
+                // Versions of the mods older than on this list no longer work with Celeste 1.3.0.0
+                { "SpeedrunTool", new Version(1, 5, 7) },
+                { "CrystalValley", new Version(1, 1, 3) },
+                { "IsaGrabBag", new Version(1, 3, 2) },
+
             };
 
             internal static void LoadAuto() {
