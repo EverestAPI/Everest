@@ -16,41 +16,18 @@ namespace Celeste {
     // TheoCrystalCollider became HoldableCollider in Celeste 1.2.6.X
     // Holdable might be missing from versions of Celeste pre-1.2.5.X
 
-    [MonoModIfFlag("V2:TheoCrystalCollider")]
-    [MonoModPatch("Celeste.TheoCrystalCollider")]
     [MonoModLinkTo("Celeste.HoldableCollider")]
-    class link_TheoCrystalCollider {
+    class TheoCrystalCollider {
     }
 
-    [MonoModIfFlag("V1:TheoCrystalCollider")]
-    [MonoModPatch("Celeste.TheoCrystalCollider")]
-    class shim_TheoCrystalCollider {
-        [MonoModLinkTo("Celeste.TheoCrystalCollider", "System.Void .ctor(System.Action`1<Celeste.TheoCrystal>,Monocle.Collider)")]
-        [MonoModForceCall]
-        [MonoModIgnore]
-        public extern void ctor_old(Action<TheoCrystal> onCollide, Collider collider = null);
-        [MonoModConstructor]
-        public void ctor_new(Action<Holdable> onCollide, Collider collider = null) {
-            ctor_old(onCollide == null ? null : new Action<TheoCrystal>(h => onCollide(h.Get<Holdable>())), collider);
-        }
-    }
-
-    [MonoModIfFlag("V1:TheoCrystalCollider")]
-    [MonoModPatch("Celeste.HoldableCollider")]
-    [MonoModLinkTo("Celeste.TheoCrystalCollider")]
-    class link_HoldableCollider {
-    }
-
-    [MonoModIfFlag("V2:TheoCrystalCollider")]
-    [MonoModPatch("Celeste.HoldableCollider")]
-    class shim_HoldableCollider {
+    class HoldableCollider {
         [MonoModLinkTo("Celeste.HoldableCollider", "System.Void .ctor(System.Action`1<Celeste.Holdable>,Monocle.Collider)")]
         [MonoModForceCall]
         [MonoModIgnore]
-        public extern void ctor_new(Action<Holdable> onCollide, Collider collider = null);
+        public extern void ctor(Action<Holdable> onCollide, Collider collider = null);
         [MonoModConstructor]
-        public void ctor_old(Action<TheoCrystal> onCollide, Collider collider = null) {
-            ctor_new(onCollide == null ? null : new Action<Holdable>(h => onCollide(h.Entity as TheoCrystal)), collider);
+        public void ctor(Action<TheoCrystal> onCollide, Collider collider = null) {
+            ctor(onCollide == null ? null : new Action<Holdable>(h => onCollide(h.Entity as TheoCrystal)), collider);
         }
     }
 }

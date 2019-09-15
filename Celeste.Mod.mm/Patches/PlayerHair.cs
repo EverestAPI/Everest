@@ -23,16 +23,8 @@ namespace Celeste {
         private float wave;
         public float Wave => wave;
 
-        // Celeste 1.1.3.0 (V1): private PlayerSprite sprite
-        [MonoModIfFlag("V1:UserIOSave")]
-        private PlayerSprite sprite;
-
-        // Celeste 1.2.5.0 (V2): public PlayerSprite Sprite
-        [MonoModIfFlag("V2:UserIOSave")]
         [MonoModLinkFrom("Celeste.PlayerSprite Celeste.PlayerHair::sprite")]
         private new PlayerSprite Sprite; // Use most restrictive visibility.
-
-        internal PlayerSprite _Sprite => sprite;
 
         public patch_PlayerHair(PlayerSprite sprite)
             : base(sprite) {
@@ -41,6 +33,8 @@ namespace Celeste {
 
         [MonoModReplace]
         public override void Render() {
+            PlayerSprite sprite = Sprite;
+
             if (!sprite.HasHair)
                 return;
 
@@ -84,7 +78,7 @@ namespace Celeste {
         [MethodImpl(MethodImplOptions.NoInlining)]
         public MTexture GetHairTexture(int index) {
             if (index == 0)
-                return bangs[sprite.HairFrame];
+                return bangs[Sprite.HairFrame];
             return GFX.Game["characters/player/hair00"];
         }
 
@@ -125,7 +119,7 @@ namespace Celeste {
         /// Get the PlayerSprite which the PlayerHair belongs to.
         /// </summary>
         public static PlayerSprite GetSprite(this PlayerHair self)
-            => ((patch_PlayerHair) self)._Sprite;
+            => ((patch_PlayerHair) self).Sprite;
 
         /// <summary>
         /// Get the current wave, updated by Engine.DeltaTime * 4f each Update.

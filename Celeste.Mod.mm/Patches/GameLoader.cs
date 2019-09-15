@@ -27,7 +27,6 @@ namespace Celeste {
         private bool audioStarted;
         private bool dialogLoaded;
         private bool ready;
-        [MonoModIfFlag("Has:IntroSkip")]
         private bool skipped;
 
         private List<MTexture> loadingTextures;
@@ -50,7 +49,7 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LaunchWithoutIntro && introRoutine != null) {
-                SkipIntro();
+                skipped = true;
             }
         }
 
@@ -67,7 +66,7 @@ namespace Celeste {
                         Engine.Commands.Enabled = true;
                     }
 
-                    SkipIntro();
+                    skipped = true;
 
                 }
 
@@ -118,47 +117,6 @@ namespace Celeste {
             Celeste.LoadTimer.Stop();
             Celeste.LoadTimer = null;
             loaded = true;
-        }
-
-        [MonoModIfFlag("Has:IntroSkip")]
-        private void SkipIntro() {
-            skipped = true;
-        }
-
-        // If we're on a version < 1.1.9.2, relink all SkipIntro calls to SkipIntroOld.
-
-        [MonoModIfFlag("Lacks:IntroSkip")]
-        [MonoModLinkFrom("System.Void Celeste.GameLoader::SkipIntro()")]
-        private void SkipIntroOld() {
-            introRoutine.Cancel();
-            introRoutine = null;
-            handler.Add(new Coroutine(FastIntroRoutine()));
-        }
-
-        [MonoModIfFlag("Lacks:IntroSkip")]
-        public IEnumerator FastIntroRoutine() {
-            if (!loaded) {
-                loadingTextures = OVR.Atlas.GetAtlasSubtextures("loading/");
-
-                Image img = new Image(loadingTextures[0]);
-                img.CenterOrigin();
-                img.Scale = Vector2.One * 0.5f;
-                handler.Add(img);
-
-                while (!loaded || loadingAlpha > 0f) {
-                    loadingFrame += Engine.DeltaTime * 10f;
-                    loadingAlpha = Calc.Approach(loadingAlpha, loaded ? 0f : 1f, Engine.DeltaTime * 4f);
-
-                    img.Texture = loadingTextures[(int) (loadingFrame % loadingTextures.Count)];
-                    img.Color = Color.White * Ease.CubeOut(loadingAlpha);
-                    img.Position = new Vector2(1792f, 1080f - 128f * Ease.CubeOut(loadingAlpha));
-                    yield return null;
-                }
-
-                img = null;
-            }
-
-            Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, Snow);
         }
 
     }

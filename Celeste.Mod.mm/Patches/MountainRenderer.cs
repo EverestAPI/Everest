@@ -18,18 +18,6 @@ using Celeste.Mod.Meta;
 namespace Celeste {
     class patch_MountainRenderer : MountainRenderer {
 
-        // Celeste 1.2.6.X comes with a new parameter.
-
-        [MonoModLinkTo("Celeste.MountainRenderer", "System.Single EaseCamera(System.Int32,Celeste.MountainCamera,System.Nullable`1<System.Single>,System.Boolean)")]
-        [MonoModIgnore]
-        public extern float EaseCameraOld(int area, MountainCamera transform, float? duration = null, bool nearTarget = true);
-
-        [MonoModIfFlag("V1:EaseCamera")]
-        public new float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true, bool targetRotate = false) {
-            return EaseCameraOld(area, transform, duration, nearTarget);
-        }
-
-        [MonoModIfFlag("V2:EaseCamera")]
         public float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {
             return EaseCamera(area, transform, duration, nearTarget, false);
         }

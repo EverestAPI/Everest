@@ -34,20 +34,9 @@ namespace Celeste {
             }
         }
 
-        /*
-        // V1:
-        public static IEnumerator SaveHandler(bool file, bool settings)
-        // V2:
-        public static void SaveHandler(bool file, bool settings)
-        public static IEnumerator SaveRoutine(bool file, bool settings)
-        */
-
-        // The new SaveRoutine doesn't need to be patched.
         [MonoModIgnore]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
 
-        // V2 is present, provide V1 for old mods.
-        [MonoModIfFlag("V2:UserIOSave")]
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandlerLegacy(bool file, bool settings) {
             if (Saving)
@@ -57,52 +46,12 @@ namespace Celeste {
             return new SafeRoutine(SaveRoutine(file, settings));
         }
 
-        // V1 is present, relink from V2 for new mods and fix V1.
-        public static extern IEnumerator orig_SaveHandler(bool file, bool settings);
-        [MonoModIfFlag("V1:UserIOSave")]
-        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveRoutine(System.Boolean,System.Boolean)")]
-        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandlerLegacy(System.Boolean,System.Boolean)")]
-        [MonoModLinkFrom("System.Collections.IEnumerator Celeste.patch_UserIO::SaveHandlerLegacy(System.Boolean,System.Boolean)")]
-        public static IEnumerator SaveHandler(bool file, bool settings) {
-            if (Saving)
-                return SaveNonHandler();
-            Saving = true; // Originally set in the coroutine, which is too late in case it gets added twice.
-            // Wrap the original SaveHandler in a SafeRoutine helper.
-            // This is needed because the entity holding the routine could be removed,
-            // leaving this in a "hanging" state.
-            return new SafeRoutine(orig_SaveHandler(file, settings));
-        }
-        [MonoModIfFlag("V1:UserIOSave")]
-        [MonoModPatch("SaveHandler")]
-        public static void SaveHandlerShim(bool file, bool settings) {
-            if (Saving)
-                return;
-            Saving = true;
-            SafeRoutine wrap = new SafeRoutine(orig_SaveHandler(file, settings));
-            wrap.MoveNext();
-            wrap.CoroutineEntity.Add(new Coroutine(wrap));
-        }
-
         private static IEnumerator SaveNonHandler() {
             yield break;
         }
 
-        /*
-        // V1:
         public static T Load<T>(string path) where T : class
-        // V2:
-        public static T Load<T>(string path, bool backup = false) where T : class
-        */
-
-        // V2 is present, provide V1 for old mods.
-        [MonoModIfFlag("V2:UserIOLoad")]
-        public static T Load<T>(string path) where T : class
-            => Load<T>(path, false);
-
-        // V1 is present, provide V2 for new mods.
-        [MonoModIfFlag("V1:UserIOLoad")]
-        public static T Load<T>(string path, bool backup = false) where T : class
-            => Load<T>(path);
+            => UserIO.Load<T>(path, false);
 
     }
 }

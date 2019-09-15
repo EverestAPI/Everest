@@ -333,17 +333,6 @@ namespace Celeste {
             }
         }
 
-        [MonoModIfFlag("Fill:AssistModeChecks")]
-        public new void AssistModeChecks() {
-            if (!AssistMode)
-                Assists = default(Assists);
-
-            if (Assists.GameSpeed == 0)
-                Assists.GameSpeed = 10;
-            if (Assists.GameSpeed < 5 || Assists.GameSpeed > 10)
-                Assists.GameSpeed = 10;
-        }
-
         public extern void orig_BeforeSave();
         public new void BeforeSave() {
             // If we're in a Vanilla-compatible area, copy from _Safe (new) to _Unsafe (legacy).

@@ -221,53 +221,7 @@ namespace MonoMod {
             if (version < versionMin)
                 throw new Exception($"Your version of Celeste ({version}) is outdated! Please update to Celeste {versionMin} or newer.");
 
-            // Set up any flags.
-
-            if (version < new Version(1, 1, 9, 2)) {
-                MonoModRule.Flag.Set("Lacks:IntroSkip", true);
-                MonoModRule.Flag.Set("Has:IntroSkip", false);
-            } else {
-                MonoModRule.Flag.Set("Lacks:IntroSkip", false);
-                MonoModRule.Flag.Set("Has:IntroSkip", true);
-            }
-
-            MonoModRule.Flag.Set("Fill:TheoCrystalDesyncFix", version <= new Version(1, 2, 9, 1));
-
-            MonoModRule.Flag.Set("Fill:SpeedrunType", MonoModRule.Modder.FindType("Celeste.SpeedrunType")?.SafeResolve() == null);
-
-            TypeDefinition settings = MonoModRule.Modder.FindType("Celeste.Settings").Resolve();
-            MonoModRule.Flag.Set("Fill:LaunchInDebugMode", settings.FindField("LaunchInDebugMode")?.SafeResolve() == null);
-            MonoModRule.Flag.Set("Fill:LaunchWithFMODLiveUpdate", settings.FindField("LaunchWithFMODLiveUpdate")?.SafeResolve() == null);
-
-            TypeDefinition savedata = MonoModRule.Modder.FindType("Celeste.SaveData").Resolve();
-            MonoModRule.Flag.Set("Fill:AssistModeChecks", savedata.FindMethod("AssistModeChecks")?.SafeResolve() == null);
-
-            TypeDefinition userio = MonoModRule.Modder.FindType("Celeste.UserIO").Resolve();
-            MethodDefinition userio_load = userio.FindMethod("Load");
-            MonoModRule.Flag.Set("V1:UserIOLoad", userio_load.Parameters.Count == 1);
-            MonoModRule.Flag.Set("V2:UserIOLoad", userio_load.Parameters.Count == 2);
-            MethodDefinition userio_saveroutine = userio.FindMethod("SaveRoutine");
-            MonoModRule.Flag.Set("V1:UserIOSave", userio_saveroutine == null);
-            MonoModRule.Flag.Set("V2:UserIOSave", userio_saveroutine != null);
-
-            TypeDefinition playerhair = MonoModRule.Modder.FindType("Celeste.PlayerHair").Resolve();
-            FieldDefinition playerhair_sprite = userio.FindField("Sprite");
-            MonoModRule.Flag.Set("V1:PlayerHairSprite", playerhair_sprite == null);
-            MonoModRule.Flag.Set("V2:PlayerHairSprite", playerhair_sprite != null);
-
-            TypeDefinition cassetteblock = MonoModRule.Modder.FindType("Celeste.CassetteBlock").Resolve();
-            MethodDefinition cassetteblock_ctor = cassetteblock.FindMethod(".ctor");
-            MonoModRule.Flag.Set("V1:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 4);
-            MonoModRule.Flag.Set("V2:CassetteBlockCtor", cassetteblock_ctor.Parameters.Count == 5);
-
-            TypeDefinition mountainrenderer = MonoModRule.Modder.FindType("Celeste.MountainRenderer").Resolve();
-            MethodDefinition mountainrenderer_easecamera = cassetteblock.FindMethod("EaseCamera");
-            MonoModRule.Flag.Set("V1:EaseCamera", cassetteblock_ctor.Parameters.Count == 4);
-            MonoModRule.Flag.Set("V2:EaseCamera", cassetteblock_ctor.Parameters.Count == 5);
-
-            TypeDefinition theocrystalcontroller = MonoModRule.Modder.FindType("Celeste.TheoCrystalCollider")?.Resolve();
-            MonoModRule.Flag.Set("V1:TheoCrystalCollider", theocrystalcontroller != null);
-            MonoModRule.Flag.Set("V2:TheoCrystalCollider", theocrystalcontroller == null);
+            // Set up flags.
 
             bool isWindows = PlatformHelper.Is(Platform.Windows);
             MonoModRule.Flag.Set("OS:Windows", isWindows);

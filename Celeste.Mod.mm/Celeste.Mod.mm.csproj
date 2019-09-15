@@ -170,7 +170,6 @@
     <Compile Include="Patches\CrystalStaticSpinner.cs" />
     <Compile Include="Patches\RotateSpinner.cs" />
     <Compile Include="Patches\CassetteBlockManager.cs" />
-    <Compile Include="Patches\Settings.cs" />
     <Compile Include="Mod\Core\CoreModuleSaveData.cs" />
     <Compile Include="Mod\Core\CoreModuleSettings.cs" />
     <Compile Include="Mod\Entities\CustomMemorialText.cs" />
@@ -264,7 +263,6 @@
     <Compile Include="Patches\RainFG.cs" />
     <Compile Include="Patches\PlaybackData.cs" />
     <Compile Include="Patches\TrailManager.cs" />
-    <Compile Include="Patches\TheoCrystal.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
     <Compile Include="Patches\TheoCrystalCollider.cs" />
     <Compile Include="Patches\Strawberry.cs" />
