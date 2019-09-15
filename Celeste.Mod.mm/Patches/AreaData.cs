@@ -334,6 +334,20 @@ namespace Celeste {
                 }
             }
 
+            // Clean up non-existing modes.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+
+                int modei = 0;
+                for (; modei < area.Mode.Length; modei++) {
+                    ModeProperties mode = area.Mode[modei];
+                    if (mode == null || string.IsNullOrEmpty(mode.Path))
+                        break;
+                }
+
+                Array.Resize(ref area.Mode, modei);
+            }
+
             // Update old MapData areas and load any new areas.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
@@ -366,6 +380,12 @@ namespace Celeste {
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
+            }
+
+            // List all loaded maps in log.
+            for (int i = 0; i < Areas.Count; i++) {
+                AreaData area = Areas[i];
+                Logger.Log("AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
             }
         }
 
