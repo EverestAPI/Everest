@@ -23,6 +23,8 @@ namespace Celeste {
         private Image image;
         private Sprite sprite;
         private Sprite flash;
+        private VertexLight light;
+        private BloomPoint bloom;
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
@@ -61,6 +63,8 @@ namespace Celeste {
 
             // Worst case: Let's just hide it.
             Visible = false;
+            light.Visible = false;
+            bloom.Visible = false;
         }
 
         public override void Render() {
