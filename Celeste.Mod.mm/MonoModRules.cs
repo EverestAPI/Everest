@@ -219,7 +219,7 @@ namespace MonoMod {
             if (version.Major == 0)
                 version = versionMin;
             if (version < versionMin)
-                throw new Exception($"Your version of Celeste ({version}) is outdated! Please update to Celeste {versionMin} or newer.");
+                throw new Exception($"Unsupported version of Celeste: {version}");
 
             // Set up flags.
 
