@@ -401,15 +401,25 @@ namespace Celeste {
             string bName;
             ParseName(bSID, out bOrder, out bSide, out bName);
 
-            if (aOrder != null && bOrder != null) {
-                if (aOrder.Value != bOrder.Value)
-                    return aOrder.Value - bOrder.Value;
+            // put the "unordered" levels at the end. (Farewell is one of them.)
+            if (aOrder != null && bOrder == null)
+                return -1;
 
-                if (aSide != bSide)
-                    return aSide - bSide;
-            }
+            if (aOrder == null && bOrder != null)
+                return 1;
 
-            return string.Compare(aName, bName);
+            // order the rest by order, then by name, then by side
+            if (aOrder != null && bOrder != null && aOrder.Value != bOrder.Value)
+                return aOrder.Value - bOrder.Value;
+            
+            if (aName != bName)
+                return string.Compare(aName, bName);
+
+            if (aSide != bSide)
+                return aSide - bSide;
+
+            // everything is the same: this is the same level
+            return 0;
         }
 
     }
