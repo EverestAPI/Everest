@@ -53,10 +53,16 @@ namespace Celeste.Mod {
             /// </summary>
             internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
 
+                // Note: Most, if not all mods use Major.Minor.Build
+                // Revision is thus set to -1 and < 0
+                // Entries with a revision of 0 are there because there is no update / fix for those mods.
+
                 // Versions of the mods older than on this list no longer work with Celeste 1.3.0.0
                 { "SpeedrunTool", new Version(1, 5, 7) },
                 { "CrystalValley", new Version(1, 1, 3) },
                 { "IsaGrabBag", new Version(1, 3, 2) },
+                { "BGswitch", new Version(0, 1, 0, 0) },
+                { "testroom", new Version(1, 0, 1, 0) },
 
             };
 
