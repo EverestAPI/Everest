@@ -154,7 +154,8 @@ namespace Celeste {
                 return;
             }
 
-            if (Focused && display && !disableInput && inputDelay <= 0f) {
+            // note: Engine.DeltaTime is removed from inputDelay before being compared to zero in the orig method.
+            if (Focused && display && !disableInput && inputDelay <= Engine.DeltaTime) {
                 if (Input.MenuUp.Pressed) {
                     Audio.Play(SFX.ui_world_chapter_pane_contract);
                     Audio.Play(SFX.ui_world_icon_roll_left);
