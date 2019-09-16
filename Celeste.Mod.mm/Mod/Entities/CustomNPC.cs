@@ -9,7 +9,7 @@ using Monocle;
 namespace Celeste.Mod.Entities {
     public class CustomNPC : NPC {
         private string spritePath;
-        private int spriteRate;
+        private float spriteRate;
         private string dialogEntry;
         private bool onlyOnce;
         private bool endLevel;
@@ -35,7 +35,7 @@ namespace Celeste.Mod.Entities {
             this.id = id;
 
             spritePath = data.Attr("sprite", ""); // Path is from Graphics/Atlases/Gameplay/characters
-            spriteRate = data.Int("spriteRate", 1);
+            spriteRate = data.Float("spriteRate", 1f);
             dialogEntry = data.Attr("dialogId", "");
             dialogs = dialogEntry.Split(',');
             onlyOnce = data.Bool("onlyOnce", true);
