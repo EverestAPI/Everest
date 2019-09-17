@@ -22,7 +22,6 @@ namespace Celeste {
         [PatchLoadLanguage]
         public static new Language FromTxt(string path) {
             Language lang = orig_FromTxt(path);
-            LoadingLanguage = null;
             return lang;
         }
 

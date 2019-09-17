@@ -31,9 +31,22 @@ namespace Celeste {
                 Dialog.Languages.Remove(id);
         }
 
-        public static extern Language orig_LoadLanguage(string filename);
+        [MonoModReplace]
         public static Language LoadLanguage(string filename) {
-            Language language = orig_LoadLanguage(filename);
+            Language language;
+
+            // if (File.Exists(filename + ".export"))
+            //     language = Language.FromExport(filename + ".export");
+            // else
+                language = Language.FromTxt(filename);
+
+            patch_Language.LoadingLanguage = null;
+
+            if (language == null)
+                return null;
+
+            Dialog.Languages[language.Id] = language;
+
             language?.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
             language?.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
 
