@@ -984,9 +984,6 @@ namespace MonoMod {
         }
 
         public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
-
             MethodDefinition m_GetLanguageText = method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
             if (m_GetLanguageText == null)
                 return;

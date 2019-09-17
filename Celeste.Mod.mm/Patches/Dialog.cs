@@ -31,29 +31,41 @@ namespace Celeste {
                 Dialog.Languages.Remove(id);
         }
 
-        [MonoModReplace]
+        public static extern Language orig_LoadLanguage(string filename);
         public static Language LoadLanguage(string filename) {
-            Language language;
+            patch_Language.LoadingLanguage = null;
+            patch_Language.LoadOrigLanguage = true;
+            patch_Language.LoadModLanguage = false;
 
-            // if (File.Exists(filename + ".export"))
-            //     language = Language.FromExport(filename + ".export");
-            // else
-                language = Language.FromTxt(filename);
+            Language lang = orig_LoadLanguage(filename);
 
             patch_Language.LoadingLanguage = null;
 
-            if (language == null)
+            if (lang == null)
                 return null;
 
-            Dialog.Languages[language.Id] = language;
+            lang?.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+            lang?.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
 
-            language?.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
-            language?.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+            if (lang?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
+                FallbackLanguage = lang;
 
-            if (language?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
-                FallbackLanguage = language;
+            patch_Language.LoadOrigLanguage = false;
+            patch_Language.LoadModLanguage = true;
 
-            return language;
+            // TODO: Load and merge all mod .export files
+
+            Language langModTxt = Language.FromTxt(filename);
+            if (lang == null) {
+                lang = langModTxt;
+            } else {
+                foreach (KeyValuePair<string, string> kvp in langModTxt.Dialog)
+                    lang.Dialog[kvp.Key] = kvp.Value;
+                foreach (KeyValuePair<string, string> kvp in langModTxt.Cleaned)
+                    lang.Cleaned[kvp.Key] = kvp.Value;
+            }
+
+            return lang;
         }
 
         [MonoModReplace]

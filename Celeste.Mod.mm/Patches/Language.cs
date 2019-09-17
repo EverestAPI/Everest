@@ -17,16 +17,15 @@ namespace Celeste {
     class patch_Language : Language {
 
         internal static Language LoadingLanguage;
+        internal static bool LoadOrigLanguage;
+        internal static bool LoadModLanguage;
 
-        public static extern Language orig_FromTxt(string path);
+        [MonoModIgnore]
         [PatchLoadLanguage]
-        public static new Language FromTxt(string path) {
-            Language lang = orig_FromTxt(path);
-            return lang;
-        }
+        public static extern new Language FromTxt(string path);
 
         private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
-            bool ready = File.Exists(path);
+            bool ready = LoadOrigLanguage && File.Exists(path);
             if (ready)
                 foreach (string text in File.ReadLines(path, encoding))
                     yield return text;
@@ -35,16 +34,22 @@ namespace Celeste {
             path = path.Replace('\\', '/');
             path = path.Substring(0, path.Length - 4);
             string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()}";
+
+            if (!ready) {
+                ready = true;
+                // Feed a dummy language line. All empty languages are removed afterwards.
+                yield return dummy;
+            }
+
+            if (!LoadModLanguage)
+                yield break;
+
             foreach (ModAsset asset in
                 Everest.Content.Mods
                 .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
                 .Where(asset => asset != null)
             ) {
-                if (!ready) {
-                    ready = true;
-                    // Feed a dummy language line. All empty languages are removed afterwards.
-                    yield return dummy;
-                }
+
                 using (StreamReader reader = new StreamReader(asset.Stream, encoding))
                     while (reader.Peek() != -1)
                         yield return reader.ReadLine().Trim('\r', '\n').Trim();
