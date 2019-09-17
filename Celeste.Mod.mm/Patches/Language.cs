@@ -24,6 +24,39 @@ namespace Celeste {
         [PatchLoadLanguage]
         public static extern new Language FromTxt(string path);
 
+        public static Language FromModExport(ModAsset asset) {
+            Language lang = new Language();
+
+            using (BinaryReader reader = new BinaryReader(asset.Stream)) {
+                lang.Id = reader.ReadString();
+                lang.Label = reader.ReadString();
+
+                lang.IconPath = reader.ReadString();
+                lang.Icon = new MTexture(VirtualContent.CreateTexture(Path.Combine("Dialog", lang.IconPath)));
+
+                lang.Order = reader.ReadInt32();
+
+                lang.FontFace = reader.ReadString();
+                lang.FontFaceSize = reader.ReadSingle();
+
+                lang.SplitRegex = reader.ReadString();
+                lang.CommaCharacters = reader.ReadString();
+                lang.PeriodCharacters = reader.ReadString();
+
+                lang.Lines = reader.ReadInt32();
+                lang.Words = reader.ReadInt32();
+
+                int count = reader.ReadInt32();
+                for (int i = 0; i < count; i++) {
+                    string key = reader.ReadString();
+                    lang.Dialog[key] = reader.ReadString();
+                    lang.Cleaned[key] = reader.ReadString();
+                }
+            }
+
+            return lang;
+        }
+
         private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
             bool ready = LoadOrigLanguage && File.Exists(path);
             if (ready)

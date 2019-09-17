@@ -36,9 +36,7 @@ namespace Celeste {
             patch_Language.LoadingLanguage = null;
             patch_Language.LoadOrigLanguage = true;
             patch_Language.LoadModLanguage = false;
-
             Language lang = orig_LoadLanguage(filename);
-
             patch_Language.LoadingLanguage = null;
 
             if (lang == null)
@@ -50,22 +48,35 @@ namespace Celeste {
             if (lang?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
                 FallbackLanguage = lang;
 
-            patch_Language.LoadOrigLanguage = false;
-            patch_Language.LoadModLanguage = true;
-
-            // TODO: Load and merge all mod .export files
-
-            Language langModTxt = Language.FromTxt(filename);
-            if (lang == null) {
-                lang = langModTxt;
-            } else {
-                foreach (KeyValuePair<string, string> kvp in langModTxt.Dialog)
-                    lang.Dialog[kvp.Key] = kvp.Value;
-                foreach (KeyValuePair<string, string> kvp in langModTxt.Cleaned)
-                    lang.Cleaned[kvp.Key] = kvp.Value;
+            string pathExp = filename.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/');
+            foreach (ModAsset asset in
+                Everest.Content.Mods
+                .Select(mod => mod.Map.TryGetValue(pathExp, out ModAsset asset) ? asset : null)
+                .Where(asset => asset != null)
+            ) {
+                lang = MergeLanguages(lang, patch_Language.FromModExport(asset));
             }
 
+            patch_Language.LoadingLanguage = null;
+            patch_Language.LoadOrigLanguage = false;
+            patch_Language.LoadModLanguage = true;
+            lang = MergeLanguages(lang, Language.FromTxt(filename));
+            patch_Language.LoadingLanguage = null;
+
             return lang;
+        }
+
+        private static Language MergeLanguages(Language orig, Language mod) {
+            if (orig == null)
+                return mod;
+
+            foreach (KeyValuePair<string, string> kvp in mod.Dialog)
+                orig.Dialog[kvp.Key] = kvp.Value;
+
+            foreach (KeyValuePair<string, string> kvp in mod.Cleaned)
+                orig.Cleaned[kvp.Key] = kvp.Value;
+
+            return orig;
         }
 
         [MonoModReplace]

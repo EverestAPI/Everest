@@ -28,6 +28,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
+    public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
     public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
@@ -395,6 +396,10 @@ namespace Celeste.Mod {
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
                     type = typeof(AssetTypeDialog);
                     file = file.Substring(0, file.Length - 4);
+
+                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt.export")) {
+                    type = typeof(AssetTypeDialog);
+                    file = file.Substring(0, file.Length - 7);
 
                 } else if (file.StartsWith("Maps/") && file.EndsWith(".bin")) {
                     type = typeof(AssetTypeMap);
