@@ -55,9 +55,18 @@ namespace Celeste.Mod {
                 }
 
                 Context = new Lua();
-                Context.UseTraceback = true;
 
-                object[] rva = Context.DoString(text, "boot");
+                object[] rva = null;
+
+                if (Environment.GetEnvironmentVariable("LOCAL_LUA_DEBUGGER_VSCODE") == "1") {
+                    object[] drva = Context.DoString(@"require(""lldebugger"").start(); return function(data, path) return load(data, path) end", "debuginit");
+                    LuaFunction load = (LuaFunction) drva[0];
+                    rva = ((LuaFunction) load.Call(text, "boot.lua")[0]).Call();
+
+                } else {
+                    Context.UseTraceback = true;
+                    rva = Context.DoString(text, "boot.lua");
+                }
 
                 LuaFunction load_assembly = (LuaFunction) rva[1];
                 _LoadAssembly = name => load_assembly.Call(name);
@@ -166,7 +175,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static Func<string, string, string> _VFS = (ctx, name) => {
+            private static Func<string, string, string[]> _VFS = (ctx, name) => {
                 if (string.IsNullOrEmpty(name))
                     return null;
 
@@ -183,16 +192,25 @@ namespace Celeste.Mod {
 
                 ModAsset asset;
 
-                if ((string.IsNullOrEmpty(ctx) || !name.Contains(":")) && !Content.TryGet<AssetTypeLua>(ctx + "/" + name, out asset))
-                    return ReadText(asset);
+                string data = null;
+                string path = null;
 
-                if (Content.TryGet<AssetTypeLua>(name, out asset))
-                    return ReadText(asset);
+                if (!name.Contains(":") && !string.IsNullOrEmpty(ctx) && Content.TryGet<AssetTypeLua>(ctx + "/" + name, out asset)) {
+                    data = ReadText(asset);
+                    path = "Mods/" + ctx.Substring(0, ctx.Length - 1) + "/" + name + ".lua";
 
-                return null;
+                } else if (Content.TryGet<AssetTypeLua>(name, out asset)) {
+                    data = ReadText(asset);
+                    path = "Mods/" + asset.Source.Name + "/" + asset.PathVirtual + ".lua";
+
+                }
+
+                return new string[] { data, path };
             };
 
             private static string ReadText(ModAsset asset) {
+                if (asset == null)
+                    return null;
                 using (StreamReader reader = new StreamReader(asset.Stream))
                     return reader.ReadToEnd();
             }

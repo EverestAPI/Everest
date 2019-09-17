@@ -133,7 +133,8 @@ marshalToLua["default"] = function(value, typeName)
         end
         mt._fixed = true
 
-        local ctype = toLua(lualoader.AllTypes[typeName])
+        local rtype = lualoader.AllTypes:get_Item(typeName)
+        local ctype = toLua(rtype)
 
         local __index = mt.__index
         function mt:__index(key)
@@ -400,8 +401,12 @@ function mtFunction:__index(key)
         return mtFunction._hook
     end
 
+    return nil
+    -- The following fails with "attempt to index a luaNet_function value"
+    --[[
     local proxy = rawget(self, _proxy)
     return proxy[key]
+    --]]
 end
 
 function mtFunction:__call(...)
@@ -438,18 +443,75 @@ function mtFunction:__tostring()
 end
 
 
+local function using(env, arg)
+    local argmt = getmetatable(arg)
+    if argmt == mtNamespace or argmt == mtType then
+        local usings = rawget(env, _node)
+        table.insert(usings, arg)
+
+    elseif type(arg) == "string" then
+        -- TODO: Resolve namespace
+
+    else
+        for k, v in ipairs(arg) do
+            using(env, v)
+        end
+    end
+end
+
+
+local mtEnv = {
+    __newindex = _ENV
+}
+
+mtEnv.__name = "pluginEnv"
+
+function mtEnv:__index(key)
+    local value = rawget(self, key) or _ENV[key]
+    if value ~= nil then
+        return value
+    end
+
+    local usings = rawget(self, _node)
+
+    for i, ns in ipairs(usings) do
+        value = ns[key]
+        if value then
+            return value
+        end
+    end
+
+    return value
+end
+
+
 -- require() loader for .lua files inside of mod containers
 local vfs
 local function loaderVirtualFS(name)
-    local status, data = pcall(vfs, debug.getinfo(2, "S").source, name)
+    local status, rv = pcall(vfs, debug.getinfo(2, "S").source, name)
     if not status then
-        return data
-    end
-    if not data then
-        return "Packed Lua script not found: " .. name
+        return rv
     end
 
-    return assert(load(data, name))
+    local data = rv[0]
+    local path = rv[1]
+    path = path or name
+    if not data then
+        return "\n\tPacked Lua script not found: " .. name
+    end
+
+    local env = {}
+
+    env[_node] = {}
+
+    function env.using(ns)
+        using(env, ns)
+    end
+
+    setmetatable(env, mtEnv)
+
+    local fn = assert(load(data, path, "t", env))
+    return fn
 end
 
 table.insert(package.searchers, loaderVirtualFS)
