@@ -168,16 +168,9 @@ namespace Celeste.Mod {
                 int depth = SD.Image.GetPixelFormatSize(bmp.PixelFormat);
 
                 SD.Bitmap copy = null;
-
                 if (depth != 32)
-                    copy = new SD.Bitmap(w, h, SDI.PixelFormat.Format32bppArgb);
+                    copy = bmp.Clone(new SD.Rectangle(0, 0, w, h), SDI.PixelFormat.Format32bppArgb);
                 using (copy) {
-                    if (copy != null)
-                        using (SD.Graphics g = SD.Graphics.FromImage(copy)) {
-                            g.CompositingMode = SD.Drawing2D.CompositingMode.SourceCopy;
-                            g.CompositingQuality = SD.Drawing2D.CompositingQuality.HighSpeed;
-                            g.DrawImage(bmp, 0, 0);
-                        }
 
                     SD.Bitmap src = copy ?? bmp;
 

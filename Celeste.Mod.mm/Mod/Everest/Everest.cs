@@ -137,17 +137,6 @@ namespace Celeste.Mod {
                     data.AddRange(ChecksumHasher.ComputeHash(stream));
                 }
 
-                /* Note:
-                    * I've decided to disable adding Celeste itself into the master hash
-                    * as Everest updates and XNA vs FNA would just affect it too wildly.
-                    * -ade
-                    */
-                /*
-                string pathCeleste = typeof(Celeste).Assembly.Location;
-                if (!string.IsNullOrEmpty(pathCeleste))
-                    AddFile(pathCeleste);
-                */
-
                 // Add all mod containers (or .DLLs).
                 lock (_Modules) {
                     foreach (EverestModule mod in _Modules) {
