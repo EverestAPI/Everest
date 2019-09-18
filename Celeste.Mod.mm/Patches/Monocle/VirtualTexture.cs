@@ -91,18 +91,15 @@ namespace Monocle {
 
             Stream stream = Metadata.Stream;
             if (stream != null) {
-                using (stream)
-                    Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                bool premul = false; // Assume unpremultiplied by default.
+                if (Metadata.TryGetMeta(out TextureMeta meta))
+                    premul = meta.Premultiplied;
 
-                TextureMeta meta;
-                if (Metadata.TryGetMeta(out meta)) {
-
-                    if (!meta.Premultiplied)
-                        Texture.Premultiply();
-
-                } else {
-                    // Assume unpremultiplied by default.
-                    Texture.Premultiply();
+                using (stream) {
+                    if (premul)
+                        Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                    else
+                        Texture = ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream);
                 }
 
             } else if (Fallback != null) {

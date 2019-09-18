@@ -151,6 +151,7 @@ namespace MonoMod {
                 if (isFNA = name.Name.Contains("FNA"))
                     break;
             MonoModRule.Flag.Set("FNA", isFNA);
+            MonoModRule.Flag.Set("XNA", !isFNA);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();

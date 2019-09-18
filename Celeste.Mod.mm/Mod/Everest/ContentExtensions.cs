@@ -15,6 +15,9 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using SD = System.Drawing;
+using SDI = System.Drawing.Imaging;
+using System.Runtime.InteropServices;
 
 namespace Celeste.Mod {
     public static class ContentExtensions {
@@ -141,6 +144,106 @@ namespace Celeste.Mod {
             texture.SetData(data);
             return texture;
         }
+
+        /// <summary>
+        /// Load a texture and lazily late-premultiply it: Multiply the values of the R, G and B channels by the value of the A channel.
+        /// </summary>
+        public static Texture2D LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream) {
+            _LoadTextureLazyPremultiply(gd, stream, out int w, out int h, out byte[] data);
+            Texture2D tex = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
+            tex.SetData(data);
+            return tex;
+        }
+
+        [MonoModIgnore]
+        private static extern void _LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data);
+
+        [MonoModIfFlag("XNA")]
+        [MonoModPatch("_LoadTextureLazyPremultiply")]
+        [MonoModReplace]
+        private static void _LoadTextureLazyPremultiplyXNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data) {
+            using (SD.Bitmap bmp = new SD.Bitmap(stream)) {
+                w = bmp.Width;
+                h = bmp.Height;
+                int depth = SD.Image.GetPixelFormatSize(bmp.PixelFormat);
+
+                SD.Bitmap copy = null;
+
+                if (depth != 32)
+                    copy = new SD.Bitmap(w, h, SDI.PixelFormat.Format32bppArgb);
+                using (copy) {
+                    if (copy != null)
+                        using (SD.Graphics g = SD.Graphics.FromImage(copy)) {
+                            g.CompositingMode = SD.Drawing2D.CompositingMode.SourceCopy;
+                            g.CompositingQuality = SD.Drawing2D.CompositingQuality.HighSpeed;
+                            g.DrawImage(bmp, 0, 0);
+                        }
+
+                    SD.Bitmap src = copy ?? bmp;
+
+                    SDI.BitmapData srcData = src.LockBits(
+                        new SD.Rectangle(0, 0, w, h),
+                        SDI.ImageLockMode.ReadOnly,
+                        src.PixelFormat
+                    );
+
+                    data = new byte[w * h * 4];
+
+                    unsafe {
+                        byte* from = (byte*) srcData.Scan0;
+                        fixed (byte* to = data) {
+                            for (int i = data.Length - 1 - 3; i > -1; i -= 4) {
+                                byte r = from[i + 2];
+                                byte g = from[i + 1];
+                                byte b = from[i + 0];
+                                byte a = from[i + 3];
+
+                                if (a == 0)
+                                    continue;
+
+                                if (a == 255) {
+                                    to[i + 0] = r;
+                                    to[i + 1] = g;
+                                    to[i + 2] = b;
+                                    to[i + 3] = a;
+                                    continue;
+                                }
+
+                                to[i + 0] = (byte) Math.Round(r * a / 255D);
+                                to[i + 1] = (byte) Math.Round(g * a / 255D);
+                                to[i + 2] = (byte) Math.Round(b * a / 255D);
+                                to[i + 3] = a;
+                            }
+                        }
+                    }
+
+                    src.UnlockBits(srcData);
+                }
+            }
+        }
+
+        [MonoModIfFlag("FNA")]
+        [MonoModPatch("_LoadTextureLazyPremultiply")]
+        [MonoModReplace]
+        private static void _LoadTextureLazyPremultiplyFNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data) {
+            Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
+            unsafe {
+                fixed (byte* raw = data) {
+                    for (int i = data.Length - 1 - 3; i > -1; i -= 4) {
+                        byte a = raw[i + 3];
+
+                        if (a == 0 || a == 255)
+                            continue;
+
+                        raw[i + 0] = (byte) Math.Round(raw[i + 0] * a / 255D);
+                        raw[i + 1] = (byte) Math.Round(raw[i + 1] * a / 255D);
+                        raw[i + 2] = (byte) Math.Round(raw[i + 2] * a / 255D);
+                        raw[i + 3] = a;
+                    }
+                }
+            }
+        }
+
 
     }
 }
