@@ -23,8 +23,6 @@ namespace Celeste {
         private Image image;
         private Sprite sprite;
         private Sprite flash;
-        private VertexLight light;
-        private BloomPoint bloom;
 
         public override void Awake(Scene scene) {
             base.Awake(scene);

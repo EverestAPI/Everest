@@ -212,7 +212,6 @@
     <Compile Include="Mod\Helpers\FakeFileStream.cs" />
     <Compile Include="Mod\Helpers\LogWriter.cs" />
     <Compile Include="Mod\Everest\Logger.cs" />
-    <Compile Include="Mod\Everest\MTextureOverride.cs" />
     <Compile Include="Mod\Helpers\FileProxy.cs" />
     <Compile Include="Mod\Meta\IMeta.cs" />
     <Compile Include="Mod\Meta\TextureMeta.cs" />

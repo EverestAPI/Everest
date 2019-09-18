@@ -397,10 +397,10 @@ namespace Monocle {
 
                     if (meta != null) {
                         // Apply width and height from existing meta.
-                        existing.AddOverride(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                        existing.SetOverride(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                     } else {
                         // Keep width and height from existing instance.
-                        existing.AddOverride(vtex, existing.DrawOffset, existing.Width, existing.Height);
+                        existing.SetOverride(vtex, existing.DrawOffset, existing.Width, existing.Height);
                     }
 
                     mtex = existing;
