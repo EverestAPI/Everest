@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
 using System.Globalization;
 using System.Security.Cryptography;
+using YYProject.XXHash;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -94,7 +95,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The hasher used to determine the mod and installation hashes.
         /// </summary>
-        public readonly static HashAlgorithm ChecksumHasher = SHA256.Create();
+        public readonly static HashAlgorithm ChecksumHasher = XXHash64.Create();
 
         /// <summary>
         /// Get the checksum for a given file.
@@ -159,8 +160,7 @@ namespace Celeste.Mod {
         }
         public static string InstallationHashShort {
             get {
-                // MD5 the installation hash.
-                using (HashAlgorithm hasher = MD5.Create()) {
+                using (HashAlgorithm hasher = XXHash64.Create()) {
                     return hasher.ComputeHash(InstallationHash).ToHexadecimalString();
                 }
             }
