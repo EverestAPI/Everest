@@ -170,6 +170,13 @@ namespace Celeste {
             }
         }
 
+        public new int MaxAssistArea {
+            [MonoModReplace]
+            get {
+                return LevelSetStats.AreaOffset + LevelSetStats.MaxAssistArea;
+            }
+        }
+
         [MonoModLinkFrom("System.Collections.Generic.List`1<System.String> Celeste.SaveData::Poem_Unsafe")]
         public new List<string> Poem;
 
@@ -470,6 +477,13 @@ namespace Celeste {
                 if (Celeste.PlayMode == Celeste.PlayModes.Event)
                     return Math.Min(count, AreaOffset + 2);
                 return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxAssistArea {
+            get {
+                return AreaData.Areas.Count(area => area.GetLevelSet() == Name) - 1;
             }
         }
 
