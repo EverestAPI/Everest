@@ -57,7 +57,9 @@ namespace Celeste {
                 lang = MergeLanguages(lang, patch_Language.FromModExport(asset));
             }
 
-            patch_Language.LoadingLanguage = null;
+            Language filler = patch_Language.LoadingLanguage = new Language();
+            foreach (KeyValuePair<string, string> kvp in lang.Dialog)
+                filler.Dialog[kvp.Key] = kvp.Value;
             patch_Language.LoadOrigLanguage = false;
             patch_Language.LoadModLanguage = true;
             lang = MergeLanguages(lang, Language.FromTxt(filename));
