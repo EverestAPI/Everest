@@ -222,7 +222,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the source file.
         /// </summary>
-        public string Path;
+        public readonly string Path;
 
         public FileSystemModAsset(FileSystemModContent source, string path)
             : base(source) {
@@ -249,7 +249,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the source file.
         /// </summary>
-        public string Path;
+        public readonly string Path;
 
         public MapBinsInModsModAsset(MapBinsInModsModContent source, string path)
             : base(source) {
@@ -276,7 +276,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The name of the resource in the assembly.
         /// </summary>
-        public string ResourceName;
+        public readonly string ResourceName;
 
         public AssemblyModAsset(AssemblyModContent source, string resourceName)
             : base(source) {
@@ -293,18 +293,38 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the source file inside the archive.
         /// </summary>
-        public string Path;
+        public readonly string Path;
+
+        /// <summary>
+        /// The entry for the source file inside the archive.
+        /// </summary>
+        public readonly ZipEntry Entry;
 
         public ZipModAsset(ZipModContent source, string path)
             : base(source) {
-            Path = path;
+            Path = path = path.Replace('\\', '/');
+
+            foreach (ZipEntry entry in source.Zip.Entries) {
+                if (entry.FileName.Replace('\\', '/') == path) {
+                    Entry = entry;
+                    break;
+                }
+            }
+        }
+
+        public ZipModAsset(ZipModContent source, ZipEntry entry)
+            : base(source) {
+            Path = entry.FileName.Replace('\\', '/');
+            Entry = entry;
         }
 
         protected override void Open(out Stream stream, out bool isSection) {
-            string file = Path.Replace('\\', '/');
-            using (ZipFile zip = new ZipFile(Source.Path)) {
-                foreach (ZipEntry entry in zip.Entries) {
-                    if (entry.FileName.Replace('\\', '/') == file) {
+            string path = Path;
+
+            ZipEntry found = Entry;
+            if (found == null) {
+                foreach (ZipEntry entry in Source.Zip.Entries) {
+                    if (entry.FileName.Replace('\\', '/') == path) {
                         stream = entry.ExtractStream();
                         isSection = false;
                         return;
@@ -312,7 +332,11 @@ namespace Celeste.Mod {
                 }
             }
 
-            throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
+            if (found == null)
+                throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
+
+            stream = Entry.ExtractStream();
+            isSection = false;
         }
     }
 }

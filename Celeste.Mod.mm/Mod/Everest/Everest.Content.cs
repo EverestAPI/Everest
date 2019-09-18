@@ -38,7 +38,7 @@ namespace Celeste.Mod {
     public delegate string TypeGuesser(string file, out Type type, out string format);
 
     // Source types.
-    public abstract class ModContent {
+    public abstract class ModContent : IDisposable {
         public virtual string DefaultName { get; }
         private string _Name;
         public string Name {
@@ -48,8 +48,8 @@ namespace Celeste.Mod {
 
         public EverestModuleMetadata Mod;
 
-        public List<ModAsset> List = new List<ModAsset>();
-        public Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
+        public readonly List<ModAsset> List = new List<ModAsset>();
+        public readonly Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
         protected abstract void Crawl();
         internal void _Crawl() => Crawl();
@@ -59,13 +59,35 @@ namespace Celeste.Mod {
             List.Add(asset);
             Map[asset.PathVirtual] = asset;
         }
+
+        private bool disposed = false;
+
+        ~ModContent() {
+            if (disposed)
+                return;
+            disposed = true;
+
+            Dispose(false);
+        }
+
+        public void Dispose() {
+            if (disposed)
+                return;
+            disposed = true;
+
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing) {
+        }
     }
 
     public class FileSystemModContent : ModContent {
         /// <summary>
         /// The path to the mod directory.
         /// </summary>
-        public string Path;
+        public readonly string Path;
 
         public FileSystemModContent(string path) {
             Path = path;
@@ -95,7 +117,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the mod directory.
         /// </summary>
-        public string Path;
+        public readonly string Path;
 
         public MapBinsInModsModContent(string path) {
             Path = path;
@@ -119,7 +141,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The assembly containing the mod content as resources.
         /// </summary>
-        public Assembly Assembly;
+        public readonly Assembly Assembly;
 
         public AssemblyModContent(Assembly asm) {
             Assembly = asm;
@@ -142,21 +164,30 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the archive containing the mod content.
         /// </summary>
-        public string Path;
+        public readonly string Path;
+
+        /// <summary>
+        /// The loaded archive containing the mod content.
+        /// </summary>
+        public readonly ZipFile Zip;
 
         public ZipModContent(string path) {
             Path = path;
+            Zip = new ZipFile(path);
         }
 
         protected override void Crawl() {
-            using (ZipFile zip = new ZipFile(Path)) {
-                foreach (ZipEntry entry in zip.Entries) {
-                    string entryName = entry.FileName.Replace('\\', '/');
-                    if (entryName.EndsWith("/"))
-                        continue;
-                    Add(entryName, new ZipModAsset(this, entryName));
-                }
+            foreach (ZipEntry entry in Zip.Entries) {
+                string entryName = entry.FileName.Replace('\\', '/');
+                if (entryName.EndsWith("/"))
+                    continue;
+                Add(entryName, new ZipModAsset(this, entry));
             }
+        }
+
+        protected override void Dispose(bool disposing) {
+            base.Dispose(disposing);
+            Zip.Dispose();
         }
     }
 
