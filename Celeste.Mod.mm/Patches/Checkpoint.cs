@@ -62,15 +62,23 @@ namespace Celeste {
             }
 
             // Worst case: Let's just hide it.
+            // This hides it in old mod maps which don't have any
+            // checkpoint indicator. Not hiding this would show
+            // the checkpoint indicator in a weird place.
             Visible = false;
-            light.Visible = false;
-            bloom.Visible = false;
         }
 
         public override void Render() {
             if (!Visible)
                 return;
             base.Render();
+        }
+
+        private extern void orig_TurnOn(bool animate);
+        private void TurnOn(bool animate) {
+            if (!Visible)
+                return;
+            orig_TurnOn(animate);
         }
 
     }
