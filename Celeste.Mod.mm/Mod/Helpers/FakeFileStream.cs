@@ -14,9 +14,8 @@ namespace Celeste.Mod.Helpers {
 
         public FileProxyStream(Stream inner)
             // We need to open something.
-            : base(Dummy, FileMode.Create) {
+            : base(Dummy, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete) {
             base.Close();
-            File.Delete(Dummy);
             Inner = inner;
         }
 

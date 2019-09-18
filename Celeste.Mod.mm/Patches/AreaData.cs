@@ -334,24 +334,22 @@ namespace Celeste {
                 }
             }
 
-            // Clean up non-existing modes.
             for (int i = 0; i < Areas.Count; i++) {
                 AreaData area = Areas[i];
+                area.ID = i;
 
+                // Clean up non-existing modes.
                 int modei = 0;
                 for (; modei < area.Mode.Length; modei++) {
                     ModeProperties mode = area.Mode[modei];
                     if (mode == null || string.IsNullOrEmpty(mode.Path))
                         break;
                 }
-
                 Array.Resize(ref area.Mode, modei);
-            }
 
-            // Update old MapData areas and load any new areas.
-            for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                area.ID = i;
+                Logger.Log("AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
+
+                // Update old MapData areas and load any new areas.
 
                 // Add the A side MapData or update its area key.
                 if (area.Mode[0].MapData != null)
@@ -361,7 +359,7 @@ namespace Celeste {
 
                 if (area.Interlude)
                     continue;
-                
+
                 // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
                 if (area.Mode[0].PoemID == null)
                     area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
@@ -380,12 +378,6 @@ namespace Celeste {
                     else
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
-            }
-
-            // List all loaded maps in log.
-            for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                Logger.Log("AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
             }
         }
 
