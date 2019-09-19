@@ -201,6 +201,27 @@ namespace Celeste {
         }
 
         [MonoModReplace]
+        public static new string GetFilename(int slot) {
+            if (slot == -1)
+                return "debug";
+            return slot.ToString();
+        }
+
+        [MonoModReplace]
+        public static new void InitializeDebugMode(bool loadExisting = true) {
+            SaveData save = null;
+            if (loadExisting && UserIO.Open(UserIO.Mode.Read)) {
+                save = UserIO.Load<SaveData>(GetFilename(-1));
+                UserIO.Close();
+            }
+
+            save = save ?? new SaveData();
+            save.DebugMode = true;
+
+            Start(save, -1);
+        }
+
+        [MonoModReplace]
         public new void AfterInitialize() {
             // Vanilla / new saves don't have the LevelSets list.
             if (LevelSets == null)
@@ -302,11 +323,6 @@ namespace Celeste {
             // Fix out of bounds areas.
             if (LastArea.ID < 0 || LastArea.ID >= AreaData.Areas.Count)
                 LastArea = AreaKey.Default;
-
-            // Debug mode shouldn't auto-enter into a level.
-            if (DebugMode) {
-                CurrentSession = null;
-            }
 
             if (string.IsNullOrEmpty(TheoSisterName)) {
                 TheoSisterName = Dialog.Clean("THEO_SISTER_NAME", null);

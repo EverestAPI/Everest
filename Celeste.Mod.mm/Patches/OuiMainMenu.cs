@@ -53,6 +53,24 @@ namespace Celeste {
             }
         }
 
+        [MonoModReplace]
+        private void OnDebug() {
+            Audio.Play("event:/ui/main/whoosh_list_out");
+            Audio.Play("event:/ui/main/button_select");
+
+            SaveData.InitializeDebugMode(true);
+
+            if (SaveData.Instance.CurrentSession != null && SaveData.Instance.CurrentSession.InArea) {
+                Audio.SetMusic(null);
+                Audio.SetAmbience(null);
+                Overworld.ShowInputUI = false;
+                new FadeWipe(Scene, false, () => LevelEnter.Go(SaveData.Instance.CurrentSession, true));
+                return;
+            }
+
+            Overworld.Goto<OuiChapterSelect>();
+        }
+
     }
     public static class OuiMainMenuExt {
 
