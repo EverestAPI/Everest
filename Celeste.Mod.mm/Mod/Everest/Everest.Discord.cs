@@ -17,16 +17,33 @@ using System.Text;
 using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
+using System.Threading;
 
 namespace Celeste.Mod {
     public static partial class Everest {
         public static class Discord {
 
             private static DiscordRpc.EventHandlers DiscordHandlers = new DiscordRpc.EventHandlers();
-            public static DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
+            public static readonly DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
+
+            private static Thread Worker;
+            private static readonly Queue<Action> Queue = new Queue<Action>();
 
             public static void Initialize() {
+                Worker = new Thread(WorkerLoop);
+                Worker.Name = "Everest Discord Worker";
+                Worker.Priority = ThreadPriority.Lowest;
+                Worker.IsBackground = true;
+                Worker.Start();
 
+                Events.Celeste.OnExiting += OnGameExit;
+
+                Events.MainMenu.OnCreateButtons += OnMainMenu;
+                Events.Level.OnLoadLevel += OnLoadLevel;
+                Events.Level.OnExit += OnLevelExit;
+            }
+
+            private static void WorkerLoop() {
                 string lib = null;
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordLib))
                     lib = CoreModule.Settings.DiscordLib;
@@ -65,11 +82,19 @@ namespace Celeste.Mod {
                 DiscordRpc.Initialize.Invoke(discordID, ref DiscordHandlers, true, "504230");
                 DiscordRpc.UpdatePresence(DiscordPresence);
 
-                Events.Celeste.OnExiting += OnGameExit;
+                while (Worker != null) {
+                    if (Queue.Count == 0) {
+                        Thread.Yield();
+                        continue;
+                    }
 
-                Events.MainMenu.OnCreateButtons += OnMainMenu;
-                Events.Level.OnLoadLevel += OnLoadLevel;
-                Events.Level.OnExit += OnLevelExit;
+                    Action cb;
+                    lock (Queue)
+                        cb = Queue.Dequeue();
+                    cb?.Invoke();
+                }
+
+                DiscordRpc.Shutdown();
             }
 
             private static void OnDiscordReady(ref DiscordRpc.DiscordUser user) {
@@ -83,27 +108,29 @@ namespace Celeste.Mod {
             }
 
             private static void OnGameExit() {
-                if (DiscordRpc.Initialize == null)
-                    return;
-                DiscordRpc.Shutdown();
+                Worker = null;
             }
 
             private static void OnMainMenu(OuiMainMenu menu, List<MenuButton> buttons) {
                 UpdateText(CoreModule.Settings.DiscordTextInMenu);
             }
             private static void OnLoadLevel(Level level, Player.IntroTypes playerIntro, bool isFromLoader) {
-                DateTime now = DateTime.UtcNow;
-                if (DiscordPresence.startTimestamp == 0)
-                    DiscordPresence.startTimestamp = DateTimeToDiscordTime(DateTime.UtcNow);
-                DiscordPresence.endTimestamp = 0;
+                lock (DiscordPresence) {
+                    DateTime now = DateTime.UtcNow;
+                    if (DiscordPresence.startTimestamp == 0)
+                        DiscordPresence.startTimestamp = DateTimeToDiscordTime(DateTime.UtcNow);
+                    DiscordPresence.endTimestamp = 0;
 
-                UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame, level.Session);
+                    UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame, level.Session);
+                }
             }
             private static void OnLevelExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
-                DiscordPresence.startTimestamp = 0;
-                DiscordPresence.endTimestamp = 0;
+                lock (DiscordPresence) {
+                    DiscordPresence.startTimestamp = 0;
+                    DiscordPresence.endTimestamp = 0;
 
-                UpdateText(CoreModule.Settings.DiscordTextInMenu);
+                    UpdateText(CoreModule.Settings.DiscordTextInMenu);
+                }
             }
 
             internal static void OnStrawberryCollect() {
@@ -140,14 +167,23 @@ namespace Celeste.Mod {
                     area = area?.DialogCleanOrNull(language) ?? area;
                 }
 
-                DiscordPresence.details = FillText(details, session, area);
-                DiscordPresence.state = FillText(state, session, area);
+                lock (DiscordPresence) {
+                    DiscordPresence.details = FillText(details, session, area);
+                    DiscordPresence.state = FillText(state, session, area);
+                }
 
-                if (DiscordRpc.Initialize == null)
+                if (Worker == null)
                     return;
-
-                DiscordRpc.UpdatePresence(DiscordPresence);
+                lock (Queue) {
+                    Queue.Enqueue(UpdatePresence);
+                }
             }
+
+            private static readonly Action UpdatePresence = () => {
+                lock (DiscordPresence) {
+                    DiscordRpc.UpdatePresence(DiscordPresence);
+                }
+            };
 
         }
     }
