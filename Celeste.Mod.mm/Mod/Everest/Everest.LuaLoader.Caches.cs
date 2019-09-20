@@ -55,6 +55,8 @@ namespace Celeste.Mod {
                 public readonly string FullName;
                 public readonly Type Type;
                 public readonly ProxyType ProxyType;
+                public LuaTable Members;
+                public LuaTable Cache;
 
                 public readonly Dictionary<string, CachedType> NestedTypeMap = new Dictionary<string, CachedType>();
                 public CachedType[] NestedTypes => NestedTypeMap.Values.ToArray();

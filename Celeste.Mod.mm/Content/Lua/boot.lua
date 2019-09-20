@@ -1,10 +1,26 @@
 ﻿local luanet = _G.luanet
-local get_method_bysig = _G.get_method_bysig
 
 local function symbol(id)
     return setmetatable({ _id = id }, {
         __tostring = function(self) return "symbol<" .. self._id .. ">" end
     })
+end
+
+
+-- https://github.com/NLua/NLua/issues/328
+local dummynil = nil
+local function _fixnil(value)
+    if value == nil or value == dummynil then
+        return nil
+    end
+    return value
+end
+local function fixnil(value)
+    local status, rv = pcall(_fixnil, value)
+    if not status then
+        return nil
+    end
+    return rv
 end
 
 
@@ -30,35 +46,95 @@ local function sharpifyName(key)
     return key:sub(1, 1):upper() .. key:sub(2)
 end
 
+local function luaifyName(key)
+    if not key or type(key) ~= "string" then
+        return nil
+    end
+    
+    local rebuilt = ""
+    local lasti = 0
+    
+    for i=1,#key  do
+      local c = key:sub(i, i)
+      local cl = c:lower()
+    
+      if c == cl then
+        break
+      end
+      
+      rebuilt = rebuilt .. cl
+      lasti = i
+    end
+    
+    rebuilt = rebuilt .. key:sub(lasti + 1)
+    return rebuilt
+end
+
+local function _addCachedMember(cache, member)
+    local mname = member.Name
+    local mtype = nil
+
+    local entry = cache[mname]
+    if not entry then
+        if not mtype then
+            mtype = fixnil(member.PropertyType) or fixnil(member.FieldType)
+        end
+        entry = { {}, mtype }
+        cache[mname] = entry
+    end
+    table.insert(entry[1], member)
+
+    mname = luaifyName(mname)
+    entry = cache[mname]
+    if not entry then
+        if not mtype then
+            mtype = fixnil(member.PropertyType) or fixnil(member.FieldType)
+        end
+        entry = { {}, mtype }
+        cache[mname] = entry
+    end
+    table.insert(entry[1], member)
+end
+
 local function getMembers(ctype, key)
     if not key or type(key) ~= "string" then
         return nil, nil
     end
 
-    local keySharp = sharpifyName(key)
     local node = ctype[_node]
     local type = node.Type
 
-    local prop = type:GetProperty(key) or type:GetProperty(keySharp)
-    if prop then
-        return { prop }, prop.PropertyType
-    end
-    
-    local field = type:GetField(key) or type:GetField(keySharp)
-    if field then
-        return { field }, field.FieldType
-    end
+    local all = node.Members
+    local cache = node.Cache
 
-    local all = type:GetMembers()
-    local found = {}
-    for i = 1, all.Length do
-        local member = all:GetValue(i - 1)
-        if member.Name == key or member.Name == keySharp then
-            table.insert(found, member)
+    if not cache then
+        cache = {}
+        node.Cache = cache
+
+        if not all then
+            all = {}
+            node.Members = all
+            local allr = type:GetMembers()
+            for i = 1, allr.Length do
+                local member = allr:GetValue(i - 1)
+                table.insert(all, member)
+                _addCachedMember(cache, member)
+
+            end
+
+        else
+            for i, member in ipairs(all) do
+                _addCachedMember(cache, member)
+            end
         end
     end
 
-    return (found and #found > 0) and found or nil, nil
+    local cached = cache[key]
+    if cached then
+        return table.unpack(cached)
+    end
+
+    return nil, nil
 end
 
 local function toLua(value, typeName, members)
@@ -546,6 +622,9 @@ local function init(_preload, _vfs, _hook)
 
     lualoader = luanet.import_type("Celeste.Mod.Everest").LuaLoader
     cs[_node] = lualoader.Global
+
+    -- https://github.com/NLua/NLua/issues/328
+    dummynil = lualoader.Global.notnil
 
     local cmod = require("cs.celeste.mod")
     cmod.logger.log(cmod.logLevel.info, "Everest.LuaBoot", "Lua ready.")

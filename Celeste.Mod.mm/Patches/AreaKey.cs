@@ -27,7 +27,7 @@ namespace Celeste {
         public const int SIDLength = 511;
         [XmlIgnore]
         [NonSerialized]
-        public string _SID;
+        private string _SID;
         [XmlIgnore]
         [NonSerialized]
         public int SIDID; // Last ID when the SID was set. SID is always set last.
