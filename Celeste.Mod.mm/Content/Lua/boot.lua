@@ -58,7 +58,7 @@ local function getMembers(ctype, key)
         end
     end
 
-    return #found and found or nil, nil
+    return (found and #found > 0) and found or nil, nil
 end
 
 local function toLua(value, typeName, members)
@@ -516,6 +516,28 @@ end
 
 table.insert(package.searchers, loaderVirtualFS)
 
+
+-- Vex forced me to do this.
+local function loaderCS(name)
+    name = name and string.match(name, '^cs%.(.*)')
+    if not name then
+        return "\n\tNot a C# reference: " .. name
+    end
+
+    local found = cs;
+    for key in name:gmatch("[^.]+") do
+        found = found[key]
+        if not found then
+            return "\n\tC# reference not found: " .. name
+        end
+    end
+
+    return function () return found end
+end
+
+table.insert(package.searchers, loaderCS)
+
+
 -- Called by Everest to register a few necessary callbacks.
 local function init(_preload, _vfs, _hook)
     luanet.preload = _preload
@@ -525,7 +547,8 @@ local function init(_preload, _vfs, _hook)
     lualoader = luanet.import_type("Celeste.Mod.Everest").LuaLoader
     cs[_node] = lualoader.Global
 
-    celeste.mod.logger.log(celeste.mod.logLevel.info, "Everest.LuaBoot", "Lua ready.")
+    local cmod = require("cs.celeste.mod")
+    cmod.logger.log(cmod.logLevel.info, "Everest.LuaBoot", "Lua ready.")
 
     --[[
     for k, v in pairs(cs) do

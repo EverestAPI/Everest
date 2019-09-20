@@ -367,6 +367,9 @@
     <EmbeddedResource Include="Content\Lua\boot.lua">
       <LogicalName>Content\Lua\boot.lua</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Lua\typebuilder.lua">
+      <LogicalName>Content\Lua\typebuilder.lua</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\lib-ext\discord-rpc.dll">

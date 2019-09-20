@@ -61,12 +61,14 @@ namespace Celeste.Mod {
                 if (Environment.GetEnvironmentVariable("LOCAL_LUA_DEBUGGER_VSCODE") == "1") {
                     object[] drva = Context.DoString(@"require(""lldebugger"").start(); return function(data, path) return load(data, path) end", "debuginit");
                     LuaFunction load = (LuaFunction) drva[0];
-                    rva = ((LuaFunction) load.Call(text, "boot.lua")[0]).Call();
+                    _Run = (code, path) => ((LuaFunction) load.Call(code, path)[0]).Call();
 
                 } else {
                     Context.UseTraceback = true;
-                    rva = Context.DoString(text, "boot.lua");
+                    _Run = (code, path) => Context.DoString(code, path);
                 }
+
+                rva = Run(text, "boot.lua");
 
                 LuaFunction load_assembly = (LuaFunction) rva[1];
                 _LoadAssembly = name => load_assembly.Call(name);
@@ -86,7 +88,11 @@ namespace Celeste.Mod {
                         Console.WriteLine(rv);
                 }
 
+                LuaTypeBuilder.Initialize();
             }
+
+            private static Func<string, string, object[]> _Run;
+            public static object[] Run(string code, string path) => _Run(code, path);
 
             private static Func<string, bool> _Preload = name => {
                 if (string.IsNullOrEmpty(name))
@@ -216,84 +222,88 @@ namespace Celeste.Mod {
             }
 
             private static Func<MethodBase, LuaFunction, Hook> _Hook = (from, to) => {
-                ParameterInfo[] args = from.GetParameters();
-                Type[] argTypes;
-                Type[] argTypesOrig;
-
-                if (!from.IsStatic) {
-                    argTypesOrig = new Type[args.Length + 1];
-                    argTypes = new Type[args.Length + 2];
-                    argTypesOrig[0] = from.GetThisParamType();
-                    argTypes[1] = from.GetThisParamType();
-                    for (int i = 0; i < args.Length; i++) {
-                        argTypesOrig[i + 1] = args[i].ParameterType;
-                        argTypes[i + 2] = args[i].ParameterType;
-                    }
-
-                } else {
-                    argTypesOrig = new Type[args.Length];
-                    argTypes = new Type[args.Length + 1];
-                    for (int i = 0; i < args.Length; i++) {
-                        argTypesOrig[i] = args[i].ParameterType;
-                        argTypes[i + 1] = args[i].ParameterType;
-                    }
-                }
-
-                Type origType = HookHelper.GetDelegateType(from);
-                argTypes[0] = origType;
-
-                Type returnType = (from as MethodInfo)?.ReturnType ?? typeof(void);
-
-                MethodInfo proxy;
-                using (DynamicMethodDefinition dmd = new DynamicMethodDefinition(
-                    "HookProxy_" + to.ToString(),
-                    returnType,
-                    argTypes
-                )) {
-                    ILProcessor il = dmd.GetILProcessor();
-
-                    il.EmitReference(to);
-
-                    il.Emit(OpCodes.Ldc_I4, argTypes.Length);
-                    il.Emit(OpCodes.Newarr, typeof(object));
-
-                    for (int i = 0; i < argTypes.Length; i++) {
-                        Type argType = argTypes[i];
-                        bool argIsByRef = argType.IsByRef;
-                        if (argIsByRef)
-                            argType = argType.GetElementType();
-                        bool argIsValueType = argType.IsValueType;
-
-                        il.Emit(OpCodes.Dup);
-                        il.Emit(OpCodes.Ldc_I4, i);
-                        il.Emit(OpCodes.Ldarg, i);
-                        if (argIsValueType) {
-                            il.Emit(OpCodes.Box, argType);
-                        }
-                        il.Emit(OpCodes.Stelem_Ref);
-                    }
-
-                    il.Emit(OpCodes.Callvirt, m_LuaFunction_Call);
-
-                    if (returnType != typeof(void)) {
-                        il.Emit(OpCodes.Ldc_I4_0);
-                        il.Emit(OpCodes.Ldelem_Ref);
-                        if (returnType.IsValueType) {
-                            il.Emit(OpCodes.Unbox_Any, returnType);
-                        }
-                    } else {
-                        il.Emit(OpCodes.Pop);
-                    }
-
-                    il.Emit(OpCodes.Ret);
-
-                    proxy = dmd.Generate();
-                }
-
                 // NLua hates DynamicMethods.
                 string dmdType = Environment.GetEnvironmentVariable("MONOMOD_DMD_TYPE");
                 Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", "Cecil");
                 try {
+
+                    ParameterInfo[] args = from.GetParameters();
+                    Type[] argTypes;
+                    Type[] argTypesOrig;
+
+                    if (!from.IsStatic) {
+                        argTypesOrig = new Type[args.Length + 1];
+                        argTypes = new Type[args.Length + 2];
+                        argTypesOrig[0] = from.GetThisParamType();
+                        argTypes[1] = from.GetThisParamType();
+                        for (int i = 0; i < args.Length; i++) {
+                            argTypesOrig[i + 1] = args[i].ParameterType;
+                            argTypes[i + 2] = args[i].ParameterType;
+                        }
+
+                    } else {
+                        argTypesOrig = new Type[args.Length];
+                        argTypes = new Type[args.Length + 1];
+                        for (int i = 0; i < args.Length; i++) {
+                            argTypesOrig[i] = args[i].ParameterType;
+                            argTypes[i + 1] = args[i].ParameterType;
+                        }
+                    }
+
+                    Type origType = HookHelper.GetDelegateType(from);
+                    argTypes[0] = origType;
+
+                    Type returnType = (from as MethodInfo)?.ReturnType ?? typeof(void);
+
+                    MethodInfo proxy;
+                    using (DynamicMethodDefinition dmd = new DynamicMethodDefinition(
+                        "HookProxy_" + to.ToString(),
+                        returnType,
+                        argTypes
+                    )) {
+                        ILProcessor il = dmd.GetILProcessor();
+
+                        il.EmitReference(to);
+
+                        il.Emit(OpCodes.Ldc_I4, argTypes.Length);
+                        il.Emit(OpCodes.Newarr, typeof(object));
+
+                        for (int i = 0; i < argTypes.Length; i++) {
+                            // Lua expects self as the first parameter.
+                            int iFrom = !from.IsStatic && i <= 1 ? (i + 1) % 2 : i;
+
+                            Type argType = argTypes[iFrom];
+                            bool argIsByRef = argType.IsByRef;
+                            if (argIsByRef)
+                                argType = argType.GetElementType();
+                            bool argIsValueType = argType.IsValueType;
+
+                            il.Emit(OpCodes.Dup);
+                            il.Emit(OpCodes.Ldc_I4, i);
+                            il.Emit(OpCodes.Ldarg, iFrom);
+                            if (argIsValueType) {
+                                il.Emit(OpCodes.Box, argType);
+                            }
+                            il.Emit(OpCodes.Stelem_Ref);
+                        }
+
+                        il.Emit(OpCodes.Callvirt, m_LuaFunction_Call);
+
+                        if (returnType != typeof(void)) {
+                            il.Emit(OpCodes.Ldc_I4_0);
+                            il.Emit(OpCodes.Ldelem_Ref);
+                            if (returnType.IsValueType) {
+                                il.Emit(OpCodes.Unbox_Any, returnType);
+                            }
+                        } else {
+                            il.Emit(OpCodes.Pop);
+                        }
+
+                        il.Emit(OpCodes.Ret);
+
+                        proxy = dmd.Generate();
+                    }
+
                     return new Hook(from, proxy);
                 } finally {
                     Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", dmdType);
