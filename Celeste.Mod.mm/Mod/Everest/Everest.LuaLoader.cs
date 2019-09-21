@@ -201,14 +201,17 @@ namespace Celeste.Mod {
                 string data = null;
                 string path = null;
 
-                if (!name.Contains(":") && !string.IsNullOrEmpty(ctx) && Content.TryGet<AssetTypeLua>(ctx + "/" + name, out asset)) {
+                if ((!name.Contains(":") && !string.IsNullOrEmpty(ctx) && Content.TryGet<AssetTypeLua>(ctx + "/" + name, out asset)) ||
+                    Content.TryGet<AssetTypeLua>(name, out asset)) {
                     data = ReadText(asset);
-                    path = "Mods/" + ctx.Substring(0, ctx.Length - 1) + "/" + name + ".lua";
 
-                } else if (Content.TryGet<AssetTypeLua>(name, out asset)) {
-                    data = ReadText(asset);
-                    path = "Mods/" + asset.Source.Name + "/" + asset.PathVirtual + ".lua";
+                    string owner = asset.Source.DefaultName;
+                    if (string.IsNullOrEmpty(owner))
+                        owner = asset.Source.Name;
+                    if (string.IsNullOrEmpty(owner))
+                        owner = "???";
 
+                    path = "Mods/" + owner + "/" + asset.PathVirtual + ".lua";
                 }
 
                 return new string[] { data, path };

@@ -42,7 +42,7 @@ namespace Celeste.Mod {
         public virtual string DefaultName { get; }
         private string _Name;
         public string Name {
-            get => _Name ?? DefaultName;
+            get => !string.IsNullOrEmpty(_Name) ? _Name : DefaultName;
             set => _Name = value;
         }
 
@@ -84,6 +84,8 @@ namespace Celeste.Mod {
     }
 
     public class FileSystemModContent : ModContent {
+        public override string DefaultName => System.IO.Path.GetFileName(Path);
+
         /// <summary>
         /// The path to the mod directory.
         /// </summary>
@@ -114,6 +116,8 @@ namespace Celeste.Mod {
     }
 
     public class MapBinsInModsModContent : ModContent {
+        public override string DefaultName => System.IO.Path.GetFileName(Path);
+
         /// <summary>
         /// The path to the mod directory.
         /// </summary>
@@ -138,6 +142,8 @@ namespace Celeste.Mod {
     }
 
     public class AssemblyModContent : ModContent {
+        public override string DefaultName => Assembly.GetName().Name;
+
         /// <summary>
         /// The assembly containing the mod content as resources.
         /// </summary>
@@ -161,6 +167,8 @@ namespace Celeste.Mod {
     }
 
     public class ZipModContent : ModContent {
+        public override string DefaultName => System.IO.Path.GetFileName(Path);
+
         /// <summary>
         /// The path to the archive containing the mod content.
         /// </summary>
