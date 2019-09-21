@@ -25,6 +25,7 @@ namespace Celeste {
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
+        public static Dictionary<Guid, string> cachedBankPaths = new Dictionary<Guid, string>();
         public static Dictionary<string, EventDescription> cachedModEvents = new Dictionary<string, EventDescription>();
 
         private static int modBankHandleLast = 0x0ade;
@@ -53,10 +54,8 @@ namespace Celeste {
                 foreach (EventDescription desc in descs) {
                     if (!desc.isValid())
                         continue;
-                    Guid id;
-                    desc.getID(out id);
-                    string path;
-                    desc.getPath(out path);
+                    desc.getID(out Guid id);
+                    desc.getPath(out string path);
                     cachedPaths[id] = path;
                 }
             }
@@ -100,6 +99,9 @@ namespace Celeste {
             }
 
             patch_Banks.ModCache[asset] = bank;
+
+            bank.getID(out Guid id);
+            cachedBankPaths[id] = $"bank:/mods/{asset.PathVirtual.Substring("Audio/".Length)}";
             return bank;
         }
 
@@ -115,8 +117,7 @@ namespace Celeste {
                     if (indexOfSpace == -1)
                         continue;
 
-                    Guid id;
-                    if (!Guid.TryParse(line.Substring(0, indexOfSpace), out id) ||
+                    if (!Guid.TryParse(line.Substring(0, indexOfSpace), out Guid id) ||
                         cachedPaths.ContainsKey(id))
                         continue;
                     string path = line.Substring(indexOfSpace + 1);
@@ -137,20 +138,37 @@ namespace Celeste {
             if (instance == null)
                 return "";
 
-            EventDescription desc;
-            instance.getDescription(out desc);
+            instance.getDescription(out EventDescription desc);
             if (desc == null)
                 return "";
 
-            Guid id;
-            desc.getID(out id);
+            return GetEventName(desc);
+        }
 
-            string path;
-            if (cachedPaths.TryGetValue(id, out path))
+        public static string GetEventName(EventDescription desc) {
+            if (desc == null)
+                return "";
+
+            desc.getID(out Guid id);
+
+            if (cachedPaths.TryGetValue(id, out string path))
                 return path;
 
             desc.getPath(out path);
             return cachedPaths[id] = path;
+        }
+
+        public static string GetBankName(Bank bank) {
+            if (bank == null)
+                return "";
+
+            bank.getID(out Guid id);
+
+            if (cachedBankPaths.TryGetValue(id, out string path))
+                return path;
+
+            bank.getPath(out path);
+            return cachedBankPaths[id] = path;
         }
 
         [MonoModReplace]
@@ -264,9 +282,6 @@ namespace Celeste {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
-
-        public static FMOD.Studio.System System => patch_Audio.System;
-        public static Dictionary<Guid, string> cachedPaths => patch_Audio.cachedPaths;
 
         public static Dictionary<string, Bank> Banks => patch_Audio.patch_Banks.Banks;
 

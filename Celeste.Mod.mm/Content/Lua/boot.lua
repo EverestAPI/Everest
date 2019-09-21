@@ -8,7 +8,7 @@ end
 
 
 -- https://github.com/NLua/NLua/issues/328
-local dummynil = nil
+local dummynil
 local function _fixnil(value)
     if value == nil or value == dummynil then
         return nil
@@ -39,6 +39,8 @@ setmetatable(_G, {
     __index = cs
 })
 
+local bindingFlagsAll
+
 local function sharpifyName(key)
     if not key or type(key) ~= "string" then
         return nil
@@ -50,29 +52,29 @@ local function luaifyName(key)
     if not key or type(key) ~= "string" then
         return nil
     end
-    
+
     local rebuilt = ""
     local lasti = 0
-    
+
     for i=1,#key  do
       local c = key:sub(i, i)
       local cl = c:lower()
-    
+
       if c == cl then
         break
       end
-      
+
       rebuilt = rebuilt .. cl
       lasti = i
     end
-    
+
     rebuilt = rebuilt .. key:sub(lasti + 1)
     return rebuilt
 end
 
 local function _addCachedMember(cache, member)
     local mname = member.Name
-    local mtype = nil
+    local mtype
 
     local entry = cache[mname]
     if not entry then
@@ -114,7 +116,7 @@ local function getMembers(ctype, key)
         if not all then
             all = {}
             node.Members = all
-            local allr = type:GetMembers()
+            local allr = type:GetMembers(bindingFlagsAll)
             for i = 1, allr.Length do
                 local member = allr:GetValue(i - 1)
                 table.insert(all, member)
@@ -401,7 +403,7 @@ function mtType:__index(key)
 
     local status, value = pcall(function() return proxy[members and members[1].Name or key] end)
 
-    if not status and members and not members[1].IsStatic then
+    if not status and members then
         return marshalToLua["luaNet_function"]({}, nil, members)
     end
 
@@ -515,7 +517,8 @@ function mtFunction:__call(...)
 end
 
 function mtFunction:__tostring()
-    return "C# Function: " .. tostring(self[_node])
+    local members = self[_node]
+    return "C# Function: " .. (members and tostring(members[1]) or "nil")
 end
 
 
@@ -595,7 +598,7 @@ table.insert(package.searchers, loaderVirtualFS)
 
 -- Vex forced me to do this.
 local function loaderCS(name)
-    name = name and string.match(name, '^cs%.(.*)')
+    name = name and (name:match("^cs%.(.*)") or name:match("^#(.*)"))
     if not name then
         return "\n\tNot a C# reference: " .. name
     end
@@ -625,6 +628,8 @@ local function init(_preload, _vfs, _hook)
 
     -- https://github.com/NLua/NLua/issues/328
     dummynil = lualoader.Global.notnil
+    
+    bindingFlagsAll = luanet.enum(luanet.import_type("System.Reflection.BindingFlags"), "Public,NonPublic,Instance,Static")
 
     local cmod = require("cs.celeste.mod")
     cmod.logger.log(cmod.logLevel.info, "Everest.LuaBoot", "Lua ready.")

@@ -23,23 +23,26 @@ namespace Celeste.Mod.UI {
         private float timer;
         private float ease;
 
-        private int[] digits = new int[4];
+        private int[] digits = new int[5];
         private int selectedDigit;
+        private string selectedBankPath;
         private string selectedPath;
 
         private Wiggler[] wigglerDigits;
         private Wiggler wigglerPath;
+        private Wiggler wigglerBankPath;
 
         private Color unselectColor = Color.White;
+        private Color unselectSpecialColor = Color.LightSlateGray;
         private Color selectColorA = Calc.HexToColor("84FF54");
         private Color selectColorB = Calc.HexToColor("FCFF59");
-        private Color disableColor = Color.DarkSlateGray;
 
         public OuiSoundTest() {
             wigglerDigits = new Wiggler[digits.Length];
             for (int i = 0; i < digits.Length; i++)
                 wigglerDigits[i] = Wiggler.Create(0.25f, 4f);
             wigglerPath = Wiggler.Create(0.25f, 4f);
+            wigglerBankPath = Wiggler.Create(0.25f, 4f);
             Position = new Vector2(0f, 1080f);
             Visible = false;
         }
@@ -77,6 +80,7 @@ namespace Celeste.Mod.UI {
             for (int i = 0; i < digits.Length; i++)
                 wigglerDigits[i].Start();
             wigglerPath.Start();
+            wigglerBankPath.Start();
         }
 
         public override IEnumerator Leave(Oui next) {
@@ -139,6 +143,7 @@ namespace Celeste.Mod.UI {
             for (int i = 0; i < digits.Length; i++)
                 wigglerDigits[i].Update();
             wigglerPath.Update();
+            wigglerBankPath.Update();
         }
 
         private void UpdateDigits(int index, int dir) {
@@ -159,35 +164,45 @@ namespace Celeste.Mod.UI {
                 digits[i] = digit;
             }
 
-            wigglerPath.Start();
+            if (index <= 1)
+                wigglerBankPath.Start();
+            else
+                wigglerPath.Start();
+
             if (dir < 0)
                 Audio.Play(SFX.ui_main_button_toggle_off);
             else
                 Audio.Play(SFX.ui_main_button_toggle_on);
+
             UpdateSelectedPath();
         }
 
         private void UpdateSelectedPath() {
+            selectedBankPath = "";
             selectedPath = "";
 
             Bank[] banks;
-            AudioExt.System.getBankList(out banks);
-            if (digits[0] >= banks.Length || !(banks[digits[0]]?.isValid() ?? false))
+            patch_Audio.System.getBankList(out banks);
+            int bankI = 0;
+            for (int i = 0; i <= 1; i++) {
+                bankI += digits[i] * (int) Math.Pow(0x10, (2 - 1) - i);
+            }
+            if (bankI >= banks.Length || !(banks[bankI]?.isValid() ?? false))
                 return;
 
-            Bank bank = banks[digits[0]];
+            Bank bank = banks[bankI];
+            selectedBankPath = patch_Audio.GetBankName(bank);
+
             EventDescription[] events;
             bank.getEventList(out events);
             int eventI = 0;
-            for (int i = 1; i < digits.Length; i++) {
+            for (int i = 2; i < digits.Length; i++) {
                 eventI += digits[i] * (int) Math.Pow(0x10, (digits.Length - 1) - i);
             }
             if (eventI >= events.Length || !(events[eventI]?.isValid() ?? false))
                 return;
 
-            Guid id;
-            events[eventI].getID(out id);
-            selectedPath = AudioExt.cachedPaths[id];
+            selectedPath = patch_Audio.GetEventName(events[eventI]);
         }
 
         public override void Render() {
@@ -195,29 +210,34 @@ namespace Celeste.Mod.UI {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * ease * 0.4f);
             base.Render();
 
-            Vector2 justifyCenter = Vector2.One * 0.5f;
             const float spacingX = 48f;
             const float spacingY = 64f;
 
             Vector2 posCenter = Position + new Vector2(1920f / 2f, 1080f / 2f);
             Vector2 pos;
 
-            pos = posCenter - new Vector2(spacingX * digits.Length / 2f, spacingY * 0.5f);
+            // Vector2 posInput = posCenter - new Vector2(spacingX * (digits.Length - 1f) / 2f, spacingY * 0.5f);
+            Vector2 posInput = Position + new Vector2(384f, 1080f / 2f);
+            pos = posInput;
             for (int i = 0; i < digits.Length; i++) {
-                DrawOptionText(digits[i].ToString("X1"), pos + new Vector2(0f, wigglerDigits[i].Value * 8f), justifyCenter, Vector2.One, selectedDigit == i);
+                DrawOptionText(digits[i].ToString("X1"), pos + new Vector2(0f, wigglerDigits[i].Value * 8f), new Vector2(0f, 0.5f), Vector2.One, selectedDigit == i, i <= 1);
                 pos.X += spacingX;
             }
 
-            pos = posCenter + new Vector2(0f, spacingY * 0.5f + wigglerPath.Value * 2f);
-            ActiveFont.DrawOutline(selectedPath ?? "", pos, justifyCenter, Vector2.One, Color.LightSlateGray * ease, 2f, Color.Black * ease * ease * ease);
+            // pos = posCenter + new Vector2(0f, spacingY * 0.5f + wigglerPath.Value * 2f);
+            pos = posInput + new Vector2(spacingX * 2f, spacingY * 0.8f + wigglerPath.Value * 2f);
+            ActiveFont.DrawOutline(selectedPath ?? "", pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
+
+            pos = posInput + new Vector2(0f, spacingY * -0.8f + wigglerBankPath.Value * 2f);
+            ActiveFont.DrawOutline(selectedBankPath ?? "", pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.LightSlateGray * ease, 2f, Color.Black * ease * ease * ease);
 
             ActiveFont.DrawEdgeOutline(Dialog.Clean("soundtest_title"), Position + new Vector2(960f, 256f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
         }
 
-        private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
+        private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool special = false) {
             Color color =
-                disabled ? disableColor :
                 selected ? (Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB) :
+                special ? unselectSpecialColor :
                 unselectColor;
             ActiveFont.DrawOutline(text, at, justify, scale, color * ease, 2f, Color.Black * ease * ease * ease);
         }

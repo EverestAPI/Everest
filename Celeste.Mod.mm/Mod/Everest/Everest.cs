@@ -467,7 +467,7 @@ namespace Celeste.Mod {
                     game.Start();
                 });
                 offspring.Start();
-                AudioExt.System?.release();
+                patch_Audio.System?.release();
             };
 
             Engine.Instance.Exit();
