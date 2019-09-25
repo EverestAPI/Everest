@@ -357,7 +357,7 @@ namespace Celeste {
                 else
                     area.Mode[0].MapData = new MapData(area.ToKey());
 
-                if (area.Interlude)
+                if (area.IsInterludeUnsafe())
                     continue;
 
                 // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
@@ -444,6 +444,12 @@ namespace Celeste {
             => patch_AreaData.Get(stats);
         public static AreaData Get(string sid)
             => patch_AreaData.Get(sid);
+
+        /// <summary>
+        /// Check if the AreaData is an interlude (like Prologue and Epilogue).
+        /// </summary>
+        public static bool IsInterludeUnsafe(this AreaData self)
+            => ((patch_AreaData)self).Interlude_Unsafe;
 
         /// <summary>
         /// Get an AreaKey for this area.
