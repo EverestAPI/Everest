@@ -53,7 +53,7 @@ namespace Celeste {
                 SaveData save = UserIO.Load<SaveData>(SaveData.GetFilename(slot));
                 if (save != null) {
                     SaveData.Start(save, slot);
-                    if (slot == 4)
+                    if (slot == -1)
                         save.DebugMode = true;
                     if (save.CurrentSession?.InArea ?? false) {
                         Engine.Scene = new LevelLoader(save.CurrentSession);
