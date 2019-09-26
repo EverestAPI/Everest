@@ -1,9 +1,16 @@
 ﻿local luanet = _G.luanet
 
+local symcache = {}
 local function symbol(id)
-    return setmetatable({ _id = id }, {
-        __tostring = function(self) return "symbol<" .. self._id .. ">" end
-    })
+    local sym = symcache[id]
+    if not sym then
+        sym = setmetatable({ _id = id }, {
+            __name = "symbol",
+            __tostring = function(self) return "symbol<" .. self._id .. ">" end
+        })
+        symcache[id] = sym
+    end
+    return sym
 end
 
 
@@ -224,17 +231,21 @@ marshalToLua["default"] = function(value, typeName)
     return value
 end
 
+marshalToSharp["default"] = function(value)
+    return value
+end
+
 marshalToLua["Celeste.Mod.Everest+LuaLoader+CachedType"] = function(value)
     return setmetatable({ [_node] = value, [_proxy] = luanet.import_type(value.FullName) }, mtType)
 end
 
-marshalToLua["luaNet_function"] = function(value, _, members)
-    return setmetatable({ [_node] = members, [_proxy] = value }, mtFunction)
+marshalToLua["System.RuntimeType"] = function(value)
+    getmetatable(value)._fixed = true
+    return value
 end
 
-
-marshalToSharp["default"] = function(value)
-    return value
+marshalToLua["luaNet_function"] = function(value, _, members)
+    return setmetatable({ [_node] = members, [_proxy] = value }, mtFunction)
 end
 
 
@@ -603,7 +614,7 @@ local function loaderCS(name)
         return "\n\tNot a C# reference: " .. name
     end
 
-    local found = cs;
+    local found = cs
     for key in name:gmatch("[^.]+") do
         found = found[key]
         if not found then
@@ -658,4 +669,4 @@ local function init(_preload, _vfs, _hook)
 
 end
 
-return init, luanet.load_assembly, require
+return init, luanet.load_assembly, require, symbol
