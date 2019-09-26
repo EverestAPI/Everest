@@ -33,6 +33,8 @@ namespace Celeste.Editor {
         public extern void orig_ctor(AreaKey area, bool reloadMapData = true);
         [MonoModConstructor]
         public void ctor(AreaKey area, bool reloadMapData = true) {
+            AreaKey prevArea = patch_MapEditor.area;
+
             orig_ctor(area, reloadMapData);
 
             CurrentSession = (Engine.Scene as Level)?.Session ?? SaveData.Instance?.CurrentSession;
@@ -40,6 +42,9 @@ namespace Celeste.Editor {
                 CurrentSession = null;
                 return;
             }
+
+            if (prevArea == area)
+                return;
 
             Vector2 pos;
             if (CurrentSession.RespawnPoint != null) {
