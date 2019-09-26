@@ -22,6 +22,8 @@ namespace Celeste.Mod {
 
         private static int Count = -1;
 
+        private static LuaTable _SymNode;
+
         internal static void Initialize() {
             Stream stream = null;
             string text;
@@ -53,11 +55,13 @@ namespace Celeste.Mod {
 
             LuaFunction invokecb = (LuaFunction) rva[0];
             InvokeCB = cb => invokecb.Call(cb)?.FirstOrDefault() as LuaTable;
+
+            _SymNode = Symbol("node");
         }
 
         private static Func<LuaFunction, LuaTable> InvokeCB;
 
-        public static Type Build(LuaBase rulesOrCB) {
+        public static Type Build(object rulesOrCB) {
             if (Count == -2)
                 return null;
 
@@ -77,7 +81,7 @@ namespace Celeste.Mod {
                 new AssemblyName() {
                     Name = $"LuaDynAsm{Count}"
                 },
-                AssemblyBuilderAccess.RunAndCollect
+                AssemblyBuilderAccess.Run // Collectable assemblies cannot be AssemblyResolve-d
             );
 
             asm.SetCustomAttribute(new CustomAttributeBuilder(c_UnverifiableCodeAttribute, new object[0]));
@@ -98,18 +102,46 @@ namespace Celeste.Mod {
                 baset
             );
 
-            foreach (DictionaryEntry kvp in rules) {
+            foreach (KeyValuePair<object, object> kvp in rules) {
                 string rname = kvp.Key as string;
                 if (string.IsNullOrEmpty(rname) || rname.StartsWith("__"))
                     continue;
 
                 if (kvp.Value is LuaFunction cb) {
                     LuaTable info = rules["__" + rname] as LuaTable;
+                    if (info == null)
+                        throw new InvalidDataException($"Type ruleset for {tfullName} contains function {rname} but no info!");
 
+                    string name = info["name"] as string ?? rname;
+                    Type ret = GetType(info["ret"]) ?? typeof(void);
+                    Console.WriteLine(ret?.ToString() ?? "NULL");
                 }
             }
 
-            return builder.CreateType();
+            Type built = builder.CreateType();
+
+            Assembly asmBuilt = built.Assembly;
+            AppDomain.CurrentDomain.AssemblyResolve +=
+                (s, e) => e.Name == asmBuilt.FullName ? asmBuilt : null;
+            _Precache(asmBuilt);
+
+            return built;
+        }
+
+        private static Type GetType(object raw) {
+            if (raw == null)
+                return null;
+
+            if (raw is Type type)
+                return type;
+
+            if (raw is CachedType ctype)
+                return ctype.Type;
+
+            if (raw is LuaTable table)
+                return table[_SymNode] as Type;
+
+            throw new InvalidDataException($"Expected Type, CachedType or a compatible LuaTable, got {raw.GetType()}");
         }
 
     }

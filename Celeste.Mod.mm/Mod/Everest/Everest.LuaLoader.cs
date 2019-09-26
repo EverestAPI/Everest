@@ -26,6 +26,8 @@ namespace Celeste.Mod {
 
             private static readonly MethodInfo m_LuaFunction_Call = typeof(LuaFunction).GetMethod("Call");
 
+            public static bool IsDebug { get; private set; }
+
             internal static void Initialize() {
                 Stream stream = null;
                 string text;
@@ -58,8 +60,9 @@ namespace Celeste.Mod {
 
                 object[] rva = null;
 
-                if (Environment.GetEnvironmentVariable("LOCAL_LUA_DEBUGGER_VSCODE") == "1") {
-                    object[] drva = Context.DoString(@"require(""lldebugger"").start(); return function(data, path) return load(data, path) end", "debuginit");
+                IsDebug = Environment.GetEnvironmentVariable("LOCAL_LUA_DEBUGGER_VSCODE") == "1";
+                if (IsDebug) {
+                    object[] drva = Context.DoString(@"require(""lldebugger"").start(); return function(...) return load(...) end", "debuginit");
                     LuaFunction load = (LuaFunction) drva[0];
                     _Run = (code, path) => ((LuaFunction) load.Call(code, path)[0]).Call();
 
@@ -73,8 +76,18 @@ namespace Celeste.Mod {
                 LuaFunction load_assembly = (LuaFunction) rva[1];
                 _LoadAssembly = name => load_assembly.Call(name);
 
-                LuaFunction require = (LuaFunction) rva[2];
-                _Require = name => require.Call(name);
+                if (IsDebug) {
+                    object[] drva = Context.DoString(@"return function(...) return require(...) end", "debugutils");
+                    LuaFunction require = (LuaFunction) drva[0];
+                    _Require = name => require.Call(name);
+
+                } else {
+                    LuaFunction require = (LuaFunction) rva[2];
+                    _Require = name => require.Call(name);
+                }
+
+                LuaFunction symbol = (LuaFunction) rva[3];
+                _Symbol = name => symbol.Call(name).FirstOrDefault() as LuaTable;
 
                 AllNamespaces[""] = Global;
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
@@ -140,7 +153,7 @@ namespace Celeste.Mod {
                 return false;
             };
 
-            private static void _Precache(Assembly asm) {
+            internal static void _Precache(Assembly asm) {
                 _Preloaded.Add(asm.GetName().Name);
                 _Preloaded.Add(asm.FullName);
 
@@ -151,8 +164,11 @@ namespace Celeste.Mod {
                 }
 
                 foreach (Type type in asm.GetTypes()) {
+                    // Non-public type instances can still be passed / returned.
+                    /*
                     if (!type.IsPublic)
                         continue;
+                    */
 
                     _Preloaded.Add(type.FullName);
 
@@ -317,6 +333,9 @@ namespace Celeste.Mod {
 
             private static Func<string, object[]> _Require;
             public static object[] Require(string name) => _Require(name);
+
+            private static Func<string, LuaTable> _Symbol;
+            public static LuaTable Symbol(string name) => _Symbol(name);
 
         }
     }
