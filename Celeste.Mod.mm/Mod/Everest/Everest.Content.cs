@@ -18,6 +18,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
+using System.Threading;
 
 namespace Celeste.Mod {
     // Special meta types.
@@ -91,8 +92,27 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly string Path;
 
+        private FileSystemWatcher watcher;
+
         public FileSystemModContent(string path) {
             Path = path;
+
+            watcher = new FileSystemWatcher {
+                Path = path,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+            };
+
+            watcher.Changed += FileUpdated;
+            watcher.Created += FileUpdated;
+            watcher.Deleted += FileUpdated;
+            watcher.Renamed += FileRenamed;
+
+            watcher.EnableRaisingEvents = true;
+        }
+
+        protected override void Dispose(bool disposing) {
+            base.Dispose(disposing);
+            watcher.Dispose();
         }
 
         protected override void Crawl() => Crawl(null);
@@ -112,6 +132,19 @@ namespace Celeste.Mod {
                 string file = files[i];
                 Crawl(file, root);
             }
+        }
+
+        private void FileUpdated(object source, FileSystemEventArgs e) {
+            Console.WriteLine($"File updated: {e.FullPath} - {e.ChangeType}");
+            /*
+            AssetReloadScene.Do($"Reloading {e.Name}", () => {
+                Thread.Sleep(2000);
+            });
+            */
+        }
+
+        private void FileRenamed(object source, RenamedEventArgs e) {
+            Console.WriteLine($"File renamed: {e.OldFullPath} - {e.FullPath}");
         }
     }
 

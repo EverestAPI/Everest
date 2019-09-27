@@ -129,6 +129,7 @@
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
     <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
     <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
+    <Compile Include="Mod\Everest\AssetReloadScene.cs" />
     <Compile Include="Mod\Helpers\XXHash.cs" />
     <Compile Include="Mod\Module\LuaModule.cs" />
     <Compile Include="Mod\Module\NullModule.cs" />
@@ -337,6 +338,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\reloader\cogwheel.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\reloader\cogwheel.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam.png">
       <LogicalName>Content\Graphics\Atlases\Gui\areas\steam.png</LogicalName>

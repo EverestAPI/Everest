@@ -37,6 +37,7 @@ namespace Celeste.Editor {
 
             orig_ctor(area, reloadMapData);
 
+            Session prevSession = CurrentSession;
             CurrentSession = (Engine.Scene as Level)?.Session ?? SaveData.Instance?.CurrentSession;
             if (CurrentSession == null || CurrentSession.Area != area) {
                 CurrentSession = null;

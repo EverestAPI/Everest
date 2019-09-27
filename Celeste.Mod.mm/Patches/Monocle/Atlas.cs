@@ -398,9 +398,14 @@ namespace Monocle {
                     if (meta != null) {
                         // Apply width and height from existing meta.
                         existing.SetOverride(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
-                    } else {
-                        // Keep width and height from existing instance.
+
+                    } else if (vtex.Width == existing.ClipRect.Width && vtex.Height == existing.ClipRect.Height) {
+                        // Replacement is a subtexture. Keep drawoffset, width and height from existing instance.
                         existing.SetOverride(vtex, existing.DrawOffset, existing.Width, existing.Height);
+
+                    } else {
+                        // Full texture replacement.
+                        existing.SetOverride(vtex, new Vector2(0f, 0f), vtex.Width, vtex.Height);
                     }
 
                     mtex = existing;
