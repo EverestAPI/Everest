@@ -53,6 +53,11 @@ namespace Celeste.Mod {
         public int SectionLength;
 
         /// <summary>
+        /// A set of all objects affected by this mod asset.
+        /// </summary>
+        public List<object> Targets = new List<object>();
+
+        /// <summary>
         /// A stream to read the asset data from.
         /// </summary>
         public virtual Stream Stream {

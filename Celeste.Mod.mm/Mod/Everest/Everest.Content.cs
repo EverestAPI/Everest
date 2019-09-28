@@ -92,6 +92,8 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly string Path;
 
+        private readonly Dictionary<string, FileSystemModAsset> FileSystemMap = new Dictionary<string, FileSystemModAsset>();
+
         private FileSystemWatcher watcher;
 
         public FileSystemModContent(string path) {
@@ -99,7 +101,8 @@ namespace Celeste.Mod {
 
             watcher = new FileSystemWatcher {
                 Path = path,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
+                IncludeSubdirectories = true
             };
 
             watcher.Changed += FileUpdated;
@@ -134,17 +137,42 @@ namespace Celeste.Mod {
             }
         }
 
+        protected override void Add(string path, ModAsset asset) {
+            FileSystemModAsset fsma = (FileSystemModAsset) asset;
+            FileSystemMap[fsma.Path] = fsma;
+            base.Add(path, asset);
+        }
+
         private void FileUpdated(object source, FileSystemEventArgs e) {
             Console.WriteLine($"File updated: {e.FullPath} - {e.ChangeType}");
-            /*
-            AssetReloadScene.Do($"Reloading {e.Name}", () => {
-                Thread.Sleep(2000);
-            });
-            */
+
+            FileSystemModAsset previous;
+            if (!FileSystemMap.TryGetValue(e.FullPath, out previous))
+                previous = null;
+
+            FileSystemModAsset updated = null;
+            if (File.Exists(e.FullPath)) {
+                updated = new FileSystemModAsset(this, e.FullPath);
+                updated.PathVirtual = updated.Path.Substring(Path.Length + 1);
+            }
+
+            Everest.Content.Update(previous, updated);
         }
 
         private void FileRenamed(object source, RenamedEventArgs e) {
             Console.WriteLine($"File renamed: {e.OldFullPath} - {e.FullPath}");
+
+            FileSystemModAsset previous;
+            if (!FileSystemMap.TryGetValue(e.OldFullPath, out previous))
+                previous = null;
+
+            FileSystemModAsset updated = null;
+            if (File.Exists(e.FullPath)) {
+                updated = new FileSystemModAsset(this, e.FullPath);
+                updated.PathVirtual = updated.Path.Substring(Path.Length + 1);
+            }
+
+            Everest.Content.Update(previous, updated);
         }
     }
 
@@ -299,9 +327,9 @@ namespace Celeste.Mod {
             public static bool TryGet(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
-                if (includeDirs && MapDirs.TryGetValue(path, out metadata))
+                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata != null)
                     return true;
-                if (Map.TryGetValue(path, out metadata))
+                if (Map.TryGetValue(path, out metadata) && metadata != null)
                     return true;
 
                 metadata = null;
@@ -350,9 +378,9 @@ namespace Celeste.Mod {
 
                 path = string.Join("/", parts);
 
-                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
+                if (includeDirs && MapDirs.TryGetValue(path, out metadata) && metadata != null && metadata.Type == typeof(T))
                     return true;
-                if (Map.TryGetValue(path, out metadata) && metadata.Type == typeof(T))
+                if (Map.TryGetValue(path, out metadata) && metadata != null && metadata.Type == typeof(T))
                     return true;
 
                 metadata = null;
@@ -379,12 +407,13 @@ namespace Celeste.Mod {
             /// <returns>The passed mod asset meta object.</returns>
             public static ModAsset Add(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
-                
-                if (metadata.Type == null)
-                    path = GuessType(path, out metadata.Type, out metadata.Format);
 
-                metadata.PathVirtual = path;
-                string prefix = metadata.Source?.Name;
+                if (metadata != null) {
+                    if (metadata.Type == null)
+                        path = GuessType(path, out metadata.Type, out metadata.Format);
+                    metadata.PathVirtual = path;
+                }
+                string prefix = metadata?.Source?.Name;
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
                 ModAsset metadataPrev;
@@ -392,7 +421,7 @@ namespace Celeste.Mod {
                     metadataPrev = null;
 
                 // Hardcoded case: Handle directories separately.
-                if (metadata.Type == typeof(AssetTypeDirectory)) {
+                if (metadata?.Type == typeof(AssetTypeDirectory)) {
                     MapDirs[path] = metadata;
                     if (prefix != null)
                         MapDirs[$"{prefix}:/{path}"] = metadata;
@@ -416,10 +445,15 @@ namespace Celeste.Mod {
                     }
                     // If a previous mapping exists, replace it in the shadow structure.
                     int metadataPrevIndex = metadataDir.Children.IndexOf(metadataPrev);
-                    if (metadataPrevIndex != -1)
-                        metadataDir.Children[metadataPrevIndex] = metadata;
-                    else
+                    if (metadataPrevIndex != -1) {
+                        if (metadata == null) {
+                            metadataDir.Children.RemoveAt(metadataPrevIndex);
+                        } else {
+                            metadataDir.Children[metadataPrevIndex] = metadata;
+                        }
+                    } else {
                         metadataDir.Children.Add(metadata);
+                    }
                 }
 
                 return metadata;
@@ -543,6 +577,43 @@ namespace Celeste.Mod {
                     if (!weak.IsAlive)
                         continue;
                     Process(weak.Target, LoadedAssetFullPaths[i]);
+                }
+            }
+
+            public static void Update(ModAsset prev, ModAsset next) {
+                List<object> targets = null;
+                string path = null;
+
+                if (prev != null) {
+                    path = prev.PathVirtual;
+                    targets = prev.Targets;
+                    foreach (object target in targets) {
+                        if (target is MTexture mtex) {
+                            AssetReloadScene.Do($"Reverting texture {path}", () => {
+                                mtex.UndoOverride(prev);
+                            });
+                        }
+                    }
+
+                    if (next == null)
+                        Add(prev.PathVirtual, null);
+                }
+
+
+                if (next != null) {
+                    Add(path ?? next.PathVirtual, next);
+                    path = next.PathVirtual;
+
+                    if (targets != null) {
+                        next.Targets.AddRange(targets);
+                        foreach (object target in targets) {
+                            if (target is MTexture mtex) {
+                                AssetReloadScene.Do($"Updating texture {path}", () => {
+                                    mtex.SetOverride(next);
+                                });
+                            }
+                        }
+                    }
                 }
             }
 

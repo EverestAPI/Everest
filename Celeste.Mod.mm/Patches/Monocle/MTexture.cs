@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -32,6 +33,15 @@ namespace Monocle {
         // Needed for mods which were built against old versions.
         public string get_AtlasPath() => AtlasPath;
 
+        private bool _HasOrig;
+        private VirtualTexture _OrigTexture;
+        private Rectangle _OrigClipRect;
+        private Vector2 _OrigDrawOffset;
+        private int _OrigWidth;
+        private int _OrigHeight;
+
+        private List<ModAsset> _ModAssets;
+
         // Patching constructors is ugly.
         public extern void orig_ctor(MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]
@@ -62,12 +72,90 @@ namespace Monocle {
         }
 
         public void SetOverride(VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight) {
+            if (!_HasOrig) {
+                _OrigTexture = Texture;
+                _OrigClipRect = ClipRect;
+                _OrigDrawOffset = DrawOffset;
+                _OrigWidth = Width;
+                _OrigHeight = Height;
+                _HasOrig = true;
+            }
+
             Texture = texture;
             ClipRect = new Rectangle(0, 0, texture.Width, texture.Height);
             DrawOffset = drawOffset;
             Width = frameWidth;
             Height = frameHeight;
             SetUtil();
+        }
+
+        public void SetOverride(ModAsset asset) {
+            if (_ModAssets == null)
+                _ModAssets = new List<ModAsset>();
+
+            ModAsset assetPrev = _ModAssets.Count == 0 ? null : _ModAssets[_ModAssets.Count - 1];
+            if (assetPrev != asset) {
+                _ModAssets.Add(asset);
+                asset.Targets.Add(this);
+            }
+
+            VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+            MTextureMeta meta = asset.GetMeta<MTextureMeta>();
+
+            if (meta != null) {
+                // Apply width and height from meta.
+                if (meta.Width == 0)
+                    meta.Width = vtex.Width;
+                if (meta.Height == 0)
+                    meta.Height = vtex.Height;
+                SetOverride(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+
+            } else if (vtex.Width == ClipRect.Width && vtex.Height == ClipRect.Height) {
+                // Replacement is a subtexture. Keep drawoffset, width and height from existing instance.
+                SetOverride(vtex, DrawOffset, Width, Height);
+
+            } else {
+                // Full texture replacement.
+                SetOverride(vtex, new Vector2(0f, 0f), vtex.Width, vtex.Height);
+            }
+        }
+
+        public void UndoOverride() {
+            if (_ModAssets != null && _ModAssets.Count > 0) {
+                _ModAssets.RemoveAt(_ModAssets.Count - 1);
+                if (_ModAssets.Count > 0) {
+                    SetOverride(_ModAssets[_ModAssets.Count - 1]);
+                    return;
+                }
+            }
+
+            if (!_HasOrig)
+                return;
+
+            Texture = _OrigTexture;
+            _OrigTexture = null;
+            ClipRect = _OrigClipRect;
+            DrawOffset = _OrigDrawOffset;
+            Width = _OrigWidth;
+            Height = _OrigHeight;
+            SetUtil();
+            _HasOrig = false;
+        }
+
+        public void UndoOverride(ModAsset asset) {
+            if (_ModAssets == null)
+                return;
+
+            int index = _ModAssets.IndexOf(asset);
+            if (index == -1)
+                return;
+
+            if (index == _ModAssets.Count - 1) {
+                UndoOverride();
+                return;
+            }
+
+            _ModAssets.Remove(asset);
         }
 
         [MonoModReplace]
@@ -701,6 +789,24 @@ namespace Monocle {
         /// </summary>
         public static void SetOverride(this MTexture self, VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight)
             => ((patch_MTexture) self).SetOverride(texture, drawOffset, frameWidth, frameHeight);
+
+        /// <summary>
+        /// Override the given MTexutre with the given mod asset.
+        /// </summary>
+        public static void SetOverride(this MTexture self, ModAsset asset)
+            => ((patch_MTexture) self).SetOverride(asset);
+
+        /// <summary>
+        /// Undo the latest override applied to the given MTexture.
+        /// </summary>
+        public static void UndoOverride(this MTexture self)
+            => ((patch_MTexture) self).UndoOverride();
+
+        /// <summary>
+        /// Undo the given override applied to the given MTexture.
+        /// </summary>
+        public static void UndoOverride(this MTexture self, ModAsset asset)
+            => ((patch_MTexture) self).UndoOverride(asset);
 
         /// <summary>
         /// Gets the parent texture of the given MTexture.

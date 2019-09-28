@@ -26,8 +26,6 @@ namespace Monocle {
         private Dictionary<string, string> links = new Dictionary<string, string>();
         public Dictionary<string, MTexture> Textures => textures;
 
-        public static Dictionary<string, MTexture> VTextureToMTextureMap;
-
         public string DataMethod;
         public string DataPath;
         public string[] DataPaths;
@@ -35,9 +33,6 @@ namespace Monocle {
 
         [MonoModReplace]
         private static void ReadAtlasData(Atlas _atlas, string path, AtlasDataFormat format) {
-            if (VTextureToMTextureMap == null)
-                VTextureToMTextureMap = new Dictionary<string, MTexture>();
-
             patch_Atlas atlas = (patch_Atlas) _atlas;
 
             string pathFull = Path.Combine(Engine.ContentDirectory, path);
@@ -55,7 +50,6 @@ namespace Monocle {
 
                     texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlTextureAtlas.Attr("imagePath", "")));
                     texM = new MTexture(texV);
-                    VTextureToMTextureMap[texV.Name] = texM;
                     atlas.Sources.Add(texV);
 
                     XmlNodeList xmlSubs = xmlTextureAtlas.GetElementsByTagName("SubTexture");
@@ -84,7 +78,6 @@ namespace Monocle {
                     foreach (XmlElement xmlAtlasSource in xmlAtlas) {
                         texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlAtlasSource.Attr("n", "") + ".png"));
                         texM = new MTexture(texV);
-                        VTextureToMTextureMap[texV.Name] = texM;
                         atlas.Sources.Add(texV);
                         foreach (XmlElement xmlSub in xmlAtlasSource) {
                             string name = xmlSub.Attr("n");
@@ -112,7 +105,6 @@ namespace Monocle {
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadNullTerminatedString() + ".png"));
                             texM = new MTexture(texV);
-                            VTextureToMTextureMap[texV.Name] = texM;
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -164,7 +156,7 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".png"));
-                                atlas.textures[name] = VTextureToMTextureMap[texV.Name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
                                 atlas.Sources.Add(texV);
                             }
                         }
@@ -184,7 +176,6 @@ namespace Monocle {
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
                             texM = new MTexture(texV);
-                            VTextureToMTextureMap[texV.Name] = texM;
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -239,8 +230,8 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".data"));
-                                atlas.textures[name] = VTextureToMTextureMap[texV.Name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
-                                atlas.textures[name].AtlasPath = name;
+                                MTexture tex = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                tex.AtlasPath = name;
                                 atlas.Sources.Add(texV);
                             }
                         }
@@ -308,11 +299,6 @@ namespace Monocle {
         // We thus expose any new members through extensions.
 
         /// <summary>
-        /// Get the VTexture -> MTexture map. Note that it only contains the last mapping and is only useful for VTextures which don't contain subtextures.
-        /// </summary>
-        public static Dictionary<string, MTexture> VTextureToMTextureMap => patch_Atlas.VTextureToMTextureMap;
-
-        /// <summary>
         /// Get the internal string-MTexture dictionary.
         /// </summary>
         public static Dictionary<string, MTexture> GetTextures(this Atlas self)
@@ -376,55 +362,34 @@ namespace Monocle {
                     return;
                 }
 
-                VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
                 MTexture mtex;
-                MTextureMeta meta = asset.GetMeta<MTextureMeta>();
-                if (meta != null) {
-                    if (meta.Width == 0)
-                        meta.Width = vtex.Width;
-                    if (meta.Height == 0)
-                        meta.Height = vtex.Height;
-                }
 
                 Dictionary<string, MTexture> textures = self.GetTextures();
-                MTexture existing;
-                if (textures.TryGetValue(path, out existing)) {
+                if (textures.TryGetValue(path, out mtex)) {
                     if (lq && !CoreModule.Settings.LQAtlas)
                         return;
 
-                    if (existing.Texture.GetMetadata() == asset)
-                        return; // We're the currently active overlay.
-
-                    if (meta != null) {
-                        // Apply width and height from existing meta.
-                        existing.SetOverride(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
-
-                    } else if (vtex.Width == existing.ClipRect.Width && vtex.Height == existing.ClipRect.Height) {
-                        // Replacement is a subtexture. Keep drawoffset, width and height from existing instance.
-                        existing.SetOverride(vtex, existing.DrawOffset, existing.Width, existing.Height);
-
-                    } else {
-                        // Full texture replacement.
-                        existing.SetOverride(vtex, new Vector2(0f, 0f), vtex.Width, vtex.Height);
-                    }
-
-                    mtex = existing;
+                    mtex.SetOverride(asset);
 
                 } else {
+                    VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+                    MTextureMeta meta = asset.GetMeta<MTextureMeta>();
                     if (meta != null) {
-                        // Apply width and height from existing meta.
+                        // Apply width and height from meta.
+                        if (meta.Width == 0)
+                            meta.Width = vtex.Width;
+                        if (meta.Height == 0)
+                            meta.Height = vtex.Height;
                         mtex = new MTexture(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
                     } else {
                         // Apply width and height from replacement texture.
                         mtex = new MTexture(vtex);
                     }
                     mtex.SetAtlasPath(path);
+                    mtex.SetOverride(asset);
                 }
 
-                VTextureToMTextureMap[vtex.Name] = mtex;
                 self[path] = mtex;
-                if (!self.Sources.Contains(vtex))
-                    self.Sources.Add(vtex);
                 return;
             }
         }
