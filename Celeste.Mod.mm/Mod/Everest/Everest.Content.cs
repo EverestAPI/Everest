@@ -94,6 +94,10 @@ namespace Celeste.Mod {
                     else
                         List.Add(next);
 
+                    next.PathVirtual = prev.PathVirtual;
+                    next.Type = prev.Type;
+                    next.Format = prev.Format;
+
                     Everest.Content.Update(prev, next);
                     foreach (ModAsset child in prev.Children.ToArray())
                         if (child.Source == this)
@@ -212,6 +216,8 @@ namespace Celeste.Mod {
             FileSystemModAsset fsma;
             if ((fsma = next as FileSystemModAsset) != null) {
                 FileSystemMap[fsma.Path] = fsma;
+            } else {
+                FileSystemMap[path] = null;
             }
             base.Update(path, next);
         }
@@ -246,14 +252,17 @@ namespace Celeste.Mod {
         private void Update(string pathPrev, string pathNext) {
             FileSystemModAsset prevFS;
             ModAsset prev = null;
-            if (!FileSystemMap.TryGetValue(pathPrev, out prevFS) && !Everest.Content.TryGet<AssetTypeDirectory>(pathPrev.Substring(Path.Length + 1), out prev)) {
+            if (!FileSystemMap.TryGetValue(pathPrev, out prevFS) && prevFS != null && !Everest.Content.TryGet<AssetTypeDirectory>(pathPrev.Substring(Path.Length + 1), out prev)) {
                 prevFS = null;
             }
 
             prev = prevFS ?? prev;
 
             if (File.Exists(pathNext)) {
-                Update(prev, new FileSystemModAsset(this, pathNext));
+                if (prev != null)
+                    Update(prev, new FileSystemModAsset(this, pathNext));
+                else
+                    Update(pathPrev, new FileSystemModAsset(this, pathNext));
 
             } else if (Directory.Exists(pathNext)) {
                 Update(prev, null);
@@ -669,13 +678,27 @@ namespace Celeste.Mod {
 
                 if (next != null) {
                     Add(next.PathVirtual, next);
-                    AssetReloadScene.Do($"Loading {Path.GetFileName(next.PathVirtual)}", () => {
+                    string path = next.PathVirtual;
+                    ModeProperties mode = null;
+                    AssetReloadScene.Do($"Loading {Path.GetFileName(path)}", () => {
+                        if (next.Type == typeof(AssetTypeMap)) {
+                            string mapName = path.Substring(5);
+                            mode = AreaData.Areas.SelectMany(area => area.Mode).FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
+                        }
+
                         foreach (WeakReference weakref in LoadedAssets) {
                             object target = weakref.Target;
                             if (!weakref.IsAlive)
                                 return;
 
                             Process(target, next);
+                        }
+                    }, () => {
+                        if (mode != null) {
+                            mode.MapData.Reload();
+                            if (AssetReloadScene.ReturnToScene is Level level && level.Session.MapData == mode.MapData) {
+                                Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                            }
                         }
                     });
 

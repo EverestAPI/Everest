@@ -154,9 +154,12 @@ namespace Monocle {
             if (asset == Metadata) {
                 Atlas atlas = Atlas;
                 if (atlas != null && atlas.GetTextures().ContainsValue(this)) {
+                    // TODO: Delayed removal - allow other textures to overwrite THIS ALREADY REFERENCED OBJECT before loosening it.
+                    /*
                     atlas.ResetCaches();
                     atlas.GetTextures().Remove(AtlasPath);
                     Atlas = null;
+                    */
                 }
                 return;
             }
