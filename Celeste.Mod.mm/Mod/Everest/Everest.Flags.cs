@@ -59,11 +59,6 @@ namespace Celeste.Mod {
             public static bool PreferLazyLoading { get; private set; }
 
             /// <summary>
-            /// Does the environment (platform, ...) prefer LQ texture atlases?
-            /// </summary>
-            public static bool PreferLQAtlas { get; private set; }
-
-            /// <summary>
             /// Does the environment (platform, ...) support loading runtime mods?
             /// </summary>
             public static bool SupportRuntimeMods { get; private set; }
@@ -90,7 +85,6 @@ namespace Celeste.Mod {
 
                 AvoidRenderTargets = IsMobile || Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
                 PreferLazyLoading = IsMobile;
-                PreferLQAtlas = IsMobile;
 
                 SupportRuntimeMods = true;
                 SupportRelinkingMods = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*

@@ -17,7 +17,7 @@ using System.Xml;
 namespace Monocle {
     class patch_MTexture : MTexture {
 
-        public MTexture Parent;
+        public patch_MTexture Parent;
 
         [MonoModIgnore]
         public new VirtualTexture Texture { get; set; }
@@ -33,6 +33,14 @@ namespace Monocle {
         // Needed for mods which were built against old versions.
         public string get_AtlasPath() => AtlasPath;
 
+        private Atlas _Atlas;
+        public Atlas Atlas {
+            get => _Atlas ?? Parent?.Atlas;
+            set => _Atlas = value;
+        }
+
+        public ModAsset Metadata;
+
         private bool _HasOrig;
         private VirtualTexture _OrigTexture;
         private Rectangle _OrigClipRect;
@@ -43,16 +51,16 @@ namespace Monocle {
         private List<ModAsset> _ModAssets;
 
         // Patching constructors is ugly.
-        public extern void orig_ctor(MTexture parent, int x, int y, int width, int height);
+        public extern void orig_ctor(patch_MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]
-        public void ctor(MTexture parent, int x, int y, int width, int height) {
+        public void ctor(patch_MTexture parent, int x, int y, int width, int height) {
             orig_ctor(parent, x, y, width, height);
             Parent = parent;
         }
 
-        public extern void orig_ctor(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height);
+        public extern void orig_ctor(patch_MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height);
         [MonoModConstructor]
-        public void ctor(MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height) {
+        public void ctor(patch_MTexture parent, string atlasPath, Rectangle clipRect, Vector2 drawOffset, int width, int height) {
             orig_ctor(parent, atlasPath, clipRect, drawOffset, width, height);
             Parent = parent;
         }
@@ -63,12 +71,6 @@ namespace Monocle {
 
             if (_ScaleFix <= 0f)
                 _ScaleFix = 1f;
-        }
-
-        public void SetAtlasPath(string path) {
-            if (AtlasPath != null)
-                return;
-            AtlasPath = path;
         }
 
         public void SetOverride(VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight) {
@@ -90,6 +92,12 @@ namespace Monocle {
         }
 
         public void SetOverride(ModAsset asset) {
+            if (!_HasOrig && Texture.GetMetadata() == asset) {
+                Metadata = asset;
+                asset.Targets.Add(this);
+                return;
+            }
+
             if (_ModAssets == null)
                 _ModAssets = new List<ModAsset>();
 
@@ -143,6 +151,16 @@ namespace Monocle {
         }
 
         public void UndoOverride(ModAsset asset) {
+            if (asset == Metadata) {
+                Atlas atlas = Atlas;
+                if (atlas != null && atlas.GetTextures().ContainsValue(this)) {
+                    atlas.ResetCaches();
+                    atlas.GetTextures().Remove(AtlasPath);
+                    Atlas = null;
+                }
+                return;
+            }
+
             if (_ModAssets == null)
                 return;
 
@@ -778,11 +796,11 @@ namespace Monocle {
     }
     public static class MTextureExt {
 
-        /// <summary>
-        /// Set the AtlasPath property for this MTexture. Can only be set if it is null.
-        /// </summary>
-        public static void SetAtlasPath(this MTexture self, string path)
-            => ((patch_MTexture) self).SetAtlasPath(path);
+        public static void SetAtlas(this MTexture self, Atlas atlas)
+            => ((patch_MTexture) self).Atlas = atlas;
+
+        public static Atlas GetAtlas(this MTexture self)
+            => ((patch_MTexture) self).Atlas;
 
         /// <summary>
         /// Override the given MTexutre with the given VirtualTexture and parameters.
@@ -818,7 +836,7 @@ namespace Monocle {
         /// Sets the parent texture of the given MTexture.
         /// </summary>
         public static void SetParent(this MTexture self, MTexture parent)
-            => ((patch_MTexture) self).Parent = parent;
+            => ((patch_MTexture) self).Parent = (patch_MTexture) parent;
 
     }
 }

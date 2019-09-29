@@ -290,6 +290,8 @@ namespace Celeste.Mod {
                 // Don't add it yet, though - add it in Initialize.
             }
 
+            MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
+
             // Register our core module and load any other modules.
             new CoreModule().Register();
 
@@ -335,7 +337,9 @@ namespace Celeste.Mod {
             }
 
             // Add the previously created managers.
-            Celeste.Instance.Components.Add(TouchInputManager.Instance);
+            if (TouchInputManager.Instance != null)
+                Celeste.Instance.Components.Add(TouchInputManager.Instance);
+            Celeste.Instance.Components.Add(MainThreadHelper.Instance);
 
             Invoke("Initialize");
             _Initialized = true;

@@ -42,27 +42,33 @@ namespace Celeste.Mod {
 
         public static void Do(string text, Action reload = null, Action done = null) {
             lock (QueuePending) {
-                QueuePending.Enqueue(new ReloadAction {
-                    Text = text,
-                    Reload = reload,
-                    Done = done
-                });
+                lock (QueueDone) {
+                    ReloadAction action = new ReloadAction {
+                        Text = text,
+                        Reload = reload,
+                        Done = done
+                    };
+                    (reload != null ? QueuePending : QueueDone).Enqueue(action);
 
-                Scene scene = Engine.Scene;
-                if (scene is AssetReloadScene reloadScene) {
-                    if (!reloadScene.done)
-                        return;
-                    reloadScene.End();
-                } else {
-                    ReturnToScene = scene;
-                    ReturnToGameLoop = Engine.OverloadGameLoop;
+                    if (Current == null)
+                        Current = action;
+
+                    Scene scene = Engine.Scene;
+                    if (scene is AssetReloadScene reloadScene) {
+                        if (!reloadScene.done)
+                            return;
+                        reloadScene.End();
+                    } else {
+                        ReturnToScene = scene;
+                        ReturnToGameLoop = Engine.OverloadGameLoop;
+                    }
+
+                    reloadScene = new AssetReloadScene();
+                    f_Engine_scene.SetValue(Engine.Instance, reloadScene);
+                    Engine.OverloadGameLoop = () => {
+                        reloadScene.Update();
+                    };
                 }
-
-                reloadScene = new AssetReloadScene();
-                f_Engine_scene.SetValue(Engine.Instance, reloadScene);
-                Engine.OverloadGameLoop = () => {
-                    reloadScene.Update();
-                };
             }
         }
 
@@ -146,12 +152,13 @@ namespace Celeste.Mod {
                 // Ease in.
             } else {
                 time = timeIn;
-                if (QueueDone.Count > 0) {
-                    lock (QueueDone) {
-                        foreach (ReloadAction action in QueueDone)
-                            action.Done?.Invoke();
-                        QueueDone.Clear();
-                    }
+            }
+
+            if (QueueDone.Count > 0) {
+                lock (QueueDone) {
+                    foreach (ReloadAction action in QueueDone)
+                        action.Done?.Invoke();
+                    QueueDone.Clear();
                 }
             }
 

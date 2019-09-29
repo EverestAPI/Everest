@@ -47,7 +47,7 @@ namespace Monocle {
             }
         }
 
-        public ModAsset Metadata { get; private set; }
+        public ModAsset Metadata;
 
         public VirtualTexture Fallback;
 
@@ -97,9 +97,9 @@ namespace Monocle {
 
                 using (stream) {
                     if (premul)
-                        Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                        Texture = MainThreadHelper.Get(() => Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream)).GetResult();
                     else
-                        Texture = ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                        Texture = MainThreadHelper.Get(() => ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream)).GetResult();
                 }
 
             } else if (Fallback != null) {

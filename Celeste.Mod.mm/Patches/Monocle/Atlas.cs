@@ -23,8 +23,9 @@ namespace Monocle {
 
         // We're effectively in Atlas, but still need to "expose" private fields to our mod.
         private Dictionary<string, MTexture> textures;
-        private Dictionary<string, string> links = new Dictionary<string, string>();
         public Dictionary<string, MTexture> Textures => textures;
+        private Dictionary<string, string> links = new Dictionary<string, string>();
+        private Dictionary<string, List<MTexture>> orderedTexturesCache;
 
         public string DataMethod;
         public string DataPath;
@@ -50,6 +51,7 @@ namespace Monocle {
 
                     texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlTextureAtlas.Attr("imagePath", "")));
                     texM = new MTexture(texV);
+                    texM.SetAtlas(atlas);
                     atlas.Sources.Add(texV);
 
                     XmlNodeList xmlSubs = xmlTextureAtlas.GetElementsByTagName("SubTexture");
@@ -78,6 +80,7 @@ namespace Monocle {
                     foreach (XmlElement xmlAtlasSource in xmlAtlas) {
                         texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlAtlasSource.Attr("n", "") + ".png"));
                         texM = new MTexture(texV);
+                        texM.SetAtlas(atlas);
                         atlas.Sources.Add(texV);
                         foreach (XmlElement xmlSub in xmlAtlasSource) {
                             string name = xmlSub.Attr("n");
@@ -105,6 +108,7 @@ namespace Monocle {
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadNullTerminatedString() + ".png"));
                             texM = new MTexture(texV);
+                            texM.SetAtlas(atlas);
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -156,7 +160,8 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".png"));
-                                atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                texM = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                texM.SetAtlas(atlas);
                                 atlas.Sources.Add(texV);
                             }
                         }
@@ -176,6 +181,7 @@ namespace Monocle {
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
                             texM = new MTexture(texV);
+                            texM.SetAtlas(atlas);
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -230,8 +236,9 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".data"));
-                                MTexture tex = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
-                                tex.AtlasPath = name;
+                                texM = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                texM.SetAtlas(atlas);
+                                texM.AtlasPath = name;
                                 atlas.Sources.Add(texV);
                             }
                         }
@@ -292,6 +299,11 @@ namespace Monocle {
             return atlas;
         }
 
+        public void ResetCaches() {
+            if (orderedTexturesCache.Count > 0)
+                orderedTexturesCache = new Dictionary<string, List<MTexture>>();
+        }
+
     }
     public static class AtlasExt {
 
@@ -328,70 +340,67 @@ namespace Monocle {
         public static Atlas.AtlasDataFormat? GetDataFormat(this Atlas self)
             => ((patch_Atlas) self).DataFormat;
 
+        public static void ResetCaches(this Atlas self)
+            => ((patch_Atlas) self).ResetCaches();
+
         /// <summary>
         /// Feed the given ModAsset into the atlas.
         /// </summary>
-        public static void Ingest(this Atlas self, ModAsset asset) {
+        public static void Ingest(this Atlas atlas, ModAsset asset) {
+            if (asset == null)
+                return;
+
             // Crawl through all child assets.
             if (asset.Type == typeof(AssetTypeDirectory)) {
                 foreach (ModAsset child in asset.Children)
-                    self.Ingest(child);
+                    atlas.Ingest(child);
                 return;
             }
 
             // Forcibly add the mod content to the atlas.
-            if (asset.Type == typeof(Texture2D)) {
-                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{self.GetDataPath()} + {asset.PathVirtual}");
-
-                string parentPath = self.GetDataPath();
-                if (parentPath.StartsWith(Everest.Content.PathContentOrig))
-                    parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
-                parentPath = parentPath.Replace('\\', '/');
-
-                bool lq = false;
-                string path = asset.PathVirtual;
-
-                if (path.StartsWith(parentPath + "LQ/")) {
-                    lq = true;
-                    path = path.Substring(parentPath.Length + 3);
-
-                } else if (path.StartsWith(parentPath + "/")) {
-                    path = path.Substring(parentPath.Length + 1);
-
-                } else {
-                    return;
-                }
-
-                MTexture mtex;
-
-                Dictionary<string, MTexture> textures = self.GetTextures();
-                if (textures.TryGetValue(path, out mtex)) {
-                    if (lq && !CoreModule.Settings.LQAtlas)
-                        return;
-
-                    mtex.SetOverride(asset);
-
-                } else {
-                    VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
-                    MTextureMeta meta = asset.GetMeta<MTextureMeta>();
-                    if (meta != null) {
-                        // Apply width and height from meta.
-                        if (meta.Width == 0)
-                            meta.Width = vtex.Width;
-                        if (meta.Height == 0)
-                            meta.Height = vtex.Height;
-                        mtex = new MTexture(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
-                    } else {
-                        // Apply width and height from replacement texture.
-                        mtex = new MTexture(vtex);
-                    }
-                    mtex.SetAtlasPath(path);
-                    mtex.SetOverride(asset);
-                }
-
-                self[path] = mtex;
+            if (asset.Type != typeof(Texture2D))
                 return;
+
+            string parentPath = atlas.GetDataPath();
+            if (parentPath.StartsWith(Everest.Content.PathContentOrig))
+                parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
+            parentPath = parentPath.Replace('\\', '/');
+
+            string path = asset.PathVirtual;
+
+            if (!path.StartsWith(parentPath + "/"))
+                return;
+            path = path.Substring(parentPath.Length + 1);
+
+            Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{Path.GetFileName(atlas.GetDataPath())} + ({asset.Source?.Name ?? "???"}) {path}");
+
+            MTexture mtex;
+
+            Dictionary<string, MTexture> textures = atlas.GetTextures();
+            if (textures.TryGetValue(path, out mtex)) {
+                mtex.SetOverride(asset);
+
+            } else {
+                VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+                MTextureMeta meta = asset.GetMeta<MTextureMeta>();
+                if (meta != null) {
+                    // Apply width and height from meta.
+                    if (meta.Width == 0)
+                        meta.Width = vtex.Width;
+                    if (meta.Height == 0)
+                        meta.Height = vtex.Height;
+                    mtex = new MTexture(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+                } else {
+                    // Apply width and height from replacement texture.
+                    mtex = new MTexture(vtex);
+                }
+                mtex.AtlasPath = path;
+                mtex.SetAtlas(atlas);
+                mtex.SetOverride(asset);
             }
+
+            atlas.ResetCaches();
+            atlas[path] = mtex;
         }
 
     }

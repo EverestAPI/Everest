@@ -127,6 +127,7 @@
     <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
+    <Compile Include="Mod\Everest\MainThreadHelper.cs" />
     <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
     <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
     <Compile Include="Mod\Everest\AssetReloadScene.cs" />
@@ -156,6 +157,7 @@
     <Compile Include="Patches\BadelineOldsite.cs" />
     <Compile Include="Patches\CrumblePlatform.cs" />
     <Compile Include="Patches\EntityData.cs" />
+    <Compile Include="Patches\Monocle\SpriteBank.cs" />
     <Compile Include="Patches\MusicFadeTrigger.cs" />
     <Compile Include="Patches\IntroCrusher.cs" />
     <Compile Include="Patches\LevelData.cs" />
@@ -290,7 +292,6 @@
     <Compile Include="Patches\Monocle\VirtualContent.cs" />
     <Compile Include="Patches\Monocle\Calc.cs" />
     <Compile Include="Patches\Monocle\Atlas.cs" />
-    <Compile Include="Patches\Monocle\SpriteBank.cs" />
     <Compile Include="Patches\Monocle\Commands.cs" />
     <Compile Include="Patches\Monocle\Coroutine.cs" />
     <Compile Include="Patches\OuiMainMenu.cs" />
