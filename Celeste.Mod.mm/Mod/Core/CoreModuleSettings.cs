@@ -135,6 +135,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
 
+        // this address should lead to a running instance of https://github.com/max4805/EverestUpdateCheckerServer
+        [SettingIgnore]
+        public string ModUpdateServerAddress { get; set; } = "https://max480-random-stuff.appspot.com/celeste/everest_update.yaml";
+
         [SettingIgnore]
         public int? QuickRestart { get; set; }
 
