@@ -400,7 +400,7 @@ namespace Celeste.Mod {
                     int count = 0;
                     TimeSpan td;
                     while (read > 0) {
-                        count = length > 0 ? (int)Math.Min(buffer.Length, length - pos) : buffer.Length;
+                        count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
                         read = input.Read(buffer, 0, count);
                         output.Write(buffer, 0, read);
                         pos += read;
@@ -408,7 +408,7 @@ namespace Celeste.Mod {
 
                         td = DateTime.Now - timeLastSpeed;
                         if (td.TotalMilliseconds > 100) {
-                            speed = (int)((readForSpeed / 1024D) / td.TotalSeconds);
+                            speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
                             readForSpeed = 0;
                             timeLastSpeed = DateTime.Now;
                         }

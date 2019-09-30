@@ -72,11 +72,14 @@ namespace Celeste.Mod.UI {
             menu.Focused = true;
 
             task = new Task(() => {
-                // 1. Download the updates list
-                Logger.Log("OuiModUpdateList", "Downloading last versions list");
                 try {
+                    // 1. Download the updates list
+                    string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl();
+
+                    Logger.Log("OuiModUpdateList", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
+
                     using (WebClient wc = new WebClient()) {
-                        string yamlData = wc.DownloadString(CoreModule.Settings.ModUpdateServerAddress);
+                        string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
                         updateCatalog = new Deserializer().Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                         foreach (string name in updateCatalog.Keys) {
                             updateCatalog[name].Name = name;
@@ -85,7 +88,8 @@ namespace Celeste.Mod.UI {
                     }
                 }
                 catch (Exception e) {
-                    Logger.Log("OuiModUpdateList", $"Download failed! {e.ToString()}");
+                    Logger.Log("OuiModUpdateList", $"Downloading database failed!");
+                    Logger.LogDetailed(e);
                 }
 
                 // 2. Find out what actually has been updated
@@ -132,57 +136,88 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
-            if(menu != null && task != null && task.IsCompleted && fetchingButton != null) {
-                Logger.Log("OuiModUpdateList", "Rendering updates");
+            if(menu != null && task != null && task.IsCompleted) {
+                // there is no download or install task in progress
 
-                menu.Remove(fetchingButton);
-                fetchingButton = null;
+                if(fetchingButton != null) {
+                    // This means fetching the updates just finished. We have to remove the "Checking for updates" button
+                    // and put the actual update list instead.
 
-                if(updateCatalog == null) {
-                    // display an error message
-                    TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
-                    button.Disabled = true;
-                    menu.Add(button);
-                } else if (availableUpdatesCatalog.Count == 0) {
-                    // display a dummy "no update available" button
-                    TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
-                    button.Disabled = true;
-                    menu.Add(button);
-                } else {
-                    // display one button per update
-                    foreach(ModUpdateInfo update in availableUpdatesCatalog.Keys) {
-                        EverestModuleMetadata metadata = availableUpdatesCatalog[update];
-                        TextMenu.Button button = new TextMenu.Button($"{metadata.Name} | v. {metadata.VersionString} > {update.Version} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
-                        button.Pressed(() => {
-                            // make the menu non-interactive
-                            menu.Focused = false;
-                            button.Disabled = true;
+                    Logger.Log("OuiModUpdateList", "Rendering updates");
 
-                            // trigger the update download
-                            downloadModUpdate(update, metadata, button);
-                        });
+                    menu.Remove(fetchingButton);
+                    fetchingButton = null;
 
-                        // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                        if (update.xxHash.Count > 1) button.Disabled = true;
-
+                    if(updateCatalog == null) {
+                        // display an error message
+                        TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
+                        button.Disabled = true;
                         menu.Add(button);
+                    } else if (availableUpdatesCatalog.Count == 0) {
+                        // display a dummy "no update available" button
+                        TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
+                        button.Disabled = true;
+                        menu.Add(button);
+                    } else {
+                        // display one button per update
+                        foreach(ModUpdateInfo update in availableUpdatesCatalog.Keys) {
+                            EverestModuleMetadata metadata = availableUpdatesCatalog[update];
+                            TextMenu.Button button = new TextMenu.Button($"{metadata.Name} | v. {metadata.VersionString} > {update.Version} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+                            button.Pressed(() => {
+                                // make the menu non-interactive
+                                menu.Focused = false;
+                                button.Disabled = true;
+
+                                // trigger the update download
+                                downloadModUpdate(update, metadata, button);
+                            });
+
+                            // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
+                            if (update.xxHash.Count > 1) button.Disabled = true;
+
+                            menu.Add(button);
+                        }
                     }
                 }
-            }
 
-            if (menu != null && task != null && menu.Focused && Selected && Input.MenuCancel.Pressed && task.IsCompleted) {
-                if(shouldRestart) {
-                    Everest.QuickFullRestart();
-                } else {
-                    // go back to mod options instead
-                    Audio.Play(SFX.ui_main_button_back);
-                    Overworld.Goto<OuiModOptions>();
+                if(menu.Focused && Selected && Input.MenuCancel.Pressed) {
+                    if(shouldRestart) {
+                        Everest.QuickFullRestart();
+                    } else {
+                        // go back to mod options instead
+                        Audio.Play(SFX.ui_main_button_back);
+                        Overworld.Goto<OuiModOptions>();
+                    }
                 }
             }
 
             base.Update();
         }
 
+        public override void Render() {
+            if (alpha > 0f) {
+                Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+            }
+            base.Render();
+        }
+
+        /// <summary>
+        /// Retrieves the mod updater database location from everestapi.github.io.
+        /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
+        /// </summary>
+        private string getModUpdaterDatabaseUrl() {
+            using (WebClient wc = new WebClient()) {
+                Logger.Log("OuiModUpdateList", "Fetching mod updater database URL");
+                return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
+            }
+        }
+
+        /// <summary>
+        /// Downloads and installs a mod update.
+        /// </summary>
+        /// <param name="update">The update info coming from the update server</param>
+        /// <param name="mod">The mod metadata from Everest for the installed mod</param>
+        /// <param name="button">The button for that mod shown on the interface</param>
         private void downloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
             task = new Task(() => {
                 // we will download the mod to Celeste_Directory/mod-update.zip at first.
@@ -244,6 +279,12 @@ namespace Celeste.Mod.UI {
             task.Start();
         }
 
+        /// <summary>
+        /// Downloads a mod update.
+        /// </summary>
+        /// <param name="update">The update info coming from the update server</param>
+        /// <param name="button">The button for that mod shown on the interface</param>
+        /// <param name="zipPath">The path to the zip the update will be downloaded to</param>
         private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
             Logger.Log("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
@@ -256,6 +297,13 @@ namespace Celeste.Mod.UI {
             });
         }
 
+        /// <summary>
+        /// Installs a mod update in the Mods directory once it has been downloaded.
+        /// This method will replace the installed mod zip with the one that was just downloaded.
+        /// </summary>
+        /// <param name="update">The update info coming from the update server</param>
+        /// <param name="mod">The mod metadata from Everest for the installed mod</param>
+        /// <param name="zipPath">The path to the zip the update has been downloaded to</param>
         private static void installMod(ModUpdateInfo update, EverestModuleMetadata mod, string zipPath) {
             // let's close the zip, as we will replace it now.
             foreach(ModContent content in Everest.Content.Mods) {
@@ -273,13 +321,6 @@ namespace Celeste.Mod.UI {
 
             Logger.Log("OuiModUpdateList", $"Moving {zipPath} to {mod.PathArchive}");
             File.Move(zipPath, mod.PathArchive);
-        }
-
-        public override void Render() {
-            if (alpha > 0f) {
-                Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
-            }
-            base.Render();
         }
     }
 }
