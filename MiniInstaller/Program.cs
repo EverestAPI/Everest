@@ -248,8 +248,8 @@ namespace MiniInstaller {
         // AFAIK there's no "clean" way to check for any file locks in C#.
         static bool CanReadWrite(string path) {
             try {
-                using (FileStream stream = new FileStream(path, FileMode.Open, FileAccess.ReadWrite))
-                    return true;
+                new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite | FileShare.Delete).Dispose();
+                return true;
             } catch {
                 return false;
             }

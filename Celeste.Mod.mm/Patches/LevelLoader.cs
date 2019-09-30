@@ -25,8 +25,9 @@ namespace Celeste {
         public extern void orig_ctor(Session session, Vector2? startPosition = default(Vector2?));
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default(Vector2?)) {
-            if (CoreModule.Settings.LazyLoading)
-                VirtualContentExt.UnloadOverworld();
+            if (CoreModule.Settings.LazyLoading) {
+                MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+            }
 
             // Vanilla TileToIndex mappings.
             SurfaceIndex.TileToIndex = new Dictionary<char, int> {

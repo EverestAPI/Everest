@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
 using System.Threading;
+using System.Diagnostics;
 
 namespace Celeste.Mod {
     // Special meta types.
@@ -62,15 +63,10 @@ namespace Celeste.Mod {
         }
 
         protected virtual void Update(string path, ModAsset next) {
-            if (next != null)
-                next.PathVirtual = path;
-
-            if (Map.TryGetValue(path, out ModAsset prev)) {
-                Update(prev, next);
-
-            } else if (next != null) {
-                Update((ModAsset) null, next);
-            }
+            if (next == null)
+                return;
+            next.PathVirtual = path;
+            Update((ModAsset) null, next);
         }
 
         protected virtual void Update(ModAsset prev, ModAsset next) {
@@ -216,8 +212,6 @@ namespace Celeste.Mod {
             FileSystemModAsset fsma;
             if ((fsma = next as FileSystemModAsset) != null) {
                 FileSystemMap[fsma.Path] = fsma;
-            } else {
-                FileSystemMap[path] = null;
             }
             base.Update(path, next);
         }
@@ -230,6 +224,20 @@ namespace Celeste.Mod {
 
             if ((fsma = next as FileSystemModAsset) != null) {
                 FileSystemMap[fsma.Path] = fsma;
+
+                // Make sure to wait until the file is readable.
+                Stopwatch timer = Stopwatch.StartNew();
+                while (File.Exists(fsma.Path)) {
+                    try {
+                        new FileStream(fsma.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete).Dispose();
+                        break;
+                    } catch {
+                        // Retry, but not infinitely.
+                        if (timer.Elapsed.TotalSeconds >= 2D)
+                            throw;
+                    }
+                }
+                timer.Stop();
             }
 
             base.Update(prev, next);
@@ -241,12 +249,12 @@ namespace Celeste.Mod {
                 return;
 
             Logger.Log("content", $"File updated: {e.FullPath} - {e.ChangeType}");
-            MainThreadHelper.Do(e.FullPath, () => Update(e.FullPath, e.FullPath));
+            QueuedTaskHelper.Do(e.FullPath, () => Update(e.FullPath, e.FullPath));
         }
 
         private void FileRenamed(object source, RenamedEventArgs e) {
             Logger.Log("content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
-            MainThreadHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
+            QueuedTaskHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
         }
 
         private void Update(string pathPrev, string pathNext) {
@@ -262,7 +270,7 @@ namespace Celeste.Mod {
                 if (prev != null)
                     Update(prev, new FileSystemModAsset(this, pathNext));
                 else
-                    Update(pathPrev, new FileSystemModAsset(this, pathNext));
+                    Update(pathNext.Substring(Path.Length + 1), new FileSystemModAsset(this, pathNext));
 
             } else if (Directory.Exists(pathNext)) {
                 Update(prev, null);
@@ -679,11 +687,19 @@ namespace Celeste.Mod {
                 if (next != null) {
                     Add(next.PathVirtual, next);
                     string path = next.PathVirtual;
+
                     ModeProperties mode = null;
                     AssetReloadScene.Do($"Loading {Path.GetFileName(path)}", () => {
                         if (next.Type == typeof(AssetTypeMap)) {
                             string mapName = path.Substring(5);
-                            mode = AreaData.Areas.SelectMany(area => area.Mode).FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
+                            mode =
+                                AreaData.Areas
+                                .SelectMany(area => area.Mode)
+                                .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
+                            if (mode != null && AssetReloadScene.ReturnToScene is Level level && level.Session.MapData == mode.MapData) {
+                                mode.MapData.Reload();
+                                Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                            }
                         }
 
                         foreach (WeakReference weakref in LoadedAssets) {
@@ -692,13 +708,6 @@ namespace Celeste.Mod {
                                 return;
 
                             Process(target, next);
-                        }
-                    }, () => {
-                        if (mode != null) {
-                            mode.MapData.Reload();
-                            if (AssetReloadScene.ReturnToScene is Level level && level.Session.MapData == mode.MapData) {
-                                Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
-                            }
                         }
                     });
 
