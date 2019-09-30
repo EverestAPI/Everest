@@ -254,7 +254,7 @@ namespace Celeste.Mod.UI {
                     if (menu.Selection + 1 > menu.LastPossibleSelection)
                         menu.Selection = menu.LastPossibleSelection;
                     else
-                        menu.Selection++;
+                        menu.MoveSelection(1);
                 } catch (Exception e) {
                     // update failed
                     button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
