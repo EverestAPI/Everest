@@ -21,14 +21,27 @@ namespace Celeste {
         public static extern void orig_Load();
         public static void Load() {
             orig_Load();
+            RemoveDummies();
+        }
 
-            // Remove all empty dummy languages.
+        public static void RemoveDummies() {
             HashSet<string> dummies = new HashSet<string>();
             foreach (Language lang in Dialog.Languages.Values)
                 if (lang.Dialog.Count == 0 || string.IsNullOrEmpty(lang.Label))
                     dummies.Add(lang.Id);
             foreach (string id in dummies)
                 Dialog.Languages.Remove(id);
+        }
+
+        public static void RefreshLanguages() {
+            RemoveDummies();
+
+            Dialog.Language = Dialog.Languages[Dialog.Language.Id];
+
+            Dialog.OrderedLanguages = new List<Language>();
+            foreach (KeyValuePair<string, Language> keyValuePair in Dialog.Languages)
+                Dialog.OrderedLanguages.Add(keyValuePair.Value);
+            Dialog.OrderedLanguages.Sort((a, b) => a.Order != b.Order ? a.Order - b.Order : a.Id.CompareTo(b.Id));
         }
 
         public static extern Language orig_LoadLanguage(string filename);
@@ -52,7 +65,7 @@ namespace Celeste {
             foreach (ModAsset asset in
                 Everest.Content.Mods
                 .Select(mod => mod.Map.TryGetValue(pathExp, out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null)
+                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDialogExport))
             ) {
                 lang = MergeLanguages(lang, patch_Language.FromModExport(asset));
             }

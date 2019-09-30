@@ -80,7 +80,7 @@ namespace Celeste {
             foreach (ModAsset asset in
                 Everest.Content.Mods
                 .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null)
+                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDialog))
             ) {
 
                 using (StreamReader reader = new StreamReader(asset.Stream, encoding))

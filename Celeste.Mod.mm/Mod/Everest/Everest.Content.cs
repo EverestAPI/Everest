@@ -63,8 +63,11 @@ namespace Celeste.Mod {
         }
 
         protected virtual void Update(string path, ModAsset next) {
-            if (next == null)
+            if (next == null) {
+                Update(Everest.Content.Get<AssetTypeDirectory>(path), null);
                 return;
+            }
+
             next.PathVirtual = path;
             Update((ModAsset) null, next);
         }
@@ -258,13 +261,12 @@ namespace Celeste.Mod {
         }
 
         private void Update(string pathPrev, string pathNext) {
-            FileSystemModAsset prevFS;
             ModAsset prev = null;
-            if (!FileSystemMap.TryGetValue(pathPrev, out prevFS) && prevFS != null && !Everest.Content.TryGet<AssetTypeDirectory>(pathPrev.Substring(Path.Length + 1), out prev)) {
-                prevFS = null;
-            }
-
-            prev = prevFS ?? prev;
+            FileSystemModAsset prevFS;
+            if (FileSystemMap.TryGetValue(pathPrev, out prevFS))
+                prev = prevFS;
+            else
+                prev = Everest.Content.Get<AssetTypeDirectory>(pathPrev.Substring(Path.Length + 1));
 
             if (File.Exists(pathNext)) {
                 if (prev != null)
@@ -276,8 +278,11 @@ namespace Celeste.Mod {
                 Update(prev, null);
                 Crawl(pathNext, Path, true);
 
-            } else {
+            } else if (prev != null) {
                 Update(prev, null);
+
+            } else {
+                Update(pathPrev, (ModAsset) null);
             }
         }
     }
@@ -605,7 +610,7 @@ namespace Celeste.Mod {
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt.export")) {
-                    type = typeof(AssetTypeDialog);
+                    type = typeof(AssetTypeDialogExport);
                     file = file.Substring(0, file.Length - 7);
 
                 } else if (file.StartsWith("Maps/") && file.EndsWith(".bin")) {
@@ -688,31 +693,48 @@ namespace Celeste.Mod {
                     Add(next.PathVirtual, next);
                     string path = next.PathVirtual;
 
-                    ModeProperties mode = null;
                     AssetReloadScene.Do($"Loading {Path.GetFileName(path)}", () => {
+                        Level level = null;
+
                         if (next.Type == typeof(AssetTypeMap)) {
                             string mapName = path.Substring(5);
-                            mode =
+                            ModeProperties mode =
                                 AreaData.Areas
                                 .SelectMany(area => area.Mode)
                                 .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
-                            if (mode != null && AssetReloadScene.ReturnToScene is Level level && level.Session.MapData == mode.MapData) {
+
+                            if (mode != null) {
                                 mode.MapData.Reload();
-                                Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+
+                                Level levelPrev = level;
+                                level = AssetReloadScene.ReturnToScene as Level;
+                                if (level == null || level.Session.MapData != mode.MapData) {
+                                    level = levelPrev;
+                                }
                             }
+
+                        } else if (next.Type == typeof(AssetTypeXml)) {
+                            // It isn't known if the reloaded xml is part of the currently loaded level.
+                            // Let's reload just to be safe.
+                            level = level ?? AssetReloadScene.ReturnToScene as Level;
+
+                        } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
+                            Dialog.LoadLanguage(Path.Combine(PathContentOrig, path + ".txt"));
+                            patch_Dialog.RefreshLanguages();
                         }
 
                         foreach (WeakReference weakref in LoadedAssets) {
                             object target = weakref.Target;
                             if (!weakref.IsAlive)
-                                return;
+                                break;
 
                             Process(target, next);
                         }
-                    });
 
-                    foreach (ModAsset child in next.Children)
-                        Update(null, child);
+                        if (level != null) {
+                            AssetReloadScene.ReturnToScene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                        }
+                    });
                 }
             }
 

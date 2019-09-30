@@ -163,7 +163,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            if (Worker == null) {
+            if (Worker == null && time >= timeIn) {
                 time = 0f;
                 done = true;
             }
