@@ -26,9 +26,21 @@ namespace Celeste.Mod {
         private static readonly Dictionary<object, object> Map = new Dictionary<object, object>();
         private static readonly Dictionary<object, Stopwatch> Timers = new Dictionary<object, Stopwatch>();
 
-        private const double Delay = 0.5D;
+        public static readonly double DefaultDelay = 0.5D;
 
-        public static Task Do(object key, Action a) {
+        public static void Cancel(object key) {
+            lock (Map) {
+                if (Timers.TryGetValue(key, out Stopwatch timer)) {
+                    timer.Stop();
+                    Map.Remove(key);
+                    Timers.Remove(key);
+                }
+            }
+        }
+
+        public static Task Do(object key, Action a)
+            => Do(key, DefaultDelay, a);
+        public static Task Do(object key, double delay, Action a) {
             lock (Map) {
                 if (Map.TryGetValue(key, out object queued)) {
                     Timers[key].Restart();
@@ -39,10 +51,16 @@ namespace Celeste.Mod {
                 Timers[key] = timer;
                 Task t = new Func<Task>(async () => {
                     do {
-                        await Task.Delay(TimeSpan.FromSeconds(Delay - timer.Elapsed.TotalSeconds));
-                    } while (timer.Elapsed.TotalSeconds < Delay);
+                        await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
+                    } while (timer.Elapsed.TotalSeconds < delay);
 
-                    Map.Remove(key);
+                    if (!timer.IsRunning)
+                        return;
+
+                    lock (Map) {
+                        Map.Remove(key);
+                        Timers.Remove(key);
+                    }
                     timer.Stop();
 
                     a?.Invoke();
@@ -53,7 +71,9 @@ namespace Celeste.Mod {
             }
         }
 
-        public static Task<T> Get<T>(object key, Func<T> f) {
+        public static Task<T> Get<T>(object key, Func<T> f)
+            => Get(key, DefaultDelay, f);
+        public static Task<T> Get<T>(object key, double delay, Func<T> f) {
             lock (Map) {
                 if (Map.TryGetValue(key, out object queued)) {
                     Timers[key].Restart();
@@ -64,10 +84,13 @@ namespace Celeste.Mod {
                 Timers[key] = timer;
                 Task<T> t = new Func<Task<T>>(async () => {
                     do {
-                        await Task.Delay(TimeSpan.FromSeconds(Delay - timer.Elapsed.TotalSeconds));
-                    } while (timer.Elapsed.TotalSeconds < Delay);
+                        await Task.Delay(TimeSpan.FromSeconds(delay - timer.Elapsed.TotalSeconds));
+                    } while (timer.Elapsed.TotalSeconds < delay);
 
-                    Map.Remove(key);
+                    lock (Map) {
+                        Map.Remove(key);
+                        Timers.Remove(key);
+                    }
                     timer.Stop();
 
                     return f != null ? f.Invoke() : default(T);

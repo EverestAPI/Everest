@@ -61,7 +61,9 @@ namespace Celeste.Mod {
 
                 Queue.Enqueue(() => {
                     a?.Invoke();
-                    Enqueued.Remove(key);
+                    lock (Queue) {
+                        Enqueued.Remove(key);
+                    }
                 });
             }
         }
@@ -102,8 +104,10 @@ namespace Celeste.Mod {
                 Queue.Enqueue(() => {
                     result = f != null ? f.Invoke() : default(T);
                     proxy.Start();
-                    EnqueuedWaiting.Remove(key);
-                    Enqueued.Remove(key);
+                    lock (Queue) {
+                        EnqueuedWaiting.Remove(key);
+                        Enqueued.Remove(key);
+                    }
                 });
 
                 return awaitable;
@@ -112,9 +116,11 @@ namespace Celeste.Mod {
 
         public override void Update(GameTime gameTime) {
             if (Queue.Count > 0) {
+                Action action;
                 lock (Queue) {
-                    Queue.Dequeue()?.Invoke();
+                    action = Queue.Dequeue();
                 }
+                action?.Invoke();
             }
 
             base.Update(gameTime);

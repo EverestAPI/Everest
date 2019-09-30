@@ -113,13 +113,14 @@ namespace Celeste.Mod {
         private static void WorkerLoop() {
             try {
                 while (QueuePending.Count > 0) {
+                    ReloadAction action;
                     lock (QueuePending) {
-                        ReloadAction action = QueuePending.Dequeue();
-                        Current = action;
-                        action.Reload?.Invoke();
-                        lock (QueueDone) {
-                            QueueDone.Enqueue(action);
-                        }
+                        action = QueuePending.Dequeue();
+                    }
+                    Current = action;
+                    action.Reload?.Invoke();
+                    lock (QueueDone) {
+                        QueueDone.Enqueue(action);
                     }
                 }
 
