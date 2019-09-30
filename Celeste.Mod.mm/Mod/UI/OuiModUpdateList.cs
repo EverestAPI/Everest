@@ -246,52 +246,14 @@ namespace Celeste.Mod.UI {
 
         private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
             Logger.Log("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
-            DateTime timeStart = DateTime.Now;
 
-            if (File.Exists(zipPath))
-                File.Delete(zipPath);
-
-            // Manual buffered copy from web input to file output.
-            // Allows us to measure speed and progress.
-            using (WebClient wc = new WebClient())
-            using (Stream input = wc.OpenRead(update.URL))
-            using (FileStream output = File.OpenWrite(zipPath)) {
-                long length;
-                if (input.CanSeek) {
-                    length = input.Length;
+            Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
+                if (length > 0) {
+                    button.Label = $"{update.Name} ({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
                 } else {
-                    length = _ContentLength(update.URL);
+                    button.Label = $"{update.Name} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
-
-                byte[] buffer = new byte[4096];
-                DateTime timeLastSpeed = timeStart;
-                int read = 1;
-                int readForSpeed = 0;
-                int pos = 0;
-                int speed = 0;
-                int count = 0;
-                TimeSpan td;
-                while (read > 0) {
-                    count = length > 0 ? (int)Math.Min(buffer.Length, length - pos) : buffer.Length;
-                    read = input.Read(buffer, 0, count);
-                    output.Write(buffer, 0, read);
-                    pos += read;
-                    readForSpeed += read;
-
-                    td = DateTime.Now - timeLastSpeed;
-                    if (td.TotalMilliseconds > 100) {
-                        speed = (int)((readForSpeed / 1024D) / td.TotalSeconds);
-                        readForSpeed = 0;
-                        timeLastSpeed = DateTime.Now;
-                    }
-
-                    if (length > 0) {
-                        button.Label = $"{update.Name} ({((int)Math.Floor(100D * (pos / (double)length)))}% @ {speed} KiB/s)";
-                    } else {
-                        button.Label = $"{update.Name} ({((int)Math.Floor(pos / 1000D))}KiB @ {speed} KiB/s)";
-                    }
-                }
-            }
+            });
         }
 
         private static void installMod(ModUpdateInfo update, EverestModuleMetadata mod, string zipPath) {
@@ -311,17 +273,6 @@ namespace Celeste.Mod.UI {
 
             Logger.Log("OuiModUpdateList", $"Moving {zipPath} to {mod.PathArchive}");
             File.Move(zipPath, mod.PathArchive);
-        }
-
-        private static long _ContentLength(string url) {
-            try {
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
-                request.Method = "HEAD";
-                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
-                    return response.ContentLength;
-            } catch (Exception) {
-                return 0;
-            }
         }
 
         public override void Render() {

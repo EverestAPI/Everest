@@ -265,58 +265,21 @@ namespace Celeste.Mod {
                 progress.LogLine($"Updating to {version.Name} (branch: {version.Branch}) @ {version.URL}");
 
                 progress.LogLine($"Downloading");
-                DateTime timeStart = DateTime.Now;
                 try {
-                    if (File.Exists(zipPath))
-                        File.Delete(zipPath);
-
-                    // Manual buffered copy from web input to file output.
-                    // Allows us to measure speed and progress.
-                    using (WebClient wc = new WebClient())
-                    using (Stream input = wc.OpenRead(version.URL))
-                    using (FileStream output = File.OpenWrite(zipPath))  {
-                        long length;
-                        if (input.CanSeek) {
-                            length = input.Length;
+                    DownloadFileWithProgress(version.URL, zipPath, (position, length, speed) => {
+                        if (length > 0) {
+                            progress.Lines[progress.Lines.Count - 1] =
+                                $"Downloading: {((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s";
+                            progress.Progress = position;
                         } else {
-                            length = _ContentLength(version.URL);
+                            progress.Lines[progress.Lines.Count - 1] =
+                                $"Downloading: {((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         }
-                        progress.Progress = 0;
-                        progress.ProgressMax = (int) length;
 
-                        byte[] buffer = new byte[4096];
-                        DateTime timeLastSpeed = timeStart;
-                        int read = 1;
-                        int readForSpeed = 0;
-                        int pos = 0;
-                        int speed = 0;
-                        int count = 0;
-                        TimeSpan td;
-                        while (read > 0) {
-                            count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
-                            read = input.Read(buffer, 0, count);
-                            output.Write(buffer, 0, read);
-                            pos += read;
-                            readForSpeed += read;
-
-                            td = DateTime.Now - timeLastSpeed;
-                            if (td.TotalMilliseconds > 100) {
-                                speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
-                                readForSpeed = 0;
-                                timeLastSpeed = DateTime.Now;
-                            }
-
-                            if (length > 0) {
-                                progress.Lines[progress.Lines.Count - 1] =
-                                    $"Downloading: {((int) Math.Floor(100D * (pos / (double) length)))}% @ {speed} KiB/s";
-                                progress.Progress = pos;
-                            } else {
-                                progress.Lines[progress.Lines.Count - 1] =
-                                    $"Downloading: {((int) Math.Floor(pos / 1000D))}KiB @ {speed} KiB/s";
-                            }
-                        }
-                    }
-                } catch (Exception e) {
+                        progress.ProgressMax = (int)length;
+                    });
+                }
+                catch (Exception e) {
                     progress.LogLine("Download failed!");
                     e.LogDetailed();
                     progress.LogLine(errorHint);
@@ -398,6 +361,60 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
+                }
+            }
+
+            /// <summary>
+            /// Downloads a file and calls the progressCallback parameter periodically with progress information.
+            /// This can be used to display the download progress on screen.
+            /// </summary>
+            /// <param name="url">The URL to download the file from</param>
+            /// <param name="destPath">The path the file should be downloaded to</param>
+            /// <param name="progressCallback">A method called periodically as the download progresses. Parameters are progress, length and speed in KiB/s</param>
+            public static void DownloadFileWithProgress(string url, string destPath, Action<int, long, int> progressCallback) {
+                DateTime timeStart = DateTime.Now;
+
+                if (File.Exists(destPath))
+                    File.Delete(destPath);
+
+                // Manual buffered copy from web input to file output.
+                // Allows us to measure speed and progress.
+                using (WebClient wc = new WebClient())
+                using (Stream input = wc.OpenRead(url))
+                using (FileStream output = File.OpenWrite(destPath)) {
+                    long length;
+                    if (input.CanSeek) {
+                        length = input.Length;
+                    } else {
+                        length = _ContentLength(url);
+                    }
+
+                    progressCallback(0, length, 0);
+
+                    byte[] buffer = new byte[4096];
+                    DateTime timeLastSpeed = timeStart;
+                    int read = 1;
+                    int readForSpeed = 0;
+                    int pos = 0;
+                    int speed = 0;
+                    int count = 0;
+                    TimeSpan td;
+                    while (read > 0) {
+                        count = length > 0 ? (int)Math.Min(buffer.Length, length - pos) : buffer.Length;
+                        read = input.Read(buffer, 0, count);
+                        output.Write(buffer, 0, read);
+                        pos += read;
+                        readForSpeed += read;
+
+                        td = DateTime.Now - timeLastSpeed;
+                        if (td.TotalMilliseconds > 100) {
+                            speed = (int)((readForSpeed / 1024D) / td.TotalSeconds);
+                            readForSpeed = 0;
+                            timeLastSpeed = DateTime.Now;
+                        }
+
+                        progressCallback(pos, length, speed);
+                    }
                 }
             }
 
