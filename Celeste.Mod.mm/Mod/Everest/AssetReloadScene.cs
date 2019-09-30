@@ -24,7 +24,16 @@ namespace Celeste.Mod {
         private bool init;
         private bool done;
 
-        public static Scene ReturnToScene;
+        private static Scene _ReturnToSceneOrig;
+        private static Scene _ReturnToScene;
+        public static Scene ReturnToScene {
+            get => _ReturnToScene;
+            set {
+                if (value == null || _ReturnToSceneOrig == null)
+                    _ReturnToSceneOrig = value;
+                _ReturnToScene = value;
+            }
+        }
         public static Action ReturnToGameLoop;
 
         private Texture2D snap;
@@ -145,6 +154,14 @@ namespace Celeste.Mod {
                     End();
                     Engine.OverloadGameLoop = ReturnToGameLoop;
                     f_Engine_scene.SetValue(Engine.Instance, ReturnToScene);
+
+                    if (_ReturnToScene != _ReturnToSceneOrig) {
+                        _ReturnToSceneOrig?.End();
+                        _ReturnToScene?.Begin();
+                    }
+
+                    ReturnToGameLoop = null;
+                    ReturnToScene = null;
                 }
                 return;
             }
