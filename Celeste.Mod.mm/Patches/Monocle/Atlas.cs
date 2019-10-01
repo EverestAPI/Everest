@@ -352,8 +352,10 @@ namespace Monocle {
 
             // Crawl through all child assets.
             if (asset.Type == typeof(AssetTypeDirectory)) {
-                foreach (ModAsset child in asset.Children)
-                    atlas.Ingest(child);
+                lock (asset.Children) {
+                    foreach (ModAsset child in asset.Children)
+                        atlas.Ingest(child);
+                }
                 return;
             }
 

@@ -147,11 +147,13 @@ namespace Celeste.Mod {
                 }
 
                 // Add all map .bins
-                foreach (ModAsset asset in Content.Map.Values) {
-                    if (asset.Type != typeof(AssetTypeMap))
-                        continue;
-                    using (Stream stream = asset.Stream)
-                        AddStream(stream);
+                lock (Content.Map) {
+                    foreach (ModAsset asset in Content.Map.Values.ToArray()) {
+                        if (asset.Type != typeof(AssetTypeMap))
+                            continue;
+                        using (Stream stream = asset.Stream)
+                            AddStream(stream);
+                    }
                 }
 
                 // Return the final hash.
@@ -165,6 +167,7 @@ namespace Celeste.Mod {
                 }
             }
         }
+        public static void InvalidateInstallationHash() => _InstallationHash = null;
 
         private static bool _SavingSettings;
 
@@ -343,9 +346,6 @@ namespace Celeste.Mod {
 
             Invoke("Initialize");
             _Initialized = true;
-
-            // Pre-generate the hash.
-            _InstallationHash = InstallationHash;
         }
 
         /// <summary>
@@ -365,7 +365,7 @@ namespace Celeste.Mod {
             if (_Initialized)
                 module.Initialize();
 
-            _InstallationHash = null;
+            InvalidateInstallationHash();
 
             EverestModuleMetadata meta = module.Metadata;
             meta.Hash = GetChecksum(meta);

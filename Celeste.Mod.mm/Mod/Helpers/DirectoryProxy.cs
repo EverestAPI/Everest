@@ -18,14 +18,16 @@ namespace Celeste.Mod.Helpers {
             if (!Everest.Content.TryGet<AssetTypeDirectory>(FileProxy._Modize(path), out ModAsset dir, true))
                 return fs;
 
-            return dir.Children.Select(
-                asset => Path.Combine(
-                    path,
-                    (asset.PathVirtual + "." + asset.Format)
-                        .Substring(dir.PathVirtual.Length + 1)
-                        .Replace('/', Path.DirectorySeparatorChar)
-                )
-            ).Union(fs).ToArray();
+            lock (dir.Children) {
+                return dir.Children.Select(
+                    asset => Path.Combine(
+                        path,
+                        (asset.PathVirtual + "." + asset.Format)
+                            .Substring(dir.PathVirtual.Length + 1)
+                            .Replace('/', Path.DirectorySeparatorChar)
+                    )
+                ).Union(fs).ToArray();
+            }
         }
 
     }

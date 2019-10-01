@@ -15,6 +15,7 @@ namespace Celeste.Mod {
     public class AssetReloadScene : Scene {
 
         private static readonly FieldInfo f_Engine_scene = typeof(Engine).GetField("scene", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo f_Engine_nextScene = typeof(Engine).GetField("nextScene", BindingFlags.NonPublic | BindingFlags.Instance);
 
         private static readonly Queue<ReloadAction> QueuePending = new Queue<ReloadAction>();
         private static readonly Queue<ReloadAction> QueueDone = new Queue<ReloadAction>();
@@ -52,6 +53,12 @@ namespace Celeste.Mod {
         public static void Do(string text, Action reload = null, Action done = null) {
             lock (QueuePending) {
                 lock (QueueDone) {
+                    Scene scene = Engine.Scene;
+                    if (scene == null) {
+                        MainThreadHelper.Do(() => Do(text, reload, done));
+                        return;
+                    }
+
                     ReloadAction action = new ReloadAction {
                         Text = text,
                         Reload = reload,
@@ -62,7 +69,6 @@ namespace Celeste.Mod {
                     if (Current == null)
                         Current = action;
 
-                    Scene scene = Engine.Scene;
                     if (scene is AssetReloadScene reloadScene) {
                         if (!reloadScene.done)
                             return;
@@ -93,6 +99,7 @@ namespace Celeste.Mod {
             int w = gd.Viewport.Width;
             int h = gd.Viewport.Height;
             Color[] data = new Color[w * h];
+            // FIXME: Purple with XNA.
             gd.GetBackBufferData(gd.Viewport.Bounds, data, 0, data.Length);
 
             snap = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
@@ -153,6 +160,10 @@ namespace Celeste.Mod {
                 if (time >= timeOut) {
                     End();
                     Engine.OverloadGameLoop = ReturnToGameLoop;
+
+                    if (ReturnToScene == null)
+                        ReturnToScene = new OverworldLoader(Overworld.StartMode.Titlescreen);
+
                     f_Engine_scene.SetValue(Engine.Instance, ReturnToScene);
 
                     if (_ReturnToScene != _ReturnToSceneOrig) {
@@ -271,7 +282,7 @@ namespace Celeste.Mod {
 
             Vector2 pos = center + new Vector2(0, -32f);
             float cogScale = MathHelper.Lerp(0.5f, 0.7f, Ease.CubeOut(a));
-            if (cogwheel != null) {
+            if (!(cogwheel?.Texture?.Texture?.IsDisposed ?? true)) {
                 float cogRot = timeTotal * 4f;
                 for (int x = -2; x <= 2; x++)
                     for (int y = -2; y <= 2; y++)

@@ -82,9 +82,10 @@ namespace Celeste.Mod {
                         List.RemoveAt(index);
 
                     Everest.Content.Update(prev, null);
-                    foreach (ModAsset child in prev.Children.ToArray())
-                        if (child.Source == this)
-                            Update(child, null);
+                    lock (prev.Children)
+                        foreach (ModAsset child in prev.Children)
+                            if (child.Source == this)
+                                Update(child, null);
 
                 } else {
                     Map[prev.PathVirtual] = next;
@@ -98,21 +99,24 @@ namespace Celeste.Mod {
                     next.Format = prev.Format;
 
                     Everest.Content.Update(prev, next);
-                    foreach (ModAsset child in prev.Children.ToArray())
-                        if (child.Source == this)
-                            Update(child, null);
-                    foreach (ModAsset child in next.Children.ToArray())
-                        if (child.Source == this)
-                            Update((ModAsset) null, child);
+                    lock (prev.Children)
+                        foreach (ModAsset child in prev.Children)
+                            if (child.Source == this)
+                                Update(child, null);
+                    lock (next.Children)
+                        foreach (ModAsset child in next.Children)
+                            if (child.Source == this)
+                                Update((ModAsset) null, child);
                 }
 
             } else if (next != null) {
                 Map[next.PathVirtual] = next;
                 List.Add(next);
                 Everest.Content.Update(null, next);
-                foreach (ModAsset child in next.Children.ToArray())
-                    if (child.Source == this)
-                        Update((ModAsset) null, child);
+                lock (next.Children)
+                    foreach (ModAsset child in next.Children)
+                        if (child.Source == this)
+                            Update((ModAsset) null, child);
             }
         }
 
@@ -528,15 +532,17 @@ namespace Celeste.Mod {
                 if (metadata == null && metadataPrev != null && metadataPrev.Type == typeof(AssetTypeDirectory))
                     return;
 
-                if (metadata == null) {
-                    Map[path] = null;
-                    if (prefix != null)
-                        Map[$"{prefix}:/{path}"] = null;
+                lock (Map) {
+                    if (metadata == null) {
+                        Map[path] = null;
+                        if (prefix != null)
+                            Map[$"{prefix}:/{path}"] = null;
 
-                } else {
-                    Map[path] = metadata;
-                    if (prefix != null)
-                        Map[$"{prefix}:/{path}"] = metadata;
+                    } else {
+                        Map[path] = metadata;
+                        if (prefix != null)
+                            Map[$"{prefix}:/{path}"] = metadata;
+                    }
                 }
 
                 // If we're not already the highest level shadow "node"...
@@ -552,15 +558,17 @@ namespace Celeste.Mod {
                         Add(pathDir, metadataDir);
                     }
                     // If a previous mapping exists, replace it in the shadow structure.
-                    int metadataPrevIndex = metadataDir.Children.IndexOf(metadataPrev);
-                    if (metadataPrevIndex != -1) {
-                        if (metadata == null) {
-                            metadataDir.Children.RemoveAt(metadataPrevIndex);
+                    lock (metadataDir.Children) {
+                        int metadataPrevIndex = metadataDir.Children.IndexOf(metadataPrev);
+                        if (metadataPrevIndex != -1) {
+                            if (metadata == null) {
+                                metadataDir.Children.RemoveAt(metadataPrevIndex);
+                            } else {
+                                metadataDir.Children[metadataPrevIndex] = metadata;
+                            }
                         } else {
-                            metadataDir.Children[metadataPrevIndex] = metadata;
+                            metadataDir.Children.Add(metadata);
                         }
-                    } else {
-                        metadataDir.Children.Add(metadata);
                     }
                 }
             }
@@ -664,7 +672,9 @@ namespace Celeste.Mod {
             /// </summary>
             [Obsolete("Mod content should no longer be recrawled manually.")]
             public static void Recrawl() {
-                Map.Clear();
+                lock (Map) {
+                    Map.Clear();
+                }
 
                 for (int i = 0; i < Mods.Count; i++) {
                     ModContent mod = Mods[i];
@@ -739,6 +749,8 @@ namespace Celeste.Mod {
                         }
                     });
                 }
+
+                InvalidateInstallationHash();
             }
 
             /// <summary>

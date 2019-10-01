@@ -187,93 +187,95 @@ namespace Celeste {
             // Separate array as we sort it afterwards.
             List<AreaData> modAreas = new List<AreaData>();
 
-            foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeMap))) {
-                string path = asset.PathVirtual.Substring(5);
+            lock (Everest.Content.Map) {
+                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeMap))) {
+                    string path = asset.PathVirtual.Substring(5);
 
-                AreaData area = new AreaData();
+                    AreaData area = new AreaData();
 
-                // Default values.
+                    // Default values.
 
-                area.SetSID(path);
-                area.Name = path;
-                area.Icon = "areas/" + path.ToLowerInvariant();
-                if (!GFX.Gui.Has(area.Icon))
-                    area.Icon = "areas/null";
+                    area.SetSID(path);
+                    area.Name = path;
+                    area.Icon = "areas/" + path.ToLowerInvariant();
+                    if (!GFX.Gui.Has(area.Icon))
+                        area.Icon = "areas/null";
 
-                area.Interlude = false;
-                area.CanFullClear = true;
+                    area.Interlude = false;
+                    area.CanFullClear = true;
 
-                area.TitleBaseColor = Calc.HexToColor("6c7c81");
-                area.TitleAccentColor = Calc.HexToColor("2f344b");
-                area.TitleTextColor = Color.White;
+                    area.TitleBaseColor = Calc.HexToColor("6c7c81");
+                    area.TitleAccentColor = Calc.HexToColor("2f344b");
+                    area.TitleTextColor = Color.White;
 
-                area.IntroType = Player.IntroTypes.WakeUp;
+                    area.IntroType = Player.IntroTypes.WakeUp;
 
-                area.Dreaming = false;
-                area.ColorGrade = null;
+                    area.Dreaming = false;
+                    area.ColorGrade = null;
 
-                area.Mode = new ModeProperties[] {
+                    area.Mode = new ModeProperties[] {
                     new ModeProperties {
                         Inventory = PlayerInventory.Default,
                         AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                     }
                 };
 
-                area.Wipe = (Scene scene, bool wipeIn, Action onComplete)
-                    => new AngledWipe(scene, wipeIn, onComplete);
+                    area.Wipe = (Scene scene, bool wipeIn, Action onComplete)
+                        => new AngledWipe(scene, wipeIn, onComplete);
 
-                area.DarknessAlpha = 0.05f;
-                area.BloomBase = 0f;
-                area.BloomStrength = 1f;
+                    area.DarknessAlpha = 0.05f;
+                    area.BloomBase = 0f;
+                    area.BloomStrength = 1f;
 
-                area.Jumpthru = "wood";
+                    area.Jumpthru = "wood";
 
-                area.CassseteNoteColor = Calc.HexToColor("33a9ee");
-                area.CassetteSong = SFX.cas_01_forsaken_city;
+                    area.CassseteNoteColor = Calc.HexToColor("33a9ee");
+                    area.CassetteSong = SFX.cas_01_forsaken_city;
 
-                // Custom values can be set via the MapMeta.
-                MapMeta meta = new MapMeta();
-                meta.ApplyTo(area);
-                MapMeta metaLoaded = asset.GetMeta<MapMeta>();
-                if (metaLoaded != null) {
-                    area.SetMeta(null);
-                    metaLoaded.ApplyTo(area);
-                    meta = metaLoaded;
+                    // Custom values can be set via the MapMeta.
+                    MapMeta meta = new MapMeta();
+                    meta.ApplyTo(area);
+                    MapMeta metaLoaded = asset.GetMeta<MapMeta>();
+                    if (metaLoaded != null) {
+                        area.SetMeta(null);
+                        metaLoaded.ApplyTo(area);
+                        meta = metaLoaded;
+                    }
+
+                    if (string.IsNullOrEmpty(area.Mode[0].Path))
+                        area.Mode[0].Path = asset.PathVirtual.Substring(5);
+
+                    // Some of the game's code checks for [1] / [2] explicitly.
+                    // Let's just provide null modes to fill any gaps.
+                    meta.Modes = meta.Modes ?? new MapMetaModeProperties[3];
+                    if (meta.Modes.Length < 3) {
+                        MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
+                        for (int i = 0; i < meta.Modes.Length; i++)
+                            larger[i] = meta.Modes[i];
+                        meta.Modes = larger;
+                    }
+                    if (area.Mode.Length < 3) {
+                        ModeProperties[] larger = new ModeProperties[3];
+                        for (int i = 0; i < area.Mode.Length; i++)
+                            larger[i] = area.Mode[i];
+                        area.Mode = larger;
+                    }
+
+                    // Celeste levelset always appears first.
+                    if (area.GetLevelSet() == "Celeste")
+                        Areas.Add(area);
+                    else
+                        modAreas.Add(area);
+
+                    // Some special handling.
+                    area.OnLevelBegin = (level) => {
+                        MapMeta levelMeta = AreaData.Get(level.Session).GetMeta();
+                        MapMetaModeProperties levelMetaMode = level.Session.MapData.GetMeta();
+
+                        if (levelMetaMode?.SeekerSlowdown ?? false)
+                            level.Add(new SeekerEffectsController());
+                    };
                 }
-
-                if (string.IsNullOrEmpty(area.Mode[0].Path))
-                    area.Mode[0].Path = asset.PathVirtual.Substring(5);
-
-                // Some of the game's code checks for [1] / [2] explicitly.
-                // Let's just provide null modes to fill any gaps.
-                meta.Modes = meta.Modes ?? new MapMetaModeProperties[3];
-                if (meta.Modes.Length < 3) {
-                    MapMetaModeProperties[] larger = new MapMetaModeProperties[3];
-                    for (int i = 0; i < meta.Modes.Length; i++)
-                        larger[i] = meta.Modes[i];
-                    meta.Modes = larger;
-                }
-                if (area.Mode.Length < 3) {
-                    ModeProperties[] larger = new ModeProperties[3];
-                    for (int i = 0; i < area.Mode.Length; i++)
-                        larger[i] = area.Mode[i];
-                    area.Mode = larger;
-                }
-
-                // Celeste levelset always appears first.
-                if (area.GetLevelSet() == "Celeste")
-                    Areas.Add(area);
-                else
-                    modAreas.Add(area);
-
-                // Some special handling.
-                area.OnLevelBegin = (level) => {
-                    MapMeta levelMeta = AreaData.Get(level.Session).GetMeta();
-                    MapMetaModeProperties levelMetaMode = level.Session.MapData.GetMeta();
-
-                    if (levelMetaMode?.SeekerSlowdown ?? false)
-                        level.Add(new SeekerEffectsController());
-                };
             }
 
 
