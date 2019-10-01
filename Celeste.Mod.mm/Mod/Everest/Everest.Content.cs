@@ -732,7 +732,10 @@ namespace Celeste.Mod {
                         }
 
                         if (level != null) {
-                            AssetReloadScene.ReturnToScene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                            LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                            if (level.Paused)
+                                MainThreadHelper.Do(() => loader.Level.Pause());
+                            AssetReloadScene.ReturnToScene = loader;
                         }
                     });
                 }
