@@ -23,6 +23,7 @@ namespace Celeste.Mod {
         private static Thread Worker;
 
         private bool init;
+        private bool initRender;
         private bool done;
 
         private static Scene _ReturnToSceneOrig;
@@ -87,9 +88,7 @@ namespace Celeste.Mod {
             }
         }
 
-        public override void Begin() {
-            base.Begin();
-
+        private void InitRender() {
             if (GFX.Gui != null) {
                 cogwheel = GFX.Gui["reloader/cogwheel"];
             }
@@ -99,7 +98,19 @@ namespace Celeste.Mod {
             int w = gd.Viewport.Width;
             int h = gd.Viewport.Height;
             Color[] data = new Color[w * h];
-            // FIXME: Purple with XNA.
+
+            // This shouldn't be done, yet here we are.
+
+            Scene scene = _ReturnToScene;
+            scene?.BeforeRender();
+            gd.SetRenderTarget(null);
+            gd.Viewport = Engine.Viewport;
+            gd.Clear(Engine.ClearColor);
+            scene?.Render();
+            scene?.AfterRender();
+
+            gd.SetRenderTarget(null);
+
             gd.GetBackBufferData(gd.Viewport.Bounds, data, 0, data.Length);
 
             snap = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
@@ -203,6 +214,11 @@ namespace Celeste.Mod {
                 return;
             }
 
+            if (!initRender) {
+                initRender = true;
+                InitRender();
+            }
+
             base.BeforeRender();
 
             if (HiresRenderer.Buffer == null)
@@ -229,6 +245,8 @@ namespace Celeste.Mod {
             }
 
             base.Render();
+
+            Engine.Graphics.GraphicsDevice.Clear(Color.Black);
 
             if (HiresRenderer.Buffer == null) {
                 RenderContent(false);
