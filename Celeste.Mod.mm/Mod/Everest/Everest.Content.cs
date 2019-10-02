@@ -680,6 +680,10 @@ namespace Celeste.Mod {
                 }
             }
 
+            /// <summary>
+            /// Invoked when content is being updated, allowing you to handle it.
+            /// </summary>
+            public static event Action<ModAsset, ModAsset> OnUpdate;
             public static void Update(ModAsset prev, ModAsset next) {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
@@ -749,6 +753,8 @@ namespace Celeste.Mod {
                         ProcessUpdate(target, next);
                     }
                 }
+
+                OnUpdate?.Invoke(prev, next);
 
                 InvalidateInstallationHash();
             }
