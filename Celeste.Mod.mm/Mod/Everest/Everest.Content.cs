@@ -82,10 +82,9 @@ namespace Celeste.Mod {
                         List.RemoveAt(index);
 
                     Everest.Content.Update(prev, null);
-                    lock (prev.Children)
-                        foreach (ModAsset child in prev.Children)
-                            if (child.Source == this)
-                                Update(child, null);
+                    foreach (ModAsset child in prev.Children.ToArray())
+                        if (child.Source == this)
+                            Update(child, null);
 
                 } else {
                     Map[prev.PathVirtual] = next;
@@ -99,24 +98,21 @@ namespace Celeste.Mod {
                     next.Format = prev.Format;
 
                     Everest.Content.Update(prev, next);
-                    lock (prev.Children)
-                        foreach (ModAsset child in prev.Children)
-                            if (child.Source == this)
-                                Update(child, null);
-                    lock (next.Children)
-                        foreach (ModAsset child in next.Children)
-                            if (child.Source == this)
-                                Update((ModAsset) null, child);
+                    foreach (ModAsset child in prev.Children.ToArray())
+                        if (child.Source == this)
+                            Update(child, null);
+                    foreach (ModAsset child in next.Children.ToArray())
+                        if (child.Source == this)
+                            Update((ModAsset) null, child);
                 }
 
             } else if (next != null) {
                 Map[next.PathVirtual] = next;
                 List.Add(next);
                 Everest.Content.Update(null, next);
-                lock (next.Children)
-                    foreach (ModAsset child in next.Children)
-                        if (child.Source == this)
-                            Update((ModAsset) null, child);
+                foreach (ModAsset child in next.Children.ToArray())
+                    if (child.Source == this)
+                        Update((ModAsset) null, child);
             }
         }
 
@@ -688,7 +684,7 @@ namespace Celeste.Mod {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
                         if (target is MTexture mtex) {
-                            AssetReloadScene.Do($"Unloading texture {Path.GetFileName(prev.PathVirtual)}", () => {
+                            AssetReloadScene.Do($"Unloading texture: {Path.GetFileName(prev.PathVirtual)}", () => {
                                 mtex.UndoOverride(prev);
                             });
                         }
@@ -702,52 +698,56 @@ namespace Celeste.Mod {
                 if (next != null) {
                     Add(next.PathVirtual, next);
                     string path = next.PathVirtual;
+                    string name = Path.GetFileName(path);
 
-                    AssetReloadScene.Do($"Loading {Path.GetFileName(path)}", () => {
-                        Level level = null;
+                    Level levelPrev = Engine.Scene as Level ?? AssetReloadScene.ReturnToScene as Level;
 
-                        if (next.Type == typeof(AssetTypeMap)) {
-                            string mapName = path.Substring(5);
-                            ModeProperties mode =
-                                AreaData.Areas
-                                .SelectMany(area => area.Mode)
-                                .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
+                    if (next.Type == typeof(AssetTypeMap)) {
+                        string mapName = path.Substring(5);
+                        ModeProperties mode =
+                            AreaData.Areas
+                            .SelectMany(area => area.Mode)
+                            .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
 
-                            if (mode != null) {
+                        if (mode != null) {
+                            AssetReloadScene.Do($"Reloading map: {name}", () => {
                                 mode.MapData.Reload();
+                            });
 
-                                Level levelPrev = level;
-                                level = AssetReloadScene.ReturnToScene as Level;
-                                if (level == null || level.Session.MapData != mode.MapData) {
-                                    level = levelPrev;
-                                }
-                            }
+                            if (levelPrev?.Session.MapData == mode.MapData)
+                                AssetReloadScene.ReloadLevel();
+                        }
 
-                        } else if (next.Type == typeof(AssetTypeXml)) {
-                            // It isn't known if the reloaded xml is part of the currently loaded level.
-                            // Let's reload just to be safe.
-                            level = level ?? AssetReloadScene.ReturnToScene as Level;
+                    } else if (next.Type == typeof(AssetTypeXml)) {
+                        // It isn't known if the reloaded xml is part of the currently loaded level.
+                        // Let's reload just to be safe.
+                        AssetReloadScene.ReloadLevel();
 
-                        } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
+                    } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
+                        AssetReloadScene.Do($"Reloading dialog: {name}", () => {
                             Dialog.LoadLanguage(Path.Combine(PathContentOrig, path + ".txt"));
                             patch_Dialog.RefreshLanguages();
-                        }
+                        });
+                    }
 
-                        foreach (WeakReference weakref in LoadedAssets) {
-                            object target = weakref.Target;
-                            if (!weakref.IsAlive)
-                                break;
+                    // Loaded assets can be folders, which means that we need to check the updated assets' entire path.
+                    HashSet<WeakReference> updated = new HashSet<WeakReference>();
+                    for (ModAsset asset = next; asset != null && !string.IsNullOrEmpty(asset.PathVirtual); asset = Get(Path.GetDirectoryName(asset.PathVirtual).Replace('\\', '/'))) {
+                        int index = LoadedAssetPaths.IndexOf(asset.PathVirtual);
+                        if (index == -1)
+                            continue;
 
-                            Process(target, next);
-                        }
+                        WeakReference weakref = LoadedAssets[index];
+                        if (!updated.Add(weakref))
+                            continue;
 
-                        if (level != null) {
-                            LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
-                            if (level.Paused)
-                                MainThreadHelper.Do(() => loader.Level.Pause());
-                            AssetReloadScene.ReturnToScene = loader;
-                        }
-                    });
+                        object target = weakref.Target;
+                        if (!weakref.IsAlive)
+                            continue;
+
+                        // Don't feed the entire tree into the loaded asset, just the updated asset.
+                        ProcessUpdate(target, next);
+                    }
                 }
 
                 InvalidateInstallationHash();
@@ -764,13 +764,17 @@ namespace Celeste.Mod {
             }
 
             /// <summary>
+            /// Invoked when content is being processed (most likely on load), allowing you to manipulate it.
+            /// </summary>
+            public static event Action<object, string> OnProcessLoad;
+            /// <summary>
             /// Process an asset and register it for further reprocessing in the future.
             /// Apply any mod-related changes to the asset based on the existing mod asset meta map.
             /// </summary>
             /// <param name="asset">The asset to process.</param>
             /// <param name="assetNameFull">The "full name" of the asset, preferable the relative asset path.</param>
             /// <returns>The processed asset.</returns>
-            public static void Process(object asset, string assetNameFull) {
+            public static void ProcessLoad(object asset, string assetNameFull) {
                 if (DumpOnLoad)
                     Dump(assetNameFull, asset);
 
@@ -778,6 +782,7 @@ namespace Celeste.Mod {
                 if (assetName.StartsWith(PathContentOrig)) {
                     assetName = assetName.Substring(PathContentOrig.Length + 1);
                 }
+                assetName = assetName.Replace('\\', '/');
 
                 int loadedIndex = LoadedAssetPaths.IndexOf(assetName);
                 if (loadedIndex == -1) {
@@ -788,16 +793,25 @@ namespace Celeste.Mod {
                     LoadedAssets[loadedIndex] = new WeakReference(asset);
                 }
 
-                Process(asset, Get(assetName, true));
+                OnProcessLoad?.Invoke(asset, assetName);
+
+                ProcessUpdate(asset, Get(assetName, true));
             }
 
-            public static void Process(object asset, ModAsset mapping) {
+            /// <summary>
+            /// Invoked when content is being processed (most likely on load or runtime update), allowing you to manipulate it.
+            /// </summary>
+            public static event Action<object, ModAsset> OnProcessUpdate;
+            public static void ProcessUpdate(object asset, ModAsset mapping) {
                 if (asset == null || mapping == null)
                     return;
 
-                if (asset is Atlas atlas) {
-                    atlas.Ingest(mapping);
-                }
+                if (asset is Atlas atlas)
+                    AssetReloadScene.Do($"Reloading texture{(mapping.Children.Count == 0 ? "" : "s")}: {Path.GetFileName(mapping.PathVirtual)}", () => {
+                        atlas.Ingest(mapping);
+                    });
+
+                OnProcessUpdate?.Invoke(asset, mapping);
             }
 
             /// <summary>

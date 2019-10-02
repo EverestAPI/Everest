@@ -25,7 +25,7 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor(Atlas atlas, XmlDocument xml) {
             orig_ctor(atlas, xml);
-            Everest.Content.Process(this, XMLPath);
+            Everest.Content.ProcessLoad(this, XMLPath);
         }
 
         public extern void orig_ctor(Atlas atlas, string xmlPath);

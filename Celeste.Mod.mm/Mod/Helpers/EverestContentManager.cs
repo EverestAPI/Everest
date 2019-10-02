@@ -19,7 +19,7 @@ namespace Celeste.Mod.Helpers {
 
             // We don't have any overriding mapping - load from the inner CM instead.
             T asset = Inner.Load<T>(assetName);
-            Everest.Content.Process(asset, assetName);
+            Everest.Content.ProcessLoad(asset, assetName);
             return asset;
         }
 

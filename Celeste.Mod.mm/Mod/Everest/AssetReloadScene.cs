@@ -38,6 +38,9 @@ namespace Celeste.Mod {
         }
         public static Action ReturnToGameLoop;
 
+        private static bool ReloadingLevel;
+        private static bool ReloadingLevelPaused;
+
         private Texture2D snap;
         private Texture2D snapDesat;
 
@@ -45,13 +48,19 @@ namespace Celeste.Mod {
 
         private float time;
         private float timeTotal;
-        private const float timeIn = 0.4f;
-        private const float timeOut = 0.2f;
+        private const float timeIn = 0.3f;
+        private const float timeOut = 0.15f;
 
         public AssetReloadScene() {
         }
 
         public static void Do(string text, Action reload = null, Action done = null) {
+            if (Celeste.LoadTimer != null) {
+                reload?.Invoke();
+                done?.Invoke();
+                return;
+            }
+
             lock (QueuePending) {
                 lock (QueueDone) {
                     Scene scene = Engine.Scene;
@@ -65,7 +74,7 @@ namespace Celeste.Mod {
                         Reload = reload,
                         Done = done
                     };
-                    (reload != null ? QueuePending : QueueDone).Enqueue(action);
+                    QueuePending.Enqueue(action);
 
                     if (Current == null)
                         Current = action;
@@ -81,10 +90,30 @@ namespace Celeste.Mod {
 
                     reloadScene = new AssetReloadScene();
                     f_Engine_scene.SetValue(Engine.Instance, reloadScene);
+                    f_Engine_nextScene.SetValue(Engine.Instance, reloadScene);
                     Engine.OverloadGameLoop = () => {
                         reloadScene.Update();
                     };
                 }
+            }
+        }
+
+        public static void ReloadLevel() {
+            lock (QueuePending) {
+                if (Celeste.LoadTimer != null || ReloadingLevel)
+                    return;
+
+                Level level = Engine.Scene as Level ?? ReturnToScene as Level;
+                if (level == null)
+                    return;
+
+                ReloadingLevel = true;
+                Do($"Reloading level", () => {
+                    LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                    ReturnToScene = loader;
+                    ReloadingLevel = false;
+                    ReloadingLevelPaused = level.Paused;
+                });
             }
         }
 
@@ -123,6 +152,10 @@ namespace Celeste.Mod {
             }
             snapDesat = new Texture2D(gd, w, h, false, SurfaceFormat.Color);
             snapDesat.SetData(data);
+        }
+
+        public override void Begin() {
+            base.Begin();
 
             Worker = new Thread(WorkerLoop);
             Worker.Name = "Everest Reload Worker";
@@ -160,6 +193,7 @@ namespace Celeste.Mod {
             if (!init) {
                 init = true;
                 Begin();
+                return;
             }
 
             base.Update();
@@ -176,14 +210,19 @@ namespace Celeste.Mod {
                         ReturnToScene = new OverworldLoader(Overworld.StartMode.Titlescreen);
 
                     f_Engine_scene.SetValue(Engine.Instance, ReturnToScene);
+                    f_Engine_nextScene.SetValue(Engine.Instance, ReturnToScene);
 
                     if (_ReturnToScene != _ReturnToSceneOrig) {
                         _ReturnToSceneOrig?.End();
                         _ReturnToScene?.Begin();
                     }
 
+                    if (ReloadingLevelPaused && ReturnToScene is LevelLoader levelLoader)
+                        levelLoader.Level.Pause();
+
                     ReturnToGameLoop = null;
                     ReturnToScene = null;
+                    ReloadingLevelPaused = false;
                 }
                 return;
             }
@@ -202,7 +241,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            if (Worker == null && time >= timeIn) {
+            if (Worker == null) {
                 time = 0f;
                 done = true;
             }
@@ -283,7 +322,7 @@ namespace Celeste.Mod {
             float t = done ? 1f - time / timeOut : (time / timeIn);
 
             float st = done ? Ease.CubeOut(t) : (1f - Ease.ElasticIn(1f - t));
-            float border = MathHelper.Lerp(0f, 0.05f, st);
+            float border = MathHelper.Lerp(0f, 0.01f, st);
             float a = Ease.SineInOut(t);
 
             Rectangle dest = new Rectangle(
@@ -293,13 +332,13 @@ namespace Celeste.Mod {
                 (int) (h * (1f - border * 2f))
             );
 
-            Draw.SpriteBatch.Draw(snap, dest, Color.White * MathHelper.Lerp(1f, 0.4f, a));
-            Draw.SpriteBatch.Draw(snapDesat, dest, Color.White * MathHelper.Lerp(0f, 0.6f, a));
+            Draw.SpriteBatch.Draw(snap, dest, Color.White * MathHelper.Lerp(1f, 0.25f, a));
+            Draw.SpriteBatch.Draw(snapDesat, dest, Color.White * MathHelper.Lerp(0f, 0.45f, a));
 
-            Vector2 center = new Vector2(w * 0.5f, h * 0.5f);
+            Vector2 anchor = new Vector2(96f, 96f);
 
-            Vector2 pos = center + new Vector2(0, -32f);
-            float cogScale = MathHelper.Lerp(0.5f, 0.7f, Ease.CubeOut(a));
+            Vector2 pos = anchor + new Vector2(0f, 0f);
+            float cogScale = MathHelper.Lerp(0.2f, 0.25f, Ease.CubeOut(a));
             if (!(cogwheel?.Texture?.Texture?.IsDisposed ?? true)) {
                 float cogRot = timeTotal * 4f;
                 for (int x = -2; x <= 2; x++)
@@ -309,11 +348,12 @@ namespace Celeste.Mod {
                 cogwheel.DrawCentered(pos, Color.White * a, cogScale, cogRot);
             }
 
-            pos = center + new Vector2(0, 96f);
+            pos = anchor + new Vector2(48f, 0f);
             ReloadAction action = Current;
             try {
                 if (action?.Text != null && Dialog.Language != null && ActiveFont.Font != null) {
-                    ActiveFont.DrawOutline(action.Text, pos, new Vector2(0.5f, 0.5f), Vector2.One * MathHelper.Lerp(0.8f, 1f, Ease.CubeOut(a)), Color.White * a, 2f, Color.Black * a * a * a * a);
+                    Vector2 size = ActiveFont.Measure(action.Text);
+                    ActiveFont.DrawOutline(action.Text, pos + new Vector2(size.X * 0.5f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * MathHelper.Lerp(0.8f, 1f, Ease.CubeOut(a)), Color.White * a, 2f, Color.Black * a * a * a * a);
                 }
             } catch {
                 // Whoops, we weren't ready to draw text yet...

@@ -264,7 +264,7 @@ namespace Monocle {
             atlas.DataMethod = "FromAtlas";
             atlas.DataPath = path;
             atlas.DataFormat = format;
-            Everest.Content.Process(atlas, atlas.DataPath);
+            Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
 
@@ -275,7 +275,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = dataPath;
             atlas.DataFormat = format;
-            Everest.Content.Process(atlas, atlas.DataPath);
+            Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
 
@@ -286,7 +286,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = new string[] { filename };
             atlas.DataFormat = format;
-            Everest.Content.Process(atlas, atlas.DataPath);
+            Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
 
@@ -295,7 +295,7 @@ namespace Monocle {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
             atlas.DataPath = path;
-            Everest.Content.Process(atlas, atlas.DataPath);
+            Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
 
