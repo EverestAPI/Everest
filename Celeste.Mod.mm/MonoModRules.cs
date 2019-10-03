@@ -350,6 +350,10 @@ namespace MonoMod {
             if (!method.HasBody)
                 return;
 
+            MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
+            if (m_LoadNewPlayer == null)
+                return;
+
             MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
             if (m_LoadCustomEntity == null)
                 return;
@@ -358,6 +362,11 @@ namespace MonoMod {
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.Player::.ctor(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_LoadNewPlayer;
+                }
 
                 /* We expect something similar enough to the following:
                 ldwhatever the entityData into stack

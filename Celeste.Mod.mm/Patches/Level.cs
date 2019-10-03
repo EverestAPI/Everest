@@ -24,13 +24,9 @@ namespace Celeste {
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
 
-
-        // These two fields are missing before Celeste 1.2.5.0.
-        // This is only here because Leo bugged me enough to add this here.
-        private new float CassetteBlockTempo;
-        private new int CassetteBlockBeats;
-
         public SubHudRenderer SubHudRenderer;
+        public static Player NextLoadedPlayer;
+        public static int SkipScreenWipes;
 
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
@@ -57,6 +53,16 @@ namespace Celeste {
             if (!completed) {
                 Everest.Events.Level.Complete(this);
             }
+        }
+
+        public extern void orig_DoScreenWipe(bool wipeIn, Action onComplete = null, bool hiresSnow = false);
+        public new void DoScreenWipe(bool wipeIn, Action onComplete = null, bool hiresSnow = false) {
+            if (onComplete == null && !hiresSnow && SkipScreenWipes > 0) {
+                SkipScreenWipes--;
+                return;
+            }
+
+            orig_DoScreenWipe(wipeIn, onComplete, hiresSnow);
         }
 
         // Needed for older mods.
@@ -123,11 +129,6 @@ namespace Celeste {
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
-            // These two fields are missing before Celeste 1.2.5.0.
-            // This is only here because Leo bugged me enough to add this here.
-            CassetteBlockTempo = 1f;
-            CassetteBlockBeats = 2;
-            
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
                 && Session.Area.Mode == AreaMode.CSide
@@ -166,6 +167,16 @@ namespace Celeste {
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
+        private static Player LoadNewPlayer(Vector2 position, PlayerSpriteMode spriteMode) {
+            Player player = NextLoadedPlayer;
+            if (player != null) {
+                NextLoadedPlayer = null;
+                return player;
+            }
+
+            return new Player(position, spriteMode);
+        }
+
         public static bool LoadCustomEntity(EntityData entityData, Level level) {
             LevelData levelData = level.Session.LevelData;
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);

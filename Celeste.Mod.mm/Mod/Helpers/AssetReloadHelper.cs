@@ -5,6 +5,7 @@ using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -124,9 +125,20 @@ namespace Celeste.Mod {
                 ReloadingLevel = true;
                 Do($"Reloading level", () => {
                     LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
+
+                    Player player = level.Tracker?.GetEntity<Player>();
+                    if (player != null) {
+                        patch_Level.SkipScreenWipes++;
+                        patch_Level.NextLoadedPlayer = player;
+                        ((patch_Player) player).OverrideIntroType = Player.IntroTypes.Transition;
+                    }
+
                     ReturnToScene = loader;
                     ReloadingLevel = false;
                     ReloadingLevelPaused = level.Paused;
+
+                    while (!loader.Loaded)
+                        Thread.Yield();
                 });
             }
         }

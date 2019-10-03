@@ -19,7 +19,9 @@ namespace Celeste {
         private static int diedInGBJ = 0;
         private int framesAlive;
         private Level level;
-        
+
+        public IntroTypes? OverrideIntroType;
+
         public new int MaxDashes {
             get {
                 if (SaveData.Instance.Assists.DashMode != Assists.DashModes.Normal && level?.InCutscene == false) {
@@ -45,6 +47,11 @@ namespace Celeste {
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
+            if (OverrideIntroType != null) {
+                IntroType = OverrideIntroType.Value;
+                OverrideIntroType = null;
+            }
+
             orig_Added(scene);
 
             framesAlive = int.MaxValue;
