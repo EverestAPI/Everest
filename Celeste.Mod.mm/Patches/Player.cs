@@ -7,6 +7,7 @@ using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Celeste {
@@ -58,7 +59,8 @@ namespace Celeste {
 
         [MonoModReplace]
         private void CreateTrail() {
-            TrailManager.Add(this, GetCurrentTrailColor(), 1f);
+            Vector2 scale = new Vector2(Math.Abs(Sprite.Scale.X) * (float) Facing, Sprite.Scale.Y);
+            TrailManager.Add(this, scale, GetCurrentTrailColor());
         }
 
         public extern void orig_Update();
@@ -108,6 +110,8 @@ namespace Celeste {
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         [MethodImpl(MethodImplOptions.NoInlining)]
         private Color GetTrailColor(bool wasDashB) {
+            if (Sprite.Mode == PlayerSpriteMode.MadelineAsBadeline)
+                return wasDashB ? NormalBadelineHairColor : UsedBadelineHairColor;
             return wasDashB ? NormalHairColor : UsedHairColor;
         }
 
