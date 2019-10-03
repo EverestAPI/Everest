@@ -239,6 +239,9 @@ namespace Celeste.Mod {
                 };
             }
 
+            // enable TLS 1.2 to fix connecting to everestapi.github.io
+            ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12;
+
             PathGame = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
 
             // .NET hates it when strong-named dependencies get updated.

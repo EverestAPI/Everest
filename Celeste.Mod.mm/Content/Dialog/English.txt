@@ -50,6 +50,7 @@
 	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					TOUCH
 	MODOPTIONS_COREMODULE_LQATLAS=							Prefer LQ atlases
 	MODOPTIONS_COREMODULE_NONTHREADEDGL=					Non-threaded GL
+	MODOPTIONS_COREMODULE_MODUPDATES= 						Check for Mod Updates
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload assets~
 
@@ -85,6 +86,18 @@
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
+
+# Mod Updater
+	MODUPDATECHECKER_MENU_TITLE=	MOD UPDATES
+	MODUPDATECHECKER_NOUPDATE=		No update available
+	MODUPDATECHECKER_MENU_HEADER=	Available Updates
+	MODUPDATECHECKER_FETCHING=		Checking for updates...
+	MODUPDATECHECKER_ERROR=			Update checking failed.
+	MODUPDATECHECKER_UPDATED=		updated
+	MODUPDATECHECKER_DOWNLOADING=	downloading...
+	MODUPDATECHECKER_INSTALLING=	installing...
+	MODUPDATECHECKER_FAILED=		update failed!
+	MODUPDATECHECKER_WILLRESTART=	press Back to restart Celeste
 
 # Misc
 	UI_GIVEUP_HINT=			Your progress is saved, but you'll need to restart at the last :checkpoint:
