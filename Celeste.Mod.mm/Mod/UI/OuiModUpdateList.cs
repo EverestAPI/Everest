@@ -22,7 +22,7 @@ namespace Celeste.Mod.UI {
 
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
-                if(x.LastUpdate != y.LastUpdate) {
+                if (x.LastUpdate != y.LastUpdate) {
                     return y.LastUpdate - x.LastUpdate;
                 }
                 // fall back to alphabetical order
@@ -86,8 +86,7 @@ namespace Celeste.Mod.UI {
                         }
                         Logger.Log("OuiModUpdateList", $"Downloaded {updateCatalog.Count} item(s)");
                     }
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     Logger.Log("OuiModUpdateList", $"Downloading database failed!");
                     Logger.LogDetailed(e);
                 }
@@ -98,12 +97,12 @@ namespace Celeste.Mod.UI {
                 if (updateCatalog != null) {
                     Logger.Log("OuiModUpdateList", "Checking for updates");
 
-                    foreach(EverestModule module in Everest.Modules) {
+                    foreach (EverestModule module in Everest.Modules) {
                         EverestModuleMetadata metadata = module.Metadata;
                         if (metadata.PathArchive != null && updateCatalog.ContainsKey(metadata.Name)) {
                             string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
                             Logger.Log("OuiModUpdateList", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
-                            if(!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
+                            if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
                                 availableUpdatesCatalog.Add(updateCatalog[metadata.Name], metadata);
                             }
                         }
@@ -136,10 +135,10 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
-            if(menu != null && task != null && task.IsCompleted) {
+            if (menu != null && task != null && task.IsCompleted) {
                 // there is no download or install task in progress
 
-                if(fetchingButton != null) {
+                if (fetchingButton != null) {
                     // This means fetching the updates just finished. We have to remove the "Checking for updates" button
                     // and put the actual update list instead.
 
@@ -148,7 +147,7 @@ namespace Celeste.Mod.UI {
                     menu.Remove(fetchingButton);
                     fetchingButton = null;
 
-                    if(updateCatalog == null) {
+                    if (updateCatalog == null) {
                         // display an error message
                         TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
                         button.Disabled = true;
@@ -160,7 +159,7 @@ namespace Celeste.Mod.UI {
                         menu.Add(button);
                     } else {
                         // display one button per update
-                        foreach(ModUpdateInfo update in availableUpdatesCatalog.Keys) {
+                        foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
                             EverestModuleMetadata metadata = availableUpdatesCatalog[update];
                             TextMenu.Button button = new TextMenu.Button($"{metadata.Name} | v. {metadata.VersionString} > {update.Version} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
                             button.Pressed(() => {
@@ -180,8 +179,8 @@ namespace Celeste.Mod.UI {
                     }
                 }
 
-                if(menu.Focused && Selected && Input.MenuCancel.Pressed) {
-                    if(shouldRestart) {
+                if (menu.Focused && Selected && Input.MenuCancel.Pressed) {
+                    if (shouldRestart) {
                         Everest.QuickFullRestart();
                     } else {
                         // go back to mod options instead
@@ -232,7 +231,7 @@ namespace Celeste.Mod.UI {
                     string actualHash = BitConverter.ToString(Everest.GetChecksum("mod-update.zip")).Replace("-", "").ToLowerInvariant();
                     string expectedHash = update.xxHash[0];
                     Logger.Log("OuiModUpdateList", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
-                    if(expectedHash != actualHash) {
+                    if (expectedHash != actualHash) {
                         throw new IOException($"Checksum error: expected {expectedHash}, got {actualHash}");
                     }
 
@@ -263,11 +262,11 @@ namespace Celeste.Mod.UI {
                     button.Disabled = false;
 
                     // try to delete mod-update.zip if it still exists.
-                    if(File.Exists(zipPath)) {
+                    if (File.Exists(zipPath)) {
                         try {
                             Logger.Log("OuiModUpdateList", $"Deleting temp file {zipPath}");
                             File.Delete(zipPath);
-                        } catch(Exception) {
+                        } catch (Exception) {
                             Logger.Log("OuiModUpdateList", $"Removing {zipPath} failed");
                         }
                     }
@@ -306,8 +305,8 @@ namespace Celeste.Mod.UI {
         /// <param name="zipPath">The path to the zip the update has been downloaded to</param>
         private static void installMod(ModUpdateInfo update, EverestModuleMetadata mod, string zipPath) {
             // let's close the zip, as we will replace it now.
-            foreach(ModContent content in Everest.Content.Mods) {
-                if(content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Mod.Name == mod.Name) {
+            foreach (ModContent content in Everest.Content.Mods) {
+                if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Mod.Name == mod.Name) {
                     ZipModContent modZip = content as ZipModContent;
 
                     Logger.Log("OuiModUpdateList", $"Closing mod .zip: {modZip.Path}");
