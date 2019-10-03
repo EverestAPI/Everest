@@ -83,8 +83,10 @@ namespace Celeste.Mod.Core {
                 if (level == null)
                     return;
 
-                AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
-                Engine.Scene = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                AssetReloadHelper.Do("Reloading map", () => {
+                    AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
+                });
+                AssetReloadHelper.ReloadLevel();
             };
 
             // F6: Open map editor for current level.
