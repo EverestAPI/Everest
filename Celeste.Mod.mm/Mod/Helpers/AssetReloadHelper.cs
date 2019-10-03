@@ -12,7 +12,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
-    public class AssetReloadScene : Scene {
+    public class AssetReloadHelper : Scene {
 
         private static readonly FieldInfo f_Engine_scene = typeof(Engine).GetField("scene", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo f_Engine_nextScene = typeof(Engine).GetField("nextScene", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -38,6 +38,16 @@ namespace Celeste.Mod {
         }
         public static Action ReturnToGameLoop;
 
+        public static readonly HashSet<string> SilentThreadList = new HashSet<string>() {
+            "Main Thread",
+            "GAME_LOADER",
+            "OVERWORLD_LOADER",
+            "SUMMIT_VIGNETTE",
+            "LEVEL_LOADER",
+            "COMPLETE_LEVEL",
+            "Wave Dash Presentation Loading",
+        };
+
         private static bool ReloadingLevel;
         private static bool ReloadingLevelPaused;
 
@@ -51,11 +61,14 @@ namespace Celeste.Mod {
         private const float timeIn = 0.3f;
         private const float timeOut = 0.15f;
 
-        public AssetReloadScene() {
+        public AssetReloadHelper() {
         }
 
-        public static void Do(string text, Action reload = null, Action done = null) {
-            if (Celeste.LoadTimer != null) {
+        public static void Do(string text, Action reload = null, Action done = null)
+            => Do(false, text, reload, done);
+        public static void Do(bool silent, string text, Action reload = null, Action done = null) {
+            if (Celeste.LoadTimer != null ||
+                (silent && SilentThreadList.Contains(Thread.CurrentThread.Name))) {
                 reload?.Invoke();
                 done?.Invoke();
                 return;
@@ -65,7 +78,8 @@ namespace Celeste.Mod {
                 lock (QueueDone) {
                     Scene scene = Engine.Scene;
                     if (scene == null) {
-                        MainThreadHelper.Do(() => Do(text, reload, done));
+                        // Wait until there is a scene.
+                        MainThreadHelper.Do(() => Do(silent, text, reload, done));
                         return;
                     }
 
@@ -79,7 +93,7 @@ namespace Celeste.Mod {
                     if (Current == null)
                         Current = action;
 
-                    if (scene is AssetReloadScene reloadScene) {
+                    if (scene is AssetReloadHelper reloadScene) {
                         if (!reloadScene.done)
                             return;
                         reloadScene.End();
@@ -88,7 +102,7 @@ namespace Celeste.Mod {
                         ReturnToGameLoop = Engine.OverloadGameLoop;
                     }
 
-                    reloadScene = new AssetReloadScene();
+                    reloadScene = new AssetReloadHelper();
                     f_Engine_scene.SetValue(Engine.Instance, reloadScene);
                     f_Engine_nextScene.SetValue(Engine.Instance, reloadScene);
                     Engine.OverloadGameLoop = () => {

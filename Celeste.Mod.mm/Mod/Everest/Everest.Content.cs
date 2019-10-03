@@ -688,7 +688,7 @@ namespace Celeste.Mod {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
                         if (target is MTexture mtex) {
-                            AssetReloadScene.Do($"Unloading texture: {Path.GetFileName(prev.PathVirtual)}", () => {
+                            AssetReloadHelper.Do($"Unloading texture: {Path.GetFileName(prev.PathVirtual)}", () => {
                                 mtex.UndoOverride(prev);
                             });
                         }
@@ -704,7 +704,7 @@ namespace Celeste.Mod {
                     string path = next.PathVirtual;
                     string name = Path.GetFileName(path);
 
-                    Level levelPrev = Engine.Scene as Level ?? AssetReloadScene.ReturnToScene as Level;
+                    Level levelPrev = Engine.Scene as Level ?? AssetReloadHelper.ReturnToScene as Level;
 
                     if (next.Type == typeof(AssetTypeMap)) {
                         string mapName = path.Substring(5);
@@ -714,21 +714,21 @@ namespace Celeste.Mod {
                             .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
 
                         if (mode != null) {
-                            AssetReloadScene.Do($"Reloading map: {name}", () => {
+                            AssetReloadHelper.Do($"Reloading map: {name}", () => {
                                 mode.MapData.Reload();
                             });
 
                             if (levelPrev?.Session.MapData == mode.MapData)
-                                AssetReloadScene.ReloadLevel();
+                                AssetReloadHelper.ReloadLevel();
                         }
 
                     } else if (next.Type == typeof(AssetTypeXml)) {
                         // It isn't known if the reloaded xml is part of the currently loaded level.
                         // Let's reload just to be safe.
-                        AssetReloadScene.ReloadLevel();
+                        AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
-                        AssetReloadScene.Do($"Reloading dialog: {name}", () => {
+                        AssetReloadHelper.Do($"Reloading dialog: {name}", () => {
                             Dialog.LoadLanguage(Path.Combine(PathContentOrig, path + ".txt"));
                             patch_Dialog.RefreshLanguages();
                         });
@@ -750,7 +750,7 @@ namespace Celeste.Mod {
                             continue;
 
                         // Don't feed the entire tree into the loaded asset, just the updated asset.
-                        ProcessUpdate(target, next);
+                        ProcessUpdate(target, next, false);
                     }
                 }
 
@@ -801,23 +801,23 @@ namespace Celeste.Mod {
 
                 OnProcessLoad?.Invoke(asset, assetName);
 
-                ProcessUpdate(asset, Get(assetName, true));
+                ProcessUpdate(asset, Get(assetName, true), true);
             }
 
             /// <summary>
             /// Invoked when content is being processed (most likely on load or runtime update), allowing you to manipulate it.
             /// </summary>
-            public static event Action<object, ModAsset> OnProcessUpdate;
-            public static void ProcessUpdate(object asset, ModAsset mapping) {
+            public static event Action<object, ModAsset, bool> OnProcessUpdate;
+            public static void ProcessUpdate(object asset, ModAsset mapping, bool load) {
                 if (asset == null || mapping == null)
                     return;
 
                 if (asset is Atlas atlas)
-                    AssetReloadScene.Do($"Reloading texture{(mapping.Children.Count == 0 ? "" : "s")}: {Path.GetFileName(mapping.PathVirtual)}", () => {
+                    AssetReloadHelper.Do(load, $"Reloading texture{(mapping.Children.Count == 0 ? "" : "s")}: {Path.GetFileName(mapping.PathVirtual)}", () => {
                         atlas.Ingest(mapping);
                     });
 
-                OnProcessUpdate?.Invoke(asset, mapping);
+                OnProcessUpdate?.Invoke(asset, mapping, load);
             }
 
             /// <summary>

@@ -28,7 +28,7 @@ namespace Celeste.Mod {
         private static readonly Queue<Action> Queue = new Queue<Action>();
         private static readonly HashSet<object> Enqueued = new HashSet<object>();
         private static readonly Dictionary<object, object> EnqueuedWaiting = new Dictionary<object, object>();
-        private static Thread MainThread;
+        public static Thread MainThread { get; private set; }
 
         public MainThreadHelper(Game game)
             : base(game) {
