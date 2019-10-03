@@ -366,7 +366,8 @@ namespace Celeste {
 
             orig_BeforeSave();
 
-            Everest.Invoke("SaveSaveData", FileSlot);
+            foreach (EverestModule mod in Everest._Modules)
+                mod.SaveSaveData(FileSlot);
         }
 
         public LevelSetStats GetLevelSetStatsFor(string name)

@@ -33,11 +33,8 @@ namespace Celeste.Mod.UI {
                 ImageScale = 0.5f
             });
 
-            Everest.InvokeTyped(
-                "CreateModMenuSection",
-                new Type[] { typeof(TextMenu), typeof(bool), typeof(EventInstance) },
-                menu, inGame, snapshot
-            );
+            foreach (EverestModule mod in Everest._Modules)
+                mod.CreateModMenuSection(menu, inGame, snapshot);
 
             if (menu.Height > menu.ScrollableMinSize) {
                 menu.Position.Y = menu.ScrollTargetY;

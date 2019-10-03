@@ -344,7 +344,8 @@ namespace Celeste.Mod {
                 Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
 
-            Invoke("Initialize");
+            foreach (EverestModule mod in _Modules)
+                mod.Initialize();
             _Initialized = true;
         }
 
@@ -424,7 +425,8 @@ namespace Celeste.Mod {
         private static IEnumerator _SaveSettings() {
             bool saving = true;
             RunThread.Start(() => {
-                Invoke("SaveSettings");
+                foreach (EverestModule mod in _Modules)
+                    mod.SaveSettings();
                 saving = false;
             }, "MOD_IO", false);
 
@@ -484,78 +486,6 @@ namespace Celeste.Mod {
         // A shared object a day keeps the GC away!
         public readonly static Type[] _EmptyTypeArray = new Type[0];
         public readonly static object[] _EmptyObjectArray = new object[0];
-
-        /// <summary>
-        /// Invoke a method in all loaded EverestModules.
-        /// </summary>
-        /// <param name="methodName">The name of the method.</param>
-        /// <param name="args">Any arguments to be passed to the methods.</param>
-        public static void Invoke(string methodName, params object[] args)
-            => InvokeTyped(methodName, null, args);
-        /// <summary>
-        /// Invoke a method in all loaded EverestModules.
-        /// </summary>
-        /// <param name="methodName">The name of the method.</param>
-        /// <param name="argsTypes">The types of the arguments passed to the methods.</param>
-        /// <param name="args">Any arguments to be passed to the methods.</param>
-        public static void InvokeTyped(string methodName, Type[] argsTypes, params object[] args) {
-            if (args == null) {
-                args = _EmptyObjectArray;
-                if (argsTypes == null)
-                    argsTypes = _EmptyTypeArray;
-            } else if (argsTypes == null) {
-                argsTypes = Type.GetTypeArray(args);
-            }
-
-            if (!Debugger.IsAttached) {
-                // Fast codepath: DynamicMethodDelegate
-                // Unfortunately prevents us from stepping into invoked methods.
-                for (int i = 0; i < _Modules.Count; i++) {
-                    EverestModule module = _Modules[i];
-                    IDictionary<string, FastReflectionDelegate> moduleMethods = _ModuleMethodDelegates[i];
-                    FastReflectionDelegate method;
-
-                    if (moduleMethods.TryGetValue(methodName, out method)) {
-                        if (method == null)
-                            continue;
-                        method(module, args);
-                        continue;
-                    }
-
-                    MethodInfo methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
-                    if (methodInfo != null)
-                        method = methodInfo.GetFastDelegate();
-                    moduleMethods[methodName] = method;
-                    if (method == null)
-                        continue;
-
-                    method(module, args);
-                }
-
-            } else {
-                // Slow codepath: MethodInfo.Invoke
-                // Doesn't hinder us from stepping into the invoked methods.
-                for (int i = 0; i < _Modules.Count; i++) {
-                    EverestModule module = _Modules[i];
-                    IDictionary<string, MethodInfo> moduleMethods = _ModuleMethods[i];
-                    MethodInfo methodInfo;
-
-                    if (moduleMethods.TryGetValue(methodName, out methodInfo)) {
-                        if (methodInfo == null)
-                            continue;
-                        methodInfo.Invoke(module, args);
-                        continue;
-                    }
-
-                    methodInfo = _ModuleTypes[i].GetMethod(methodName, argsTypes);
-                    moduleMethods[methodName] = methodInfo;
-                    if (methodInfo == null)
-                        continue;
-
-                    methodInfo.Invoke(module, args);
-                }
-            }
-        }
 
     }
 }

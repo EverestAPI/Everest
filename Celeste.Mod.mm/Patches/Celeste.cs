@@ -218,7 +218,8 @@ namespace Celeste {
             bool firstLoad = this.firstLoad;
             orig_LoadContent();
 
-            Everest.Invoke("LoadContent", firstLoad);
+            foreach (EverestModule mod in Everest._Modules)
+                mod.LoadContent(firstLoad);
         }
 
         protected override void OnExiting(object sender, EventArgs args) {
