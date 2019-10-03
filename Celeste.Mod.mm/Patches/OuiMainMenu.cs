@@ -20,13 +20,6 @@ namespace Celeste {
         public List<MenuButton> Buttons => buttons;
         private MainMenuClimb climbButton;
 
-        public extern IEnumerator orig_Enter(Oui from);
-        public override IEnumerator Enter(Oui from) {
-            // Some parts of Celeste and Everrest assume that SaveData.Instance is null in the main menu.
-            SaveData.Instance = null;
-            return orig_Enter(from);
-        }
-
         public extern void orig_CreateButtons();
         public new void CreateButtons() {
             orig_CreateButtons();

@@ -443,14 +443,16 @@ namespace Celeste.Mod {
 
         public static void QuickFullRestart() {
             Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart()));
+            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _QuickFullRestart() {
+        private static IEnumerator _QuickFullRestart(bool fromOverworld) {
             SaveData save = SaveData.Instance;
             if (save != null) {
-                CoreModule.Settings.QuickRestart = save.FileSlot;
+                if (!fromOverworld) {
+                    CoreModule.Settings.QuickRestart = save.FileSlot;
+                }
                 save.BeforeSave();
                 UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
                 CoreModule.Instance.SaveSettings();
