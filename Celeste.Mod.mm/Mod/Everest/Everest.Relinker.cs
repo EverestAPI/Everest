@@ -238,19 +238,6 @@ namespace Celeste.Mod {
                             modder.ParseRules(rules);
                             rules.Dispose(); // Is this safe?
                         }
-
-                        // Fix old mods built against HookIL instead of ILContext.
-                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.ILManipulator"] = "MonoMod.Cil.ILContext/Manipulator";
-                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookIL"] = "MonoMod.Cil.ILContext";
-                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookILCursor"] = "MonoMod.Cil.ILCursor";
-                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookILLabel"] = "MonoMod.Cil.ILLabel";
-                        _Modder.RelinkMap["MonoMod.RuntimeDetour.HookGen.HookExtensions"] = "MonoMod.Cil.ILPatternMatchingExt";
-
-                        _Shim("MonoMod.Utils.ReflectionHelper", typeof(MonoModUpdateShim._ReflectionHelper));
-                        _Shim("MonoMod.Cil.ILCursor", typeof(MonoModUpdateShim._ILCursor));
-
-                        // If no entry for MonoMod.Utils exists already, add one.
-                        modder.MapDependency(_Modder.Module, "MonoMod.Utils");
                     }
 
                     prePatch?.Invoke(modder);
@@ -289,18 +276,6 @@ namespace Celeste.Mod {
                     return null;
                 }
             }
-
-
-            private static void _Shim(string fromType, Type toType) {
-                string toTypeName = toType.FullName.Replace("+", "/");
-                foreach (FieldInfo to in toType.GetFields(BindingFlags.Public | BindingFlags.Static)) {
-                    _Modder.RelinkMap[to.GetCustomAttribute<ShimFromAttribute>()?.FindableID ?? $"{to.FieldType.FullName.Replace("+", "/")} {fromType}::{to.Name}"] = new RelinkMapEntry(toTypeName, to.Name);
-                }
-                foreach (MethodInfo to in toType.GetMethods(BindingFlags.Public | BindingFlags.Static)) {
-                    _Modder.RelinkMap[to.GetCustomAttribute<ShimFromAttribute>()?.FindableID ?? to.GetFindableID(type: fromType, proxyMethod: true, simple: true)] = new RelinkMapEntry(toTypeName, to.GetFindableID(withType: false, simple: true));
-                }
-            }
-
 
             private static MissingDependencyResolver GenerateModDependencyResolver(EverestModuleMetadata meta) {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {

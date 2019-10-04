@@ -130,7 +130,6 @@
     <Compile Include="Mod\Helpers\QueuedTaskHelper.cs" />
     <Compile Include="Mod\Helpers\MainThreadHelper.cs" />
     <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
-    <Compile Include="Mod\Helpers\MonoModUpdateShim.cs" />
     <Compile Include="Mod\Helpers\AssetReloadHelper.cs" />
     <Compile Include="Mod\Helpers\XXHash.cs" />
     <Compile Include="Mod\Module\LuaModule.cs" />
