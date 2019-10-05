@@ -354,6 +354,9 @@ namespace Celeste {
                     }
                 }
             }
+
+            foreach (EverestModule mod in Everest._Modules)
+                mod.LoadSaveData(FileSlot);
         }
 
         public extern void orig_BeforeSave();
