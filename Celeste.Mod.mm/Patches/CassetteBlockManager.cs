@@ -49,11 +49,13 @@ namespace Celeste {
 
             MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session).GetMeta()?.CassetteModifier;
             if (meta != null) {
-                tempoMult = meta.TempoMult;
+                if (meta.OldBehavior) {
+                    tempoMult = meta.TempoMult;
+                    maxBeat = meta.Blocks;
+                }
                 leadBeats = meta.LeadBeats;
                 beatsPerTick = meta.BeatsPerTick;
                 ticksPerSwap = meta.TicksPerSwap;
-                maxBeat = meta.Blocks;
                 beatIndexMax = meta.BeatsMax;
             }
         }
@@ -102,17 +104,21 @@ namespace Celeste {
 
         [MonoModReplace]
         public new void OnLevelStart() {
-            maxBeat = SceneAs<Level>().CassetteBlockBeats;
-            tempoMult = SceneAs<Level>().CassetteBlockTempo;
+            Level level = Scene as Level;
+            MapMetaCassetteModifier meta = AreaData.Get(level.Session).GetMeta()?.CassetteModifier;
 
-            if (SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
+            if (meta != null && meta.OldBehavior) {
+                currentIndex = maxBeat - 1 - ((beatIndex / beatsPerTick) % maxBeat);
+
+            } else {
+                maxBeat = level.CassetteBlockBeats;
+                tempoMult = level.CassetteBlockTempo;
+
                 if (beatIndex % 8 >= 5) {
                     currentIndex = maxBeat - 2;
                 } else {
                     currentIndex = maxBeat - 1;
                 }
-            } else {
-                currentIndex = maxBeat - 1 - ((beatIndex / beatsPerTick) % maxBeat);
             }
 
             SilentUpdateBlocks();
