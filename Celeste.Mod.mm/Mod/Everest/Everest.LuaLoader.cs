@@ -332,7 +332,7 @@ namespace Celeste.Mod {
             private static Action<string> _LoadAssembly;
 
             private static Func<string, object[]> _Require;
-            public static object[] Require(string name) => _Require(name);
+            public static object Require(string name) => _Require(name)?.FirstOrDefault();
 
             private static Func<string, LuaTable> _Symbol;
             public static LuaTable Symbol(string name) => _Symbol(name);
