@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using MonoMod.Utils;
+using System.Runtime.CompilerServices;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -360,6 +361,8 @@ namespace Celeste.Mod {
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
 
+                ApplyModHackfixesPreLoad(meta);
+
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
@@ -401,6 +404,8 @@ namespace Celeste.Mod {
                         return;
                     }
                 }
+
+                ApplyModHackfixesPostLoad(meta, asm);
 
                 if (asm == null) {
                     // Register a null module for content mods.
@@ -531,6 +536,20 @@ namespace Celeste.Mod {
                 }
 
                 return null;
+            }
+
+            private static void ApplyModHackfixesPreLoad(EverestModuleMetadata meta) {
+                
+            }
+
+            private static void ApplyModHackfixesPostLoad(EverestModuleMetadata meta, Assembly asm) {
+                if (meta.Name == "Prideline" && meta.Version < new Version(1, 0, 0, 0)) {
+                    // Prideline 1.0.0 has got a hardcoded path to /ModSettings/Prideline.flag
+                    Type t_PridelineModule = asm.GetType(" Celeste.Mod.Prideline.PridelineModule");
+                    RuntimeHelpers.RunClassConstructor(t_PridelineModule.TypeHandle);
+                    FieldInfo f_CustomFlagPath = t_PridelineModule.GetField("CustomFlagPath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                    f_CustomFlagPath.SetValue(null, Path.Combine(PathSettings, "modsettings-Prideline-Flag.celeste"));
+                }
             }
 
         }
