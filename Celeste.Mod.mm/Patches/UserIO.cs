@@ -22,10 +22,8 @@ namespace Celeste {
         [MonoModIgnore]
         public static bool Saving { get; private set; }
 
-        [MonoModIgnore]
-        private static readonly string SavePath;
-
         private static extern string orig_GetSavePath(string dir);
+        [MonoModIfFlag("FNA")]
         private static string GetSavePath(string dir) {
             string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
             if (!string.IsNullOrEmpty(env))
@@ -42,7 +40,7 @@ namespace Celeste {
         private static extern string GetHandle(string name);
 
         public static string GetSaveFilePath(string name = null)
-            => string.IsNullOrEmpty(name) ? SavePath : GetHandle(name);
+            => string.IsNullOrEmpty(name) ? Path.GetDirectoryName(GetSaveFilePath("dummy")) : GetHandle(name);
 
         [MonoModIgnore]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
