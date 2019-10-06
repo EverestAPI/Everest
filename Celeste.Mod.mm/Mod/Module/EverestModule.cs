@@ -48,7 +48,7 @@ namespace Celeste.Mod {
 
             _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), "modsettings-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
             if (!File.Exists(path))
                 return;
 
@@ -76,7 +76,7 @@ namespace Celeste.Mod {
             if (SettingsType == null || _Settings == null)
                 return;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), "modsettings-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
             if (File.Exists(path))
                 File.Delete(path);
 
@@ -116,7 +116,7 @@ namespace Celeste.Mod {
             _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _SaveData.Index = index;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
             if (!File.Exists(path))
                 return;
 
@@ -143,7 +143,7 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
             if (File.Exists(path))
                 File.Delete(path);
 
@@ -170,7 +170,7 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
             if (!File.Exists(path))
                 return;
 
@@ -197,7 +197,7 @@ namespace Celeste.Mod {
             _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _Session.Index = index;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
             if (!File.Exists(path))
                 return;
 
@@ -223,7 +223,7 @@ namespace Celeste.Mod {
             if (SessionType == null)
                 return;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
             if (File.Exists(path))
                 File.Delete(path);
 
@@ -251,7 +251,7 @@ namespace Celeste.Mod {
             if (SessionType == null)
                 return;
 
-            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
             if (!File.Exists(path))
                 return;
 

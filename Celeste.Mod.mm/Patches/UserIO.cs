@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
@@ -21,9 +22,11 @@ namespace Celeste {
         [MonoModIgnore]
         public static bool Saving { get; private set; }
 
-        public static extern string orig_GetSavePath(string dir);
-        [MonoModPublic]
-        public static string GetSavePath(string dir) {
+        [MonoModIgnore]
+        private static readonly string SavePath;
+
+        private static extern string orig_GetSavePath(string dir);
+        private static string GetSavePath(string dir) {
             string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
             if (!string.IsNullOrEmpty(env))
                 return Path.Combine(env, dir);
@@ -34,6 +37,12 @@ namespace Celeste {
                 return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dir);
             }
         }
+
+        [MonoModIgnore]
+        private static extern string GetHandle(string name);
+
+        public static string GetSaveFilePath(string name = null)
+            => string.IsNullOrEmpty(name) ? SavePath : GetHandle(name);
 
         [MonoModIgnore]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
