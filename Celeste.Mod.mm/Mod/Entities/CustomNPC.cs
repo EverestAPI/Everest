@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Monocle;
 
 namespace Celeste.Mod.Entities {
+    [CustomEntity("everest/npc")]
     public class CustomNPC : NPC {
         private string spritePath;
         private float spriteRate;

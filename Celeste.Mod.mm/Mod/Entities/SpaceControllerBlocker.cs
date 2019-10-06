@@ -12,6 +12,7 @@ namespace Celeste.Mod.Entities {
     /// <summary>
     /// Semi-internal entity that removes any existing SpaceControllers.
     /// </summary>
+    [CustomEntity("everest/spaceControllerBlocker")]
     public class SpaceControllerBlocker : Entity {
 
         public override void Added(Scene scene) {

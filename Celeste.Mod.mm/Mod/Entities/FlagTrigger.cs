@@ -20,6 +20,7 @@ namespace Celeste.Mod.Entities {
     /// - `int death_count` (default: `-1`)
     /// </summary>
     [Tracked]
+    [CustomEntity("everest/flagTrigger")]
     public class FlagTrigger : Trigger {
 
         private string flag;

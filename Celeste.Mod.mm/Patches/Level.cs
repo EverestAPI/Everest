@@ -16,6 +16,7 @@ using System.Collections;
 using System.Linq;
 using Celeste.Mod.Meta;
 using MonoMod.Utils;
+using System.Collections.Generic;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -27,6 +28,9 @@ namespace Celeste {
         public SubHudRenderer SubHudRenderer;
         public static Player NextLoadedPlayer;
         public static int SkipScreenWipes;
+
+        public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
+        public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
 
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
@@ -190,70 +194,16 @@ namespace Celeste {
             if (Everest.Events.Level.LoadEntity(level, levelData, offset, entityData))
                 return true;
 
-            // Everest comes with a few core utility entities out of the box.
+            if (EntityLoaders.TryGetValue(entityData.Name, out EntityLoader loader)) {
+                Entity loaded = loader(level, levelData, offset, entityData);
+                if (loaded != null) {
+                    level.Add(loaded);
+                    return true;
+                }
+            }
 
             if (entityData.Name == "everest/spaceController") {
                 level.Add(new SpaceController());
-                return true;
-            }
-            if (entityData.Name == "everest/spaceControllerBlocker") {
-                level.Add(new SpaceControllerBlocker());
-                return true;
-            }
-
-            if (entityData.Name == "everest/flagTrigger") {
-                level.Add(new FlagTrigger(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/changeInventoryTrigger") {
-                level.Add(new ChangeInventoryTrigger(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/coreMessage") {
-                level.Add(new CustomCoreMessage(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/memorial") {
-                level.Add(new CustomMemorial(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/npc") {
-                level.Add(new CustomNPC(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
-                return true;
-            }
-
-            if (entityData.Name == "everest/dialogTrigger" ||
-                entityData.Name == "dialog/dialogtrigger" ||
-                entityData.Name == "cavern/dialogtrigger") {
-                level.Add(new DialogCutsceneTrigger(entityData, offset, new EntityID(levelData.Name, entityData.ID)));
-                return true;
-            }
-
-            if (entityData.Name == "everest/crystalShatterTrigger" ||
-                entityData.Name == "outback/destroycrystalstrigger") {
-                level.Add(new CrystalShatterTrigger(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/completeAreaTrigger" ||
-                entityData.Name == "outback/completeareatrigger") {
-                level.Add(new CompleteAreaTrigger(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/lavaBlockerTrigger" ||
-                entityData.Name == "cavern/lavablockertrigger") {
-                level.Add(new LavaBlockerTrigger(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "everest/coreModeTrigger" ||
-                entityData.Name == "cavern/coremodetrigger") {
-                level.Add(new CoreModeTrigger(entityData, offset));
                 return true;
             }
 
@@ -322,28 +272,6 @@ namespace Celeste {
                 // Workaround for mod levels with old versions of Ahorn containing a checkpoint at (0, 0):
                 // Create the checkpoint and avoid the start position update in orig_Load.
                 level.Add(new Checkpoint(entityData, offset));
-                return true;
-            }
-
-            if (entityData.Name == "triggerSpikesOriginalUp") {
-                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Up));
-                return true;
-            }
-            if (entityData.Name == "triggerSpikesOriginalDown") {
-                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Down));
-                return true;
-            }
-            if (entityData.Name == "triggerSpikesOriginalLeft") {
-                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Left));
-                return true;
-            }
-            if (entityData.Name == "triggerSpikesOriginalRight") {
-                level.Add(new TriggerSpikesOriginal(entityData, offset, TriggerSpikesOriginal.Directions.Right));
-                return true;
-            }
-
-            if (entityData.Name == "darkChaserEnd") {
-                level.Add(new BadelineOldsiteEnd(entityData, offset));
                 return true;
             }
 

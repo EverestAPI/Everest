@@ -5,6 +5,8 @@ using Monocle;
 using MonoMod.Utils;
 
 namespace Celeste.Mod.Entities {
+    [CustomEntity("everest/lavaBlockerTrigger")]
+    [CustomEntity("cavern/lavablockertrigger")]
     public class LavaBlockerTrigger : Trigger {
         List<DynData<RisingLava>> risingLavas;
         List<DynData<SandwichLava>> sandwichLavas;

@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
+    [CustomEntity("everest/changeInventoryTrigger")]
     public class ChangeInventoryTrigger : Trigger {
         private PlayerInventory inventory;
 

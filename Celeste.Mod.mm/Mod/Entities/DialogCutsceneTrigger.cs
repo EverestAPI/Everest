@@ -1,6 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.Entities {
+    [CustomEntity("everest/dialogTrigger")]
+    [CustomEntity("dialog/dialogtrigger")]
+    [CustomEntity("cavern/dialogTrigger")]
     public class DialogCutsceneTrigger : Trigger {
 
         private string dialogEntry;

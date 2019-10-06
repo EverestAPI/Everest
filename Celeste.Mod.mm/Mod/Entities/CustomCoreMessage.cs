@@ -15,6 +15,7 @@ namespace Celeste.Mod.Entities {
     /// Checks for the following new attributes:
     /// - `string dialog` (default: `app_ending`)
     /// </summary>
+    [CustomEntity("everest/coreMessage")]
     public class CustomCoreMessage : Entity {
 
         private string text;

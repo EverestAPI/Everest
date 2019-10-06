@@ -14,7 +14,20 @@ namespace Celeste.Mod.Entities {
     /// 
     /// TriggerSpikes with the original spike graphics.
     /// </summary>
+    [CustomEntity("triggerSpikesOriginalUp", "LoadUp")]
+    [CustomEntity("triggerSpikesOriginalDown", "LoadDown")]
+    [CustomEntity("triggerSpikesOriginalLeft", "LoadLeft")]
+    [CustomEntity("triggerSpikesOriginalRight", "LoadRight")]
     public class TriggerSpikesOriginal : Entity {
+
+        public static Entity LoadUp(Level level, LevelData levelData, Vector2 offset, EntityData entityData)
+            => new TriggerSpikesOriginal(entityData, offset, Directions.Up);
+        public static Entity LoadDown(Level level, LevelData levelData, Vector2 offset, EntityData entityData)
+            => new TriggerSpikesOriginal(entityData, offset, Directions.Down);
+        public static Entity LoadLeft(Level level, LevelData levelData, Vector2 offset, EntityData entityData)
+            => new TriggerSpikesOriginal(entityData, offset, Directions.Left);
+        public static Entity LoadRight(Level level, LevelData levelData, Vector2 offset, EntityData entityData)
+            => new TriggerSpikesOriginal(entityData, offset, Directions.Right);
 
         private const float RetractTime = 6f;
         private const float DelayTime = 0.4f;

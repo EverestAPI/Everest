@@ -16,6 +16,7 @@ namespace Celeste.Mod.Entities {
     /// - `string dialog` (default: `memorial`)
     /// - `string sprite` (default: `scenery/memorial/memorial`)
     /// </summary>
+    [CustomEntity("everest/memorial")]
     public class CustomMemorial : Entity {
 
         private Image sprite;
