@@ -80,9 +80,10 @@ namespace Celeste.Mod {
         public static string PathGame { get; internal set; }
 
         /// <summary>
-        /// The path to the Everest /ModSettings directory.
+        /// The path to the Celeste /Saves directory.
         /// </summary>
-        public static string PathSettings { get; internal set; }
+        [Obsolete("Use UserIO.GetSavePath(\"Saves\") instead.")]
+        public static string PathSettings => patch_UserIO.GetSavePath("Saves");
         /// <summary>
         /// Whether XDG paths should be used.
         /// </summary>
@@ -274,8 +275,6 @@ namespace Celeste.Mod {
                 Directory.CreateDirectory(PathEverest = Path.Combine(dataDir, "Everest"));
                 Directory.CreateDirectory(Path.Combine(dataDir, "Everest", "Mods")); // Make sure it exists before content gets initialized
             }
-            PathSettings = Path.Combine(PathEverest, "ModSettings");
-            Directory.CreateDirectory(PathSettings);
 
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();

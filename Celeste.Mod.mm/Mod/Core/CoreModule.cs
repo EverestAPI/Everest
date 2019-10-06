@@ -33,6 +33,9 @@ namespace Celeste.Mod.Core {
         public override Type SaveDataType => typeof(CoreModuleSaveData);
         public static CoreModuleSaveData SaveData => (CoreModuleSaveData) Instance._SaveData;
 
+        public override Type SessionType => typeof(CoreModuleSession);
+        public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
+
         public CoreModule() {
             Instance = this;
 

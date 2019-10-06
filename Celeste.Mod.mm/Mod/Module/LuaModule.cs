@@ -19,6 +19,7 @@ namespace Celeste.Mod {
 
         public override Type SettingsType => null;
         public override Type SaveDataType => null;
+        public override Type SessionType => null;
 
         public LuaModule(EverestModuleMetadata metadata) {
             Metadata = metadata;

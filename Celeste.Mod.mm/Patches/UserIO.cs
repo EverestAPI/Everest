@@ -21,8 +21,9 @@ namespace Celeste {
         [MonoModIgnore]
         public static bool Saving { get; private set; }
 
-        private static extern string orig_GetSavePath(string dir);
-        private static string GetSavePath(string dir) {
+        public static extern string orig_GetSavePath(string dir);
+        [MonoModPublic]
+        public static string GetSavePath(string dir) {
             string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
             if (!string.IsNullOrEmpty(env))
                 return Path.Combine(env, dir);

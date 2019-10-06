@@ -40,7 +40,7 @@ namespace Celeste.Mod {
         public virtual EverestModuleSettings _Settings { get; set; }
 
         /// <summary>
-        /// Load the mod settings. Loads the settings from {Everest.PathSettings}/{Metadata.Name}.yaml by default.
+        /// Load the mod settings. Loads the settings from {UserIO.GetSavePath("Saves")}/modsettings-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void LoadSettings() {
             if (SettingsType == null)
@@ -48,25 +48,18 @@ namespace Celeste.Mod {
 
             _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
 
-            string extension = ".yaml";
-            if (_Settings is EverestModuleBinarySettings)
-                extension = ".bin";
-
-            string path = Path.Combine(Everest.PathSettings, Metadata.Name + extension);
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), "modsettings-" + Metadata.Name + ".celeste");
             if (!File.Exists(path))
                 return;
 
             try {
                 using (Stream stream = File.OpenRead(path)) {
                     if (_Settings is EverestModuleBinarySettings) {
-                        // .bin
                         using (BinaryReader reader = new BinaryReader(stream))
                             ((EverestModuleBinarySettings) _Settings).Read(reader);
                     } else {
-                        // .yaml
-                        using (StreamReader reader = new StreamReader(path)) {
+                        using (StreamReader reader = new StreamReader(path))
                             _Settings = (EverestModuleSettings) YamlHelper.Deserializer.Deserialize(reader, SettingsType);
-                        }
                     }
                 }
             } catch {
@@ -77,32 +70,30 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Save the mod settings. Saves the settings to {Everest.PathSettings}/{Metadata.Name}.yaml by default.
+        /// Save the mod settings. Saves the settings to {UserIO.GetSavePath("Saves")}/modsettings-{Metadata.Name}.yaml by default.
         /// </summary>
         public virtual void SaveSettings() {
             if (SettingsType == null || _Settings == null)
                 return;
 
-            string extension = ".yaml";
-            if (_Settings is EverestModuleBinarySettings)
-                extension = ".bin";
-
-            string path = Path.Combine(Everest.PathSettings, Metadata.Name + extension);
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), "modsettings-" + Metadata.Name + ".celeste");
             if (File.Exists(path))
                 File.Delete(path);
 
-            using (Stream stream = File.OpenWrite(path)) {
-                if (_Settings is EverestModuleBinarySettings) {
-                    // .bin
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                        ((EverestModuleBinarySettings) _Settings).Write(writer);
-                } else {
-                    // .yaml
-                    using (StreamWriter writer = new StreamWriter(stream))
-                        YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
-                }
-            }
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
 
+            try {
+                using (Stream stream = File.OpenWrite(path)) {
+                    if (_Settings is EverestModuleBinarySettings) {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                            ((EverestModuleBinarySettings) _Settings).Write(writer);
+                    } else {
+                        using (StreamWriter writer = new StreamWriter(stream))
+                            YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
+                    }
+                }
+            } catch {
+            }
         }
 
         /// <summary>
@@ -116,7 +107,7 @@ namespace Celeste.Mod {
         public virtual EverestModuleSaveData _SaveData { get; set; }
 
         /// <summary>
-        /// Load the mod save data. Loads the save data from {Everest.PathSettings}/Save{index}/{Metadata.Name}.yaml by default.
+        /// Load the mod save data. Loads the save data from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void LoadSaveData(int index) {
             if (SaveDataType == null)
@@ -125,26 +116,47 @@ namespace Celeste.Mod {
             _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _SaveData.Index = index;
 
-            string extension = ".yaml";
-            if (_SaveData is EverestModuleBinarySaveData)
-                extension = ".bin";
-
-            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + extension);
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
             if (!File.Exists(path))
                 return;
 
             try {
                 using (Stream stream = File.OpenRead(path)) {
                     if (_SaveData is EverestModuleBinarySaveData) {
-                        // .bin
                         using (BinaryReader reader = new BinaryReader(stream))
                             ((EverestModuleBinarySaveData) _SaveData).Read(reader);
                     } else {
-                        // .yaml
-                        using (StreamReader reader = new StreamReader(path)) {
+                        using (StreamReader reader = new StreamReader(path))
                             _SaveData = (EverestModuleSaveData) YamlHelper.Deserializer.Deserialize(reader, SaveDataType);
-                            _SaveData.Index = index;
-                        }
+                    }
+                }
+                _SaveData.Index = index;
+            } catch {
+            }
+
+        }
+
+        /// <summary>
+        /// Save the mod save data. Saves the save data to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual void SaveSaveData(int index) {
+            if (SaveDataType == null)
+                return;
+
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
+            if (File.Exists(path))
+                File.Delete(path);
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            try {
+                using (Stream stream = File.OpenWrite(path)) {
+                    if (_SaveData is EverestModuleBinarySaveData) {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                            ((EverestModuleBinarySaveData) _SaveData).Write(writer);
+                    } else {
+                        using (StreamWriter writer = new StreamWriter(stream))
+                            YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
                     }
                 }
             } catch {
@@ -152,18 +164,98 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Save the mod save data. Saves the save data to {Everest.PathSettings}/Save{index}/{Metadata.Name}.yaml by default.
+        /// Delete the mod save data. Deletes the save data at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
-        public virtual void SaveSaveData(int index) {
+        public virtual void DeleteSaveData(int index) {
             if (SaveDataType == null)
                 return;
-            string path = Path.Combine(Everest.PathSettings, "Save" + index, Metadata.Name + ".yaml");
+
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name + ".celeste");
+            if (!File.Exists(path))
+                return;
+
+            File.Delete(path);
+        }
+
+        /// <summary>
+        /// The type used for the session object. Used for serialization, among other things.
+        /// </summary>
+        public virtual Type SessionType => null;
+        /// <summary>
+        /// Any save data stored for the current session.
+        /// Define your custom property returning _Session typecasted as your custom session type.
+        /// </summary>
+        public virtual EverestModuleSession _Session { get; set; }
+
+        /// <summary>
+        /// Load the mod session. Loads the session from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual void LoadSession(int index) {
+            if (SessionType == null)
+                return;
+
+            _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Session.Index = index;
+
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
+            if (!File.Exists(path))
+                return;
+
+            try {
+                using (Stream stream = File.OpenRead(path)) {
+                    if (_Session is EverestModuleBinarySession) {
+                        using (BinaryReader reader = new BinaryReader(stream))
+                            ((EverestModuleBinarySession) _Session).Read(reader);
+                    } else {
+                        using (StreamReader reader = new StreamReader(path))
+                            _Session = (EverestModuleSession) YamlHelper.Deserializer.Deserialize(reader, SessionType);
+                    }
+                }
+                _Session.Index = index;
+            } catch {
+            }
+        }
+
+        /// <summary>
+        /// Save the mod session. Saves the session to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual void SaveSession(int index) {
+            if (SessionType == null)
+                return;
+
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
             if (File.Exists(path))
                 File.Delete(path);
+
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            using (Stream stream = File.OpenWrite(path))
-            using (StreamWriter writer = new StreamWriter(stream))
-                YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
+
+            try {
+                using (Stream stream = File.OpenWrite(path)) {
+                    if (_Session is EverestModuleBinarySession) {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                            ((EverestModuleBinarySession) _Session).Write(writer);
+                    } else {
+                        using (StreamWriter writer = new StreamWriter(stream))
+                            YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
+                    }
+                }
+            } catch {
+            }
+        }
+
+        /// <summary>
+        /// Delete the mod session. Deletes the session at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        /// <param name="index"></param>
+        public virtual void DeleteSession(int index) {
+            if (SessionType == null)
+                return;
+
+            string path = Path.Combine(patch_UserIO.GetSavePath("Saves"), patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name + ".celeste");
+            if (!File.Exists(path))
+                return;
+
+            File.Delete(path);
         }
 
         /// <summary>

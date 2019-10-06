@@ -200,7 +200,29 @@ namespace Celeste {
             }
         }
 
+        public static extern void orig_Start(SaveData data, int slot);
+        public static new void Start(SaveData data, int slot) {
+            orig_Start(data, slot);
+
+            foreach (EverestModule mod in Everest._Modules)
+                mod.LoadSaveData(slot);
+        }
+
+        public static extern bool orig_TryDelete(int slot);
+        public static new bool TryDelete(int slot) {
+            if (!orig_TryDelete(slot))
+                return false;
+
+            foreach (EverestModule mod in Everest._Modules) {
+                mod.DeleteSaveData(slot);
+                mod.DeleteSession(slot);
+            }
+
+            return true;
+        }
+
         [MonoModReplace]
+        [MonoModPublic]
         public static new string GetFilename(int slot) {
             if (slot == -1)
                 return "debug";
@@ -354,9 +376,6 @@ namespace Celeste {
                     }
                 }
             }
-
-            foreach (EverestModule mod in Everest._Modules)
-                mod.LoadSaveData(FileSlot);
         }
 
         public extern void orig_BeforeSave();
