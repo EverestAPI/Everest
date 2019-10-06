@@ -211,7 +211,7 @@ namespace Celeste.Mod.Meta {
                 if (!string.IsNullOrEmpty(Portraits))
                     meta.Portraits = Portraits;
 
-                if ((Modes?.Length ?? 0) != 0)
+                if ((Modes?.Length ?? 0) != 0 && Modes.Any(mode => mode != null))
                     meta.Modes = Modes;
 
                 if (Mountain != null)
