@@ -204,8 +204,10 @@ namespace Celeste {
         public static new void Start(SaveData data, int slot) {
             orig_Start(data, slot);
 
-            foreach (EverestModule mod in Everest._Modules)
+            foreach (EverestModule mod in Everest._Modules) {
                 mod.LoadSaveData(slot);
+                mod.LoadSession(slot, false);
+            }
         }
 
         public static extern bool orig_TryDelete(int slot);
@@ -219,6 +221,19 @@ namespace Celeste {
             }
 
             return true;
+        }
+
+        public extern void orig_StartSession(Session session);
+        public new void StartSession(Session session) {
+            Session sessionPrev = CurrentSession;
+
+            orig_StartSession(session);
+
+            if (sessionPrev != session) {
+                foreach (EverestModule mod in Everest._Modules) {
+                    mod.LoadSession(FileSlot, true);
+                }
+            }
         }
 
         [MonoModReplace]
@@ -388,8 +403,10 @@ namespace Celeste {
 
             orig_BeforeSave();
 
-            foreach (EverestModule mod in Everest._Modules)
+            foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
+                mod.SaveSession(FileSlot);
+            }
         }
 
         public LevelSetStats GetLevelSetStatsFor(string name)

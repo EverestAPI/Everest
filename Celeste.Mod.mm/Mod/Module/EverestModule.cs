@@ -190,12 +190,15 @@ namespace Celeste.Mod {
         /// <summary>
         /// Load the mod session. Loads the session from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
         /// </summary>
-        public virtual void LoadSession(int index) {
+        public virtual void LoadSession(int index, bool forceNew) {
             if (SessionType == null)
                 return;
 
             _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _Session.Index = index;
+
+            if (forceNew)
+                return;
 
             string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
             if (!File.Exists(path))
