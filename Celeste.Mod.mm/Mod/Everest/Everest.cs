@@ -275,6 +275,15 @@ namespace Celeste.Mod {
                 Directory.CreateDirectory(Path.Combine(dataDir, "Everest", "Mods")); // Make sure it exists before content gets initialized
             }
 
+            // Old versions of Everest have used a separate ModSettings folder.
+            string modSettingsOld = Path.Combine(PathEverest, "ModSettings");
+            string modSettingsRIP = Path.Combine(PathEverest, "ModSettings-OBSOLETE");
+            if (Directory.Exists(modSettingsOld) || Directory.Exists(modSettingsRIP)) {
+                Logger.Log(LogLevel.Warn, "core", "THE ModSettings FOLDER IS OBSOLETE AND WILL NO LONGER BE USED!");
+                if (Directory.Exists(modSettingsOld) && !Directory.Exists(modSettingsRIP))
+                    Directory.Move(modSettingsOld, modSettingsRIP);
+            }
+
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
