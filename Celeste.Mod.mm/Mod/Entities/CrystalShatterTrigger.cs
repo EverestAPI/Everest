@@ -8,8 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
-    [CustomEntity("everest/crystalShatterTrigger")]
-    [CustomEntity("outback/destroycrystalstrigger")]
+    [CustomEntity("everest/crystalShatterTrigger", "outback/destroycrystalstrigger")]
     public class CrystalShatterTrigger : Trigger {
 
         private Modes mode;

@@ -14,10 +14,12 @@ namespace Celeste.Mod.Entities {
     /// 
     /// TriggerSpikes with the original spike graphics.
     /// </summary>
-    [CustomEntity("triggerSpikesOriginalUp", "LoadUp")]
-    [CustomEntity("triggerSpikesOriginalDown", "LoadDown")]
-    [CustomEntity("triggerSpikesOriginalLeft", "LoadLeft")]
-    [CustomEntity("triggerSpikesOriginalRight", "LoadRight")]
+    [CustomEntity(
+        "triggerSpikesOriginalUp = LoadUp",
+        "triggerSpikesOriginalDown = LoadDown",
+        "triggerSpikesOriginalLeft = LoadLeft",
+        "triggerSpikesOriginalRight = LoadRight"
+    )]
     public class TriggerSpikesOriginal : Entity {
 
         public static Entity LoadUp(Level level, LevelData levelData, Vector2 offset, EntityData entityData)

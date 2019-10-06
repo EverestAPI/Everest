@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 
 namespace Celeste.Mod.Entities {
-    [CustomEntity("everest/coreModeTrigger")]
-    [CustomEntity("cavern/coremodetrigger")]
+    [CustomEntity("everest/coreModeTrigger", "cavern/coremodetrigger")]
     public class CoreModeTrigger : Trigger {
         private readonly Session.CoreModes mode;
 

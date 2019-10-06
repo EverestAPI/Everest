@@ -9,18 +9,12 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
-    [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class CustomEntityAttribute : Attribute {
-        public string ID;
-        public string Generator;
+        public string[] IDs;
 
-        public CustomEntityAttribute(string id)
-            : this(id, "Load") {
-        }
-
-        public CustomEntityAttribute(string id, string generator) {
-            ID = id;
-            Generator = generator;
+        public CustomEntityAttribute(params string[] ids) {
+            IDs = ids;
         }
     }
 }

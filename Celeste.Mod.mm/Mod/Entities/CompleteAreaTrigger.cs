@@ -8,8 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
-    [CustomEntity("everest/completeAreaTrigger")]
-    [CustomEntity("outback/completeareatrigger")]
+    [CustomEntity("everest/completeAreaTrigger", "outback/completeareatrigger")]
     public class CompleteAreaTrigger : Trigger {
 
         public CompleteAreaTrigger(EntityData data, Vector2 offset)
