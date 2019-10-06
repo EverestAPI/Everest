@@ -82,7 +82,6 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path to the Celeste /Saves directory.
         /// </summary>
-        [Obsolete("Use UserIO.GetSaveFilePath() instead.")]
         public static string PathSettings => patch_UserIO.GetSaveFilePath();
         /// <summary>
         /// Whether XDG paths should be used.

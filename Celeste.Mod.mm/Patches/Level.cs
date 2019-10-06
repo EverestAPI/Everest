@@ -105,6 +105,12 @@ namespace Celeste {
             }
 
             Player player = Tracker.GetEntity<Player>();
+            // No player? No problem!
+            if (player == null) {
+                while (orig.MoveNext())
+                    yield return orig.Current;
+                yield break;
+            }
 
             Vector2 playerPos = player.Position;
             DateTime playerStuck = DateTime.UtcNow;
