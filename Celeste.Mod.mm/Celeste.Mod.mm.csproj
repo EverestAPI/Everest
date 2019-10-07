@@ -345,6 +345,9 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\langnoicon.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\langnoicon.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\reloader\cogwheel.png">
       <LogicalName>Content\Graphics\Atlases\Gui\reloader\cogwheel.png</LogicalName>
     </EmbeddedResource>

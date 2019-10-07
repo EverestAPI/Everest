@@ -19,22 +19,49 @@ namespace Celeste {
         private static Language FallbackLanguage;
 
         public static extern void orig_Load();
+        [PatchDialogLoader]
         public static void Load() {
             orig_Load();
-            RemoveDummies();
+            PostLanguageLoad();
         }
 
-        public static void RemoveDummies() {
+        private static string[] _GetFiles(string root, string searchPattern, SearchOption searchOption) {
+            return
+                Directory.GetFiles(root, searchPattern, searchOption)
+                .Select(f => f.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/'))
+                .Union(
+                    Everest.Content.Map.Values
+                    .Where(a => a.Type == typeof(AssetTypeDialog) || a.Type == typeof(AssetTypeDialogExport))
+                    .Select(a => Path.ChangeExtension(a.PathVirtual, "txt"))
+                ).Select(f => Path.Combine(Everest.Content.PathContentOrig, f.Replace('/', Path.DirectorySeparatorChar)))
+                .ToArray();
+        }
+
+        public static void PostLanguageLoad() {
             HashSet<string> dummies = new HashSet<string>();
-            foreach (Language lang in Dialog.Languages.Values)
-                if (lang.Dialog.Count == 0 || string.IsNullOrEmpty(lang.Label))
+
+            foreach (Language lang in Dialog.Languages.Values) {
+                if (lang.Dialog.Count == 0) {
                     dummies.Add(lang.Id);
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(lang.FontFace)) {
+                    lang.FontFace = "Renogare";
+                    lang.FontFaceSize = 64;
+                }
+
+                if (lang.Icon == null) {
+                    lang.Icon = new MTexture(VirtualContent.CreateTexture(Path.Combine("Graphics", "Atlases", "Gui", "menu", "langnoicon")));
+                }
+            }
+
             foreach (string id in dummies)
                 Dialog.Languages.Remove(id);
         }
 
         public static void RefreshLanguages() {
-            RemoveDummies();
+            PostLanguageLoad();
 
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
 
@@ -52,11 +79,7 @@ namespace Celeste {
             Language lang = orig_LoadLanguage(filename);
             patch_Language.LoadingLanguage = null;
 
-            if (lang == null)
-                return null;
-
-            lang?.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
-            lang?.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+            Dialog.Languages.Remove(lang.Id);
 
             if (lang?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
                 FallbackLanguage = lang;
@@ -71,12 +94,22 @@ namespace Celeste {
             }
 
             Language filler = patch_Language.LoadingLanguage = new Language();
-            foreach (KeyValuePair<string, string> kvp in lang.Dialog)
-                filler.Dialog[kvp.Key] = kvp.Value;
+            if (lang != null) {
+                foreach (KeyValuePair<string, string> kvp in lang.Dialog)
+                    filler.Dialog[kvp.Key] = kvp.Value;
+            }
             patch_Language.LoadOrigLanguage = false;
             patch_Language.LoadModLanguage = true;
             lang = MergeLanguages(lang, Language.FromTxt(filename));
             patch_Language.LoadingLanguage = null;
+
+            if (lang != null) {
+                lang.Dialog.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+                lang.Cleaned.Remove("EVEREST_SPLIT_BETWEEN_FILES");
+
+                if (lang.Dialog.Count > 0)
+                    Dialog.Languages[lang.Id] = lang;
+            }
 
             return lang;
         }
@@ -84,6 +117,20 @@ namespace Celeste {
         private static Language MergeLanguages(Language orig, Language mod) {
             if (orig == null)
                 return mod;
+
+            if (string.IsNullOrEmpty(orig.Label) && string.IsNullOrEmpty(orig.IconPath)) {
+                orig.Id = mod.Id;
+                orig.FontFace = mod.FontFace;
+                orig.FontFaceSize = mod.FontFaceSize;
+                orig.FilePath = mod.FilePath;
+                orig.Label = mod.Label;
+                orig.IconPath = mod.IconPath;
+                orig.Icon = mod.Icon;
+                orig.Order = mod.Order;
+                orig.SplitRegex = mod.SplitRegex;
+                orig.CommaCharacters = mod.CommaCharacters;
+                orig.PeriodCharacters = mod.PeriodCharacters;
+            }
 
             foreach (KeyValuePair<string, string> kvp in mod.Dialog)
                 orig.Dialog[kvp.Key] = kvp.Value;

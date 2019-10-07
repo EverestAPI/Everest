@@ -95,6 +95,12 @@ namespace MonoMod {
     class PatchRainFGRenderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Dialog.Load method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchDialogLoader")]
+    class PatchDialogLoaderAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLoadLanguage")]
@@ -989,6 +995,25 @@ namespace MonoMod {
                     // Replace the method call.
                     instr.Operand = m_GetColor;
                     instri++;
+                }
+            }
+        }
+
+        public static void PatchDialogLoader(MethodDefinition method, CustomAttribute attrib) {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+
+            MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
+            if (m_GetFiles == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.String[] System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)") {
+                    instr.Operand = m_GetFiles;
                 }
             }
         }
