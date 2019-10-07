@@ -318,6 +318,10 @@ namespace Celeste.Mod {
                 Name = "DialogCutscene",
                 VersionString = "1.0.0"
             }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "UpdateChecker",
+                VersionString = "1.0.2"
+            }).Register();
 
             LuaLoader.Initialize();
 
