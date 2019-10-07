@@ -129,7 +129,13 @@ namespace Celeste.Mod {
                     Player player = level.Tracker?.GetEntity<Player>();
                     if (player != null) {
                         patch_Level.SkipScreenWipes++;
+
                         patch_Level.NextLoadedPlayer = player;
+
+                        player.Remove(player.Light);
+                        VertexLight light = player.Light;
+                        player.Add(light = player.Light = new VertexLight(light.Position, light.Color, light.Alpha, (int) light.StartRadius, (int) light.EndRadius));
+
                         ((patch_Player) player).OverrideIntroType = Player.IntroTypes.Transition;
                     }
 
