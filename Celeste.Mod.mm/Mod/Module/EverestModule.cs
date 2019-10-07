@@ -49,6 +49,11 @@ namespace Celeste.Mod {
             _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
 
             string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
+
+            // Temporary fallback to help migrate settings from their old location.
+            if (!File.Exists(path))
+                path = Path.Combine(Everest.PathEverest, "ModSettings-OBSOLETE", Metadata.Name + ".yaml");
+
             if (!File.Exists(path))
                 return;
 
