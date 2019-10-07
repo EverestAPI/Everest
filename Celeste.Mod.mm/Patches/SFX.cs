@@ -26,6 +26,16 @@ namespace Celeste {
             string result;
             if (byHandle.TryGetValue(handle, out result))
                 return result;
+
+            if (!Everest.Flags.IsDisabled) {
+                /* Vanilla chapter 3 has got an invalid ambience sound
+                 * handle in the reception room (introducing Oshiro).
+                 * It ends up being silent in vanilla Celeste.
+                 */
+                if (handle == "env_amb_03_interior_main")
+                    return EventnameByHandle("env_amb_03_interior");
+            }
+
             return handle;
         }
 
