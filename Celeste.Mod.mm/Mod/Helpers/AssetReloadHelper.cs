@@ -136,6 +136,8 @@ namespace Celeste.Mod {
                         VertexLight light = player.Light;
                         player.Add(light = player.Light = new VertexLight(light.Position, light.Color, light.Alpha, (int) light.StartRadius, (int) light.EndRadius));
 
+                        player.Leader.LoseFollowers();
+
                         ((patch_Player) player).OverrideIntroType = Player.IntroTypes.Transition;
                     }
 
