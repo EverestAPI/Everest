@@ -34,6 +34,7 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Download dependencies
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Version list
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug mode

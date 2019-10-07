@@ -129,6 +129,8 @@
     <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
+    <Compile Include="Mod\Helpers\ModUpdateInfo.cs" />
+    <Compile Include="Mod\Helpers\ModUpdaterHelper.cs" />
     <Compile Include="Mod\Helpers\QueuedTaskHelper.cs" />
     <Compile Include="Mod\Helpers\MainThreadHelper.cs" />
     <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
@@ -145,6 +147,7 @@
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\Helpers\EndUserException.cs" />
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
+    <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
     <Compile Include="Patches\MapEditor.cs" />
