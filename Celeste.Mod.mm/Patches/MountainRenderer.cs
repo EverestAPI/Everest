@@ -18,8 +18,26 @@ using Celeste.Mod.Meta;
 namespace Celeste {
     class patch_MountainRenderer : MountainRenderer {
 
+        [MonoModIgnore]
+        public new int Area { get; private set; }
+
         public float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {
             return EaseCamera(area, transform, duration, nearTarget, false);
+        }
+
+        public extern void orig_Update(Scene scene);
+        public override void Update(Scene scene) {
+            AreaData area = AreaData.Get(Area);
+            MapMeta meta = area.GetMeta();
+
+            if (meta?.Mountain?.ShowCore ?? false) {
+                Area = 9;
+                orig_Update(scene);
+                Area = area.ID;
+
+            } else {
+                orig_Update(scene);
+            }
         }
 
     }

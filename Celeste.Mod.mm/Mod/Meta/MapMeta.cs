@@ -429,6 +429,7 @@ namespace Celeste.Mod.Meta {
         public float[] Cursor { get; set; } = null;
         public int State { get; set; } = 0;
         public bool Rotate { get; set; } = false;
+        public bool ShowCore { get; set; } = false;
     }
     public class MapMetaMountainCamera {
         public float[] Position { get; set; }
