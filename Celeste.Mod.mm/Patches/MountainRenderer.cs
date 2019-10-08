@@ -27,8 +27,8 @@ namespace Celeste {
 
         public extern void orig_Update(Scene scene);
         public override void Update(Scene scene) {
-            AreaData area = AreaData.Get(Area);
-            MapMeta meta = area.GetMeta();
+            AreaData area = Area < (AreaData.Areas?.Count ?? 0) ? AreaData.Get(Area) : null;
+            MapMeta meta = area?.GetMeta();
 
             if (meta?.Mountain?.ShowCore ?? false) {
                 Area = 9;
