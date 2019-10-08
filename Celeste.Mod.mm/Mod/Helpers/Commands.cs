@@ -8,5 +8,12 @@ namespace Celeste.Mod.Helpers {
             Engine.Commands.Open = false;
         }
 
+        [Command("wipedebug", "wipes the debug save")]
+        public static void WipeDebug() {
+            SaveData.TryDelete(-1);
+            if (SaveData.Instance != null && SaveData.Instance.FileSlot == -1)
+                SaveData.InitializeDebugMode(true);
+        }
+
     }
 }
