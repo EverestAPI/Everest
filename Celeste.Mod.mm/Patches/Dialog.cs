@@ -38,11 +38,13 @@ namespace Celeste {
         }
 
         public static void PostLanguageLoad() {
-            HashSet<string> dummies = new HashSet<string>();
+            Language[] langs = Dialog.Languages.Values.Distinct().ToArray();
+            Dialog.Languages.Clear();
 
-            foreach (Language lang in Dialog.Languages.Values) {
-                if (lang.Dialog.Count == 0) {
-                    dummies.Add(lang.Id);
+            foreach (Language lang in langs) {
+                if (lang.Dialog.Count == 0 || (string.IsNullOrEmpty(lang.Label) && string.IsNullOrEmpty(lang.FontFace) && string.IsNullOrEmpty(lang.IconPath))) {
+                    if (lang.Icon != null)
+                        lang.Dispose();
                     continue;
                 }
 
@@ -54,21 +56,22 @@ namespace Celeste {
                 if (lang.Icon == null) {
                     lang.Icon = new MTexture(VirtualContent.CreateTexture(Path.Combine("Graphics", "Atlases", "Gui", "menu", "langnoicon")));
                 }
+
+                Dialog.Languages[lang.Id] = lang;
+                if (lang.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase))
+                    FallbackLanguage = lang;
             }
 
-            foreach (string id in dummies)
-                Dialog.Languages.Remove(id);
+            Dialog.OrderedLanguages = new List<Language>();
+            foreach (KeyValuePair<string, Language> keyValuePair in Dialog.Languages)
+                Dialog.OrderedLanguages.Add(keyValuePair.Value);
+            Dialog.OrderedLanguages.Sort((a, b) => a.Order != b.Order ? a.Order - b.Order : a.Id.CompareTo(b.Id));
         }
 
         public static void RefreshLanguages() {
             PostLanguageLoad();
 
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
-
-            Dialog.OrderedLanguages = new List<Language>();
-            foreach (KeyValuePair<string, Language> keyValuePair in Dialog.Languages)
-                Dialog.OrderedLanguages.Add(keyValuePair.Value);
-            Dialog.OrderedLanguages.Sort((a, b) => a.Order != b.Order ? a.Order - b.Order : a.Id.CompareTo(b.Id));
         }
 
         public static extern Language orig_LoadLanguage(string filename);
@@ -80,9 +83,6 @@ namespace Celeste {
             patch_Language.LoadingLanguage = null;
 
             Dialog.Languages.Remove(lang.Id);
-
-            if (lang?.Id.Equals("english", StringComparison.InvariantCultureIgnoreCase) ?? false)
-                FallbackLanguage = lang;
 
             string pathExp = filename.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/');
             foreach (ModAsset asset in
