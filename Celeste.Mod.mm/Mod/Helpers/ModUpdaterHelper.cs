@@ -16,7 +16,7 @@ namespace Celeste.Mod.Helpers {
             try {
                 string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl();
 
-                Logger.Log("OuiModUpdateList", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
+                Logger.Log("ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
                 using (WebClient wc = new WebClient()) {
                     string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
@@ -24,10 +24,10 @@ namespace Celeste.Mod.Helpers {
                     foreach (string name in updateCatalog.Keys) {
                         updateCatalog[name].Name = name;
                     }
-                    Logger.Log("OuiModUpdateList", $"Downloaded {updateCatalog.Count} item(s)");
+                    Logger.Log("ModUpdaterHelper", $"Downloaded {updateCatalog.Count} item(s)");
                 }
             } catch (Exception e) {
-                Logger.Log("OuiModUpdateList", $"Downloading database failed!");
+                Logger.Log("ModUpdaterHelper", $"Downloading database failed!");
                 Logger.LogDetailed(e);
             }
 
@@ -42,7 +42,7 @@ namespace Celeste.Mod.Helpers {
         public static void VerifyChecksum(ModUpdateInfo update, string filePath) {
             string actualHash = BitConverter.ToString(Everest.GetChecksum(filePath)).Replace("-", "").ToLowerInvariant();
             string expectedHash = update.xxHash[0];
-            Logger.Log("OuiModUpdateList", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
+            Logger.Log("ModUpdaterHelper", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
             if (expectedHash != actualHash) {
                 throw new IOException($"Checksum error: expected {expectedHash}, got {actualHash}");
             }
@@ -61,16 +61,16 @@ namespace Celeste.Mod.Helpers {
                 if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Mod.Name == mod.Name) {
                     ZipModContent modZip = content as ZipModContent;
 
-                    Logger.Log("OuiModUpdateList", $"Closing mod .zip: {modZip.Path}");
+                    Logger.Log("ModUpdaterHelper", $"Closing mod .zip: {modZip.Path}");
                     modZip.Dispose();
                 }
             }
 
             // delete the old zip, and move the new one.
-            Logger.Log("OuiModUpdateList", $"Deleting mod .zip: {mod.PathArchive}");
+            Logger.Log("ModUpdaterHelper", $"Deleting mod .zip: {mod.PathArchive}");
             File.Delete(mod.PathArchive);
 
-            Logger.Log("OuiModUpdateList", $"Moving {zipPath} to {mod.PathArchive}");
+            Logger.Log("ModUpdaterHelper", $"Moving {zipPath} to {mod.PathArchive}");
             File.Move(zipPath, mod.PathArchive);
         }
 
@@ -80,7 +80,7 @@ namespace Celeste.Mod.Helpers {
         /// </summary>
         private static string getModUpdaterDatabaseUrl() {
             using (WebClient wc = new WebClient()) {
-                Logger.Log("OuiModUpdateList", "Fetching mod updater database URL");
+                Logger.Log("ModUpdaterHelper", "Fetching mod updater database URL");
                 return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
             }
         }
