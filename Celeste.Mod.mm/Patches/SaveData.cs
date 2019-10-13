@@ -489,6 +489,25 @@ namespace Celeste {
         }
 
         [XmlIgnore]
+        public int MaxStrawberries {
+            get {
+                if (Name == "Celeste")
+                    return 175;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.DetectedStrawberries;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
         public int AreaOffset {
             get {
                 return AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
@@ -506,8 +525,10 @@ namespace Celeste {
                 } else {
                     maxHeartGems = 0;
                     for (int i = 0; i <= MaxArea; i++) {
-                        if (!AreaData.Areas[offset + i].Interlude) {
-                            maxHeartGems += 2;
+                        foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                            if (mode == null || mode.MapData.Area.Mode > AreaMode.BSide)
+                                continue;
+                            maxHeartGems += mode.MapData.DetectedHeartGem ? 1 : 0;
                         }
                     }
                 }
@@ -547,6 +568,22 @@ namespace Celeste {
         public int TotalHeartGems {
             get {
                 return AreasIncludingCeleste.Sum(area => area.Modes.Count(mode => mode?.HeartGem ?? false));
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxHeartGems {
+            get {
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.DetectedHeartGem ? 1 : 0;
+                    }
+                }
+                return count;
             }
         }
 

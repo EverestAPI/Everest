@@ -37,7 +37,18 @@ namespace Celeste {
             // This enables filtering the areas by the save data's current levelset.
             SaveData prev = SaveData.Instance;
             SaveData.Instance = data;
+
             orig_ctor(index, fileSelect, data);
+
+            LevelSetStats stats = data?.GetLevelSetStats();
+
+            if (stats != null) {
+                StrawberriesCounter strawbs = Strawberries;
+                strawbs.Amount = stats.TotalStrawberries;
+                strawbs.OutOf = stats.MaxStrawberries;
+                strawbs.ShowOutOf = stats.Name != "Celeste" || strawbs.OutOf <= 0;
+            }
+
             SaveData.Instance = prev;
         }
 
