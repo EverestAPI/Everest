@@ -142,7 +142,7 @@ namespace Celeste {
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
                 && Session.Area.Mode == AreaMode.CSide
-                && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && mapMeta.OverrideASideMeta
+                && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && (mapMeta.OverrideASideMeta ?? false)
                 && mapMeta.IntroType is Player.IntroTypes introType)
                 playerIntro = introType;
 

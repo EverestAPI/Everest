@@ -60,7 +60,8 @@ namespace Celeste.Mod.Meta {
         public string AnimatedTiles { get; set; }
         public string Sprites { get; set; }
         public string Portraits { get; set; }
-        public bool OverrideASideMeta { get; set; }
+
+        public bool? OverrideASideMeta { get; set; }
 
         public MapMetaModeProperties[] Modes { get; set; }
 
@@ -149,15 +150,9 @@ namespace Celeste.Mod.Meta {
 
             if (Dreaming != null)
                 area.Dreaming = Dreaming.Value;
+
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
-
-            ModeProperties[] modes = area.Mode;
-            area.Mode = Convert(Modes) ?? modes;
-            if (modes != null)
-                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
-                    if (area.Mode[i] == null)
-                        area.Mode[i] = modes[i];
 
             if (!string.IsNullOrEmpty(Wipe)) {
                 Type type = Assembly.GetEntryAssembly().GetType(Wipe);
@@ -191,11 +186,20 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
+            ModeProperties[] modes = area.Mode;
+            area.Mode = Convert(Modes) ?? modes;
+            if (modes != null)
+                for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
+                    if (area.Mode[i] == null)
+                        area.Mode[i] = modes[i];
+
             MapMeta meta = area.GetMeta();
             if (meta == null) {
                 area.SetMeta(this);
-            }
-            else {
+            } else {
+                if (!string.IsNullOrEmpty(PostcardSoundID))
+                    meta.PostcardSoundID = PostcardSoundID;
+
                 if (!string.IsNullOrEmpty(ForegroundTiles))
                     meta.ForegroundTiles = ForegroundTiles;
 
@@ -210,6 +214,9 @@ namespace Celeste.Mod.Meta {
 
                 if (!string.IsNullOrEmpty(Portraits))
                     meta.Portraits = Portraits;
+
+                if (OverrideASideMeta != null)
+                    meta.OverrideASideMeta = OverrideASideMeta;
 
                 if ((Modes?.Length ?? 0) != 0 && Modes.Any(mode => mode != null))
                     meta.Modes = Modes;

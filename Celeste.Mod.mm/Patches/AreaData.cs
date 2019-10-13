@@ -533,7 +533,7 @@ namespace Celeste {
         /// </summary>
         public static MapMeta GetModeMeta(this AreaData self, AreaMode value) {
             if (self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta) {
-                if (value != AreaMode.Normal && mapMeta.OverrideASideMeta)
+                if (value != AreaMode.Normal && (mapMeta.OverrideASideMeta ?? false))
                     return mapMeta;
             }
             
@@ -553,7 +553,7 @@ namespace Celeste {
             if (!(self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta))
                 return;
             
-            if (!mapMeta.OverrideASideMeta) return;
+            if (!(mapMeta.OverrideASideMeta ?? false)) return;
 
             mapMeta.ApplyToForOverride(areaData);
         }
