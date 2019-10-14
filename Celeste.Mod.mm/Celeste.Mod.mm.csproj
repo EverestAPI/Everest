@@ -339,6 +339,9 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions_new.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions_new.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.png</LogicalName>
     </EmbeddedResource>

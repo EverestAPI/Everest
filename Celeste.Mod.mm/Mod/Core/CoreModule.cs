@@ -172,7 +172,7 @@ namespace Celeste.Mod.Core {
             else
                 index = buttons.Count - 1;
 
-            buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions", menu, Vector2.Zero, Vector2.Zero, () => {
+            buttons.Insert(index, new MainMenuSmallButton("menu_modoptions", "menu/modoptions_new", menu, Vector2.Zero, Vector2.Zero, () => {
                 Audio.Play(SFX.ui_main_button_select);
                 Audio.Play(SFX.ui_main_whoosh_large_in);
                 menu.Overworld.Goto<OuiModOptions>();
