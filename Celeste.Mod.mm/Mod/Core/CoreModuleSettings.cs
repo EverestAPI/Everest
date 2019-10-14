@@ -38,39 +38,7 @@ namespace Celeste.Mod.Core {
                     Engine.Commands.Enabled = false;
                 }
 
-                Overworld oui = Engine.Scene as Overworld;
-                if (oui != null) {
-                    oui.UIs.Remove(oui.GetUI<OuiTitleScreen>());
-                    Oui title = new OuiTitleScreen() {
-                        Visible = false
-                    };
-                    title.IsStart(oui, Overworld.StartMode.MainMenu);
-                    oui.Add(title);
-                    oui.UIs.Add(title);
-
-                    OuiMainMenu main = oui.GetUI<OuiMainMenu>();
-
-                    MenuButton selected = null;
-                    foreach (MenuButton button in main.GetButtons()) {
-                        if (!button.Selected)
-                            continue;
-                        selected = button;
-                        break;
-                    }
-
-                    main.CreateButtons();
-
-                    if (selected is MainMenuClimb) {
-                        foreach (MenuButton button in main.GetButtons()) {
-                            button.SetSelected(button is MainMenuClimb);
-                        }
-                    } else {
-                        string selectedLabel = (selected as MainMenuSmallButton)?.GetLabelName();
-                        foreach (MenuButton button in main.GetButtons()) {
-                            button.SetSelected((button as MainMenuSmallButton)?.GetLabelName() == selectedLabel);
-                        }
-                    }
-                }
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
             }
         }
 
@@ -120,6 +88,15 @@ namespace Celeste.Mod.Core {
         public bool DisableAntiSoftlock { get; set; } = false;
 
         public string InputGui { get; set; } = "";
+
+        private string _MainMenuMode = "";
+        public string MainMenuMode {
+            get => _MainMenuMode;
+            set {
+                _MainMenuMode = value;
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            }
+        }
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
@@ -177,6 +154,25 @@ namespace Celeste.Mod.Core {
                 .Change(i => {
                     InputGui = inputGuiPrefixes[i];
                     Input.OverrideInputPrefix = inputGuiPrefixes[i];
+                })
+            );
+        }
+
+        public void CreateMainMenuModeEntry(TextMenu menu, bool inGame) {
+            // TODO: Let mods register custom main menu modes?
+            List<string> types = new List<string>() {
+                "",
+                "rows"
+            };
+
+            menu.Add(
+                new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_mainmenumode"), i => {
+                    string prefix = types[i];
+                    string fullName = $"modoptions_coremodule_mainmenumode_{prefix.ToLowerInvariant()}";
+                    return fullName.DialogCleanOrNull() ?? prefix.ToUpperInvariant();
+                }, 0, types.Count - 1, Math.Max(0, types.IndexOf(MainMenuMode)))
+                .Change(i => {
+                    MainMenuMode = types[i];
                 })
             );
         }

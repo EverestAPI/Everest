@@ -143,6 +143,9 @@ namespace Celeste {
 
         [MonoModReplace]
         public static bool Has(string name, Language language = null) {
+            if (string.IsNullOrEmpty(name))
+                return true;
+
             name = name.DialogKeyify();
             if (language == null)
                 language = Dialog.Language;
@@ -158,6 +161,9 @@ namespace Celeste {
 
         [MonoModReplace]
         public static string Get(string name, Language language = null) {
+            if (string.IsNullOrEmpty(name))
+                return "";
+
             name = name.DialogKeyify();
             if (language == null)
                 language = Dialog.Language;
@@ -174,6 +180,9 @@ namespace Celeste {
 
         [MonoModReplace]
         public static string Clean(string name, Language language = null) {
+            if (string.IsNullOrEmpty(name))
+                return "";
+
             name = name.DialogKeyify();
             if (language == null)
                 language = Dialog.Language;
