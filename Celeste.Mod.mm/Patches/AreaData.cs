@@ -214,11 +214,11 @@ namespace Celeste {
                     area.ColorGrade = null;
 
                     area.Mode = new ModeProperties[] {
-                    new ModeProperties {
-                        Inventory = PlayerInventory.Default,
-                        AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
-                    }
-                };
+                        new ModeProperties {
+                            Inventory = PlayerInventory.Default,
+                            AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
+                        }
+                    };
 
                     area.Wipe = (Scene scene, bool wipeIn, Action onComplete)
                         => new AngledWipe(scene, wipeIn, onComplete);
@@ -321,7 +321,7 @@ namespace Celeste {
                     string otherName;
                     ParseName(other.Mode[0].Path, out otherOrder, out otherSide, out otherName);
 
-                    if (order == otherOrder && name == otherName && side != otherSide &&
+                    if (area.GetLevelSet() == other.GetLevelSet() && order == otherOrder && name == otherName && side != otherSide &&
                         !other.HasMode(side)) {
                         if (other.Mode[(int) side] == null)
                             other.Mode[(int) side] = new ModeProperties {
