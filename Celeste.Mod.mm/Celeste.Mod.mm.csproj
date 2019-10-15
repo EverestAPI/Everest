@@ -134,6 +134,7 @@
     <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
     <Compile Include="Mod\Helpers\AssetReloadHelper.cs" />
     <Compile Include="Mod\Helpers\XXHash.cs" />
+    <Compile Include="Mod\Helpers\LuaCoroutine.cs" />
     <Compile Include="Mod\Module\EverestModuleBinarySession.cs" />
     <Compile Include="Mod\Module\EverestModuleSession.cs" />
     <Compile Include="Mod\Module\LuaModule.cs" />

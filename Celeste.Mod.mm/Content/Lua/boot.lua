@@ -293,6 +293,33 @@ end
 setupVectorMarshallers("Color", { "R", "G", "B", "A" }, 4)
 
 
+-- Marshalling LuaCoroutine back to a thread would make it impossible to use one as IEnumerator in Lua.
+--[[
+marshalToLua["Celeste.Mod.LuaCoroutine"] = function(value)
+    return value.Proxy.value
+end
+--]]
+
+local function threadProxyResume(self, ...)
+    return coroutine.resume(self.value, ...)
+end
+marshalToSharp["Celeste.Mod.LuaCoroutine"] = function(value)
+    local proxy = { }
+    proxy.value = value
+    proxy.resume = threadProxyResume
+    return cs.Celeste.Mod.LuaCoroutine(proxy)
+end
+
+
+marshalToSharp["System.Collections.IEnumerator"] = function(value)
+    if type(value) == "thread" then
+        return marshalToSharp["Celeste.Mod.LuaCoroutine"](value)
+    end
+
+    return marshalToSharp["default"](value)
+end
+
+
 mtNamespace.__name = "csCachedNamespace"
 
 function mtNamespace:__index(key)
@@ -622,7 +649,7 @@ local function loaderCS(name)
         end
     end
 
-    return function () return found end
+    return function() return found end
 end
 
 table.insert(package.searchers, loaderCS)
