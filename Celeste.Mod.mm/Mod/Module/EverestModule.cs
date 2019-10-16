@@ -32,7 +32,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The type used for the settings object. Used for serialization, among other things.
         /// </summary>
-        public abstract Type SettingsType { get; }
+        public virtual Type SettingsType => null;
         /// <summary>
         /// Any settings stored across runs. Everest loads this before Load gets invoked.
         /// Define your custom property returning _Settings typecasted as your custom settings type.
