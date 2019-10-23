@@ -63,12 +63,8 @@ namespace Celeste.Mod {
                         using (BinaryReader reader = new BinaryReader(stream))
                             ((EverestModuleBinarySettings) _Settings).Read(reader);
                     } else {
-                        IDeserializer deserializer = new DeserializerBuilder()
-                            .IgnoreUnmatchedProperties()
-                            .WithObjectFactory(t => _Settings)
-                            .Build();
-                        using (StreamReader reader = new StreamReader(path))
-                            _Settings = (EverestModuleSettings) deserializer.Deserialize(reader, SettingsType);
+                        using (StreamReader reader = new StreamReader(stream))
+                            YamlHelper.DeserializerUsing(_Settings).Deserialize(reader, SettingsType);
                     }
                 }
             } catch {
@@ -135,12 +131,8 @@ namespace Celeste.Mod {
                         using (BinaryReader reader = new BinaryReader(stream))
                             ((EverestModuleBinarySaveData) _SaveData).Read(reader);
                     } else {
-                        IDeserializer deserializer = new DeserializerBuilder()
-                            .IgnoreUnmatchedProperties()
-                            .WithObjectFactory(t => _SaveData)
-                            .Build();
-                        using (StreamReader reader = new StreamReader(path))
-                            _SaveData = (EverestModuleSaveData) deserializer.Deserialize(reader, SaveDataType);
+                        using (StreamReader reader = new StreamReader(stream))
+                            YamlHelper.DeserializerUsing(_SaveData).Deserialize(reader, SaveDataType);
                     }
                 }
                 _SaveData.Index = index;
@@ -223,12 +215,8 @@ namespace Celeste.Mod {
                         using (BinaryReader reader = new BinaryReader(stream))
                             ((EverestModuleBinarySession) _Session).Read(reader);
                     } else {
-                        IDeserializer deserializer = new DeserializerBuilder()
-                            .IgnoreUnmatchedProperties()
-                            .WithObjectFactory(t => _Session)
-                            .Build();
-                        using (StreamReader reader = new StreamReader(path))
-                            _Session = (EverestModuleSession) deserializer.Deserialize(reader, SessionType);
+                        using (StreamReader reader = new StreamReader(stream))
+                            YamlHelper.DeserializerUsing(_Session).Deserialize(reader, SessionType);
                     }
                 }
                 _Session.Index = index;
