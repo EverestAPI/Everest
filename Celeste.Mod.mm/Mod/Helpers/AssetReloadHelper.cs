@@ -283,7 +283,11 @@ namespace Celeste.Mod {
 
         public override void BeforeRender() {
             if (!init) {
-                ReturnToScene.BeforeRender();
+                try {
+                    ReturnToScene.BeforeRender();
+                } catch {
+                    // Let's hope that it's not critical.
+                }
                 return;
             }
 
