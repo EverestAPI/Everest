@@ -19,11 +19,24 @@ using Celeste.Mod.Meta;
 
 namespace Celeste.Editor {
     class patch_MapEditor : MapEditor {
+        private static readonly Lazy<bool> _SpeedrunToolInstalled = new Lazy<bool>(() =>
+            Everest.Modules.Any(module => {
+                EverestModuleMetadata meta = module?.Metadata;
+                if (meta == null || meta.Version == null)
+                    return false;
+                return meta.Name == "SpeedrunTool" && meta.Version <= new Version(1, 6, 7, 0);
+            })
+        );
+
+        private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
+        private static readonly int ZoomIntervalFrames = 6;
 
         private static Camera Camera;
         private static AreaKey area;
+        private Vector2 mousePosition;
 
         private Session CurrentSession;
+        private int zoomWaitFrames;
 
         public patch_MapEditor(AreaKey area, bool reloadMapData = true)
             : base(area, reloadMapData) {
@@ -37,7 +50,6 @@ namespace Celeste.Editor {
 
             orig_ctor(area, reloadMapData);
 
-            Session prevSession = CurrentSession;
             CurrentSession = (Engine.Scene as Level)?.Session ?? SaveData.Instance?.CurrentSession;
             if (CurrentSession == null || CurrentSession.Area != area) {
                 CurrentSession = null;
@@ -77,6 +89,60 @@ namespace Celeste.Editor {
 
             Engine.Scene = new LevelLoader(session, at);
         }
+        
+        public extern void orig_Update();
+        public override void Update() {
+            if (!SpeedrunToolInstalled) {
+                MakeMapEditorBetter();
+            }
+            
+            orig_Update();
+        }
+        
+        private extern LevelTemplate TestCheck(Vector2 point);
 
+        private void MakeMapEditorBetter() {
+            // press cancel button to return game
+            if ((Input.ESC.Pressed || Input.MenuCancel.Pressed) && CurrentSession != null) {
+                Input.ESC.ConsumePress();
+                Input.MenuCancel.ConsumePress();
+                Engine.Scene = new LevelLoader(CurrentSession);
+            }
+            
+            // press confirm button to teleport to selected room
+            if (Input.MenuConfirm.Pressed) {
+                Input.MenuConfirm.ConsumePress();
+                LevelTemplate level = TestCheck(mousePosition);
+                if (level != null) {
+                    if (level.Type == LevelTemplateType.Filler) {
+                        return;
+                    }
+
+                    LoadLevel(level, mousePosition * 8f);
+                }
+            }
+            
+            // speed up camera when zoom out
+            if (Camera != null && Camera.Zoom < 6f) {
+                Camera.Position += new Vector2(Input.MoveX.Value, Input.MoveY.Value) * 300f * Engine.DeltaTime *
+                                   ((float) Math.Pow(1.3, 6 - Camera.Zoom) - 1);
+            }
+            
+            // controller right stick zoom the map
+            GamePadState currentState = MInput.GamePads[Input.Gamepad].CurrentState;
+            if (zoomWaitFrames <= 0 && Camera != null) {
+                float newZoom = 0f;
+                if (Math.Abs(currentState.ThumbSticks.Right.X) >= 0.5f) {
+                    newZoom = Camera.Zoom + Math.Sign(currentState.ThumbSticks.Right.X) * 1f;
+                } else if (Math.Abs(currentState.ThumbSticks.Right.Y) >= 0.5f) {
+                    newZoom = Camera.Zoom + Math.Sign(currentState.ThumbSticks.Right.Y) * 1f;
+                }
+
+                if (newZoom >= 1f) {
+                    Camera.Zoom = newZoom;
+                    zoomWaitFrames = ZoomIntervalFrames;
+                }
+            }
+        }
     }
 }
