@@ -142,18 +142,19 @@ namespace Celeste.Mod {
                 // Add all mod containers (or .DLLs).
                 lock (_Modules) {
                     foreach (EverestModule mod in _Modules) {
-                        data.AddRange(mod.Metadata.Hash);
-                        EverestModuleMetadata meta = mod.Metadata;
+                        if (mod?.Metadata != null)
+                            data.AddRange(mod.Metadata.Hash);
                     }
                 }
 
                 // Add all map .bins
                 lock (Content.Map) {
                     foreach (ModAsset asset in Content.Map.Values.ToArray()) {
-                        if (asset.Type != typeof(AssetTypeMap))
+                        if (asset?.Type != typeof(AssetTypeMap))
                             continue;
                         using (Stream stream = asset.Stream)
-                            AddStream(stream);
+                            if (stream != null)
+                                AddStream(stream);
                     }
                 }
 
