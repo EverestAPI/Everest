@@ -99,6 +99,7 @@ namespace Celeste.Editor {
             orig_Update();
         }
         
+        [MonoModIgnore]
         private extern LevelTemplate TestCheck(Vector2 point);
 
         private void MakeMapEditorBetter() {
