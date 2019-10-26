@@ -22,6 +22,13 @@ let
     outputFiles = ["*"];
   };
 
+  KeraLua = fetchNuGet {
+    baseName = "KeraLua";
+    version  = "1.0.22";
+    sha256 = "09b4kp6rnzkxdz69bk2w964l3vkypga6p1lnp5g7vzcnq24zhn6y";
+    outputFiles = ["*"];
+  };
+
 in buildDotnetPackage rec {
   baseName = "Everest";
   version = pkgs.lib.commitIdFromGitRepo ./.git;
@@ -44,6 +51,7 @@ in buildDotnetPackage rec {
     ln -sn ${Jdenticon}/lib/dotnet/Jdenticon-net packages/Jdenticon-net.${Jdenticon.version}
     ln -sn ${Cecil}/lib/dotnet/Mono.Cecil packages/Mono.Cecil.${Cecil.version}
     ln -sn ${Json}/lib/dotnet/Newtonsoft.Json packages/Newtonsoft.Json.${Json.version}
+    ln -sn ${KeraLua}/lib/dotnet/KeraLua packages/KeraLua.${KeraLua.version}
   '';
 
   postInstall = ''
