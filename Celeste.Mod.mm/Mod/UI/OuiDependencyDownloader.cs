@@ -42,13 +42,29 @@ namespace Celeste.Mod.UI {
                 LogLine($"[ERROR] Downloading the database failed. Please check your log.txt for more info.");
             } else {
                 LogLine("Computing dependencies to download...");
+
+                // these mods are not installed currently, we will install them
                 Dictionary<string, ModUpdateInfo> modsToInstall = new Dictionary<string, ModUpdateInfo>();
+
+                // these mods are already installed, but need an update to satisfy the dependency
                 Dictionary<string, ModUpdateInfo> modsToUpdate = new Dictionary<string, ModUpdateInfo>();
                 Dictionary<string, EverestModuleMetadata> modsToUpdateCurrentVersions = new Dictionary<string, EverestModuleMetadata>();
-                HashSet<string> modsNotFound = new HashSet<string>();
-                HashSet<string> modsNotInstallableAutomatically = new HashSet<string>();
-                HashSet<string> modsBlacklisted = new HashSet<string>();
+
+                // Everest should be updated to satisfy a dependency on Everest
                 bool shouldUpdateEverest = false;
+
+                // these mods are absent from the database
+                HashSet<string> modsNotFound = new HashSet<string>();
+
+                // these mods have multiple downloads, and as such, should be installed manually
+                HashSet<string> modsNotInstallableAutomatically = new HashSet<string>();
+
+                // these mods are blacklisted, and should be removed from the blacklist instead of being re-installed
+                HashSet<string> modsBlacklisted = new HashSet<string>();
+
+                // these mods are in the database, but the version found in there won't satisfy the dependency
+                Dictionary<string, HashSet<Version>> modsWithIncompatibleVersionInDatabase = new Dictionary<string, HashSet<Version>>();
+                Dictionary<string, string> modsDatabaseVersions = new Dictionary<string, string>();
 
                 foreach (EverestModuleMetadata dependency in MissingDependencies) {
                     if (dependency.Name == "Everest") {
@@ -72,11 +88,21 @@ namespace Celeste.Mod.UI {
                         modsNotInstallableAutomatically.Add(dependency.Name);
                         shouldAutoRestart = false;
 
+                    } else if (!isVersionCompatible(dependency.Version, availableDownloads[dependency.Name].Version)) {
+                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} has a version in database ({availableDownloads[dependency.Name].Version}) that would not satisfy dependency ({dependency.Version})");
+
+                        // add the required version to the list of versions for this mod
+                        HashSet<Version> requiredVersions = modsWithIncompatibleVersionInDatabase.TryGetValue(dependency.Name, out HashSet<Version> result) ? result : new HashSet<Version>();
+                        requiredVersions.Add(dependency.Version);
+                        modsWithIncompatibleVersionInDatabase[dependency.Name] = requiredVersions;
+                        modsDatabaseVersions[dependency.Name] = availableDownloads[dependency.Name].Version;
+                        shouldAutoRestart = false;
+
                     } else {
                         EverestModuleMetadata installedVersion = null;
                         foreach (EverestModule module in Everest.Modules) {
-                            // note: if the mod is installed, but not as a zip, this will be treated as a fresh install.
-                            // this is fine since zips take the priority over directories.
+                            // note: if the mod is installed, but not as a zip, this will be treated as a fresh install rather than an update.
+                            // this is fine since zips take the priority over directories, and we cannot update directory mods anyway.
                             if (module.Metadata.PathArchive != null && module.Metadata.Name == dependency.Name) {
                                 installedVersion = module.Metadata;
                                 break;
@@ -93,7 +119,6 @@ namespace Celeste.Mod.UI {
                             modsToInstall[dependency.Name] = availableDownloads[dependency.Name];
                         }
                     }
-                    // TODO: also check if version is actually compatible?
                 }
 
                 // actually install the mods now
@@ -115,6 +140,10 @@ namespace Celeste.Mod.UI {
 
                 foreach (string mod in modsBlacklisted)
                     LogLine($"[ERROR] {mod}.zip is present in your blacklist. Please unblacklist it to satisfy the dependency on {mod}.");
+
+                foreach (string mod in modsWithIncompatibleVersionInDatabase.Keys)
+                    LogLine($"[ERROR] Version(s) {string.Join(", ", modsWithIncompatibleVersionInDatabase[mod])} of {mod} are required, but only version {modsDatabaseVersions[mod]} is in the database. " +
+                        "Please install this mod manually.");
             }
 
             Progress = 1;
@@ -135,6 +164,20 @@ namespace Celeste.Mod.UI {
             } else {
                 LogLine("\nPress Back to return to Mod Options.");
             }
+        }
+
+        private bool isVersionCompatible(Version requiredVersion, string databaseVersionString) {
+            // the update checker server does not perform any check on the version format, so be careful
+            Version databaseVersion;
+            try {
+                databaseVersion = new Version(databaseVersionString);
+            } catch (Exception e) {
+                Logger.Log("OuiDependencyDownloader", $"Could not parse version number: {databaseVersionString}");
+                Logger.LogDetailed(e);
+                return false;
+            }
+
+            return Everest.Loader.VersionSatisfiesDependency(requiredVersion, databaseVersion);
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {
