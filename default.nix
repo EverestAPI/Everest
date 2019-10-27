@@ -29,13 +29,6 @@ let
     outputFiles = ["*"];
   };
 
-  Cecil-Rocks = fetchNuGet {
-    baseName = "Mono.Cecil.Rocks";
-    version  = "0.10.4";
-    sha256 = "09b4kp6rnzkxdz69bk2w964l3vkypga6p1lnp5g7vzcnq24zhn6y";
-    outputFiles = ["*"];
-  };
-
   MonoMod = fetchNuGet {
     baseName = "MonoMod";
     version  = "19.9.1.6";
