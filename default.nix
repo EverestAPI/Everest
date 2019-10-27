@@ -3,7 +3,7 @@
 let
   DotNetZip = fetchNuGet {
     baseName = "DotNetZip";
-    version  = "1.13.4";
+    version = "1.13.4";
     sha256 = "0j7b8b12dz7wxmhr1i9xs9mr9hq65xnsxdg4vlaz53k7ddi36v39";
     outputFiles = ["*"];
   };
@@ -17,63 +17,63 @@ let
 
   KeraLua = fetchNuGet {
     baseName = "KeraLua";
-    version  = "1.0.22";
+    version = "1.0.22";
     sha256 = "09b4kp6rnzkxdz69bk2w964l3vkypga6p1lnp5g7vzcnq24zhn6y";
     outputFiles = ["*"];
   };
 
   Cecil = fetchNuGet {
     baseName = "Mono.Cecil";
-    version  = "0.10.4";
+    version = "0.10.4";
     sha256 = "16iabjrizkh3g4g9dj40bm2z1kba7752pp5qfszy06x82ahs8l9l";
     outputFiles = ["*"];
   };
 
   MonoMod = fetchNuGet {
     baseName = "MonoMod";
-    version  = "19.9.1.6";
+    version = "19.9.1.6";
     sha256 = "1z5rz44m62i5f6n87z71fsgdy00xc445s29fca80cjvb8qwmwwz4";
     outputFiles = ["*"];
   };
 
   MonoMod-RD = fetchNuGet {
     baseName = "MonoMod.RuntimeDetour";
-    version  = "19.9.1.6";
+    version = "19.9.1.6";
     sha256 = "07ggcssl9xyf5g6b80xsd0y4nlzap2cnm9fhv7bywiynvlkh2rd8";
     outputFiles = ["*"];
   };
 
   MonoMod-RD-HG = fetchNuGet {
     baseName = "MonoMod.RuntimeDetour.HookGen";
-    version  = "19.9.1.6";
+    version = "19.9.1.6";
     sha256 = "04vf06ascqph6yl0c6i0iqzw3sqhn1m1hwhgn0jm02ps0wjgvvqa";
     outputFiles = ["*"];
   };
 
   MonoMod-Utils = fetchNuGet {
     baseName = "MonoMod.Utils";
-    version  = "19.9.1.6";
+    version = "19.9.1.6";
     sha256 = "174pfw9d8kwk64rdy75aw6acag619fvd5vin5iwzbrhxniv3pb69";
     outputFiles = ["*"];
   };
 
   Json = fetchNuGet {
     baseName = "Newtonsoft.Json";
-    version  = "12.0.2";
+    version = "12.0.2";
     sha256 = "0w2fbji1smd2y7x25qqibf1qrznmv4s6s0jvrbvr6alb7mfyqvh5";
     outputFiles = ["*"];
   };
 
   NLua = fetchNuGet {
     baseName = "NLua";
-    version  = "1.4.24";
+    version = "1.4.24";
     sha256 = "0gcn2gfbrf8ib4dw1j0dy0pn256x3171gvws225gg9lkm96n3dqn";
     outputFiles = ["*"];
   };
 
   YamlDotNet = fetchNuGet {
     baseName = "YamlDotNet";
-    version  = "7.0.0";
+    version = "7.0.0";
     sha256 = "1vckldz58qn2pmnc9kfvvfqayyxiy8yzyini8s7fl2c7fm3nrjyg";
     outputFiles = ["*"];
   };
