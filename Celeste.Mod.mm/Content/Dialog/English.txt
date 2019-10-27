@@ -108,7 +108,7 @@
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ERROR: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
-	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is in the database. Please install this mod manually.
+	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is available. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Restarting
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Restarting in {0}
 	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Press Back to restart Celeste.
