@@ -490,29 +490,39 @@ namespace Celeste.Mod {
                     EverestModuleMetadata meta = other.Metadata;
                     if (meta.Name != depName)
                         continue;
+
                     Version version = meta.Version;
-
-                    // Special case: Always true if version == 0.0.*
-                    if (version.Major == 0 && version.Minor == 0)
-                        return true;
-                    
-                    // Major version, breaking changes, must match.
-                    if (version.Major != depVersion.Major)
-                        return false;
-                    // Minor version, non-breaking changes, installed can't be lower than what we depend on.
-                    if (version.Minor < depVersion.Minor)
-                        return false;
-
-                    // "Build" is "PATCH" in semver, but we'll also check for it and "Revision".
-                    if (version.Minor == depVersion.Minor && version.Build < depVersion.Build)
-                        return false;
-                    if (version.Minor == depVersion.Minor && version.Build == depVersion.Build && version.Revision < depVersion.Revision)
-                        return false;
-
-                    return true;
+                    return VersionSatisfiesDependency(depVersion, version);
                 }
 
                 return false;
+            }
+
+            /// <summary>
+            /// Checks if the given version number is "compatible" with the one required as a dependency.
+            /// </summary>
+            /// <param name="requiredVersion">The version required by a mod in their dependencies</param>
+            /// <param name="installedVersion">The version to check for</param>
+            /// <returns>true if the versions number are compatible, false otherwise.</returns>
+            public static bool VersionSatisfiesDependency(Version requiredVersion, Version installedVersion) {
+                // Special case: Always true if version == 0.0.*
+                if (installedVersion.Major == 0 && installedVersion.Minor == 0)
+                    return true;
+
+                // Major version, breaking changes, must match.
+                if (installedVersion.Major != requiredVersion.Major)
+                    return false;
+                // Minor version, non-breaking changes, installed can't be lower than what we depend on.
+                if (installedVersion.Minor < requiredVersion.Minor)
+                    return false;
+
+                // "Build" is "PATCH" in semver, but we'll also check for it and "Revision".
+                if (installedVersion.Minor == requiredVersion.Minor && installedVersion.Build < requiredVersion.Build)
+                    return false;
+                if (installedVersion.Minor == requiredVersion.Minor && installedVersion.Build == requiredVersion.Build && installedVersion.Revision < requiredVersion.Revision)
+                    return false;
+
+                return true;
             }
 
             private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta) {

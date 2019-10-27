@@ -232,6 +232,8 @@ namespace Celeste.Mod.Core {
             LoadSettings();
 
             if (!inGame) {
+                List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
+
                 lock (Everest.Loader.Delayed) {
                     if (Everest.Loader.Delayed.Count > 0) {
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
@@ -241,12 +243,13 @@ namespace Celeste.Mod.Core {
                             string missingDepsString = "";
                             if(mod.Item1.Dependencies != null) {
                                 // check for missing dependencies
-                                List<EverestModuleMetadata> missingDependencies = mod.Item1.Dependencies
+                                List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
                                     .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+                                missingDependencies.AddRange(missingDependenciesForMod);
 
-                                if(missingDependencies.Count != 0) {
+                                if(missingDependenciesForMod.Count != 0) {
                                     // format their names and versions, and join all of them in a single string
-                                    missingDepsString = string.Join(", ", missingDependencies.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
+                                    missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
 
                                     // ensure that string is not too long, or else it would break the display
                                     if (missingDepsString.Length > 40) {
@@ -268,6 +271,13 @@ namespace Celeste.Mod.Core {
                 if (Everest.Updater.HasUpdate) {
                     menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
                         Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                    }));
+                }
+
+                if(missingDependencies.Count != 0)  {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
+                        OuiDependencyDownloader.MissingDependencies = missingDependencies;
+                        OuiModOptions.Instance.Overworld.Goto<OuiDependencyDownloader>();
                     }));
                 }
             }

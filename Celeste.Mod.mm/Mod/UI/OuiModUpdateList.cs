@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -11,14 +12,6 @@ using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.UI {
     class OuiModUpdateList : Oui {
-
-        private class ModUpdateInfo {
-            public virtual string Name { get; set; }
-            public virtual string Version { get; set; }
-            public virtual int LastUpdate { get; set; }
-            public virtual string URL { get; set; }
-            public virtual List<string> xxHash { get; set; }
-        }
 
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
@@ -72,24 +65,8 @@ namespace Celeste.Mod.UI {
             menu.Focused = true;
 
             task = new Task(() => {
-                try {
-                    // 1. Download the updates list
-                    string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl();
-
-                    Logger.Log("OuiModUpdateList", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
-
-                    using (WebClient wc = new WebClient()) {
-                        string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
-                        updateCatalog = new Deserializer().Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
-                        foreach (string name in updateCatalog.Keys) {
-                            updateCatalog[name].Name = name;
-                        }
-                        Logger.Log("OuiModUpdateList", $"Downloaded {updateCatalog.Count} item(s)");
-                    }
-                } catch (Exception e) {
-                    Logger.Log("OuiModUpdateList", $"Downloading database failed!");
-                    Logger.LogDetailed(e);
-                }
+                // 1. Download the mod updates database
+                updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
 
                 // 2. Find out what actually has been updated
                 availableUpdatesCatalog.Clear();
@@ -201,17 +178,6 @@ namespace Celeste.Mod.UI {
         }
 
         /// <summary>
-        /// Retrieves the mod updater database location from everestapi.github.io.
-        /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
-        /// </summary>
-        private string getModUpdaterDatabaseUrl() {
-            using (WebClient wc = new WebClient()) {
-                Logger.Log("OuiModUpdateList", "Fetching mod updater database URL");
-                return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
-            }
-        }
-
-        /// <summary>
         /// Downloads and installs a mod update.
         /// </summary>
         /// <param name="update">The update info coming from the update server</param>
@@ -228,12 +194,7 @@ namespace Celeste.Mod.UI {
                     downloadMod(update, button, zipPath);
 
                     // verify its checksum
-                    string actualHash = BitConverter.ToString(Everest.GetChecksum("mod-update.zip")).Replace("-", "").ToLowerInvariant();
-                    string expectedHash = update.xxHash[0];
-                    Logger.Log("OuiModUpdateList", $"Verifying checksum: actual hash is {actualHash}, expected hash is {expectedHash}");
-                    if (expectedHash != actualHash) {
-                        throw new IOException($"Checksum error: expected {expectedHash}, got {actualHash}");
-                    }
+                    ModUpdaterHelper.VerifyChecksum(update, zipPath);
 
                     // mark restarting as required, as we will do weird stuff like closing zips afterwards.
                     if (!shouldRestart) {
@@ -244,7 +205,7 @@ namespace Celeste.Mod.UI {
 
                     // install it
                     button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
-                    installMod(update, mod, zipPath);
+                    ModUpdaterHelper.InstallModUpdate(update, mod, zipPath);
 
                     // done!
                     button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
@@ -294,32 +255,6 @@ namespace Celeste.Mod.UI {
                     button.Label = $"{update.Name} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
-        }
-
-        /// <summary>
-        /// Installs a mod update in the Mods directory once it has been downloaded.
-        /// This method will replace the installed mod zip with the one that was just downloaded.
-        /// </summary>
-        /// <param name="update">The update info coming from the update server</param>
-        /// <param name="mod">The mod metadata from Everest for the installed mod</param>
-        /// <param name="zipPath">The path to the zip the update has been downloaded to</param>
-        private static void installMod(ModUpdateInfo update, EverestModuleMetadata mod, string zipPath) {
-            // let's close the zip, as we will replace it now.
-            foreach (ModContent content in Everest.Content.Mods) {
-                if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Mod.Name == mod.Name) {
-                    ZipModContent modZip = content as ZipModContent;
-
-                    Logger.Log("OuiModUpdateList", $"Closing mod .zip: {modZip.Path}");
-                    modZip.Dispose();
-                }
-            }
-
-            // delete the old zip, and move the new one.
-            Logger.Log("OuiModUpdateList", $"Deleting mod .zip: {mod.PathArchive}");
-            File.Delete(mod.PathArchive);
-
-            Logger.Log("OuiModUpdateList", $"Moving {zipPath} to {mod.PathArchive}");
-            File.Move(zipPath, mod.PathArchive);
         }
     }
 }
