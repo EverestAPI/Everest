@@ -145,6 +145,9 @@ namespace Celeste.Mod.Core {
                 GFX.Game[$"objects/checkpoint/flag{i:D2}"] = GFX.Game["util/pixel"];
             for (int i = 0; i <= 27; i++)
                 GFX.Game[$"objects/checkpoint/obelisk{i:D2}"] = GFX.Game["util/pixel"];
+
+            GFX.Gui["fileselect/assist"] = GFX.Game["util/pixel"];
+            GFX.Gui["fileselect/cheatmode"] = GFX.Game["util/pixel"];
         }
 
         public override void Unload() {
