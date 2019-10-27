@@ -16,7 +16,7 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Mettre à jour vers ((version))
-	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Télécharger les dépendances
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Installer les dépendances manquantes
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Liste des versions
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Mode debug
@@ -82,6 +82,26 @@
 	MODUPDATECHECKER_INSTALLING=	installation...
 	MODUPDATECHECKER_FAILED=		échec de mise à jour
 	MODUPDATECHECKER_WILLRESTART=	appuyez sur Retour pour redémarrer Celeste
+	
+# Dependency downloader
+	DEPENDENCYDOWNLOADER_TITLE=						INSTALLATION DES DÉPENDANCES
+	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Téléchargement de la base de données de mods...
+	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ERREUR: Vous devez mettre Everest à jour pour jouer à certains de vos mods.
+	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
+	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERREUR: {0} possède plusieurs versions et ne peut pas être installé automatiquement. Merci de l'installer manuellement.
+	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ERREUR: {0}.zip est dans votre blacklist. Retirez-le de la blacklist pour pouvoir l'utiliser comme une dépendance.
+	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERREUR: La version {1} de {0} est nécessaire, mais uniquement la version {2} est dans la base de données. Merci d'installer ce mod manuellement.
+	DEPENDENCYDOWNLOADER_RESTARTING=				Redémarrage en cours
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Redémarrage dans {0}
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Appuyez sur Retour pour redémarrer Celeste.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Appuyez sur Retour pour revenir aux options des mods.
+	DEPENDENCYDOWNLOADER_DOWNLOADING=				Téléchargement de {0} depuis {1}...
+	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			Téléchargement terminé.
+	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Vérification de la somme de contrôle...
+	DEPENDENCYDOWNLOADER_UPDATING=					Installation de la mise à jour de {0} ({1} -> {2}) vers {3}...
+	DEPENDENCYDOWNLOADER_INSTALLING=				Installation du mod {0} v.{1} vers {2}...
+	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERREUR: L'installation de {0} a échoué. Vérifiez votre log.txt pour plus d'informations.
 
 # Misc
 	UI_GIVEUP_HINT=			Votre progression est sauvegardée, mais vous devrez recommencer depuis le dernier :checkpoint:

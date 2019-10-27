@@ -16,7 +16,7 @@ namespace Celeste.Mod.UI {
         private Task task = null;
 
         public override IEnumerator Enter(Oui from) {
-            Title = Dialog.Clean("MODOPTIONS_COREMODULE_DOWNLOADDEPS").ToUpperInvariant();
+            Title = Dialog.Clean("DEPENDENCYDOWNLOADER_TITLE");
             task = new Task(downloadAllDependencies);
             Lines = new List<string>();
             Progress = 0;
@@ -33,15 +33,15 @@ namespace Celeste.Mod.UI {
 
         private void downloadAllDependencies() {
             // 1. Compute the list of dependencies we must download.
-            LogLine("Downloading mod database...");
+            LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE"));
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
             if (availableDownloads == null) {
                 shouldAutoRestart = false;
                 shouldRestart = false;
 
-                LogLine($"[ERROR] Downloading the database failed. Please check your log.txt for more info.");
+                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
-                LogLine("Computing dependencies to download...");
+                Logger.Log("OuiDependencyDownloader", "Computing dependencies to download...");
 
                 // these mods are not installed currently, we will install them
                 Dictionary<string, ModUpdateInfo> modsToInstall = new Dictionary<string, ModUpdateInfo>();
@@ -130,20 +130,20 @@ namespace Celeste.Mod.UI {
 
                 // display all mods that couldn't be accounted for
                 if (shouldUpdateEverest)
-                    LogLine($"[ERROR] You must update Everest to play some of your mods.");
+                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
                 foreach (string mod in modsNotFound)
-                    LogLine($"[ERROR] {mod} could not be found in the database. Please install this mod manually.");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_FOUND"), mod));
 
                 foreach (string mod in modsNotInstallableAutomatically)
-                    LogLine($"[ERROR] {mod} is available in multiple versions and cannot be installed automatically. Please install this mod manually.");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE"), mod));
 
                 foreach (string mod in modsBlacklisted)
-                    LogLine($"[ERROR] {mod}.zip is present in your blacklist. Please unblacklist it to satisfy the dependency on {mod}.");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_BLACKLISTED"), mod));
 
                 foreach (string mod in modsWithIncompatibleVersionInDatabase.Keys)
-                    LogLine($"[ERROR] Version(s) {string.Join(", ", modsWithIncompatibleVersionInDatabase[mod])} of {mod} are required, but only version {modsDatabaseVersions[mod]} is in the database. " +
-                        "Please install this mod manually.");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod, 
+                        string.Join(", ", modsWithIncompatibleVersionInDatabase[mod]), modsDatabaseVersions[mod]));
             }
 
             Progress = 1;
@@ -151,18 +151,18 @@ namespace Celeste.Mod.UI {
 
             if (shouldAutoRestart) {
                 // there are no errors to display: restart automatically
-                LogLine("Restarting");
+                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING"));
                 for (int i = 3; i > 0; --i) {
-                    Lines[Lines.Count - 1] = $"Restarting in {i}";
+                    Lines[Lines.Count - 1] = string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_RESTARTING_IN"), i);
                     Thread.Sleep(1000);
                 }
-                Lines[Lines.Count - 1] = $"Restarting";
+                Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING");
 
                 Everest.QuickFullRestart();
             } else if (shouldRestart) {
-                LogLine("\nPress Back to restart Celeste.");
+                LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART"));
             } else {
-                LogLine("\nPress Back to return to Mod Options.");
+                LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK"));
             }
         }
 
@@ -184,8 +184,8 @@ namespace Celeste.Mod.UI {
             string downloadDestination = Path.Combine(Everest.PathGame, $"dependency-download.zip");
             try {
                 // 1. Download
-                LogLine($"Downloading {mod.Name} from {mod.URL}...");
-                LogLine($"", false);
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING"), mod.Name, mod.URL));
+                LogLine("", false);
 
                 Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, (position, length, speed) => {
                     if (length > 0) {
@@ -199,25 +199,25 @@ namespace Celeste.Mod.UI {
                 });
 
                 ProgressMax = 0;
-                Lines[Lines.Count - 1] = $"Download finished.";
+                Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED");
 
                 // 2. Verify checksum
-                LogLine($"Verifying checksum...");
+                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM"));
                 ModUpdaterHelper.VerifyChecksum(mod, downloadDestination);
 
                 // 3. Install mod
                 shouldRestart = true;
                 if (installedVersion != null) {
-                    LogLine($"Installing update for {mod.Name} ({installedVersion.Version} -> {mod.Version}) to {installedVersion.PathArchive}...");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_UPDATING"), mod.Name, installedVersion.Version, mod.Version, installedVersion.PathArchive));
                     ModUpdaterHelper.InstallModUpdate(mod, installedVersion, downloadDestination);
                 } else {
                     string installDestination = Path.Combine(Everest.Loader.PathMods, $"{mod.Name}.zip");
-                    LogLine($"Installing mod {mod.Name} v.{mod.Version} to {installDestination}...");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALLING"), mod.Name, mod.Version, installDestination));
                     File.Move(downloadDestination, installDestination);
                 }
             } catch (Exception e) {
                 // install failed
-                LogLine($"[ERROR] Installing {mod.Name} failed. Please check your log.txt for more info.");
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALL_FAILED"), mod.Name));
                 Logger.LogDetailed(e);
                 shouldAutoRestart = false;
 

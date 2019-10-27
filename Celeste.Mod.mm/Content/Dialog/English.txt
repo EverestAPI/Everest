@@ -34,7 +34,7 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
-	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Download dependencies
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Install missing dependencies
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Version list
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug mode
@@ -99,6 +99,27 @@
 	MODUPDATECHECKER_INSTALLING=	installing...
 	MODUPDATECHECKER_FAILED=		update failed!
 	MODUPDATECHECKER_WILLRESTART=	press Back to restart Celeste
+
+# Dependency downloader
+	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES
+	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
+	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ERROR: You must update Everest to play some of your mods.
+	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
+	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
+	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ERROR: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
+	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is in the database. Please install this mod manually.
+	DEPENDENCYDOWNLOADER_RESTARTING=				Restarting
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Restarting in {0}
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Press Back to restart Celeste.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Press Back to return to Mod Options.
+	DEPENDENCYDOWNLOADER_DOWNLOADING=				Downloading {0} from {1}...
+	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			Download finished.
+	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Verifying checksum...
+	DEPENDENCYDOWNLOADER_UPDATING=					Installing update for {0} ({1} -> {2}) to {3}...
+	DEPENDENCYDOWNLOADER_INSTALLING=				Installing mod {0} v.{1} to {2}...
+	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
+
 
 # Misc
 	UI_GIVEUP_HINT=			Your progress is saved, but you'll need to restart at the last :checkpoint:

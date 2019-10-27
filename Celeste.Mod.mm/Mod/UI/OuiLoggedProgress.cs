@@ -66,7 +66,7 @@ namespace Celeste.Mod.UI {
             StringBuilder escaped = new StringBuilder();
             for (int i = 0; i < line.Length; i++) {
                 char c = line[i];
-                if (!Draw.DefaultFont.Characters.Contains(c))
+                if (!ActiveFont.Font.Get(ActiveFont.BaseSize * 0.5f).Characters.ContainsKey(c))
                     c = ' ';
                 escaped.Append(c);
             }
