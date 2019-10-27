@@ -1,6 +1,13 @@
 { pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage }:
 
 let
+  DotNetZip = fetchNuGet {
+    baseName = "DotNetZip";
+    version  = "1.13.4";
+    sha256 = "0j7b8b12dz7wxmhr1i9xs9mr9hq65xnsxdg4vlaz53k7ddi36v39";
+    outputFiles = ["*"];
+  };
+
   Jdenticon = fetchNuGet {
     baseName = "Jdenticon-net";
     version = "2.2.1";
@@ -8,24 +15,73 @@ let
     outputFiles = ["*"];
   };
 
-  Cecil = fetchNuGet {
-    baseName = "Mono.Cecil";
-    version = "0.10.0";
-    sha256 = "0yg9c0papkdlvmhas5jh8d849hwmigam4whyljn6ig1npx6lmsik";
-    outputFiles = [ "*" ];
-  };
-
-  Json = fetchNuGet {
-    baseName = "Newtonsoft.Json";
-    version  = "12.0.1";
-    sha256 = "11f30cfxwn0z1hr5y69hxac0yyjz150ar69nvqhn18n9k92zfxz1";
-    outputFiles = ["*"];
-  };
-
   KeraLua = fetchNuGet {
     baseName = "KeraLua";
     version  = "1.0.22";
     sha256 = "09b4kp6rnzkxdz69bk2w964l3vkypga6p1lnp5g7vzcnq24zhn6y";
+    outputFiles = ["*"];
+  };
+
+  Cecil = fetchNuGet {
+    baseName = "Mono.Cecil";
+    version  = "0.10.4";
+    sha256 = "16iabjrizkh3g4g9dj40bm2z1kba7752pp5qfszy06x82ahs8l9l";
+    outputFiles = ["*"];
+  };
+
+  Cecil-Rocks = fetchNuGet {
+    baseName = "Mono.Cecil.Rocks";
+    version  = "0.10.4";
+    sha256 = "09b4kp6rnzkxdz69bk2w964l3vkypga6p1lnp5g7vzcnq24zhn6y";
+    outputFiles = ["*"];
+  };
+
+  MonoMod = fetchNuGet {
+    baseName = "MonoMod";
+    version  = "19.9.1.6";
+    sha256 = "1z5rz44m62i5f6n87z71fsgdy00xc445s29fca80cjvb8qwmwwz4";
+    outputFiles = ["*"];
+  };
+
+  MonoMod-RD = fetchNuGet {
+    baseName = "MonoMod.RuntimeDetour";
+    version  = "19.9.1.6";
+    sha256 = "07ggcssl9xyf5g6b80xsd0y4nlzap2cnm9fhv7bywiynvlkh2rd8";
+    outputFiles = ["*"];
+  };
+
+  MonoMod-RD-HG = fetchNuGet {
+    baseName = "MonoMod.RuntimeDetour.HookGen";
+    version  = "19.9.1.6";
+    sha256 = "04vf06ascqph6yl0c6i0iqzw3sqhn1m1hwhgn0jm02ps0wjgvvqa";
+    outputFiles = ["*"];
+  };
+
+  MonoMod-Utils = fetchNuGet {
+    baseName = "MonoMod.Utils";
+    version  = "19.9.1.6";
+    sha256 = "174pfw9d8kwk64rdy75aw6acag619fvd5vin5iwzbrhxniv3pb69";
+    outputFiles = ["*"];
+  };
+
+  Json = fetchNuGet {
+    baseName = "Newtonsoft.Json";
+    version  = "12.0.2";
+    sha256 = "0w2fbji1smd2y7x25qqibf1qrznmv4s6s0jvrbvr6alb7mfyqvh5";
+    outputFiles = ["*"];
+  };
+
+  NLua = fetchNuGet {
+    baseName = "NLua";
+    version  = "1.4.24";
+    sha256 = "0gcn2gfbrf8ib4dw1j0dy0pn256x3171gvws225gg9lkm96n3dqn";
+    outputFiles = ["*"];
+  };
+
+  YamlDotNet = fetchNuGet {
+    baseName = "YamlDotNet";
+    version  = "7.0.0";
+    sha256 = "1vckldz58qn2pmnc9kfvvfqayyxiy8yzyini8s7fl2c7fm3nrjyg";
     outputFiles = ["*"];
   };
 
@@ -48,10 +104,17 @@ in buildDotnetPackage rec {
   preBuild = ''
     # Fake nuget restore, not very elegant but it works.
     mkdir -p packages
-    ln -sn ${Jdenticon}/lib/dotnet/Jdenticon-net packages/Jdenticon-net.${Jdenticon.version}
-    ln -sn ${Cecil}/lib/dotnet/Mono.Cecil packages/Mono.Cecil.${Cecil.version}
-    ln -sn ${Json}/lib/dotnet/Newtonsoft.Json packages/Newtonsoft.Json.${Json.version}
-    ln -sn ${KeraLua}/lib/dotnet/KeraLua packages/KeraLua.${KeraLua.version}
+    ln -sn ${Jdenticon}/lib/dotnet/Jdenticon-net                     packages/Jdenticon-net.${Jdenticon.version}
+    ln -sn ${KeraLua}/lib/dotnet/KeraLua                             packages/KeraLua.${KeraLua.version}
+    ln -sn ${DotNetZip}/lib/dotnet/DotNetZip                         packages/DotNetZip.${DotNetZip.version}
+    ln -sn ${Cecil}/lib/dotnet/Mono.Cecil                            packages/Mono.Cecil.${Cecil.version}
+    ln -sn ${MonoMod}/lib/dotnet/MonoMod                             packages/MonoMod.${MonoMod.version}
+    ln -sn ${MonoMod-RD}/lib/dotnet/MonoMod.RuntimeDetour            packages/MonoMod.RuntimeDetour.${MonoMod-RD.version}
+    ln -sn ${MonoMod-RD-HG}/lib/dotnet/MonoMod.RuntimeDetour.HookGen packages/MonoMod.RuntimeDetour.HookGen.${MonoMod-RD-HG.version}
+    ln -sn ${MonoMod-Utils}/lib/dotnet/MonoMod.Utils                 packages/MonoMod.Utils.${MonoMod-Utils.version}
+    ln -sn ${Json}/lib/dotnet/Newtonsoft.Json                        packages/Newtonsoft.Json.${Json.version}
+    ln -sn ${NLua}/lib/dotnet/NLua                                   packages/NLua.${NLua.version}
+    ln -sn ${YamlDotNet}/lib/dotnet/YamlDotNet                       packages/YamlDotNet.${YamlDotNet.version}
   '';
 
   postInstall = ''
