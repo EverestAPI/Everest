@@ -88,7 +88,9 @@ in buildDotnetPackage rec {
   xBuildFiles = [ "Celeste.Mod.mm/Celeste.Mod.mm.csproj" "MiniInstaller/MiniInstaller.csproj" ];
   outputFiles = [ "Celeste.Mod.mm/bin/Release/*" "MiniInstaller/bin/Release/*" ];
 
-  buildNumber = "0";
+  # The build number appears to be Azure-specific, so there is no "correct"
+  # number to use here.
+  buildNumber = 0;
 
   patchPhase = ''
     # $(SolutionDir) does not work for some reason
@@ -96,7 +98,8 @@ in buildDotnetPackage rec {
     substituteInPlace MiniInstaller/MiniInstaller.csproj --replace '$(SolutionDir)' ".."
 
     # See c4263f8 Celeste.Mod.mm/Mod/Everest/Everest.cs line 31
-    substituteInPlace Celeste.Mod.mm/Mod/Everest/Everest.cs --replace '0.0.0-dev' "1.${buildNumber}.0-nix-${builtins.substring 0 7 version}"
+    # This is normally set by Azure
+    substituteInPlace Celeste.Mod.mm/Mod/Everest/Everest.cs --replace '0.0.0-dev' "1.${toString buildNumber}.0-nix-${builtins.substring 0 7 version}"
   '';
 
   preBuild = ''
