@@ -120,6 +120,8 @@ in buildDotnetPackage rec {
 
   postInstall = ''
     mkdir -pv "$out/lib/dotnet/${baseName}"
+    cp $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM/Contents/Resources/DWARF/libMonoPosixHelper.dylib \
+      $out/lib/dotnet/Everest/libMonoPosixHelper.dylib
     sed -i "2i chmod -R u+w ." $out/bin/miniinstaller
     sed -i "2i cp -r $out/lib/dotnet/Everest/* "'$1' $out/bin/miniinstaller
     sed -i '2i cd $1' $out/bin/miniinstaller
