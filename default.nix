@@ -120,6 +120,7 @@ in buildDotnetPackage rec {
 
   postInstall = ''
     mkdir -pv "$out/lib/dotnet/${baseName}"
+    sed -i "2i chmod -R u+w ." $out/bin/miniinstaller
     sed -i "2i cp -r $out/lib/dotnet/Everest/* "'$1' $out/bin/miniinstaller
     sed -i '2i cd $1' $out/bin/miniinstaller
   '';
