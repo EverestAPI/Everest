@@ -249,7 +249,9 @@ namespace Celeste.Mod {
             // .NET hates it when strong-named dependencies get updated.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
                 AssemblyName asmName = new AssemblyName(asmArgs.Name);
-                if (!asmName.Name.StartsWith("Mono.Cecil") && !asmName.Name.StartsWith("YamlDotNet"))
+                if (!asmName.Name.StartsWith("Mono.Cecil") &&
+                    !asmName.Name.StartsWith("YamlDotNet") &&
+                    !asmName.Name.StartsWith("NLua"))
                     return null;
 
                 Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
