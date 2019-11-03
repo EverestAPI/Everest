@@ -35,6 +35,12 @@ namespace Celeste {
         private extern void orig_Load();
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
+            // reset those fields to prevent them from stacking up when reloading the map.
+            DetectedStrawberries = 0;
+            DetectedHeartGem = false;
+            DetectedRemixNotes = false;
+            Goldenberries = new List<EntityData>();
+
             try {
                 orig_Load();
             } catch (Exception e) {
