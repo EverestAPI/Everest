@@ -138,7 +138,12 @@ namespace Celeste.Mod.UI {
                         // display one button per update
                         foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
                             EverestModuleMetadata metadata = availableUpdatesCatalog[update];
-                            TextMenu.Button button = new TextMenu.Button($"{metadata.Name} | v. {metadata.VersionString} > {update.Version} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+
+                            string versionUpdate = metadata.VersionString;
+                            if(metadata.VersionString != update.Version)
+                                versionUpdate = $"{metadata.VersionString} > {update.Version}";
+
+                            TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
                             button.Pressed(() => {
                                 // make the menu non-interactive
                                 menu.Focused = false;
@@ -190,7 +195,7 @@ namespace Celeste.Mod.UI {
 
                 try {
                     // download it...
-                    button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
                     downloadMod(update, button, zipPath);
 
                     // verify its checksum
@@ -204,11 +209,11 @@ namespace Celeste.Mod.UI {
                     }
 
                     // install it
-                    button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
                     ModUpdaterHelper.InstallModUpdate(update, mod, zipPath);
 
                     // done!
-                    button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
 
                     // select another enabled option: the next one, or the last one if there is no next one.
                     if (menu.Selection + 1 > menu.LastPossibleSelection)
@@ -217,7 +222,7 @@ namespace Celeste.Mod.UI {
                         menu.MoveSelection(1);
                 } catch (Exception e) {
                     // update failed
-                    button.Label = $"{update.Name} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
                     Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
                     Logger.LogDetailed(e);
                     button.Disabled = false;
@@ -250,9 +255,9 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                 if (length > 0) {
-                    button.Label = $"{update.Name} ({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
                 } else {
-                    button.Label = $"{update.Name} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
         }
