@@ -140,7 +140,7 @@ namespace Celeste.Mod.UI {
                             EverestModuleMetadata metadata = availableUpdatesCatalog[update];
 
                             string versionUpdate = metadata.VersionString;
-                            if(metadata.VersionString != update.Version)
+                            if (metadata.VersionString != update.Version)
                                 versionUpdate = $"{metadata.VersionString} > {update.Version}";
 
                             TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
