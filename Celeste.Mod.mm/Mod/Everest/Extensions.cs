@@ -113,7 +113,7 @@ namespace Celeste.Mod {
             StringBuilder builder = new StringBuilder();
             for (int i = 0; i < input.Length; i++) {
                 char c = input[i];
-                if (i > 0 && char.IsUpper(c))
+                if (i > 0 && char.IsUpper(c) && input[i - 1] != ' ')
                     builder.Append(' ');
                 builder.Append(c);
             }
