@@ -159,22 +159,24 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreateMainMenuModeEntry(TextMenu menu, bool inGame) {
-            // TODO: Let mods register custom main menu modes?
-            List<string> types = new List<string>() {
-                "",
-                "rows"
-            };
+            if (!inGame) {
+                // TODO: Let mods register custom main menu modes?
+                List<string> types = new List<string>() {
+                    "",
+                    "rows"
+                };
 
-            menu.Add(
-                new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_mainmenumode"), i => {
-                    string prefix = types[i];
-                    string fullName = $"modoptions_coremodule_mainmenumode_{prefix.ToLowerInvariant()}";
-                    return fullName.DialogCleanOrNull() ?? prefix.ToUpperInvariant();
-                }, 0, types.Count - 1, Math.Max(0, types.IndexOf(MainMenuMode)))
-                .Change(i => {
-                    MainMenuMode = types[i];
-                })
-            );
+                menu.Add(
+                    new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_mainmenumode"), i => {
+                        string prefix = types[i];
+                        string fullName = $"modoptions_coremodule_mainmenumode_{prefix.ToLowerInvariant()}";
+                        return fullName.DialogCleanOrNull() ?? prefix.ToUpperInvariant();
+                    }, 0, types.Count - 1, Math.Max(0, types.IndexOf(MainMenuMode)))
+                    .Change(i => {
+                        MainMenuMode = types[i];
+                    })
+                );
+            }
         }
 
     }
