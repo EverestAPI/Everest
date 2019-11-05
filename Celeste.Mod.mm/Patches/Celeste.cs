@@ -95,8 +95,15 @@ namespace Celeste {
             }) {
                 Console.SetOut(logWriter);
 
-                Everest.ParseArgs(args);
-                orig_Main(args);
+                try {
+                    Everest.ParseArgs(args);
+                    orig_Main(args);
+                } catch (Exception e) {
+                    e.LogDetailed("CRITICAL");
+                    ErrorLog.Write("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquarters are working VEWY HAWD to fix this!");
+                    ErrorLog.Open();
+                    return;
+                }
 
                 Everest.Events.Celeste.Shutdown();
 
