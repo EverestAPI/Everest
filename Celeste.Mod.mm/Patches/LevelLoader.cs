@@ -110,6 +110,14 @@ namespace Celeste {
                 }
             }
 
+            // This is done exactly once in the vanilla GFX.LoadData method.
+            PlayerSprite.ClearFramesMetadata();
+            PlayerSprite.CreateFramesMetadata("player");
+            PlayerSprite.CreateFramesMetadata("player_no_backpack");
+            PlayerSprite.CreateFramesMetadata("badeline");
+            PlayerSprite.CreateFramesMetadata("player_badeline");
+            PlayerSprite.CreateFramesMetadata("player_playback");
+
             path = meta?.Portraits;
             if (string.IsNullOrEmpty(path))
                 path = Path.Combine("Graphics", "Portraits.xml");
