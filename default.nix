@@ -1,4 +1,5 @@
-{ pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage }:
+{ pkgs ? import <nixpkgs> {}, fetchNuGet ? pkgs.fetchNuGet, buildDotnetPackage ? pkgs.buildDotnetPackage,
+  mono ? pkgs.mono }:
 
 let
   DotNetZip = fetchNuGet {
@@ -120,6 +121,7 @@ in buildDotnetPackage rec {
       $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM/Contents/Info.plist \
       $out/lib/dotnet/Everest/lib64/* \
       $out/lib/dotnet/Everest/
+    cp ${mono}/lib/libMonoPosixHelper.so $out/lib/dotnet/Everest
     rm -r $out/lib/dotnet/Everest/lib64 $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM
     sed -i "2i chmod -R u+w ." $out/bin/miniinstaller
     sed -i "2i cp -r $out/lib/dotnet/Everest/* "'$1' $out/bin/miniinstaller
