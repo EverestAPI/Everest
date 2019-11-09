@@ -125,12 +125,12 @@ in buildDotnetPackage rec {
       cp ${mono}/lib/libMonoPosixHelper.so $out/lib/dotnet/Everest
     fi
     rm -r $out/lib/dotnet/Everest/lib64 $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM
-    sed -i "2i chmod -R u+w ."                                  $out/bin/miniinstaller
-    sed -i "2i cp -r $out/lib/dotnet/Everest/* ."               $out/bin/miniinstaller
-    sed -i '2i fi'                                              $out/bin/miniinstaller
-    sed -i '2i \ \ exit 1'                                      $out/bin/miniinstaller
-    sed -i '2i \ \ echo "File Celeste.exe does not exist" 1>&2' $out/bin/miniinstaller
-    sed -i '2i if [ ! -f Celeste.exe ]; then'                   $out/bin/miniinstaller
-    sed -i '2i cd "$1"'                                         $out/bin/miniinstaller
+    sed -i "2i chmod -R u+w ."                                                                   $out/bin/miniinstaller
+    sed -i "2i cp -r $out/lib/dotnet/Everest/* ."                                                $out/bin/miniinstaller
+    sed -i '2i fi'                                                                               $out/bin/miniinstaller
+    sed -i '2i \ \ exit 1'                                                                       $out/bin/miniinstaller
+    sed -i '2i \ \ echo "No file named Celeste or Celeste.exe exists, refusing to install" 1>&2' $out/bin/miniinstaller
+    sed -i '2i if ! [[ -f Celeste.exe || -f Celeste ]]; then'                                    $out/bin/miniinstaller
+    sed -i '2i cd "$1"'                                                                          $out/bin/miniinstaller
   '';
 } // { shell = import ./shell.nix; }
