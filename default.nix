@@ -131,7 +131,7 @@ in buildDotnetPackage rec {
     sed -i "2i cp -r $out/lib/dotnet/Everest/* ."                                                                    $out/bin/miniinstaller
     sed -i '2i fi'                                                                                                   $out/bin/miniinstaller
     sed -i '2i \ \ exit 1'                                                                                           $out/bin/miniinstaller
-    sed -i '2i \ \ echo "No Celeste executeable found, refusing to install" 1>&2'                                    $out/bin/miniinstaller
+    sed -i '2i \ \ echo "No Celeste executable found, refusing to install" 1>&2'                                     $out/bin/miniinstaller
     sed -i '2i if ! [[ -f Celeste.exe || -f Celeste.bin.osx || -f Celeste.bin.x86_64 || -f Celeste.bin.x86 ]]; then' $out/bin/miniinstaller
     sed -i '2i cd "$1"'                                                                                              $out/bin/miniinstaller
   '';
