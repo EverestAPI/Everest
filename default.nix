@@ -127,7 +127,7 @@ in buildDotnetPackage rec {
       cp ${mono}/lib/libMonoPosixHelper.so $out/lib/dotnet/Everest
     fi
     rm -r $out/lib/dotnet/Everest/lib64 $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM
-    sed -i "2i chmod -R u+w ."                                                                                       $out/bin/miniinstaller
+    sed -i '2i chmod -R u+w .'                                                                                       $out/bin/miniinstaller
     sed -i "2i cp -r $out/lib/dotnet/Everest/* ."                                                                    $out/bin/miniinstaller
     sed -i '2i fi'                                                                                                   $out/bin/miniinstaller
     sed -i '2i \ \ exit 1'                                                                                           $out/bin/miniinstaller
