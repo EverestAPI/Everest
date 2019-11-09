@@ -121,7 +121,7 @@ in buildDotnetPackage rec {
       $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM/Contents/Info.plist \
       $out/lib/dotnet/Everest/lib64/* \
       $out/lib/dotnet/Everest/
-    if [ -f "${mono}/lib/libMonoPosixHelper.so"]; then
+    if [ -f "${mono}/lib/libMonoPosixHelper.so" ]; then
       cp ${mono}/lib/libMonoPosixHelper.so $out/lib/dotnet/Everest
     fi
     rm -r $out/lib/dotnet/Everest/lib64 $out/lib/dotnet/Everest/libMonoPosixHelper.dylib.dSYM
