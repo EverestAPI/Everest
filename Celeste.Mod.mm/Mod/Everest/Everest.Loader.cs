@@ -71,6 +71,7 @@ namespace Celeste.Mod {
                 { "IsaGrabBag", new Version(1, 3, 2) },
                 { "testroom", new Version(1, 0, 1, 0) },
                 { "Elemental Chaos", new Version(1, 0, 0, 0) },
+                { "BGswitch", new Version(0, 1, 0, 0) },
 
             };
 
