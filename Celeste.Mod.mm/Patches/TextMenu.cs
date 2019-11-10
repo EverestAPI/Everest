@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
@@ -53,7 +54,23 @@ namespace Celeste {
             return this;
         }
 
+        [MonoModReplace]
+        public override void Render() {
+            RecalculateSize();
+            Vector2 currentPosition = Position - Justify * new Vector2(Width, Height);
+            foreach (Item item in items) {
+                if (item.Visible) {
+                    float itemHeight = item.Height();
+                    Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
+                    if (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height) {
+                        item.Render(drawPosition, Focused && Current == item);
+                    }
+                    currentPosition.Y += itemHeight + ItemSpacing;
+                }
+            }
+        }
     }
+
     public static partial class TextMenuExt {
 
         // Mods can't access patch_ classes directly.
