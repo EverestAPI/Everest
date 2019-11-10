@@ -99,10 +99,11 @@ namespace Celeste {
                     if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
                         IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
                         IDictionary animsMod = valueMod.Sprite.GetAnimations();
-
                         foreach (DictionaryEntry kvpAnim in animsMod) {
                             animsOrig[kvpAnim.Key] = kvpAnim.Value;
                         }
+
+                        valueOrig.Sources.AddRange(valueMod.Sources);
 
                     } else {
                         bankOrig.SpriteData[key] = valueMod;
