@@ -246,3 +246,6 @@ ModelManifest.xml
 
 # vscode files
 .vscode/
+
+# Nix build result
+result
