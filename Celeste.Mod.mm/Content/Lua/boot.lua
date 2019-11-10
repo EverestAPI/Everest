@@ -226,6 +226,12 @@ marshalToLua["default"] = function(value, typeName)
             local members, memberType = getMembers(ctype, key)
             return toLua(__index(self, members and members[1].Name or key), memberType and memberType.FullName, members)
         end
+
+        local __newindex = mt.__newindex
+        function mt:__newindex(key, value)
+            local members, memberType = getMembers(ctype, key)
+            __newindex(self, members and members[1].Name or key, toSharp(value, memberType and memberType.FullName, members))
+        end
     end
 
     return value
