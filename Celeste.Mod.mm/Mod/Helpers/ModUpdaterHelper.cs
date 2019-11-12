@@ -2,10 +2,21 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Helpers {
     public class ModUpdaterHelper {
+        private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
+            public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
+                if (x.LastUpdate != y.LastUpdate) {
+                    return y.LastUpdate - x.LastUpdate;
+                }
+                // fall back to alphabetical order
+                return x.Name.CompareTo(y.Name);
+            }
+        }
+
         /// <summary>
         /// Downloads the full update list from the update checker server.
         /// Returns null if the download fails for any reason.
@@ -32,6 +43,31 @@ namespace Celeste.Mod.Helpers {
             }
 
             return updateCatalog;
+        }
+
+        /// <summary>
+        /// List all mods needing an update, by comparing the installed mods' hashes with the ones in the update checker database.
+        /// </summary>
+        /// <param name="updateCatalog">The update checker database (must not be null!)</param>
+        /// <returns>A map listing all the updates: info from the update checker database => info from the installed mod</returns>
+        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> ListAvailableUpdates(Dictionary<string, ModUpdateInfo> updateCatalog) {
+            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>(new MostRecentUpdatedFirst());
+
+            Logger.Log("ModUpdaterHelper", "Checking for updates");
+
+            foreach (EverestModule module in Everest.Modules) {
+                EverestModuleMetadata metadata = module.Metadata;
+                if (metadata.PathArchive != null && updateCatalog.ContainsKey(metadata.Name)) {
+                    string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
+                    Logger.Log("ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
+                    if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
+                        availableUpdatesCatalog.Add(updateCatalog[metadata.Name], metadata);
+                    }
+                }
+            }
+
+            Logger.Log("ModUpdaterHelper", $"{availableUpdatesCatalog.Count} update(s) available");
+            return availableUpdatesCatalog;
         }
 
         /// <summary>
@@ -83,6 +119,33 @@ namespace Celeste.Mod.Helpers {
                 Logger.Log("ModUpdaterHelper", "Fetching mod updater database URL");
                 return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
             }
+        }
+
+        private static Task updateCheckTask = null;
+        private static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdates = null;
+
+        /// <summary>
+        /// Run a check for mod updates asynchronously.
+        /// </summary>
+        public static void RunCheckForModUpdates() {
+            updateCheckTask = new Task(() => {
+                Dictionary<string, ModUpdateInfo> updateCatalog = DownloadModUpdateList();
+                if (updateCatalog != null) {
+                    availableUpdates = ListAvailableUpdates(updateCatalog);
+                }
+            });
+            updateCheckTask.Start();
+        }
+
+        /// <summary>
+        /// Returns the mod updates retrieved by RunCheckForModUpdates().
+        /// Waits for the end of the task if it is not over yet.
+        /// </summary>
+        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> GetLoadedModUpdates() {
+            if (updateCheckTask != null)
+                updateCheckTask.Wait();
+
+            return availableUpdates;
         }
     }
 }

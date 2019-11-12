@@ -5,6 +5,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -119,5 +120,15 @@ namespace Celeste {
             loaded = true;
         }
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchGameLoaderIntroRoutine] // ... except for manually manipulating the method via MonoModRules
+        public extern new IEnumerator IntroRoutine();
+
+        private static Scene _GetNextScene(Overworld.StartMode startMode, HiresSnow snow) {
+            if (CoreModule.Settings.AutoUpdateModsOnStart)
+                return new AutoModUpdater(snow);
+            else
+                return new OverworldLoader(startMode, snow);
+        }
     }
 }
