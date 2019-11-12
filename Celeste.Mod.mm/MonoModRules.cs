@@ -222,7 +222,7 @@ namespace MonoMod {
                 version = new Version(versionInts[0], versionInts[1], versionInts[2], versionInts[3]);
             }
 
-            Version versionMin = new Version(1, 3, 0, 0);
+            Version versionMin = new Version(1, 3, 1, 2);
             if (version.Major == 0)
                 version = versionMin;
             if (version < versionMin)
