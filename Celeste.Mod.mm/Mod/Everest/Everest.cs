@@ -349,7 +349,7 @@ namespace Celeste.Mod {
             // Start requesting the version list ASAP.
             Updater.RequestAll();
 
-            if (CoreModule.Settings.AutoUpdateModsOnStart) {
+            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
                 // Request the mod update list as well.
                 ModUpdaterHelper.RunAsyncCheckForModUpdates();
             }

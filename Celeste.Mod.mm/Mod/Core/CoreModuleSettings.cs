@@ -99,7 +99,7 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingInGame(false)]
-        public bool AutoUpdateModsOnStart { get; set; } = false;
+        public bool AutoUpdateModsOnStartup { get; set; } = false;
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;

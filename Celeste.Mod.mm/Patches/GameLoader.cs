@@ -128,7 +128,7 @@ namespace Celeste {
         private static Scene _GetNextScene(Overworld.StartMode startMode, HiresSnow snow) {
             bool transitionToModUpdater = false;
 
-            if (CoreModule.Settings.AutoUpdateModsOnStart) {
+            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
                 if (!ModUpdaterHelper.IsAsyncUpdateCheckingDone()) {
                     // update checking is not done yet.
                     // transition to mod updater screen to display the "checking for updates" message.
