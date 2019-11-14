@@ -111,6 +111,22 @@ namespace Celeste.Mod.Helpers {
         }
 
         /// <summary>
+        /// Tries deleting a file if it exists.
+        /// If deletion fails, an error is written to the log.
+        /// </summary>
+        /// <param name="path">The path to the file to delete</param>
+        public static void TryDelete(string path) {
+            if (File.Exists(path)) {
+                try {
+                    Logger.Log("ModUpdaterHelper", $"Deleting file {path}");
+                    File.Delete(path);
+                } catch (Exception) {
+                    Logger.Log("ModUpdaterHelper", $"Removing {path} failed");
+                }
+            }
+        }
+
+        /// <summary>
         /// Retrieves the mod updater database location from everestapi.github.io.
         /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
         /// </summary>

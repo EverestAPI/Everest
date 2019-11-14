@@ -203,14 +203,7 @@ namespace Celeste.Mod.UI {
                     button.Disabled = false;
 
                     // try to delete mod-update.zip if it still exists.
-                    if (File.Exists(zipPath)) {
-                        try {
-                            Logger.Log("OuiModUpdateList", $"Deleting temp file {zipPath}");
-                            File.Delete(zipPath);
-                        } catch (Exception) {
-                            Logger.Log("OuiModUpdateList", $"Removing {zipPath} failed");
-                        }
-                    }
+                    ModUpdaterHelper.TryDelete(zipPath);
                 }
 
                 // give the menu control back to the player

@@ -28,6 +28,8 @@ namespace Celeste.Mod.UI {
 
         public AutoModUpdater(HiresSnow snow) {
             this.snow = snow;
+
+            cogwheel = GFX.Gui["reloader/cogwheel"];
         }
 
         public override void Begin() {
@@ -113,14 +115,7 @@ namespace Celeste.Mod.UI {
                     failuresOccured = true;
 
                     // try to delete mod-update.zip if it still exists.
-                    if (File.Exists(zipPath)) {
-                        try {
-                            Logger.Log("AutoModUpdater", $"Deleting temp file {zipPath}");
-                            File.Delete(zipPath);
-                        } catch (Exception) {
-                            Logger.Log("AutoModUpdater", $"Removing {zipPath} failed");
-                        }
-                    }
+                    ModUpdaterHelper.TryDelete(zipPath);
                 }
 
                 currentlyUpdatedModIndex++;
@@ -167,19 +162,7 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             base.Render();
-
-            if (modUpdatingMessage != null) {
-                // render the message and the cogwheel.
-                if (cogwheel == null && GFX.Gui != null)
-                    cogwheel = GFX.Gui["reloader/cogwheel"];
-
-                if (cogwheel != null)
-                    copyPasteFromAssetReloadHelper();
-            }
-        }
-
-        // TODO: don't do copy-paste, copy-paste is bad
-        private void copyPasteFromAssetReloadHelper() {
+            
             Draw.SpriteBatch.Begin(
                 SpriteSortMode.Deferred,
                 BlendState.AlphaBlend,
@@ -192,34 +175,38 @@ namespace Celeste.Mod.UI {
 
             Vector2 anchor = new Vector2(96f, 96f);
 
-            Vector2 pos = anchor + new Vector2(0f, 0f);
-            float cogScale = 0.25f;
+            // render the spinning cogwheel
             if (!(cogwheel?.Texture?.Texture?.IsDisposed ?? true)) {
+                Vector2 cogPosition = anchor + new Vector2(0f, 0f);
+                float cogScale = 0.25f;
                 float cogRot = (cogwheelSpinning ? RawTimeActive : cogwheelStopTime) * 4f;
+
+                // render a 2 pixel-thick cogwheel shadow / outline
                 for (int x = -2; x <= 2; x++)
                     for (int y = -2; y <= 2; y++)
                         if (x != 0 || y != 0)
-                            cogwheel.DrawCentered(pos + new Vector2(x, y), Color.Black, cogScale, cogRot);
-                cogwheel.DrawCentered(pos, Color.White, cogScale, cogRot);
+                            cogwheel.DrawCentered(cogPosition + new Vector2(x, y), Color.Black, cogScale, cogRot);
+
+                // render the cogwheel itself
+                cogwheel.DrawCentered(cogPosition, Color.White, cogScale, cogRot);
             }
 
-            pos = anchor + new Vector2(48f, 0f);
-            try {
-                if (Dialog.Language != null && ActiveFont.Font != null) {
-                    if (modUpdatingMessage != null) {
-                        Vector2 size = ActiveFont.Measure(modUpdatingMessage);
-                        ActiveFont.DrawOutline(modUpdatingMessage, pos + new Vector2(size.X * 0.5f * 0.8f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.8f, 0.8f), Color.White, 2f, Color.Black);
-                    }
-                    if (modUpdatingSubMessage != null) {
-                        Vector2 size = ActiveFont.Measure(modUpdatingSubMessage);
-                        ActiveFont.DrawOutline(modUpdatingSubMessage, pos + new Vector2(size.X * 0.5f * 0.5f + 5, 40f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Color.White, 2f, Color.Black);
-                    }
-                }
-            } catch {
-                // Whoops, we weren't ready to draw text yet...
+            if (modUpdatingMessage != null) {
+                // render sub-text (appears smaller under the text)
+                drawText(modUpdatingMessage, anchor + new Vector2(48f, 0f), 0.8f);
+            }
+
+            if (modUpdatingSubMessage != null) {
+                // render sub-text (appears smaller under the text)
+                drawText(modUpdatingSubMessage, anchor + new Vector2(53f, 40f), 0.5f);
             }
 
             Draw.SpriteBatch.End();
+        }
+
+        private void drawText(string text, Vector2 position, float scale) {
+            Vector2 size = ActiveFont.Measure(text);
+            ActiveFont.DrawOutline(text, position + new Vector2(size.X * 0.5f * scale, 0f), new Vector2(0.5f, 0.5f), Vector2.One * scale, Color.White, 2f, Color.Black);
         }
     }
 }
