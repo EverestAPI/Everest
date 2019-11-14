@@ -351,7 +351,7 @@ namespace Celeste.Mod {
 
             if (CoreModule.Settings.AutoUpdateModsOnStart) {
                 // Request the mod update list as well.
-                ModUpdaterHelper.RunCheckForModUpdates();
+                ModUpdaterHelper.RunAsyncCheckForModUpdates();
             }
         }
 

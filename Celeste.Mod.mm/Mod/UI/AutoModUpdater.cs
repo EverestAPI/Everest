@@ -50,7 +50,7 @@ namespace Celeste.Mod.UI {
                 // display "checking for updates" message, in case the async task is not done yet.
                 modUpdatingMessage = Dialog.Clean("AUTOUPDATECHECKER_CHECKING");
 
-                SortedDictionary<ModUpdateInfo, EverestModuleMetadata> updateList = ModUpdaterHelper.GetLoadedModUpdates();
+                SortedDictionary<ModUpdateInfo, EverestModuleMetadata> updateList = ModUpdaterHelper.GetAsyncLoadedModUpdates();
                 if (updateList == null || updateList.Count == 0) {
                     // no mod update, clear message and continue right away.
                     modUpdatingMessage = null;

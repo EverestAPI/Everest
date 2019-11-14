@@ -143,7 +143,7 @@ namespace Celeste.Mod.Helpers {
         /// <summary>
         /// Run a check for mod updates asynchronously.
         /// </summary>
-        public static void RunCheckForModUpdates() {
+        public static void RunAsyncCheckForModUpdates() {
             updateCheckTask = new Task(() => {
                 Dictionary<string, ModUpdateInfo> updateCatalog = DownloadModUpdateList();
                 if (updateCatalog != null) {
@@ -154,10 +154,17 @@ namespace Celeste.Mod.Helpers {
         }
 
         /// <summary>
+        /// Returns true if update checking is done, false otherwise.
+        /// </summary>
+        public static bool IsAsyncUpdateCheckingDone() {
+            return updateCheckTask == null || updateCheckTask.Status != TaskStatus.Running;
+        }
+
+        /// <summary>
         /// Returns the mod updates retrieved by RunCheckForModUpdates().
         /// Waits for the end of the task if it is not over yet.
         /// </summary>
-        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> GetLoadedModUpdates() {
+        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> GetAsyncLoadedModUpdates() {
             if (updateCheckTask != null)
                 updateCheckTask.Wait();
 
