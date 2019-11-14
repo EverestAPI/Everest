@@ -88,7 +88,8 @@ namespace Celeste.Mod.UI {
                 try {
                     // download it...
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")}";
-                
+
+                    Logger.Log("AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
                     Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                         if (length > 0) {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
