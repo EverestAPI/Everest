@@ -21,6 +21,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using YYProject.XXHash;
 using Celeste.Mod.Entities;
+using Celeste.Mod.Helpers;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -347,6 +348,11 @@ namespace Celeste.Mod {
 
             // Start requesting the version list ASAP.
             Updater.RequestAll();
+
+            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
+                // Request the mod update list as well.
+                ModUpdaterHelper.RunAsyncCheckForModUpdates();
+            }
         }
 
         internal static bool _Initialized;

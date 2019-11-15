@@ -103,6 +103,16 @@
 	MODUPDATECHECKER_INSTALLING=	installing...
 	MODUPDATECHECKER_FAILED=		update failed!
 	MODUPDATECHECKER_WILLRESTART=	press Back to restart Celeste
+	
+# Auto Mod Updater
+	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
+	AUTOUPDATECHECKER_UPDATING=		Auto-updating
+	AUTOUPDATECHECKER_DOWNLOADING=	Downloading
+	AUTOUPDATECHECKER_VERIFYING=	Verifying
+	AUTOUPDATECHECKER_INSTALLING=	Installing
+	AUTOUPDATECHECKER_FAILED=		Some updates failed. Check your log.txt for more info.
+	AUTOUPDATECHECKER_CONTINUE=		Press Confirm to continue
+	AUTOUPDATECHECKER_REBOOT=		Press Confirm to restart Celeste
 
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES

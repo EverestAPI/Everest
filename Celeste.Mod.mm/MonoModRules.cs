@@ -124,6 +124,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("RegisterAreaCompleteCtor")]
     class PatchAreaCompleteCtorAttribute : Attribute { }
 
+    /// <summary>
+    /// Patch the GameLoader.IntroRoutine method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchGameLoaderIntroRoutine")]
+    class PatchGameLoaderIntroRoutineAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1153,6 +1159,31 @@ namespace MonoMod {
                 instri++;
             }
 
+        }
+        
+
+        public static void PatchGameLoaderIntroRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetNextScene = method.DeclaringType.FindMethod("Monocle.Scene _GetNextScene(Celeste.Overworld/StartMode,Celeste.HiresSnow)");
+            if (m_GetNextScene == null)
+                return;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GetNextScene;
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

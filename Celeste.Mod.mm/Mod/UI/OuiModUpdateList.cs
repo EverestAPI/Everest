@@ -13,16 +13,6 @@ using YamlDotNet.Serialization;
 namespace Celeste.Mod.UI {
     class OuiModUpdateList : Oui {
 
-        private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
-            public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
-                if (x.LastUpdate != y.LastUpdate) {
-                    return y.LastUpdate - x.LastUpdate;
-                }
-                // fall back to alphabetical order
-                return x.Name.CompareTo(y.Name);
-            }
-        }
-
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenu.Button fetchingButton;
@@ -37,7 +27,7 @@ namespace Celeste.Mod.UI {
         private bool shouldRestart = false;
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
-        private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>(new MostRecentUpdatedFirst());
+        private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
 
         public override IEnumerator Enter(Oui from) {
             menu = new TextMenu();
@@ -69,23 +59,8 @@ namespace Celeste.Mod.UI {
                 updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
 
                 // 2. Find out what actually has been updated
-                availableUpdatesCatalog.Clear();
-
                 if (updateCatalog != null) {
-                    Logger.Log("OuiModUpdateList", "Checking for updates");
-
-                    foreach (EverestModule module in Everest.Modules) {
-                        EverestModuleMetadata metadata = module.Metadata;
-                        if (metadata.PathArchive != null && updateCatalog.ContainsKey(metadata.Name)) {
-                            string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
-                            Logger.Log("OuiModUpdateList", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
-                            if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
-                                availableUpdatesCatalog.Add(updateCatalog[metadata.Name], metadata);
-                            }
-                        }
-                    }
-
-                    Logger.Log("OuiModUpdateList", $"{availableUpdatesCatalog.Count} update(s) available");
+                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog);
                 }
             });
 
@@ -107,7 +82,7 @@ namespace Celeste.Mod.UI {
             menu = null;
 
             updateCatalog = null;
-            availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>(new MostRecentUpdatedFirst());
+            availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
             task = null;
         }
 
@@ -228,14 +203,7 @@ namespace Celeste.Mod.UI {
                     button.Disabled = false;
 
                     // try to delete mod-update.zip if it still exists.
-                    if (File.Exists(zipPath)) {
-                        try {
-                            Logger.Log("OuiModUpdateList", $"Deleting temp file {zipPath}");
-                            File.Delete(zipPath);
-                        } catch (Exception) {
-                            Logger.Log("OuiModUpdateList", $"Removing {zipPath} failed");
-                        }
-                    }
+                    ModUpdaterHelper.TryDelete(zipPath);
                 }
 
                 // give the menu control back to the player

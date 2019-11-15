@@ -5,6 +5,8 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -119,5 +121,33 @@ namespace Celeste {
             loaded = true;
         }
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchGameLoaderIntroRoutine] // ... except for manually manipulating the method via MonoModRules
+        public extern new IEnumerator IntroRoutine();
+
+        private static Scene _GetNextScene(Overworld.StartMode startMode, HiresSnow snow) {
+            bool transitionToModUpdater = false;
+
+            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
+                if (!ModUpdaterHelper.IsAsyncUpdateCheckingDone()) {
+                    // update checking is not done yet.
+                    // transition to mod updater screen to display the "checking for updates" message.
+                    transitionToModUpdater = true;
+                } else {
+                    SortedDictionary<ModUpdateInfo, EverestModuleMetadata> modUpdates = ModUpdaterHelper.GetAsyncLoadedModUpdates();
+                    if (modUpdates != null && modUpdates.Count != 0) {
+                        // update checking is done, and updates are available.
+                        // transition to mod updater screen in order to install the updates
+                        transitionToModUpdater = true;
+                    }
+                }
+            }
+
+            if (transitionToModUpdater) {
+                return new AutoModUpdater(snow);
+            } else {
+                return new OverworldLoader(startMode, snow);
+            }
+        }
     }
 }
