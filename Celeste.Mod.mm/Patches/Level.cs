@@ -98,6 +98,7 @@ namespace Celeste {
         }
 
         private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
+        [PatchTransitionRoutine]
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
             IEnumerator orig = orig_TransitionRoutine(next, direction);
 
@@ -324,6 +325,18 @@ namespace Celeste {
             }
 
             return false;
+        }
+
+        private static object _GCCollectLock = Tuple.Create(new object(), "Level Transition GC.Collect");
+        private static void _GCCollect() {
+            if (Everest.Flags.IsDisabled) {
+                GC.Collect();
+                return;
+            }
+
+            QueuedTaskHelper.Do(_GCCollectLock, () => {
+                GC.Collect(1, GCCollectionMode.Forced, false);
+            });
         }
 
     }

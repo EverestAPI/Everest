@@ -59,6 +59,12 @@ namespace MonoMod {
     class PatchLevelLoaderThreadAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the Godzilla-sized level transition method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTransitionRoutine")]
+    class PatchTransitionRoutineAttribute : Attribute { }
+
+    /// <summary>
     /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
     /// </summary>
     [MonoModCustomMethodAttribute("PatchErrorLogWrite")]
@@ -657,6 +663,40 @@ namespace MonoMod {
                     instri++;
 
                     // The rest should work as-is.
+                }
+
+            }
+
+        }
+
+        public static void PatchTransitionRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_this = null;
+
+            MethodDefinition m_GCCollect = method.DeclaringType.FindMethod("System.Void _GCCollect()");
+            if (m_GCCollect == null)
+                return;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void System.GC::Collect()") {
+                    // Replace the method call.
+                    instr.Operand = m_GCCollect;
+                    instri++;
                 }
 
             }
