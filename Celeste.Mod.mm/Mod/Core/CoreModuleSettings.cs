@@ -85,6 +85,11 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
+        public bool UnloadUnusedAudio { get; set; } = true;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool DisableAntiSoftlock { get; set; } = false;
 
         public string InputGui { get; set; } = "";

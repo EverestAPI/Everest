@@ -135,6 +135,14 @@ namespace Celeste {
             }
         }
 
+        public static extern void orig_ReleaseUnusedDescriptions();
+        public static void ReleaseUnusedDescriptions() {
+            if (!CoreModule.Settings.UnloadUnusedAudio)
+                return;
+            orig_ReleaseUnusedDescriptions();
+        }
+
+
         [MonoModReplace]
         public static string GetEventName(EventInstance instance) {
             if (instance == null)
