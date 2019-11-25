@@ -13,7 +13,7 @@ using System.Xml;
 using Microsoft.Xna.Framework;
 
 namespace Celeste {
-    // : Solid because Awake
+    // : Solid because base.Awake
     class patch_StarJumpBlock : Solid {
         private Level level;
 
@@ -33,7 +33,7 @@ namespace Celeste {
 
             // TODO: Inner corner textures? Or keep them empty as-is?
 
-            Awake(scene);
+            base.Awake(scene);
 
             level = SceneAs<Level>();
 
