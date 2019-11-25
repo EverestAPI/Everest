@@ -281,6 +281,7 @@
     <Compile Include="Patches\RainFG.cs" />
     <Compile Include="Patches\PlaybackData.cs" />
     <Compile Include="Patches\MenuButton.cs" />
+    <Compile Include="Patches\StarJumpBlock.cs" />
     <Compile Include="Patches\TrailManager.cs" />
     <Compile Include="Patches\UnlockEverythingThingy.cs" />
     <Compile Include="Patches\TheoCrystalCollider.cs" />
