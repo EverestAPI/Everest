@@ -8,7 +8,7 @@ using MonoMod;
 
 namespace Celeste {
     public class patch_LevelData : LevelData {
-        private static readonly string[] BerryNames = {"strawberry", "goldenBerry", "memorialTextController"};
+        private static readonly string[] excludeNames = {"strawberry", "goldenBerry", "memorialTextController", "key"};
 
         public patch_LevelData(BinaryPacker.Element data) : base(data) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -28,8 +28,8 @@ namespace Celeste {
 
             int maxId = 0;
             foreach (EntityData entityData in Entities) {
-                // Do not touch the strawberries, because save data need them.
-                if (BerryNames.Contains(entityData.Name)) {
+                // Do not touch the strawberries and keys, because save data need them.
+                if (excludeNames.Contains(entityData.Name)) {
                     maxId = Math.Max(maxId, entityData.ID);
                 }
                 else {
