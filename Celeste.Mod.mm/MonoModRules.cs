@@ -158,6 +158,16 @@ namespace MonoMod {
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
 
         static MonoModRules() {
+            // FIXME: Remove this workaround once Everest updates to MonoMod 19.12+
+            __get_Modder__Force = MonoModRule.Modder;
+            System.Reflection.Assembly asm_RuntimeDetour = System.Reflection.Assembly.Load("MonoMod.RuntimeDetour");
+            Type t_Hook = asm_RuntimeDetour.GetType("MonoMod.RuntimeDetour.NativeDetour");
+            System.Reflection.ConstructorInfo ctor_Hook = t_Hook.GetConstructor(new Type[] { typeof(System.Reflection.MethodBase), typeof(System.Reflection.MethodBase) });
+            __get_Modder__Hook = (IDisposable) ctor_Hook.Invoke(new object[] {
+                typeof(MonoModRulesManager).GetProperty("Modder").GetGetMethod(),
+                typeof(MonoModRules).GetMethod("__get_Modder")
+            });
+
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
 
@@ -272,11 +282,11 @@ namespace MonoMod {
 
                 if (calling?.DeclaringType?.FullName == "System.IO.File") {
                     if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
-                        FileProxyCache[calling.GetFindableID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetFindableID(withType: false));
+                        FileProxyCache[calling.GetID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetID(withType: false));
 
                 } else if (calling?.DeclaringType?.FullName == "System.IO.Directory") {
                     if (!DirectoryProxyCache.TryGetValue(calling.Name, out replacement))
-                        DirectoryProxyCache[calling.GetFindableID(withType: false)] = replacement = DirectoryProxy.FindMethod(calling.GetFindableID(withType: false));
+                        DirectoryProxyCache[calling.GetID(withType: false)] = replacement = DirectoryProxy.FindMethod(calling.GetID(withType: false));
 
                 } else {
                     continue;
@@ -310,7 +320,7 @@ namespace MonoMod {
 
         public static void PatchMapDataLoader(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
             if (!method.HasBody)
                 return;
@@ -339,7 +349,7 @@ namespace MonoMod {
                     pop = false;
                 }
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.BinaryPacker/Element Celeste.BinaryPacker::FromBinary(System.String)") {
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "Celeste.BinaryPacker/Element Celeste.BinaryPacker::FromBinary(System.String)") {
                     instri++;
 
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
@@ -350,7 +360,7 @@ namespace MonoMod {
 
                 if (instri > 2 &&
                     instrs[instri - 3].OpCode == OpCodes.Ldfld && (instrs[instri - 3].Operand as FieldReference)?.FullName == "Celeste.EntityData[0...,0...] Celeste.ModeProperties::StrawberriesByCheckpoint" &&
-                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "Celeste.EntityData Celeste.EntityData[0...,0...]::Get(System.Int32,System.Int32)"
+                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "Celeste.EntityData Celeste.EntityData[0...,0...]::Get(System.Int32,System.Int32)"
                 ) {
                     instrs[instri - 3].OpCode = OpCodes.Ldflda;
                     instr.OpCode = OpCodes.Call;
@@ -363,7 +373,7 @@ namespace MonoMod {
 
         public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
             if (!method.HasBody)
                 return;
@@ -381,7 +391,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.Player::.ctor(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)") {
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.Player::.ctor(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_LoadNewPlayer;
                 }
@@ -401,7 +411,7 @@ namespace MonoMod {
                     instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
                     instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
                     instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                    instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetFindableID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                    instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
                 ) {
                     // Insert a call to our own entity handler here.
                     // If it returns true, replace the name with ""
@@ -498,9 +508,9 @@ namespace MonoMod {
 
                 if (instri > 1 &&
                     instri < instrs.Count - 2 &&
-                    instrs[instri - 2].OpCode == OpCodes.Call && (instrs[instri - 2].Operand as MethodReference)?.GetFindableID() == "Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()" &&
+                    instrs[instri - 2].OpCode == OpCodes.Call && (instrs[instri - 2].Operand as MethodReference)?.GetID() == "Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()" &&
                     instrs[instri - 1].GetIntOrNull() == 9 &&
-                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean Monocle.MInput/KeyboardData::Pressed(Microsoft.Xna.Framework.Input.Keys)"
+                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Boolean Monocle.MInput/KeyboardData::Pressed(Microsoft.Xna.Framework.Input.Keys)"
                 ) {
                     // Replace the offending instructions with a ldc.i4.0
                     instri -= 2;
@@ -543,7 +553,7 @@ namespace MonoMod {
                     instri < instrs.Count - 2 &&
                     instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
                     instrs[instri + 1].OpCode == OpCodes.Ldarg_0 &&
-                    instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference)?.GetFindableID() == "System.Void Monocle.Renderer::Render(Monocle.Scene)"
+                    instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference)?.GetID() == "System.Void Monocle.Renderer::Render(Monocle.Scene)"
                 ) {
                     // Load this, SubHudRenderer, this and call it right before the branch.
 
@@ -625,12 +635,12 @@ namespace MonoMod {
 
                 if (instri > 3 &&
                     instri < instrs.Count - 6 &&
-                    instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.HudRenderer::.ctor()" &&
+                    instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.HudRenderer::.ctor()" &&
                     instrs[instri + 1].OpCode == OpCodes.Dup &&
                     instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
                     instrs[instri + 3].OpCode == OpCodes.Stfld && (instrs[instri + 3].Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
                     instrs[instri + 4].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                    instrs[instri + 5].OpCode == OpCodes.Callvirt && (instrs[instri + 5].Operand as MethodReference)?.GetFindableID() == "System.Void Monocle.Scene::Add(Monocle.Renderer)"
+                    instrs[instri + 5].OpCode == OpCodes.Callvirt && (instrs[instri + 5].Operand as MethodReference)?.GetID() == "System.Void Monocle.Scene::Add(Monocle.Renderer)"
                 ) {
                     // Insert our own SubHudRenderer here.
 
@@ -693,7 +703,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void System.GC::Collect()") {
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Void System.GC::Collect()") {
                     // Replace the method call.
                     instr.Operand = m_GCCollect;
                     instri++;
@@ -732,7 +742,7 @@ namespace MonoMod {
                 if (instri > 0 &&
                     instri < instrs.Count - 3 &&
                     instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.Version Monocle.Engine::Version" &&
-                    instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference)?.GetFindableID() == "System.String System.Object::ToString()"
+                    instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference)?.GetID() == "System.String System.Object::ToString()"
                 ) {
                     // Skip the ldfld Version and ToString instructions.
                     instri += 2;
@@ -838,7 +848,7 @@ namespace MonoMod {
                 if (instri > 3 &&
                     instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "System.String Celeste.Session::Level" &&
                     instrs[instri - 1].OpCode == OpCodes.Ldstr && (instrs[instri - 1].Operand as string) == "2" &&
-                    instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Boolean System.String::op_Equality(System.String,System.String)"
+                    instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Boolean System.String::op_Equality(System.String,System.String)"
                 ) {
                     // After ==, process the result.
                     instri++;
@@ -1034,7 +1044,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "Microsoft.Xna.Framework.Color Monocle.Calc::HexToColor(System.String)") {
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "Microsoft.Xna.Framework.Color Monocle.Calc::HexToColor(System.String)") {
                     // Push this.
                     instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
                     instri++;
@@ -1047,7 +1057,7 @@ namespace MonoMod {
 
         public static void PatchDialogLoader(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetFindableID(name: method.GetOriginalName()));
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
             MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
             if (m_GetFiles == null)
@@ -1058,7 +1068,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.String[] System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)") {
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.String[] System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)") {
                     instr.Operand = m_GetFiles;
                 }
             }
@@ -1078,12 +1088,12 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetFindableID() == "System.Collections.Generic.IEnumerable`1<System.String> System.IO.File::ReadLines(System.String,System.Text.Encoding)") {
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.IEnumerable`1<System.String> System.IO.File::ReadLines(System.String,System.Text.Encoding)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GetLanguageText;
                 }
 
-                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.Language::.ctor()") {
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.Language::.ctor()") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_NewLanguage;
                 }
@@ -1102,7 +1112,7 @@ namespace MonoMod {
             method.Body.Instructions.Clear();
             ILProcessor il = method.Body.GetILProcessor();
 
-            foreach (KeyValuePair<string, object> kvp in MonoModExt.SharedData) {
+            foreach (KeyValuePair<string, object> kvp in MonoModRule.Modder.SharedData) {
                 if (!(kvp.Value is bool))
                     return;
                 il.Emit(OpCodes.Ldstr, kvp.Key);
@@ -1140,7 +1150,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
                 MethodReference calling = instr.Operand as MethodReference;
-                string callingID = calling?.GetFindableID();
+                string callingID = calling?.GetID();
 
                 // The original AreaComplete .ctor has been modified to contain an extra parameter.
                 // For safety, check against both signatures.
@@ -1185,7 +1195,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
                 MethodReference calling = instr.Operand as MethodReference;
-                string callingID = calling?.GetFindableID();
+                string callingID = calling?.GetID();
 
                 // The matching CompleteRenderer .ctor has been added manually, thus manually relink to it.
                 if (instr.OpCode != OpCodes.Newobj || (
@@ -1219,7 +1229,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetFindableID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GetNextScene;
                 }
@@ -1309,6 +1319,26 @@ namespace MonoMod {
             il.Emit(OpCodes.Initobj, t);
             if (!stind)
                 il.Emit(OpCodes.Ldloc, var);
+        }
+
+        // FIXME: Use MonoMod 19.12's variant.
+        public static string GetOriginalName(this MethodDefinition method) {
+            foreach (CustomAttribute attrib in method.CustomAttributes)
+                if (attrib.AttributeType.FullName == "MonoMod.MonoModOriginalName")
+                    return (string) attrib.ConstructorArguments[0].Value;
+
+            if (method.Name == ".ctor" || method.Name == ".cctor") {
+                return "orig_ctor_" + ((MemberReference) method.DeclaringType).GetPatchName();
+            }
+
+            return "orig_" + method.Name;
+        }
+
+        // FIXME: Remove this workaround once Everest updates to MonoMod 19.12+
+        public static IDisposable __get_Modder__Hook;
+        public static MonoModder __get_Modder__Force;
+        public static MonoModder __get_Modder() {
+            return __get_Modder__Force;
         }
 
     }

@@ -74,35 +74,35 @@
     <Reference Include="KeraLua, Version=1.0.22.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
       <HintPath>..\packages\KeraLua.1.0.22\lib\net45\KeraLua.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.dll</HintPath>
+    <Reference Include="Mono.Cecil, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
+    <Reference Include="Mono.Cecil.Mdb, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
+    <Reference Include="Mono.Cecil.Pdb, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
     </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.10.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.10.4\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
+    <Reference Include="Mono.Cecil.Rocks, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
+      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod, Version=19.9.1.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.19.9.1.6\lib\net35\MonoMod.exe</HintPath>
+    <Reference Include="MonoMod, Version=19.11.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.19.11.5.1\lib\net40\MonoMod.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour, Version=19.9.1.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.19.9.1.6\lib\net35\MonoMod.RuntimeDetour.dll</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour, Version=19.11.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.19.11.5.1\lib\net40\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=19.9.1.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.19.9.1.6\lib\net35\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=19.11.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.19.11.5.1\lib\net40\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.Utils, Version=19.9.1.6, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.Utils.19.9.1.6\lib\net35\MonoMod.Utils.dll</HintPath>
+    <Reference Include="MonoMod.Utils, Version=19.11.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.Utils.19.11.5.1\lib\net40\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="NLua, Version=1.4.24.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLua.1.4.24\lib\net45\NLua.dll</HintPath>
+    <Reference Include="NLua, Version=1.4.25.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLua.1.4.25\lib\net45\NLua.dll</HintPath>
     </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>..\lib-stripped\Steamworks.NET.dll</HintPath>
@@ -112,8 +112,8 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Management" />
     <Reference Include="System.Xml" />
-    <Reference Include="YamlDotNet, Version=7.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
-      <HintPath>..\packages\YamlDotNet.7.0.0\lib\net45\YamlDotNet.dll</HintPath>
+    <Reference Include="YamlDotNet, Version=8.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
+      <HintPath>..\packages\YamlDotNet.8.0.0\lib\net45\YamlDotNet.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

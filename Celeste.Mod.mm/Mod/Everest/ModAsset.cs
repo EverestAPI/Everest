@@ -44,15 +44,6 @@ namespace Celeste.Mod {
         public List<ModAsset> Children = new List<ModAsset>();
 
         /// <summary>
-        /// If the asset is a section of a larger file, the asset starting offset.
-        /// </summary>
-        public long SectionOffset;
-        /// <summary>
-        /// If the asset is a section of a larger file, the asset length.
-        /// </summary>
-        public int SectionLength;
-
-        /// <summary>
         /// A set of all objects affected by this mod asset.
         /// </summary>
         public List<object> Targets = new List<object>();
@@ -65,10 +56,7 @@ namespace Celeste.Mod {
                 Stream stream;
                 bool isSection;
                 Open(out stream, out isSection);
-
-                if (stream == null || SectionLength == 0 || isSection)
-                    return stream;
-                return new LimitedStream(stream, SectionOffset, SectionLength);
+                return stream;
             }
         }
 
