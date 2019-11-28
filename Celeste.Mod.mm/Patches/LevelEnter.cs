@@ -24,10 +24,18 @@ namespace Celeste {
 
         private bool fromSaveData;
 
+        private patch_LevelEnter(Session session, bool fromSaveData) {
+            // no-op.
+        }
+
         extern public static void orig_Go(Session session, bool fromSaveData);
         public static void Go(Session session, bool fromSaveData) {
             orig_Go(session, fromSaveData);
             Everest.Events.Level.Enter(session, fromSaveData);
+        }
+
+        public static patch_LevelEnter ForceCreate(Session session, bool fromSaveData) {
+            return new patch_LevelEnter(session, fromSaveData);
         }
 
         private extern IEnumerator orig_Routine();
@@ -65,9 +73,9 @@ namespace Celeste {
             Add(postcard = new Postcard(message, "event:/ui/main/postcard_csides_in", "event:/ui/main/postcard_csides_out"));
             yield return postcard.DisplayRoutine();
 
-            SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
-            SaveData.Instance.LastArea = AreaKey.None;
-            Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaComplete);
+            SaveData.Instance.CurrentSession = session;
+            SaveData.Instance.LastArea = session.Area;
+            Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
         }
 
         private IEnumerator EnterWithPostcardRoutine(string message, string soundId) {

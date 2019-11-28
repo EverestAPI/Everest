@@ -101,7 +101,7 @@ namespace Celeste {
                 ;
 
                 LevelEnterExt.ErrorMessage = message;
-                LevelEnter.Go(new Session(new AreaKey(1).SetSID("")), false);
+                LevelEnter.Go(new Session(Area), false);
             }
         }
 

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -124,29 +125,50 @@ namespace Celeste.Mod {
 
                 ReloadingLevel = true;
                 Do($"Reloading level", () => {
-                    LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
+                    try {
+                        LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
 
-                    Player player = level.Tracker?.GetEntity<Player>();
-                    if (player != null) {
-                        patch_Level.SkipScreenWipes++;
+                        Player player = level.Tracker?.GetEntity<Player>();
+                        if (player != null) {
+                            patch_Level.SkipScreenWipes++;
 
-                        patch_Level.NextLoadedPlayer = player;
+                            patch_Level.NextLoadedPlayer = player;
 
-                        player.Remove(player.Light);
-                        VertexLight light = player.Light;
-                        player.Add(light = player.Light = new VertexLight(light.Position, light.Color, light.Alpha, (int) light.StartRadius, (int) light.EndRadius));
+                            player.Remove(player.Light);
+                            VertexLight light = player.Light;
+                            player.Add(light = player.Light = new VertexLight(light.Position, light.Color, light.Alpha, (int) light.StartRadius, (int) light.EndRadius));
 
-                        player.Leader.LoseFollowers();
+                            player.Leader.LoseFollowers();
 
-                        ((patch_Player) player).OverrideIntroType = Player.IntroTypes.Transition;
+                            ((patch_Player) player).OverrideIntroType = Player.IntroTypes.Transition;
+                        }
+
+                        ReturnToScene = loader;
+                        ReloadingLevel = false;
+                        ReloadingLevelPaused = level.Paused;
+
+                        while (!loader.Loaded)
+                            Thread.Yield();
+
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "misc", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
+                        e.LogDetailed();
+
+                        string message = Dialog.Get("postcard_levelloadfailed")
+                            .Replace("((player))", SaveData.Instance.Name)
+                            .Replace("((sid))", level.Session?.Area.GetSID() ?? "NULL")
+                        ;
+
+                        if (patch_Level.NextLoadedPlayer != null) {
+                            patch_Level.NextLoadedPlayer = null;
+                            patch_Level.SkipScreenWipes--;
+                        }
+
+                        LevelEnterExt.ErrorMessage = message;
+                        ReturnToScene = patch_LevelEnter.ForceCreate(new Session(level.Session?.Area ?? new AreaKey(1).SetSID("")), false);
+                        ReloadingLevel = false;
+                        ReloadingLevelPaused = false;
                     }
-
-                    ReturnToScene = loader;
-                    ReloadingLevel = false;
-                    ReloadingLevelPaused = level.Paused;
-
-                    while (!loader.Loaded)
-                        Thread.Yield();
                 });
             }
         }

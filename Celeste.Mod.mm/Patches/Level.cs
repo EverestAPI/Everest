@@ -174,7 +174,7 @@ namespace Celeste {
             Audio.SetMusic(null);
 
             LevelEnterExt.ErrorMessage = message;
-            LevelEnter.Go(new Session(new AreaKey(1).SetSID("")), false);
+            LevelEnter.Go(new Session(Session?.Area ?? new AreaKey(1).SetSID("")), false);
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
