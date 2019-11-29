@@ -41,13 +41,17 @@ namespace Celeste {
 
         public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
+            AreaData area = AreaData.Get(scene);
+            if (area.CassetteSong == "-" || string.IsNullOrWhiteSpace(area.CassetteSong))
+                area.CassetteSong = null;
+
             orig_Awake(scene);
 
             beatsPerTick = 4;
             ticksPerSwap = 2;
             beatIndexMax = 256;
 
-            MapMetaCassetteModifier meta = AreaData.Get((Scene as Level).Session).GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = area.GetMeta()?.CassetteModifier;
             if (meta != null) {
                 if (meta.OldBehavior) {
                     tempoMult = meta.TempoMult;
