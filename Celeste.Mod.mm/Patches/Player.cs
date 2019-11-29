@@ -113,6 +113,14 @@ namespace Celeste {
             }
         }
 
+        private extern void orig_WindMove(Vector2 move);
+        private void WindMove(Vector2 move) {
+            // Don't apply wind on player in the Attract state: this would constantly push the player away from its target.
+            // This causes an infinite loop when hitting Badeline bosses.
+            if (StateMachine.State != StAttract)
+                orig_WindMove(move);
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         [MethodImpl(MethodImplOptions.NoInlining)]
