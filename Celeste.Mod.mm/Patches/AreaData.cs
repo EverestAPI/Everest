@@ -381,6 +381,11 @@ namespace Celeste {
                         area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
                 }
             }
+
+            // Load custom mountains
+            // This needs to be done after areas are loaded because it depends on the MapMeta
+            MTNExt.LoadMod();
+            MTNExt.LoadModData();
         }
 
         private static int AreaComparison(AreaData a, AreaData b) {

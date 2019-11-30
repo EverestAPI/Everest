@@ -153,6 +153,9 @@
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
+    <Compile Include="Patches\MountainModel.cs" />
+    <Compile Include="Patches\MTN.cs" />
+    <Compile Include="Patches\ObjModel.cs" />
     <Compile Include="Patches\MapEditor.cs" />
     <Compile Include="Patches\CassetteBlock.cs" />
     <Compile Include="Patches\Checkpoint.cs" />
