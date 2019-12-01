@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
+using MonoMod.Utils;
 
 namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
@@ -91,6 +92,11 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool DisableAntiSoftlock { get; set; } = false;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool? MultithreadedGC { get; set; } = null;
 
         public string InputGui { get; set; } = "";
 
