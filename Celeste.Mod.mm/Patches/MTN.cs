@@ -11,15 +11,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Celeste
-{
-    class patch_MTN
-    {
+namespace Celeste {
+    class patch_MTN {
         // We don't need an Unload() because the vanilla MTN disposes with the Atlas we use
 
         public static extern void orig_UnloadData();
-        public static void UnloadData()
-        {
+        public static void UnloadData() {
             if (MTN.DataLoaded) {
                 foreach (KeyValuePair<string, MountainResources> kvp in MTNExt.MountainMappings) {
                     kvp.Value.MountainTerrain?.Dispose();
@@ -35,8 +32,7 @@ namespace Celeste
 
     }
 
-    public class MountainResources
-    {
+    public class MountainResources {
         public ObjModel MountainTerrain;
 
         public ObjModel MountainBuildings;
@@ -54,8 +50,7 @@ namespace Celeste
         public MountainState[] MountainStates = new MountainState[4];
     }
 
-    public static class MTNExt
-    {
+    public static class MTNExt {
         /// <summary>
         /// Maps the key to the ModAsset of the map in Everest.Content to the MountainResources for it
         /// </summary>
@@ -67,8 +62,7 @@ namespace Celeste
         /// <summary>
         /// Load the custom mountain models for mods.
         /// </summary>
-        public static void LoadModData()
-        {
+        public static void LoadModData() {
             if (!ModsDataLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
@@ -103,8 +97,7 @@ namespace Celeste
         /// <summary>
         /// Load the custom mountain textures for mods.
         /// </summary>
-        public static void LoadMod()
-        {
+        public static void LoadMod() {
             if (!ModsLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {

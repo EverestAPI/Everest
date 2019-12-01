@@ -9,12 +9,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
-namespace Celeste
-{
-    class patch_ObjModel : ObjModel
-    {
-        public static ObjModel CreateFromStream(Stream stream, string fname)
-        {
+namespace Celeste {
+    class patch_ObjModel : ObjModel {
+        public static ObjModel CreateFromStream(Stream stream, string fname) {
             ObjModel objModel = new ObjModel();
             List<VertexPositionTexture> list = new List<VertexPositionTexture>();
             List<Vector3> list2 = new List<Vector3>();
@@ -110,8 +107,7 @@ namespace Celeste
         private static extern float Float(string data);
     }
 
-    public static class ObjModelExt
-    {
+    public static class ObjModelExt {
 
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
@@ -120,8 +116,7 @@ namespace Celeste
         /// Create a new ObjModel from a stream
         /// The filename is mainly just to check if it's a .export
         /// </summary>
-        public static ObjModel CreateFromStream(Stream stream, string fname)
-        {
+        public static ObjModel CreateFromStream(Stream stream, string fname) {
             return patch_ObjModel.CreateFromStream(stream, fname);
         }
 

@@ -11,10 +11,8 @@ using Celeste.Mod;
 using Celeste.Mod.Meta;
 using System.IO;
 
-namespace Celeste
-{
-    class patch_MountainModel : MountainModel
-    {
+namespace Celeste {
+    class patch_MountainModel : MountainModel {
         // A whole bunch of private fields need to be used in BeforeRender
         private bool ignoreCameraRotation;
         private Quaternion lastCameraRotation;
@@ -38,16 +36,14 @@ namespace Celeste
 
         public extern void orig_ctor();
         [MonoModConstructor]
-        public void ctor()
-        {
+        public void ctor() {
             orig_ctor();
             customFog = fog;
             customFog2 = fog2;
         }
 
         public extern void orig_Update();
-        public new void Update()
-        {
+        public new void Update() {
             orig_Update();
             string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
@@ -66,8 +62,7 @@ namespace Celeste
         private extern void DrawBillboards(Matrix matrix, List<Component> billboards);
 
         public extern void orig_BeforeRender(Scene scene);
-        public new void BeforeRender(Scene scene)
-        {
+        public new void BeforeRender(Scene scene) {
             string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
             bool fadingIn = true;
