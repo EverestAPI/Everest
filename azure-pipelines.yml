@@ -34,7 +34,6 @@ steps:
 
 # Create and "publish" main artifact.
 - task: CopyFiles@2
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   displayName: 'Pack artifact'
   continueOnError: true
   inputs:
@@ -45,7 +44,6 @@ steps:
     overWrite: true
     flattenFolders: true
 - task: PublishBuildArtifacts@1
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   displayName: 'Publish artifact'
   continueOnError: true
   inputs:
