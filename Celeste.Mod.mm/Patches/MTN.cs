@@ -20,10 +20,8 @@ namespace Celeste
         public static extern void orig_UnloadData();
         public static void UnloadData()
         {
-            if (MTN.DataLoaded)
-            {
-                foreach (KeyValuePair<string, MountainResources> kvp in MTNExt.MountainMappings)
-                {
+            if (MTN.DataLoaded) {
+                foreach (KeyValuePair<string, MountainResources> kvp in MTNExt.MountainMappings) {
                     kvp.Value.MountainTerrain?.Dispose();
                     kvp.Value.MountainTerrain = null;
                     kvp.Value.MountainBuildings?.Dispose();
@@ -71,34 +69,27 @@ namespace Celeste
         /// </summary>
         public static void LoadModData()
         {
-            if (!ModsDataLoaded)
-            {
+            if (!ModsDataLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map)
-                {
+                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
                     MapMeta meta;
                     // Check if the meta for this asset exists and if it has a MountainModelDirectory specified
-                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory))
-                    {
+                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory)) {
                         // Create the mountain resources for this map if they don't exist already
-                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources))
-                        {
+                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
                             resources = new MountainResources();
                             MountainMappings.Add(kvp.Key, resources);
                         }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain"), out ModAsset mountain))
-                        {
+                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain"), out ModAsset mountain)) {
                             resources.MountainTerrain = ObjModelExt.CreateFromStream(mountain.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain.obj"));
                         }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "buildings"), out ModAsset buildings))
-                        {
+                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "buildings"), out ModAsset buildings)) {
                             resources.MountainBuildings = ObjModelExt.CreateFromStream(buildings.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "buildings.obj"));
                         }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall"), out ModAsset coreWall))
-                        {
+                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall"), out ModAsset coreWall)) {
                             resources.MountainCoreWall = ObjModelExt.CreateFromStream(coreWall.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall.obj"));
                         }
 
@@ -114,18 +105,14 @@ namespace Celeste
         /// </summary>
         public static void LoadMod()
         {
-            if (!ModsLoaded)
-            {
+            if (!ModsLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map)
-                {
+                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
                     MapMeta meta;
                     // Check if the meta for this asset exists and if it has a MountainTextureDirectory specified
-                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))
-                    {
+                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)) {
                         // Create the mountain resources for this map if they don't exist already
-                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources))
-                        {
+                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
                             resources = new MountainResources();
                             MountainMappings.Add(kvp.Key, resources);
                         }
@@ -133,23 +120,18 @@ namespace Celeste
                         resources.MountainTerrainTextures = new VirtualTexture[3];
                         resources.MountainBuildingTextures = new VirtualTexture[3];
                         resources.MountainSkyboxTextures = new VirtualTexture[3];
-                        for (int i = 0; i < 3; i++)
-                        {
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')))
-                            {
+                        for (int i = 0; i < 3; i++) {
+                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/'))) {
                                 resources.MountainSkyboxTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')].Texture;
                             }
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')))
-                            {
+                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/'))) {
                                 resources.MountainTerrainTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')].Texture;
                             }
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')))
-                            {
+                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/'))) {
                                 resources.MountainBuildingTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')].Texture;
                             }
                         }
-                        if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')))
-                        {
+                        if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/'))) {
                             resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
                         }
 

@@ -50,11 +50,9 @@ namespace Celeste
         {
             orig_Update();
             string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
-            if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset))
-            {
+            if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
-                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)))
-                {
+                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))) {
                     MountainResources resources = MTNExt.MountainMappings[path];
                     customFog.Rotate((0f - Engine.DeltaTime) * 0.01f);
                     customFog.TopColor = (customFog.BotColor = Color.Lerp((resources.MountainStates?[currState] ?? mountainStates[currState]).FogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
@@ -65,9 +63,7 @@ namespace Celeste
         }
 
         [MonoModIgnore]
-        private void DrawBillboards(Matrix matrix, List<Component> billboards)
-        {
-        }
+        private extern void DrawBillboards(Matrix matrix, List<Component> billboards);
 
         public extern void orig_BeforeRender(Scene scene);
         public new void BeforeRender(Scene scene)
@@ -77,69 +73,53 @@ namespace Celeste
             bool fadingIn = true;
             // Check if we're changing mountain models or textures
             // If so, we want to fade out and then back in
-            if (!(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID))
-            {
+            if (!(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
                 string oldModelDir = "", oldTextureDir = "", newModelDir = "", newTextureDir = "";
-                if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset1))
-                {
+                if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset1)) {
                     MapMeta meta;
-                    if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null)
-                    {
+                    if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
                         newModelDir = meta.Mountain.MountainModelDirectory ?? "";
                         newTextureDir = meta.Mountain.MountainTextureDirectory ?? "";
                     }
                 }
                 string oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
-                if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1))
-                {
+                if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1)) {
                     MapMeta meta;
-                    if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null)
-                    {
+                    if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
                         oldModelDir = meta.Mountain.MountainModelDirectory ?? "";
                         oldTextureDir = meta.Mountain.MountainTextureDirectory ?? "";
                     }
                 }
-                
-                if (!oldModelDir.Equals(newModelDir) || !oldTextureDir.Equals(newTextureDir))
-                {
-                    if (fade != 1f)
-                    {
+
+                if (!oldModelDir.Equals(newModelDir) || !oldTextureDir.Equals(newTextureDir)) {
+                    if (fade != 1f) {
                         SIDToUse = PreviousSID;
                         path = oldPath;
                         fade = Calc.Approach(fade, 1f, Engine.DeltaTime * 4f);
                         fadingIn = false;
-                    }
-                    else
-                    {
+                    } else {
                         // How long we want it to stay opaque before fading back in
                         fadeHoldCountdown = .3f;
                     }
                 }
             }
 
-            if (fadingIn && fade != 0f)
-            {
-                if (fadeHoldCountdown <= 0)
-                {
+            if (fadingIn && fade != 0f) {
+                if (fadeHoldCountdown <= 0) {
                     fade = Calc.Approach(fade, 0f, Engine.DeltaTime * 4f);
-                }
-                else
-                {
+                } else {
                     fadeHoldCountdown -= Engine.DeltaTime;
                 }
             }
-            
-            if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset))
-            {
+
+            if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
-                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)))
-                {
+                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))) {
                     MountainResources resources = MTNExt.MountainMappings[path];
-                    
+
                     ResetRenderTargets();
                     Quaternion rotation = Camera.Rotation;
-                    if (ignoreCameraRotation)
-                    {
+                    if (ignoreCameraRotation) {
                         rotation = lastCameraRotation;
                     }
                     Matrix matrix = Matrix.CreatePerspectiveFieldOfView((float)Math.PI / 4f, (float)Engine.Width / (float)Engine.Height, 0.25f, 50f);
@@ -149,23 +129,17 @@ namespace Celeste
                     Engine.Graphics.GraphicsDevice.SetRenderTarget(buffer);
 
                     Matrix matrix4 = Matrix.CreateTranslation(0f, 5f - Camera.Position.Y * 1.1f, 0f) * Matrix.CreateFromQuaternion(rotation) * matrix;
-                    
-                    if (currState == nextState)
-                    {
+
+                    if (currState == nextState) {
                         (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
-                    }
-                    else
-                    {
+                    } else {
                         (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
                         (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White * easeState);
                     }
-                    if (currState != nextState)
-                    {
+                    if (currState != nextState) {
                         GFX.FxMountain.Parameters["ease"].SetValue(easeState);
                         GFX.FxMountain.CurrentTechnique = GFX.FxMountain.Techniques["Easing"];
-                    }
-                    else
-                    {
+                    } else {
                         GFX.FxMountain.CurrentTechnique = GFX.FxMountain.Techniques["Single"];
                     }
                     Engine.Graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
@@ -175,8 +149,7 @@ namespace Celeste
                     GFX.FxMountain.Parameters["fog"].SetValue(customFog.TopColor.ToVector3());
                     Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainStates?[currState] ?? mountainStates[currState]).TerrainTexture.Texture;
                     Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
-                    if (currState != nextState)
-                    {
+                    if (currState != nextState) {
                         Engine.Graphics.GraphicsDevice.Textures[1] = (resources.MountainStates?[nextState] ?? mountainStates[nextState]).TerrainTexture.Texture;
                         Engine.Graphics.GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
                     }
@@ -186,8 +159,7 @@ namespace Celeste
                     GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
                     Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainStates?[currState] ?? mountainStates[currState]).BuildingsTexture.Texture;
                     Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
-                    if (currState != nextState)
-                    {
+                    if (currState != nextState) {
                         Engine.Graphics.GraphicsDevice.Textures[1] = (resources.MountainStates?[nextState] ?? mountainStates[nextState]).BuildingsTexture.Texture;
                         Engine.Graphics.GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
                     }
@@ -197,16 +169,14 @@ namespace Celeste
                     DrawBillboards(matrix3, scene.Tracker.GetComponents<Billboard>());
                     customFog2.Draw(matrix3, CullCRasterizer);
 
-                    if (DrawDebugPoints && DebugPoints.Count > 0)
-                    {
+                    if (DrawDebugPoints && DebugPoints.Count > 0) {
                         GFX.FxDebug.World = Matrix.Identity;
                         GFX.FxDebug.View = matrix2;
                         GFX.FxDebug.Projection = matrix;
                         GFX.FxDebug.TextureEnabled = false;
                         GFX.FxDebug.VertexColorEnabled = true;
                         VertexPositionColor[] array = DebugPoints.ToArray();
-                        foreach (EffectPass pass in GFX.FxDebug.CurrentTechnique.Passes)
-                        {
+                        foreach (EffectPass pass in GFX.FxDebug.CurrentTechnique.Passes) {
                             pass.Apply();
                             Engine.Graphics.GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, array, 0, array.Length / 3);
                         }
@@ -215,8 +185,7 @@ namespace Celeste
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
 
                     // Initialize new custom fog when we switch between maps
-                    if (!(SIDToUse).Equals(PreviousSID) && resources.MountainFogTexture != null)
-                    {
+                    if (!(SIDToUse).Equals(PreviousSID) && resources.MountainFogTexture != null) {
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                     }
