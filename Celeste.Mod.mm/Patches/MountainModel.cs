@@ -100,7 +100,7 @@ namespace Celeste
                     }
                 }
                 
-                if ((!oldModelDir.Equals(newModelDir) || !oldTextureDir.Equals(newTextureDir)) /*&& !string.IsNullOrEmpty(PreviousSID)*/)
+                if (!oldModelDir.Equals(newModelDir) || !oldTextureDir.Equals(newTextureDir))
                 {
                     if (fade != 1f)
                     {
@@ -111,6 +111,7 @@ namespace Celeste
                     }
                     else
                     {
+                        // How long we want it to stay opaque before fading back in
                         fadeHoldCountdown = .3f;
                     }
                 }
@@ -213,6 +214,7 @@ namespace Celeste
                     GaussianBlur.Blur((RenderTarget2D)buffer, blurA, blurB, 0.75f, clear: true, samples: GaussianBlur.Samples.Five);
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
 
+                    // Initialize new custom fog when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID) && resources.MountainFogTexture != null)
                     {
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);

@@ -77,8 +77,10 @@ namespace Celeste
                 foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map)
                 {
                     MapMeta meta;
+                    // Check if the meta for this asset exists and if it has a MountainModelDirectory specified
                     if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory))
                     {
+                        // Create the mountain resources for this map if they don't exist already
                         if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources))
                         {
                             resources = new MountainResources();
@@ -118,8 +120,10 @@ namespace Celeste
                 foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map)
                 {
                     MapMeta meta;
+                    // Check if the meta for this asset exists and if it has a MountainTextureDirectory specified
                     if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))
                     {
+                        // Create the mountain resources for this map if they don't exist already
                         if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources))
                         {
                             resources = new MountainResources();
@@ -149,6 +153,7 @@ namespace Celeste
                             resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
                         }
 
+                        // Use the default textures if no custom ones were loaded
                         resources.MountainStates[0] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
                         resources.MountainStates[1] = new MountainState(resources.MountainTerrainTextures[1] ?? MTN.MountainTerrainTextures[1], resources.MountainBuildingTextures[1] ?? MTN.MountainBuildingTextures[1], resources.MountainSkyboxTextures[1] ?? MTN.MountainSkyboxTextures[1], Calc.HexToColor("13203E"));
                         resources.MountainStates[2] = new MountainState(resources.MountainTerrainTextures[2] ?? MTN.MountainTerrainTextures[2], resources.MountainBuildingTextures[2] ?? MTN.MountainBuildingTextures[2], resources.MountainSkyboxTextures[2] ?? MTN.MountainSkyboxTextures[2], Calc.HexToColor("281A35"));
