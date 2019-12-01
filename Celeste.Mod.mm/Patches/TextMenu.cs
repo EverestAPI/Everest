@@ -55,6 +55,24 @@ namespace Celeste {
         }
 
         [MonoModReplace]
+        public new float GetYOffsetOf(Item targetItem) {
+            // this is a small fix of the vanilla method to better support invisible menu items.
+            if (targetItem == null)
+                return 0f;
+
+            float num = 0f;
+            foreach (Item listItem in items) {
+                if (listItem.Visible) // this is targetItem.Visible in vanilla.
+                    num += listItem.Height() + ItemSpacing;
+
+                if (listItem == targetItem)
+                    break;
+            }
+
+            return num - targetItem.Height() * 0.5f - ItemSpacing;
+        }
+
+        [MonoModReplace]
         public override void Render() {
             // this is heavily based on the vanilla method, adding a check to skip rendering off-screen options.
             RecalculateSize();
