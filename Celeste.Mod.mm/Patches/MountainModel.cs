@@ -177,7 +177,10 @@ namespace Celeste {
                         }
                     }
                     GaussianBlur.Blur((RenderTarget2D)buffer, blurA, blurB, 0.75f, clear: true, samples: GaussianBlur.Samples.Five);
+
+                    Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null);
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
+                    Draw.SpriteBatch.End();
 
                     // Initialize new custom fog when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID) && resources.MountainFogTexture != null) {
@@ -190,7 +193,11 @@ namespace Celeste {
             }
 
             orig_BeforeRender(scene);
+
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null);
             Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
+            Draw.SpriteBatch.End();
+
             PreviousSID = SIDToUse;
         }
 
