@@ -86,20 +86,22 @@ namespace Celeste {
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
         public new PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
             Level level = Scene as Level;
+            PlayerDeadBody body = orig_Die(direction, evenIfInvincible, registerDeathInStats);
 
-            // 2 catches spawn-blade-kill GBJs.
-            // 4 catches spawn-OOB-kill GBJs.
-            if (framesAlive < 6 && level != null) {
-                diedInGBJ++;
-                if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetLevelSet() != "Celeste" && !CoreModule.Settings.DisableAntiSoftlock) {
-                    level.Pause();
-                    return null;
+            if (body != null) {
+                // 2 catches spawn-blade-kill GBJs.
+                // 4 catches spawn-OOB-kill GBJs.
+                if (framesAlive < 6 && level != null) {
+                    diedInGBJ++;
+                    if (diedInGBJ != 0 && (diedInGBJ % 2) == 0 && level.Session.Area.GetLevelSet() != "Celeste" && !CoreModule.Settings.DisableAntiSoftlock) {
+                        level.Pause();
+                        return null;
+                    }
                 }
             }
 
-            PlayerDeadBody orig = orig_Die(direction, evenIfInvincible, registerDeathInStats);
             Everest.Events.Player.Die(this);
-            return orig;
+            return body;
         }
 
         private extern void orig_BoostBegin();
