@@ -158,16 +158,6 @@ namespace MonoMod {
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
 
         static MonoModRules() {
-            // FIXME: Remove this workaround once Everest updates to MonoMod 19.12+
-            __get_Modder__Force = MonoModRule.Modder;
-            System.Reflection.Assembly asm_RuntimeDetour = System.Reflection.Assembly.Load("MonoMod.RuntimeDetour");
-            Type t_Hook = asm_RuntimeDetour.GetType("MonoMod.RuntimeDetour.NativeDetour");
-            System.Reflection.ConstructorInfo ctor_Hook = t_Hook.GetConstructor(new Type[] { typeof(System.Reflection.MethodBase), typeof(System.Reflection.MethodBase) });
-            __get_Modder__Hook = (IDisposable) ctor_Hook.Invoke(new object[] {
-                typeof(MonoModRulesManager).GetProperty("Modder").GetGetMethod(),
-                typeof(MonoModRules).GetMethod("__get_Modder")
-            });
-
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
 
@@ -1319,26 +1309,6 @@ namespace MonoMod {
             il.Emit(OpCodes.Initobj, t);
             if (!stind)
                 il.Emit(OpCodes.Ldloc, var);
-        }
-
-        // FIXME: Use MonoMod 19.12's variant.
-        public static string GetOriginalName(this MethodDefinition method) {
-            foreach (CustomAttribute attrib in method.CustomAttributes)
-                if (attrib.AttributeType.FullName == "MonoMod.MonoModOriginalName")
-                    return (string) attrib.ConstructorArguments[0].Value;
-
-            if (method.Name == ".ctor" || method.Name == ".cctor") {
-                return "orig_ctor_" + ((MemberReference) method.DeclaringType).GetPatchName();
-            }
-
-            return "orig_" + method.Name;
-        }
-
-        // FIXME: Remove this workaround once Everest updates to MonoMod 19.12+
-        public static IDisposable __get_Modder__Hook;
-        public static MonoModder __get_Modder__Force;
-        public static MonoModder __get_Modder() {
-            return __get_Modder__Force;
         }
 
     }
