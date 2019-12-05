@@ -89,6 +89,43 @@ namespace Celeste {
                 }
             }
         }
+
+        public class patch_LanguageButton : LanguageButton {
+            public patch_LanguageButton(string label, Language language)
+                : base(label, language) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModReplace]
+            public override void Render(Vector2 position, bool highlighted) {
+                float alpha = Container.Alpha;
+                Color strokeColor = Color.Black * (alpha * alpha * alpha);
+
+                ActiveFont.DrawOutline(
+                    Label, position, new Vector2(0f, 0.5f), Vector2.One,
+                    Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha),
+                    2f, strokeColor
+                );
+
+                position += new Vector2(Container.Width - RightWidth(), 0f);
+
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        if (x != 0 || y != 0) {
+                            Language.Icon.DrawJustified(
+                                position + new Vector2(x * 2f, y * 2f), new Vector2(0f, 0.5f),
+                                strokeColor, 1f
+                            );
+                        }
+                    }
+                }
+
+                Language.Icon.DrawJustified(
+                    position, new Vector2(0f, 0.5f),
+                    Color.White * alpha, 1f
+                );
+            }
+        }
     }
 
     public static partial class TextMenuExt {
