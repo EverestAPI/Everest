@@ -31,7 +31,7 @@ namespace Celeste.Mod.Helpers {
 
                 using (WebClient wc = new WebClient()) {
                     string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
-                    updateCatalog = new Deserializer().Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
+                    updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
                         updateCatalog[name].Name = name;
                     }
