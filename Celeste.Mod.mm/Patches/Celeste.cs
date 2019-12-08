@@ -223,6 +223,12 @@ namespace Celeste {
             // Note: You may instinctually call base.LoadContent();
             // DON'T! The original method is orig_LoadContent
             bool firstLoad = this.firstLoad;
+
+            if (!firstLoad && Version <= new Version(1, 3, 1, 2)) {
+                // Celeste 1.3.1.2 and older runs Directory.Add in PlaybackData.Load
+                PlaybackData.Tutorials.Clear();
+            }
+
             orig_LoadContent();
 
             foreach (EverestModule mod in Everest._Modules)
