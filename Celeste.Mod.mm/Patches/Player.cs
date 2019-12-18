@@ -70,6 +70,7 @@ namespace Celeste {
             TrailManager.Add(this, scale, GetCurrentTrailColor());
         }
 
+        [PatchPlayerOrigUpdate] // Manipulate the method via MonoModRules
         public extern void orig_Update();
         public override void Update() {
             orig_Update();
@@ -81,6 +82,13 @@ namespace Celeste {
                 framesAlive++;
             if (framesAlive >= 8)
                 diedInGBJ = 0;
+        }
+
+        public bool _IsOverWater() {
+            // check if we are 2 pixels over water (or less).
+            Rectangle bounds = Collider.Bounds;
+            bounds.Height += 2;
+            return Scene.CollideCheck<Water>(bounds);
         }
 
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);

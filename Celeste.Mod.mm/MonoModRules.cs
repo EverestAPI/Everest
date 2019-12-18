@@ -136,6 +136,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchGameLoaderIntroRoutine")]
     class PatchGameLoaderIntroRoutineAttribute : Attribute { }
 
+    /// <summary>
+    /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
+    class PatchPlayerOrigUpdate : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1222,6 +1228,66 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GetNextScene;
+                }
+            }
+        }
+        
+
+        public static void PatchPlayerOrigUpdate(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_IsOverWater = method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+            if (m_IsOverWater == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 1; instri < instrs.Count - 5; instri++) {
+                // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldflda && (instrs[instri + 1].Operand as FieldReference)?.FullName == "Microsoft.Xna.Framework.Vector2 Celeste.Player::Speed"
+                    && instrs[instri + 2].OpCode == OpCodes.Ldfld && (instrs[instri + 2].Operand as FieldReference)?.FullName == "System.Single Microsoft.Xna.Framework.Vector2::Y"
+                    && instrs[instri + 3].OpCode == OpCodes.Ldc_R4 && (float)instrs[instri + 3].Operand == -60f) {
+
+                    // XNA:
+                    // 0: ldarg.0
+                    // 1: ldflda Celeste.Player::Speed
+                    // 2: ldfld Vector2::Y
+                    // 3: ldc.r4 -60
+                    // 4: blt.un [instruction after if]
+                    if (instrs[instri + 4].OpCode == OpCodes.Blt_Un) {
+                        // 5: ldarg.0
+                        // 6: call Player::_IsOverWater
+                        // 7: brfalse [instruction after if]
+                        instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
+                        instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
+                    }
+
+                    // FNA:
+                    // -1: bge.un.s [instruction setting flag to false]
+                    // 0: ldarg.0
+                    // 1: ldflda Celeste.Player::Speed
+                    // 2: ldfld Vector2::Y
+                    // 3: ldc.r4 -60
+                    // 4: clt.un
+                    // 5: ldc.i4.0
+                    // 6: ceq [final value for the flag. if this flag is true, we enter the if]
+                    if(instrs[instri - 1].OpCode == OpCodes.Bge_Un_S
+                        && instrs[instri + 4].OpCode == OpCodes.Clt_Un
+                        && instrs[instri + 5].OpCode == OpCodes.Ldc_I4_0) {
+                        // 4: blt.un [instruction setting flag to false]
+                        // 5: ldarg.0
+                        // 6: call Player::_IsOverWater
+                        // 7: ldc.i4.1
+                        // 8: ceq
+                        instrs[instri + 4].OpCode = OpCodes.Blt_Un;
+                        instrs[instri + 4].Operand = instrs[instri - 1].Operand;
+
+                        instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
+
+                        instrs[instri + 7].OpCode = OpCodes.Ldc_I4_1;
+
+                    }
                 }
             }
         }
