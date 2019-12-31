@@ -202,38 +202,42 @@ namespace Celeste {
                     foreach (BinaryPacker.Element levelChild in level.Children) {
                         switch (levelChild.Name) {
                             case "entities":
+                                // check if the room has a checkpoint first.
+                                foreach (BinaryPacker.Element entity in levelChild.Children) {
+                                    if (entity.Name == "checkpoint") {
+                                        if (checkpointsAuto != null) {
+                                            MapMeta modeMeta = area.GetModeMeta(Area.Mode);
+                                            CheckpointData c = new CheckpointData(
+                                                levelName,
+                                                (area.GetSID() + "_" + levelName).DialogKeyify(),
+                                                MapMeta.GetInventory(entity.Attr("inventory")),
+                                                entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? area.Dreaming : entity.AttrBool("dreaming"),
+                                                null
+                                            );
+                                            if (entity.Attr("coreMode") == "") {
+                                                c.CoreMode = modeMeta.CoreMode ?? area.CoreMode;
+                                            }
+                                            else {
+                                                entity.AttrIf("coreMode", v => c.CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
+                                            }
+                                                
+                                            int id = entity.AttrInt("checkpointID", -1);
+                                            if (id == -1) {
+                                                checkpointsAuto.Add(c);
+                                            } else {
+                                                while (checkpointsAuto.Count <= id)
+                                                    checkpointsAuto.Add(null);
+                                                checkpointsAuto[id] = c;
+                                            }
+                                        }
+                                        checkpoint++;
+                                        strawberryInCheckpoint = 0;
+                                    }
+                                }
+
+                                // then, auto-assign strawberries and cassettes to checkpoints.
                                 foreach (BinaryPacker.Element entity in levelChild.Children) {
                                     switch (entity.Name) {
-                                        case "checkpoint":
-                                            if (checkpointsAuto != null) {
-                                                MapMeta modeMeta = area.GetModeMeta(Area.Mode);
-                                                CheckpointData c = new CheckpointData(
-                                                    levelName,
-                                                    (area.GetSID() + "_" + levelName).DialogKeyify(),
-                                                    MapMeta.GetInventory(entity.Attr("inventory")),
-                                                    entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? area.Dreaming : entity.AttrBool("dreaming"),
-                                                    null
-                                                );
-                                                if (entity.Attr("coreMode") == "") {
-                                                    c.CoreMode = modeMeta.CoreMode ?? area.CoreMode;
-                                                }
-                                                else {
-                                                    entity.AttrIf("coreMode", v => c.CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
-                                                }
-                                                
-                                                int id = entity.AttrInt("checkpointID", -1);
-                                                if (id == -1) {
-                                                    checkpointsAuto.Add(c);
-                                                } else {
-                                                    while (checkpointsAuto.Count <= id)
-                                                        checkpointsAuto.Add(null);
-                                                    checkpointsAuto[id] = c;
-                                                }
-                                            }
-                                            checkpoint++;
-                                            strawberryInCheckpoint = 0;
-                                            break;
-
                                         case "cassette":
                                             if (area.CassetteCheckpointIndex < 0)
                                                 area.CassetteCheckpointIndex = checkpoint;
