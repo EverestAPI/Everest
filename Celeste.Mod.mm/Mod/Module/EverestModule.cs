@@ -421,13 +421,16 @@ namespace Celeste.Mod {
                     ;
 
                 } else if (!inGame && propType == typeof(string)) {
+                    int maxValueLength = prop.GetCustomAttribute<SettingMaxLengthAttribute>()?.Max ?? 12;
+
                     item =
                         new TextMenu.Button(name + ": " + value)
                         .Pressed(() => {
                             Audio.Play(SFX.ui_main_savefile_rename_start);
                             menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
                                 (string) value,
-                                v => prop.SetValue(settings, v)
+                                v => prop.SetValue(settings, v),
+                                maxValueLength
                             );
                         })
                     ;
