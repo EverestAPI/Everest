@@ -439,10 +439,10 @@ namespace Celeste.Mod {
                 if (item == null)
                     continue;
 
-                if (needsRelaunch)
-                    item = item.NeedsRelaunch();
-
                 menu.Add(item);
+
+                if (needsRelaunch)
+                    item = item.NeedsRelaunch(menu);
             }
 
         }

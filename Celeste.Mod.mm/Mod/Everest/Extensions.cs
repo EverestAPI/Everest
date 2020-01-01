@@ -185,17 +185,33 @@ namespace Celeste.Mod {
         /// Add an Enter and Leave handler, notifying the user that a relaunch is required to apply the changes.
         /// </summary>
         /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
         /// <param name="needsRelaunch">This method does nothing if this is set to false.</param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, bool needsRelaunch = true) {
+        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, TextMenu containingMenu, bool needsRelaunch = true) {
             if (!needsRelaunch)
                 return option;
+
+            // build the "Restart is required" text menu entry
+            TextMenuExt.EaseInSubHeaderExt needsRelaunchText = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("MODOPTIONS_NEEDSRELAUNCH"), false, containingMenu) {
+                TextColor = Color.OrangeRed,
+                HeightExtra = 0f
+            };
+
+            List<TextMenu.Item> items = containingMenu.GetItems();
+            if (items.Contains(option)) {
+                // insert the text after the option that needs relaunch.
+                containingMenu.Insert(items.IndexOf(option) + 1, needsRelaunchText);
+            }
+
             return option
             .Enter(() => {
-                // TODO: Show "needs relaunch" warning.
+                // make the text appear.
+                needsRelaunchText.FadeVisible = true;
             })
             .Leave(() => {
-                // TODO: Hide "needs relaunch" warning.
+                // make the text disappear.
+                needsRelaunchText.FadeVisible = false;
             });
         }
 

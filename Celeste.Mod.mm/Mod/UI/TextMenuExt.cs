@@ -188,5 +188,55 @@ namespace Celeste {
 
         }
 
+        /// <summary>
+        /// Sub-header that eases in/out when FadeVisible is changed.
+        /// </summary>
+        public class EaseInSubHeaderExt : SubHeaderExt {
+
+            /// <summary>
+            /// Toggling this will make the header ease in/out.
+            /// </summary>
+            public bool FadeVisible { get; set; } = true;
+
+            private float uneasedAlpha;
+            private TextMenu containingMenu;
+
+            /// <summary>
+            /// Creates a EaseInSubHeaderExt.
+            /// </summary>
+            /// <param name="title">The sub-header title</param>
+            /// <param name="initiallyVisible">The initial value for FadeVisible</param>
+            /// <param name="containingMenu">The menu containing this SubHeader</param>
+            /// <param name="icon">An icon for the sub-header</param>
+            public EaseInSubHeaderExt(string title, bool initiallyVisible, TextMenu containingMenu, string icon = null)
+                : base(title, icon) {
+
+                this.containingMenu = containingMenu;
+
+                FadeVisible = initiallyVisible;
+                Alpha = FadeVisible ? 1 : 0;
+                uneasedAlpha = Alpha;
+            }
+
+            // the fade has to take into account the item spacing as well, or the other options will abruptly shift up when Visible is switched to false.
+            public override float Height() => MathHelper.Lerp(-containingMenu.ItemSpacing, base.Height(), Alpha);
+
+            public override void Update() {
+                base.Update();
+
+                // gradually make the sub-header fade in or out. (~333ms fade)
+                float targetAlpha = FadeVisible ? 1 : 0;
+                if (uneasedAlpha != targetAlpha) {
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.DeltaTime * 3f);
+
+                    if (FadeVisible)
+                        Alpha = Ease.SineOut(uneasedAlpha);
+                    else
+                        Alpha = Ease.SineIn(uneasedAlpha);
+                }
+
+                Visible = (Alpha != 0);
+            }
+        }
     }
 }
