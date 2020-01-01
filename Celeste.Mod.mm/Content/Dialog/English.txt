@@ -31,6 +31,7 @@
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
+	MODOPTIONS_NEEDSRELAUNCH=								Requires a restart to take effect
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
