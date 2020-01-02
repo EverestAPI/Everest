@@ -11,6 +11,11 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.UI {
     public class OuiModOptions : Oui {
 
+        /// <summary>
+        /// Interface used to "tag" mod options submenus.
+        /// </summary>
+        public interface ISubmenu { }
+
         public static OuiModOptions Instance;
 
         private TextMenu menu;
@@ -19,6 +24,8 @@ namespace Celeste.Mod.UI {
         private const float offScreenX = 2880f;
 
         private float alpha = 0f;
+
+        private int savedMenuIndex = -1;
 
         public OuiModOptions() {
             Instance = this;
@@ -66,6 +73,12 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Enter(Oui from) {
             ReloadMenu();
 
+            // restore selection if coming from a submenu.
+            if (savedMenuIndex != -1 && typeof(ISubmenu).IsAssignableFrom(from.GetType())) {
+                menu.Selection = Math.Min(savedMenuIndex, menu.LastPossibleSelection);
+                menu.Position.Y = menu.ScrollTargetY;
+            }
+
             menu.Visible = Visible = true;
             menu.Focused = false;
 
@@ -81,6 +94,9 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Leave(Oui next) {
             Audio.Play(SFX.ui_main_whoosh_large_out);
             menu.Focused = false;
+
+            // save the menu position in case we want to restore it.
+            savedMenuIndex = menu.Selection;
 
             yield return Everest.SaveSettings();
 
