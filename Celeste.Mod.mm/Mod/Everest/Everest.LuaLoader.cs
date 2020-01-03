@@ -154,6 +154,9 @@ namespace Celeste.Mod {
             };
 
             public static void Precache(Assembly asm) {
+                if (asm == null || _LoadAssembly == null)
+                    return;
+
                 _Preloaded.Add(asm.GetName().Name);
                 _Preloaded.Add(asm.FullName);
 

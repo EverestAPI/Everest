@@ -385,6 +385,77 @@ namespace Celeste.Mod {
                 _ModuleMethodDelegates.Add(new Dictionary<string, FastReflectionDelegate>());
             }
 
+            LuaLoader.Precache(module.GetType().Assembly);
+
+            foreach (Type type in module.GetType().Assembly.GetTypes()) {
+                // Search for all entities marked with the CustomEntityAttribute.
+                foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
+                    foreach (string idFull in attrib.IDs) {
+                        string id;
+                        string genName;
+                        string[] split = idFull.Split('=');
+
+                        if (split.Length == 1) {
+                            id = split[0];
+                            genName = "Load";
+
+                        } else if (split.Length == 2) {
+                            id = split[0];
+                            genName = split[1];
+
+                        } else {
+                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                            continue;
+                        }
+
+                        id = id.Trim();
+                        genName = genName.Trim();
+
+                        patch_Level.EntityLoader loader = null;
+
+                        ConstructorInfo ctor;
+                        MethodInfo gen;
+
+                        gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
+                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                            loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            goto RegisterEntityLoader;
+                        }
+
+                        RegisterEntityLoader:
+                        if (loader == null) {
+                            Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
+                            continue;
+                        }
+                        patch_Level.EntityLoaders[id] = loader;
+                    }
+                }
+            }
+
             module.LoadSettings();
             module.Load();
             if (_Initialized)
