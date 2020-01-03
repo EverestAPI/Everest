@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     // Based on OuiFileNaming
-    public class OuiModOptionString : Oui {
+    public class OuiModOptionString : Oui, OuiModOptions.ISubmenu {
 
         // TODO: OuiModOptionString is a hellscape of decompiled code.
 
@@ -345,8 +345,10 @@ namespace Celeste.Mod.UI {
             End:
 
             if (wasFocused && !Focused) {
-                if (Input.ESC)
+                if (Input.ESC) {
                     Cancel();
+                    wasFocused = false;
+                }
             }
 
             Focused = wasFocused;
