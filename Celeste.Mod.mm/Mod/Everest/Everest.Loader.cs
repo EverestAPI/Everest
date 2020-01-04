@@ -206,6 +206,7 @@ namespace Celeste.Mod {
 
                 if (multimetas != null) {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
+                        multimeta.Multimeta = multimetas;
                         if (contentMetaParent == null)
                             contentMetaParent = multimeta;
                         LoadModDelayed(multimeta, contentCrawl);
@@ -292,6 +293,7 @@ namespace Celeste.Mod {
 
                 if (multimetas != null) {
                     foreach (EverestModuleMetadata multimeta in multimetas) {
+                        multimeta.Multimeta = multimetas;
                         if (contentMetaParent == null)
                             contentMetaParent = multimeta;
                         LoadModDelayed(multimeta, contentCrawl);
@@ -378,13 +380,8 @@ namespace Celeste.Mod {
                         foreach (ZipEntry entry in zip.Entries) {
                             string entryName = entry.FileName.Replace('\\', '/');
                             if (entryName == meta.DLL) {
-                                using (MemoryStream stream = entry.ExtractStream()) {
-                                    if (meta.Prelinked) {
-                                        asm = Assembly.Load(stream.GetBuffer());
-                                    } else {
-                                        asm = Relinker.GetRelinkedAssembly(meta, stream);
-                                    }
-                                }
+                                using (MemoryStream stream = entry.ExtractStream())
+                                    asm = Relinker.GetRelinkedAssembly(meta, stream);
                             }
 
                             if (entryName == "main.lua") {
@@ -399,9 +396,6 @@ namespace Celeste.Mod {
 
                 } else {
                     if (!string.IsNullOrEmpty(meta.DLL) && File.Exists(meta.DLL)) {
-                        if (meta.Prelinked)
-                            asm = Assembly.LoadFrom(meta.DLL);
-                        else
                             using (FileStream stream = File.OpenRead(meta.DLL))
                                 asm = Relinker.GetRelinkedAssembly(meta, stream);
                     }
@@ -525,34 +519,32 @@ namespace Celeste.Mod {
                 return true;
             }
 
-            private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta) {
-                if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                    return (sender, args) => {
-                        string asmName = new AssemblyName(args.Name).Name + ".dll";
+            private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
+                => (sender, args) => {
+                    AssemblyName asmName = args?.Name == null ? null : new AssemblyName(args.Name);
+                    if (string.IsNullOrEmpty(asmName?.Name))
+                        return null;
+
+                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                        string asmPath = asmName.Name + ".dll";
                         using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                             foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName != asmName)
-                                    continue;
-                                using (MemoryStream stream = entry.ExtractStream()) {
-                                    return Assembly.Load(stream.GetBuffer());
-                                }
+                                if (entry.FileName == asmPath)
+                                    using (MemoryStream stream = entry.ExtractStream())
+                                        return Relinker.GetRelinkedAssembly(meta, stream);
                             }
                         }
-                        return null;
-                    };
-                }
+                    }
 
-                if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                    return (sender, args) => {
-                        string asmPath = Path.Combine(meta.PathDirectory, new AssemblyName(args.Name).Name + ".dll");
-                        if (!File.Exists(asmPath))
-                            return null;
-                        return Assembly.LoadFrom(asmPath);
-                    };
-                }
+                    if (!string.IsNullOrEmpty(meta.PathDirectory)) {
+                        string asmPath = Path.Combine(meta.PathDirectory, asmName.Name + ".dll");
+                        if (File.Exists(asmPath))
+                            using (FileStream stream = File.OpenRead(asmPath))
+                                return Relinker.GetRelinkedAssembly(meta, stream);
+                    }
 
-                return null;
-            }
+                    return null;
+                };
 
             private static void ApplyRelinkerHackfixes(EverestModuleMetadata meta) {
                 if (meta.Name == "BGswitch" && meta.Version < new Version(0, 1, 0, 0)) {

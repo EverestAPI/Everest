@@ -156,7 +156,7 @@ namespace Celeste.Mod {
             /// <param name="meta">The mod metadata, used for caching, among other things.</param>
             /// <param name="stream">The stream to read the .dll from.</param>
             /// <param name="depResolver">An optional dependency resolver.</param>
-            /// <param name="checksumsExtra">Any optional checksums. If you're running this at runtime, pass at least Everest.Relinker.GetChecksum(Metadata)</param>
+            /// <param name="checksumsExtra">Any optional checksums</param>
             /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
@@ -174,7 +174,7 @@ namespace Celeste.Mod {
                     GameChecksum = Everest.GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString();
                 checksums[0] = GameChecksum;
 
-                checksums[1] = Everest.GetChecksum(meta).ToHexadecimalString();
+                checksums[1] = Everest.GetChecksum(ref stream).ToHexadecimalString();
 
                 if (checksumsExtra != null)
                     for (int i = 0; i < checksumsExtra.Length; i++) {
@@ -185,7 +185,9 @@ namespace Celeste.Mod {
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta}");
                     try {
-                        return Assembly.LoadFrom(cachedPath);
+                        Assembly asm = Assembly.LoadFrom(cachedPath);
+                        _RelinkedAssemblies.Add(asm);
+                        return asm;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
                         e.LogDetailed();
@@ -278,7 +280,9 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta}");
                 try {
-                    return Assembly.LoadFrom(cachedPath);
+                    Assembly asm = Assembly.LoadFrom(cachedPath);
+                    _RelinkedAssemblies.Add(asm);
+                    return asm;
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
                     e.LogDetailed();

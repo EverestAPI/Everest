@@ -73,8 +73,7 @@ namespace Celeste.Mod {
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
-        private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
-        private static List<IDictionary<string, FastReflectionDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, FastReflectionDelegate>>();
+        private static List<Assembly> _RelinkedAssemblies = new List<Assembly>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -120,6 +119,27 @@ namespace Celeste.Mod {
             if (!string.IsNullOrEmpty(meta.DLL))
                 return GetChecksum(meta.DLL);
             return new byte[0];
+        }
+
+        /// <summary>
+        /// Get the checksum for a given stream.
+        /// </summary>
+        /// <param name="stream">A reference to the stream. Gets converted to a MemoryStream if it isn't seekable.</param>
+        /// <returns>A checksum.</returns>
+        public static byte[] GetChecksum(ref Stream stream) {
+            if (!stream.CanSeek) {
+                MemoryStream ms = new MemoryStream();
+                stream.CopyTo(ms);
+                stream.Dispose();
+                stream = ms;
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+
+            long pos = stream.Position;
+            stream.Seek(0, SeekOrigin.Begin);
+            byte[] hash = ChecksumHasher.ComputeHash(stream);
+            stream.Seek(pos, SeekOrigin.Begin);
+            return hash;
         }
 
         private static byte[] _InstallationHash;
@@ -262,6 +282,17 @@ namespace Celeste.Mod {
                 return Assembly.LoadFrom(Path.Combine(PathGame, asmName.Name + ".dll"));
             };
 
+            // .NET hates to acknowledge manually loaded assemblies.
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName asmName = new AssemblyName(asmArgs.Name);
+                foreach (Assembly asm in _RelinkedAssemblies) {
+                    if (asm.GetName().Name == asmName.Name)
+                        return asm;
+                }
+
+                return null;
+            };
+
             // Preload some basic dependencies.
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
@@ -381,8 +412,6 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());
-                _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
-                _ModuleMethodDelegates.Add(new Dictionary<string, FastReflectionDelegate>());
             }
 
             LuaLoader.Precache(module.GetType().Assembly);
@@ -498,7 +527,6 @@ namespace Celeste.Mod {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
                 _ModuleTypes.RemoveAt(index);
-                _ModuleMethods.RemoveAt(index);
             }
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
