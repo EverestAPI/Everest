@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
-    public class OuiVersionList : Oui {
+    public class OuiVersionList : Oui, OuiModOptions.ISubmenu {
 
         private TextMenu menu;
 

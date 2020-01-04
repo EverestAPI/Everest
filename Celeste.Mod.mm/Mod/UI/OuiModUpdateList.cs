@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.UI {
-    class OuiModUpdateList : Oui {
+    class OuiModUpdateList : Oui, OuiModOptions.ISubmenu {
 
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
