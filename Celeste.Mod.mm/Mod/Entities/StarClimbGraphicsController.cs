@@ -14,6 +14,7 @@ namespace Celeste.Mod.Entities
         private VertexPositionColor[] vertices = new VertexPositionColor[600];
         private int vertexCount = 0;
         private Color rayColor; // = Calc.HexToColor("a3ffff") * 0.25f;
+        private Color wipeColor;
         private StarClimbGraphicsController.Ray[] rays = new StarClimbGraphicsController.Ray[100];
         private Level level;
         private Random random;
@@ -22,7 +23,8 @@ namespace Celeste.Mod.Entities
 
         public StarClimbGraphicsController(EntityData data, Vector2 offset)
         {
-            this.rayColor = Calc.HexToColor(data.Attr("color", "a3ffff")) * 0.25f;
+            this.rayColor = Calc.HexToColor(data.Attr("fgColor", "a3ffff")) * 0.25f;
+            this.wipeColor = Calc.HexToColor(data.Attr("bgColor", "293E4B"));
             this.InitBlockFill();
         }
 
@@ -113,7 +115,7 @@ namespace Celeste.Mod.Entities
             if (this.vertexCount <= 0)
                 return;
             Engine.Graphics.GraphicsDevice.SetRenderTarget((RenderTarget2D)this.BlockFill);
-            Engine.Graphics.GraphicsDevice.Clear(Color.Lerp(Color.Black, Color.LightSkyBlue, 0.3f));
+            Engine.Graphics.GraphicsDevice.Clear(wipeColor);
             GFX.DrawVertices<VertexPositionColor>(Matrix.Identity, this.vertices, this.vertexCount, (Effect)null, (BlendState)null);
         }
 
