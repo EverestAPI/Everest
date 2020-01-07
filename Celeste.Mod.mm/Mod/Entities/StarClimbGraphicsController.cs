@@ -13,8 +13,8 @@ namespace Celeste.Mod.Entities
     {
         private VertexPositionColor[] vertices = new VertexPositionColor[600];
         private int vertexCount = 0;
-        private Color rayColor; // = Calc.HexToColor("a3ffff") * 0.25f;
-        private Color wipeColor;
+        private Color rayColor = Calc.HexToColor("a3ffff") * 0.25f;
+        private Color wipeColor = Calc.HexToColor("293E4B");
         private StarClimbGraphicsController.Ray[] rays = new StarClimbGraphicsController.Ray[100];
         private Level level;
         private Random random;
