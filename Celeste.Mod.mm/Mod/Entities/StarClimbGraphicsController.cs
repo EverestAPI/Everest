@@ -20,7 +20,7 @@ namespace Celeste.Mod.Entities
         public VirtualRenderTarget BlockFill;
         private const int RayCount = 100;
 
-        public StarClimbGraphicsController(EntityData data, EntityID id)
+        public StarClimbGraphicsController(EntityData data, Vector2 offset)
         {
             this.rayColor = Calc.HexToColor(data.Attr("color", "a3ffff")) * 0.25f;
             this.InitBlockFill();
