@@ -302,5 +302,9 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public override void PrepareMapDataProcessors(MapDataFixup context) {
+            context.Add<CoreMapDataProcessor>();
+        }
+
     }
 }

@@ -447,5 +447,12 @@ namespace Celeste.Mod {
 
         }
 
+        /// <summary>
+        /// Create and add any map data processors to the given context, if any are needed.
+        /// </summary>
+        /// <param name="context">The context to add the processors to.</param>
+        public virtual void PrepareMapDataProcessors(MapDataFixup context) {
+        }
+
     }
 }
