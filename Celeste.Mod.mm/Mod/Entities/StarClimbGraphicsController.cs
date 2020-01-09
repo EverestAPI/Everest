@@ -13,8 +13,8 @@ namespace Celeste.Mod.Entities
     {
         private VertexPositionColor[] vertices = new VertexPositionColor[600];
         private int vertexCount = 0;
-        private Color rayColor = Calc.HexToColor("a3ffff") * 0.25f;
-        private Color wipeColor = Calc.HexToColor("293E4B");
+        private Color rayColor;
+        private Color wipeColor;
         private StarClimbGraphicsController.Ray[] rays = new StarClimbGraphicsController.Ray[100];
         private Level level;
         private Random random;
@@ -31,7 +31,7 @@ namespace Celeste.Mod.Entities
         public override void Added(Scene scene)
         {
             base.Added(scene);
-            this.level = this.SceneAs<Level>();
+            level = scene as Level;
             this.random = new Random(666);
             this.Add((Component)new BeforeRenderHook(new Action(this.BeforeRender)));
         }
@@ -53,59 +53,42 @@ namespace Celeste.Mod.Entities
 
         private void UpdateBlockFill()
         {
-            Level scene = this.Scene as Level;
-            Vector2 vector = Calc.AngleToVector(-1.670796f, 1f);
-            Vector2 vector2_1 = new Vector2(-vector.Y, vector.X);
-            int num1 = 0;
+            Vector2 rayAngle = Calc.AngleToVector(-1.670796f, 1f);
+            Vector2 rayAngleCompl = new Vector2(-rayAngle.Y, rayAngle.X);
+            int verticeCount = 0;
+
             for (int index1 = 0; index1 < this.rays.Length; ++index1)
             {
+                // Ray lifetime and expiry
                 if ((double)this.rays[index1].Percent >= 1.0)
                     this.rays[index1].Reset();
+
                 this.rays[index1].Percent += Engine.DeltaTime / this.rays[index1].Duration;
                 this.rays[index1].Y += 8f * Engine.DeltaTime;
-                float percent = this.rays[index1].Percent;
-                float num2 = this.mod(this.rays[index1].X - scene.Camera.X * 0.9f, 320f);
-                float num3 = this.mod(this.rays[index1].Y - scene.Camera.Y * 0.7f, 580f) - 200f;
+
+                Vector2 rayPosition = new Vector2(
+                    mod(this.rays[index1].X - this.level.Camera.X * 0.9f, 320f),
+                    mod(this.rays[index1].Y - this.level.Camera.Y * 0.7f, 580f) - 200f
+                );
+
+                // Construct the ray
                 float width = this.rays[index1].Width;
                 float length = this.rays[index1].Length;
-                Vector2 vector2_2 = new Vector2((float)(int)num2, (float)(int)num3);
-                Color color = this.rayColor * Ease.CubeInOut(Calc.YoYo(percent));
-                VertexPositionColor vertexPositionColor1 = new VertexPositionColor(new Vector3(vector2_2 + vector2_1 * width + vector * length, 0.0f), color);
-                VertexPositionColor vertexPositionColor2 = new VertexPositionColor(new Vector3(vector2_2 - vector2_1 * width, 0.0f), color);
-                VertexPositionColor vertexPositionColor3 = new VertexPositionColor(new Vector3(vector2_2 + vector2_1 * width, 0.0f), color);
-                VertexPositionColor vertexPositionColor4 = new VertexPositionColor(new Vector3(vector2_2 - vector2_1 * width - vector * length, 0.0f), color);
-                VertexPositionColor[] vertices1 = this.vertices;
-                int index2 = num1;
-                int num4 = index2 + 1;
-                VertexPositionColor vertexPositionColor5 = vertexPositionColor1;
-                vertices1[index2] = vertexPositionColor5;
-                VertexPositionColor[] vertices2 = this.vertices;
-                int index3 = num4;
-                int num5 = index3 + 1;
-                VertexPositionColor vertexPositionColor6 = vertexPositionColor2;
-                vertices2[index3] = vertexPositionColor6;
-                VertexPositionColor[] vertices3 = this.vertices;
-                int index4 = num5;
-                int num6 = index4 + 1;
-                VertexPositionColor vertexPositionColor7 = vertexPositionColor3;
-                vertices3[index4] = vertexPositionColor7;
-                VertexPositionColor[] vertices4 = this.vertices;
-                int index5 = num6;
-                int num7 = index5 + 1;
-                VertexPositionColor vertexPositionColor8 = vertexPositionColor2;
-                vertices4[index5] = vertexPositionColor8;
-                VertexPositionColor[] vertices5 = this.vertices;
-                int index6 = num7;
-                int num8 = index6 + 1;
-                VertexPositionColor vertexPositionColor9 = vertexPositionColor3;
-                vertices5[index6] = vertexPositionColor9;
-                VertexPositionColor[] vertices6 = this.vertices;
-                int index7 = num8;
-                num1 = index7 + 1;
-                VertexPositionColor vertexPositionColor10 = vertexPositionColor4;
-                vertices6[index7] = vertexPositionColor10;
+                Color rayLifeColor = this.rayColor * Ease.CubeInOut(Calc.YoYo(this.rays[index1].Percent));
+                VertexPositionColor vert1 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width + rayAngle * length, 0.0f), rayLifeColor);
+                VertexPositionColor vert2 = new VertexPositionColor(new Vector3(rayPosition - rayAngleCompl * width, 0.0f), rayLifeColor);
+                VertexPositionColor vert3 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width, 0.0f), rayLifeColor);
+                VertexPositionColor vert4 = new VertexPositionColor(new Vector3(rayPosition - rayAngleCompl * width - rayAngle * length, 0.0f), rayLifeColor);
+
+                // Add ray tris
+                this.vertices[verticeCount++] = vert1;
+                this.vertices[verticeCount++] = vert2;
+                this.vertices[verticeCount++] = vert3;
+                this.vertices[verticeCount++] = vert2;
+                this.vertices[verticeCount++] = vert3;
+                this.vertices[verticeCount++] = vert4;
             }
-            this.vertexCount = num1;
+            this.vertexCount = verticeCount;
         }
 
         private void BeforeRender()
@@ -135,10 +118,10 @@ namespace Celeste.Mod.Entities
         {
             if (this.BlockFill != null)
                 this.BlockFill.Dispose();
-            this.BlockFill = (VirtualRenderTarget)null;
+            this.BlockFill = null;
         }
 
-        private float mod(float x, float m)
+        private static float mod(float x, float m)
         {
             return (x % m + m) % m;
         }
@@ -157,7 +140,7 @@ namespace Celeste.Mod.Entities
                 this.Percent = 0.0f;
                 this.X = Calc.Random.NextFloat(320f);
                 this.Y = Calc.Random.NextFloat(580f);
-                this.Duration = (float)(4.0 + (double)Calc.Random.NextFloat() * 8.0);
+                this.Duration = 4.0f + Calc.Random.NextFloat() * 8.0f;
                 this.Width = (float)Calc.Random.Next(8, 80);
                 this.Length = (float)Calc.Random.Next(20, 200);
             }

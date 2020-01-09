@@ -194,8 +194,9 @@ namespace Celeste {
                 return;
             }
 
-            // Allow the StarJumpBlock to use an Everest StarJumpGraphicsController instead, which is color-customizable and doesn't include forced music.
-            // This is the "get it working" pass. Prioritizes the Everest controller if found, though you shouldn't be using both at once.
+            // Allow the StarJumpBlock to use an Everest StarJumpGraphicsController instead,
+            // which is color-customizable and doesn't include forced music.
+            // Prioritizes the Everest controller if found, though you shouldn't be using both at once.
 
             StarJumpController vanillaController = this.Scene.Tracker.GetEntity<StarJumpController>();
             StarClimbGraphicsController everestController = this.Scene.Tracker.GetEntity<StarClimbGraphicsController>();
@@ -208,23 +209,15 @@ namespace Celeste {
             else if (vanillaController != null)
                 blockFill = vanillaController.BlockFill;
 
-            // forgive me, but I HATE long lines. someone can despaghetti the whole thing later
             if (blockFill != null)
+            {
                 Draw.SpriteBatch.Draw(
-                    (Texture2D)(RenderTarget2D)blockFill,
+                    blockFill,
                     this.Position,
-                    new Rectangle?
-                    (
-                        new Rectangle
-                        (
-                            (int)((double)this.X - (double)cameraPos.X),
-                            (int)((double)this.Y - (double)cameraPos.Y),
-                            (int)this.Width,
-                            (int)this.Height
-                        )
-                    ),
+                    new Rectangle?(new Rectangle((int)(this.X - cameraPos.X), (int)(this.Y - cameraPos.Y), (int)this.Width, (int)this.Height)),
                     Color.White
                 );
+            }
 
             base.Render();
         }
