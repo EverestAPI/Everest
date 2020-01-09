@@ -125,6 +125,7 @@
     <Compile Include="Mod\Entities\CustomNPC.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
     <Compile Include="Mod\Entities\CustomEntityAttribute.cs" />
+    <Compile Include="Mod\Entities\StarClimbGraphicsController.cs" />
     <Compile Include="Mod\Entities\MusicLayerTrigger.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.Caches.cs" />
     <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
