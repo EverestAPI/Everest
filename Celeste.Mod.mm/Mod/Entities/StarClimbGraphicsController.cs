@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using System;
+using System.Collections.Generic;
 
 // Decompile lifted from dotPeek, blame spaghetti on that. --GreyMaria
 
@@ -15,26 +16,31 @@ namespace Celeste.Mod.Entities
         private int vertexCount = 0;
         private Color rayColor;
         private Color wipeColor;
-        private StarClimbGraphicsController.Ray[] rays = new StarClimbGraphicsController.Ray[100];
+        private static Ray[] rays = new Ray[100];
         private Level level;
-        private Random random;
-        public VirtualRenderTarget BlockFill;
+        private static Random random;
+        public static VirtualRenderTarget BlockFill;
         private const int RayCount = 100;
 
         public StarClimbGraphicsController(EntityData data, Vector2 offset)
         {
+            this.Tag = (Tags.TransitionUpdate | Tags.FrozenUpdate);
             this.rayColor = Calc.HexToColor(data.Attr("fgColor", "a3ffff")) * 0.25f;
             this.wipeColor = Calc.HexToColor(data.Attr("bgColor", "293E4B"));
-            this.InitBlockFill();
         }
 
         public override void Added(Scene scene)
         {
             base.Added(scene);
             level = scene as Level;
-            this.random = new Random(666);
-            this.Add((Component)new BeforeRenderHook(new Action(this.BeforeRender)));
-        }
+
+            if (!DetectOtherController())
+            {
+                this.InitBlockFill();
+                random = new Random(666);
+            }
+            this.Add(new BeforeRenderHook(new Action(this.BeforeRender)));
+    }
 
         public override void Update()
         {
@@ -42,12 +48,25 @@ namespace Celeste.Mod.Entities
             this.UpdateBlockFill();
         }
 
+        private bool DetectOtherController()
+        {
+            List<Entity> controllers = level.Tracker.GetEntities<StarClimbGraphicsController>();
+
+            foreach (Entity control in controllers)
+            {
+                StarClimbGraphicsController other = control as StarClimbGraphicsController;
+                if (other == null || other == this) continue;
+                else return true;
+            }
+            return false;
+        }
+
         private void InitBlockFill()
         {
-            for (int index = 0; index < this.rays.Length; ++index)
+            for (int index = 0; index < rays.Length; ++index)
             {
-                this.rays[index].Reset();
-                this.rays[index].Percent = Calc.Random.NextFloat();
+                rays[index].Reset();
+                rays[index].Percent = Calc.Random.NextFloat();
             }
         }
 
@@ -57,24 +76,24 @@ namespace Celeste.Mod.Entities
             Vector2 rayAngleCompl = new Vector2(-rayAngle.Y, rayAngle.X);
             int verticeCount = 0;
 
-            for (int index1 = 0; index1 < this.rays.Length; ++index1)
+            for (int index1 = 0; index1 < rays.Length; ++index1)
             {
                 // Ray lifetime and expiry
-                if ((double)this.rays[index1].Percent >= 1.0)
-                    this.rays[index1].Reset();
+                if ((double)rays[index1].Percent >= 1.0)
+                    rays[index1].Reset();
 
-                this.rays[index1].Percent += Engine.DeltaTime / this.rays[index1].Duration;
-                this.rays[index1].Y += 8f * Engine.DeltaTime;
+                rays[index1].Percent += Engine.DeltaTime / rays[index1].Duration;
+                rays[index1].Y += 8f * Engine.DeltaTime;
 
                 Vector2 rayPosition = new Vector2(
-                    mod(this.rays[index1].X - this.level.Camera.X * 0.9f, 320f),
-                    mod(this.rays[index1].Y - this.level.Camera.Y * 0.7f, 580f) - 200f
+                    mod(rays[index1].X - this.level.Camera.X * 0.9f, 320f + 160f) - 80f,
+                    mod(rays[index1].Y - this.level.Camera.Y * 0.7f, 580f) - 200f
                 );
 
                 // Construct the ray
-                float width = this.rays[index1].Width;
-                float length = this.rays[index1].Length;
-                Color rayLifeColor = this.rayColor * Ease.CubeInOut(Calc.YoYo(this.rays[index1].Percent));
+                float width = rays[index1].Width;
+                float length = rays[index1].Length;
+                Color rayLifeColor = this.rayColor * Ease.CubeInOut(Calc.YoYo(rays[index1].Percent));
                 VertexPositionColor vert1 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width + rayAngle * length, 0.0f), rayLifeColor);
                 VertexPositionColor vert2 = new VertexPositionColor(new Vector3(rayPosition - rayAngleCompl * width, 0.0f), rayLifeColor);
                 VertexPositionColor vert3 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width, 0.0f), rayLifeColor);
@@ -93,11 +112,11 @@ namespace Celeste.Mod.Entities
 
         private void BeforeRender()
         {
-            if (this.BlockFill == null)
-                this.BlockFill = VirtualContent.CreateRenderTarget("block-fill", 320, 180, false, true, 0);
+            if (BlockFill == null)
+                BlockFill = VirtualContent.CreateRenderTarget("block-fill", 320, 180, false, true, 0);
             if (this.vertexCount <= 0)
                 return;
-            Engine.Graphics.GraphicsDevice.SetRenderTarget((RenderTarget2D)this.BlockFill);
+            Engine.Graphics.GraphicsDevice.SetRenderTarget((RenderTarget2D)BlockFill);
             Engine.Graphics.GraphicsDevice.Clear(wipeColor);
             GFX.DrawVertices<VertexPositionColor>(Matrix.Identity, this.vertices, this.vertexCount, (Effect)null, (BlendState)null);
         }
@@ -116,9 +135,10 @@ namespace Celeste.Mod.Entities
 
         private void Dispose()
         {
-            if (this.BlockFill != null)
-                this.BlockFill.Dispose();
-            this.BlockFill = null;
+            if (DetectOtherController()) return;
+            if (BlockFill != null)
+                BlockFill.Dispose();
+            BlockFill = null;
         }
 
         private static float mod(float x, float m)
@@ -138,7 +158,7 @@ namespace Celeste.Mod.Entities
             public void Reset()
             {
                 this.Percent = 0.0f;
-                this.X = Calc.Random.NextFloat(320f);
+                this.X = Calc.Random.NextFloat(320f + 160f);
                 this.Y = Calc.Random.NextFloat(580f);
                 this.Duration = 4.0f + Calc.Random.NextFloat() * 8.0f;
                 this.Width = (float)Calc.Random.Next(8, 80);
