@@ -205,7 +205,7 @@ namespace Celeste {
             VirtualRenderTarget blockFill = null;
 
             if (everestController != null)
-                blockFill = everestController.BlockFill;
+                blockFill = StarClimbGraphicsController.BlockFill;
             else if (vanillaController != null)
                 blockFill = vanillaController.BlockFill;
 
