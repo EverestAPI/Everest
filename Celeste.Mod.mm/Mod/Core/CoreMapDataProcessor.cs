@@ -188,6 +188,8 @@ namespace Celeste.Mod.Core {
                 } }
             };
 
+
+
         public override void End() {
             if (Mode.Checkpoints == null)
                 Mode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();

@@ -54,10 +54,8 @@ namespace Celeste.Mod {
         }
 
         public void Run(string stepName, BinaryPacker.Element el) {
-            foreach (EverestMapDataProcessor p in Processors) {
-                if (p.Steps.TryGetValue(stepName, out Action<BinaryPacker.Element> step))
-                    step(el);
-            }
+            foreach (EverestMapDataProcessor p in Processors)
+                p.Run(stepName, el);
         }
 
     }
