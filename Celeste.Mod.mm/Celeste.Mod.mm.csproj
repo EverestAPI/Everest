@@ -130,6 +130,9 @@
     <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
+    <Compile Include="Mod\Core\CoreMapDataProcessor.cs" />
+    <Compile Include="Mod\Module\EverestMapDataProcessor.cs" />
+    <Compile Include="Mod\Helpers\MapDataFixup.cs" />
     <Compile Include="Mod\Helpers\ModUpdateInfo.cs" />
     <Compile Include="Mod\Helpers\ModUpdaterHelper.cs" />
     <Compile Include="Mod\Helpers\QueuedTaskHelper.cs" />
