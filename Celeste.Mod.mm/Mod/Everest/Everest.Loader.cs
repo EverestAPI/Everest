@@ -370,8 +370,6 @@ namespace Celeste.Mod {
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
 
-                ApplyRelinkerHackfixes(meta);
-
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
@@ -546,50 +544,7 @@ namespace Celeste.Mod {
                     return null;
                 };
 
-            private static void ApplyRelinkerHackfixes(EverestModuleMetadata meta) {
-                if (meta.Name == "BGswitch" && meta.Version < new Version(0, 1, 0, 0)) {
-                    /* I wish I knew what went wrong while PenguinOwl compiled that build...
-                     * 
-                     * For whoever is going to end up here in the future:
-                     * PenguinOwl's "BG toggler" mod .dll is just... weird.
-                     * Yet it somehow worked in the past when MonoMod's relinker
-                     * wasn't as accurate and strict as it is now.
-                     * 
-                     * -ade
-                     */
-                    Relinker.Modder.PostProcessors += _FixBGswitch;
-                }
-
-            }
-
-            private static void _FixBGswitch(MonoModder modder) {
-                // The broken code is inside of Celeste.BGModeToggle::Setup
-                TypeDefinition t_BGModeToggle = modder.Module.GetType("Celeste.BGModeToggle");
-                if (t_BGModeToggle == null)
-                    return;
-
-                ILContext il = new ILContext(t_BGModeToggle.FindMethod("Setup"));
-                ILCursor c = new ILCursor(il);
-
-                // newobj Grid::.ctor(System.Single,System.Single,System.Boolean[,]) -> newobj Grid::.ctor(System.Single,System.Single,System.Boolean[0...,0...])
-                c.Index = 0;
-                while (c.TryGotoNext(i => i.MatchNewobj<Grid>())) {
-                    MethodReference ctor = c.Next.Operand as MethodReference;
-                    if (ctor == null)
-                        continue;
-
-                    ArrayType param = (ArrayType) ctor.Parameters[2].ParameterType;
-                    param.Dimensions.Clear();
-                    param.Dimensions.Add(new ArrayDimension(0, null));
-                    param.Dimensions.Add(new ArrayDimension(0, null));
-                }
-            }
-
             private static void ApplyModHackfixes(EverestModuleMetadata meta, Assembly asm) {
-                if (meta.Name == "BGswitch" && meta.Version < new Version(0, 1, 0, 0)) {
-                    Relinker.Modder.PostProcessors -= _FixBGswitch;
-                }
-
                 if (meta.Name == "Prideline" && meta.Version < new Version(1, 0, 0, 0)) {
                     // Prideline 1.0.0 has got a hardcoded path to /ModSettings/Prideline.flag
                     Type t_PridelineModule = asm.GetType("Celeste.Mod.Prideline.PridelineModule");
