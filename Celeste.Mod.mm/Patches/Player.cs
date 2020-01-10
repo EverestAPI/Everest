@@ -131,6 +131,20 @@ namespace Celeste {
                 orig_WindMove(move);
         }
 
+        private extern void orig_WallJump(int dir);
+        private void WallJump(int dir) {
+            if ((Scene as Level).Session.Area.GetLevelSet() != "Celeste") {
+                // Fix vertical boost from upwards-moving solids not being applied correctly when dir != -1
+                if (LiftSpeed == Vector2.Zero) {
+                    Solid solid = CollideFirst<Solid>(Position + Vector2.UnitX * 3f * -dir);
+                    if (solid != null) {
+                        LiftSpeed = solid.LiftSpeed;
+                    }
+                }
+            }
+            orig_WallJump(dir);
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         [MethodImpl(MethodImplOptions.NoInlining)]
