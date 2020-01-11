@@ -73,7 +73,7 @@ namespace Celeste.Mod {
                 silent = true;
 
             } else if (silent) {
-                string threadName = Thread.CurrentThread.Name;
+                string threadName = Thread.CurrentThread.Name ?? "<null>";
                 if (!SilentThreadList.Contains(threadName)) {
                     Logger.Log(LogLevel.Warn, "reload", $"Tried to silently reload on non-whitelisted thread {threadName}: {text}");
                     silent = false;
