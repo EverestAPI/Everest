@@ -27,5 +27,20 @@ namespace Celeste {
             Everest.Discord.OnStrawberryCollect();
         }
 
+        public extern void orig_Update();
+        [PatchStrawberryTrainCollectionOrder]
+        public new void Update()
+        {
+            orig_Update();
+        }
+
+        /*[MonoModReplace]
+        private new bool IsFirstStrawberry
+        {
+            get
+            {
+                return StrawberryRegistry.IsFirstStrawberry(this);
+            }
+        }*/
     }
 }

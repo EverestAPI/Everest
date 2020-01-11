@@ -18,6 +18,14 @@ namespace Celeste.Mod.Core {
             Strawberry = 0;
             StrawberryInCheckpoint = 0;
             CheckpointsAuto = Mode.Checkpoints == null ? new List<CheckpointData>() : null;
+
+            foreach (KeyValuePair<string, Action<BinaryPacker.Element>> action in StrawberryRegistry.GetBerriesToInject(this.Context))
+            {
+                if (action.Key == "strawberry")
+                    continue;
+                if (!this.Steps.Keys.Contains<string>(action.Key))
+                    this.Steps.Add(action.Key, action.Value);
+            }
         }
 
         public override Dictionary<string, Action<BinaryPacker.Element>> Init()
@@ -183,6 +191,7 @@ namespace Celeste.Mod.Core {
                         entity.SetAttr("checkpointID", Checkpoint);
                     if (entity.AttrInt("order", -1) == -1)
                         entity.SetAttr("order", StrawberryInCheckpoint);
+
                     Strawberry++;
                     StrawberryInCheckpoint++;
                 } }

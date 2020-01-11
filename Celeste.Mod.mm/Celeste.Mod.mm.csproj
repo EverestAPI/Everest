@@ -154,6 +154,7 @@
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\Helpers\EndUserException.cs" />
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
+    <Compile Include="Mod\Registry\StrawberryRegistry.cs" />
     <Compile Include="Mod\UI\AutoModUpdater.cs" />
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
