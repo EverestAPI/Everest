@@ -33,14 +33,5 @@ namespace Celeste {
         {
             orig_Update();
         }
-
-        /*[MonoModReplace]
-        private new bool IsFirstStrawberry
-        {
-            get
-            {
-                return StrawberryRegistry.IsFirstStrawberry(this);
-            }
-        }*/
     }
 }

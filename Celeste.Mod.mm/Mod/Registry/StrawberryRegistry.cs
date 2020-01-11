@@ -20,6 +20,7 @@ namespace Celeste.Mod
         private static ReadOnlyCollection<RegisteredBerry> _getTrackableBerries;
         private static ReadOnlyCollection<Type> _getBerryTypes;
 
+        // Return caches or create new ones
         public static ReadOnlyCollection<RegisteredBerry> GetRegisteredBerries()
         {
             if (_getRegisteredBerries == null)
@@ -44,8 +45,7 @@ namespace Celeste.Mod
             return _getBerryTypes;
         }
 
-        // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.<para />
-        // Only use this version if your strawberry class does not use the CustomEntity(entityname) attribute.
+        // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
         public static void Register(Type type, string name, bool tracked = true, bool alternateCollectionRules = false)
         {
             registeredBerries.Add(new RegisteredBerry(type, name, tracked, alternateCollectionRules));
@@ -59,7 +59,7 @@ namespace Celeste.Mod
                 CustomEntityAttribute attr = Attribute.GetCustomAttribute(type, typeof(CustomEntityAttribute)) as CustomEntityAttribute;
                 foreach (string id in attr.IDs)
                 {
-                    registeredBerries.Add(new RegisteredBerry(type, id, tracked, alternateCollectionRules));
+                    Register(type, id, tracked, alternateCollectionRules);
                 }
             }
         }
@@ -134,16 +134,18 @@ namespace Celeste.Mod
 
         public class RegisteredBerry
         {
-            // registered berry as a Type
+            // The registered berry as a Type
             public readonly Type berryClass;
 
-            // entity:<passed berry's defined name>
+            // The custom name for the berry.
             public readonly string entityName;
 
             // T: add berry to tracker and auto-assign checkpoint + order
             // F: berry is secret, only auto-handle last ditch collections
             public readonly bool isTracked;
 
+            // T: berry defers "leadership" of the berry train so that berries that follow redberry collection rules can be collected
+            // F: berry doesn't have a special collection rule and can be a "leader" of the berry train
             public readonly bool blocksNormalCollection;
 
             public RegisteredBerry(Type berry, string name, bool track, bool blockCollect)

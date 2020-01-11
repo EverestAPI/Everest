@@ -25,10 +25,6 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        /*[MonoModIgnore] // We don't want to change anything about the method...
-        [PatchHeartGemCollectRoutine] // ... except for manually manipulating the method via MonoModRules
-        private extern IEnumerator CollectRoutine(Player player);*/
-
         private extern IEnumerator orig_CollectRoutine(Player player);
         [PatchHeartGemCollectRoutine]
         private IEnumerator CollectRoutine(Player player)

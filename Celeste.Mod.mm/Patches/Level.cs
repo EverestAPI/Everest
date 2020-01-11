@@ -52,10 +52,9 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
-        public extern void orig_RegisterAreaComplete();
+        [MonoModReplace]
         public new void RegisterAreaComplete() {
             bool completed = Completed;
-            //orig_RegisterAreaComplete();
             if (!completed)
             {
                 Player player = base.Tracker.GetEntity<Player>();
