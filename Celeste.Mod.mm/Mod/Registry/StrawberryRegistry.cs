@@ -85,28 +85,32 @@ namespace Celeste.Mod
             // we need it searchable and Find doesn't work on a ReadOnlyCollection aaaaa
             List<RegisteredBerry> berries = registeredBerries.ToList();
             ReadOnlyCollection<Type> types = GetBerryTypes();
-            //RegisteredBerry detectedBerry = berries.Find(b => b.GetType() == self.GetType());
-            //if (detectedBerry != null)
-            //if (detectedBerry == null)
-            //    return false;
 
             for (int i = follow.FollowIndex - 1; i >= 0; i--)
             {
                 Entity strawberry = follow.Leader.Followers[i].Entity;
+                Type t = strawberry.GetType();
+                RegisteredBerry berry = berries.Find(b => b.berryClass == t);
+
+                // Is the "strawberry" registered? If not, bail immediately.
+                // This is a safety check and should _never_ fail.
+                bool isRegistered = types.Contains(strawberry.GetType());
+
+                // Does the strawberry not collect in the normal way?
+                // If it does, we need to defer "leader" to another berry.
+                bool blocksCollect = berry.blocksNormalCollection;
+
+                // Is it a vanilla Gold Strawberry?
+                // This needs to defer "leader" to another berry.
                 bool goldenCheck = false;
                 if (strawberry as Strawberry != null)
                     goldenCheck = (strawberry as Strawberry).Golden;
 
-                //Strawberry vanillaStraw = strawberry as Strawberry;
-                //if (vanillaStraw != null && !vanillaStraw.Golden)
-                //{
-                //    return false;
-                //}
-                Type t = follow.Entity.GetType();
-                RegisteredBerry berry = berries.Find(b => b.berryClass == t);
-                bool blocksCollect = berry.blocksNormalCollection;
+                // Did we find a berry closer to the front that doesn't defer?
+                // It must be registered, must NOT block collection, and is NOT a gold berry
+                // in order to be a valid leader.
                 if (types.Contains(strawberry.GetType()) && 
-                    berry.blocksNormalCollection == false && 
+                    !blocksCollect && 
                     !goldenCheck)
                 {
                     return false;
