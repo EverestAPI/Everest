@@ -17,6 +17,8 @@ using System.Linq;
 using Celeste.Mod.Meta;
 using MonoMod.Utils;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -53,8 +55,28 @@ namespace Celeste {
         public extern void orig_RegisterAreaComplete();
         public new void RegisterAreaComplete() {
             bool completed = Completed;
-            orig_RegisterAreaComplete();
-            if (!completed) {
+            //orig_RegisterAreaComplete();
+            if (!completed)
+            {
+                Player player = base.Tracker.GetEntity<Player>();
+                if (player != null)
+                {
+                    List<Entity> strawbs = new List<Entity>();
+                    ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
+                    foreach (Follower follower in player.Leader.Followers)
+                    {
+
+                        if (regBerries.Contains(follower.Entity.GetType()))
+                        {
+                            strawbs.Add(follower.Entity);
+                        }
+                    }
+                    foreach (Entity strawb in strawbs)
+                    {
+                        strawb.GetType().InvokeMember("OnCollect", BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, Type.DefaultBinder, strawb, null);
+                    }
+                }
+                Completed = true;
                 Everest.Events.Level.Complete(this);
             }
         }
