@@ -483,6 +483,22 @@ namespace Celeste.Mod {
                         patch_Level.EntityLoaders[id] = loader;
                     }
                 }
+                // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
+                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>())
+                {
+                    List<string> names = new List<string>();
+                    foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
+                        foreach (string idFull in nameAttrib.IDs)
+                            names.Add(idFull);
+                    if (names.Count == 0)
+                        goto NoDefinedBerryNames; // no customnames? skip out on registering berry
+
+                    foreach (string name in names)
+                    {
+                        StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
+                    }
+                }
+            NoDefinedBerryNames:;
             }
 
             module.LoadSettings();
