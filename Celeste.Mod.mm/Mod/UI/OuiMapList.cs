@@ -102,10 +102,14 @@ namespace Celeste.Mod.UI {
             int levelSetUnlockedModes = int.MaxValue;
             string name;
 
-            List<AreaStats> areaStatsAll = SaveData.Instance.Areas;
+            SaveData save = SaveData.Instance;
+            List<AreaStats> areaStatsAll = save.Areas;
             for (int i = 0; i < AreaData.Areas.Count; i++) {
-                AreaData area = AreaData.Areas[i];
-                if (!area.HasMode((AreaMode) side))
+                AreaData area = AreaData.Get(i);
+                if (area == null || !area.HasMode((AreaMode) side))
+                    continue;
+
+                if (!save.DebugMode && !string.IsNullOrEmpty(area.GetMeta()?.Parent))
                     continue;
 
                 string levelSet = area.GetLevelSet();

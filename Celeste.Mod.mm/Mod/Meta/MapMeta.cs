@@ -24,6 +24,8 @@ namespace Celeste.Mod.Meta {
         // public string CompleteScreenName { get; set; }
         // public string SID { get; set; }
 
+        public string Parent { get; set; }
+
         public string Icon { get; set; }
 
         public bool? Interlude { get; set; }
@@ -72,6 +74,8 @@ namespace Celeste.Mod.Meta {
         public MapMetaCassetteModifier CassetteModifier { get; set; }
 
         public void Parse(BinaryPacker.Element meta) {
+            meta.AttrIf("Parent", v => Parent = v);
+
             meta.AttrIf("Icon", v => Icon = v);
 
             meta.AttrIfBool("Interlude", v => Interlude = v);
@@ -197,6 +201,9 @@ namespace Celeste.Mod.Meta {
             if (meta == null) {
                 area.SetMeta(this);
             } else {
+                if (!string.IsNullOrEmpty(Parent))
+                    meta.Parent = Parent;
+
                 if (!string.IsNullOrEmpty(PostcardSoundID))
                     meta.PostcardSoundID = PostcardSoundID;
 

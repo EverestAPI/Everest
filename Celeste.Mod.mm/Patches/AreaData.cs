@@ -163,6 +163,8 @@ namespace Celeste {
 
         [MonoModReplace]
         public static new AreaData Get(int id) {
+            if (id < 0)
+                return null;
             return Areas[id];
         }
 
@@ -391,8 +393,10 @@ namespace Celeste {
         private static int AreaComparison(AreaData a, AreaData b) {
             string aSet = a.GetLevelSet();
             string aSID = a.GetSID();
+            MapMeta aMeta = a.GetMeta();
             string bSet = b.GetLevelSet();
             string bSID = b.GetSID();
+            MapMeta bMeta = b.GetMeta();
 
             // Celeste appears before everything else.
             if (aSet == "Celeste" && bSet != "Celeste")
@@ -409,6 +413,10 @@ namespace Celeste {
             // Compare level sets alphabetically.
             if (aSet != bSet)
                 return string.Compare(aSet, bSet);
+
+            // Put "parented" levels at the end.
+            if (!string.IsNullOrEmpty(aMeta?.Parent) && string.IsNullOrEmpty(bMeta?.Parent))
+                return -1;
 
             int? aOrder;
             AreaMode aSide;

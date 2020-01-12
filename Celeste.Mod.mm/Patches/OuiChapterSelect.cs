@@ -41,11 +41,36 @@ namespace Celeste {
 
         private extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
-            // Note: You may instinctually call base.Added();
-            // DON'T! The original method is orig_Added
             orig_Added(scene);
 
-            // Do we even need to do anything here?
+            SaveData save = SaveData.Instance;
+            for (int i = icons.Count - 1; i > -1; --i) {
+                OuiChapterSelectIcon icon = icons[i];
+                AreaData area = AreaData.Get(icon.Area);
+
+                if (!string.IsNullOrEmpty(area?.GetMeta()?.Parent)) {
+                    icons[i].Area = -1;
+                    icons[i].Hide();
+                    continue;
+                }
+            }
+        }
+
+        private void GetMinMaxArea(out int areaOffs, out int areaMax) {
+            int areaOffsRaw = SaveData.Instance.GetLevelSetStats().AreaOffset;
+            int areaMaxRaw = Math.Max(areaOffsRaw, SaveData.Instance.UnlockedAreas);
+
+            do {
+                areaOffs = icons.FindIndex(i => i?.Area == areaOffsRaw);
+            } while (areaOffs == -1 && ++areaOffsRaw < areaMaxRaw);
+            if (areaOffs == -1)
+                areaOffs = areaOffsRaw;
+
+            do {
+                areaMax = icons.FindLastIndex(i => i?.Area == areaMaxRaw);
+            } while (areaMax == -1 && --areaMaxRaw < areaOffsRaw);
+            if (areaMax == -1)
+                areaMax = areaMaxRaw;
         }
 
         [MonoModReplace]
@@ -58,8 +83,7 @@ namespace Celeste {
         [MonoModReplace]
         public override IEnumerator Enter(Oui from) {
             // Fix "out of bounds" level selection.
-            int areaOffs = SaveData.Instance.GetLevelSetStats().AreaOffset;
-            int areaMax = Math.Max(areaOffs, SaveData.Instance.UnlockedAreas);
+            GetMinMaxArea(out int areaOffs, out int areaMax);
             int areaUnclamp = area;
             area = Calc.Clamp(area, areaOffs, areaMax);
 
@@ -83,8 +107,8 @@ namespace Celeste {
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
-                AreaData area = AreaData.Areas[icon.Area];
-                if (area.GetLevelSet() != currentLevelSet)
+                AreaData area = AreaData.Get(icon.Area);
+                if (area == null || area.GetLevelSet() != currentLevelSet)
                     continue;
 
                 int index = area.ToKey().ID;
@@ -116,8 +140,8 @@ namespace Celeste {
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
-                AreaData area = AreaData.Areas[icon.Area];
-                if (area.GetLevelSet() != currentLevelSet)
+                AreaData area = AreaData.Get(icon.Area);
+                if (area == null || area.GetLevelSet() != currentLevelSet)
                     continue;
 
                 if (selected != icon)
@@ -177,12 +201,12 @@ namespace Celeste {
                 }
 
                 // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.
-                int offs = SaveData.Instance.GetLevelSetStats().AreaOffset;
-                if (area < offs) {
-                    area = offs;
+                GetMinMaxArea(out int areaOffs, out int areaMax);
+                if (area < areaOffs) {
+                    area = areaOffs;
                 } else {
-                    if (area > SaveData.Instance.MaxArea) {
-                        area = SaveData.Instance.MaxArea;
+                    if (area > areaMax) {
+                        area = areaMax;
                     }
                     while (area > 0 && icons[area].GetIsHidden()) {
                         area--;
