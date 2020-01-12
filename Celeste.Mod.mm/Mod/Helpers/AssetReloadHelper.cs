@@ -69,8 +69,18 @@ namespace Celeste.Mod {
         public static void Do(string text, Action reload = null, Action done = null)
             => Do(false, text, reload, done);
         public static void Do(bool silent, string text, Action reload = null, Action done = null) {
-            if (Celeste.LoadTimer != null ||
-                (silent && SilentThreadList.Contains(Thread.CurrentThread.Name))) {
+            if (Celeste.LoadTimer != null) {
+                silent = true;
+
+            } else if (silent) {
+                string threadName = Thread.CurrentThread.Name ?? "<null>";
+                if (!SilentThreadList.Contains(threadName)) {
+                    Logger.Log(LogLevel.Warn, "reload", $"Tried to silently reload on non-whitelisted thread {threadName}: {text}");
+                    silent = false;
+                }
+            }
+
+            if (silent) {
                 reload?.Invoke();
                 done?.Invoke();
                 return;
@@ -151,7 +161,7 @@ namespace Celeste.Mod {
                             Thread.Yield();
 
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "misc", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
+                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
                         e.LogDetailed();
 
                         string message = Dialog.Get("postcard_levelloadfailed")

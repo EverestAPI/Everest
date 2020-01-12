@@ -19,6 +19,7 @@ using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste {
@@ -29,6 +30,8 @@ namespace Celeste {
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
+            Thread.CurrentThread.Name = "Main Thread";
+
             if (File.Exists("launch.txt")) {
                 args =
                     File.ReadAllLines("launch.txt")
