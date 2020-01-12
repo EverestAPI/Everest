@@ -60,20 +60,20 @@ namespace Celeste.Mod
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
-        public static void Register(Type type, string name, bool tracked = true, bool alternateCollectionRules = false)
+        public static void Register(Type type, string name, bool tracked = true, bool blocksNormalCollection = false)
         {
-            registeredBerries.Add(new RegisteredBerry(type, name, tracked, alternateCollectionRules));
+            registeredBerries.Add(new RegisteredBerry(type, name, tracked, blocksNormalCollection));
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
-        public static void Register(Type type, bool tracked = true, bool alternateCollectionRules = false)
+        public static void Register(Type type, bool tracked = true, bool blocksNormalCollection = false)
         {
             if (Attribute.IsDefined(type, typeof(CustomEntityAttribute)))
             {
                 CustomEntityAttribute attr = Attribute.GetCustomAttribute(type, typeof(CustomEntityAttribute)) as CustomEntityAttribute;
                 foreach (string id in attr.IDs)
                 {
-                    Register(type, id, tracked, alternateCollectionRules);
+                    Register(type, id, tracked, blocksNormalCollection);
                 }
             }
         }
