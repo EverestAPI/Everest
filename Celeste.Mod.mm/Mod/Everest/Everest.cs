@@ -489,7 +489,15 @@ namespace Celeste.Mod {
                     List<string> names = new List<string>();
                     foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
                         foreach (string idFull in nameAttrib.IDs)
-                            names.Add(idFull);
+                        {
+                            string[] split = idFull.Split('=');
+                            if(split.Length == 0)
+                            {
+                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+                            names.Add(split[0]);
+                        }
                     if (names.Count == 0)
                         goto NoDefinedBerryNames; // no customnames? skip out on registering berry
 
