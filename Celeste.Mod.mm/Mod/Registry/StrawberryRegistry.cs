@@ -112,7 +112,9 @@ namespace Celeste.Mod
 
                 // Does the strawberry not collect in the normal way?
                 // If it does, we need to defer "leader" to another berry.
-                bool blocksCollect = berry.blocksNormalCollection;
+                bool blocksCollect = false;
+                if (berry != null)
+                    blocksCollect = berry.blocksNormalCollection;
 
                 // Is it a vanilla Gold Strawberry?
                 // This needs to defer "leader" to another berry.
