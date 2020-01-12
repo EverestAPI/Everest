@@ -19,6 +19,7 @@ namespace Celeste.Mod
         private static ReadOnlyCollection<RegisteredBerry> _getRegisteredBerries;
         private static ReadOnlyCollection<RegisteredBerry> _getTrackableBerries;
         private static ReadOnlyCollection<Type> _getBerryTypes;
+        private static ReadOnlyCollection<string> _getBerryNames;
 
         // Return caches or create new ones
         public static ReadOnlyCollection<RegisteredBerry> GetRegisteredBerries()
@@ -43,6 +44,19 @@ namespace Celeste.Mod
                 _getBerryTypes = types.AsReadOnly();
             }
             return _getBerryTypes;
+        }
+        public static ReadOnlyCollection<string> GetBerryNames()
+        {
+            if (_getBerryNames == null)
+            {
+                List<string> berryNames = new List<string>();
+                foreach (RegisteredBerry berry in registeredBerries)
+                {
+                    berryNames.Add(berry.entityName);
+                }
+                _getBerryNames = berryNames.AsReadOnly();
+            }
+            return _getBerryNames;
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
@@ -117,19 +131,6 @@ namespace Celeste.Mod
                 }
             }
             return true;
-        }
-
-        // Called by CoreMapDataProcessor in order to inject mod berries into the step list for fixup.
-        public static Dictionary<string, Action<BinaryPacker.Element>> GetBerriesToInject(MapDataFixup context)
-        {
-            Dictionary<string, Action<BinaryPacker.Element>> trackDict = new Dictionary<string, Action<BinaryPacker.Element>>();
-            ReadOnlyCollection<RegisteredBerry> berries = GetRegisteredBerries();
-            foreach (RegisteredBerry berry in berries)
-            {
-                trackDict.Add(String.Concat("entity:", berry.entityName), entity => { context.Run("entity:strawberry", entity); });
-            }
-
-            return trackDict;
         }
 
         public class RegisteredBerry
