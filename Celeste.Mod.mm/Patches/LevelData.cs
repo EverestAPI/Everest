@@ -17,6 +17,7 @@ namespace Celeste {
         public extern void orig_ctor(BinaryPacker.Element data);
 
         [MonoModConstructor]
+        [PatchLevelDataBerryTracker]
         public void ctor(BinaryPacker.Element data) {
             orig_ctor(data);
             if(!Everest.Flags.IsDisabled)
