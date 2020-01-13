@@ -109,6 +109,7 @@ namespace Celeste.Mod.UI {
                 if (area == null || !area.HasMode((AreaMode) side))
                     continue;
 
+                // TODO: Make subchapters hidden by default in the map list, even in debug mode.
                 if (!save.DebugMode && !string.IsNullOrEmpty(area.GetMeta()?.Parent))
                     continue;
 

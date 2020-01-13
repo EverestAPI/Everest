@@ -80,6 +80,18 @@ namespace Celeste {
             Overworld.Mountain.Model.EaseState(areaData.MountainState);
         }
 
+        public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
+        public override bool IsStart(Overworld overworld, Overworld.StartMode start) {
+            if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
+                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                if (area != null)
+                    SaveData.Instance.LastArea.ID = area.ID;
+            }
+
+            return orig_IsStart(overworld, start);
+        }
+
         [MonoModReplace]
         public override IEnumerator Enter(Oui from) {
             // Fix "out of bounds" level selection.

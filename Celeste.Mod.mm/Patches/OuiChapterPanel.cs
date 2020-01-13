@@ -42,6 +42,14 @@ namespace Celeste {
                 SaveData.Instance.LastArea = AreaKey.Default;
                 instantClose = true;
             }
+
+            if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
+                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                if (area != null)
+                    SaveData.Instance.LastArea.ID = area.ID;
+            }
+
             return orig_IsStart(overworld, start);
         }
 
