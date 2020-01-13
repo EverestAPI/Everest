@@ -188,7 +188,13 @@ namespace Celeste.Mod.Core {
                 } }
             };
 
-
+        public override void Run(string stepName, BinaryPacker.Element el)
+        {
+            List<string> berries = StrawberryRegistry.GetBerryNames().ToList();
+            if (stepName.Length > 7 && berries.Contains(stepName.Remove(0, 7)))
+                stepName = "entity:strawberry";
+            base.Run(stepName, el);
+        }
 
         public override void End() {
             if (Mode.Checkpoints == null)

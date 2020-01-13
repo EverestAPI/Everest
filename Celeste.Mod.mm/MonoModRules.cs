@@ -24,15 +24,28 @@ namespace MonoMod {
     /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
     /// Also manually execute ProxyFileCalls rule.
+    /// Also includes a patch for the strawberry tracker.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchMapDataLoader")]
     class PatchMapDataLoaderAttribute : Attribute { }
+
+    /// <summary>
+    /// A patch for the strawberry tracker, allowing all registered modded berries to be detected.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelDataBerryTracker")]
+    class PatchLevelDataBerryTracker : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLevelLoader")]
     class PatchLevelLoaderAttribute : Attribute { }
+
+    /// <summary>
+    /// A patch for Strawberry that takes into account that some modded strawberries may not allow standard collection rules.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchStrawberryTrainCollectionOrder")]
+    class PatchStrawberryTrainCollectionOrder : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
@@ -154,6 +167,8 @@ namespace MonoMod {
         static MethodDefinition m_Everest_get_VersionCelesteString;
 
         static TypeDefinition Level;
+
+        static TypeDefinition StrawberryRegistry;
 
         static TypeDefinition FileProxy;
         static TypeDefinition DirectoryProxy;
@@ -331,6 +346,15 @@ namespace MonoMod {
             if (m_GrowAndGet == null)
                 return;
 
+            if (StrawberryRegistry == null)
+                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            if (StrawberryRegistry == null)
+                return;
+
+            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+            if (m_TrackableContains == null)
+                return;
+
             bool pop = false;
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -363,8 +387,82 @@ namespace MonoMod {
                     instr.Operand = m_GrowAndGet;
                     instri++;
                 }
+
+                // Strawberry count adjustments
+                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry")
+                {
+                    instr.OpCode = OpCodes.Nop;
+                    instrs[instri + 1].Operand = m_TrackableContains;
+                    instri++;
+                }
             }
 
+        }
+
+        public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib)
+        {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
+
+            if (!method.HasBody)
+                return;
+
+            if (StrawberryRegistry == null)
+                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            if (StrawberryRegistry == null)
+                return;
+
+            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+            if (m_TrackableContains == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++)
+            {
+                Instruction instr = instrs[instri];
+
+                // Strawberry tracker adjustments
+                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry")
+                {
+                    instr.OpCode = OpCodes.Nop;
+                    instrs[instri + 1].Operand = m_TrackableContains;
+                    instri++;
+                }
+            }
+        }
+
+        public static void PatchStrawberryTrainCollectionOrder(MethodDefinition method, CustomAttribute attrib)
+        {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
+
+            if (!method.HasBody)
+                return;
+
+            if (StrawberryRegistry == null)
+                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            if (StrawberryRegistry == null)
+                return;
+
+            MethodDefinition m_IsFirst = StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
+            if (m_IsFirst == null)
+                return;
+            
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++)
+            {
+                Instruction instr = instrs[instri];
+
+                // Rip out the vanilla code call and replace it with vanilla-considerate code
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID().Contains("IsFirstStrawberry") == true)
+                {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_IsFirst;
+                    instri++;
+                }
+            }
         }
 
         public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
@@ -402,7 +500,7 @@ namespace MonoMod {
                 Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
                 */
 
-                if (instri > 0 &&
+            if (instri > 0 &&
                     instri < instrs.Count - 4 &&
                     instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
                     instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
