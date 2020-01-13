@@ -115,12 +115,24 @@ namespace Celeste.Mod {
                     Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
                     // Force stable, then master branches to appear first.
                     branchFirsts["stable"] = int.MaxValue;
-                    branchFirsts["master"] = int.MaxValue - 1;
+                    branchFirsts["master"] = int.MaxValue - 2;
+
+                    // Make sure that the branch we're on appears between stable and master.
+                    // This ensures that people don't miss out on important stability updates,
+                    // but don't get dragged onto the master branch by accident.
+                    foreach (Entry entry in entries) {
+                        if (entry.Build == Build) {
+                            branchFirsts[entry.Branch] = int.MaxValue - 1;
+                            break;
+                        }
+                    }
+
                     for (int i = 0; i < entries.Count; i++) {
                         Entry entry = entries[i];
                         if (!branchFirsts.ContainsKey(entry.Branch))
                             branchFirsts[entry.Branch] = i;
                     }
+
                     entries.Sort((a, b) => {
                         if (a.Branch != b.Branch)
                             return -(branchFirsts[a.Branch].CompareTo(branchFirsts[b.Branch]));
