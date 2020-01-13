@@ -60,19 +60,19 @@ namespace Celeste {
                 Player player = base.Tracker.GetEntity<Player>();
                 if (player != null)
                 {
-                    List<Entity> strawbs = new List<Entity>();
+                    List<IStrawberry> strawbs = new List<IStrawberry>();
                     ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
                     foreach (Follower follower in player.Leader.Followers)
                     {
 
-                        if (regBerries.Contains(follower.Entity.GetType()))
+                        if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry)
                         {
-                            strawbs.Add(follower.Entity);
+                            strawbs.Add(follower.Entity as IStrawberry);
                         }
                     }
-                    foreach (Entity strawb in strawbs)
+                    foreach (IStrawberry strawb in strawbs)
                     {
-                        strawb.GetType().InvokeMember("OnCollect", BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, Type.DefaultBinder, strawb, null);
+                        strawb.OnCollect();
                     }
                 }
                 Completed = true;
