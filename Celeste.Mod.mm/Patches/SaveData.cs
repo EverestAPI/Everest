@@ -496,9 +496,9 @@ namespace Celeste {
 
                 int offset = AreaOffset;
                 int count = 0;
-                for (int i = 0; i <= Areas.Count; i++) {
+                for (int i = 0; i <= MaxArea; i++) {
                     foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                        if (mode == null || mode.MapData.Area.Mode > AreaMode.CSide)
+                        if (mode?.MapData == null || mode.MapData.Area.Mode > AreaMode.CSide)
                             continue;
                         count += mode.MapData.DetectedStrawberries;
                     }
@@ -526,7 +526,7 @@ namespace Celeste {
                     maxHeartGems = 0;
                     for (int i = 0; i <= MaxArea; i++) {
                         foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                            if (mode == null || mode.MapData.Area.Mode > AreaMode.BSide)
+                            if (mode?.MapData == null || mode.MapData.Area.Mode > AreaMode.BSide)
                                 continue;
                             maxHeartGems += mode.MapData.DetectedHeartGem ? 1 : 0;
                         }
@@ -578,7 +578,7 @@ namespace Celeste {
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
                     foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                        if (mode == null || mode.MapData.Area.Mode > AreaMode.CSide)
+                        if (mode?.MapData == null || mode.MapData.Area.Mode > AreaMode.CSide)
                             continue;
                         count += mode.MapData.DetectedHeartGem ? 1 : 0;
                     }
