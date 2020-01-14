@@ -43,6 +43,7 @@ namespace Celeste {
             => string.IsNullOrEmpty(name) ? Path.GetDirectoryName(GetSaveFilePath("dummy")) : GetHandle(name);
 
         [MonoModIgnore]
+        [PatchSaveRoutine]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
 
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]

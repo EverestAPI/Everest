@@ -298,25 +298,42 @@ namespace Celeste {
                 // Refresh all stat IDs based on their SIDs, sort, fill and remove leftovers.
                 // Temporarily use ID_Unsafe; later ID_Safe to ID_Unsafe to resync the SIDs.
                 // This keeps the stats bound to their SIDs, not their indices, while removing non-existent areas.
-                int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
+                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
+                int countAll = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
+
                 // Fix IDs
-                for (int i = 0; i < areas.Count; i++)
-                    ((patch_AreaStats) areas[i]).ID_Unsafe = AreaDataExt.Get(areas[i])?.ID ?? int.MaxValue;
+                for (int i = 0; i < areas.Count; i++) {
+                    AreaData area = AreaDataExt.Get(areas[i]);
+                    if (!string.IsNullOrEmpty(area?.GetMeta()?.Parent))
+                        area = null;
+                    ((patch_AreaStats) areas[i]).ID_Unsafe = area?.ID ?? int.MaxValue;
+                }
+
                 // Sort
                 areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
+
                 // Remove leftovers
                 while (areas.Count > 0 && ((patch_AreaStats) areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
                     areas.RemoveAt(areas.Count - 1);
+
                 // Fill gaps
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < countRoots; i++)
                     if (i >= areas.Count || ((patch_AreaStats) areas[i]).ID_Unsafe != offset + i)
                         areas.Insert(i, new AreaStats(offset + i));
+
+                // Duplicate parent stat refs into their respective children slots.
+                for (int i = countRoots; i < countAll; i++) {
+                    if (i >= areas.Count) {
+                        areas.Insert(i, areas[AreaDataExt.Get(AreaData.Get(offset + i).GetMeta().Parent).ID - offset]);
+                    }
+                }
+
                 // Resync SIDs
                 for (int i = 0; i < areas.Count; i++)
                     ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
 
                 int lastCompleted = -1;
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < countRoots; i++) {
                     if (areas[i].Modes[0].Completed) {
                         lastCompleted = i;
                     }
@@ -400,6 +417,19 @@ namespace Celeste {
                 LastArea_Unsafe = LastArea_Safe;
             if (CurrentSession_Safe != null && CurrentSession_Safe.Area.GetLevelSet() == "Celeste")
                 CurrentSession_Unsafe = CurrentSession_Safe;
+
+            // Make sure that subchapter references to parent chapters aren't stored.
+            // They'll be reverted afterwards with AfterInitialize.
+            // Fill each LevelSetStats with its areas.
+            foreach (LevelSetStats set in LevelSets) {
+                if (set.Name == "Celeste")
+                    continue;
+                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
+                List<AreaStats> areas = set.Areas;
+                while (areas.Count > countRoots)
+                    areas.RemoveAt(areas.Count - 1);
+            }
+
 
             orig_BeforeSave();
 

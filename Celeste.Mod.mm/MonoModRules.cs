@@ -150,6 +150,12 @@ namespace MonoMod {
     class PatchGameLoaderIntroRoutineAttribute : Attribute { }
 
     /// <summary>
+    /// Patch the UserIO.SaveRoutine method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchSaveRoutine")]
+    class PatchSaveRoutineAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
@@ -169,6 +175,8 @@ namespace MonoMod {
         static TypeDefinition Level;
 
         static TypeDefinition StrawberryRegistry;
+
+        static TypeDefinition SaveData;
 
         static TypeDefinition FileProxy;
         static TypeDefinition DirectoryProxy;
@@ -1329,7 +1337,47 @@ namespace MonoMod {
                 }
             }
         }
-        
+
+
+        public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
+            if (SaveData == null)
+                SaveData = MonoModRule.Modder.FindType("Celeste.SaveData")?.Resolve();
+            if (SaveData == null)
+                return;
+
+            FieldDefinition f_Instance = SaveData.FindField("Instance");
+            if (f_Instance == null)
+                return;
+
+            MethodDefinition m_AfterInitialize = SaveData.FindMethod("System.Void AfterInitialize()");
+            if (m_AfterInitialize == null)
+                return;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldsfld, f_Instance));
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_AfterInitialize));
+                    instri++;
+                }
+            }
+        }
+
 
         public static void PatchPlayerOrigUpdate(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_IsOverWater = method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
