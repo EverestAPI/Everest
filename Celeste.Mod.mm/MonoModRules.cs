@@ -865,7 +865,11 @@ namespace MonoMod {
 
         }
 
-        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
+        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib)
+        {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
+
             FieldDefinition f_this = null;
             FieldDefinition f_completeArea = null;
 

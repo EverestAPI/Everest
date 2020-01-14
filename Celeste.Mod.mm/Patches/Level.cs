@@ -76,6 +76,7 @@ namespace Celeste {
                     }
                 }
                 Completed = true;
+                SaveData.Instance.RegisterCompletion(this.Session);
                 Everest.Events.Level.Complete(this);
             }
         }
