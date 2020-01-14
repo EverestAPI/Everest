@@ -185,9 +185,17 @@ namespace Celeste.Mod {
                     if (all.Count == 0)
                         return;
 
+                    // look up the installed version in the table (or the latest one by default).
+                    int currentBuildIndex = all.FindIndex(entry => entry.Build == Build);
+                    if (currentBuildIndex == -1) currentBuildIndex = 0;
+
+                    // find the latest version (highest build number), taking only the elements that are higher in the list into account.
                     Newest = all[0];
-                    if (Newest.Build < Build)
-                        Newest = all.OrderByDescending(entry => entry.Build).First();
+                    for (int i = 1; i <= currentBuildIndex; i++) {
+                        if (all[i].Build > Newest.Build) {
+                            Newest = all[i];
+                        }
+                    }
                 });
             }
 
