@@ -155,6 +155,18 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
     class PatchPlayerOrigUpdate : Attribute { }
 
+    /// <summary>
+    /// Patch the Strawberry class to tack on the IStrawberry interface for the StrawberryRegistry
+    /// </summary>
+    [MonoModCustomAttribute("PatchStrawberryInterface")]
+    class PatchStrawberryInterface : Attribute { }
+
+    /// <summary>
+    /// Helper for patching methods force-implemented by an interface
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchInterface")]
+    class PatchInterface : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -169,6 +181,7 @@ namespace MonoMod {
         static TypeDefinition Level;
 
         static TypeDefinition StrawberryRegistry;
+        static InterfaceImplementation IStrawberry;
 
         static TypeDefinition FileProxy;
         static TypeDefinition DirectoryProxy;
@@ -448,7 +461,7 @@ namespace MonoMod {
             MethodDefinition m_IsFirst = StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
             if (m_IsFirst == null)
                 return;
-            
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++)
@@ -500,13 +513,13 @@ namespace MonoMod {
                 Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
                 */
 
-            if (instri > 0 &&
-                    instri < instrs.Count - 4 &&
-                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
-                    instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
-                    instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                    instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
-                ) {
+                if (instri > 0 &&
+                        instri < instrs.Count - 4 &&
+                        instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
+                        instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
+                        instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
+                        instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                    ) {
                     // Insert a call to our own entity handler here.
                     // If it returns true, replace the name with ""
 
@@ -852,7 +865,11 @@ namespace MonoMod {
 
         }
 
-        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
+        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib)
+        {
+            // Our actual target method is the orig_ method.
+            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
+
             FieldDefinition f_this = null;
             FieldDefinition f_completeArea = null;
 
@@ -862,7 +879,7 @@ namespace MonoMod {
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                if (!nest.Name.StartsWith("<CollectRoutine>d__"))
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
                 f_this = method.DeclaringType.FindField("<>4__this");
@@ -1210,7 +1227,7 @@ namespace MonoMod {
                 if (!(kvp.Value is bool))
                     return;
                 il.Emit(OpCodes.Ldstr, kvp.Key);
-                il.Emit((bool) kvp.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                il.Emit((bool)kvp.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 il.Emit(OpCodes.Call, m_Set);
             }
 
@@ -1304,7 +1321,7 @@ namespace MonoMod {
             }
 
         }
-        
+
 
         public static void PatchGameLoaderIntroRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetNextScene = method.DeclaringType.FindMethod("Monocle.Scene _GetNextScene(Celeste.Overworld/StartMode,Celeste.HiresSnow)");
@@ -1329,7 +1346,7 @@ namespace MonoMod {
                 }
             }
         }
-        
+
 
         public static void PatchPlayerOrigUpdate(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_IsOverWater = method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
@@ -1369,7 +1386,7 @@ namespace MonoMod {
                     // 4: clt.un
                     // 5: ldc.i4.0
                     // 6: ceq [final value for the flag. if this flag is true, we enter the if]
-                    if(instrs[instri - 1].OpCode == OpCodes.Bge_Un_S
+                    if (instrs[instri - 1].OpCode == OpCodes.Bge_Un_S
                         && instrs[instri + 4].OpCode == OpCodes.Clt_Un
                         && instrs[instri + 5].OpCode == OpCodes.Ldc_I4_0) {
                         // 4: blt.un [instruction setting flag to false]
@@ -1388,6 +1405,25 @@ namespace MonoMod {
                     }
                 }
             }
+        }
+
+        public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib)
+        {
+            //MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
+            if (IStrawberry == null)
+            {
+                IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
+            }
+            if (IStrawberry == null)
+                return;
+
+            ((TypeDefinition)provider).Interfaces.Add(IStrawberry);
+        }
+
+        public static void PatchInterface(MethodDefinition method, CustomAttribute attrib)
+        {
+            MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
+            method.Attributes = method.Attributes | flags;
         }
 
         public static void PostProcessor(MonoModder modder) {

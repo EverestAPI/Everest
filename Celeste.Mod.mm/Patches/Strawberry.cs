@@ -13,6 +13,7 @@ using System.Xml;
 using Microsoft.Xna.Framework;
 
 namespace Celeste {
+    [PatchStrawberryInterface]
     class patch_Strawberry : Strawberry {
 
         public patch_Strawberry(EntityData data, Vector2 offset, EntityID gid)
@@ -21,6 +22,7 @@ namespace Celeste {
         }
 
         public extern void orig_OnCollect();
+        [PatchInterface]
         public new void OnCollect() {
             orig_OnCollect();
             // "Patch hook", because maintaining a pre-Everest MMHOOK is too much work.
@@ -33,5 +35,10 @@ namespace Celeste {
         {
             orig_Update();
         }
+
+        // Patch interface-implemented methods
+        [MonoModIgnore]
+        [PatchInterface]
+        public extern new void CollectedSeeds();
     }
 }
