@@ -5,12 +5,9 @@ using Monocle;
 
 namespace Celeste.Mod.Entities
 {
-    // Token: 0x0200032C RID: 812
     [Tracked(false)]
     public class GenericStrawberrySeed : Entity
     {
-        // Token: 0x170001D5 RID: 469
-        // (get) Token: 0x060019A5 RID: 6565 RVA: 0x000B849C File Offset: 0x000B669C
         public bool Collected
         {
             get
@@ -19,7 +16,6 @@ namespace Celeste.Mod.Entities
             }
         }
 
-        // Token: 0x060019A6 RID: 6566 RVA: 0x000B84C4 File Offset: 0x000B66C4
         public GenericStrawberrySeed(IStrawberrySeeded strawberry, Vector2 position, int index, bool ghost) : base(position)
         {
             this.Strawberry = strawberry;
@@ -57,7 +53,6 @@ namespace Celeste.Mod.Entities
                 P_Burst = StrawberrySeed.P_Burst;
         }
 
-        // Token: 0x060019A7 RID: 6567 RVA: 0x000B868C File Offset: 0x000B688C
         public override void Awake(Scene scene)
         {
             this.level = (scene as Level);
@@ -87,7 +82,6 @@ namespace Celeste.Mod.Entities
             GenericStrawberrySeed.P_Burst.Color = this.sprite.Color;
         }
 
-        // Token: 0x060019A8 RID: 6568 RVA: 0x000B87CC File Offset: 0x000B69CC
         public override void Update()
         {
             base.Update();
@@ -138,7 +132,6 @@ namespace Celeste.Mod.Entities
             }
         }
 
-        // Token: 0x060019A9 RID: 6569 RVA: 0x000B8948 File Offset: 0x000B6B48
         private void OnPlayer(Player player)
         {
             Audio.Play("event:/game/general/seed_touch", this.Position, "count", (float)this.index);
@@ -162,7 +155,6 @@ namespace Celeste.Mod.Entities
             }
         }
 
-        // Token: 0x060019AA RID: 6570 RVA: 0x000B8A1C File Offset: 0x000B6C1C
         private void OnGainLeader()
         {
             this.wiggler.Start();
@@ -170,7 +162,6 @@ namespace Celeste.Mod.Entities
             this.loseTimer = 0.15f;
         }
 
-        // Token: 0x060019AB RID: 6571 RVA: 0x000B8A44 File Offset: 0x000B6C44
         private void OnLoseLeader()
         {
             bool flag = !this.finished;
@@ -180,7 +171,6 @@ namespace Celeste.Mod.Entities
             }
         }
 
-        // Token: 0x060019AC RID: 6572 RVA: 0x000B8A72 File Offset: 0x000B6C72
         private IEnumerator ReturnRoutine()
         {
             Audio.Play("event:/game/general/seed_poof", this.Position);
@@ -212,7 +202,6 @@ namespace Celeste.Mod.Entities
             yield break;
         }
 
-        // Token: 0x060019AD RID: 6573 RVA: 0x000B8A84 File Offset: 0x000B6C84
         public void OnAllCollected()
         {
             this.finished = true;
@@ -222,7 +211,6 @@ namespace Celeste.Mod.Entities
             this.wiggler.Start();
         }
 
-        // Token: 0x060019AE RID: 6574 RVA: 0x000B8ADC File Offset: 0x000B6CDC
         public void StartSpinAnimation(Vector2 averagePos, Vector2 centerPos, float angleOffset, float time)
         {
             float spinLerp = 0f;
@@ -245,7 +233,6 @@ namespace Celeste.Mod.Entities
             base.Add(tween);
         }
 
-        // Token: 0x060019AF RID: 6575 RVA: 0x000B8B90 File Offset: 0x000B6D90
         public void StartCombineAnimation(Vector2 centerPos, float time, ParticleSystem particleSystem)
         {
             Vector2 position = this.Position;
@@ -270,70 +257,48 @@ namespace Celeste.Mod.Entities
             base.Add(tween);
         }
 
-        // Token: 0x04001616 RID: 5654
         public static ParticleType P_Burst;
 
-        // Token: 0x04001617 RID: 5655
         private const float LoseDelay = 0.25f;
 
-        // Token: 0x04001618 RID: 5656
         private const float LoseGraceTime = 0.15f;
 
-        // Token: 0x04001619 RID: 5657
         public IStrawberrySeeded Strawberry;
 
-        // Token: 0x0400161A RID: 5658
         private Sprite sprite;
 
-        // Token: 0x0400161B RID: 5659
         private Follower follower;
 
-        // Token: 0x0400161C RID: 5660
         private Wiggler wiggler;
 
-        // Token: 0x0400161D RID: 5661
         private Platform attached;
 
-        // Token: 0x0400161E RID: 5662
         private SineWave sine;
 
-        // Token: 0x0400161F RID: 5663
         private Tween lightTween;
 
-        // Token: 0x04001620 RID: 5664
         private VertexLight light;
 
-        // Token: 0x04001621 RID: 5665
         private BloomPoint bloom;
 
-        // Token: 0x04001622 RID: 5666
         private Shaker shaker;
 
-        // Token: 0x04001623 RID: 5667
         private int index;
 
-        // Token: 0x04001624 RID: 5668
         private Vector2 start;
 
-        // Token: 0x04001625 RID: 5669
         private Player player;
 
-        // Token: 0x04001626 RID: 5670
         private Level level;
 
-        // Token: 0x04001627 RID: 5671
         private float canLoseTimer;
 
-        // Token: 0x04001628 RID: 5672
         private float loseTimer;
 
-        // Token: 0x04001629 RID: 5673
         private bool finished;
 
-        // Token: 0x0400162A RID: 5674
         private bool losing;
 
-        // Token: 0x0400162B RID: 5675
         private bool ghost;
     }
 }
