@@ -60,19 +60,16 @@ namespace Celeste.Mod.Entities
             this.sprite = GFX.SpriteBank.Create(this.ghost ? "ghostberrySeed" : ((this.level.Session.Area.Mode == AreaMode.CSide) ? "goldberrySeed" : "strawberrySeed"));
             this.sprite.Position = new Vector2(this.sine.Value * 2f, this.sine.ValueOverTwo * 1f);
             base.Add(this.sprite);
-            bool flag = this.ghost;
-            if (flag)
-            {
+            if (this.ghost)
                 this.sprite.Color = Color.White * 0.8f;
-            }
+
             int num = base.Scene.Tracker.CountEntities<GenericStrawberrySeed>();
             float num2 = 1f - (float)this.index / ((float)num + 1f);
             num2 = 0.25f + num2 * 0.75f;
             this.sprite.PlayOffset("idle", num2, false);
             this.sprite.OnFrameChange = delegate (string s)
             {
-                bool flag2 = this.Visible && this.sprite.CurrentAnimationID == "idle" && this.sprite.CurrentAnimationFrame == 19;
-                if (flag2)
+                if (this.Visible && this.sprite.CurrentAnimationID == "idle" && this.sprite.CurrentAnimationFrame == 19)
                 {
                     Audio.Play("event:/game/general/seed_pulse", this.Position, "count", (float)this.index);
                     this.lightTween.Start();
@@ -85,51 +82,36 @@ namespace Celeste.Mod.Entities
         public override void Update()
         {
             base.Update();
-            bool flag = !this.finished;
-            if (flag)
+
+            if (!this.finished)
             {
-                bool flag2 = this.canLoseTimer > 0f;
-                if (flag2)
-                {
+                if (this.canLoseTimer > 0f)
                     this.canLoseTimer -= Engine.DeltaTime;
-                }
                 else
+                if (this.follower.HasLeader && this.player.LoseShards)
+                    this.losing = true;
+
+                if (this.losing)
                 {
-                    bool flag3 = this.follower.HasLeader && this.player.LoseShards;
-                    if (flag3)
-                    {
-                        this.losing = true;
-                    }
-                }
-                bool flag4 = this.losing;
-                if (flag4)
-                {
-                    bool flag5 = this.loseTimer <= 0f || this.player.Speed.Y < 0f;
-                    if (flag5)
+                    if (this.loseTimer <= 0f || this.player.Speed.Y < 0f)
                     {
                         this.player.Leader.LoseFollower(this.follower);
                         this.losing = false;
                     }
                     else
+                    if (this.player.LoseShards)
+                        this.loseTimer -= Engine.DeltaTime;
+                    else
                     {
-                        bool loseShards = this.player.LoseShards;
-                        if (loseShards)
-                        {
-                            this.loseTimer -= Engine.DeltaTime;
-                        }
-                        else
-                        {
-                            this.loseTimer = 0.15f;
-                            this.losing = false;
-                        }
+                        this.loseTimer = 0.15f;
+                        this.losing = false;
                     }
                 }
+
                 this.sprite.Position = new Vector2(this.sine.Value * 2f, this.sine.ValueOverTwo * 1f) + this.shaker.Value;
             }
             else
-            {
                 this.light.Alpha = Calc.Approach(this.light.Alpha, 0f, Engine.DeltaTime * 4f);
-            }
         }
 
         private void OnPlayer(Player player)
@@ -139,20 +121,16 @@ namespace Celeste.Mod.Entities
             player.Leader.GainFollower(this.follower);
             this.Collidable = false;
             base.Depth = -1000000;
-            bool flag = true;
+            bool haveAllSeeds = true;
             foreach (GenericStrawberrySeed strawberrySeed in this.Strawberry.Seeds)
-            {
-                bool flag2 = !strawberrySeed.follower.HasLeader;
-                if (flag2)
+                if (!strawberrySeed.follower.HasLeader)
                 {
-                    flag = false;
+                    haveAllSeeds = false;
+                    break;
                 }
-            }
-            bool flag3 = flag;
-            if (flag3)
-            {
+
+            if (haveAllSeeds)
                 base.Scene.Add(new CSGEN_GenericStrawberrySeeds(this.Strawberry));
-            }
         }
 
         private void OnGainLeader()
@@ -164,11 +142,8 @@ namespace Celeste.Mod.Entities
 
         private void OnLoseLeader()
         {
-            bool flag = !this.finished;
-            if (flag)
-            {
+            if (!this.finished)
                 base.Add(new Coroutine(this.ReturnRoutine(), true));
-            }
         }
 
         private IEnumerator ReturnRoutine()
@@ -178,22 +153,22 @@ namespace Celeste.Mod.Entities
             this.sprite.Scale = Vector2.One * 2f;
             yield return 0.05f;
             Input.Rumble(RumbleStrength.Medium, RumbleLength.Medium);
-            int num;
-            for (int i = 0; i < 6; i = num + 1)
+
+            for (int i = 0; i < 6; i++)
             {
                 float dir = Calc.Random.NextFloat(6.2831855f);
                 this.level.ParticlesFG.Emit(GenericStrawberrySeed.P_Burst, 1, this.Position + Calc.AngleToVector(dir, 4f), Vector2.Zero, dir);
-                num = i;
             }
+
             this.Visible = false;
             yield return 0.3f + (float)this.index * 0.1f;
+
+
             Audio.Play("event:/game/general/seed_reappear", this.Position, "count", (float)this.index);
             this.Position = this.start;
-            bool flag = this.attached != null;
-            if (flag)
-            {
+            if (this.attached != null)
                 this.Position += this.attached.Position;
-            }
+
             this.shaker.ShakeFor(0.4f, false);
             this.sprite.Scale = Vector2.One;
             this.Visible = true;
@@ -258,47 +233,27 @@ namespace Celeste.Mod.Entities
         }
 
         public static ParticleType P_Burst;
-
-        private const float LoseDelay = 0.25f;
-
-        private const float LoseGraceTime = 0.15f;
-
         public IStrawberrySeeded Strawberry;
 
+        private const float LoseDelay = 0.25f;
+        private const float LoseGraceTime = 0.15f;
         private Sprite sprite;
-
         private Follower follower;
-
         private Wiggler wiggler;
-
         private Platform attached;
-
         private SineWave sine;
-
         private Tween lightTween;
-
         private VertexLight light;
-
         private BloomPoint bloom;
-
         private Shaker shaker;
-
         private int index;
-
         private Vector2 start;
-
         private Player player;
-
         private Level level;
-
         private float canLoseTimer;
-
         private float loseTimer;
-
         private bool finished;
-
         private bool losing;
-
         private bool ghost;
     }
 }

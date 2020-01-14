@@ -26,11 +26,8 @@ namespace Celeste.Mod.Entities
             this.snapshot = Audio.CreateSnapshot("snapshot:/music_mains_mute", true);
 
             Player player = base.Scene.Tracker.GetEntity<Player>();
-            bool flag = player != null;
-            if (flag)
-            {
+            if (player != null)
                 this.cameraStart = player.CameraTarget;
-            }
 
             // Shorten code for reading.
             List<GenericStrawberrySeed> seeds = strawberry.Seeds;
@@ -105,11 +102,9 @@ namespace Celeste.Mod.Entities
             yield return CutsceneEntity.CameraTo(this.cameraStart, dist / 180f, null, 0f);
 
 
-            bool flag2 = dist > 80f;
-            if (flag2)
-            {
+            if (dist > 80f)
                 yield return 0.25f;
-            }
+
             level.EndCutscene();
             this.OnEnd(level);
             yield break;
@@ -117,20 +112,16 @@ namespace Celeste.Mod.Entities
 
         public override void OnEnd(Level level)
         {
-            bool wasSkipped = this.WasSkipped;
-            if (wasSkipped)
-            {
+            if (this.WasSkipped)
                 Audio.Stop(this.sfx, true);
-            }
+
             level.OnEndOfFrame += delegate ()
             {
-                bool wasSkipped2 = this.WasSkipped;
-                if (wasSkipped2)
+                if (this.WasSkipped)
                 {
                     foreach (GenericStrawberrySeed strawberrySeed in this.strawberry.Seeds)
-                    {
                         strawberrySeed.RemoveSelf();
-                    }
+
                     this.strawberry.CollectedSeeds();
                     level.Camera.Position = this.cameraStart;
                 }
