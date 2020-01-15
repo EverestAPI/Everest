@@ -89,6 +89,20 @@ namespace Celeste.Mod
             return false;
         }
 
+        public static bool TrackableContains(BinaryPacker.Element victim)
+        {
+            if (victim.AttrBool("moon", false))
+                return false;
+
+            ReadOnlyCollection<RegisteredBerry> berries = GetTrackableBerries();
+            foreach (RegisteredBerry berry in berries)
+            {
+                if (berry.entityName == victim.Name)
+                    return true;
+            }
+            return false;
+        }
+
         // Is it the first normally collectable strawberry in the train?
         public static bool IsFirstStrawberry(Entity self)
         {

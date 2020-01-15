@@ -179,19 +179,21 @@ namespace Celeste.Mod.Core {
                 } },
 
                 { "entity:strawberry", entity => {
-                    if (entity.AttrInt("checkpointID", -1) == -1)
-                        entity.SetAttr("checkpointID", Checkpoint);
-                    if (entity.AttrInt("order", -1) == -1)
-                        entity.SetAttr("order", StrawberryInCheckpoint);
-                    Strawberry++;
-                    StrawberryInCheckpoint++;
+                    if (!entity.AttrBool("moon", false))
+                    {
+                        if (entity.AttrInt("checkpointID", -1) == -1)
+                            entity.SetAttr("checkpointID", Checkpoint);
+                        if (entity.AttrInt("order", -1) == -1)
+                            entity.SetAttr("order", StrawberryInCheckpoint);
+                        Strawberry++;
+                        StrawberryInCheckpoint++;
+                    }
                 } }
             };
 
         public override void Run(string stepName, BinaryPacker.Element el)
         {
-            List<string> berries = StrawberryRegistry.GetBerryNames().ToList();
-            if (stepName.Length > 7 && berries.Contains(stepName.Remove(0, 7)))
+            if (stepName.Length > 7 && StrawberryRegistry.TrackableContains(el))
                 stepName = "entity:strawberry";
             base.Run(stepName, el);
         }
