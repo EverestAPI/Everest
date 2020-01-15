@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Entities;
+using Celeste.Mod.Entities;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -87,6 +87,14 @@ namespace Celeste.Mod
                     return true;
             }
             return false;
+        }
+
+        public static bool TrackableContains(BinaryPacker.Element target)
+        {
+            if (target.AttrBool("moon", false))
+                return false;
+
+            return TrackableContains(target.Name);
         }
 
         // Is it the first normally collectable strawberry in the train?

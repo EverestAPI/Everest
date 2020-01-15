@@ -31,7 +31,7 @@ namespace Celeste {
             foreach (EntityData entityData in Entities) {
                 // Do not touch the strawberries, because save data need them.
                 // Do not touch the keys and dashSwitch, because conditionBlock need them.
-                if (excludeNames.Contains(entityData.Name)) {
+                if (excludeNames.Contains(entityData.Name) || StrawberryRegistry.GetBerryNames().Contains(entityData.Name)) {
                     maxId = Math.Max(maxId, entityData.ID);
                 }
                 else {

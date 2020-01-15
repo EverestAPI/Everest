@@ -425,7 +425,7 @@ namespace MonoMod {
             if (StrawberryRegistry == null)
                 return;
 
-            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(Celeste.BinaryPacker/Element)");
             if (m_TrackableContains == null)
                 return;
 
@@ -435,10 +435,22 @@ namespace MonoMod {
             {
                 Instruction instr = instrs[instri];
 
+                /* 
+                   we found
+
+                   IL_08BA: ldloc.s   V_14
+                   IL_08BC: ldfld     string Celeste.BinaryPacker/Element::Name
+                   IL_08C1: ldstr     "strawberry"      <-- YOU ARE HERE
+                   IL_08C6: call      bool [mscorlib]System.String::op_Equality(string, string)
+                   IL_08CB: brtrue.s  IL_08E0
+                */
+
                 // Strawberry tracker adjustments
                 if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry")
                 {
+
                     instr.OpCode = OpCodes.Nop;
+                    instrs[instri - 1].OpCode = OpCodes.Nop;
                     instrs[instri + 1].Operand = m_TrackableContains;
                     instri++;
                 }
