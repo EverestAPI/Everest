@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Entities;
+using Celeste.Mod.Entities;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -89,18 +89,12 @@ namespace Celeste.Mod
             return false;
         }
 
-        public static bool TrackableContains(BinaryPacker.Element victim)
+        public static bool TrackableContains(BinaryPacker.Element target)
         {
-            if (victim.AttrBool("moon", false))
+            if (target.AttrBool("moon", false))
                 return false;
 
-            ReadOnlyCollection<RegisteredBerry> berries = GetTrackableBerries();
-            foreach (RegisteredBerry berry in berries)
-            {
-                if (berry.entityName == victim.Name)
-                    return true;
-            }
-            return false;
+            return TrackableContains(target.Name);
         }
 
         // Is it the first normally collectable strawberry in the train?
