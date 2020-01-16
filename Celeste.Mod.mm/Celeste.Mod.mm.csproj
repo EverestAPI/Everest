@@ -186,6 +186,7 @@
     <Compile Include="Patches\Monocle\SpriteBank.cs" />
     <Compile Include="Patches\MusicFadeTrigger.cs" />
     <Compile Include="Patches\IntroCrusher.cs" />
+    <Compile Include="Patches\LevelData.cs" />
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
