@@ -38,6 +38,31 @@ namespace Celeste {
                 Engine.Commands.Log("FILE NOT FOUND");
             }
         }
+        
+        [Command("print_counts", "Prints the max count for cassettes, berries, etc. To be used with a save loaded")]
+        private static void CmdPrintCounts() {
+            if (SaveData.Instance == null) {
+                Engine.Commands.Log("No save loaded!");
+                return;
+            }
 
+            LevelSetStats stats = SaveData.Instance.GetLevelSetStats();
+            Engine.Commands.Log($"** Level Set Stats: {stats.Name} **");
+            Engine.Commands.Log($"Max strawberry count = {stats.MaxStrawberries}");
+            Engine.Commands.Log($"Max golden strawberry count = {stats.MaxGoldenStrawberries}");
+            Engine.Commands.Log($"Max strawberry count including untracked = {stats.MaxStrawberriesIncludingUntracked}");
+            Engine.Commands.Log($"Max cassettes = {stats.MaxCassettes}");
+            Engine.Commands.Log($"Max crystal hearts = {stats.MaxHeartGems}");
+            Engine.Commands.Log($"Max crystal hearts excluding C-sides = {stats.MaxHeartGemsExcludingCSides}");
+            Engine.Commands.Log($"Chapter count = {stats.MaxCompletions}");
+            Engine.Commands.Log("====");
+            Engine.Commands.Log($"Owned strawberries = {stats.TotalStrawberries}");
+            Engine.Commands.Log($"Owned golden strawberries = {stats.TotalGoldenStrawberries}");
+            Engine.Commands.Log($"Owned cassettes = {stats.TotalCassettes}");
+            Engine.Commands.Log($"Owned crystal hearts = {stats.TotalHeartGems}");
+            Engine.Commands.Log($"Completed chapters = {stats.TotalCompletions}");
+            Engine.Commands.Log("====");
+            Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
+        }
     }
 }

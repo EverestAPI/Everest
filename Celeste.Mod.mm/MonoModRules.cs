@@ -167,6 +167,13 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchInterface")]
     class PatchInterface : Attribute { };
 
+    /// <summary>
+    /// IL-patch the Render method for file select slots instead of reimplementing it,
+    /// to un-hardcode stamps.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFileSelectSlotRender")]
+    class PatchFileSelectSlotRenderAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1436,6 +1443,130 @@ namespace MonoMod {
         {
             MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
             method.Attributes = method.Attributes | flags;
+        }
+
+        public static void PatchFileSelectSlotRender(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_maxStrawberryCount = method.DeclaringType.FindField("maxStrawberryCount");
+            if (f_maxStrawberryCount == null) return;
+
+            FieldDefinition f_maxGoldenStrawberryCount = method.DeclaringType.FindField("maxGoldenStrawberryCount");
+            if (f_maxGoldenStrawberryCount == null) return;
+
+            FieldDefinition f_maxCassettes = method.DeclaringType.FindField("maxCassettes");
+            if (f_maxCassettes == null) return;
+
+            FieldDefinition f_maxCrystalHeartsExcludingCSides = method.DeclaringType.FindField("maxCrystalHeartsExcludingCSides");
+            if (f_maxCrystalHeartsExcludingCSides == null) return;
+
+            FieldDefinition f_maxCrystalHearts = method.DeclaringType.FindField("maxCrystalHearts");
+            if (f_maxCrystalHearts == null) return;
+
+            FieldDefinition f_summitStamp = method.DeclaringType.FindField("summitStamp");
+            if (f_summitStamp == null) return;
+
+            FieldDefinition f_farewellStamp = method.DeclaringType.FindField("farewellStamp");
+            if (f_farewellStamp == null) return;
+
+            FieldDefinition f_totalGoldenStrawberries = method.DeclaringType.FindField("totalGoldenStrawberries");
+            if (f_totalGoldenStrawberries == null) return;
+
+            FieldDefinition f_totalHeartGems = method.DeclaringType.FindField("totalHeartGems");
+            if (f_totalHeartGems == null) return;
+
+            FieldDefinition f_totalCassettes = method.DeclaringType.FindField("totalCassettes");
+            if (f_totalCassettes == null) return;
+
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count - 8; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int) instrs[instri].Operand == 175) {
+                    instrs[instri].OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxStrawberryCount));
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_8) {
+                    instrs[instri].OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCassettes));
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
+                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems"
+                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 2].Operand == 16) {
+                    
+                    instrs[instri].OpCode = OpCodes.Ldfld;
+                    instrs[instri].Operand = f_totalHeartGems;
+
+                    instrs[instri + 1].OpCode = OpCodes.Ldarg_0;
+
+                    instrs[instri + 2].OpCode = OpCodes.Ldfld;
+                    instrs[instri + 2].Operand = f_maxCrystalHeartsExcludingCSides;
+                }
+                
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 24) {
+                    instrs[instri].OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCrystalHearts));
+                }
+                
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 25) {
+                    instrs[instri].OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxGoldenStrawberryCount));
+                }
+
+                // here is what we want to replace: this.SaveData.Areas_Safe[7 or 10].Modes[0].Completed;
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference).Name == "SaveData"
+                    && instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference).Name == "get_Areas_Safe"
+                    // instrs[instri + 3] = ldc.i4 7 or 10
+                    && instrs[instri + 4].OpCode == OpCodes.Callvirt && (instrs[instri + 4].Operand as MethodReference).Name == "get_Item"
+                    && instrs[instri + 5].OpCode == OpCodes.Ldfld && (instrs[instri + 5].Operand as FieldReference).Name == "Modes"
+                    && instrs[instri + 6].OpCode == OpCodes.Ldc_I4_0
+                    && instrs[instri + 7].OpCode == OpCodes.Ldelem_Ref
+                    && instrs[instri + 8].OpCode == OpCodes.Ldfld && (instrs[instri + 8].Operand as FieldReference).Name == "Completed") {
+
+                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_7) {
+                        // remove everything but this
+                        instri++;
+                        for (int i = 0; i < 8; i++) instrs.RemoveAt(instri);
+
+                        // and put summitStamp instead
+                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_summitStamp));
+
+                    }
+
+                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 3].Operand == 10) {
+                        // remove everything but this
+                        instri++;
+                        for (int i = 0; i < 8; i++) instrs.RemoveAt(instri);
+
+                        // and put farewellStamp instead
+                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_farewellStamp));
+                    }
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference).Name == "TotalGoldenStrawberries") {
+
+                    instrs.RemoveAt(instri);
+                    instrs[instri].Operand = f_totalGoldenStrawberries;
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
+                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems") {
+
+                    instrs.RemoveAt(instri);
+                    instrs[instri].OpCode = OpCodes.Ldfld;
+                    instrs[instri].Operand = f_totalHeartGems;
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
+                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalCassettes") {
+
+                    instrs.RemoveAt(instri);
+                    instrs[instri].OpCode = OpCodes.Ldfld;
+                    instrs[instri].Operand = f_totalCassettes;
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

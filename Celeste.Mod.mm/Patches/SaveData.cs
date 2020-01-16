@@ -489,6 +489,38 @@ namespace Celeste {
         }
 
         [XmlIgnore]
+        public int TotalGoldenStrawberries {
+            get {
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaStats areaSave;
+                    if (Name == "Celeste")
+                        areaSave = SaveData.Areas_Unsafe[i];
+                    else
+                        areaSave = Areas[i];
+
+                    AreaData areaData = AreaData.Areas[offset + i];
+
+                    for (int j = 0; j < areaData.Mode.Length && j < areaSave.Modes.Length; j++) {
+                        AreaModeStats modeSave = areaSave.Modes[j];
+                        ModeProperties modeData = areaData.Mode[j];
+
+                        if (modeSave == null || modeData == null)
+                            continue;
+
+                        foreach (EntityID strawb in modeSave.Strawberries) {
+                            if (modeData.MapData.Goldenberries.Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
+                                count++;
+                        }
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        [XmlIgnore]
         public int MaxStrawberries {
             get {
                 if (Name == "Celeste")
@@ -508,6 +540,64 @@ namespace Celeste {
         }
 
         [XmlIgnore]
+        public int MaxStrawberriesIncludingUntracked {
+            get {
+                if (Name == "Celeste")
+                    return 202;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.GetDetectedStrawberriesIncludingUntracked();
+                    }
+                }
+                return count + MaxGoldenStrawberries;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxGoldenStrawberries {
+            get {
+                if (Name == "Celeste")
+                    return 25;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.Goldenberries.Count;
+                    }
+                }
+                return count;
+            }
+        }
+        
+        [XmlIgnore]
+        public int MaxCassettes {
+            get {
+                if (Name == "Celeste")
+                    return 8;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        if (mode.MapData.GetDetectedCassette())
+                            count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
         public int AreaOffset {
             get {
                 return AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
@@ -519,21 +609,7 @@ namespace Celeste {
             get {
                 int offset = AreaOffset;
 
-                int maxHeartGems;
-                if (Name == "Celeste") {
-                    maxHeartGems = 16;
-                } else {
-                    maxHeartGems = 0;
-                    for (int i = 0; i <= MaxArea; i++) {
-                        foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                            if (mode == null || mode.MapData.Area.Mode > AreaMode.BSide)
-                                continue;
-                            maxHeartGems += mode.MapData.DetectedHeartGem ? 1 : 0;
-                        }
-                    }
-                }
-
-                if (TotalHeartGems >= maxHeartGems) {
+                if (TotalHeartGems >= MaxHeartGemsExcludingCSides) {
                     return 3;
                 }
 
@@ -574,6 +650,9 @@ namespace Celeste {
         [XmlIgnore]
         public int MaxHeartGems {
             get {
+                if (Name == "Celeste")
+                    return 24;
+
                 int offset = AreaOffset;
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
@@ -584,6 +663,34 @@ namespace Celeste {
                     }
                 }
                 return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxHeartGemsExcludingCSides {
+            get {
+                if (Name == "Celeste")
+                    return 16;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaData areaData = AreaData.Areas[offset + i];
+                    for (int j = 0; j < 2 && j < areaData.Mode.Length; j++) {
+                        if (areaData.Mode[j]?.MapData.DetectedHeartGem ?? false) count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxCompletions {
+            get {
+                if (Name == "Celeste")
+                    return 9;
+
+                return AreaData.Areas.Count(area => area.GetLevelSet() == Name && !area.Interlude);
             }
         }
 
@@ -620,15 +727,10 @@ namespace Celeste {
             get {
                 // TODO: Get max counts on the fly.
                 float value = 0f;
-                value += TotalHeartGems / 24f * 24f;
-                value += TotalStrawberries / 175f * 55f;
-                value += TotalCassettes / 8f * 7f;
-                value += TotalCompletions / 8f * 14f;
-
-                if (value < 0f)
-                    value = 0f;
-                else if (value > 100f)
-                    value = 100f;
+                value += (MaxHeartGems == 0 ? 1 : (float)TotalHeartGems / MaxHeartGems) * 24f;
+                value += (MaxStrawberries == 0 ? 1 : (float)TotalStrawberries / MaxStrawberries) * 55f;
+                value += (MaxCassettes == 0 ? 1 : (float)TotalCassettes / MaxCassettes) * 7f;
+                value += (MaxCompletions == 0 ? 1 : (float)TotalCompletions / MaxCompletions) * 14f;
 
                 return (int) value;
             }

@@ -17,6 +17,9 @@ using System.Xml;
 namespace Celeste {
     class patch_MapData : MapData {
 
+        public bool DetectedCassette;
+        public int DetectedStrawberriesIncludingUntracked;
+
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
@@ -40,6 +43,8 @@ namespace Celeste {
             DetectedHeartGem = false;
             DetectedRemixNotes = false;
             Goldenberries = new List<EntityData>();
+            DetectedCassette = false;
+            DetectedStrawberriesIncludingUntracked = 0;
 
             try {
                 orig_Load();
@@ -169,5 +174,30 @@ namespace Celeste {
         public static MapMetaModeProperties GetMeta(this MapData self)
             => ((patch_MapData) self).Meta;
 
+        /// <summary>
+        /// Returns whether the map contains a cassette or not.
+        /// </summary>
+        public static bool GetDetectedCassette(this MapData self)
+            => ((patch_MapData) self).DetectedCassette;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when a cassette is detected in a map.
+        /// </summary>
+        internal static void SetDetectedCassette(this MapData self) {
+            ((patch_MapData)self).DetectedCassette = true;
+        }
+
+        /// <summary>
+        /// Returns the number of strawberries in the map, including untracked ones (moons). Does not include goldens.
+        /// </summary>
+        public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
+            => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when processing a map is over, to register the detected berry count.
+        /// </summary>
+        internal static void SetDetectedStrawberriesIncludingUntracked(this MapData self, int count) {
+            ((patch_MapData)self).DetectedStrawberriesIncludingUntracked = count;
+        }
     }
 }
