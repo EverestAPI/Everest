@@ -13,7 +13,11 @@ namespace Celeste.Mod
     /// </summary>
     public static class StrawberryRegistry
     {
-        private static HashSet<RegisteredBerry> registeredBerries = new HashSet<RegisteredBerry>() { new RegisteredBerry(typeof(Strawberry), "strawberry", true, false) };
+        private static HashSet<RegisteredBerry> registeredBerries = new HashSet<RegisteredBerry>() {
+            new RegisteredBerry(typeof(Strawberry), "strawberry", true, false), // red berries
+            new RegisteredBerry(typeof(Strawberry), "goldenBerry", false, true), // golden berries
+            new RegisteredBerry(typeof(Strawberry), "memorialTextController", false, true) // dashless golden berry
+        };
 
         // Caches
         private static ReadOnlyCollection<RegisteredBerry> _getRegisteredBerries;
@@ -40,7 +44,9 @@ namespace Celeste.Mod
             {
                 List<Type> types = new List<Type>();
                 foreach (RegisteredBerry b in registeredBerries)
-                    types.Add(b.berryClass);
+                    if (!types.Contains(b.berryClass)) // enumerate each type once. a berry can have multiple names.
+                        types.Add(b.berryClass);
+
                 _getBerryTypes = types.AsReadOnly();
             }
             return _getBerryTypes;

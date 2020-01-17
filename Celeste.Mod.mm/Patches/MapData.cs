@@ -188,7 +188,7 @@ namespace Celeste {
         }
 
         /// <summary>
-        /// Returns the number of strawberries in the map, including untracked ones (moons). Does not include goldens.
+        /// Returns the number of strawberries in the map, including untracked ones (goldens, moons).
         /// </summary>
         public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
             => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;

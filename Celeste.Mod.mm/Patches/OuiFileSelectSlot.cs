@@ -47,7 +47,7 @@ namespace Celeste {
         }
 
         public extern void orig_Show();
-        public void Show() {
+        public new void Show() {
             // Temporarily set the current save data to the file slot's save data.
             // This enables filtering the areas by the save data's current levelset.
             SaveData prev = SaveData.Instance;
@@ -65,7 +65,7 @@ namespace Celeste {
                 if(stats.Name == "Celeste") {
                     // never mess with vanilla.
                     maxStrawberryCount = 175;
-                    maxGoldenStrawberryCount = 25;
+                    maxGoldenStrawberryCount = 25; // vanilla is wrong (there are 26 including dashless), but don't mess with vanilla.
                     maxStrawberryCountIncludingUntracked = 202;
 
                     maxCassettes = 8;

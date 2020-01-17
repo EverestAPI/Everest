@@ -554,7 +554,7 @@ namespace Celeste {
                         count += mode.MapData.GetDetectedStrawberriesIncludingUntracked();
                     }
                 }
-                return count + MaxGoldenStrawberries;
+                return count;
             }
         }
 
@@ -562,7 +562,7 @@ namespace Celeste {
         public int MaxGoldenStrawberries {
             get {
                 if (Name == "Celeste")
-                    return 25;
+                    return 25; // vanilla is wrong (there are 26 including dashless), but don't mess with vanilla.
 
                 int offset = AreaOffset;
                 int count = 0;
