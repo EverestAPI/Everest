@@ -197,14 +197,12 @@ namespace Celeste.Mod.Core {
 
         public override void Run(string stepName, BinaryPacker.Element el)
         {
-            if (stepName.Length > 7)
-            {
-                if (StrawberryRegistry.TrackableContains(el))
-                    stepName = "entity:strawberry";
+            if (StrawberryRegistry.TrackableContains(el))
+                stepName = "entity:strawberry";
 
-                if (StrawberryRegistry.GetRegisteredBerries().Any(berry => berry.entityName == el.Name))
-                    TotalStrawberriesIncludingUntracked++;
-            }
+            if (StrawberryRegistry.GetRegisteredBerries().Any(berry => berry.entityName == el.Name))
+                TotalStrawberriesIncludingUntracked++;
+
             base.Run(stepName, el);
         }
 
