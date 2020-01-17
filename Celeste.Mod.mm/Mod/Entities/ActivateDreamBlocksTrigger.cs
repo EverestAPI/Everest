@@ -5,16 +5,12 @@ namespace Celeste.Mod.Entities
     [CustomEntity("everest/activateDreamBlocksTrigger")]
     class ActivateDreamBlocksTrigger : Trigger
     {
-        private readonly Level level;
-
         public ActivateDreamBlocksTrigger(EntityData data, Vector2 offset)
-            : base(data, offset)
-        {
-            level = Scene as Level;
-        }
+            : base(data, offset) { }
 
         public override void OnEnter(Player player)
         {
+            Level level = Scene as Level;
             if (!level.Session.Inventory.DreamDash)
             {
                 level.Session.Inventory.DreamDash = true;
