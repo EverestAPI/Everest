@@ -118,6 +118,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\Core\CoreModuleSession.cs" />
+    <Compile Include="Mod\Entities\ActivateDreamBlocksTrigger.cs" />
     <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
