@@ -512,6 +512,8 @@ namespace Celeste {
                         foreach (EntityID strawb in modeSave.Strawberries) {
                             if (modeData.MapData.Goldenberries.Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
                                 count++;
+                            if (modeData.MapData.GetDashlessGoldenberries().Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
+                                count++;
                         }
                     }
                 }
@@ -571,6 +573,7 @@ namespace Celeste {
                         if (mode == null)
                             continue;
                         count += mode.MapData.Goldenberries.Count;
+                        count += mode.MapData.GetDashlessGoldenberries().Count;
                     }
                 }
                 return count;

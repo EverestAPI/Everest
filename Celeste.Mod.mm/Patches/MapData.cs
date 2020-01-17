@@ -19,6 +19,7 @@ namespace Celeste {
 
         public bool DetectedCassette;
         public int DetectedStrawberriesIncludingUntracked;
+        public List<EntityData> DashlessGoldenberries = new List<EntityData>();
 
         public MapMetaModeProperties Meta {
             get {
@@ -43,11 +44,19 @@ namespace Celeste {
             DetectedHeartGem = false;
             DetectedRemixNotes = false;
             Goldenberries = new List<EntityData>();
+            DashlessGoldenberries = new List<EntityData>();
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
 
             try {
                 orig_Load();
+
+                foreach (LevelData level in Levels) {
+                    foreach (EntityData entity in level.Entities) {
+                        if (entity.Name == "memorialTextController") // aka "dashless golden"
+                            DashlessGoldenberries.Add(entity);
+                    }
+                }
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();
@@ -199,5 +208,11 @@ namespace Celeste {
         internal static void SetDetectedStrawberriesIncludingUntracked(this MapData self, int count) {
             ((patch_MapData)self).DetectedStrawberriesIncludingUntracked = count;
         }
+
+        /// <summary>
+        /// Returns the list of dashless goldens in the map.
+        /// </summary>
+        public static List<EntityData> GetDashlessGoldenberries(this MapData self)
+            => ((patch_MapData) self).DashlessGoldenberries;
     }
 }
