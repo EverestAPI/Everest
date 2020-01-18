@@ -5,14 +5,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
-namespace Celeste.Mod
-{
+namespace Celeste.Mod {
     /// <summary>
     /// Allows mods to register their own strawberry-type collectible objects.<para />
     /// Registered strawberries can be tracked or secret, and will attempt to autocollect when appropriate e.g. level end.
     /// </summary>
-    public static class StrawberryRegistry
-    {
+    public static class StrawberryRegistry {
         private static HashSet<RegisteredBerry> registeredBerries = new HashSet<RegisteredBerry>() {
             new RegisteredBerry(typeof(Strawberry), "strawberry", true, false), // red berries
             new RegisteredBerry(typeof(Strawberry), "goldenBerry", false, true), // golden berries
@@ -26,22 +24,18 @@ namespace Celeste.Mod
         private static ReadOnlyCollection<string> _getBerryNames;
 
         // Return caches or create new ones
-        public static ReadOnlyCollection<RegisteredBerry> GetRegisteredBerries()
-        {
+        public static ReadOnlyCollection<RegisteredBerry> GetRegisteredBerries() {
             if (_getRegisteredBerries == null)
                 _getRegisteredBerries = registeredBerries.ToList().AsReadOnly();
             return _getRegisteredBerries;
         }
-        public static ReadOnlyCollection<RegisteredBerry> GetTrackableBerries()
-        {
+        public static ReadOnlyCollection<RegisteredBerry> GetTrackableBerries() {
             if (_getTrackableBerries == null)
                 _getTrackableBerries = registeredBerries.ToList().FindAll(berry => berry.isTracked).AsReadOnly();
             return _getTrackableBerries;
         }
-        public static ReadOnlyCollection<Type> GetBerryTypes()
-        {
-            if (_getBerryTypes == null)
-            {
+        public static ReadOnlyCollection<Type> GetBerryTypes() {
+            if (_getBerryTypes == null) {
                 List<Type> types = new List<Type>();
                 foreach (RegisteredBerry b in registeredBerries)
                     if (!types.Contains(b.berryClass)) // enumerate each type once. a berry can have multiple names.
@@ -51,13 +45,10 @@ namespace Celeste.Mod
             }
             return _getBerryTypes;
         }
-        public static ReadOnlyCollection<string> GetBerryNames()
-        {
-            if (_getBerryNames == null)
-            {
+        public static ReadOnlyCollection<string> GetBerryNames() {
+            if (_getBerryNames == null) {
                 List<string> berryNames = new List<string>();
-                foreach (RegisteredBerry berry in registeredBerries)
-                {
+                foreach (RegisteredBerry berry in registeredBerries) {
                     berryNames.Add(berry.entityName);
                 }
                 _getBerryNames = berryNames.AsReadOnly();
@@ -66,37 +57,30 @@ namespace Celeste.Mod
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
-        public static void Register(Type type, string name, bool tracked = true, bool blocksNormalCollection = false)
-        {
+        public static void Register(Type type, string name, bool tracked = true, bool blocksNormalCollection = false) {
             registeredBerries.Add(new RegisteredBerry(type, name, tracked, blocksNormalCollection));
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
-        public static void Register(Type type, bool tracked = true, bool blocksNormalCollection = false)
-        {
-            if (Attribute.IsDefined(type, typeof(CustomEntityAttribute)))
-            {
+        public static void Register(Type type, bool tracked = true, bool blocksNormalCollection = false) {
+            if (Attribute.IsDefined(type, typeof(CustomEntityAttribute))) {
                 CustomEntityAttribute attr = Attribute.GetCustomAttribute(type, typeof(CustomEntityAttribute)) as CustomEntityAttribute;
-                foreach (string id in attr.IDs)
-                {
+                foreach (string id in attr.IDs) {
                     Register(type, id, tracked, blocksNormalCollection);
                 }
             }
         }
 
-        public static bool TrackableContains(string name)
-        {
+        public static bool TrackableContains(string name) {
             ReadOnlyCollection<RegisteredBerry> berries = GetTrackableBerries();
-            foreach (RegisteredBerry berry in berries)
-            {
+            foreach (RegisteredBerry berry in berries) {
                 if (berry.entityName == name)
                     return true;
             }
             return false;
         }
 
-        public static bool TrackableContains(BinaryPacker.Element target)
-        {
+        public static bool TrackableContains(BinaryPacker.Element target) {
             if (target.AttrBool("moon", false))
                 return false;
 
@@ -104,8 +88,7 @@ namespace Celeste.Mod
         }
 
         // Is it the first normally collectable strawberry in the train?
-        public static bool IsFirstStrawberry(Entity self)
-        {
+        public static bool IsFirstStrawberry(Entity self) {
             Follower follow = self.Components.Get<Follower>();
             if (follow == null)
                 return false;
@@ -114,8 +97,7 @@ namespace Celeste.Mod
             List<RegisteredBerry> berries = registeredBerries.ToList();
             ReadOnlyCollection<Type> types = GetBerryTypes();
 
-            for (int i = follow.FollowIndex - 1; i >= 0; i--)
-            {
+            for (int i = follow.FollowIndex - 1; i >= 0; i--) {
                 Entity strawberry = follow.Leader.Followers[i].Entity;
                 Type t = strawberry.GetType();
                 RegisteredBerry berry = berries.Find(b => b.berryClass == t);
@@ -139,18 +121,16 @@ namespace Celeste.Mod
                 // Did we find a berry closer to the front that doesn't defer?
                 // It must be registered, must NOT block collection, and is NOT a gold berry
                 // in order to be a valid leader.
-                if (types.Contains(strawberry.GetType()) && 
-                    !blocksCollect && 
-                    !goldenCheck)
-                {
+                if (types.Contains(strawberry.GetType()) &&
+                    !blocksCollect &&
+                    !goldenCheck) {
                     return false;
                 }
             }
             return true;
         }
 
-        public class RegisteredBerry
-        {
+        public class RegisteredBerry {
             // The registered berry as a Type
             public readonly Type berryClass;
 
@@ -165,8 +145,7 @@ namespace Celeste.Mod
             // F: berry doesn't have a special collection rule and can be a "leader" of the berry train
             public readonly bool blocksNormalCollection;
 
-            public RegisteredBerry(Type berry, string name, bool track, bool blockCollect)
-            {
+            public RegisteredBerry(Type berry, string name, bool track, bool blockCollect) {
                 berryClass = berry;
                 entityName = name;
                 isTracked = track;

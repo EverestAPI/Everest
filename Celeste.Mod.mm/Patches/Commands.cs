@@ -38,7 +38,7 @@ namespace Celeste {
                 Engine.Commands.Log("FILE NOT FOUND");
             }
         }
-        
+
         [Command("print_counts", "Prints the max count for cassettes, berries, etc. To be used with a save loaded")]
         private static void CmdPrintCounts() {
             if (SaveData.Instance == null) {

@@ -265,7 +265,8 @@ namespace MonoMod {
             Version version = new Version();
             if (versionString != null) {
                 version = new Version(versionString);
-            } if (versionInts == null || versionInts.Length == 0) {
+            }
+            if (versionInts == null || versionInts.Length == 0) {
                 // ???
             } else if (versionInts.Length == 2) {
                 version = new Version(versionInts[0], versionInts[1]);
@@ -409,8 +410,7 @@ namespace MonoMod {
                 }
 
                 // Strawberry count adjustments
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry")
-                {
+                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry") {
                     instr.OpCode = OpCodes.Nop;
                     instrs[instri + 1].Operand = m_TrackableContains;
                     instri++;
@@ -419,8 +419,7 @@ namespace MonoMod {
 
         }
 
-        public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib)
-        {
+        public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
@@ -438,8 +437,7 @@ namespace MonoMod {
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++)
-            {
+            for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
                 /* 
@@ -453,8 +451,7 @@ namespace MonoMod {
                 */
 
                 // Strawberry tracker adjustments
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry")
-                {
+                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry") {
 
                     instr.OpCode = OpCodes.Nop;
                     instrs[instri - 1].OpCode = OpCodes.Nop;
@@ -464,8 +461,7 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchStrawberryTrainCollectionOrder(MethodDefinition method, CustomAttribute attrib)
-        {
+        public static void PatchStrawberryTrainCollectionOrder(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
@@ -483,13 +479,11 @@ namespace MonoMod {
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++)
-            {
+            for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
                 // Rip out the vanilla code call and replace it with vanilla-considerate code
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID().Contains("IsFirstStrawberry") == true)
-                {
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID().Contains("IsFirstStrawberry") == true) {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_IsFirst;
                     instri++;
@@ -884,8 +878,7 @@ namespace MonoMod {
 
         }
 
-        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib)
-        {
+        public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
@@ -1426,11 +1419,9 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib)
-        {
+        public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
             //MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
-            if (IStrawberry == null)
-            {
+            if (IStrawberry == null) {
                 IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
             }
             if (IStrawberry == null)
@@ -1439,8 +1430,7 @@ namespace MonoMod {
             ((TypeDefinition)provider).Interfaces.Add(IStrawberry);
         }
 
-        public static void PatchInterface(MethodDefinition method, CustomAttribute attrib)
-        {
+        public static void PatchInterface(MethodDefinition method, CustomAttribute attrib) {
             MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
             method.Attributes = method.Attributes | flags;
         }
@@ -1480,7 +1470,7 @@ namespace MonoMod {
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count - 8; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int) instrs[instri].Operand == 175) {
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int)instrs[instri].Operand == 175) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxStrawberryCount));
                 }
@@ -1492,8 +1482,8 @@ namespace MonoMod {
 
                 if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
                     && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems"
-                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 2].Operand == 16) {
-                    
+                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri + 2].Operand == 16) {
+
                     instrs[instri].OpCode = OpCodes.Ldfld;
                     instrs[instri].Operand = f_totalHeartGems;
 
@@ -1502,13 +1492,13 @@ namespace MonoMod {
                     instrs[instri + 2].OpCode = OpCodes.Ldfld;
                     instrs[instri + 2].Operand = f_maxCrystalHeartsExcludingCSides;
                 }
-                
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 24) {
+
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri].Operand == 24) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCrystalHearts));
                 }
-                
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 25) {
+
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri].Operand == 25) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxGoldenStrawberryCount));
                 }
@@ -1534,7 +1524,7 @@ namespace MonoMod {
 
                     }
 
-                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 3].Operand == 10) {
+                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri + 3].Operand == 10) {
                         // remove everything but this
                         instri++;
                         for (int i = 0; i < 8; i++) instrs.RemoveAt(instri);

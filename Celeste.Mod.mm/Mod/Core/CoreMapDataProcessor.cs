@@ -195,8 +195,7 @@ namespace Celeste.Mod.Core {
                 } }
             };
 
-        public override void Run(string stepName, BinaryPacker.Element el)
-        {
+        public override void Run(string stepName, BinaryPacker.Element el) {
             if (StrawberryRegistry.TrackableContains(el))
                 stepName = "entity:strawberry";
 

@@ -301,19 +301,19 @@ namespace Celeste {
                 int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
                 // Fix IDs
                 for (int i = 0; i < areas.Count; i++)
-                    ((patch_AreaStats) areas[i]).ID_Unsafe = AreaDataExt.Get(areas[i])?.ID ?? int.MaxValue;
+                    ((patch_AreaStats)areas[i]).ID_Unsafe = AreaDataExt.Get(areas[i])?.ID ?? int.MaxValue;
                 // Sort
-                areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
+                areas.Sort((a, b) => ((patch_AreaStats)a).ID_Unsafe - ((patch_AreaStats)b).ID_Unsafe);
                 // Remove leftovers
-                while (areas.Count > 0 && ((patch_AreaStats) areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
+                while (areas.Count > 0 && ((patch_AreaStats)areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
                     areas.RemoveAt(areas.Count - 1);
                 // Fill gaps
                 for (int i = 0; i < count; i++)
-                    if (i >= areas.Count || ((patch_AreaStats) areas[i]).ID_Unsafe != offset + i)
+                    if (i >= areas.Count || ((patch_AreaStats)areas[i]).ID_Unsafe != offset + i)
                         areas.Insert(i, new AreaStats(offset + i));
                 // Resync SIDs
                 for (int i = 0; i < areas.Count; i++)
-                    ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
+                    ((patch_AreaStats)areas[i]).ID_Safe = ((patch_AreaStats)areas[i]).ID_Unsafe;
 
                 int lastCompleted = -1;
                 for (int i = 0; i < count; i++) {
@@ -425,7 +425,7 @@ namespace Celeste {
             }
 
             // Remove any checkpoints which don't exist in the level.
-            ModeProperties mode = AreaData.Get(area).Mode[(int) area.Mode];
+            ModeProperties mode = AreaData.Get(area).Mode[(int)area.Mode];
             if (mode == null) {
                 checkpoints.Clear();
             } else {
@@ -579,7 +579,7 @@ namespace Celeste {
                 return count;
             }
         }
-        
+
         [XmlIgnore]
         public int MaxCassettes {
             get {
@@ -735,7 +735,7 @@ namespace Celeste {
                 value += (MaxCassettes == 0 ? 1 : (float)TotalCassettes / MaxCassettes) * 7f;
                 value += (MaxCompletions == 0 ? 1 : (float)TotalCompletions / MaxCompletions) * 14f;
 
-                return (int) value;
+                return (int)value;
             }
         }
 
@@ -749,12 +749,12 @@ namespace Celeste {
         /// Get the statistics for all level sets.
         /// </summary>
         public static List<LevelSetStats> GetLevelSets(this SaveData self)
-            => ((patch_SaveData) self).LevelSets;
+            => ((patch_SaveData)self).LevelSets;
         /// <summary>
         /// Set the statistics for all level sets.
         /// </summary>
         public static SaveData SetLevelSets(this SaveData self, List<LevelSetStats> value) {
-            ((patch_SaveData) self).LevelSets = value;
+            ((patch_SaveData)self).LevelSets = value;
             return self;
         }
 
@@ -762,19 +762,19 @@ namespace Celeste {
         /// Get the last played level set.
         /// </summary>
         public static string GetLevelSet(this SaveData self)
-            => ((patch_SaveData) self).LevelSet;
+            => ((patch_SaveData)self).LevelSet;
 
         /// <summary>
         /// Get the statistics for the last played level set.
         /// </summary>
         public static LevelSetStats GetLevelSetStats(this SaveData self)
-            => ((patch_SaveData) self).LevelSetStats;
+            => ((patch_SaveData)self).LevelSetStats;
 
         /// <summary>
         /// Get the statistics for a given level set.
         /// </summary>
         public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
-            => ((patch_SaveData) self).GetLevelSetStatsFor(name);
+            => ((patch_SaveData)self).GetLevelSetStatsFor(name);
 
     }
 }

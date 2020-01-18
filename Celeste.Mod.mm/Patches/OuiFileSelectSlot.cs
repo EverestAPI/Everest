@@ -62,7 +62,7 @@ namespace Celeste {
                 strawbs.ShowOutOf = stats.Name != "Celeste" || strawbs.OutOf <= 0;
                 strawbs.CanWiggle = false;
 
-                if(stats.Name == "Celeste") {
+                if (stats.Name == "Celeste") {
                     // never mess with vanilla.
                     maxStrawberryCount = 175;
                     maxGoldenStrawberryCount = 25; // vanilla is wrong (there are 26 including dashless), but don't mess with vanilla.
@@ -93,7 +93,7 @@ namespace Celeste {
                 totalGoldenStrawberries = stats.TotalGoldenStrawberries; // The value saved on the file is global for all level sets.
                 totalHeartGems = stats.TotalHeartGems; // this counts from all level sets. 
                 totalCassettes = stats.TotalCassettes; // this relies on SaveData.Instance.
-                
+
                 // redo what is done on the constructor. This keeps the area name and stats up-to-date with the latest area.
                 FurthestArea = SaveData.UnlockedAreas;
                 Cassettes.Clear();

@@ -25,8 +25,8 @@ namespace Celeste {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
                 return
-                    (metaAll?.Modes?.Length ?? 0) > (int) Area.Mode ?
-                    metaAll.Modes[(int) Area.Mode] :
+                    (metaAll?.Modes?.Length ?? 0) > (int)Area.Mode ?
+                    metaAll.Modes[(int)Area.Mode] :
                     null;
             }
         }
@@ -81,7 +81,7 @@ namespace Celeste {
         private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self) {
             if (self.Area.GetLevelSet() == "Celeste")
                 return root;
-            return ((patch_MapData) self).Process(root);
+            return ((patch_MapData)self).Process(root);
         }
 
         private BinaryPacker.Element Process(BinaryPacker.Element root) {
@@ -89,7 +89,7 @@ namespace Celeste {
                 return root;
 
             // make sure parse meta first, because checkpoint entity needs to read meta
-            if(root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta) 
+            if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta)
                 ProcessMeta(meta);
 
             new MapDataFixup(this).Process(root);
@@ -104,7 +104,7 @@ namespace Celeste {
             if (mode == AreaMode.Normal) {
                 new MapMeta(meta).ApplyTo(area);
                 Area = area.ToKey();
-                
+
                 // Backup A-Side's Metadata. Only back up useful data.
                 area.SetASideAreaDataBackup(new AreaData {
                     IntroType = area.IntroType,
@@ -128,7 +128,7 @@ namespace Celeste {
                 MapMeta mapMeta = new MapMeta(meta) {
                     Modes = area.GetMeta().Modes
                 };
-                area.Mode[(int) mode].SetMapMeta(mapMeta);
+                area.Mode[(int)mode].SetMapMeta(mapMeta);
             }
         }
 
@@ -181,13 +181,13 @@ namespace Celeste {
         /// Get the mod mode metadata of the map.
         /// </summary>
         public static MapMetaModeProperties GetMeta(this MapData self)
-            => ((patch_MapData) self).Meta;
+            => ((patch_MapData)self).Meta;
 
         /// <summary>
         /// Returns whether the map contains a cassette or not.
         /// </summary>
         public static bool GetDetectedCassette(this MapData self)
-            => ((patch_MapData) self).DetectedCassette;
+            => ((patch_MapData)self).DetectedCassette;
 
         /// <summary>
         /// To be called by the CoreMapDataProcessor when a cassette is detected in a map.
@@ -200,7 +200,7 @@ namespace Celeste {
         /// Returns the number of strawberries in the map, including untracked ones (goldens, moons).
         /// </summary>
         public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
-            => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;
+            => ((patch_MapData)self).DetectedStrawberriesIncludingUntracked;
 
         /// <summary>
         /// To be called by the CoreMapDataProcessor when processing a map is over, to register the detected berry count.
@@ -213,6 +213,6 @@ namespace Celeste {
         /// Returns the list of dashless goldens in the map.
         /// </summary>
         public static List<EntityData> GetDashlessGoldenberries(this MapData self)
-            => ((patch_MapData) self).DashlessGoldenberries;
+            => ((patch_MapData)self).DashlessGoldenberries;
     }
 }
