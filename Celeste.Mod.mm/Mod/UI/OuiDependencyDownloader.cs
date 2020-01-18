@@ -27,7 +27,8 @@ namespace Celeste.Mod.UI {
             task.Start();
 
             IEnumerator enterBase = base.Enter(from);
-            while (enterBase.MoveNext()) yield return enterBase.Current;
+            while (enterBase.MoveNext())
+                yield return enterBase.Current;
             yield break;
         }
 

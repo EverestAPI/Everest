@@ -342,7 +342,7 @@ namespace Celeste.Mod.UI {
                 Finish();
             }
 
-        End:
+            End:
 
             if (wasFocused && !Focused) {
                 if (Input.ESC) {

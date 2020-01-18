@@ -680,7 +680,8 @@ namespace Celeste {
                 for (int i = 0; i <= MaxArea; i++) {
                     AreaData areaData = AreaData.Areas[offset + i];
                     for (int j = 0; j < 2 && j < areaData.Mode.Length; j++) {
-                        if (areaData.Mode[j]?.MapData.DetectedHeartGem ?? false) count++;
+                        if (areaData.Mode[j]?.MapData.DetectedHeartGem ?? false)
+                            count++;
                     }
                 }
                 return count;

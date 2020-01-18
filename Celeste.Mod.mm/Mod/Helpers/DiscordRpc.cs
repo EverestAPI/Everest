@@ -165,7 +165,8 @@ namespace Celeste.Mod.Helpers {
             /// <param name="maxbytes">Max number of bytes to use</param>
             /// <returns>Pointer to the UTF-8 representation of input</returns>
             private IntPtr StrToPtr(string input, int maxbytes) {
-                if (string.IsNullOrEmpty(input)) return IntPtr.Zero;
+                if (string.IsNullOrEmpty(input))
+                    return IntPtr.Zero;
                 var convstr = StrClampBytes(input, maxbytes);
                 var convbytecnt = Encoding.UTF8.GetByteCount(convstr);
                 var buffer = Marshal.AllocHGlobal(convbytecnt);

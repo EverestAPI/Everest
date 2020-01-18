@@ -137,7 +137,7 @@ namespace Celeste.Mod.UI {
                 Overworld.Goto<OuiModOptions>();
             }
 
-        End:
+            End:
             pressedTimer -= Engine.DeltaTime;
             timer += Engine.DeltaTime;
             for (int i = 0; i < digits.Length; i++)

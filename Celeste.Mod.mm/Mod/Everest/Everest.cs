@@ -475,7 +475,7 @@ namespace Celeste.Mod {
                             goto RegisterEntityLoader;
                         }
 
-                    RegisterEntityLoader:
+                        RegisterEntityLoader:
                         if (loader == null) {
                             Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
                             continue;
@@ -502,7 +502,8 @@ namespace Celeste.Mod {
                         StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
                     }
                 }
-            NoDefinedBerryNames:;
+                NoDefinedBerryNames:
+                ;
             }
 
             module.LoadSettings();

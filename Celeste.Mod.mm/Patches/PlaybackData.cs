@@ -42,7 +42,8 @@ namespace Celeste {
                 } else if (child.Type == typeof(AssetTypeTutorial)) {
                     // remove Tutorials/ from the tutorial path.
                     string tutorialPath = child.PathVirtual;
-                    if (tutorialPath.StartsWith("Tutorials/")) tutorialPath = tutorialPath.Substring("Tutorials/".Length);
+                    if (tutorialPath.StartsWith("Tutorials/"))
+                        tutorialPath = tutorialPath.Substring("Tutorials/".Length);
 
                     // load tutorial.
                     Logger.Log("PlaybackData", $"Loading tutorial: {tutorialPath}");

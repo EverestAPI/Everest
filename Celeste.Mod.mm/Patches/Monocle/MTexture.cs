@@ -540,7 +540,8 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position) {
-            float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+            float scaleFix = ScaleFix;
+            Rectangle clip = ClipRect;
             Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {
@@ -554,7 +555,8 @@ namespace Monocle {
 
         [MonoModReplace]
         public new void DrawOutlineCentered(Vector2 position, Color color) {
-            float scaleFix = ScaleFix; Rectangle clip = ClipRect;
+            float scaleFix = ScaleFix;
+            Rectangle clip = ClipRect;
             Vector2 offset = (Center - DrawOffset) / scaleFix;
             for (int x = -1; x <= 1; x++) {
                 for (int y = -1; y <= 1; y++) {

@@ -187,7 +187,8 @@ namespace Celeste.Mod {
 
                     // look up the installed version in the table (or the latest one by default).
                     int currentBuildIndex = all.FindIndex(entry => entry.Build == Build);
-                    if (currentBuildIndex == -1) currentBuildIndex = 0;
+                    if (currentBuildIndex == -1)
+                        currentBuildIndex = 0;
 
                     // find the latest version (highest build number), taking only the elements that are higher in the list into account.
                     Newest = all[0];

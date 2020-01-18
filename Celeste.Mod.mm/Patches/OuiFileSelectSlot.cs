@@ -99,7 +99,8 @@ namespace Celeste {
                 Cassettes.Clear();
                 HeartGems.Clear();
                 foreach (AreaStats areaStats in SaveData.Areas) {
-                    if (areaStats.ID > SaveData.UnlockedAreas) break;
+                    if (areaStats.ID > SaveData.UnlockedAreas)
+                        break;
 
                     if (!AreaData.Areas[areaStats.ID].Interlude && AreaData.Areas[areaStats.ID].CanFullClear) {
                         bool[] hearts = new bool[3];

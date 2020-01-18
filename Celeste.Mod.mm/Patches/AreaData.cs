@@ -551,14 +551,17 @@ namespace Celeste {
         public static void OverrideASideMeta(this AreaData self, AreaMode value) {
             patch_AreaData areaData = (patch_AreaData) self;
 
-            if (areaData.LevelSet == "Celeste") return;
+            if (areaData.LevelSet == "Celeste")
+                return;
 
-            if (value == AreaMode.Normal) return;
+            if (value == AreaMode.Normal)
+                return;
 
             if (!(self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta))
                 return;
 
-            if (!(mapMeta.OverrideASideMeta ?? false)) return;
+            if (!(mapMeta.OverrideASideMeta ?? false))
+                return;
 
             mapMeta.ApplyToForOverride(areaData);
         }

@@ -16,7 +16,8 @@ namespace Celeste {
 
             // call the original EndingRoutine, that will handle displaying the end screen.
             IEnumerator orig = orig_EndingRoutine();
-            while (orig.MoveNext()) yield return orig.Current;
+            while (orig.MoveNext())
+                yield return orig.Current;
 
             patch_AreaComplete.DisposeAreaCompleteInfoForEverest();
             yield break;

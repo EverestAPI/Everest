@@ -36,7 +36,7 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-        Done:
+            Done:
             if (Direction > 0) {
                 Audio.Play(SFX.ui_world_chapter_pane_expand);
             } else {

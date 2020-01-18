@@ -64,7 +64,8 @@ namespace Celeste.Mod.UI {
 
         private IEnumerator Routine() {
             // wait until we can continue (async task finished, or player hit Confirm to continue)
-            while (!shouldContinue) yield return null;
+            while (!shouldContinue)
+                yield return null;
 
             // proceed to the title screen, as GameLoader would do it normally.
             Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, snow);

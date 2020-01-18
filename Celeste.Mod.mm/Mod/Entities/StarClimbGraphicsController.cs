@@ -47,8 +47,10 @@ namespace Celeste.Mod.Entities {
 
             foreach (Entity control in controllers) {
                 StarClimbGraphicsController other = control as StarClimbGraphicsController;
-                if (other == null || other == this) continue;
-                else return true;
+                if (other == null || other == this)
+                    continue;
+                else
+                    return true;
             }
             return false;
         }
@@ -119,7 +121,8 @@ namespace Celeste.Mod.Entities {
         }
 
         private void Dispose() {
-            if (DetectOtherController()) return;
+            if (DetectOtherController())
+                return;
             if (BlockFill != null)
                 BlockFill.Dispose();
             BlockFill = null;

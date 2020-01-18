@@ -129,7 +129,8 @@ namespace Celeste.Mod.UI {
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                            if (update.xxHash.Count > 1) button.Disabled = true;
+                            if (update.xxHash.Count > 1)
+                                button.Disabled = true;
 
                             menu.Add(button);
                         }
