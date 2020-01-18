@@ -24,32 +24,97 @@ namespace Celeste {
         private patch_Button NewGameLevelSetButton;
         private string NewGameLevelSet;
 
+        // computed maximums for stamp rendering
+        private int maxStrawberryCount;
+        private int maxGoldenStrawberryCount;
+        private int maxStrawberryCountIncludingUntracked;
+        private int maxCassettes;
+        private int maxCrystalHeartsExcludingCSides;
+        private int maxCrystalHearts;
+
+        private bool summitStamp;
+        private bool farewellStamp;
+
+        private int totalGoldenStrawberries;
+        private int totalHeartGems;
+        private int totalCassettes;
+
+        private bool Golden => !Corrupted && Exists && SaveData.TotalStrawberries >= maxStrawberryCountIncludingUntracked;
+
         public patch_OuiFileSelectSlot(int index, OuiFileSelect fileSelect, SaveData data)
             : base(index, fileSelect, data) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        // Patching constructors is ugly.
-        public extern void orig_ctor(int index, OuiFileSelect fileSelect, SaveData data);
-        [MonoModConstructor]
-        public void ctor(int index, OuiFileSelect fileSelect, SaveData data) {
+        public extern void orig_Show();
+        public new void Show() {
             // Temporarily set the current save data to the file slot's save data.
             // This enables filtering the areas by the save data's current levelset.
             SaveData prev = SaveData.Instance;
-            SaveData.Instance = data;
+            SaveData.Instance = SaveData;
 
-            orig_ctor(index, fileSelect, data);
-
-            LevelSetStats stats = data?.GetLevelSetStats();
+            LevelSetStats stats = SaveData?.GetLevelSetStats();
 
             if (stats != null) {
                 StrawberriesCounter strawbs = Strawberries;
                 strawbs.Amount = stats.TotalStrawberries;
                 strawbs.OutOf = stats.MaxStrawberries;
                 strawbs.ShowOutOf = stats.Name != "Celeste" || strawbs.OutOf <= 0;
+                strawbs.CanWiggle = false;
+
+                if (stats.Name == "Celeste") {
+                    // never mess with vanilla.
+                    maxStrawberryCount = 175;
+                    maxGoldenStrawberryCount = 25; // vanilla is wrong (there are 26 including dashless), but don't mess with vanilla.
+                    maxStrawberryCountIncludingUntracked = 202;
+
+                    maxCassettes = 8;
+                    maxCrystalHeartsExcludingCSides = 16;
+                    maxCrystalHearts = 24;
+
+                    summitStamp = SaveData.Areas[7].Modes[0].Completed;
+                    farewellStamp = SaveData.Areas[10].Modes[0].Completed;
+                } else {
+                    // compute the counts for the current level set.
+                    maxStrawberryCount = stats.MaxStrawberries;
+                    maxGoldenStrawberryCount = stats.MaxGoldenStrawberries;
+                    maxStrawberryCountIncludingUntracked = stats.MaxStrawberriesIncludingUntracked;
+
+                    maxCassettes = stats.MaxCassettes;
+                    maxCrystalHearts = stats.MaxHeartGems;
+                    maxCrystalHeartsExcludingCSides = stats.MaxHeartGemsExcludingCSides;
+
+                    // summit stamp is displayed if we finished all areas that are not interludes. (TotalCompletions filters interludes out.)
+                    summitStamp = stats.TotalCompletions >= stats.MaxCompletions;
+                    farewellStamp = false; // what is supposed to be Farewell in mod campaigns anyway??
+                }
+
+                // save the values from the current level set. They will be patched in instead of SaveData.TotalXX.
+                totalGoldenStrawberries = stats.TotalGoldenStrawberries; // The value saved on the file is global for all level sets.
+                totalHeartGems = stats.TotalHeartGems; // this counts from all level sets. 
+                totalCassettes = stats.TotalCassettes; // this relies on SaveData.Instance.
+
+                // redo what is done on the constructor. This keeps the area name and stats up-to-date with the latest area.
+                FurthestArea = SaveData.UnlockedAreas;
+                Cassettes.Clear();
+                HeartGems.Clear();
+                foreach (AreaStats areaStats in SaveData.Areas) {
+                    if (areaStats.ID > SaveData.UnlockedAreas) break;
+
+                    if (!AreaData.Areas[areaStats.ID].Interlude && AreaData.Areas[areaStats.ID].CanFullClear) {
+                        bool[] hearts = new bool[3];
+                        for (int i = 0; i < hearts.Length; i++) {
+                            hearts[i] = areaStats.Modes[i].HeartGem;
+                        }
+                        Cassettes.Add(areaStats.Cassette);
+                        HeartGems.Add(hearts);
+                    }
+                }
             }
 
             SaveData.Instance = prev;
+
+            orig_Show();
         }
 
         public extern void orig_CreateButtons();
@@ -131,5 +196,9 @@ namespace Celeste {
             public float Scale = 1f;
         }
 
+
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchFileSelectSlotRender] // ... except for manually manipulating the method via MonoModRules
+        public override extern void Render();
     }
 }
