@@ -89,16 +89,16 @@ namespace Celeste.Editor {
 
             Engine.Scene = new LevelLoader(session, at);
         }
-        
+
         public extern void orig_Update();
         public override void Update() {
             if (!SpeedrunToolInstalled) {
                 MakeMapEditorBetter();
             }
-            
+
             orig_Update();
         }
-        
+
         [MonoModIgnore]
         private extern LevelTemplate TestCheck(Vector2 point);
 
@@ -109,7 +109,7 @@ namespace Celeste.Editor {
                 Input.MenuCancel.ConsumePress();
                 Engine.Scene = new LevelLoader(CurrentSession);
             }
-            
+
             // press confirm button to teleport to selected room
             if (Input.MenuConfirm.Pressed) {
                 Input.MenuConfirm.ConsumePress();
@@ -122,13 +122,13 @@ namespace Celeste.Editor {
                     LoadLevel(level, mousePosition * 8f);
                 }
             }
-            
+
             // speed up camera when zoom out
             if (Camera != null && Camera.Zoom < 6f) {
                 Camera.Position += new Vector2(Input.MoveX.Value, Input.MoveY.Value) * 300f * Engine.DeltaTime *
                                    ((float) Math.Pow(1.3, 6 - Camera.Zoom) - 1);
             }
-            
+
             // controller right stick zoom the map
             GamePadState currentState = MInput.GamePads[Input.Gamepad].CurrentState;
             if (zoomWaitFrames <= 0 && Camera != null) {

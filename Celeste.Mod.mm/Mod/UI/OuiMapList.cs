@@ -32,7 +32,7 @@ namespace Celeste.Mod.UI {
 
         public OuiMapList() {
         }
-        
+
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
             items.Clear();

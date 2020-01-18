@@ -394,8 +394,8 @@ namespace Celeste.Mod {
 
                 } else {
                     if (!string.IsNullOrEmpty(meta.DLL) && File.Exists(meta.DLL)) {
-                            using (FileStream stream = File.OpenRead(meta.DLL))
-                                asm = Relinker.GetRelinkedAssembly(meta, stream);
+                        using (FileStream stream = File.OpenRead(meta.DLL))
+                            asm = Relinker.GetRelinkedAssembly(meta, stream);
                     }
 
                     if (File.Exists(Path.Combine(meta.PathDirectory, "main.lua"))) {

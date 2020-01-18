@@ -33,7 +33,7 @@ namespace Celeste.Mod {
             Console.Write("] ");
             Console.WriteLine(str);
         }
-        
+
         /// <summary>
         /// Print the exception to the console, including extended loading / reflection data useful for mods.
         /// </summary>

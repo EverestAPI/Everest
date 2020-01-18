@@ -14,11 +14,9 @@ namespace Celeste {
         private void SetRunAnim() {
             if (Renderer.Area < 0 || AreaData.Get(Renderer.Area).IsOfficialLevelSet()) {
                 orig_SetRunAnim();
-            }
-            else if (AreaData.Get(Renderer.Area).Mode[0].Inventory.Dashes > 1) {
+            } else if (AreaData.Get(Renderer.Area).Mode[0].Inventory.Dashes > 1) {
                 frames = MTN.Mountain.GetAtlasSubtextures("marker/runNoBackpack");
-            }
-            else {
+            } else {
                 frames = MTN.Mountain.GetAtlasSubtextures("marker/runBackpack");
             }
         }

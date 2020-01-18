@@ -125,7 +125,8 @@ namespace YYProject.XXHash {
             set {
 
                 if (value != _Seed32) {
-                    if (State != 0) throw new InvalidOperationException("Hash computation has not yet completed.");
+                    if (State != 0)
+                        throw new InvalidOperationException("Hash computation has not yet completed.");
                     _Seed32 = value;
                     Initialize();
                 }
@@ -152,7 +153,8 @@ namespace YYProject.XXHash {
         /// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
         /// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
         protected override void HashCore(byte[] array, int ibStart, int cbSize) {
-            if (State != 1) State = 1;
+            if (State != 1)
+                State = 1;
             var size = cbSize - ibStart;
             _RemainingLength = size & 15;
             if (cbSize >= 16) {
@@ -344,7 +346,8 @@ namespace YYProject.XXHash {
             get => _Seed64;
             set {
                 if (value != _Seed64) {
-                    if (State != 0) throw new InvalidOperationException("Computation has not yet completed.");
+                    if (State != 0)
+                        throw new InvalidOperationException("Computation has not yet completed.");
                     _Seed64 = value;
                     Initialize();
                 }
@@ -369,7 +372,8 @@ namespace YYProject.XXHash {
         /// <param name="ibStart">The offset into the byte array from which to begin using data.</param>
         /// <param name="cbSize">The number of bytes in the byte array to use as data.</param>
         protected override void HashCore(byte[] array, int ibStart, int cbSize) {
-            if (State != 1) State = 1;
+            if (State != 1)
+                State = 1;
             var size = cbSize - ibStart;
             _RemainingLength = size & 31;
             if (cbSize >= 32) {

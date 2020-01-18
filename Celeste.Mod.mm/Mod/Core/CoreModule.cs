@@ -244,13 +244,13 @@ namespace Celeste.Mod.Core {
 
                         foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
                             string missingDepsString = "";
-                            if(mod.Item1.Dependencies != null) {
+                            if (mod.Item1.Dependencies != null) {
                                 // check for missing dependencies
                                 List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
                                     .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
                                 missingDependencies.AddRange(missingDependenciesForMod);
 
-                                if(missingDependenciesForMod.Count != 0) {
+                                if (missingDependenciesForMod.Count != 0) {
                                     // format their names and versions, and join all of them in a single string
                                     missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
 
@@ -265,7 +265,8 @@ namespace Celeste.Mod.Core {
                             }
 
                             menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
-                                HeightExtra = 0f, TextColor = Color.PaleVioletRed
+                                HeightExtra = 0f,
+                                TextColor = Color.PaleVioletRed
                             });
                         }
                     }
@@ -277,7 +278,7 @@ namespace Celeste.Mod.Core {
                     }));
                 }
 
-                if(missingDependencies.Count != 0)  {
+                if (missingDependencies.Count != 0) {
                     menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
                         OuiDependencyDownloader.MissingDependencies = missingDependencies;
                         OuiModOptions.Instance.Overworld.Goto<OuiDependencyDownloader>();

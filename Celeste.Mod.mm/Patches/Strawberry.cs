@@ -31,8 +31,7 @@ namespace Celeste {
 
         public extern void orig_Update();
         [PatchStrawberryTrainCollectionOrder]
-        public new void Update()
-        {
+        public new void Update() {
             orig_Update();
         }
 

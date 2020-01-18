@@ -1239,7 +1239,7 @@ namespace MonoMod {
                 if (!(kvp.Value is bool))
                     return;
                 il.Emit(OpCodes.Ldstr, kvp.Key);
-                il.Emit((bool)kvp.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                il.Emit((bool) kvp.Value ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
                 il.Emit(OpCodes.Call, m_Set);
             }
 
@@ -1372,7 +1372,7 @@ namespace MonoMod {
                 if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].OpCode == OpCodes.Ldflda && (instrs[instri + 1].Operand as FieldReference)?.FullName == "Microsoft.Xna.Framework.Vector2 Celeste.Player::Speed"
                     && instrs[instri + 2].OpCode == OpCodes.Ldfld && (instrs[instri + 2].Operand as FieldReference)?.FullName == "System.Single Microsoft.Xna.Framework.Vector2::Y"
-                    && instrs[instri + 3].OpCode == OpCodes.Ldc_R4 && (float)instrs[instri + 3].Operand == -60f) {
+                    && instrs[instri + 3].OpCode == OpCodes.Ldc_R4 && (float) instrs[instri + 3].Operand == -60f) {
 
                     // XNA:
                     // 0: ldarg.0
@@ -1427,7 +1427,7 @@ namespace MonoMod {
             if (IStrawberry == null)
                 return;
 
-            ((TypeDefinition)provider).Interfaces.Add(IStrawberry);
+            ((TypeDefinition) provider).Interfaces.Add(IStrawberry);
         }
 
         public static void PatchInterface(MethodDefinition method, CustomAttribute attrib) {
@@ -1437,40 +1437,50 @@ namespace MonoMod {
 
         public static void PatchFileSelectSlotRender(MethodDefinition method, CustomAttribute attrib) {
             FieldDefinition f_maxStrawberryCount = method.DeclaringType.FindField("maxStrawberryCount");
-            if (f_maxStrawberryCount == null) return;
+            if (f_maxStrawberryCount == null)
+                return;
 
             FieldDefinition f_maxGoldenStrawberryCount = method.DeclaringType.FindField("maxGoldenStrawberryCount");
-            if (f_maxGoldenStrawberryCount == null) return;
+            if (f_maxGoldenStrawberryCount == null)
+                return;
 
             FieldDefinition f_maxCassettes = method.DeclaringType.FindField("maxCassettes");
-            if (f_maxCassettes == null) return;
+            if (f_maxCassettes == null)
+                return;
 
             FieldDefinition f_maxCrystalHeartsExcludingCSides = method.DeclaringType.FindField("maxCrystalHeartsExcludingCSides");
-            if (f_maxCrystalHeartsExcludingCSides == null) return;
+            if (f_maxCrystalHeartsExcludingCSides == null)
+                return;
 
             FieldDefinition f_maxCrystalHearts = method.DeclaringType.FindField("maxCrystalHearts");
-            if (f_maxCrystalHearts == null) return;
+            if (f_maxCrystalHearts == null)
+                return;
 
             FieldDefinition f_summitStamp = method.DeclaringType.FindField("summitStamp");
-            if (f_summitStamp == null) return;
+            if (f_summitStamp == null)
+                return;
 
             FieldDefinition f_farewellStamp = method.DeclaringType.FindField("farewellStamp");
-            if (f_farewellStamp == null) return;
+            if (f_farewellStamp == null)
+                return;
 
             FieldDefinition f_totalGoldenStrawberries = method.DeclaringType.FindField("totalGoldenStrawberries");
-            if (f_totalGoldenStrawberries == null) return;
+            if (f_totalGoldenStrawberries == null)
+                return;
 
             FieldDefinition f_totalHeartGems = method.DeclaringType.FindField("totalHeartGems");
-            if (f_totalHeartGems == null) return;
+            if (f_totalHeartGems == null)
+                return;
 
             FieldDefinition f_totalCassettes = method.DeclaringType.FindField("totalCassettes");
-            if (f_totalCassettes == null) return;
+            if (f_totalCassettes == null)
+                return;
 
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count - 8; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int)instrs[instri].Operand == 175) {
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int) instrs[instri].Operand == 175) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxStrawberryCount));
                 }
@@ -1482,7 +1492,7 @@ namespace MonoMod {
 
                 if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
                     && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems"
-                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri + 2].Operand == 16) {
+                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 2].Operand == 16) {
 
                     instrs[instri].OpCode = OpCodes.Ldfld;
                     instrs[instri].Operand = f_totalHeartGems;
@@ -1493,12 +1503,12 @@ namespace MonoMod {
                     instrs[instri + 2].Operand = f_maxCrystalHeartsExcludingCSides;
                 }
 
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri].Operand == 24) {
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 24) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCrystalHearts));
                 }
 
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri].Operand == 25) {
+                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 25) {
                     instrs[instri].OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxGoldenStrawberryCount));
                 }
@@ -1517,17 +1527,19 @@ namespace MonoMod {
                     if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_7) {
                         // remove everything but this
                         instri++;
-                        for (int i = 0; i < 8; i++) instrs.RemoveAt(instri);
+                        for (int i = 0; i < 8; i++)
+                            instrs.RemoveAt(instri);
 
                         // and put summitStamp instead
                         instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_summitStamp));
 
                     }
 
-                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte)instrs[instri + 3].Operand == 10) {
+                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 3].Operand == 10) {
                         // remove everything but this
                         instri++;
-                        for (int i = 0; i < 8; i++) instrs.RemoveAt(instri);
+                        for (int i = 0; i < 8; i++)
+                            instrs.RemoveAt(instri);
 
                         // and put farewellStamp instead
                         instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_farewellStamp));

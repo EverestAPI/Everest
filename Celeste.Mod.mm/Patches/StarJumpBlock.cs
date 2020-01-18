@@ -90,7 +90,7 @@ namespace Celeste {
             // Corners / additional edges.
 
             Image img;
-            
+
             img = null;
             if (Open(-8f, 0f) && Open(0f, -8f)) {
                 img = new Image(Calc.Random.Choose(corners));
@@ -186,10 +186,8 @@ namespace Celeste {
         }
 
         public extern void orig_Render();
-        public override void Render()
-        {
-            if (this.SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste")
-            {
+        public override void Render() {
+            if (this.SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
                 orig_Render();
                 return;
             }
@@ -209,12 +207,11 @@ namespace Celeste {
             else if (vanillaController != null)
                 blockFill = vanillaController.BlockFill;
 
-            if (blockFill != null)
-            {
+            if (blockFill != null) {
                 Draw.SpriteBatch.Draw(
                     blockFill,
                     this.Position,
-                    new Rectangle?(new Rectangle((int)(this.X - cameraPos.X), (int)(this.Y - cameraPos.Y), (int)this.Width, (int)this.Height)),
+                    new Rectangle?(new Rectangle((int) (this.X - cameraPos.X), (int) (this.Y - cameraPos.Y), (int) this.Width, (int) this.Height)),
                     Color.White
                 );
             }

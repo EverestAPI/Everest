@@ -55,23 +55,18 @@ namespace Celeste {
         [MonoModReplace]
         public new void RegisterAreaComplete() {
             bool completed = Completed;
-            if (!completed)
-            {
+            if (!completed) {
                 Player player = base.Tracker.GetEntity<Player>();
-                if (player != null)
-                {
+                if (player != null) {
                     List<IStrawberry> strawbs = new List<IStrawberry>();
                     ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
-                    foreach (Follower follower in player.Leader.Followers)
-                    {
+                    foreach (Follower follower in player.Leader.Followers) {
 
-                        if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry)
-                        {
+                        if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry) {
                             strawbs.Add(follower.Entity as IStrawberry);
                         }
                     }
-                    foreach (IStrawberry strawb in strawbs)
-                    {
+                    foreach (IStrawberry strawb in strawbs) {
                         strawb.OnCollect();
                     }
                 }

@@ -21,8 +21,8 @@ namespace Celeste {
     // : Entity because there's no original Awake method to hook, thus base.Awake must be Entity::Awake.
     class patch_RotateSpinner : Entity {
 
-        public float Angle => 
-            fixAngle ? 
+        public float Angle =>
+            fixAngle ?
             MathHelper.Lerp(MathHelper.Pi, -MathHelper.Pi, Easer(rotationPercent)) :
             MathHelper.Lerp(4.712389f, -1.57079637f, Easer(rotationPercent));
 
