@@ -30,7 +30,7 @@ namespace Celeste.Mod.UI {
         public OuiModOptions() {
             Instance = this;
         }
-        
+
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
 

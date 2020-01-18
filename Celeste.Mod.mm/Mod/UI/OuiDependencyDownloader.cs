@@ -142,7 +142,7 @@ namespace Celeste.Mod.UI {
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_BLACKLISTED"), mod));
 
                 foreach (string mod in modsWithIncompatibleVersionInDatabase.Keys)
-                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod, 
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod,
                         string.Join(", ", modsWithIncompatibleVersionInDatabase[mod]), modsDatabaseVersions[mod]));
             }
 
@@ -189,11 +189,11 @@ namespace Celeste.Mod.UI {
 
                 Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, (position, length, speed) => {
                     if (length > 0) {
-                        Lines[Lines.Count - 1] = $"{((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s";
+                        Lines[Lines.Count - 1] = $"{((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                         Progress = position;
-                        ProgressMax = (int)length;
+                        ProgressMax = (int) length;
                     } else {
-                        Lines[Lines.Count - 1] = $"{((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
+                        Lines[Lines.Count - 1] = $"{((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         ProgressMax = 0;
                     }
                 });

@@ -91,7 +91,7 @@ namespace Celeste.Mod {
 
                 AllNamespaces[""] = Global;
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-                     Precache(asm);
+                    Precache(asm);
                 }
 
                 LuaFunction init = (LuaFunction) rva[0];

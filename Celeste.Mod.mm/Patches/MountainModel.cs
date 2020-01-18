@@ -117,7 +117,7 @@ namespace Celeste {
                     if (ignoreCameraRotation) {
                         rotation = lastCameraRotation;
                     }
-                    Matrix matrix = Matrix.CreatePerspectiveFieldOfView((float)Math.PI / 4f, (float)Engine.Width / (float)Engine.Height, 0.25f, 50f);
+                    Matrix matrix = Matrix.CreatePerspectiveFieldOfView((float) Math.PI / 4f, (float) Engine.Width / (float) Engine.Height, 0.25f, 50f);
                     Matrix matrix2 = Matrix.CreateTranslation(-Camera.Position) * Matrix.CreateFromQuaternion(rotation);
                     Matrix matrix3 = matrix2 * matrix;
                     Forward = Vector3.Transform(Vector3.Forward, Camera.Rotation.Conjugated());
@@ -176,7 +176,7 @@ namespace Celeste {
                             Engine.Graphics.GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, array, 0, array.Length / 3);
                         }
                     }
-                    GaussianBlur.Blur((RenderTarget2D)buffer, blurA, blurB, 0.75f, clear: true, samples: GaussianBlur.Samples.Five);
+                    GaussianBlur.Blur((RenderTarget2D) buffer, blurA, blurB, 0.75f, clear: true, samples: GaussianBlur.Samples.Five);
 
                     Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null);
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);

@@ -41,7 +41,7 @@ namespace Monocle {
 
             Vector2 offset = Vector2.Zero;
             Vector2 justifyOffs = new Vector2(
-                ((justify.X != 0f) ? WidthToNextLine(text, 0) : 0f) * justify.X, 
+                ((justify.X != 0f) ? WidthToNextLine(text, 0) : 0f) * justify.X,
                 HeightOf(text) * justify.Y
             );
 

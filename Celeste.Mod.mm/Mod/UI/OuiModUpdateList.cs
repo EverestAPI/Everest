@@ -223,9 +223,9 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                 if (length > 0) {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                 } else {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
         }

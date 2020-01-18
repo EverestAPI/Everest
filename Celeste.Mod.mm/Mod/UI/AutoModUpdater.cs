@@ -70,7 +70,7 @@ namespace Celeste.Mod.UI {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, snow);
         }
 
-        
+
         private void autoUpdate(SortedDictionary<ModUpdateInfo, EverestModuleMetadata> updateList) {
             int currentlyUpdatedModIndex = 1;
 
@@ -93,10 +93,10 @@ namespace Celeste.Mod.UI {
                     Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                         if (length > 0) {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
-                                $"({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
+                                $"({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                         } else {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
-                                $"({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
+                                $"({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                         }
                     });
 
@@ -163,7 +163,7 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             base.Render();
-            
+
             Draw.SpriteBatch.Begin(
                 SpriteSortMode.Deferred,
                 BlendState.AlphaBlend,

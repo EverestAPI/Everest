@@ -74,7 +74,7 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         using (WebClient wc = new WebClient())
-                            data  = wc.DownloadString(Index);
+                            data = wc.DownloadString(Index);
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
@@ -289,17 +289,16 @@ namespace Celeste.Mod {
                     DownloadFileWithProgress(version.URL, zipPath, (position, length, speed) => {
                         if (length > 0) {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s";
+                                $"Downloading: {((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                             progress.Progress = position;
                         } else {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
+                                $"Downloading: {((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         }
 
-                        progress.ProgressMax = (int)length;
+                        progress.ProgressMax = (int) length;
                     });
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     progress.LogLine("Download failed!");
                     e.LogDetailed();
                     progress.LogLine(errorHint);

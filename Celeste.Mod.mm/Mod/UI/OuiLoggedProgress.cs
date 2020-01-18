@@ -52,7 +52,7 @@ namespace Celeste.Mod.UI {
 
             return this;
         }
-        
+
         public void LogLine(string line, bool logToLogger = true) {
             if (logToLogger)
                 Logger.Log(LogLevel.Verbose, "progress", line);

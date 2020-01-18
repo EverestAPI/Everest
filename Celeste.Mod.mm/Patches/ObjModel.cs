@@ -93,8 +93,8 @@ namespace Celeste {
             if (mesh != null) {
                 mesh.VertexCount = list.Count - mesh.VertexStart;
             }
-            ((patch_ObjModel)objModel).verts = list.ToArray();
-            ((patch_ObjModel)objModel).ResetVertexBuffer();
+            ((patch_ObjModel) objModel).verts = list.ToArray();
+            ((patch_ObjModel) objModel).ResetVertexBuffer();
             return objModel;
         }
 

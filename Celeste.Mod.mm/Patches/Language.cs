@@ -86,7 +86,7 @@ namespace Celeste {
                 using (StreamReader reader = new StreamReader(asset.Stream, encoding))
                     while (reader.Peek() != -1)
                         yield return reader.ReadLine().Trim('\r', '\n').Trim();
-                
+
                 // Feed a new key to be sure that the last key in the file is cut off.
                 // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
                 yield return "EVEREST_SPLIT_BETWEEN_FILES= New file";

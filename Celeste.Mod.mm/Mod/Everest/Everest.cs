@@ -475,7 +475,7 @@ namespace Celeste.Mod {
                             goto RegisterEntityLoader;
                         }
 
-                        RegisterEntityLoader:
+                    RegisterEntityLoader:
                         if (loader == null) {
                             Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
                             continue;
@@ -484,15 +484,12 @@ namespace Celeste.Mod {
                     }
                 }
                 // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
-                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>())
-                {
+                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>()) {
                     List<string> names = new List<string>();
                     foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
-                        foreach (string idFull in nameAttrib.IDs)
-                        {
+                        foreach (string idFull in nameAttrib.IDs) {
                             string[] split = idFull.Split('=');
-                            if(split.Length == 0)
-                            {
+                            if (split.Length == 0) {
                                 Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
@@ -501,8 +498,7 @@ namespace Celeste.Mod {
                     if (names.Count == 0)
                         goto NoDefinedBerryNames; // no customnames? skip out on registering berry
 
-                    foreach (string name in names)
-                    {
+                    foreach (string name in names) {
                         StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
                     }
                 }

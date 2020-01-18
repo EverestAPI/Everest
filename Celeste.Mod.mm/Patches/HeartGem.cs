@@ -27,31 +27,25 @@ namespace Celeste {
 
         private extern IEnumerator orig_CollectRoutine(Player player);
         [PatchHeartGemCollectRoutine]
-        private IEnumerator CollectRoutine(Player player)
-        {
+        private IEnumerator CollectRoutine(Player player) {
             Level level = Scene as Level;
 
             bool heartIsEnd = false;
             MapMetaModeProperties mapMetaModeProperties = (level != null) ? level.Session.MapData.GetMeta() : null;
-            if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null)
-            {
+            if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null) {
                 heartIsEnd = mapMetaModeProperties.HeartIsEnd.Value;
             }
 
-            if (heartIsEnd)
-            {
+            if (heartIsEnd) {
                 List<IStrawberry> strawbs = new List<IStrawberry>();
                 ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
-                foreach (Follower follower in player.Leader.Followers)
-                {
-                    
-                    if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry)
-                    {
+                foreach (Follower follower in player.Leader.Followers) {
+
+                    if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry) {
                         strawbs.Add(follower.Entity as IStrawberry);
                     }
                 }
-                foreach (IStrawberry strawb in strawbs)
-                {
+                foreach (IStrawberry strawb in strawbs) {
                     strawb.OnCollect();
                 }
             }

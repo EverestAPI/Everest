@@ -5,14 +5,12 @@ using System.Text;
 using System.Threading.Tasks;
 using Celeste.Mod.Entities;
 
-namespace Celeste.Mod
-{
+namespace Celeste.Mod {
     /// <summary>
     /// If your strawberry has seeds and you want to use GenericStrawberrySeed,
     /// implement this interface. Everest will do the rest.
     /// </summary>
-    public interface IStrawberrySeeded
-    {
+    public interface IStrawberrySeeded {
         // Called by CSGEN_GenericStrawberrySeeds
         void CollectedSeeds();
 

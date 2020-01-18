@@ -127,7 +127,7 @@ namespace Celeste {
 
                     int rowUpY = iy > 0 ? iy - 1 : rows.Length - 1;
                     List<MenuButton> rowUp = rows[rowUpY];
-                    
+
                     List<MenuButton> rowDown = iy < rows.Length - 1 ? rows[iy + 1] : rows[0];
 
                     for (int ix = 0; ix < row.Count; ix++) {

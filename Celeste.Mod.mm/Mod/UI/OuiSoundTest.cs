@@ -122,7 +122,7 @@ namespace Celeste.Mod.UI {
             } else if (Input.MenuDown.Pressed) {
                 UpdateDigits(selectedDigit, -1);
 
-            }  else if (Input.MenuUp.Pressed) {
+            } else if (Input.MenuUp.Pressed) {
                 UpdateDigits(selectedDigit, +1);
 
             } else if (Input.MenuConfirm.Pressed) {
@@ -137,7 +137,7 @@ namespace Celeste.Mod.UI {
                 Overworld.Goto<OuiModOptions>();
             }
 
-            End:
+        End:
             pressedTimer -= Engine.DeltaTime;
             timer += Engine.DeltaTime;
             for (int i = 0; i < digits.Length; i++)
