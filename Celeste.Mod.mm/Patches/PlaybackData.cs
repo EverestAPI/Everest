@@ -16,7 +16,7 @@ namespace Celeste {
     static class patch_PlaybackData {
 
         // expose the Tutorials field and vanilla methods to our patch.
-        public static Dictionary<string, List<Player.ChaserState>> Tutorials;
+        public static Dictionary<string, List<Player.ChaserState>> Tutorials = new Dictionary<string, List<Player.ChaserState>>();
 
         public static extern void orig_Load();
 
