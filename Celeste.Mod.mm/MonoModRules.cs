@@ -174,6 +174,13 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchFileSelectSlotRender")]
     class PatchFileSelectSlotRenderAttribute : Attribute { };
 
+    /// <summary>
+    /// Take out the "strawberry" equality check and replace it with a call to StrawberryRegistry.TrackableContains
+    /// to include registered mod berries as well.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTrackableStrawberryCheck")]
+    class PatchTrackableStrawberryCheckAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -367,15 +374,6 @@ namespace MonoMod {
             if (m_GrowAndGet == null)
                 return;
 
-            if (StrawberryRegistry == null)
-                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-            if (StrawberryRegistry == null)
-                return;
-
-            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
-            if (m_TrackableContains == null)
-                return;
-
             bool pop = false;
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -408,15 +406,32 @@ namespace MonoMod {
                     instr.Operand = m_GrowAndGet;
                     instri++;
                 }
+            }
 
-                // Strawberry count adjustments
+        }
+
+        public static void PatchTrackableStrawberryCheck(MethodDefinition method, CustomAttribute attrib) {
+            if (StrawberryRegistry == null)
+                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            if (StrawberryRegistry == null)
+                return;
+
+            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+            if (m_TrackableContains == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
                 if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry") {
                     instr.OpCode = OpCodes.Nop;
+                    instrs[instri + 1].OpCode = OpCodes.Call;
                     instrs[instri + 1].Operand = m_TrackableContains;
                     instri++;
                 }
             }
-
         }
 
         public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib) {
