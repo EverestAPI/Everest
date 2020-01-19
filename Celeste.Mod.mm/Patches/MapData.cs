@@ -36,7 +36,9 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [PatchTrackableStrawberryCheck]
         private extern void orig_Load();
+
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
             // reset those fields to prevent them from stacking up when reloading the map.

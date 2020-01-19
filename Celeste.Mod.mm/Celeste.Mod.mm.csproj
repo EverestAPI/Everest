@@ -166,6 +166,7 @@
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
+    <Compile Include="Patches\LevelTemplate.cs" />
     <Compile Include="Patches\MountainModel.cs" />
     <Compile Include="Patches\MTN.cs" />
     <Compile Include="Patches\ObjModel.cs" />
