@@ -16,7 +16,9 @@ namespace Celeste {
     static class patch_PlaybackData {
 
         // expose the Tutorials field and vanilla methods to our patch.
-        public static Dictionary<string, List<Player.ChaserState>> Tutorials = new Dictionary<string, List<Player.ChaserState>>();
+#pragma warning disable CS0649 // This field is never assigned (it is in vanilla code)
+        public static Dictionary<string, List<Player.ChaserState>> Tutorials;
+#pragma warning restore CS0649
 
         public static extern void orig_Load();
 
