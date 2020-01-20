@@ -85,10 +85,23 @@ namespace Celeste {
                     rows[iy] = new List<MenuButton>();
                 }
 
+                // shift Debug before Credits if we find both of these.
+                List<MenuButton> switchedAroundButtons = new List<MenuButton>(buttons);
+                int debugOptionIndex = findButtonIndex("menu_debug", "menu/options");
+                int creditsOptionIndex = findButtonIndex("menu_credits", "menu/credits");
+                if(debugOptionIndex != -1 && creditsOptionIndex != -1) {
+                    MenuButton debugButton = switchedAroundButtons[debugOptionIndex];
+                    switchedAroundButtons.RemoveAt(debugOptionIndex);
+                    if (creditsOptionIndex > debugOptionIndex) {
+                        creditsOptionIndex--;
+                    }
+                    switchedAroundButtons.Insert(creditsOptionIndex, debugButton);
+                }
+
                 int x = 0;
                 int y = 0;
-                for (int i = 0; i < buttons.Count; i++) {
-                    MenuButton button = buttons[i];
+                for (int i = 0; i < switchedAroundButtons.Count; i++) {
+                    MenuButton button = switchedAroundButtons[i];
 
                     Vector2 pos = startPos + itemSize * new Vector2(x, y);
 
@@ -171,6 +184,15 @@ namespace Celeste {
                 }
             }
 
+        }
+
+        private int findButtonIndex(string labelName, string iconName) {
+            return buttons.FindIndex(_ => {
+                MainMenuSmallButton other = (_ as MainMenuSmallButton);
+                if (other == null)
+                    return false;
+                return other.GetLabelName() == labelName && other.GetIconName() == iconName;
+            });
         }
 
         [MonoModReplace]

@@ -10,6 +10,9 @@
 	MENU_MAPLIST= 			Liste des maps
 	MENU_MODOPTIONS= 		Options des mods
 	MENU_PAUSE_MODOPTIONS= 	Options des mods
+	
+	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
+	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST

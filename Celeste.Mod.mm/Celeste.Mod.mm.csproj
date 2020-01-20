@@ -163,6 +163,7 @@
     <Compile Include="Mod\Registry\IStrawberrySeeded.cs" />
     <Compile Include="Mod\Registry\StrawberryRegistry.cs" />
     <Compile Include="Mod\UI\AutoModUpdater.cs" />
+    <Compile Include="Mod\UI\MainMenuModOptionsButton.cs" />
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />

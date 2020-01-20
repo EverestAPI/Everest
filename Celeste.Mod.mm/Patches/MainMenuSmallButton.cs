@@ -3,6 +3,7 @@
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,15 @@ using System.Xml;
 
 namespace Celeste {
     class patch_MainMenuSmallButton : MainMenuSmallButton {
+
+#pragma warning disable CS0649 // field is never assigned: it is in vanilla code
+        private float ease;
+        private Wiggler wiggler;
+#pragma warning restore CS0649
+
+        // expose these fields to extending classes.
+        public float Ease => ease;
+        public Wiggler Wiggler => wiggler;
 
         public string LabelName;
         public string IconName;
@@ -48,6 +58,13 @@ namespace Celeste {
         /// </summary>
         public static string GetIconName(this MainMenuSmallButton self)
             => ((patch_MainMenuSmallButton) self).IconName;
+
+        public static float GetEase(this MainMenuSmallButton self) {
+            return ((patch_MainMenuSmallButton) self).Ease;
+        }
+        public static Wiggler GetWiggler(this MainMenuSmallButton self) {
+            return ((patch_MainMenuSmallButton) self).Wiggler;
+        }
 
     }
 }
