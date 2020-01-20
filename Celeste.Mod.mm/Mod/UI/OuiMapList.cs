@@ -151,17 +151,22 @@ namespace Celeste.Mod.UI {
                 items.Add(button);
             }
 
+            // compute a delay so that options don't take more than a second to show up if many mods are installed.
+            float delayBetweenOptions = 0.03f;
+            if (items.Count > 0)
+                delayBetweenOptions = Math.Min(0.03f, 1f / items.Count);
+
             // Do this afterwards as the menu has now properly updated its size.
             for (int i = 0; i < items.Count; i++)
-                Add(new Coroutine(FadeIn(i, items[i])));
+                Add(new Coroutine(FadeIn(i, delayBetweenOptions, items[i])));
 
             if (menu.Height > menu.ScrollableMinSize) {
                 menu.Position.Y = menu.ScrollTargetY;
             }
         }
 
-        private IEnumerator FadeIn(int i, TextMenuExt.IItemExt item) {
-            yield return 0.03f * i;
+        private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
+            yield return delayBetweenOptions * i;
             float ease = 0f;
 
             Vector2 offset = item.Offset;
