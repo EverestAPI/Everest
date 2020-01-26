@@ -51,7 +51,6 @@ namespace Celeste.Mod {
         };
 
         private static bool ReloadingLevel;
-        private static bool ReloadingLevelPaused;
 
         private Texture2D snap;
         private Texture2D snapDesat;
@@ -155,7 +154,7 @@ namespace Celeste.Mod {
 
                         ReturnToScene = loader;
                         ReloadingLevel = false;
-                        ReloadingLevelPaused = level.Paused;
+                        patch_Level.ShouldAutoPause = level.Paused;
 
                         while (!loader.Loaded)
                             Thread.Yield();
@@ -177,7 +176,7 @@ namespace Celeste.Mod {
                         LevelEnterExt.ErrorMessage = message;
                         ReturnToScene = patch_LevelEnter.ForceCreate(new Session(level.Session?.Area ?? new AreaKey(1).SetSID("")), false);
                         ReloadingLevel = false;
-                        ReloadingLevelPaused = false;
+                        patch_Level.ShouldAutoPause = false;
                     }
                 });
             }
@@ -283,12 +282,8 @@ namespace Celeste.Mod {
                         _ReturnToScene?.Begin();
                     }
 
-                    if (ReloadingLevelPaused && ReturnToScene is LevelLoader levelLoader)
-                        levelLoader.Level.Pause();
-
                     ReturnToGameLoop = null;
                     ReturnToScene = null;
-                    ReloadingLevelPaused = false;
                 }
                 return;
             }

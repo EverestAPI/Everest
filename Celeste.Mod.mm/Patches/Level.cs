@@ -30,6 +30,7 @@ namespace Celeste {
         public SubHudRenderer SubHudRenderer;
         public static Player NextLoadedPlayer;
         public static int SkipScreenWipes;
+        public static bool ShouldAutoPause = false;
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
@@ -166,6 +167,11 @@ namespace Celeste {
 
             try {
                 orig_LoadLevel(playerIntro, isFromLoader);
+
+                if (ShouldAutoPause) {
+                    ShouldAutoPause = false;
+                    Pause();
+                }
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading level {Session.Area}");
                 e.LogDetailed();
