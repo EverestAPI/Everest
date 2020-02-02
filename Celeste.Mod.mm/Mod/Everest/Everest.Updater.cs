@@ -353,12 +353,16 @@ namespace Celeste.Mod {
 
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
-                progress.LogLine("Restarting");
+                String action = "Restarting";
+                if (Environment.OSVersion.Platform == PlatformID.Unix) {
+                    action = "Updating";
+                }
+                progress.LogLine(action);
                 for (int i = 3; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = $"{action} in {i}";
                     Thread.Sleep(1000);
                 }
-                progress.Lines[progress.Lines.Count - 1] = $"Restarting";
+                progress.Lines[progress.Lines.Count - 1] = action;
 
                 // Start MiniInstaller in a separate process.
                 try {
@@ -368,13 +372,24 @@ namespace Celeste.Mod {
                     if (Type.GetType("Mono.Runtime") != null) {
                         installer.StartInfo.FileName = "mono";
                         installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                        if (File.Exists("/bin/sh")) {
-                            installer.StartInfo.FileName = "/bin/sh";
-                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; mono MiniInstaller.exe\"";
+                        if (File.Exists("/bin/bash")) {
+                            installer.StartInfo.FileName = "/bin/bash";
+                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; /usr/bin/mono MiniInstaller.exe &> log.txt\"";
                         }
                     }
                     installer.StartInfo.WorkingDirectory = extractedPath;
-                    installer.Start();
+                    if (Environment.OSVersion.Platform == PlatformID.Unix) {
+                        installer.StartInfo.UseShellExecute = false;
+                        installer.StartInfo.RedirectStandardOutput = true;
+                        installer.OutputDataReceived += (sender, args) => progress.LogLine(args.Data);
+                        installer.Start();
+                        progress.LogLine("Patching the game in-place...");
+                        installer.BeginOutputReadLine();
+                        installer.WaitForExit();
+                        progress.LogLine("Finished update, restarting...");
+                    } else {
+                        installer.Start();
+                    }
                 } catch (Exception e) {
                     progress.LogLine("Starting installer failed!");
                     e.LogDetailed();
