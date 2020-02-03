@@ -31,6 +31,7 @@
 	
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
+	MENU_MODOPTIONS_UPDATE_AVAILABLE=			An Everest update is available
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST

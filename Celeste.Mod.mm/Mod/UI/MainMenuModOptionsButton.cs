@@ -23,6 +23,8 @@ namespace Celeste.Mod.UI {
                 subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD"), delayedModCount);
             } else if (delayedModCount == 1) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD");
+            } else if (Everest.Updater.HasUpdate) {
+                subText = Dialog.Clean("MENU_MODOPTIONS_UPDATE_AVAILABLE");
             } else {
                 subText = null;
             }
