@@ -372,21 +372,17 @@ namespace Celeste.Mod {
                     if (Type.GetType("Mono.Runtime") != null) {
                         installer.StartInfo.FileName = "mono";
                         installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                        if (File.Exists("/bin/bash")) {
-                            installer.StartInfo.FileName = "/bin/bash";
-                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; /usr/bin/mono MiniInstaller.exe &> log.txt\"";
+                        if (File.Exists("/bin/sh")) {
+                            installer.StartInfo.FileName = "/bin/sh";
+                            installer.StartInfo.Arguments = $"-c \"unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; mono MiniInstaller.exe\"";
                         }
                     }
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
-                        installer.StartInfo.RedirectStandardOutput = true;
-                        installer.OutputDataReceived += (sender, args) => progress.LogLine(args.Data);
                         installer.Start();
-                        progress.LogLine("Patching the game in-place...");
-                        installer.BeginOutputReadLine();
-                        installer.WaitForExit();
-                        progress.LogLine("Finished update, restarting...");
+                        progress.LogLine("Patching the game in-place");
+                        progress.LogLine("Restarting");
                     } else {
                         installer.Start();
                     }
