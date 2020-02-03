@@ -123,10 +123,10 @@
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ERROR: You must update Everest to play some of your mods.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Please install a newer version from the Version list menu.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
-	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ERROR: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
+	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			WARNING: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is available. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Restarting
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Restarting in {0}

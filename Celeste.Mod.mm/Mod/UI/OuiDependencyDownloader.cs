@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Celeste.Mod.UI {
     class OuiDependencyDownloader : OuiLoggedProgress {
@@ -68,7 +69,10 @@ namespace Celeste.Mod.UI {
                 Dictionary<string, string> modsDatabaseVersions = new Dictionary<string, string>();
 
                 foreach (EverestModuleMetadata dependency in MissingDependencies) {
-                    if (dependency.Name == "Everest") {
+                    if (Everest.Loader.Delayed.Any(delayedMod => dependency.Name == delayedMod.Item1.Name)) {
+                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is installed but failed to load, skipping");
+
+                    } else if (dependency.Name == "Everest") {
                         Logger.Log("OuiDependencyDownloader", $"Everest should be updated");
                         shouldUpdateEverest = true;
                         shouldAutoRestart = false;
