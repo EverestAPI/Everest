@@ -40,7 +40,7 @@
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Update Everest to ((version))
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Install missing dependencies
-	MODOPTIONS_COREMODULE_VERSIONLIST= 						Version list
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						Change Everest Version
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug mode
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Launch w/ FMOD Live Update
@@ -88,7 +88,7 @@
 
 # Updater
 	UPDATER_TITLE= 					UPDATER
-	UPDATER_VERSIONS_TITLE= 		VERSION LIST
+	UPDATER_VERSIONS_TITLE= 		CHANGE EVEREST VERSION
 	UPDATER_VERSIONS_CURRENT= 		Installed: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Refreshing...
 	
@@ -123,7 +123,7 @@
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Please install a newer version from the Version list menu.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			WARNING: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.

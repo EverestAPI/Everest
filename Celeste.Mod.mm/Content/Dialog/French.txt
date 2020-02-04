@@ -22,7 +22,7 @@
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Mettre à jour vers ((version))
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Installer les dépendances manquantes
-	MODOPTIONS_COREMODULE_VERSIONLIST= 						Liste des versions
+	MODOPTIONS_COREMODULE_VERSIONLIST= 						Changer de version d'Everest
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Mode debug
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Relancer avec FMOD Live Update
@@ -72,7 +72,7 @@
 
 # Updater
 	UPDATER_TITLE= 					MISE À JOUR
-	UPDATER_VERSIONS_TITLE= 		LISTE DES VERSIONS
+	UPDATER_VERSIONS_TITLE= 		CHANGER DE VERSION D'EVEREST
 	UPDATER_VERSIONS_CURRENT= 		Installée : ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Actualisation...
 	
@@ -107,7 +107,7 @@
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALLATION DES DÉPENDANCES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Téléchargement de la base de données de mods...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Une version d'Everest plus récente est nécessaire pour certains de vos mods. Mettez à jour Everest dans le menu Liste des versions.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Certains de vos mods demandent une version plus récente d'Everest. Installez-la depuis le menu "Changer de version d'Everest".
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERREUR: {0} possède plusieurs versions et ne peut pas être installé automatiquement. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ATTENTION: {0}.zip est dans votre blacklist. Retirez-le de la blacklist pour pouvoir l'utiliser comme une dépendance.
