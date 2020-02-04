@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned but its value is never used
@@ -136,14 +136,14 @@ namespace Celeste {
             }
 
             Vector2 playerPos = player.Position;
-            DateTime playerStuck = DateTime.UtcNow;
+            TimeSpan playerStuck = TimeSpan.FromTicks(Session.Time);
 
             while (orig.MoveNext()) {
                 if (playerPos != player.Position)
-                    playerStuck = DateTime.UtcNow;
+                    playerStuck = TimeSpan.FromTicks(Session.Time);
                 playerPos = player.Position;
 
-                if ((DateTime.UtcNow - playerStuck).TotalSeconds >= 5D) {
+                if ((TimeSpan.FromTicks(Session.Time) - playerStuck).TotalSeconds >= 5D) {
                     // Player stuck in GBJ - force-reload the level.
                     Session.Level = next.Name;
                     Session.RespawnPoint = Session.LevelData.Spawns.ClosestTo(player.Position);
