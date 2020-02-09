@@ -29,12 +29,14 @@ namespace Celeste.Mod {
     public sealed class AssetTypeXml { private AssetTypeXml() { } }
     public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
+    public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
     public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
     public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
+    public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -212,16 +214,14 @@ namespace Celeste.Mod {
         }
 
         protected override void Update(string path, ModAsset next) {
-            FileSystemModAsset fsma;
-            if ((fsma = next as FileSystemModAsset) != null) {
+            if (next is FileSystemModAsset fsma) {
                 FileSystemMap[fsma.Path] = fsma;
             }
             base.Update(path, next);
         }
 
         protected override void Update(ModAsset prev, ModAsset next) {
-            FileSystemModAsset fsma;
-            if ((fsma = prev as FileSystemModAsset) != null) {
+            if (prev is FileSystemModAsset fsma) {
                 FileSystemMap[fsma.Path] = null;
             }
 
@@ -261,9 +261,8 @@ namespace Celeste.Mod {
         }
 
         private void Update(string pathPrev, string pathNext) {
-            ModAsset prev = null;
-            FileSystemModAsset prevFS;
-            if (FileSystemMap.TryGetValue(pathPrev, out prevFS))
+            ModAsset prev;
+            if (FileSystemMap.TryGetValue(pathPrev, out FileSystemModAsset prevFS))
                 prev = prevFS;
             else
                 prev = Everest.Content.Get<AssetTypeDirectory>(pathPrev.Substring(Path.Length + 1));
@@ -400,6 +399,17 @@ namespace Celeste.Mod {
             /// </summary>
             public readonly static Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
+            /// <summary>
+            /// List of all types for which asset path conflicts don't matter.
+            /// </summary>
+            public readonly static HashSet<Type> NonConflictTypes = new HashSet<Type>() {
+                typeof(AssetTypeDirectory),
+                typeof(AssetTypeMetadataYaml),
+                typeof(AssetTypeDialog),
+                typeof(AssetTypeDialogExport),
+                typeof(AssetTypeAhorn),
+            };
+
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
             internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
             internal readonly static List<WeakReference> LoadedAssets = new List<WeakReference>();
@@ -447,8 +457,7 @@ namespace Celeste.Mod {
             /// <param name="includeDirs">Whether to include directories or not.</param>
             /// <returns>The resulting mod asset meta object, or null.</returns>
             public static ModAsset Get(string path, bool includeDirs = false) {
-                ModAsset metadata;
-                if (TryGet(path, out metadata, includeDirs))
+                if (TryGet(path, out ModAsset metadata, includeDirs))
                     return metadata;
                 return null;
             }
@@ -496,8 +505,7 @@ namespace Celeste.Mod {
             /// <param name="includeDirs">Whether to include directories or not.</param>
             /// <returns>The resulting mod asset meta object, or null.</returns>
             public static ModAsset Get<T>(string path, bool includeDirs = false) {
-                ModAsset metadata;
-                if (TryGet<T>(path, out metadata, includeDirs))
+                if (TryGet<T>(path, out ModAsset metadata, includeDirs))
                     return metadata;
                 return null;
             }
@@ -521,8 +529,7 @@ namespace Celeste.Mod {
                     return;
 
                 // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
-                ModAsset metadataPrev;
-                if (!Map.TryGetValue(path, out metadataPrev))
+                if (!Map.TryGetValue(path, out ModAsset metadataPrev))
                     metadataPrev = null;
 
                 if (metadata == null && metadataPrev != null && metadataPrev.Type == typeof(AssetTypeDirectory))
@@ -535,6 +542,11 @@ namespace Celeste.Mod {
                             Map[$"{prefix}:/{path}"] = null;
 
                     } else {
+                        if (Map.TryGetValue(path, out ModAsset existing) && existing != null &&
+                            existing.Source != metadata.Source && !NonConflictTypes.Contains(existing.Type)) {
+                            Logger.Log(LogLevel.Warn, "content", $"CONFLICT for asset path {path} ({existing?.Source?.Name ?? "???"} vs {metadata?.Source?.Name ?? "???"})");
+                        }
+
                         Map[path] = metadata;
                         if (prefix != null)
                             Map[$"{prefix}:/{path}"] = metadata;
@@ -545,8 +557,7 @@ namespace Celeste.Mod {
                 if (path != "") {
                     // Add directories automatically.
                     string pathDir = Path.GetDirectoryName(path).Replace('\\', '/');
-                    ModAsset metadataDir;
-                    if (!Map.TryGetValue(pathDir, out metadataDir)) {
+                    if (!Map.TryGetValue(pathDir, out ModAsset metadataDir)) {
                         metadataDir = new ModAssetBranch {
                             PathVirtual = pathDir,
                             Type = typeof(AssetTypeDirectory)
@@ -596,6 +607,16 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".obj")) {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
+
+                } else if (
+                    file == "metadata.yaml" ||
+                    file == "multimetadata.yaml" ||
+                    file == "everest.yaml" ||
+                    file == "everest.yml"
+                ) {
+                    type = typeof(AssetTypeMetadataYaml);
+                    file = file.Substring(0, file.Length - (file.EndsWith(".yaml") ? 5 : 4));
+                    format = ".yml";
 
                 } else if (file.EndsWith(".yaml")) {
                     type = typeof(AssetTypeYaml);
@@ -648,9 +669,7 @@ namespace Celeste.Mod {
                     // Allow mods to parse custom types.
                     Delegate[] ds = OnGuessType.GetInvocationList();
                     for (int i = 0; i < ds.Length; i++) {
-                        Type typeMod;
-                        string formatMod;
-                        string fileMod = ((TypeGuesser) ds[i])(file, out typeMod, out formatMod);
+                        string fileMod = ((TypeGuesser) ds[i])(file, out Type typeMod, out string formatMod);
                         if (fileMod == null || typeMod == null || formatMod == null)
                             continue;
                         file = fileMod;
@@ -658,6 +677,11 @@ namespace Celeste.Mod {
                         format = formatMod;
                         break;
                     }
+
+                } else if (file.StartsWith("Ahorn/")) {
+                    // Special case: Fallback type for anything inside of the Ahorn folder.
+                    // Will be ignored during collision checks.
+                    type = typeof(AssetTypeAhorn);
                 }
 
                 return file;
@@ -869,37 +893,33 @@ namespace Celeste.Mod {
                         using (StreamWriter writer = new StreamWriter(stream))
                             YamlHelper.Serializer.Serialize(writer, asset, asset.GetType());
 
-                } else if (asset is Texture2D) {
-                    Texture2D tex = (Texture2D) asset;
+                } else if (asset is Texture2D tex) {
                     if (!File.Exists(pathDump + ".png"))
                         using (Stream stream = File.OpenWrite(pathDump + ".png"))
                             tex.SaveAsPng(stream, tex.Width, tex.Height);
 
-                } else if (asset is VirtualTexture) {
-                    VirtualTexture tex = (VirtualTexture) asset;
-                    Dump(assetName, tex.Texture);
+                } else if (asset is VirtualTexture vtex) {
+                    Dump(assetName, vtex.Texture);
 
-                } else if (asset is MTexture) {
-                    MTexture tex = (MTexture) asset;
+                } else if (asset is MTexture mtex) {
                     // Always copy even if !.IsSubtexture() as we need to Postdivide()
-                    using (Texture2D region = tex.GetPaddedSubtextureCopy().Postdivide())
+                    using (Texture2D region = mtex.GetPaddedSubtextureCopy().Postdivide())
                         Dump(assetName, region);
 
-                    /*
-                    if (tex.DrawOffset.X != 0 || tex.DrawOffset.Y != 0 ||
-                        tex.Width != tex.ClipRect.Width || tex.Height != tex.ClipRect.Height
+                    /*/
+                    if (mtex.DrawOffset.X != 0 || mtex.DrawOffset.Y != 0 ||
+                        mtex.Width != mtex.ClipRect.Width || mtex.Height != mtex.ClipRect.Height
                     ) {
                         Dump(assetName, new MTextureMeta {
-                            X = (int) Math.Round(tex.DrawOffset.X),
-                            Y = (int) Math.Round(tex.DrawOffset.Y),
-                            Width = tex.Width,
-                            Height = tex.Height
+                            X = (int) Math.Round(mtex.DrawOffset.X),
+                            Y = (int) Math.Round(mtex.DrawOffset.Y),
+                            Width = mtex.Width,
+                            Height = mtex.Height
                         });
                     }
-                    */
+                    /**/
 
-                } else if (asset is Atlas) {
-                    Atlas atlas = (Atlas) asset;
+                } else if (asset is Atlas atlas) {
 
                     /*
                     for (int i = 0; i < atlas.Sources.Count; i++) {

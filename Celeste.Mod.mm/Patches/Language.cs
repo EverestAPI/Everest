@@ -20,6 +20,9 @@ namespace Celeste {
         internal static bool LoadOrigLanguage;
         internal static bool LoadModLanguage;
 
+        internal HashSet<string> AllowConflictDuringMerge;
+        internal Dictionary<string, int> SetCount;
+
         [MonoModIgnore]
         [PatchLoadLanguage]
         public static extern new Language FromTxt(string path);
@@ -95,6 +98,29 @@ namespace Celeste {
 
         private static Language _NewLanguage() {
             return LoadingLanguage ?? (LoadingLanguage = new Language());
+        }
+
+        private static void _SetItem(Dictionary<string, string> dict, string key, string value, Language _lang) {
+            patch_Language lang = (patch_Language) _lang;
+
+            if (key != "EVEREST_SPLIT_BETWEEN_FILES") {
+                if (lang.Dialog != dict || lang.SetCount == null) {
+                    // Skip conflict checking when the dictionary is from an unknown source.
+
+                } else if (dict.ContainsKey(key)) {
+                    // Each key is set at least twice: During actual read and during variable filling.
+                    // If it's set more than twice (no matter if during read or fillup), there's a conflict.
+                    if (!lang.SetCount.TryGetValue(key, out int count))
+                        count = 0;
+                    count++;
+                    lang.SetCount[key] = count;
+                    if (count >= 2)
+                        Logger.Log(LogLevel.Warn, "Language", $"Conflict for dialog key {lang.Id}/{key} (read)");
+                }
+            }
+
+
+            dict[key] = value;
         }
 
     }

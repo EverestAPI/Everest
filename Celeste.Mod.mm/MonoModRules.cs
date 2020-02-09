@@ -1221,6 +1221,10 @@ namespace MonoMod {
             if (m_NewLanguage == null)
                 return;
 
+            MethodDefinition m_SetItem = method.DeclaringType.FindMethod("System.Void _SetItem(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String,System.String,Celeste.Language)");
+            if (m_SetItem == null)
+                return;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -1234,6 +1238,15 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.Language::.ctor()") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_NewLanguage;
+                }
+
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Void System.Collections.Generic.Dictionary`2<System.String,System.String>::set_Item(System.Collections.Generic.Dictionary`2<System.String,System.String>/!0,System.Collections.Generic.Dictionary`2<System.String,System.String>/!1)") {
+                    // Push the language object. Should always be stored in the first local var.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldloc_0));
+                    instri++;
+                    // Replace the method call.
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_SetItem;
                 }
             }
 

@@ -26,6 +26,9 @@ namespace Celeste {
         public static extern List<Player.ChaserState> Import(byte[] buffer);
 
         public static void Load() {
+            // Vanilla Celeste uses .Add, which throws on conflicts.
+            Tutorials?.Clear();
+
             // load vanilla tutorials
             orig_Load();
 
@@ -51,7 +54,7 @@ namespace Celeste {
                     Logger.Log("PlaybackData", $"Loading tutorial: {tutorialPath}");
                     byte[] buffer = child.Data;
                     List<Player.ChaserState> tutorial = Import(buffer);
-                    Tutorials.Add(tutorialPath, tutorial);
+                    Tutorials[tutorialPath] = tutorial;
                 }
             }
         }

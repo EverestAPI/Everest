@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -32,6 +34,27 @@ namespace Celeste.Mod {
             Console.Write(tag);
             Console.Write("] ");
             Console.WriteLine(str);
+        }
+
+        /// <summary>
+        /// Log a string to the console and to log.txt, including a call stack trace.
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void LogDetailed(string tag, string str) {
+            Log(LogLevel.Verbose, tag, str);
+            Console.WriteLine(new StackTrace(1, true).ToString());
+        }
+        /// <summary>
+        /// Log a string to the console and to log.txt, including a call stack trace.
+        /// </summary>
+        /// <param name="level">The log level.</param>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void LogDetailed(LogLevel level, string tag, string str) {
+            Log(level, tag, str);
+            Console.WriteLine(new StackTrace(1, true).ToString());
         }
 
         /// <summary>
