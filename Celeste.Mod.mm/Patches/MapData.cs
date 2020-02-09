@@ -17,6 +17,10 @@ using System.Xml;
 namespace Celeste {
     class patch_MapData : MapData {
 
+        public bool DetectedCassette;
+        public int DetectedStrawberriesIncludingUntracked;
+        public List<EntityData> DashlessGoldenberries = new List<EntityData>();
+
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
@@ -32,7 +36,9 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [PatchTrackableStrawberryCheck]
         private extern void orig_Load();
+
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
             // reset those fields to prevent them from stacking up when reloading the map.
@@ -40,9 +46,19 @@ namespace Celeste {
             DetectedHeartGem = false;
             DetectedRemixNotes = false;
             Goldenberries = new List<EntityData>();
+            DashlessGoldenberries = new List<EntityData>();
+            DetectedCassette = false;
+            DetectedStrawberriesIncludingUntracked = 0;
 
             try {
                 orig_Load();
+
+                foreach (LevelData level in Levels) {
+                    foreach (EntityData entity in level.Entities) {
+                        if (entity.Name == "memorialTextController") // aka "dashless golden"
+                            DashlessGoldenberries.Add(entity);
+                    }
+                }
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();
@@ -75,7 +91,7 @@ namespace Celeste {
                 return root;
 
             // make sure parse meta first, because checkpoint entity needs to read meta
-            if(root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta) 
+            if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta)
                 ProcessMeta(meta);
 
             new MapDataFixup(this).Process(root);
@@ -90,7 +106,7 @@ namespace Celeste {
             if (mode == AreaMode.Normal) {
                 new MapMeta(meta).ApplyTo(area);
                 Area = area.ToKey();
-                
+
                 // Backup A-Side's Metadata. Only back up useful data.
                 area.SetASideAreaDataBackup(new AreaData {
                     IntroType = area.IntroType,
@@ -169,5 +185,36 @@ namespace Celeste {
         public static MapMetaModeProperties GetMeta(this MapData self)
             => ((patch_MapData) self).Meta;
 
+        /// <summary>
+        /// Returns whether the map contains a cassette or not.
+        /// </summary>
+        public static bool GetDetectedCassette(this MapData self)
+            => ((patch_MapData) self).DetectedCassette;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when a cassette is detected in a map.
+        /// </summary>
+        internal static void SetDetectedCassette(this MapData self) {
+            ((patch_MapData) self).DetectedCassette = true;
+        }
+
+        /// <summary>
+        /// Returns the number of strawberries in the map, including untracked ones (goldens, moons).
+        /// </summary>
+        public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
+            => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when processing a map is over, to register the detected berry count.
+        /// </summary>
+        internal static void SetDetectedStrawberriesIncludingUntracked(this MapData self, int count) {
+            ((patch_MapData) self).DetectedStrawberriesIncludingUntracked = count;
+        }
+
+        /// <summary>
+        /// Returns the list of dashless goldens in the map.
+        /// </summary>
+        public static List<EntityData> GetDashlessGoldenberries(this MapData self)
+            => ((patch_MapData) self).DashlessGoldenberries;
     }
 }

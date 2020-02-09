@@ -90,17 +90,22 @@ namespace Celeste {
                 .Select(mod => mod.Map.TryGetValue(pathExp, out ModAsset asset) ? asset : null)
                 .Where(asset => asset != null && asset.Type == typeof(AssetTypeDialogExport))
             ) {
-                lang = MergeLanguages(lang, patch_Language.FromModExport(asset));
+                lang = MergeLanguages(lang, (patch_Language) patch_Language.FromModExport(asset));
             }
 
-            Language filler = patch_Language.LoadingLanguage = new Language();
+            patch_Language filler = (patch_Language) (patch_Language.LoadingLanguage = new Language());
+            filler.AllowConflictDuringMerge = new HashSet<string>();
+            filler.SetCount = new Dictionary<string, int>();
             if (lang != null) {
-                foreach (KeyValuePair<string, string> kvp in lang.Dialog)
+                foreach (KeyValuePair<string, string> kvp in lang.Dialog) {
                     filler.Dialog[kvp.Key] = kvp.Value;
+                    filler.AllowConflictDuringMerge.Add(kvp.Key);
+                    filler.SetCount[kvp.Key] = -1;
+                }
             }
             patch_Language.LoadOrigLanguage = false;
             patch_Language.LoadModLanguage = true;
-            lang = MergeLanguages(lang, Language.FromTxt(filename));
+            lang = MergeLanguages(lang, (patch_Language) Language.FromTxt(filename));
             patch_Language.LoadingLanguage = null;
 
             if (lang != null) {
@@ -114,7 +119,7 @@ namespace Celeste {
             return lang;
         }
 
-        private static Language MergeLanguages(Language orig, Language mod) {
+        private static Language MergeLanguages(Language orig, patch_Language mod) {
             if (orig == null)
                 return mod;
 
@@ -132,11 +137,15 @@ namespace Celeste {
                 orig.PeriodCharacters = mod.PeriodCharacters;
             }
 
-            foreach (KeyValuePair<string, string> kvp in mod.Dialog)
+            foreach (KeyValuePair<string, string> kvp in mod.Dialog) {
+                if (orig.Dialog.ContainsKey(kvp.Key) && !(mod.AllowConflictDuringMerge?.Contains(kvp.Key) ?? false))
+                    Logger.Log(LogLevel.Warn, "Dialog", $"Conflict for dialog key {orig.Id}/{kvp.Key} (raw)");
                 orig.Dialog[kvp.Key] = kvp.Value;
+            }
 
-            foreach (KeyValuePair<string, string> kvp in mod.Cleaned)
+            foreach (KeyValuePair<string, string> kvp in mod.Cleaned) {
                 orig.Cleaned[kvp.Key] = kvp.Value;
+            }
 
             return orig;
         }

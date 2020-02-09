@@ -26,7 +26,7 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            
+
             Level level = scene as Level;
             if (level == null || level.Session.Area.GetLevelSet() == "Celeste")
                 return;

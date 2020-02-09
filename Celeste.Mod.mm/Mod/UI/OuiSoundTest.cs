@@ -122,7 +122,7 @@ namespace Celeste.Mod.UI {
             } else if (Input.MenuDown.Pressed) {
                 UpdateDigits(selectedDigit, -1);
 
-            }  else if (Input.MenuUp.Pressed) {
+            } else if (Input.MenuUp.Pressed) {
                 UpdateDigits(selectedDigit, +1);
 
             } else if (Input.MenuConfirm.Pressed) {

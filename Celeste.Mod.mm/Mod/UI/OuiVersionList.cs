@@ -24,7 +24,7 @@ namespace Celeste.Mod.UI {
 
         public OuiVersionList() {
         }
-        
+
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
             items.Clear();

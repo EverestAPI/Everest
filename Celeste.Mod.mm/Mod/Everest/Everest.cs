@@ -484,15 +484,12 @@ namespace Celeste.Mod {
                     }
                 }
                 // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
-                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>())
-                {
+                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>()) {
                     List<string> names = new List<string>();
                     foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
-                        foreach (string idFull in nameAttrib.IDs)
-                        {
+                        foreach (string idFull in nameAttrib.IDs) {
                             string[] split = idFull.Split('=');
-                            if(split.Length == 0)
-                            {
+                            if (split.Length == 0) {
                                 Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
@@ -501,12 +498,12 @@ namespace Celeste.Mod {
                     if (names.Count == 0)
                         goto NoDefinedBerryNames; // no customnames? skip out on registering berry
 
-                    foreach (string name in names)
-                    {
+                    foreach (string name in names) {
                         StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
                     }
                 }
-            NoDefinedBerryNames:;
+                NoDefinedBerryNames:
+                ;
             }
 
             module.LoadSettings();
@@ -611,11 +608,8 @@ namespace Celeste.Mod {
                 Thread offspring = new Thread(() => {
                     Process game = new Process();
                     // If the game was installed via Steam, it should restart in a Steam context on its own.
-                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                        // The Linux and macOS versions come with a wrapping bash script.
-                        game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                    } else {
+                    if (!(Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX)) {
                         game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
                     }
                     game.StartInfo.WorkingDirectory = PathGame;
@@ -624,6 +618,15 @@ namespace Celeste.Mod {
                 offspring.Start();
                 patch_Audio.System?.release();
             };
+
+            // Unix-likes can just fork-and-die to start the new game
+            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                Logger.Log(LogLevel.Info, "info", Path.Combine(PathGame, "Celeste"));
+                Process fork = new Process();
+                fork.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
+                fork.Start();
+            }
 
             Engine.Instance.Exit();
 

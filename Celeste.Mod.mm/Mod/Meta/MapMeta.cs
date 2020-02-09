@@ -245,16 +245,16 @@ namespace Celeste.Mod.Meta {
 
             if (Dreaming != null)
                 area.Dreaming = Dreaming.Value;
-            
+
             if (!string.IsNullOrEmpty(ColorGrade))
                 area.ColorGrade = ColorGrade;
 
             if (DarknessAlpha != null)
                 area.DarknessAlpha = DarknessAlpha.Value;
-            
+
             if (BloomBase != null)
                 area.BloomBase = BloomBase.Value;
-            
+
             if (BloomStrength != null)
                 area.BloomStrength = BloomStrength.Value;
 

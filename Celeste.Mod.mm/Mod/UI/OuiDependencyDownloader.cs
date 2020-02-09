@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
 
 namespace Celeste.Mod.UI {
     class OuiDependencyDownloader : OuiLoggedProgress {
@@ -27,7 +28,8 @@ namespace Celeste.Mod.UI {
             task.Start();
 
             IEnumerator enterBase = base.Enter(from);
-            while (enterBase.MoveNext()) yield return enterBase.Current;
+            while (enterBase.MoveNext())
+                yield return enterBase.Current;
             yield break;
         }
 
@@ -67,7 +69,10 @@ namespace Celeste.Mod.UI {
                 Dictionary<string, string> modsDatabaseVersions = new Dictionary<string, string>();
 
                 foreach (EverestModuleMetadata dependency in MissingDependencies) {
-                    if (dependency.Name == "Everest") {
+                    if (Everest.Loader.Delayed.Any(delayedMod => dependency.Name == delayedMod.Item1.Name)) {
+                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is installed but failed to load, skipping");
+
+                    } else if (dependency.Name == "Everest") {
                         Logger.Log("OuiDependencyDownloader", $"Everest should be updated");
                         shouldUpdateEverest = true;
                         shouldAutoRestart = false;
@@ -142,7 +147,7 @@ namespace Celeste.Mod.UI {
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_BLACKLISTED"), mod));
 
                 foreach (string mod in modsWithIncompatibleVersionInDatabase.Keys)
-                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod, 
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod,
                         string.Join(", ", modsWithIncompatibleVersionInDatabase[mod]), modsDatabaseVersions[mod]));
             }
 
@@ -189,11 +194,11 @@ namespace Celeste.Mod.UI {
 
                 Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, (position, length, speed) => {
                     if (length > 0) {
-                        Lines[Lines.Count - 1] = $"{((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s";
+                        Lines[Lines.Count - 1] = $"{((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                         Progress = position;
-                        ProgressMax = (int)length;
+                        ProgressMax = (int) length;
                     } else {
-                        Lines[Lines.Count - 1] = $"{((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
+                        Lines[Lines.Count - 1] = $"{((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         ProgressMax = 0;
                     }
                 });

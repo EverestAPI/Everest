@@ -17,6 +17,8 @@ namespace Celeste.Mod.Entities {
         private Vector2 offsetTo;
         private PositionModes positionMode;
         private bool onlyOnce;
+        private bool xOnly;
+        private bool yOnly;
 
         public SmoothCameraOffsetTrigger(EntityData data, Vector2 offset) : base(data, offset) {
             // parse the trigger attributes. Multiplying X dimensions by 48 and Y ones by 32 replicates the vanilla offset trigger behavior.
@@ -24,11 +26,19 @@ namespace Celeste.Mod.Entities {
             offsetTo = new Vector2(data.Float("offsetXTo") * 48f, data.Float("offsetYTo") * 32f);
             positionMode = data.Enum<PositionModes>("positionMode");
             onlyOnce = data.Bool("onlyOnce");
+            xOnly = data.Bool("xOnly");
+            yOnly = data.Bool("yOnly");
         }
 
         public override void OnStay(Player player) {
             base.OnStay(player);
-            SceneAs<Level>().CameraOffset = Vector2.Lerp(offsetFrom, offsetTo, GetPositionLerp(player, positionMode));
+
+            if (!yOnly) {
+                SceneAs<Level>().CameraOffset.X = MathHelper.Lerp(offsetFrom.X, offsetTo.X, GetPositionLerp(player, positionMode));
+            }
+            if (!xOnly) {
+                SceneAs<Level>().CameraOffset.Y = MathHelper.Lerp(offsetFrom.Y, offsetTo.Y, GetPositionLerp(player, positionMode));
+            }
         }
 
         public override void OnLeave(Player player) {

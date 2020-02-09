@@ -12,12 +12,14 @@ namespace Celeste.Mod.Core {
         public List<CheckpointData> CheckpointsAuto;
         public string[] LevelTags;
         public string LevelName;
+        public int TotalStrawberriesIncludingUntracked;
 
         public override void Reset() {
             Checkpoint = 0;
             Strawberry = 0;
             StrawberryInCheckpoint = 0;
             CheckpointsAuto = Mode.Checkpoints == null ? new List<CheckpointData>() : null;
+            TotalStrawberriesIncludingUntracked = 0;
         }
 
         public override Dictionary<string, Action<BinaryPacker.Element>> Init()
@@ -176,29 +178,38 @@ namespace Celeste.Mod.Core {
                 { "entity:cassette", entity => {
                     if (AreaData.CassetteCheckpointIndex < 0)
                         AreaData.CassetteCheckpointIndex = Checkpoint;
+
+                    Context.MapData.SetDetectedCassette();
                 } },
 
                 { "entity:strawberry", entity => {
-                    if (entity.AttrInt("checkpointID", -1) == -1)
-                        entity.SetAttr("checkpointID", Checkpoint);
-                    if (entity.AttrInt("order", -1) == -1)
-                        entity.SetAttr("order", StrawberryInCheckpoint);
-                    Strawberry++;
-                    StrawberryInCheckpoint++;
+                    if (!entity.AttrBool("moon", false))
+                    {
+                        if (entity.AttrInt("checkpointID", -1) == -1)
+                            entity.SetAttr("checkpointID", Checkpoint);
+                        if (entity.AttrInt("order", -1) == -1)
+                            entity.SetAttr("order", StrawberryInCheckpoint);
+                        Strawberry++;
+                        StrawberryInCheckpoint++;
+                    }
                 } }
             };
 
-        public override void Run(string stepName, BinaryPacker.Element el)
-        {
-            List<string> berries = StrawberryRegistry.GetBerryNames().ToList();
-            if (stepName.Length > 7 && berries.Contains(stepName.Remove(0, 7)))
+        public override void Run(string stepName, BinaryPacker.Element el) {
+            if (StrawberryRegistry.TrackableContains(el))
                 stepName = "entity:strawberry";
+
+            if (StrawberryRegistry.GetRegisteredBerries().Any(berry => berry.entityName == el.Name))
+                TotalStrawberriesIncludingUntracked++;
+
             base.Run(stepName, el);
         }
 
         public override void End() {
             if (Mode.Checkpoints == null)
                 Mode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();
+
+            Context.MapData.SetDetectedStrawberriesIncludingUntracked(TotalStrawberriesIncludingUntracked);
         }
     }
 }

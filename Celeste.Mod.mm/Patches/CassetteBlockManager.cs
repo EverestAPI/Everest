@@ -79,7 +79,7 @@ namespace Celeste {
                 currentIndex++;
                 currentIndex %= maxBeat;
                 SetActiveIndex(currentIndex);
-                if(!isLevelMusic)
+                if (!isLevelMusic)
                     Audio.Play("event:/game/general/cassette_block_switch_2");
                 Input.Rumble(RumbleStrength.Medium, RumbleLength.Short);
 
@@ -96,7 +96,7 @@ namespace Celeste {
                 leadBeats--;
                 if (leadBeats == 0) {
                     beatIndex = 0;
-                    if(!isLevelMusic)
+                    if (!isLevelMusic)
                         sfx.start();
                 }
             }

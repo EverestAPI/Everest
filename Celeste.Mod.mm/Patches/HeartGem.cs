@@ -27,32 +27,26 @@ namespace Celeste {
 
         private extern IEnumerator orig_CollectRoutine(Player player);
         [PatchHeartGemCollectRoutine]
-        private IEnumerator CollectRoutine(Player player)
-        {
+        private IEnumerator CollectRoutine(Player player) {
             Level level = Scene as Level;
 
             bool heartIsEnd = false;
             MapMetaModeProperties mapMetaModeProperties = (level != null) ? level.Session.MapData.GetMeta() : null;
-            if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null)
-            {
+            if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null) {
                 heartIsEnd = mapMetaModeProperties.HeartIsEnd.Value;
             }
 
-            if (heartIsEnd)
-            {
-                List<Entity> strawbs = new List<Entity>();
+            if (heartIsEnd) {
+                List<IStrawberry> strawbs = new List<IStrawberry>();
                 ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
-                foreach (Follower follower in player.Leader.Followers)
-                {
-                    
-                    if (regBerries.Contains(follower.Entity.GetType()))
-                    {
-                        strawbs.Add(follower.Entity);
+                foreach (Follower follower in player.Leader.Followers) {
+
+                    if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry) {
+                        strawbs.Add(follower.Entity as IStrawberry);
                     }
                 }
-                foreach (Entity strawb in strawbs)
-                {
-                    strawb.GetType().InvokeMember("OnCollect", BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, Type.DefaultBinder, strawb, null);
+                foreach (IStrawberry strawb in strawbs) {
+                    strawb.OnCollect();
                 }
             }
 

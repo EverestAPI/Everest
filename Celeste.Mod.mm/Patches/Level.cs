@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned but its value is never used
@@ -30,6 +30,7 @@ namespace Celeste {
         public SubHudRenderer SubHudRenderer;
         public static Player NextLoadedPlayer;
         public static int SkipScreenWipes;
+        public static bool ShouldAutoPause = false;
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
@@ -55,27 +56,23 @@ namespace Celeste {
         [MonoModReplace]
         public new void RegisterAreaComplete() {
             bool completed = Completed;
-            if (!completed)
-            {
+            if (!completed) {
                 Player player = base.Tracker.GetEntity<Player>();
-                if (player != null)
-                {
-                    List<Entity> strawbs = new List<Entity>();
+                if (player != null) {
+                    List<IStrawberry> strawbs = new List<IStrawberry>();
                     ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
-                    foreach (Follower follower in player.Leader.Followers)
-                    {
+                    foreach (Follower follower in player.Leader.Followers) {
 
-                        if (regBerries.Contains(follower.Entity.GetType()))
-                        {
-                            strawbs.Add(follower.Entity);
+                        if (regBerries.Contains(follower.Entity.GetType()) && follower.Entity is IStrawberry) {
+                            strawbs.Add(follower.Entity as IStrawberry);
                         }
                     }
-                    foreach (Entity strawb in strawbs)
-                    {
-                        strawb.GetType().InvokeMember("OnCollect", BindingFlags.Public | BindingFlags.Instance | BindingFlags.InvokeMethod, Type.DefaultBinder, strawb, null);
+                    foreach (IStrawberry strawb in strawbs) {
+                        strawb.OnCollect();
                     }
                 }
                 Completed = true;
+                SaveData.Instance.RegisterCompletion(this.Session);
                 Everest.Events.Level.Complete(this);
             }
         }
@@ -139,14 +136,14 @@ namespace Celeste {
             }
 
             Vector2 playerPos = player.Position;
-            DateTime playerStuck = DateTime.UtcNow;
+            TimeSpan playerStuck = TimeSpan.FromTicks(Session.Time);
 
             while (orig.MoveNext()) {
                 if (playerPos != player.Position)
-                    playerStuck = DateTime.UtcNow;
+                    playerStuck = TimeSpan.FromTicks(Session.Time);
                 playerPos = player.Position;
 
-                if ((DateTime.UtcNow - playerStuck).TotalSeconds >= 5D) {
+                if ((TimeSpan.FromTicks(Session.Time) - playerStuck).TotalSeconds >= 5D) {
                     // Player stuck in GBJ - force-reload the level.
                     Session.Level = next.Name;
                     Session.RespawnPoint = Session.LevelData.Spawns.ClosestTo(player.Position);
@@ -170,6 +167,11 @@ namespace Celeste {
 
             try {
                 orig_LoadLevel(playerIntro, isFromLoader);
+
+                if (ShouldAutoPause) {
+                    ShouldAutoPause = false;
+                    Pause();
+                }
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading level {Session.Area}");
                 e.LogDetailed();

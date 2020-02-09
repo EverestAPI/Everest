@@ -118,11 +118,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\Core\CoreModuleSession.cs" />
+    <Compile Include="Mod\Entities\ActivateDreamBlocksTrigger.cs" />
     <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
     <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
+    <Compile Include="Mod\Entities\CSGEN_GenericStrawberrySeeds.cs" />
     <Compile Include="Mod\Entities\CustomNPC.cs" />
+    <Compile Include="Mod\Entities\GenericStrawberrySeed.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
     <Compile Include="Mod\Entities\CustomEntityAttribute.cs" />
     <Compile Include="Mod\Entities\RegisterStrawberryAttribute.cs" />
@@ -156,11 +159,15 @@
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\Helpers\EndUserException.cs" />
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
+    <Compile Include="Mod\Registry\IStrawberry.cs" />
+    <Compile Include="Mod\Registry\IStrawberrySeeded.cs" />
     <Compile Include="Mod\Registry\StrawberryRegistry.cs" />
     <Compile Include="Mod\UI\AutoModUpdater.cs" />
+    <Compile Include="Mod\UI\MainMenuModOptionsButton.cs" />
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
+    <Compile Include="Patches\LevelTemplate.cs" />
     <Compile Include="Patches\MountainModel.cs" />
     <Compile Include="Patches\MTN.cs" />
     <Compile Include="Patches\ObjModel.cs" />

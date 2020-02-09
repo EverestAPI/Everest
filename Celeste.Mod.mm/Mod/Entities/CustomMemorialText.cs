@@ -161,7 +161,7 @@ namespace Celeste.Mod.Entities {
                         ActiveFont.DrawOutline(c.ToString(), pos + new Vector2(x, sink + yOffs), new Vector2(0f, 1f), new Vector2(xScale, 1f), Color.Transparent, 2f, Color.Black * alphaEased * alphaEased * alphaEased);
                     else
                         ActiveFont.DrawOutline(c.ToString(), pos + new Vector2(x, sink + yOffs), new Vector2(0f, 1f), new Vector2(xScale, 1f), Color.White * alphaEased, 2f, Color.Transparent);
-                    
+
                     lineIndex++;
                 }
             }

@@ -11,8 +11,7 @@ namespace Celeste {
             AreaData areaData = AreaData.Get(area);
             if (area.Mode == AreaMode.Normal) {
                 areaData.RestoreASideAreaData();
-            }
-            else {
+            } else {
                 areaData.OverrideASideMeta(area.Mode);
             }
             orig_ctor(area, checkpoint, oldStats);
