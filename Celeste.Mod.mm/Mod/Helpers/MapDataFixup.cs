@@ -11,14 +11,20 @@ namespace Celeste.Mod {
         public readonly MapData MapData;
         public readonly AreaKey AreaKey;
         public readonly AreaData AreaData;
+        public readonly AreaData ParentAreaData;
         public readonly ModeProperties Mode;
+        public readonly ModeProperties ParentMode;
+        public readonly MapData ParentMapData;
         public BinaryPacker.Element Root;
 
         public MapDataFixup(MapData map) {
             MapData = map;
             AreaKey = map.Area;
             AreaData = AreaData.Get(AreaKey);
+            ParentAreaData = AreaDataExt.Get(AreaData.GetMeta()?.Parent) ?? AreaData;
             Mode = AreaData.Mode[(int) AreaKey.Mode];
+            ParentMode = ParentAreaData.Mode.ElementAtOrDefault((int) AreaKey.Mode) ?? Mode;
+            ParentMapData = ParentMode?.MapData ?? map;
 
             foreach (EverestModule module in Everest._Modules) {
                 module.PrepareMapDataProcessors(this);

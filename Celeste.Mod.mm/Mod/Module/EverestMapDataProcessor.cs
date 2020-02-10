@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Celeste.Mod {
     public abstract class EverestMapDataProcessor {
@@ -7,7 +8,11 @@ namespace Celeste.Mod {
         public MapDataFixup Context { get; private set; }
         public AreaKey AreaKey => Context.AreaKey;
         public AreaData AreaData => Context.AreaData;
+        public AreaData ParentAreaData => Context.ParentAreaData;
         public ModeProperties Mode => Context.Mode;
+        public ModeProperties ParentMode => Context.ParentMode;
+        public MapData MapData => Context.MapData;
+        public MapData ParentMapData => Context.ParentMapData;
         public Dictionary<string, Action<BinaryPacker.Element>> Steps { get; protected set; }
 
         public abstract void Reset();

@@ -7,7 +7,6 @@ namespace Celeste.Mod.Core {
     public class CoreMapDataProcessor : EverestMapDataProcessor {
 
         public int Checkpoint;
-        public int Strawberry;
         public int StrawberryInCheckpoint;
         public List<CheckpointData> CheckpointsAuto;
         public string[] LevelTags;
@@ -15,10 +14,9 @@ namespace Celeste.Mod.Core {
         public int TotalStrawberriesIncludingUntracked;
 
         public override void Reset() {
-            Checkpoint = 0;
-            Strawberry = 0;
+            Checkpoint = ParentMode?.Checkpoints?.Length ?? 0;
             StrawberryInCheckpoint = 0;
-            CheckpointsAuto = Mode.Checkpoints == null ? new List<CheckpointData>() : null;
+            CheckpointsAuto = new List<CheckpointData>();
             TotalStrawberriesIncludingUntracked = 0;
         }
 
@@ -150,6 +148,7 @@ namespace Celeste.Mod.Core {
                                     entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? AreaData.Dreaming : entity.AttrBool("dreaming"),
                                     null
                                 );
+                                c.SetArea(AreaKey);
                                 if (entity.Attr("coreMode") == "") {
                                     c.CoreMode = modeMeta.CoreMode ?? AreaData.CoreMode;
                                 } else {
@@ -178,8 +177,11 @@ namespace Celeste.Mod.Core {
                 { "entity:cassette", entity => {
                     if (AreaData.CassetteCheckpointIndex < 0)
                         AreaData.CassetteCheckpointIndex = Checkpoint;
+                    if (ParentAreaData.CassetteCheckpointIndex < 0)
+                        ParentAreaData.CassetteCheckpointIndex = Checkpoint;
 
-                    Context.MapData.SetDetectedCassette();
+                    MapData.SetDetectedCassette();
+                    ParentMapData.SetDetectedCassette();
                 } },
 
                 { "entity:strawberry", entity => {
@@ -189,7 +191,6 @@ namespace Celeste.Mod.Core {
                             entity.SetAttr("checkpointID", Checkpoint);
                         if (entity.AttrInt("order", -1) == -1)
                             entity.SetAttr("order", StrawberryInCheckpoint);
-                        Strawberry++;
                         StrawberryInCheckpoint++;
                     }
                 } }
@@ -209,7 +210,16 @@ namespace Celeste.Mod.Core {
             if (Mode.Checkpoints == null)
                 Mode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();
 
-            Context.MapData.SetDetectedStrawberriesIncludingUntracked(TotalStrawberriesIncludingUntracked);
+            if (Mode != ParentMode) {
+                if (ParentMode.Checkpoints == null)
+                    ParentMode.Checkpoints = CheckpointsAuto.Where(c => c != null).ToArray();
+                else
+                    ParentMode.Checkpoints = ParentMode.Checkpoints.Concat(CheckpointsAuto.Where(c => c != null)).ToArray();
+            }
+
+            MapData.SetDetectedStrawberriesIncludingUntracked(TotalStrawberriesIncludingUntracked);
+            if (MapData != ParentMapData)
+                ParentMapData.SetDetectedStrawberriesIncludingUntracked(ParentMapData.GetDetectedStrawberriesIncludingUntracked() + TotalStrawberriesIncludingUntracked);
         }
     }
 }

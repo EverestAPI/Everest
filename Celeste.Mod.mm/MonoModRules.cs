@@ -159,19 +159,25 @@ namespace MonoMod {
     /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
-    class PatchPlayerOrigUpdate : Attribute { }
+    class PatchPlayerOrigUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the SwapRoutine method in OuiChapterPanel instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchChapterPanelSwapRoutine")]
+    class PatchChapterPanelSwapRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Strawberry class to tack on the IStrawberry interface for the StrawberryRegistry
     /// </summary>
     [MonoModCustomAttribute("PatchStrawberryInterface")]
-    class PatchStrawberryInterface : Attribute { }
+    class PatchStrawberryInterfaceAttribute : Attribute { }
 
     /// <summary>
     /// Helper for patching methods force-implemented by an interface
     /// </summary>
     [MonoModCustomMethodAttribute("PatchInterface")]
-    class PatchInterface : Attribute { };
+    class PatchInterfaceAttribute : Attribute { };
 
     /// <summary>
     /// IL-patch the Render method for file select slots instead of reimplementing it,
@@ -1489,6 +1495,39 @@ namespace MonoMod {
                         instrs[instri + 7].OpCode = OpCodes.Ldc_I4_1;
 
                     }
+                }
+            }
+        }
+
+        public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_this = null;
+
+            MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
+            if (m_GetCheckpoints == null)
+                return;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<SwapRoutine>d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 1; instri < instrs.Count - 5; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.HashSet`1<System.String> Celeste.SaveData::GetCheckpoints(Celeste.AreaKey)") {
+                    // Replace the method call.
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GetCheckpoints;
+                    instri++;
                 }
             }
         }
