@@ -59,6 +59,42 @@ namespace Celeste {
                             DashlessGoldenberries.Add(entity);
                     }
                 }
+
+                AreaData area = AreaData.Get(Area);
+                AreaData parentArea = AreaDataExt.Get(area.GetMeta()?.Parent);
+                ModeProperties parentMode = parentArea?.Mode?.ElementAtOrDefault((int) Area.Mode);
+                if (parentMode != null) {
+                    MapData parentMapData = parentMode.MapData;
+
+                    parentMapData.Strawberries.AddRange(Strawberries);
+
+                    // Recount everything berry-related for the parent map data, just like in orig_Load.
+                    parentMode.TotalStrawberries = 0;
+                    parentMode.StartStrawberries = 0;
+                    parentMode.StrawberriesByCheckpoint = new EntityData[10, 25];
+
+                    for (int i = 0; parentMode.Checkpoints != null && i < parentMode.Checkpoints.Length; i++)
+                        if (parentMode.Checkpoints[i] != null)
+                            parentMode.Checkpoints[i].Strawberries = 0;
+
+                    foreach (EntityData entity in parentMapData.Strawberries) {
+                        if (!entity.Bool("moon")) {
+                            int checkpointID = entity.Int("checkpointIDParented", entity.Int("checkpointID"));
+                            int order = entity.Int("order");
+
+                            if (_GrowAndGet(ref parentMode.StrawberriesByCheckpoint, checkpointID, order) == null)
+                                parentMode.StrawberriesByCheckpoint[checkpointID, order] = entity;
+
+                            if (checkpointID == 0)
+                                parentMode.StartStrawberries++;
+                            else if (parentMode.Checkpoints != null)
+                                parentMode.Checkpoints[checkpointID - 1].Strawberries++;
+
+                            parentMode.TotalStrawberries++;
+                        }
+                    }
+                }
+
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();

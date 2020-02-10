@@ -14,7 +14,7 @@ namespace Celeste.Mod.Core {
         public int TotalStrawberriesIncludingUntracked;
 
         public override void Reset() {
-            Checkpoint = ParentMode?.Checkpoints?.Length ?? 0;
+            Checkpoint = 0;
             StrawberryInCheckpoint = 0;
             CheckpointsAuto = new List<CheckpointData>();
             TotalStrawberriesIncludingUntracked = 0;
@@ -178,7 +178,7 @@ namespace Celeste.Mod.Core {
                     if (AreaData.CassetteCheckpointIndex < 0)
                         AreaData.CassetteCheckpointIndex = Checkpoint;
                     if (ParentAreaData.CassetteCheckpointIndex < 0)
-                        ParentAreaData.CassetteCheckpointIndex = Checkpoint;
+                        ParentAreaData.CassetteCheckpointIndex = Checkpoint + (ParentMode.Checkpoints?.Length ?? 0);
 
                     MapData.SetDetectedCassette();
                     ParentMapData.SetDetectedCassette();
@@ -191,6 +191,7 @@ namespace Celeste.Mod.Core {
                             entity.SetAttr("checkpointID", Checkpoint);
                         if (entity.AttrInt("order", -1) == -1)
                             entity.SetAttr("order", StrawberryInCheckpoint);
+                        entity.SetAttr("checkpointIDParented", Checkpoint + (ParentMode.Checkpoints?.Length ?? 0));
                         StrawberryInCheckpoint++;
                     }
                 } }
