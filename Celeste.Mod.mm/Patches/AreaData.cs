@@ -175,7 +175,7 @@ namespace Celeste {
         }
 
         public static AreaData Get(string sid) {
-            return Areas.Find(area => area.GetSID() == sid);
+            return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.GetSID() == sid);
         }
 
         public static extern void orig_Load();
