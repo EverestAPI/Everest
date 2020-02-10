@@ -94,13 +94,12 @@ namespace Celeste {
             }
 
             patch_Language filler = (patch_Language) (patch_Language.LoadingLanguage = new Language());
-            filler.AllowConflictDuringMerge = new HashSet<string>();
-            filler.SetCount = new Dictionary<string, int>();
+            filler.LineSources = new Dictionary<string, string>();
+            filler.ReadCount = new Dictionary<string, int>();
             if (lang != null) {
                 foreach (KeyValuePair<string, string> kvp in lang.Dialog) {
                     filler.Dialog[kvp.Key] = kvp.Value;
-                    filler.AllowConflictDuringMerge.Add(kvp.Key);
-                    filler.SetCount[kvp.Key] = -1;
+                    // filler.ReadCount[kvp.Key] = -1; // Ignores vanilla conflicts.
                 }
             }
             patch_Language.LoadOrigLanguage = false;
@@ -138,8 +137,6 @@ namespace Celeste {
             }
 
             foreach (KeyValuePair<string, string> kvp in mod.Dialog) {
-                if (orig.Dialog.ContainsKey(kvp.Key) && !(mod.AllowConflictDuringMerge?.Contains(kvp.Key) ?? false))
-                    Logger.Log(LogLevel.Warn, "Dialog", $"Conflict for dialog key {orig.Id}/{kvp.Key} (raw)");
                 orig.Dialog[kvp.Key] = kvp.Value;
             }
 

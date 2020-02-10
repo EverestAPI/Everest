@@ -20,8 +20,9 @@ namespace Celeste {
         internal static bool LoadOrigLanguage;
         internal static bool LoadModLanguage;
 
-        internal HashSet<string> AllowConflictDuringMerge;
-        internal Dictionary<string, int> SetCount;
+        internal Dictionary<string, string> LineSources;
+        internal Dictionary<string, int> ReadCount;
+        internal string CurrentlyReadingFrom;
 
         [MonoModIgnore]
         [PatchLoadLanguage]
@@ -61,10 +62,14 @@ namespace Celeste {
         }
 
         private static IEnumerable<string> _GetLanguageText(string path, Encoding encoding) {
+            patch_Language lang = (patch_Language) _NewLanguage();
+
             bool ready = LoadOrigLanguage && File.Exists(path);
-            if (ready)
+            if (ready) {
+                lang.CurrentlyReadingFrom = "Celeste";
                 foreach (string text in File.ReadLines(path, encoding))
                     yield return text;
+            }
 
             path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
             path = path.Replace('\\', '/');
@@ -85,13 +90,14 @@ namespace Celeste {
                 .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
                 .Where(asset => asset != null && asset.Type == typeof(AssetTypeDialog))
             ) {
-
+                lang.CurrentlyReadingFrom = asset.Source?.Name ?? "???";
                 using (StreamReader reader = new StreamReader(asset.Stream, encoding))
                     while (reader.Peek() != -1)
                         yield return reader.ReadLine().Trim('\r', '\n').Trim();
 
                 // Feed a new key to be sure that the last key in the file is cut off.
                 // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
+                lang.CurrentlyReadingFrom = null;
                 yield return "EVEREST_SPLIT_BETWEEN_FILES= New file";
             }
         }
@@ -103,20 +109,23 @@ namespace Celeste {
         private static void _SetItem(Dictionary<string, string> dict, string key, string value, Language _lang) {
             patch_Language lang = (patch_Language) _lang;
 
-            if (key != "EVEREST_SPLIT_BETWEEN_FILES") {
-                if (lang.Dialog != dict || lang.SetCount == null) {
-                    // Skip conflict checking when the dictionary is from an unknown source.
+            if (lang.Dialog != dict || lang.ReadCount == null ||
+                string.IsNullOrEmpty(lang.CurrentlyReadingFrom) ||
+                key == "EVEREST_SPLIT_BETWEEN_FILES") {
+                // Skip conflict checking when the dictionary is from an unknown source.
 
-                } else if (dict.ContainsKey(key)) {
-                    // Each key is set at least twice: During actual read and during variable filling.
-                    // If it's set more than twice (no matter if during read or fillup), there's a conflict.
-                    if (!lang.SetCount.TryGetValue(key, out int count))
-                        count = 0;
-                    count++;
-                    lang.SetCount[key] = count;
-                    if (count >= 2)
-                        Logger.Log(LogLevel.Warn, "Language", $"Conflict for dialog key {lang.Id}/{key} (read)");
-                }
+            } else {
+                if (!lang.ReadCount.TryGetValue(key, out int count))
+                    count = lang.Dialog.ContainsKey(key) ? 1 : 0;
+                count++;
+                lang.ReadCount[key] = count;
+                
+                if (!lang.LineSources.TryGetValue(key, out string sourcePrev))
+                    sourcePrev = "?!?!?!";
+                lang.LineSources[key] = lang.CurrentlyReadingFrom;
+
+                if (count >= 2)
+                    Logger.Log(LogLevel.Warn, "Language", $"Conflict for dialog key {lang.Id}/{key} ({sourcePrev} vs {lang.CurrentlyReadingFrom})");
             }
 
 
