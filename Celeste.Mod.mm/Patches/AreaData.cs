@@ -462,7 +462,7 @@ namespace Celeste {
         public static new string GetCheckpointName(AreaKey area, string level) {
             int split = level?.IndexOf('|') ?? -1;
             if (split >= 0) {
-                area = Get(level.Substring(0, split))?.ToKey() ?? area;
+                area = Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
                 level = level.Substring(split + 1);
             }
             return orig_GetCheckpointName(area, level);

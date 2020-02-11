@@ -25,7 +25,7 @@ namespace Celeste {
         internal static string _GetCheckpointPreviewName(AreaKey area, string level) {
             int split = level?.IndexOf('|') ?? -1;
             if (split >= 0) {
-                area = AreaDataExt.Get(level.Substring(0, split))?.ToKey() ?? area;
+                area = AreaDataExt.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
                 level = level.Substring(split + 1);
             }
 
