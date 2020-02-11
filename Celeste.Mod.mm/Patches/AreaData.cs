@@ -182,8 +182,17 @@ namespace Celeste {
         public static new void Load() {
             orig_Load();
 
+            // assign SIDs and CheckpointData.Area for vanilla maps.
             foreach (AreaData area in Areas) {
                 area.SetSID("Celeste/" + area.Mode[0].Path);
+                foreach (ModeProperties mode in area.Mode) {
+                    if (mode?.Checkpoints == null)
+                        continue;
+
+                    foreach (CheckpointData checkpoint in mode.Checkpoints) {
+                        checkpoint.SetArea(mode.MapData.Area);
+                    }
+                }
             }
 
             // Separate array as we sort it afterwards.
