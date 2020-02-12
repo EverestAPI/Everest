@@ -54,7 +54,6 @@ namespace Celeste.Mod {
                 public readonly CachedType Parent;
                 public readonly string FullName;
                 public readonly Type Type;
-                public readonly ProxyType ProxyType;
                 public LuaTable Members;
                 public LuaTable Cache;
 
@@ -64,7 +63,6 @@ namespace Celeste.Mod {
                 private CachedType(Type type) {
                     Name = type.Name;
                     Type = type;
-                    ProxyType = new ProxyType(type);
                     FullName = type.FullName;
 
                     _Crawl();

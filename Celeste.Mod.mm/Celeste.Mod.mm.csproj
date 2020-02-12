@@ -43,8 +43,8 @@
       <HintPath>..\lib-stripped\Celeste.exe</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="DotNetZip, Version=1.13.4.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetZip.1.13.4\lib\net40\DotNetZip.dll</HintPath>
+    <Reference Include="DotNetZip, Version=1.13.5.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotNetZip.1.13.5\lib\net40\DotNetZip.dll</HintPath>
     </Reference>
     <Reference Include="FNA">
       <HintPath>..\lib-stripped\FNA.dll</HintPath>
@@ -86,17 +86,17 @@
     <Reference Include="Mono.Cecil.Rocks, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
       <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod, Version=19.12.4.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.19.12.4.1\lib\net40\MonoMod.exe</HintPath>
+    <Reference Include="MonoMod, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.20.1.1.4\lib\net40\MonoMod.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour, Version=19.12.4.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.19.12.4.1\lib\net40\MonoMod.RuntimeDetour.dll</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.20.1.1.4\lib\net40\MonoMod.RuntimeDetour.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=19.12.4.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.19.12.4.1\lib\net40\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
+    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.20.1.1.4\lib\net40\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
     </Reference>
-    <Reference Include="MonoMod.Utils, Version=19.12.4.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.Utils.19.12.4.1\lib\net40\MonoMod.Utils.dll</HintPath>
+    <Reference Include="MonoMod.Utils, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MonoMod.Utils.20.1.1.4\lib\net40\MonoMod.Utils.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
@@ -118,17 +118,27 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod\Core\CoreModuleSession.cs" />
+    <Compile Include="Mod\Entities\ActivateDreamBlocksTrigger.cs" />
     <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
     <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
     <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
     <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
+    <Compile Include="Mod\Entities\CSGEN_GenericStrawberrySeeds.cs" />
     <Compile Include="Mod\Entities\CustomNPC.cs" />
+    <Compile Include="Mod\Entities\GenericStrawberrySeed.cs" />
     <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
     <Compile Include="Mod\Entities\CustomEntityAttribute.cs" />
+    <Compile Include="Mod\Entities\RegisterStrawberryAttribute.cs" />
+    <Compile Include="Mod\Entities\SmoothCameraOffsetTrigger.cs" />
+    <Compile Include="Mod\Entities\StarClimbGraphicsController.cs" />
+    <Compile Include="Mod\Entities\MusicLayerTrigger.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.Caches.cs" />
     <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
     <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
+    <Compile Include="Mod\Core\CoreMapDataProcessor.cs" />
+    <Compile Include="Mod\Module\EverestMapDataProcessor.cs" />
+    <Compile Include="Mod\Helpers\MapDataFixup.cs" />
     <Compile Include="Mod\Helpers\ModUpdateInfo.cs" />
     <Compile Include="Mod\Helpers\ModUpdaterHelper.cs" />
     <Compile Include="Mod\Helpers\QueuedTaskHelper.cs" />
@@ -149,10 +159,15 @@
     <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
     <Compile Include="Mod\Helpers\EndUserException.cs" />
     <Compile Include="Mod\Helpers\SafeRoutine.cs" />
+    <Compile Include="Mod\Registry\IStrawberry.cs" />
+    <Compile Include="Mod\Registry\IStrawberrySeeded.cs" />
+    <Compile Include="Mod\Registry\StrawberryRegistry.cs" />
     <Compile Include="Mod\UI\AutoModUpdater.cs" />
+    <Compile Include="Mod\UI\MainMenuModOptionsButton.cs" />
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
+    <Compile Include="Patches\LevelTemplate.cs" />
     <Compile Include="Patches\MountainModel.cs" />
     <Compile Include="Patches\MTN.cs" />
     <Compile Include="Patches\ObjModel.cs" />
@@ -179,6 +194,7 @@
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
     <Compile Include="Patches\patch_Pathfinder.cs" />
+    <Compile Include="Patches\CheckpointData.cs" />
     <Compile Include="Patches\SlashFx.cs" />
     <Compile Include="Patches\Platform.cs" />
     <Compile Include="Patches\PreviewRecording.cs" />

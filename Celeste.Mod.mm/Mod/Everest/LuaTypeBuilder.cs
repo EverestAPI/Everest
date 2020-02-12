@@ -123,7 +123,7 @@ namespace Celeste.Mod {
             Assembly asmBuilt = built.Assembly;
             AppDomain.CurrentDomain.AssemblyResolve +=
                 (s, e) => e.Name == asmBuilt.FullName ? asmBuilt : null;
-            _Precache(asmBuilt);
+            Precache(asmBuilt);
 
             return built;
         }

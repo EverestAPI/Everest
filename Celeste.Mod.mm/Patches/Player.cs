@@ -70,6 +70,7 @@ namespace Celeste {
             TrailManager.Add(this, scale, GetCurrentTrailColor());
         }
 
+        [PatchPlayerOrigUpdate] // Manipulate the method via MonoModRules
         public extern void orig_Update();
         public override void Update() {
             orig_Update();
@@ -81,6 +82,13 @@ namespace Celeste {
                 framesAlive++;
             if (framesAlive >= 8)
                 diedInGBJ = 0;
+        }
+
+        public bool _IsOverWater() {
+            // check if we are 2 pixels over water (or less).
+            Rectangle bounds = Collider.Bounds;
+            bounds.Height += 2;
+            return Scene.CollideCheck<Water>(bounds);
         }
 
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
@@ -109,8 +117,7 @@ namespace Celeste {
             if (SceneAs<Level>()?.Session.MapData.GetMeta()?.TheoInBubble ?? false) {
                 RefillDash();
                 RefillStamina();
-            }
-            else {
+            } else {
                 orig_BoostBegin();
             }
         }
@@ -121,6 +128,20 @@ namespace Celeste {
             // This causes an infinite loop when hitting Badeline bosses.
             if (StateMachine.State != StAttract)
                 orig_WindMove(move);
+        }
+
+        private extern void orig_WallJump(int dir);
+        private void WallJump(int dir) {
+            if ((Scene as Level).Session.Area.GetLevelSet() != "Celeste") {
+                // Fix vertical boost from upwards-moving solids not being applied correctly when dir != -1
+                if (LiftSpeed == Vector2.Zero) {
+                    Solid solid = CollideFirst<Solid>(Position + Vector2.UnitX * 3f * -dir);
+                    if (solid != null) {
+                        LiftSpeed = solid.LiftSpeed;
+                    }
+                }
+            }
+            orig_WallJump(dir);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]

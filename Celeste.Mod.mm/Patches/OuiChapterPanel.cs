@@ -23,6 +23,12 @@ namespace Celeste {
         }
 
         internal static string _GetCheckpointPreviewName(AreaKey area, string level) {
+            int split = level?.IndexOf('|') ?? -1;
+            if (split >= 0) {
+                area = AreaDataExt.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
+                level = level.Substring(split + 1);
+            }
+
             string result = area.ToString();
             if (area.GetLevelSet() != "Celeste")
                 result = area.GetSID();
@@ -42,6 +48,14 @@ namespace Celeste {
                 SaveData.Instance.LastArea = AreaKey.Default;
                 instantClose = true;
             }
+
+            if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
+                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                if (area != null)
+                    SaveData.Instance.LastArea.ID = area.ID;
+            }
+
             return orig_IsStart(overworld, start);
         }
 
@@ -70,8 +84,64 @@ namespace Celeste {
             orig_Update();
         }
 
+        [MonoModIgnore]
+        [PatchChapterPanelSwapRoutine]
+        private extern IEnumerator SwapRoutine();
+
+        private static HashSet<string> _GetCheckpoints(SaveData save, AreaKey area) {
+            // TODO: Maybe switch back to using SaveData.GetCheckpoints in the future?
+
+            if (Celeste.PlayMode == Celeste.PlayModes.Event)
+                return new HashSet<string>();
+
+            HashSet<string> set;
+
+            AreaData areaData = AreaData.Areas[area.ID];
+            ModeProperties mode = areaData.Mode[(int) area.Mode];
+
+            if (save.DebugMode || save.CheatMode) {
+                set = new HashSet<string>();
+                if (mode.Checkpoints != null)
+                    foreach (CheckpointData cp in mode.Checkpoints)
+                        set.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+                return set;
+
+            }
+            
+            AreaModeStats areaModeStats = save.Areas[area.ID].Modes[(int) area.Mode];
+            set = areaModeStats.Checkpoints;
+
+            // Perform the same "cleanup" as SaveData.GetCheckpoints, but copy the set when adding area SIDs.
+            if (mode == null) {
+                set.Clear();
+                return set;
+            }
+            
+            set.RemoveWhere((string a) => !mode.Checkpoints.Any((CheckpointData b) => b.Level == a));
+            AreaData[] subs = AreaData.Areas.Where(other =>
+                other.GetMeta()?.Parent == areaData.GetSID() &&
+                other.HasMode(area.Mode)
+            ).ToArray();
+            return new HashSet<string>(set.Select(s => {
+                foreach (AreaData sub in subs) {
+                    foreach (CheckpointData cp in sub.Mode[(int) area.Mode].Checkpoints) {
+                        if (cp.Level == s) {
+                            return $"{sub.GetSID()}|{s}";
+                        }
+                    }
+                }
+                return s;
+            }));
+        }
+
         [MonoModReplace]
         private IEnumerator StartRoutine(string checkpoint = null) {
+            int checkpointAreaSplit = checkpoint?.IndexOf('|') ?? -1;
+            if (checkpointAreaSplit >= 0) {
+                Area = AreaDataExt.Get(checkpoint.Substring(0, checkpointAreaSplit))?.ToKey(Area.Mode) ?? Area;
+                checkpoint = checkpoint.Substring(checkpointAreaSplit + 1);
+            }
+
             EnteringChapter = true;
             Overworld.Maddy.Hide(false);
             Overworld.Mountain.EaseCamera(Area.ID, Data.MountainZoom, 1f);

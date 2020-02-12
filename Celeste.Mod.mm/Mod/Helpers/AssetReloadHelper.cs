@@ -51,7 +51,6 @@ namespace Celeste.Mod {
         };
 
         private static bool ReloadingLevel;
-        private static bool ReloadingLevelPaused;
 
         private Texture2D snap;
         private Texture2D snapDesat;
@@ -69,8 +68,18 @@ namespace Celeste.Mod {
         public static void Do(string text, Action reload = null, Action done = null)
             => Do(false, text, reload, done);
         public static void Do(bool silent, string text, Action reload = null, Action done = null) {
-            if (Celeste.LoadTimer != null ||
-                (silent && SilentThreadList.Contains(Thread.CurrentThread.Name))) {
+            if (Celeste.LoadTimer != null) {
+                silent = true;
+
+            } else if (silent) {
+                string threadName = Thread.CurrentThread.Name ?? "<null>";
+                if (!SilentThreadList.Contains(threadName)) {
+                    Logger.Log(LogLevel.Warn, "reload", $"Tried to silently reload on non-whitelisted thread {threadName}: {text}");
+                    silent = false;
+                }
+            }
+
+            if (silent) {
                 reload?.Invoke();
                 done?.Invoke();
                 return;
@@ -145,13 +154,13 @@ namespace Celeste.Mod {
 
                         ReturnToScene = loader;
                         ReloadingLevel = false;
-                        ReloadingLevelPaused = level.Paused;
+                        patch_Level.ShouldAutoPause = level.Paused;
 
                         while (!loader.Loaded)
                             Thread.Yield();
 
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "misc", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
+                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
                         e.LogDetailed();
 
                         string message = Dialog.Get("postcard_levelloadfailed")
@@ -167,7 +176,7 @@ namespace Celeste.Mod {
                         LevelEnterExt.ErrorMessage = message;
                         ReturnToScene = patch_LevelEnter.ForceCreate(new Session(level.Session?.Area ?? new AreaKey(1).SetSID("")), false);
                         ReloadingLevel = false;
-                        ReloadingLevelPaused = false;
+                        patch_Level.ShouldAutoPause = false;
                     }
                 });
             }
@@ -273,12 +282,8 @@ namespace Celeste.Mod {
                         _ReturnToScene?.Begin();
                     }
 
-                    if (ReloadingLevelPaused && ReturnToScene is LevelLoader levelLoader)
-                        levelLoader.Level.Pause();
-
                     ReturnToGameLoop = null;
                     ReturnToScene = null;
-                    ReloadingLevelPaused = false;
                 }
                 return;
             }

@@ -91,7 +91,7 @@ namespace Celeste.Mod {
 
                 AllNamespaces[""] = Global;
                 foreach (Assembly asm in AppDomain.CurrentDomain.GetAssemblies()) {
-                     _Precache(asm);
+                    Precache(asm);
                 }
 
                 LuaFunction init = (LuaFunction) rva[0];
@@ -118,21 +118,21 @@ namespace Celeste.Mod {
                 if (type != null) {
                     _Preloaded.Add(name);
                     _Preloaded.Add(type.FullName);
-                    _Precache(type.Assembly);
+                    Precache(type.Assembly);
                     return true;
                 }
 
                 Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
                 foreach (Assembly asm in asms) {
                     if (asm.GetName().Name == name || asm.FullName == name) {
-                        _Precache(asm);
+                        Precache(asm);
                         return true;
                     }
 
                     type = asm.GetType(name);
                     if (type != null) {
                         _Preloaded.Add(type.FullName);
-                        _Precache(asm);
+                        Precache(asm);
                         return true;
                     }
                 }
@@ -144,7 +144,7 @@ namespace Celeste.Mod {
                             continue;
                         if (expType.FullName.StartsWith(name)) {
                             _Preloaded.Add(name);
-                            _Precache(asm);
+                            Precache(asm);
                             return true;
                         }
                     }
@@ -153,7 +153,10 @@ namespace Celeste.Mod {
                 return false;
             };
 
-            internal static void _Precache(Assembly asm) {
+            public static void Precache(Assembly asm) {
+                if (asm == null || _LoadAssembly == null)
+                    return;
+
                 _Preloaded.Add(asm.GetName().Name);
                 _Preloaded.Add(asm.FullName);
 

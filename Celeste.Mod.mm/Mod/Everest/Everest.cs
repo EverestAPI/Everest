@@ -73,8 +73,7 @@ namespace Celeste.Mod {
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
         private static List<Type> _ModuleTypes = new List<Type>();
-        private static List<IDictionary<string, MethodInfo>> _ModuleMethods = new List<IDictionary<string, MethodInfo>>();
-        private static List<IDictionary<string, FastReflectionDelegate>> _ModuleMethodDelegates = new List<IDictionary<string, FastReflectionDelegate>>();
+        private static List<Assembly> _RelinkedAssemblies = new List<Assembly>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -120,6 +119,27 @@ namespace Celeste.Mod {
             if (!string.IsNullOrEmpty(meta.DLL))
                 return GetChecksum(meta.DLL);
             return new byte[0];
+        }
+
+        /// <summary>
+        /// Get the checksum for a given stream.
+        /// </summary>
+        /// <param name="stream">A reference to the stream. Gets converted to a MemoryStream if it isn't seekable.</param>
+        /// <returns>A checksum.</returns>
+        public static byte[] GetChecksum(ref Stream stream) {
+            if (!stream.CanSeek) {
+                MemoryStream ms = new MemoryStream();
+                stream.CopyTo(ms);
+                stream.Dispose();
+                stream = ms;
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+
+            long pos = stream.Position;
+            stream.Seek(0, SeekOrigin.Begin);
+            byte[] hash = ChecksumHasher.ComputeHash(stream);
+            stream.Seek(pos, SeekOrigin.Begin);
+            return hash;
         }
 
         private static byte[] _InstallationHash;
@@ -262,6 +282,17 @@ namespace Celeste.Mod {
                 return Assembly.LoadFrom(Path.Combine(PathGame, asmName.Name + ".dll"));
             };
 
+            // .NET hates to acknowledge manually loaded assemblies.
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName asmName = new AssemblyName(asmArgs.Name);
+                foreach (Assembly asm in _RelinkedAssemblies) {
+                    if (asm.GetName().Name == asmName.Name)
+                        return asm;
+                }
+
+                return null;
+            };
+
             // Preload some basic dependencies.
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
@@ -371,77 +402,6 @@ namespace Celeste.Mod {
             foreach (EverestModule mod in _Modules)
                 mod.Initialize();
             _Initialized = true;
-
-            // Search for all entities marked with the CustomEntityAttribute.
-            foreach (EverestModule mod in _Modules) {
-                foreach (Type type in mod.GetType().Assembly.GetTypes()) {
-                    foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
-                        foreach (string idFull in attrib.IDs) {
-                            string id;
-                            string genName;
-                            string[] split = idFull.Split('=');
-
-                            if (split.Length == 1) {
-                                id = split[0];
-                                genName = "Load";
-
-                            } else if (split.Length == 2) {
-                                id = split[0];
-                                genName = split[1];
-
-                            } else {
-                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
-                                continue;
-                            }
-
-                            id = id.Trim();
-                            genName = genName.Trim();
-
-                            patch_Level.EntityLoader loader = null;
-
-                            ConstructorInfo ctor;
-                            MethodInfo gen;
-
-                            gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
-                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
-                                loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
-                                goto RegisterEntityLoader;
-                            }
-
-                            ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
-                            if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
-                                goto RegisterEntityLoader;
-                            }
-
-                            ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
-                            if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
-                                goto RegisterEntityLoader;
-                            }
-
-                            ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
-                            if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
-                                goto RegisterEntityLoader;
-                            }
-
-                            ctor = type.GetConstructor(_EmptyTypeArray);
-                            if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
-                                goto RegisterEntityLoader;
-                            }
-
-                            RegisterEntityLoader:
-                            if (loader == null) {
-                                Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
-                                continue;
-                            }
-                            patch_Level.EntityLoaders[id] = loader;
-                        }
-                    }
-                }
-            }
         }
 
         /// <summary>
@@ -452,8 +412,98 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 _Modules.Add(module);
                 _ModuleTypes.Add(module.GetType());
-                _ModuleMethods.Add(new Dictionary<string, MethodInfo>());
-                _ModuleMethodDelegates.Add(new Dictionary<string, FastReflectionDelegate>());
+            }
+
+            LuaLoader.Precache(module.GetType().Assembly);
+
+            foreach (Type type in module.GetType().Assembly.GetTypes()) {
+                // Search for all entities marked with the CustomEntityAttribute.
+                foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
+                    foreach (string idFull in attrib.IDs) {
+                        string id;
+                        string genName;
+                        string[] split = idFull.Split('=');
+
+                        if (split.Length == 1) {
+                            id = split[0];
+                            genName = "Load";
+
+                        } else if (split.Length == 2) {
+                            id = split[0];
+                            genName = split[1];
+
+                        } else {
+                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                            continue;
+                        }
+
+                        id = id.Trim();
+                        genName = genName.Trim();
+
+                        patch_Level.EntityLoader loader = null;
+
+                        ConstructorInfo ctor;
+                        MethodInfo gen;
+
+                        gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
+                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                            loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                            goto RegisterEntityLoader;
+                        }
+
+                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        if (ctor != null) {
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            goto RegisterEntityLoader;
+                        }
+
+                        RegisterEntityLoader:
+                        if (loader == null) {
+                            Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
+                            continue;
+                        }
+                        patch_Level.EntityLoaders[id] = loader;
+                    }
+                }
+                // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
+                foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>()) {
+                    List<string> names = new List<string>();
+                    foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
+                        foreach (string idFull in nameAttrib.IDs) {
+                            string[] split = idFull.Split('=');
+                            if (split.Length == 0) {
+                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+                            names.Add(split[0]);
+                        }
+                    if (names.Count == 0)
+                        goto NoDefinedBerryNames; // no customnames? skip out on registering berry
+
+                    foreach (string name in names) {
+                        StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
+                    }
+                }
+                NoDefinedBerryNames:
+                ;
             }
 
             module.LoadSettings();
@@ -498,7 +548,6 @@ namespace Celeste.Mod {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
                 _ModuleTypes.RemoveAt(index);
-                _ModuleMethods.RemoveAt(index);
             }
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
@@ -559,11 +608,8 @@ namespace Celeste.Mod {
                 Thread offspring = new Thread(() => {
                     Process game = new Process();
                     // If the game was installed via Steam, it should restart in a Steam context on its own.
-                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                        // The Linux and macOS versions come with a wrapping bash script.
-                        game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                    } else {
+                    if (!(Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX)) {
                         game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
                     }
                     game.StartInfo.WorkingDirectory = PathGame;
@@ -572,6 +618,15 @@ namespace Celeste.Mod {
                 offspring.Start();
                 patch_Audio.System?.release();
             };
+
+            // Unix-likes can just fork-and-die to start the new game
+            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                Logger.Log(LogLevel.Info, "info", Path.Combine(PathGame, "Celeste"));
+                Process fork = new Process();
+                fork.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
+                fork.Start();
+            }
 
             Engine.Instance.Exit();
 

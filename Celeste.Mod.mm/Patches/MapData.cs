@@ -17,6 +17,10 @@ using System.Xml;
 namespace Celeste {
     class patch_MapData : MapData {
 
+        public bool DetectedCassette;
+        public int DetectedStrawberriesIncludingUntracked;
+        public List<EntityData> DashlessGoldenberries = new List<EntityData>();
+
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
@@ -32,7 +36,9 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [PatchTrackableStrawberryCheck]
         private extern void orig_Load();
+
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
             // reset those fields to prevent them from stacking up when reloading the map.
@@ -40,9 +46,55 @@ namespace Celeste {
             DetectedHeartGem = false;
             DetectedRemixNotes = false;
             Goldenberries = new List<EntityData>();
+            DashlessGoldenberries = new List<EntityData>();
+            DetectedCassette = false;
+            DetectedStrawberriesIncludingUntracked = 0;
 
             try {
                 orig_Load();
+
+                foreach (LevelData level in Levels) {
+                    foreach (EntityData entity in level.Entities) {
+                        if (entity.Name == "memorialTextController") // aka "dashless golden"
+                            DashlessGoldenberries.Add(entity);
+                    }
+                }
+
+                AreaData area = AreaData.Get(Area);
+                AreaData parentArea = AreaDataExt.Get(area.GetMeta()?.Parent);
+                ModeProperties parentMode = parentArea?.Mode?.ElementAtOrDefault((int) Area.Mode);
+                if (parentMode != null) {
+                    MapData parentMapData = parentMode.MapData;
+
+                    parentMapData.Strawberries.AddRange(Strawberries);
+
+                    // Recount everything berry-related for the parent map data, just like in orig_Load.
+                    parentMode.TotalStrawberries = 0;
+                    parentMode.StartStrawberries = 0;
+                    parentMode.StrawberriesByCheckpoint = new EntityData[10, 25];
+
+                    for (int i = 0; parentMode.Checkpoints != null && i < parentMode.Checkpoints.Length; i++)
+                        if (parentMode.Checkpoints[i] != null)
+                            parentMode.Checkpoints[i].Strawberries = 0;
+
+                    foreach (EntityData entity in parentMapData.Strawberries) {
+                        if (!entity.Bool("moon")) {
+                            int checkpointID = entity.Int("checkpointIDParented", entity.Int("checkpointID"));
+                            int order = entity.Int("order");
+
+                            if (_GrowAndGet(ref parentMode.StrawberriesByCheckpoint, checkpointID, order) == null)
+                                parentMode.StrawberriesByCheckpoint[checkpointID, order] = entity;
+
+                            if (checkpointID == 0)
+                                parentMode.StartStrawberries++;
+                            else if (parentMode.Checkpoints != null)
+                                parentMode.Checkpoints[checkpointID - 1].Strawberries++;
+
+                            parentMode.TotalStrawberries++;
+                        }
+                    }
+                }
+
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
                 e.LogDetailed();
@@ -75,189 +127,12 @@ namespace Celeste {
                 return root;
 
             // make sure parse meta first, because checkpoint entity needs to read meta
-            if(root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta) 
+            if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta)
                 ProcessMeta(meta);
-            
-            foreach (BinaryPacker.Element el in root.Children) {
-                switch (el.Name) {
-                    case "levels":
-                        ProcessLevels(el);
-                        continue;
 
-                    // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
-                    // Let's "unoptimize" Style and its Backgrounds and Foregrounds.
-                    case "Style":
-                        if (el.Children == null)
-                            el.Children = new List<BinaryPacker.Element>();
-                        foreach (BinaryPacker.Element style in el.Children)
-                            if ((
-                                    style.Name == "Backgrounds" ||
-                                    style.Name == "Foregrounds"
-                                ) && style.Children == null)
-                                style.Children = new List<BinaryPacker.Element>();
-                        continue;
-                }
-            }
+            new MapDataFixup(this).Process(root);
 
             return root;
-        }
-
-        private void ProcessLevels(BinaryPacker.Element levels) {
-            AreaData area = AreaData.Get(Area);
-            ModeProperties mode = area.Mode[(int) Area.Mode];
-
-            // Mod levels are... different.
-
-            // levels.Children.Sort((a, b) => a.Attr("name").Replace("lvl_", "").CompareTo(b.Attr("name").Replace("lvl_", "")));
-
-            int checkpoint = 0;
-            List<CheckpointData> checkpointsAuto = null;
-            if (mode.Checkpoints == null)
-                checkpointsAuto = new List<CheckpointData>();
-
-            int strawberry = 0;
-            int strawberryInCheckpoint = 0;
-
-            if (levels.Children != null) {
-                foreach (BinaryPacker.Element level in levels.Children) {
-                    string[] levelTags = level.Attr("name").Split(':');
-                    string levelName = levelTags[0];
-                    if (levelName.StartsWith("lvl_"))
-                        levelName = levelName.Substring(4);
-                    level.SetAttr("name", "lvl_" + levelName); // lvl_ was optional before Celeste 1.2.5.0 made it mandatory.
-
-                    BinaryPacker.Element entities = level.Children.FirstOrDefault(el => el.Name == "entities");
-                    BinaryPacker.Element triggers = level.Children.FirstOrDefault(el => el.Name == "triggers");
-                    
-                    // Celeste 1.2.5.0 optimizes BinaryPacker, which causes some issues.
-                    // Let's "unoptimize" entities and triggers.
-                    if (entities == null)
-                        level.Children.Add(entities = new BinaryPacker.Element {
-                            Name = "entities"
-                        });
-                    if (entities.Children == null)
-                        entities.Children = new List<BinaryPacker.Element>();
-
-                    if (triggers == null)
-                        level.Children.Add(triggers = new BinaryPacker.Element {
-                            Name = "triggers"
-                        });
-                    if (triggers.Children == null)
-                        triggers.Children = new List<BinaryPacker.Element>();
-
-                    if (levelTags.Contains("checkpoint") || levelTags.Contains("cp"))
-                        entities.Children.Add(new BinaryPacker.Element {
-                            Name = "checkpoint",
-                            Attributes = new Dictionary<string, object>() {
-                            { "x", "0" },
-                            { "y", "0" }
-                        }
-                        });
-
-                    if (level.AttrBool("space")) {
-                        if (level.AttrBool("spaceSkipWrap") || levelTags.Contains("nospacewrap") || levelTags.Contains("nsw"))
-                            entities.Children.Add(new BinaryPacker.Element {
-                                Name = "everest/spaceControllerBlocker"
-                            });
-                        if (level.AttrBool("spaceSkipGravity") || levelTags.Contains("nospacegravity") || levelTags.Contains("nsg")) {
-                            entities.Children.Add(new BinaryPacker.Element {
-                                Name = "everest/spaceController"
-                            });
-                            level.SetAttr("space", false);
-                        }
-
-                        if (!levelTags.Contains("nospacefix") && !levelTags.Contains("nsf") &&
-                            !triggers.Children.Any(el => el.Name == "cameraTargetTrigger") &&
-                            !entities.Children.Any(el => el.Name == "everest/spaceControllerBlocker")) {
-
-                            // Camera centers tile-perfectly on uneven heights.
-                            int heightForCenter = level.AttrInt("height");
-                            heightForCenter /= 8;
-                            if (heightForCenter % 2 == 0)
-                                heightForCenter--;
-                            heightForCenter *= 8;
-
-                            triggers.Children.Add(new BinaryPacker.Element {
-                                Name = "cameraTargetTrigger",
-                                Attributes = new Dictionary<string, object>() {
-                                    { "x", 0f },
-                                    { "y", 0f },
-                                    { "width", level.AttrInt("width") },
-                                    { "height", level.AttrInt("height") },
-                                    { "yOnly", true },
-                                    { "lerpStrength", 1f }
-                                },
-                                Children = new List<BinaryPacker.Element>() {
-                                    new BinaryPacker.Element {
-                                        Attributes = new Dictionary<string, object>() {
-                                            { "x", 160f },
-                                            { "y", heightForCenter / 2f }
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                    }
-
-                    foreach (BinaryPacker.Element levelChild in level.Children) {
-                        switch (levelChild.Name) {
-                            case "entities":
-                                foreach (BinaryPacker.Element entity in levelChild.Children) {
-                                    switch (entity.Name) {
-                                        case "checkpoint":
-                                            if (checkpointsAuto != null) {
-                                                MapMeta modeMeta = area.GetModeMeta(Area.Mode);
-                                                CheckpointData c = new CheckpointData(
-                                                    levelName,
-                                                    (area.GetSID() + "_" + levelName).DialogKeyify(),
-                                                    MapMeta.GetInventory(entity.Attr("inventory")),
-                                                    entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? area.Dreaming : entity.AttrBool("dreaming"),
-                                                    null
-                                                );
-                                                if (entity.Attr("coreMode") == "") {
-                                                    c.CoreMode = modeMeta.CoreMode ?? area.CoreMode;
-                                                }
-                                                else {
-                                                    entity.AttrIf("coreMode", v => c.CoreMode = (Session.CoreModes) Enum.Parse(typeof(Session.CoreModes), v, true));
-                                                }
-                                                
-                                                int id = entity.AttrInt("checkpointID", -1);
-                                                if (id == -1) {
-                                                    checkpointsAuto.Add(c);
-                                                } else {
-                                                    while (checkpointsAuto.Count <= id)
-                                                        checkpointsAuto.Add(null);
-                                                    checkpointsAuto[id] = c;
-                                                }
-                                            }
-                                            checkpoint++;
-                                            strawberryInCheckpoint = 0;
-                                            break;
-
-                                        case "cassette":
-                                            if (area.CassetteCheckpointIndex < 0)
-                                                area.CassetteCheckpointIndex = checkpoint;
-                                            break;
-
-                                        case "strawberry":
-                                            if (entity.AttrInt("checkpointID", -1) == -1)
-                                                entity.SetAttr("checkpointID", checkpoint);
-                                            if (entity.AttrInt("order", -1) == -1)
-                                                entity.SetAttr("order", strawberryInCheckpoint);
-                                            strawberry++;
-                                            strawberryInCheckpoint++;
-                                            break;
-                                    }
-                                }
-                                break;
-                        }
-                    }
-
-                }
-            }
-
-            if (mode.Checkpoints == null)
-                mode.Checkpoints = checkpointsAuto.Where(c => c != null).ToArray();
         }
 
         private void ProcessMeta(BinaryPacker.Element meta) {
@@ -267,7 +142,7 @@ namespace Celeste {
             if (mode == AreaMode.Normal) {
                 new MapMeta(meta).ApplyTo(area);
                 Area = area.ToKey();
-                
+
                 // Backup A-Side's Metadata. Only back up useful data.
                 area.SetASideAreaDataBackup(new AreaData {
                     IntroType = area.IntroType,
@@ -346,5 +221,36 @@ namespace Celeste {
         public static MapMetaModeProperties GetMeta(this MapData self)
             => ((patch_MapData) self).Meta;
 
+        /// <summary>
+        /// Returns whether the map contains a cassette or not.
+        /// </summary>
+        public static bool GetDetectedCassette(this MapData self)
+            => ((patch_MapData) self).DetectedCassette;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when a cassette is detected in a map.
+        /// </summary>
+        internal static void SetDetectedCassette(this MapData self) {
+            ((patch_MapData) self).DetectedCassette = true;
+        }
+
+        /// <summary>
+        /// Returns the number of strawberries in the map, including untracked ones (goldens, moons).
+        /// </summary>
+        public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
+            => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;
+
+        /// <summary>
+        /// To be called by the CoreMapDataProcessor when processing a map is over, to register the detected berry count.
+        /// </summary>
+        internal static void SetDetectedStrawberriesIncludingUntracked(this MapData self, int count) {
+            ((patch_MapData) self).DetectedStrawberriesIncludingUntracked = count;
+        }
+
+        /// <summary>
+        /// Returns the list of dashless goldens in the map.
+        /// </summary>
+        public static List<EntityData> GetDashlessGoldenberries(this MapData self)
+            => ((patch_MapData) self).DashlessGoldenberries;
     }
 }

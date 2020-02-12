@@ -298,25 +298,42 @@ namespace Celeste {
                 // Refresh all stat IDs based on their SIDs, sort, fill and remove leftovers.
                 // Temporarily use ID_Unsafe; later ID_Safe to ID_Unsafe to resync the SIDs.
                 // This keeps the stats bound to their SIDs, not their indices, while removing non-existent areas.
-                int count = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
+                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
+                int countAll = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
+
                 // Fix IDs
-                for (int i = 0; i < areas.Count; i++)
-                    ((patch_AreaStats) areas[i]).ID_Unsafe = AreaDataExt.Get(areas[i])?.ID ?? int.MaxValue;
+                for (int i = 0; i < areas.Count; i++) {
+                    AreaData area = AreaDataExt.Get(areas[i]);
+                    if (!string.IsNullOrEmpty(area?.GetMeta()?.Parent))
+                        area = null;
+                    ((patch_AreaStats) areas[i]).ID_Unsafe = area?.ID ?? int.MaxValue;
+                }
+
                 // Sort
                 areas.Sort((a, b) => ((patch_AreaStats) a).ID_Unsafe - ((patch_AreaStats) b).ID_Unsafe);
+
                 // Remove leftovers
                 while (areas.Count > 0 && ((patch_AreaStats) areas[areas.Count - 1]).ID_Unsafe == int.MaxValue)
                     areas.RemoveAt(areas.Count - 1);
+
                 // Fill gaps
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < countRoots; i++)
                     if (i >= areas.Count || ((patch_AreaStats) areas[i]).ID_Unsafe != offset + i)
                         areas.Insert(i, new AreaStats(offset + i));
+
+                // Duplicate parent stat refs into their respective children slots.
+                for (int i = countRoots; i < countAll; i++) {
+                    if (i >= areas.Count) {
+                        areas.Insert(i, areas[AreaDataExt.Get(AreaData.Get(offset + i).GetMeta().Parent).ID - offset]);
+                    }
+                }
+
                 // Resync SIDs
                 for (int i = 0; i < areas.Count; i++)
                     ((patch_AreaStats) areas[i]).ID_Safe = ((patch_AreaStats) areas[i]).ID_Unsafe;
 
                 int lastCompleted = -1;
-                for (int i = 0; i < count; i++) {
+                for (int i = 0; i < countRoots; i++) {
                     if (areas[i].Modes[0].Completed) {
                         lastCompleted = i;
                     }
@@ -400,6 +417,19 @@ namespace Celeste {
                 LastArea_Unsafe = LastArea_Safe;
             if (CurrentSession_Safe != null && CurrentSession_Safe.Area.GetLevelSet() == "Celeste")
                 CurrentSession_Unsafe = CurrentSession_Safe;
+
+            // Make sure that subchapter references to parent chapters aren't stored.
+            // They'll be reverted afterwards with AfterInitialize.
+            // Fill each LevelSetStats with its areas.
+            foreach (LevelSetStats set in LevelSets) {
+                if (set.Name == "Celeste")
+                    continue;
+                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
+                List<AreaStats> areas = set.Areas;
+                while (areas.Count > countRoots)
+                    areas.RemoveAt(areas.Count - 1);
+            }
+
 
             orig_BeforeSave();
 
@@ -489,6 +519,40 @@ namespace Celeste {
         }
 
         [XmlIgnore]
+        public int TotalGoldenStrawberries {
+            get {
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaStats areaSave;
+                    if (Name == "Celeste")
+                        areaSave = SaveData.Areas_Unsafe[i];
+                    else
+                        areaSave = Areas[i];
+
+                    AreaData areaData = AreaData.Areas[offset + i];
+
+                    for (int j = 0; j < areaData.Mode.Length && j < areaSave.Modes.Length; j++) {
+                        AreaModeStats modeSave = areaSave.Modes[j];
+                        ModeProperties modeData = areaData.Mode[j];
+
+                        if (modeSave == null || modeData == null)
+                            continue;
+
+                        foreach (EntityID strawb in modeSave.Strawberries) {
+                            if (modeData.MapData.Goldenberries.Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
+                                count++;
+                            if (modeData.MapData.GetDashlessGoldenberries().Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
+                                count++;
+                        }
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        [XmlIgnore]
         public int MaxStrawberries {
             get {
                 if (Name == "Celeste")
@@ -498,9 +562,68 @@ namespace Celeste {
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
                     foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                        if (mode == null)
+                        if (mode?.MapData == null || mode.MapData.Area.Mode > AreaMode.CSide)
                             continue;
                         count += mode.MapData.DetectedStrawberries;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxStrawberriesIncludingUntracked {
+            get {
+                if (Name == "Celeste")
+                    return 202;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.GetDetectedStrawberriesIncludingUntracked();
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxGoldenStrawberries {
+            get {
+                if (Name == "Celeste")
+                    return 25; // vanilla is wrong (there are 26 including dashless), but don't mess with vanilla.
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        count += mode.MapData.Goldenberries.Count;
+                        count += mode.MapData.GetDashlessGoldenberries().Count;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxCassettes {
+            get {
+                if (Name == "Celeste")
+                    return 8;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                        if (mode == null)
+                            continue;
+                        if (mode.MapData.GetDetectedCassette())
+                            count++;
                     }
                 }
                 return count;
@@ -519,21 +642,7 @@ namespace Celeste {
             get {
                 int offset = AreaOffset;
 
-                int maxHeartGems;
-                if (Name == "Celeste") {
-                    maxHeartGems = 16;
-                } else {
-                    maxHeartGems = 0;
-                    for (int i = 0; i <= MaxArea; i++) {
-                        foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                            if (mode == null || mode.MapData.Area.Mode > AreaMode.BSide)
-                                continue;
-                            maxHeartGems += mode.MapData.DetectedHeartGem ? 1 : 0;
-                        }
-                    }
-                }
-
-                if (TotalHeartGems >= maxHeartGems) {
+                if (TotalHeartGems >= MaxHeartGemsExcludingCSides) {
                     return 3;
                 }
 
@@ -550,7 +659,7 @@ namespace Celeste {
         [XmlIgnore]
         public int MaxArea {
             get {
-                int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name) - 1;
+                int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name && string.IsNullOrEmpty(area.GetMeta()?.Parent)) - 1;
                 if (Celeste.PlayMode == Celeste.PlayModes.Event)
                     return Math.Min(count, AreaOffset + 2);
                 return count;
@@ -560,7 +669,7 @@ namespace Celeste {
         [XmlIgnore]
         public int MaxAssistArea {
             get {
-                return AreaData.Areas.Count(area => area.GetLevelSet() == Name) - 1;
+                return MaxArea;
             }
         }
 
@@ -574,16 +683,48 @@ namespace Celeste {
         [XmlIgnore]
         public int MaxHeartGems {
             get {
+                if (Name == "Celeste")
+                    return 24;
+
                 int offset = AreaOffset;
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
                     foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
-                        if (mode == null)
+                        if (mode?.MapData == null || mode.MapData.Area.Mode > AreaMode.CSide)
                             continue;
                         count += mode.MapData.DetectedHeartGem ? 1 : 0;
                     }
                 }
                 return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxHeartGemsExcludingCSides {
+            get {
+                if (Name == "Celeste")
+                    return 16;
+
+                int offset = AreaOffset;
+                int count = 0;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaData areaData = AreaData.Areas[offset + i];
+                    for (int j = 0; j < 2 && j < areaData.Mode.Length; j++) {
+                        if (areaData.Mode[j]?.MapData.DetectedHeartGem ?? false)
+                            count++;
+                    }
+                }
+                return count;
+            }
+        }
+
+        [XmlIgnore]
+        public int MaxCompletions {
+            get {
+                if (Name == "Celeste")
+                    return 9;
+
+                return AreaData.Areas.Count(area => area.GetLevelSet() == Name && !area.Interlude);
             }
         }
 
@@ -620,15 +761,10 @@ namespace Celeste {
             get {
                 // TODO: Get max counts on the fly.
                 float value = 0f;
-                value += TotalHeartGems / 24f * 24f;
-                value += TotalStrawberries / 175f * 55f;
-                value += TotalCassettes / 8f * 7f;
-                value += TotalCompletions / 8f * 14f;
-
-                if (value < 0f)
-                    value = 0f;
-                else if (value > 100f)
-                    value = 100f;
+                value += (MaxHeartGems == 0 ? 1 : (float) TotalHeartGems / MaxHeartGems) * 24f;
+                value += (MaxStrawberries == 0 ? 1 : (float) TotalStrawberries / MaxStrawberries) * 55f;
+                value += (MaxCassettes == 0 ? 1 : (float) TotalCassettes / MaxCassettes) * 7f;
+                value += (MaxCompletions == 0 ? 1 : (float) TotalCompletions / MaxCompletions) * 14f;
 
                 return (int) value;
             }

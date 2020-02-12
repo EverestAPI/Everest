@@ -1,11 +1,11 @@
 using Celeste.Mod.Meta;
 
 namespace Celeste {
-    public class patch_ModeProperties:ModeProperties {
+    public class patch_ModeProperties : ModeProperties {
         // Store the metadata in the corresponding mode
         public MapMeta MapMeta;
     }
-    
+
     public static class ModePropertiesExt {
 
         // Mods can't access patch_ classes directly.

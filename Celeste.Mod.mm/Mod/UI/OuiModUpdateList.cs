@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.UI {
-    class OuiModUpdateList : Oui {
+    class OuiModUpdateList : Oui, OuiModOptions.ISubmenu {
 
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
@@ -129,7 +129,8 @@ namespace Celeste.Mod.UI {
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                            if (update.xxHash.Count > 1) button.Disabled = true;
+                            if (update.xxHash.Count > 1)
+                                button.Disabled = true;
 
                             menu.Add(button);
                         }
@@ -223,9 +224,9 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                 if (length > 0) {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                 } else {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
+                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
         }

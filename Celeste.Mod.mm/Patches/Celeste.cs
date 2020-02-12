@@ -19,6 +19,7 @@ using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste {
@@ -29,6 +30,8 @@ namespace Celeste {
 
         public static extern void orig_Main(string[] args);
         public static void Main(string[] args) {
+            Thread.CurrentThread.Name = "Main Thread";
+
             if (File.Exists("launch.txt")) {
                 args =
                     File.ReadAllLines("launch.txt")
@@ -56,7 +59,7 @@ namespace Celeste {
             if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
                 AllocConsole();
             }
-            
+
             // PlatformHelper is part of MonoMod.
             // Environment.OSVersion.Platform is good enough as well, but Everest consistently uses PlatformHelper.
             // The following is based off of https://github.com/FNA-XNA/FNA/wiki/4:-FNA-and-Windows-API#direct3d-support
@@ -122,6 +125,7 @@ namespace Celeste {
         [MonoModIfFlag("OS:Windows")]
         private static bool DoesGPUHaveBadOpenGLDrivers() {
             bool isBad = false;
+            bool checkIntel = true;
 
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from Win32_VideoController")) {
 
@@ -153,22 +157,31 @@ namespace Celeste {
                             // Good job, this machine has got an Intel GPU and we don't
                             // know if the installed drivers are good enough or not.
 
+                            // Intel chips can be listed multiple times with some important information only present once.
+                            if (!checkIntel)
+                                break;
+
                             // Someone reported lag when using ANGLE with an HD Graphics
                             // 4000 and using the latest drivers (2019).
                             // Meanwhile, someone else reported graphics issues with an
                             // HD Graphics 5500 which were fixed by using ANGLE.
                             // I regret my life decisions.
                             if (value == "Intel(R) HD Graphics 4000") {
+                                // Don't check this GPU's props any further.
                                 isBad = false;
-                                break; // Don't check this GPU's props any further.
+                                break;
                             }
 
                             // Someone reported the following crash using ANGLE:
                             // Mobile Intel(R) 4 Series Express Chipset Family
                             // NoSuitableGraphicsDeviceException: Could not create GLES window surface
-                            if (value == "Mobile Intel(R) 4 Series Express Chipset Family") {
+                            // Meanwhile, someone else reported the same crash with a non-mobile variant, yet a missing mountain with OpenGL.
+                            if (value == "Mobile Intel(R) 4 Series Express Chipset Family" ||
+                                value == "Intel(R) 4 Series Express Chipset Family") {
+                                // Don't check this GPU's props any further.
                                 isBad = false;
-                                break; // Don't check this GPU's props any further.
+                                checkIntel = false;
+                                break;
                             }
 
                             // Gonna use ANGLE by default on this setup...

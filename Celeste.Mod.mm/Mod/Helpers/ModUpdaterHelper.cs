@@ -94,7 +94,7 @@ namespace Celeste.Mod.Helpers {
         public static void InstallModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, string zipPath) {
             // let's close the zip, as we will replace it now.
             foreach (ModContent content in Everest.Content.Mods) {
-                if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Mod.Name == mod.Name) {
+                if (content.GetType() == typeof(ZipModContent) && (content as ZipModContent).Path == mod.PathArchive) {
                     ZipModContent modZip = content as ZipModContent;
 
                     Logger.Log("ModUpdaterHelper", $"Closing mod .zip: {modZip.Path}");

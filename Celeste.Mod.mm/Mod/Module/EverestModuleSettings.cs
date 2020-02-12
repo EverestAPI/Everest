@@ -55,6 +55,17 @@ namespace Celeste.Mod {
     }
 
     /// <summary>
+    /// Allows to set the maximum length of string settings.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingMaxLengthAttribute : Attribute {
+        public int Max;
+        public SettingMaxLengthAttribute(int max) {
+            Max = max;
+        }
+    }
+
+    /// <summary>
     /// Any options with this attribute will notify the user that a restart is required to apply the changes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]

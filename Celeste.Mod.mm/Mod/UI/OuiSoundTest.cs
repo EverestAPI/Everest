@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
-    public class OuiSoundTest : Oui {
+    public class OuiSoundTest : Oui, OuiModOptions.ISubmenu {
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -122,7 +122,7 @@ namespace Celeste.Mod.UI {
             } else if (Input.MenuDown.Pressed) {
                 UpdateDigits(selectedDigit, -1);
 
-            }  else if (Input.MenuUp.Pressed) {
+            } else if (Input.MenuUp.Pressed) {
                 UpdateDigits(selectedDigit, +1);
 
             } else if (Input.MenuConfirm.Pressed) {

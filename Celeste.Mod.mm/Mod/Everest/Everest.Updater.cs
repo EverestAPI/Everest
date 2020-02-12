@@ -74,7 +74,7 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         using (WebClient wc = new WebClient())
-                            data  = wc.DownloadString(Index);
+                            data = wc.DownloadString(Index);
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
@@ -115,12 +115,24 @@ namespace Celeste.Mod {
                     Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
                     // Force stable, then master branches to appear first.
                     branchFirsts["stable"] = int.MaxValue;
-                    branchFirsts["master"] = int.MaxValue - 1;
+                    branchFirsts["master"] = int.MaxValue - 2;
+
+                    // Make sure that the branch we're on appears between stable and master.
+                    // This ensures that people don't miss out on important stability updates,
+                    // but don't get dragged onto the master branch by accident.
+                    foreach (Entry entry in entries) {
+                        if (entry.Build == Build) {
+                            branchFirsts[entry.Branch] = int.MaxValue - 1;
+                            break;
+                        }
+                    }
+
                     for (int i = 0; i < entries.Count; i++) {
                         Entry entry = entries[i];
                         if (!branchFirsts.ContainsKey(entry.Branch))
                             branchFirsts[entry.Branch] = i;
                     }
+
                     entries.Sort((a, b) => {
                         if (a.Branch != b.Branch)
                             return -(branchFirsts[a.Branch].CompareTo(branchFirsts[b.Branch]));
@@ -173,9 +185,18 @@ namespace Celeste.Mod {
                     if (all.Count == 0)
                         return;
 
+                    // look up the installed version in the table (or the latest one by default).
+                    int currentBuildIndex = all.FindIndex(entry => entry.Build == Build);
+                    if (currentBuildIndex == -1)
+                        currentBuildIndex = 0;
+
+                    // find the latest version (highest build number), taking only the elements that are higher in the list into account.
                     Newest = all[0];
-                    if (Newest.Build < Build)
-                        Newest = all.OrderByDescending(entry => entry.Build).First();
+                    for (int i = 1; i <= currentBuildIndex; i++) {
+                        if (all[i].Build > Newest.Build) {
+                            Newest = all[i];
+                        }
+                    }
                 });
             }
 
@@ -269,17 +290,16 @@ namespace Celeste.Mod {
                     DownloadFileWithProgress(version.URL, zipPath, (position, length, speed) => {
                         if (length > 0) {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int)Math.Floor(100D * (position / (double)length)))}% @ {speed} KiB/s";
+                                $"Downloading: {((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                             progress.Progress = position;
                         } else {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int)Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
+                                $"Downloading: {((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         }
 
-                        progress.ProgressMax = (int)length;
+                        progress.ProgressMax = (int) length;
                     });
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     progress.LogLine("Download failed!");
                     e.LogDetailed();
                     progress.LogLine(errorHint);
@@ -333,12 +353,16 @@ namespace Celeste.Mod {
 
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
-                progress.LogLine("Restarting");
+                String action = "Restarting";
+                if (Environment.OSVersion.Platform == PlatformID.Unix) {
+                    action = "Updating";
+                }
+                progress.LogLine(action);
                 for (int i = 3; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"Restarting in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = $"{action} in {i}";
                     Thread.Sleep(1000);
                 }
-                progress.Lines[progress.Lines.Count - 1] = $"Restarting";
+                progress.Lines[progress.Lines.Count - 1] = action;
 
                 // Start MiniInstaller in a separate process.
                 try {
@@ -350,11 +374,18 @@ namespace Celeste.Mod {
                         installer.StartInfo.Arguments = $"\"{installerPath}\"";
                         if (File.Exists("/bin/sh")) {
                             installer.StartInfo.FileName = "/bin/sh";
-                            installer.StartInfo.Arguments = $"-c \"cd '{extractedPath}'; mono MiniInstaller.exe\"";
+                            installer.StartInfo.Arguments = $"-c \"unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; mono MiniInstaller.exe\"";
                         }
                     }
                     installer.StartInfo.WorkingDirectory = extractedPath;
-                    installer.Start();
+                    if (Environment.OSVersion.Platform == PlatformID.Unix) {
+                        installer.StartInfo.UseShellExecute = false;
+                        installer.Start();
+                        progress.LogLine("Patching the game in-place");
+                        progress.LogLine("Restarting");
+                    } else {
+                        installer.Start();
+                    }
                 } catch (Exception e) {
                     progress.LogLine("Starting installer failed!");
                     e.LogDetailed();

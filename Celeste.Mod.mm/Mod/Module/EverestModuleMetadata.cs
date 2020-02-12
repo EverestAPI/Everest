@@ -16,6 +16,11 @@ namespace Celeste.Mod {
     public class EverestModuleMetadata {
 
         /// <summary>
+        /// The collection of mod metadatas this mod metadata is part of. Set at runtime.
+        /// </summary>
+        public virtual EverestModuleMetadata[] Multimeta { get; set; }
+
+        /// <summary>
         /// The path to the ZIP of the mod. In case of unzipped mods, an empty string. Set at runtime.
         /// </summary>
         [YamlIgnore]
@@ -63,12 +68,6 @@ namespace Celeste.Mod {
         /// The path of the mod .dll inside the ZIP or the absolute DLL path if in a directory.
         /// </summary>
         public virtual string DLL { get; set; }
-
-        /// <summary>
-        /// Whether the mod has been prelinked or not.
-        /// If you don't know what prelinked mods are, don't touch this field.
-        /// </summary>
-        public virtual bool Prelinked { get; set; } = false;
 
         /// <summary>
         /// The dependencies of the mod.
