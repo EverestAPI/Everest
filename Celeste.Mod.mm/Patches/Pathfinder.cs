@@ -2,16 +2,16 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Microsoft.Xna.Framework;
+using MonoMod;
 using System;
 using System.Collections.Generic;
 
-namespace Celeste
-{
+namespace Celeste {
     class patch_Pathfinder : Pathfinder {
         // Those types are private in Pathfinder and needed to define the types of the private fields.
         private struct Tile { }
         private class PointMapComparer {
-            public PointMapComparer(Tile[,] map) {}
+            public PointMapComparer(Tile[,] map) { }
         }
 
         // We're effectively in Pathfinder, but still need to "expose" private fields to our mod.
@@ -29,7 +29,9 @@ namespace Celeste
             int neededWidth = level.Bounds.Width / 8;
             int neededHeight = level.Bounds.Height / 8;
 
+            // check if the "map" array is big enough for the pathfinding we are asked to do here.
             if (map.GetLength(0) < neededWidth || map.GetLength(1) < neededHeight) {
+                // extend it as required.
                 int newWidth = Math.Max(map.GetLength(0), neededWidth);
                 int newHeight = Math.Max(map.GetLength(1), neededHeight);
 
@@ -37,7 +39,12 @@ namespace Celeste
                 comparer = new PointMapComparer(map);
             }
 
+            // then, run the pathfinding as vanilla would.
             return orig_Find(ref path, from, to, fewerTurns, logging);
         }
+
+        [MonoModIgnore] // we don't want to change anything in the method...
+        [PatchPathfinderRender] // ... except manipulating it manually via MonoModRules
+        public extern new void Render();
     }
 }
