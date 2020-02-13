@@ -58,13 +58,7 @@ namespace Celeste {
         // Patch the Deserialize method so that it doesn't use BinaryFormatter (that causes an arbitrary code execution vulnerability).
         [MonoModReplace]
         private static T Deserialize<T>(Stream stream) where T : class {
-            try {
-                return (T) new XmlSerializer(typeof(T)).Deserialize(stream);
-            } catch (Exception e) {
-                Logger.Log("UserIO", "Error while loading XML file");
-                Logger.LogDetailed(e);
-                return null;
-            }
+            return (T) new XmlSerializer(typeof(T)).Deserialize(stream);
         }
 
         private static IEnumerator SaveNonHandler() {
