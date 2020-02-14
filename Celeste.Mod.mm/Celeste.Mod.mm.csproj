@@ -193,6 +193,7 @@
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
+    <Compile Include="Patches\Pathfinder.cs" />
     <Compile Include="Patches\CheckpointData.cs" />
     <Compile Include="Patches\SlashFx.cs" />
     <Compile Include="Patches\Platform.cs" />

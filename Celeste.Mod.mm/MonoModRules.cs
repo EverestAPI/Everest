@@ -193,6 +193,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchTrackableStrawberryCheck")]
     class PatchTrackableStrawberryCheckAttribute : Attribute { };
 
+    /// <summary>
+    /// Patch the pathfinder debug rendering to make it aware of the array size being unhardcoded.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchPathfinderRender")]
+    class PatchPathfinderRenderAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1680,6 +1686,29 @@ namespace MonoMod {
                     instrs.RemoveAt(instri);
                     instrs[instri].OpCode = OpCodes.Ldfld;
                     instrs[instri].Operand = f_totalCassettes;
+                }
+            }
+        }
+        public static void PatchPathfinderRender(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_map = method.DeclaringType.FindField("map");
+            if (f_map == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            bool firstDimension = true;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldc_I4 && ((int) instr.Operand) == 200) {
+                    // replace 200 with a call to get the array length.
+                    instr.OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_map));
+                    instrs.Insert(instri + 2, il.Create(firstDimension ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    instrs.Insert(instri + 3, il.Create(OpCodes.Callvirt, typeof(Array).GetMethod("GetLength")));
+
+                    instri += 3;
+                    firstDimension = false;
                 }
             }
         }
