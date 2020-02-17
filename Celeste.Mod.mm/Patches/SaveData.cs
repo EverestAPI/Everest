@@ -119,6 +119,15 @@ namespace Celeste {
             }
         }
 
+        // Make TotalHeartGems return the crystal heart count for the current level set, like TotalStrawberries does.
+        public new int TotalHeartGems {
+            [MonoModReplace]
+            get {
+                return LevelSetStats.TotalHeartGems;
+            }
+        }
+
+        public int TotalHeartGemsInVanilla => GetLevelSetStatsFor("Celeste").TotalHeartGems;
 
         [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas_Unsafe")]
         public new List<AreaStats> Areas;

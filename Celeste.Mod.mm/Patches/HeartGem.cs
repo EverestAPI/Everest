@@ -61,5 +61,8 @@ namespace Celeste {
             return value;
         }
 
+        [MonoModIgnore] // don't change anything in the method...
+        [PatchTotalHeartGemChecks] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
+        private extern void RegisterAsCollected(Level level, string poemID);
     }
 }
