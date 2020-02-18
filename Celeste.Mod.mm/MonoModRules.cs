@@ -199,6 +199,24 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchPathfinderRender")]
     class PatchPathfinderRenderAttribute : Attribute { };
 
+    /// <summary>
+    /// Patch references to TotalHeartGems to refer to TotalHeartGemsInVanilla instead.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecks")]
+    class PatchTotalHeartGemChecksAttribute : Attribute { };
+
+    /// <summary>
+    /// Same as above, but for references in routines.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecksInRoutine")]
+    class PatchTotalHeartGemChecksInRoutineAttribute : Attribute { };
+
+    /// <summary>
+    /// Patch a reference to TotalHeartGems in the OuiJournalGlobal constructor to unharcode the check for golden berry unlock.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiJournalStatsHeartGemCheck")]
+    class PatchOuiJournalStatsHeartGemCheckAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1689,6 +1707,7 @@ namespace MonoMod {
                 }
             }
         }
+
         public static void PatchPathfinderRender(MethodDefinition method, CustomAttribute attrib) {
             FieldDefinition f_map = method.DeclaringType.FindField("map");
             if (f_map == null)
@@ -1709,6 +1728,55 @@ namespace MonoMod {
 
                     instri += 3;
                     firstDimension = false;
+                }
+            }
+        }
+
+        public static void PatchTotalHeartGemChecks(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_getTotalHeartGemsInVanilla = method.Module.GetType("Celeste.SaveData")?.FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
+            if (m_getTotalHeartGemsInVanilla == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_TotalHeartGems") {
+                    // replace the call to the TotalHeartGems property with a call to TotalHeartGemsInVanilla.
+                    instr.Operand = m_getTotalHeartGemsInVanilla;
+                }
+            }
+        }
+        public static void PatchTotalHeartGemChecksInRoutine(MethodDefinition method, CustomAttribute attrib) {
+            // Routines are stored in compiler-generated methods.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            PatchTotalHeartGemChecks(method, attrib);
+        }
+
+        public static void PatchOuiJournalStatsHeartGemCheck(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_getUnlockedModes = method.Module.GetType("Celeste.SaveData")?.FindMethod("System.Int32 get_UnlockedModes()");
+            if (m_getUnlockedModes == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count - 1; instri++) {
+                Instruction instr = instrs[instri];
+                Instruction nextInstr = instrs[instri + 1];
+
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_TotalHeartGems"
+                    && nextInstr.OpCode == OpCodes.Ldc_I4_S && ((sbyte) nextInstr.Operand) == 16) {
+
+                    // instead of SaveData.Instance.TotalHeartGems >= 16, we want SaveData.Instance.UnlockedModes >= 3.
+                    // this way, we only display the golden berry stat when golden berries are actually unlocked in the level set we are in.
+                    // (UnlockedModes returns 3 if and only if TotalHeartGems is more than 16 in the vanilla level set anyway.)
+                    instr.Operand = m_getUnlockedModes;
+                    nextInstr.OpCode = OpCodes.Ldc_I4_3;
                 }
             }
         }

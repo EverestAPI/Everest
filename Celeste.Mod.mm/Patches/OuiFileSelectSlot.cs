@@ -46,6 +46,11 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [MonoModConstructor]
+        [MonoModIgnore] // don't change anything in the method...
+        [PatchTotalHeartGemChecks] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
+        public extern void ctor(int index, OuiFileSelect fileSelect, SaveData data);
+
         public extern void orig_Show();
         public new void Show() {
             // Temporarily set the current save data to the file slot's save data.
