@@ -34,6 +34,12 @@ namespace Celeste {
             }
         }
 
+        [MonoModIgnore]
+        private class DecalImage : Component {
+            public DecalImage() : base(active: false, visible: true) {
+                // no-op
+            }
+        }
 
         public extern void orig_ctor(string texture, Vector2 position, Vector2 scale, int depth);
         [MonoModConstructor]
@@ -63,11 +69,16 @@ namespace Celeste {
         public override void Added(Scene scene) {
             orig_Added(scene);
             // Handle the Decal Registry
-            string text = Name.ToLower().Replace("decals/", "");
+            string text = Name.ToLower();
+            if (text.StartsWith("decals/")) {
+                text = text.Substring(7);
+            }
             if (DecalRegistry.RegisteredDecals.ContainsKey(text)) {
+                Remove(image);
+                image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
                 if (info.CoreSwap) {
-                    image = new CoreSwapImage(GFX.Game[$"decals/{info.CoreSwapHotPath}"], GFX.Game[$"decals/{info.CoreSwapColdPath}"]);
+                    Add(image = new CoreSwapImage(GFX.Game[$"decals/{info.CoreSwapHotPath}"], GFX.Game[$"decals/{info.CoreSwapColdPath}"]));
                 }
                 if (info.AnimationSpeed != -1f) {
                     AnimationSpeed = info.AnimationSpeed;
@@ -88,6 +99,9 @@ namespace Celeste {
                     Add(new BloomPoint(info.BloomOffset, info.BloomAlpha, info.BloomRadius));
                 if (info.Sound != null)
                     Add(new SoundSource(info.Sound));
+                if (image == null) {
+                    Add(image = new DecalImage());
+                }
                 Everest.Events.Decal.HandleDecalRegistry(this, info);
             }
         }
