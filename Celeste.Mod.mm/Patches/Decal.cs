@@ -97,7 +97,6 @@ namespace Celeste {
                 // Handle properties
                 foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
-                        Logger.Log("a", $"Handling {property.Key}");
                         DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                     } else {
                         Logger.Log(LogLevel.Warn,"Decal Registry", $"Unknown property {property.Key} in decal {text}");
