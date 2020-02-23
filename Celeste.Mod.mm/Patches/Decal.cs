@@ -93,7 +93,6 @@ namespace Celeste {
                 Remove(image);
                 image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
-<<<<<<< HEAD
                    
                 // Handle properties
                 foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
@@ -105,33 +104,6 @@ namespace Celeste {
                     }
                 }
 
-=======
-                if (info.CoreSwap) {
-                    Add(image = new CoreSwapImage(GFX.Game[$"decals/{info.CoreSwapHotPath}"], GFX.Game[$"decals/{info.CoreSwapColdPath}"]));
-                }
-                if (info.AnimationSpeed != -1f) {
-                    AnimationSpeed = info.AnimationSpeed;
-                }
-                if (info.Depth != -1)
-                    Depth = info.Depth;
-                if (info.ParallaxAmt != 0f) 
-                    MakeParallax(info.ParallaxAmt);
-                if (info.Smoke)
-                    CreateSmoke(info.SmokeOffset, info.SmokeInBg);
-                if (info.Mirror)
-                    MakeMirror(text, info.MirrorKeepOffsetsClose);
-                if (info.Floaty)
-                    MakeFloaty();
-                if (info.Banner)
-                    MakeBanner(info.BannerSpeed, info.BannerAmplitude, info.BannerSliceSize, info.BannerSliceSinIncrement, info.BannerEaseDown, info.BannerOffset, info.BannerOnlyIfWindy);
-                if (info.Bloom)
-                    Add(new BloomPoint(info.BloomOffset, info.BloomAlpha, info.BloomRadius));
-                if (info.Sound != null)
-                    Add(new SoundSource(info.Sound));
-                if (image == null) {
-                    Add(image = new DecalImage());
-                }
->>>>>>> 6ae97c39d114da971ac261189d57ef9595f04f2d
                 Everest.Events.Decal.HandleDecalRegistry(this, info);
                 if (image == null) {
                     Add(image = new DecalImage());
