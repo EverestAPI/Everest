@@ -37,6 +37,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
     public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
     public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
+    public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -618,6 +619,10 @@ namespace Celeste.Mod {
                     file = file.Substring(0, file.Length - (file.EndsWith(".yaml") ? 5 : 4));
                     format = ".yml";
 
+                } else if (file == "DecalRegistry.xml") {
+                    Logger.Log("Decal Registry", "found DecalRegistry.xml");
+                    type = typeof(AssetTypeDecalRegistry);
+                    file = file.Substring(0, file.Length - 4);
                 } else if (file.EndsWith(".yaml")) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
@@ -750,7 +755,13 @@ namespace Celeste.Mod {
                         // It isn't known if the reloaded xml is part of the currently loaded level.
                         // Let's reload just to be safe.
                         AssetReloadHelper.ReloadLevel();
-
+                    } else if (next.Type == typeof(AssetTypeDecalRegistry)) {
+                        string fileContents;
+                        using (StreamReader reader = new StreamReader(next.Stream)) {
+                            fileContents = reader.ReadToEnd();
+                        }
+                        DecalRegistry.ReadDecalRegistryXml(fileContents);
+                        AssetReloadHelper.ReloadLevel();
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
                         AssetReloadHelper.Do($"Reloading dialog: {name}", () => {
                             Dialog.LoadLanguage(Path.Combine(PathContentOrig, path + ".txt"));

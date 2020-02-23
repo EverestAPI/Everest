@@ -1,7 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Monocle;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Xml;
 
 namespace Celeste.Mod {
@@ -10,14 +12,92 @@ namespace Celeste.Mod {
     /// </summary>
     public static class DecalRegistry {
 
-        public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>() {
-
+        // string is propertyName
+        public static Dictionary<string, Action<Decal, XmlAttributeCollection>> PropertyHandlers = new Dictionary<string, Action<Decal, XmlAttributeCollection>>() {
+            { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
+            }},
+            { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
+                Vector2 offset = new Vector2(offx, offy);
+                bool inbg = attrs["inbg"] != null ? bool.Parse(attrs["inbg"].Value) : false;
+                ((patch_Decal)decal).CreateSmoke(offset, inbg);
+            }},
+            { "depth", delegate(Decal decal, XmlAttributeCollection attrs) {
+                if (attrs["value"] != null)
+                    decal.Depth = int.Parse(attrs["value"].Value);
+            }},
+            { "animationSpeed", delegate(Decal decal, XmlAttributeCollection attrs) {
+                if (attrs["value"] != null)
+                    decal.AnimationSpeed = int.Parse(attrs["value"].Value);
+            }},
+            { "floaty", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).MakeFloaty();
+            }},
+            { "sound", delegate(Decal decal, XmlAttributeCollection attrs) {
+                if (attrs["event"] != null)
+                decal.Add(new SoundSource(attrs["event"].Value));
+            }},
+            { "bloom", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
+                Vector2 offset = new Vector2(offx, offy);
+                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
+                float radius = attrs["radius"] != null ? float.Parse(attrs["radius"].Value) : 1f;
+                decal.Add(new BloomPoint(offset, alpha, radius));
+            }},
+            { "coreSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
+                if (attrs["coldPath"] != null && attrs["hotPath"] != null) {
+                    ((patch_Decal)decal).MakeCoreSwap(attrs["coldPath"].Value, attrs["hotPath"].Value);
+                }
+            }},
+            { "mirror", delegate(Decal decal, XmlAttributeCollection attrs) {
+                string text = decal.Name.ToLower();
+                if (text.StartsWith("decals/"))
+                {
+                    text = text.Substring(7);
+                }
+                bool keepOffsetsClose = attrs["keepOffsetsClose"] != null ? bool.Parse(attrs["keepOffsetsClose"].Value) : false;
+                ((patch_Decal)decal).MakeMirror(text,keepOffsetsClose );
+            }},
+            { "banner", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float offset = 0f;
+                if (attrs["offset"] != null)
+                    offset = float.Parse(attrs["offset"].Value);
+                float speed = 1f;
+                if (attrs["speed"] != null)
+                    speed = float.Parse(attrs["speed"].Value);
+                float amplitude = 1f;
+                if (attrs["amplitude"] != null)
+                    amplitude = float.Parse(attrs["amplitude"].Value);
+                int sliceSize = 1;
+                if (attrs["sliceSize"] != null)
+                    sliceSize = int.Parse(attrs["sliceSize"].Value);
+                float sliceSinIncrement = 1f;
+                if (attrs["sliceSinIncrement"] != null)
+                    sliceSinIncrement = float.Parse(attrs["sliceSinIncrement"].Value);
+                bool easeDown = attrs["easeDown"] != null ? bool.Parse(attrs["easeDown"].Value) : false;
+                bool onlyIfWindy = attrs["onlyIfWindy"] != null ? bool.Parse(attrs["onlyIfWindy"].Value): false;
+                ((patch_Decal)decal).MakeBanner(speed, amplitude, sliceSize, sliceSinIncrement, easeDown, offset, onlyIfWindy);
+            }},
         };
-        
+
+        public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
+
+        public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
+            if (PropertyHandlers.ContainsKey(propertyName)) {
+                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for {propertyName} already exists! Replacing...");
+                PropertyHandlers[propertyName] = action;
+            } else {
+                PropertyHandlers.Add(propertyName, action);
+            }
+        }
+
         /// <summary>
-        /// Reads a DecalRegistry.xml file
+        /// Reads a DecalRegistry.xml file's contents
         /// </summary>
-        public static void ReadXml(string fileContents) {
+        public static void ReadDecalRegistryXml(string fileContents) {
             //XmlElement file = Calc.LoadXML(path)["decals"];
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
@@ -31,102 +111,44 @@ namespace Celeste.Mod {
                     }
                     DecalInfo info = new DecalInfo();
                     info.CustomProperties = new Dictionary<string, XmlAttributeCollection>();
-                    info.Depth = decal.AttrInt("depth", -1);
-                    info.AnimationSpeed = decal.AttrFloat("animationSpeed", -1f);
                     // Read all the properties
                     foreach (XmlNode node2 in decal.ChildNodes) {
                         if (node2 is XmlElement property) {
-                            switch (property.Name) {
-                                case "parallax":
-                                    info.ParallaxAmt = property.AttrFloat("amount", 0f);
-                                    break;
-                                case "smoke":
-                                    info.Smoke = true;
-                                    info.SmokeOffset = property.AttrVector2("offsetX", "offsetY", Vector2.Zero);
-                                    info.SmokeInBg = property.AttrBool("inbg", false);
-                                    break;
-                                case "mirror":
-                                    info.Mirror = true;
-                                    info.MirrorKeepOffsetsClose = property.AttrBool("keepOffsetsClose", false);
-                                    break;
-                                case "floaty":
-                                    info.Floaty = true;
-                                    break;
-                                case "banner":
-                                    info.Banner = true;
-                                    info.BannerAmplitude = property.AttrFloat("amplitude", 2f);
-                                    info.BannerEaseDown = property.AttrBool("easeDown", false);
-                                    info.BannerOffset = property.AttrFloat("offset", 0f);
-                                    info.BannerOnlyIfWindy = property.AttrBool("onlyIfWindy", false);
-                                    info.BannerSliceSinIncrement = property.AttrFloat("sliceSinIncrement", 0.05f);
-                                    info.BannerSliceSize = property.AttrInt("sliceSize", 1);
-                                    info.BannerSpeed = property.AttrFloat("speed", 2f);
-                                    break;
-                                case "coreSwap":
-                                    info.CoreSwap = true;
-                                    info.CoreSwapColdPath = property.Attr("coldPath", decalPath);
-                                    info.CoreSwapHotPath = property.Attr("hotPath", decalPath);
-                                    break;
-                                case "bloom":
-                                    info.Bloom = true;
-                                    info.BloomAlpha = property.AttrFloat("alpha", 1f);
-                                    info.BloomOffset = property.AttrVector2("offsetX", "offsetY", Vector2.Zero);
-                                    info.BloomRadius = property.AttrFloat("radius", 16f);
-                                    break;
-                                case "sound":
-                                    info.Sound = property.Attr("event", null);
-                                    break;
-                                default:
-                                    // Unrecognized property, might still be used for mods
-                                    info.CustomProperties.Add(property.Name, property.Attributes);
-                                    break;
+                            if (property.Attributes == null) {
+                                property.SetAttribute("a", "only here to prevent crashes");
                             }
+                            info.CustomProperties.Add(property.Name, property.Attributes);
                         }
                     }
-                    Logger.Log("Decal Registry", $"Registered decal {decalPath}");
-                    RegisteredDecals.Add(decalPath, info);
+                    
+                    if (RegisteredDecals.ContainsKey(decalPath)) {
+                        Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
+                        RegisteredDecals[decalPath] = info;
+                    } else {
+                        Logger.Log("Decal Registry", $"Registered decal {decalPath}");
+                        RegisteredDecals.Add(decalPath, info);
+                    }
+                    
                 }
             }
         }
 
+        public static void LoadDecalRegistry() {
+            foreach (ModAsset asset in
+                Everest.Content.Mods
+                .Select(mod => mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) ? asset : null)
+                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDecalRegistry))
+            ) {
+                string fileContents;
+                using (StreamReader reader = new StreamReader(asset.Stream)) {
+                    fileContents = reader.ReadToEnd();
+                }
+                ReadDecalRegistryXml(fileContents);
+            }
+        }
+
         public struct DecalInfo {
-            // parallax
-            public float ParallaxAmt;
-            // smoke
-            public bool Smoke;
-            public Vector2 SmokeOffset;
-            public bool SmokeInBg;
-            // mirror
-            public bool Mirror;
-            public bool MirrorKeepOffsetsClose;
-            // floaty
-            public bool Floaty;
-            // banner
-            public bool Banner;
-            public float BannerSpeed;
-            public float BannerAmplitude;
-            public int BannerSliceSize;
-            public float BannerSliceSinIncrement;
-            public bool BannerEaseDown;
-            public float BannerOffset;
-            public bool BannerOnlyIfWindy;
-            // depth
-            public int Depth;
-            // coreSwap
-            public bool CoreSwap;
-            public string CoreSwapColdPath;
-            public string CoreSwapHotPath;
-            // bloom
-            public bool Bloom;
-            public Vector2 BloomOffset;
-            public float BloomAlpha;
-            public float BloomRadius;
-            // sound
-            public string Sound;
-            // animationSpeed
-            public float AnimationSpeed;
             /// <summary>
-            /// These are not recognized by Everest, but still may be used by mods.
             /// PropertyName -> AttributeCollection
             /// </summary>
             public Dictionary<string, XmlAttributeCollection> CustomProperties;

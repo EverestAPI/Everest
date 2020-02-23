@@ -34,6 +34,12 @@ namespace Celeste {
             }
         }
 
+        [MonoModIgnore]
+        private class DecalImage : Component {
+            public DecalImage() : base(active: false, visible: true) {
+                // no-op
+            }
+        }
 
         public extern void orig_ctor(string texture, Vector2 position, Vector2 scale, int depth);
         [MonoModConstructor]
@@ -45,50 +51,64 @@ namespace Celeste {
 
             orig_ctor(texture, position, scale, depth);
         }
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeParallax(float amount);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void CreateSmoke(Vector2 offset, bool inbg);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeMirror(string path, bool keepOffsetsClose);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeFloaty();
 
         [MonoModIgnore]
-        private extern void MakeParallax(float amount);
-        [MonoModIgnore]
-        private extern void CreateSmoke(Vector2 offset, bool inbg);
-        [MonoModIgnore]
-        private extern void MakeMirror(string path, bool keepOffsetsClose);
-        [MonoModIgnore]
-        private extern void MakeFloaty();
-        [MonoModIgnore]
-        private extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
+        [MakeMethodPublic]
+        public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
+
         [MonoModIgnore]
         private Component image;
+
+        public void MakeCoreSwap(string coldPath, string hotPath) {
+            Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+        }
+
+        public Component Image { get { return image; } set { image = value; } }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
             orig_Added(scene);
             // Handle the Decal Registry
-            string text = Name.ToLower().Replace("decals/", "");
+            string text = Name.ToLower();
+            if (text.StartsWith("decals/")) {
+                text = text.Substring(7);
+            }
             if (DecalRegistry.RegisteredDecals.ContainsKey(text)) {
+                Remove(image);
+                image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
-                if (info.CoreSwap) {
-                    image = new CoreSwapImage(GFX.Game[$"decals/{info.CoreSwapHotPath}"], GFX.Game[$"decals/{info.CoreSwapColdPath}"]);
+                   
+                // Handle properties
+                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
+                    if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
+                        Logger.Log("a", $"Handling {property.Key}");
+                        DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
+                    } else {
+                        Logger.Log(LogLevel.Warn,"Decal Registry", $"Unknown property {property.Key} in decal {text}");
+                    }
                 }
-                if (info.AnimationSpeed != -1f) {
-                    AnimationSpeed = info.AnimationSpeed;
-                }
-                if (info.Depth != -1)
-                    Depth = info.Depth;
-                if (info.ParallaxAmt != 0f) 
-                    MakeParallax(info.ParallaxAmt);
-                if (info.Smoke)
-                    CreateSmoke(info.SmokeOffset, info.SmokeInBg);
-                if (info.Mirror)
-                    MakeMirror(text, info.MirrorKeepOffsetsClose);
-                if (info.Floaty)
-                    MakeFloaty();
-                if (info.Banner)
-                    MakeBanner(info.BannerSpeed, info.BannerAmplitude, info.BannerSliceSize, info.BannerSliceSinIncrement, info.BannerEaseDown, info.BannerOffset, info.BannerOnlyIfWindy);
-                if (info.Bloom)
-                    Add(new BloomPoint(info.BloomOffset, info.BloomAlpha, info.BloomRadius));
-                if (info.Sound != null)
-                    Add(new SoundSource(info.Sound));
+
                 Everest.Events.Decal.HandleDecalRegistry(this, info);
+                if (image == null) {
+                    Add(image = new DecalImage());
+                }
+                
             }
         }
     }
@@ -98,6 +118,5 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
-
     }
 }

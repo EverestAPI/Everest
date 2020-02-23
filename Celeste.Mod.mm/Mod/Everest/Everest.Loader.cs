@@ -177,16 +177,6 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
-                        if (entry.FileName == "DecalRegistry.xml") {
-                            using (MemoryStream stream = entry.ExtractStream())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                try {
-                                    DecalRegistry.ReadXml(reader.ReadToEnd());
-                                } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing DecalRegistry.xml in {archive}: {e}");
-                                }
-                            }
-                        }
                         if (entry.FileName == "icon.png") {
                             using (Stream stream = entry.ExtractStream())
                                 icon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
@@ -286,14 +276,6 @@ namespace Celeste.Mod {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {dir}: {e}");
                         }
                     }
-                string decalRegistryPath = Path.Combine(dir, "decalRegistry.xml");
-                if (File.Exists(decalRegistryPath)) {
-                    try {
-                        DecalRegistry.ReadXml(File.ReadAllText(decalRegistryPath));
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "loader", $"Failed parsing DecalRegistry.xml in {dir}: {e}");
-                    }
-                }
 
                 FileSystemModContent contentMeta = new FileSystemModContent(dir);
                 EverestModuleMetadata contentMetaParent = null;
