@@ -217,6 +217,13 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiJournalStatsHeartGemCheck")]
     class PatchOuiJournalStatsHeartGemCheckAttribute : Attribute { };
 
+    /// <summary>
+    /// Makes the annotated method public.
+    /// </summary>
+    [MonoModCustomMethodAttribute("MakeMethodPublic")]
+    class MakeMethodPublicAttribute : Attribute { };
+
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1779,6 +1786,10 @@ namespace MonoMod {
                     nextInstr.OpCode = OpCodes.Ldc_I4_3;
                 }
             }
+        }
+
+        public static void MakeMethodPublic(MethodDefinition method, CustomAttribute attrib) {
+            method.SetPublic(true);
         }
 
         public static void PostProcessor(MonoModder modder) {
