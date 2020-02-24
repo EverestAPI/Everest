@@ -98,13 +98,13 @@ namespace Celeste {
             }) {
                 Console.SetOut(logWriter);
 
+                AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
+
                 try {
                     Everest.ParseArgs(args);
                     orig_Main(args);
                 } catch (Exception e) {
-                    e.LogDetailed("CRITICAL");
-                    ErrorLog.Write("OOPSIE WOOPSIE!! Uwu We made a fucky wucky!! A wittle fucko boingo! The code monkeys at our headquarters are working VEWY HAWD to fix this!");
-                    ErrorLog.Open();
+                    CriticalFailureHandler(e);
                     return;
                 }
 
@@ -113,6 +113,37 @@ namespace Celeste {
                 Console.SetOut(logWriter.STDOUT);
                 logWriter.STDOUT = null;
             }
+        }
+
+        private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
+            if (e.IsTerminating) {
+                _CriticalFailureIsUnhandledException = true;
+                CriticalFailureHandler(e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception"));
+
+            } else {
+                (e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception")).LogDetailed("UNHANDLED");
+            }
+        }
+
+        private static bool _CriticalFailureIsUnhandledException;
+        public static void CriticalFailureHandler(Exception e) {
+            (e ?? new Exception("Unknown exception")).LogDetailed("CRITICAL");
+            ErrorLog.Write(
+@"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
+
+In other words: Celeste has encountered a catastrophic failure.
+Probably by force-installing Everest on top of Everest on top of Everest.
+
+IF YOU WANT TO HELP US FIX THIS:
+Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
+https://discord.gg/6qjaePQ
+
+IF YOU WANT TO MAKE EVERYONE ELSE SUFFER AND FIX IT FOR YOURSELF ONLY, YOU EGOISTIC A~
+Go to your Celeste folder, delete the orig backup folder and let Steam / EGS / itch.io verify the game's files.
+");
+            ErrorLog.Open();
+            if (!_CriticalFailureIsUnhandledException)
+                Environment.Exit(-1);
         }
 
         [MonoModIfFlag("OS:NotWindows")]
