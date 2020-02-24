@@ -20,6 +20,7 @@ using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Level = Celeste.Level;
 using _Player = Celeste.Player;
 using _OuiJournal = Celeste.OuiJournal;
+using _Decal = Celeste.Decal;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -140,6 +141,13 @@ namespace Celeste.Mod {
                 public static event EnterHandler OnEnter;
                 internal static void Enter(_OuiJournal journal, Oui from)
                     => OnEnter?.Invoke(journal, from);
+            }
+
+            public static class Decal {
+                public delegate void DecalRegistryHandler(_Decal decal, DecalRegistry.DecalInfo decalInfo);
+                public static event DecalRegistryHandler OnHandleDecalRegistry;
+                internal static void HandleDecalRegistry(_Decal decal, DecalRegistry.DecalInfo decalInfo)
+                    => OnHandleDecalRegistry?.Invoke(decal, decalInfo);
             }
 
         }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Xna.Framework;
 using System.IO;
+using Monocle;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -26,6 +27,20 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [MonoModIgnore]
+        private class CoreSwapImage : Component {
+            public CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
+                // no-op
+            }
+        }
+
+        [MonoModIgnore]
+        private class DecalImage : Component {
+            public DecalImage() : base(active: false, visible: true) {
+                // no-op
+            }
+        }
+
         public extern void orig_ctor(string texture, Vector2 position, Vector2 scale, int depth);
         [MonoModConstructor]
         public void ctor(string texture, Vector2 position, Vector2 scale, int depth) {
@@ -36,7 +51,65 @@ namespace Celeste {
 
             orig_ctor(texture, position, scale, depth);
         }
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeParallax(float amount);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void CreateSmoke(Vector2 offset, bool inbg);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeMirror(string path, bool keepOffsetsClose);
+        
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeFloaty();
 
+        [MonoModIgnore]
+        [MakeMethodPublic]
+        public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
+
+        [MonoModIgnore]
+        private Component image;
+
+        public void MakeCoreSwap(string coldPath, string hotPath) {
+            Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+        }
+
+        public Component Image { get { return image; } set { image = value; } }
+
+        public extern void orig_Added(Scene scene);
+        public override void Added(Scene scene) {
+            orig_Added(scene);
+            // Handle the Decal Registry
+            string text = Name.ToLower();
+            if (text.StartsWith("decals/")) {
+                text = text.Substring(7);
+            }
+            if (DecalRegistry.RegisteredDecals.ContainsKey(text)) {
+                Remove(image);
+                image = null;
+                DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
+                   
+                // Handle properties
+                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
+                    if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
+                        DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
+                    } else {
+                        Logger.Log(LogLevel.Warn,"Decal Registry", $"Unknown property {property.Key} in decal {text}");
+                    }
+                }
+
+                Everest.Events.Decal.HandleDecalRegistry(this, info);
+                if (image == null) {
+                    Add(image = new DecalImage());
+                }
+                
+            }
+        }
     }
     public static class DecalExt {
 
@@ -44,6 +117,5 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
-
     }
 }

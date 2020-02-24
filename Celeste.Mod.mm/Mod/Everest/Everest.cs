@@ -402,6 +402,8 @@ namespace Celeste.Mod {
             foreach (EverestModule mod in _Modules)
                 mod.Initialize();
             _Initialized = true;
+
+            DecalRegistry.LoadDecalRegistry();
         }
 
         /// <summary>
