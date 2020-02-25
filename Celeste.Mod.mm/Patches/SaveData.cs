@@ -383,6 +383,10 @@ namespace Celeste {
             LastArea_Unsafe = AreaKey.Default;
             CurrentSession_Unsafe = null;
 
+            // Fix areas with missing SID (f.e. deleted or renamed maps).
+            if (AreaData.Get(LastArea) == null)
+                LastArea = AreaKey.Default;
+
             // Fix out of bounds areas.
             if (LastArea.ID < 0 || LastArea.ID >= AreaData.Areas.Count)
                 LastArea = AreaKey.Default;
