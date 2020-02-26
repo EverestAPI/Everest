@@ -75,6 +75,10 @@ namespace Celeste {
 
             SaveData.Instance.CurrentSession = session;
             SaveData.Instance.LastArea = session.Area;
+            if (AreaData.Get(session.Area) == null) {
+                // the area we are returning to doesn't exist anymore. return to Prologue instead.
+                SaveData.Instance.LastArea = AreaKey.Default;
+            }
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
         }
 
