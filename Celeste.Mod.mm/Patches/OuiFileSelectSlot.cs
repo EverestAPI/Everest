@@ -4,6 +4,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -11,18 +12,24 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_OuiFileSelectSlot : OuiFileSelectSlot {
 
         // We're effectively in OuiFileSelectSlot, but still need to "expose" private fields to our mod.
         private OuiFileSelect fileSelect;
-        private List<patch_Button> buttons;
+        private List<Button> buttons;
+        private Tween tween;
+        private float inputDelay;
+        private bool deleting;
+        private int buttonIndex;
+        private float selectedEase;
+        private Wiggler wiggler;
 
-        private patch_Button NewGameLevelSetButton;
-        private string NewGameLevelSet;
+        [MonoModIgnore]
+        private bool selected { get; set; }
+
+        private OuiFileSelectSlotLevelSetPicker newGameLevelSetPicker;
 
         // computed maximums for stamp rendering
         private int maxStrawberryCount;
@@ -131,25 +138,9 @@ namespace Celeste {
                 return;
 
             if (!Exists) {
-
                 if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
-                    buttons.Add(NewGameLevelSetButton = new patch_Button() {
-                        Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste"),
-                        Scale = 0.5f,
-                        Action = () => {
-                            if (NewGameLevelSet == null)
-                                NewGameLevelSet = "Celeste";
-
-                            int id = AreaData.Areas.FindLastIndex(area => area.GetLevelSet() == NewGameLevelSet) + 1;
-                            if (id >= AreaData.Areas.Count)
-                                id = 0;
-                            NewGameLevelSet = AreaData.Areas[id].GetLevelSet();
-
-                            NewGameLevelSetButton.Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
-                        }
-                    });
+                    buttons.Add(newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this));
                 }
-
             }
         }
 
@@ -157,11 +148,28 @@ namespace Celeste {
         public void OnNewGameSelected() {
             orig_OnNewGameSelected();
 
-            if (NewGameLevelSet != null && NewGameLevelSet != "Celeste") {
+            string newGameLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+            if (newGameLevelSet != null && newGameLevelSet != "Celeste") {
                 SaveData.Instance.LastArea =
-                    AreaData.Areas.FirstOrDefault(area => area.GetLevelSet() == NewGameLevelSet)?.ToKey() ??
+                    AreaData.Areas.FirstOrDefault(area => area.GetLevelSet() == newGameLevelSet)?.ToKey() ??
                     AreaKey.Default;
             }
+        }
+
+        public extern void orig_Update();
+        public override void Update() {
+            orig_Update();
+
+            if (newGameLevelSetPicker != null && selected && fileSelect.Selected && fileSelect.Focused &&
+                !StartingGame && tween == null && inputDelay <= 0f && !StartingGame && !deleting) {
+
+                // currently highlighted option is the level set picker, call its Update() method to handle Left and Right presses.
+                newGameLevelSetPicker.Update(buttons[buttonIndex] == newGameLevelSetPicker);
+            }
+        }
+
+        public void WiggleMenu() {
+            wiggler.Start();
         }
 
         [MonoModReplace]
@@ -194,17 +202,33 @@ namespace Celeste {
             LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
         }
 
-        // Required because Button is private.
-        [MonoModIgnore]
-        private class patch_Button {
+        // Required because Button is private. Also make it public.
+        [MonoModPublic]
+        public class Button {
             public string Label;
             public Action Action;
             public float Scale = 1f;
         }
 
+        [PatchFileSelectSlotRender] // manually manipulate the method via MonoModRules
+        public extern void orig_Render();
+        public override void Render() {
+            orig_Render();
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchFileSelectSlotRender] // ... except for manually manipulating the method via MonoModRules
-        public override extern void Render();
+            if (selectedEase > 0f) {
+                Vector2 position = Position + new Vector2(0f, -150f + 350f * selectedEase);
+                float lineHeight = ActiveFont.LineHeight;
+
+                // go through all buttons, looking for the level set picker.
+                for (int i = 0; i < buttons.Count; i++) {
+                    Button button = buttons[i];
+                    if (button == newGameLevelSetPicker) {
+                        // we found it: call its Render method.
+                        newGameLevelSetPicker.Render(position, buttonIndex == i && !deleting, wiggler.Value * 8f);
+                    }
+                    position.Y += lineHeight * button.Scale + 15f;
+                }
+            }
+        }
     }
 }
