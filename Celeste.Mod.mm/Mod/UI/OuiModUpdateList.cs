@@ -16,6 +16,7 @@ namespace Celeste.Mod.UI {
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenu.Button fetchingButton;
+        private TextMenu.Button updateAllButton;  // TODO does this need to be global?
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -28,6 +29,7 @@ namespace Celeste.Mod.UI {
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+        private List<modUpdateHolder> updateableMods = new List<modUpdateHolder>();
 
         public override IEnumerator Enter(Oui from) {
             menu = new TextMenu();
@@ -110,6 +112,19 @@ namespace Celeste.Mod.UI {
                         button.Disabled = true;
                         menu.Add(button);
                     } else {
+                        // display an "update all" button at the top of the list
+                        updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
+                        updateAllButton.Pressed(() => {
+                            // make the menu non-interactive
+                            menu.Focused = false;
+                            updateAllButton.Disabled = true;
+
+                            // trigger all mod updates
+                            downloadAllMods();
+                            
+                        });
+                        menu.Add(updateAllButton);
+
                         // display one button per update
                         foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
                             EverestModuleMetadata metadata = availableUpdatesCatalog[update];
@@ -119,6 +134,7 @@ namespace Celeste.Mod.UI {
                                 versionUpdate = $"{metadata.VersionString} > {update.Version}";
 
                             TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+                            modUpdateHolder updateAllData = new modUpdateHolder() { update = update, metadata = metadata, button = button };
                             button.Pressed(() => {
                                 // make the menu non-interactive
                                 menu.Focused = false;
@@ -126,11 +142,16 @@ namespace Celeste.Mod.UI {
 
                                 // trigger the update download
                                 downloadModUpdate(update, metadata, button);
+                                updateableMods.Remove(updateAllData);
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                            if (update.xxHash.Count > 1)
+                            // if there isnt, add it to the list of mods that can be updated via "update all"
+                            if (update.xxHash.Count > 1) {
                                 button.Disabled = true;
+                            } else {
+                                updateableMods.Add(updateAllData);
+                            }
 
                             menu.Add(button);
                         }
@@ -166,51 +187,69 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         private void downloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
             task = new Task(() => {
-                // we will download the mod to Celeste_Directory/mod-update.zip at first.
-                string zipPath = Path.Combine(Everest.PathGame, "mod-update.zip");
 
-                try {
-                    // download it...
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
-                    downloadMod(update, button, zipPath);
+                bool updateSuccess = doDownloadModUpdate(update, mod, button);
 
-                    // verify its checksum
-                    ModUpdaterHelper.VerifyChecksum(update, zipPath);
-
-                    // mark restarting as required, as we will do weird stuff like closing zips afterwards.
-                    if (!shouldRestart) {
-                        shouldRestart = true;
-                        subHeader.TextColor = Color.OrangeRed;
-                        subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
-                    }
-
-                    // install it
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
-                    ModUpdaterHelper.InstallModUpdate(update, mod, zipPath);
-
-                    // done!
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
-
+                if (updateSuccess) {
                     // select another enabled option: the next one, or the last one if there is no next one.
                     if (menu.Selection + 1 > menu.LastPossibleSelection)
                         menu.Selection = menu.LastPossibleSelection;
                     else
                         menu.MoveSelection(1);
-                } catch (Exception e) {
-                    // update failed
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
-                    Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
-                    Logger.LogDetailed(e);
-                    button.Disabled = false;
-
-                    // try to delete mod-update.zip if it still exists.
-                    ModUpdaterHelper.TryDelete(zipPath);
                 }
 
                 // give the menu control back to the player
                 menu.Focused = true;
             });
             task.Start();
+        }
+
+        /// <summary>
+        /// Does the actual downloading of the mod. This is it's own function, to avoid double code
+        /// </summary>
+        /// <param name="update">The update info coming from the update server</param>
+        /// <param name="mod">The mod metadata from Everest for the installed mod</param>
+        /// <param name="button">The button for that mod shown on the interface</param>
+        /// <returns>Bool wether the update failed or not</returns>
+        private bool doDownloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
+
+            // we will download the mod to Celeste_Directory/[update.GetHashCode()].zip at first.
+            string zipPath = Path.Combine(Everest.PathGame, $"{update.GetHashCode()}.zip");
+
+            try {
+                // download it...
+                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
+                downloadMod(update, button, zipPath);
+
+                // verify its checksum
+                ModUpdaterHelper.VerifyChecksum(update, zipPath);
+
+                // mark restarting as required, as we will do weird stuff like closing zips afterwards.
+                if (!shouldRestart) {
+                    shouldRestart = true;
+                    subHeader.TextColor = Color.OrangeRed;
+                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+                }
+
+                // install it
+                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
+                ModUpdaterHelper.InstallModUpdate(update, mod, zipPath);
+
+                // done!
+                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
+
+                return true;
+            } catch (Exception e) {
+                // update failed
+                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
+                Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
+                Logger.LogDetailed(e);
+                button.Disabled = false;
+
+                // try to delete mod-update.zip if it still exists.
+                ModUpdaterHelper.TryDelete(zipPath);
+                return false;
+            }
         }
 
         /// <summary>
@@ -229,6 +268,29 @@ namespace Celeste.Mod.UI {
                     button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
+        }
+        /// <summary>
+        /// Downloads all automatically updateable mods
+        /// </summary>
+        private void downloadAllMods() {
+            task = new Task(() => {
+                foreach (modUpdateHolder modupdate in updateableMods) {
+                    doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button);
+                }
+
+                // There should be no more buttons selectable, however lets do this anyway.
+                menu.MoveSelection(1);
+
+                // give the menu control back to the player
+                menu.Focused = true;
+            });
+            task.Start();
+        }
+
+        private struct modUpdateHolder {
+            public ModUpdateInfo update;
+            public EverestModuleMetadata metadata;
+            public TextMenu.Button button;
         }
     }
 }
