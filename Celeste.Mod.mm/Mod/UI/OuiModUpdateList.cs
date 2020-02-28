@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
-        private List<modUpdateHolder> updateableMods = new List<modUpdateHolder>();
+        private List<ModUpdateHolder> updateableMods = new List<ModUpdateHolder>();
 
         public override IEnumerator Enter(Oui from) {
             menu = new TextMenu();
@@ -134,7 +134,7 @@ namespace Celeste.Mod.UI {
                                 versionUpdate = $"{metadata.VersionString} > {update.Version}";
 
                             TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
-                            modUpdateHolder updateAllData = new modUpdateHolder() { update = update, metadata = metadata, button = button };
+                            ModUpdateHolder updateAllData = new ModUpdateHolder() { update = update, metadata = metadata, button = button };
                             button.Pressed(() => {
                                 // make the menu non-interactive
                                 menu.Focused = false;
@@ -142,12 +142,6 @@ namespace Celeste.Mod.UI {
 
                                 // trigger the update download
                                 downloadModUpdate(update, metadata, button);
-
-                                // remove this mod from the "update all" list and, if necessary, disable the "update all" button
-                                updateableMods.Remove(updateAllData);
-                                if (updateableMods.Count == 0) {
-                                    updateAllButton.Disabled = true;
-                                }
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
@@ -279,12 +273,21 @@ namespace Celeste.Mod.UI {
         /// </summary>
         private void downloadAllMods() {
             task = new Task(() => {
-                foreach (modUpdateHolder modupdate in updateableMods) {
+                foreach (ModUpdateHolder modupdate in updateableMods) {
                     modupdate.button.Disabled = true;
                 }
                 menu.Focused = false;
-                foreach (modUpdateHolder modupdate in updateableMods) {
-                    doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button);
+                foreach (ModUpdateHolder modupdate in updateableMods) {
+                    if (doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button)) {
+                        // if update is successful, remove this mod from the "update all" list and, if necessary, disable the "update all" button
+                        updateableMods.Remove(modupdate);
+                        if (updateableMods.Count == 0) {
+                            updateAllButton.Disabled = true;
+                        }
+                    } else {
+                        // re-enable the "update all" button due to failed updates
+                        updateAllButton.Disabled = false;
+                    }
                 }
 
                 // There should be no more buttons selectable, however lets do this anyway.
@@ -296,7 +299,7 @@ namespace Celeste.Mod.UI {
             task.Start();
         }
 
-        private struct modUpdateHolder {
+        private struct ModUpdateHolder {
             public ModUpdateInfo update;
             public EverestModuleMetadata metadata;
             public TextMenu.Button button;
