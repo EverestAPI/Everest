@@ -16,7 +16,7 @@ namespace Celeste.Mod.UI {
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenu.Button fetchingButton;
-        private TextMenu.Button updateAllButton;  // TODO does this need to be global?
+        private TextMenu.Button updateAllButton; 
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -142,7 +142,12 @@ namespace Celeste.Mod.UI {
 
                                 // trigger the update download
                                 downloadModUpdate(update, metadata, button);
+
+                                // remove this mod from the "update all" list and, if necessary, disable the "update all" button
                                 updateableMods.Remove(updateAllData);
+                                if (updateableMods.Count == 0) {
+                                    updateAllButton.Disabled = true;
+                                }
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
@@ -274,7 +279,9 @@ namespace Celeste.Mod.UI {
         /// </summary>
         private void downloadAllMods() {
             task = new Task(() => {
+                menu.Focused = false;
                 foreach (modUpdateHolder modupdate in updateableMods) {
+                    modupdate.button.Disabled = true;
                     doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button);
                 }
 
