@@ -279,9 +279,11 @@ namespace Celeste.Mod.UI {
         /// </summary>
         private void downloadAllMods() {
             task = new Task(() => {
-                menu.Focused = false;
                 foreach (modUpdateHolder modupdate in updateableMods) {
                     modupdate.button.Disabled = true;
+                }
+                menu.Focused = false;
+                foreach (modUpdateHolder modupdate in updateableMods) {
                     doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button);
                 }
 
