@@ -16,7 +16,7 @@ namespace Celeste.Mod.UI {
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenu.Button fetchingButton;
-        private TextMenu.Button updateAllButton; 
+        private TextMenu.Button updateAllButton;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
-        private List<ModUpdateHolder> updateableMods = new List<ModUpdateHolder>();
+        private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
 
         public override IEnumerator Enter(Oui from) {
             menu = new TextMenu();
@@ -85,6 +85,8 @@ namespace Celeste.Mod.UI {
 
             updateCatalog = null;
             availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+            updatableMods = new List<ModUpdateHolder>();
+
             task = null;
         }
 
@@ -112,20 +114,16 @@ namespace Celeste.Mod.UI {
                         button.Disabled = true;
                         menu.Add(button);
                     } else {
-                        // display an "update all" button at the top of the list
-                        updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
-                        updateAllButton.Pressed(() => {
-                            // make the menu non-interactive
-                            menu.Focused = false;
-                            updateAllButton.Disabled = true;
+                        // if there are multiple updates...
+                        if (availableUpdatesCatalog.Count > 1) {
+                            // display an "update all" button at the top of the list
+                            updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
+                            updateAllButton.Pressed(() => downloadAllMods());
 
-                            // trigger all mod updates
-                            downloadAllMods();
-                            
-                        });
-                        menu.Add(updateAllButton);
+                            menu.Add(updateAllButton);
+                        }
 
-                        // display one button per update
+                        // then, display one button per update
                         foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
                             EverestModuleMetadata metadata = availableUpdatesCatalog[update];
 
@@ -134,7 +132,6 @@ namespace Celeste.Mod.UI {
                                 versionUpdate = $"{metadata.VersionString} > {update.Version}";
 
                             TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
-                            ModUpdateHolder updateAllData = new ModUpdateHolder() { update = update, metadata = metadata, button = button };
                             button.Pressed(() => {
                                 // make the menu non-interactive
                                 menu.Focused = false;
@@ -149,7 +146,7 @@ namespace Celeste.Mod.UI {
                             if (update.xxHash.Count > 1) {
                                 button.Disabled = true;
                             } else {
-                                updateableMods.Add(updateAllData);
+                                updatableMods.Add(new ModUpdateHolder() { update = update, metadata = metadata, button = button });
                             }
 
                             menu.Add(button);
@@ -186,7 +183,6 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         private void downloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
             task = new Task(() => {
-
                 bool updateSuccess = doDownloadModUpdate(update, mod, button);
 
                 if (updateSuccess) {
@@ -195,11 +191,15 @@ namespace Celeste.Mod.UI {
                         menu.Selection = menu.LastPossibleSelection;
                     else
                         menu.MoveSelection(1);
+                } else {
+                    // re-enable the button to allow the user to try again.
+                    button.Disabled = false;
                 }
 
                 // give the menu control back to the player
                 menu.Focused = true;
             });
+
             task.Start();
         }
 
@@ -211,9 +211,8 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         /// <returns>Bool wether the update failed or not</returns>
         private bool doDownloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
-
             // we will download the mod to Celeste_Directory/[update.GetHashCode()].zip at first.
-            string zipPath = Path.Combine(Everest.PathGame, $"{update.GetHashCode()}.zip");
+            string zipPath = Path.Combine(Everest.PathGame, $"modupdate-{update.GetHashCode()}.zip");
 
             try {
                 // download it...
@@ -243,7 +242,6 @@ namespace Celeste.Mod.UI {
                 button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
                 Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
                 Logger.LogDetailed(e);
-                button.Disabled = false;
 
                 // try to delete mod-update.zip if it still exists.
                 ModUpdaterHelper.TryDelete(zipPath);
@@ -268,30 +266,42 @@ namespace Celeste.Mod.UI {
                 }
             });
         }
+
         /// <summary>
-        /// Downloads all automatically updateable mods
+        /// Downloads all automatically updatable mods
         /// </summary>
         private void downloadAllMods() {
             task = new Task(() => {
-                foreach (ModUpdateHolder modupdate in updateableMods) {
+                // make the menu non-interactive
+                menu.Focused = false;
+                updateAllButton.Disabled = true;
+                updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL_INPROGRESS");
+
+                // disable all mod update buttons
+                foreach (ModUpdateHolder modupdate in updatableMods) {
                     modupdate.button.Disabled = true;
                 }
+
                 menu.Focused = false;
-                foreach (ModUpdateHolder modupdate in updateableMods) {
+                for (int i = 0; i < updatableMods.Count; i++) {
+                    ModUpdateHolder modupdate = updatableMods[i];
                     if (doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button)) {
-                        // if update is successful, remove this mod from the "update all" list and, if necessary, disable the "update all" button
-                        updateableMods.Remove(modupdate);
-                        if (updateableMods.Count == 0) {
-                            updateAllButton.Disabled = true;
-                        }
-                    } else {
-                        // re-enable the "update all" button due to failed updates
-                        updateAllButton.Disabled = false;
+                        // if update is successful, remove this mod from the "update all" list
+                        updatableMods.Remove(modupdate);
+                        i--;
                     }
                 }
 
-                // There should be no more buttons selectable, however lets do this anyway.
-                menu.MoveSelection(1);
+                // enable all (remaining) mod update buttons + the "update all" button if any mod is left to update
+                foreach (ModUpdateHolder modupdate in updatableMods) {
+                    modupdate.button.Disabled = false;
+                }
+                if (updatableMods.Count != 0) {
+                    updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL");
+                    updateAllButton.Disabled = false;
+                } else {
+                    updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL_DONE");
+                }
 
                 // give the menu control back to the player
                 menu.Focused = true;
