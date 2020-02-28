@@ -223,6 +223,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("MakeMethodPublic")]
     class MakeMethodPublicAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches the CrystalStaticSpinner.AddSprites method to make it more efficient.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchSpinnerCreateSprites")]
+    class PatchSpinnerCreateSpritesAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -1790,6 +1796,48 @@ namespace MonoMod {
 
         public static void MakeMethodPublic(MethodDefinition method, CustomAttribute attrib) {
             method.SetPublic(true);
+        }
+
+        public static void PatchSpinnerCreateSprites(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_ID = method.DeclaringType.FindField("ID");
+            if (f_ID == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count - 5; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Ldloc_S
+                    && instrs[instri + 1].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 2].OpCode == OpCodes.Beq_S) {
+
+                    // instead of comparing the X positions for spinners, compare their IDs.
+                    // this way, we are sure spinner 1 will connect to spinner 2, but spinner 2 won't connect to spinner 1.
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_ID));
+                    instrs.Insert(instri + 3, il.Create(OpCodes.Ldfld, f_ID));
+                    instrs[instri + 4].OpCode = OpCodes.Ble_S;
+                }
+
+                if (instrs[instri].OpCode == OpCodes.Ldloc_S
+                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_X"
+                    && instrs[instri + 2].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference).Name == "get_X"
+                    && instrs[instri + 4].OpCode == OpCodes.Blt_Un_S) {
+
+                    // the other.X >= this.X check is made redundant by the patch above. Remove it.
+                    for (int i = 0; i < 5; i++) {
+                        instrs.RemoveAt(instri);
+                    }
+                }
+
+                // replace "(item.Position - Position).Length() < 24f" with "(item.Position - Position).LengthSquared() < 576f".
+                // this is equivalent, except it skips a square root calculation, which helps with performance.
+                if (instrs[instri].OpCode == OpCodes.Call && ((MethodReference) instrs[instri].Operand).Name == "Length") {
+                    ((MethodReference) instrs[instri].Operand).Name = "LengthSquared";
+                }
+                if (instrs[instri].OpCode == OpCodes.Ldc_R4 && ((float) instrs[instri].Operand) == 24f) {
+                    instrs[instri].Operand = 576f;
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {
