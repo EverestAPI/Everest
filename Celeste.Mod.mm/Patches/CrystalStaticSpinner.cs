@@ -20,9 +20,19 @@ namespace Celeste {
 
         private CrystalColor color;
 
+        private int ID;
+
         public patch_CrystalStaticSpinner(Vector2 position, bool attachToSolid, CrystalColor color)
             : base(position, attachToSolid, color) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        public extern void orig_ctor(EntityData data, Vector2 offset, CrystalColor color);
+
+        [MonoModConstructor]
+        public void ctor(EntityData data, Vector2 offset, CrystalColor color) {
+            orig_ctor(data, offset, color);
+            ID = data.ID;
         }
 
         public extern void orig_Awake(Scene scene);
@@ -38,6 +48,10 @@ namespace Celeste {
 
             orig_Awake(scene);
         }
+
+        [MonoModIgnore] // do not change anything in the method...
+        [PatchSpinnerCreateSprites] // ... except manually manipulating it via MonoModRules
+        private extern void CreateSprites();
 
         [MonoModIgnore]
         private class CoreModeListener : Component {
