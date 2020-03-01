@@ -229,6 +229,11 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchSpinnerCreateSprites")]
     class PatchSpinnerCreateSpritesAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches the checks for OuiAssistMode to include a check for OuiFileSelectSlot.ISubmenu as well.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiFileSelectSubmenuChecks")]
+    class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { };
 
     static class MonoModRules {
 
@@ -1836,6 +1841,57 @@ namespace MonoMod {
                 }
                 if (instrs[instri].OpCode == OpCodes.Ldc_R4 && ((float) instrs[instri].Operand) == 24f) {
                     instrs[instri].Operand = 576f;
+                }
+            }
+        }
+
+        public static void PatchOuiFileSelectSubmenuChecks(MethodDefinition method, CustomAttribute attrib) {
+            TypeDefinition t_ISubmenu = method.Module.GetType("Celeste.OuiFileSelectSlot/ISubmenu");
+            if (t_ISubmenu == null)
+                return;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count - 4; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Brtrue_S
+                    && instrs[instri + 1].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 2].OpCode == OpCodes.Ldfld
+                    && instrs[instri + 3].OpCode == OpCodes.Isinst && ((TypeDefinition) instrs[instri + 3].Operand).Name == "OuiAssistMode") {
+
+                    // gather some info
+                    FieldReference field = (FieldReference) instrs[instri + 2].Operand;
+                    Instruction branchTarget = (Instruction) instrs[instri].Operand;
+
+                    // then inject another similar check for ISubmenu
+                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, field));
+                    instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
+
+                } else if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld
+                    && instrs[instri + 2].OpCode == OpCodes.Isinst && ((TypeDefinition) instrs[instri + 2].Operand).Name == "OuiAssistMode"
+                    && instrs[instri + 3].OpCode == OpCodes.Brfalse_S) {
+
+                    // gather some info
+                    FieldReference field = (FieldReference) instrs[instri + 1].Operand;
+                    Instruction branchTarget = instrs[instri + 4];
+
+                    // then inject another similar check for ISubmenu
+                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, field));
+                    instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                 }
             }
         }

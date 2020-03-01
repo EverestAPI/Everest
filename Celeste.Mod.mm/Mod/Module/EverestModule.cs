@@ -115,6 +115,8 @@ namespace Celeste.Mod {
         /// Load the mod save data. Loads the save data from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void LoadSaveData(int index) {
+            Logger.Log("EverestModule", $"Loading save data for module {GetType().FullName}");
+
             if (SaveDataType == null)
                 return;
 

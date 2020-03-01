@@ -597,7 +597,7 @@ namespace Celeste.Mod {
 
         private static IEnumerator _QuickFullRestart(bool fromOverworld) {
             SaveData save = SaveData.Instance;
-            if (save != null) {
+            if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
                     CoreModule.Settings.QuickRestart = save.FileSlot;
                 }

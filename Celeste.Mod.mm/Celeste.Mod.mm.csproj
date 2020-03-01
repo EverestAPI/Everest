@@ -167,6 +167,8 @@
     <Compile Include="Mod\UI\MainMenuModOptionsButton.cs" />
     <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
     <Compile Include="Mod\UI\OuiFileSelectSlotLevelSetPicker.cs" />
+    <Compile Include="Mod\UI\OuiFileSelectSlotSubmenu.cs" />
+    <Compile Include="Mod\UI\OuiGenericMenu.cs" />
     <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
     <Compile Include="Mod\UI\OuiModUpdateList.cs" />
     <Compile Include="Patches\LevelTemplate.cs" />
@@ -195,6 +197,7 @@
     <Compile Include="Patches\Maddy3D.cs" />
     <Compile Include="Patches\ModeProperties.cs" />
     <Compile Include="Patches\MountainRenderer.cs" />
+    <Compile Include="Patches\OuiFileSelect.cs" />
     <Compile Include="Patches\OuiJournalGlobal.cs" />
     <Compile Include="Patches\Pathfinder.cs" />
     <Compile Include="Patches\CheckpointData.cs" />

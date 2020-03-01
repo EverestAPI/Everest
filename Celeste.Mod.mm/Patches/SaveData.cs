@@ -23,6 +23,9 @@ namespace Celeste {
         public string LevelSet => LevelSetStats.Name;
 
         [XmlIgnore]
+        public static int LoadedModSaveDataIndex = int.MinValue;
+
+        [XmlIgnore]
         public LevelSetStats LevelSetStats {
             get {
                 string name = LastArea.GetLevelSet() ?? "Celeste";
@@ -213,9 +216,24 @@ namespace Celeste {
         public static new void Start(SaveData data, int slot) {
             orig_Start(data, slot);
 
+            LoadModSaveData(slot);
+
+            // load session data.
             foreach (EverestModule mod in Everest._Modules) {
-                mod.LoadSaveData(slot);
                 mod.LoadSession(slot, false);
+            }
+        }
+
+        /// <summary>
+        /// Load mod saves only when the given slot is not the currently loaded slot.
+        /// </summary>
+        /// <param name="slot">The slot to load</param>
+        public static void LoadModSaveData(int slot) {
+            if (LoadedModSaveDataIndex != slot) {
+                foreach (EverestModule mod in Everest._Modules) {
+                    mod.LoadSaveData(slot);
+                }
+                LoadedModSaveDataIndex = slot;
             }
         }
 
@@ -228,6 +246,8 @@ namespace Celeste {
                 mod.DeleteSaveData(slot);
                 mod.DeleteSession(slot);
             }
+
+            LoadedModSaveDataIndex = int.MinValue;
 
             return true;
         }
