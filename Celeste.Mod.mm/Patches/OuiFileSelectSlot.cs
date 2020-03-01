@@ -148,7 +148,7 @@ namespace Celeste {
         public void OnNewGameSelected() {
             orig_OnNewGameSelected();
 
-            string newGameLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+            string newGameLevelSet = newGameLevelSetPicker?.NewGameLevelSet;
             if (newGameLevelSet != null && newGameLevelSet != "Celeste") {
                 SaveData.Instance.LastArea =
                     AreaData.Areas.FirstOrDefault(area => area.GetLevelSet() == newGameLevelSet)?.ToKey() ??
