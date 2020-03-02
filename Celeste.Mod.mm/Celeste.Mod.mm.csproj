@@ -198,6 +198,7 @@
     <Compile Include="Patches\OuiJournalGlobal.cs" />
     <Compile Include="Patches\Pathfinder.cs" />
     <Compile Include="Patches\CheckpointData.cs" />
+    <Compile Include="Patches\LightningRenderer.cs" />
     <Compile Include="Patches\SlashFx.cs" />
     <Compile Include="Patches\Platform.cs" />
     <Compile Include="Patches\PreviewRecording.cs" />
