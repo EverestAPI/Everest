@@ -91,6 +91,16 @@ namespace Celeste {
             return Scene.CollideCheck<Water>(bounds);
         }
 
+        private extern void orig_UpdateSprite();
+        private void UpdateSprite() {
+            orig_UpdateSprite();
+
+            // don't slow down the sprite (even if in space) for "intro wake up", because that makes that intro twice longer.
+            if (StateMachine.State == StIntroWakeUp) {
+                Sprite.Rate = 1f;
+            }
+        }
+
         public extern PlayerDeadBody orig_Die(Vector2 direction, bool evenIfInvincible, bool registerDeathInStats);
         public new PlayerDeadBody Die(Vector2 direction, bool evenIfInvincible = false, bool registerDeathInStats = true) {
             Level level = Scene as Level;
