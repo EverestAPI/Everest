@@ -54,7 +54,7 @@ namespace Celeste {
                     if (slot == -1)
                         save.DebugMode = true;
                     if (save.CurrentSession?.InArea ?? false) {
-                        Engine.Scene = new LevelLoader(save.CurrentSession);
+                        LevelEnter.Go(save.CurrentSession, true);
                     } else {
                         Overworld.Goto<OuiChapterSelect>();
                     }
