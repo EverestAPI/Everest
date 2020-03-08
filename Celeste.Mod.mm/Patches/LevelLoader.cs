@@ -105,6 +105,11 @@ namespace Celeste {
 
                         valueOrig.Sources.AddRange(valueMod.Sources);
 
+                        // replay the starting animation to be sure it is referring to the new sprite.
+                        valueOrig.Sprite.Stop();
+                        if (valueMod.Sprite.CurrentAnimationID != "") {
+                            valueOrig.Sprite.Play(valueMod.Sprite.CurrentAnimationID);
+                        }
                     } else {
                         bankOrig.SpriteData[key] = valueMod;
                     }
