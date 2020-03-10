@@ -25,15 +25,32 @@ namespace Celeste {
             PostLanguageLoad();
         }
 
-        private static string[] _GetFiles(string root, string searchPattern, SearchOption searchOption) {
-            return
-                Directory.GetFiles(root, searchPattern, searchOption)
+        public static List<string> GetVanillaLanguageFileList(string root, string searchPattern, SearchOption searchOption) {
+            return Directory.GetFiles(root, searchPattern, searchOption)
                 .Select(f => f.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/'))
-                .Union(
-                    Everest.Content.Map.Values
+                .ToList();
+        }
+
+        private static string[] _GetFiles(string root, string searchPattern, SearchOption searchOption) {
+            // initialize a list of files with vanilla language files
+            List<string> allFiles = GetVanillaLanguageFileList(root, searchPattern, searchOption);
+
+            // look up for all mod dialog files
+            List<string> modFiles = Everest.Content.Map.Values
                     .Where(a => a.Type == typeof(AssetTypeDialog) || a.Type == typeof(AssetTypeDialogExport))
                     .Select(a => Path.ChangeExtension(a.PathVirtual, "txt"))
-                ).Select(f => Path.Combine(Everest.Content.PathContentOrig, f.Replace('/', Path.DirectorySeparatorChar)))
+                    .ToList();
+
+            // merge them with the vanilla language files in a case-insensitive manner (if a file is called "english.txt", don't add it)
+            foreach (string modFile in modFiles) {
+                if (allFiles.All(file => !file.Equals(modFile, StringComparison.InvariantCultureIgnoreCase))) {
+                    allFiles.Add(modFile);
+                }
+            }
+
+            // turn them into absolute paths, then return them.
+            return allFiles
+                .Select(f => Path.Combine(Everest.Content.PathContentOrig, f.Replace('/', Path.DirectorySeparatorChar)))
                 .ToArray();
         }
 
