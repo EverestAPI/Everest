@@ -347,7 +347,7 @@ namespace Celeste.Mod {
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
             name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
-            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+            TextMenu.SubHeader header = new TextMenu.SubHeader(name + " | v." + Metadata.VersionString);
 
             PropertyInfo[] props;
             if (type == _PrevSettingsType) {
@@ -367,6 +367,11 @@ namespace Celeste.Mod {
                 );
 
                 if (creator != null) {
+                    if (header != null) {
+                        menu.Add(header);
+                        header = null;
+                    }
+
                     creator.GetFastDelegate()(settings, menu, inGame);
                     continue;
                 }
@@ -438,6 +443,11 @@ namespace Celeste.Mod {
 
                 if (item == null)
                     continue;
+
+                if (header != null) {
+                    menu.Add(header);
+                    header = null;
+                }
 
                 menu.Add(item);
 
