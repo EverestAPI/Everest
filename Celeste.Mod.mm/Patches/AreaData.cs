@@ -427,6 +427,8 @@ namespace Celeste {
 
             // Put "parented" levels at the end.
             if (!string.IsNullOrEmpty(aMeta?.Parent) && string.IsNullOrEmpty(bMeta?.Parent))
+                return 1;
+            if (string.IsNullOrEmpty(aMeta?.Parent) && !string.IsNullOrEmpty(bMeta?.Parent))
                 return -1;
 
             int? aOrder;
