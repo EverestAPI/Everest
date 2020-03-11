@@ -764,7 +764,18 @@ namespace Celeste.Mod {
                         AssetReloadHelper.ReloadLevel();
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
                         AssetReloadHelper.Do($"Reloading dialog: {name}", () => {
-                            Dialog.LoadLanguage(Path.Combine(PathContentOrig, path + ".txt"));
+                            string languageFilePath = path + ".txt";
+
+                            // fix the language case if broken.
+                            string languageRoot = Path.Combine(Engine.ContentDirectory, "Dialog");
+                            foreach (string vanillaFilePath in patch_Dialog.GetVanillaLanguageFileList(languageRoot, "*.txt", SearchOption.AllDirectories)) {
+                                if (vanillaFilePath.Equals(languageFilePath, StringComparison.InvariantCultureIgnoreCase)) {
+                                    languageFilePath = vanillaFilePath;
+                                    break;
+                                }
+                            }
+
+                            Dialog.LoadLanguage(Path.Combine(PathContentOrig, languageFilePath));
                             patch_Dialog.RefreshLanguages();
                         });
                     }

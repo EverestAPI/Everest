@@ -85,20 +85,21 @@ namespace Celeste {
             if (!LoadModLanguage)
                 yield break;
 
-            foreach (ModAsset asset in
-                Everest.Content.Mods
-                .Select(mod => mod.Map.TryGetValue(path, out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDialog))
-            ) {
-                lang.CurrentlyReadingFrom = asset.Source?.Name ?? "???";
-                using (StreamReader reader = new StreamReader(asset.Stream, encoding))
-                    while (reader.Peek() != -1)
-                        yield return reader.ReadLine().Trim('\r', '\n').Trim();
+            foreach (ModContent content in Everest.Content.Mods) {
+                foreach (ModAsset asset in content.Map
+                    .Where(entry => entry.Value.Type == typeof(AssetTypeDialog) && entry.Key.Equals(path, StringComparison.InvariantCultureIgnoreCase))
+                    .Select(entry => entry.Value)) {
 
-                // Feed a new key to be sure that the last key in the file is cut off.
-                // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
-                lang.CurrentlyReadingFrom = null;
-                yield return "EVEREST_SPLIT_BETWEEN_FILES= New file";
+                    lang.CurrentlyReadingFrom = asset.Source?.Name ?? "???";
+                    using (StreamReader reader = new StreamReader(asset.Stream, encoding))
+                        while (reader.Peek() != -1)
+                            yield return reader.ReadLine().Trim('\r', '\n').Trim();
+
+                    // Feed a new key to be sure that the last key in the file is cut off.
+                    // That will prevent mod B from corrupting the last key of mod A if its language txt is bad.
+                    lang.CurrentlyReadingFrom = null;
+                    yield return "EVEREST_SPLIT_BETWEEN_FILES= New file";
+                }
             }
         }
 
@@ -119,7 +120,7 @@ namespace Celeste {
                     count = lang.Dialog.ContainsKey(key) ? 1 : 0;
                 count++;
                 lang.ReadCount[key] = count;
-                
+
                 if (!lang.LineSources.TryGetValue(key, out string sourcePrev))
                     sourcePrev = "?!?!?!";
                 lang.LineSources[key] = lang.CurrentlyReadingFrom;
