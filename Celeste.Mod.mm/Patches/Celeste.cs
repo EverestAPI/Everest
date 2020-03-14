@@ -136,11 +136,7 @@ Probably by force-installing Everest on top of Everest on top of Everest.
 
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
-https://discord.gg/6qjaePQ
-
-IF YOU WANT TO MAKE EVERYONE ELSE SUFFER AND FIX IT FOR YOURSELF ONLY, YOU EGOISTIC A~
-Go to your Celeste folder, delete the orig backup folder and let Steam / EGS / itch.io verify the game's files.
-");
+https://discord.gg/6qjaePQ");
             ErrorLog.Open();
             if (!_CriticalFailureIsUnhandledException)
                 Environment.Exit(-1);
