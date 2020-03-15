@@ -27,6 +27,13 @@ namespace Celeste.Editor {
                 return meta.Name == "SpeedrunTool" && meta.Version <= new Version(1, 6, 7, 0);
             })
         );
+        
+        private static string ManualText = "Right Click:  Teleport to the room\n" +
+                                           "Confirm:      Teleport to the room\n" +
+                                           "Hold Control: Restart Chapter before teleporting\n" + 
+                                           "Hold Shift:   Teleport to the mouse position\n" + 
+                                           "Cancel:       Exit debug map\n" +      
+                                           "Q:            Show red berries";
 
         private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
@@ -144,6 +151,24 @@ namespace Celeste.Editor {
                     zoomWaitFrames = ZoomIntervalFrames;
                 }
             }
+        }
+
+        public extern void orig_Render();
+        public override void Render() {
+            orig_Render();
+            
+            Draw.SpriteBatch.Begin();
+            
+            Vector2 infoTextSize = Draw.DefaultFont.MeasureString(ManualText);
+            Draw.Rect(Engine.ViewWidth - infoTextSize.X - 20, Engine.ViewHeight - infoTextSize.Y - 20f, infoTextSize.X + 20f, infoTextSize.Y + 20f, Color.Black * 0.8f);
+            Draw.SpriteBatch.DrawString(
+                Draw.DefaultFont,
+                ManualText,
+                new Vector2(Engine.ViewWidth - infoTextSize.X - 10, Engine.ViewHeight - infoTextSize.Y - 10f),
+                Color.White
+            );
+            
+            Draw.SpriteBatch.End();
         }
     }
 }
