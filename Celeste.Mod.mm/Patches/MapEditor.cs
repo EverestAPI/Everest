@@ -8,14 +8,9 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
 using Monocle;
-using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste.Editor {
     class patch_MapEditor : MapEditor {
@@ -27,13 +22,14 @@ namespace Celeste.Editor {
                 return meta.Name == "SpeedrunTool" && meta.Version <= new Version(1, 6, 7, 0);
             })
         );
-        
-        private static string ManualText = "Right Click:  Teleport to the room\n" +
-                                           "Confirm:      Teleport to the room\n" +
-                                           "Hold Control: Restart Chapter before teleporting\n" + 
-                                           "Hold Shift:   Teleport to the mouse position\n" + 
-                                           "Cancel:       Exit debug map\n" +      
-                                           "Q:            Show red berries";
+
+        private const string ManualText = "Right Click:  Teleport to the room\n" +
+                                          "Confirm:      Teleport to the room\n" +
+                                          "Hold Control: Restart Chapter before teleporting\n" +
+                                          "Hold Shift:   Teleport to the mouse position\n" +
+                                          "Cancel:       Exit debug map\n" +
+                                          "Q:            Show red berries\n" +
+                                          "F1:           Show keys";
 
         private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
@@ -41,9 +37,11 @@ namespace Celeste.Editor {
         private static Camera Camera;
         private static AreaKey area;
         private Vector2 mousePosition;
+        private MapData mapData;
 
         private Session CurrentSession;
         private int zoomWaitFrames;
+        private List<Vector2> keys;
 
         public patch_MapEditor(AreaKey area, bool reloadMapData = true)
             : base(area, reloadMapData) {
@@ -156,18 +154,54 @@ namespace Celeste.Editor {
         public extern void orig_Render();
         public override void Render() {
             orig_Render();
-            
+            RenderManualText();
+            RenderKeys();
+        }
+
+        private void RenderManualText() {
             Draw.SpriteBatch.Begin();
-            
+
             Vector2 infoTextSize = Draw.DefaultFont.MeasureString(ManualText);
-            Draw.Rect(Engine.ViewWidth - infoTextSize.X - 20, Engine.ViewHeight - infoTextSize.Y - 20f, infoTextSize.X + 20f, infoTextSize.Y + 20f, Color.Black * 0.8f);
+            Draw.Rect(Engine.ViewWidth - infoTextSize.X - 20, Engine.ViewHeight - infoTextSize.Y - 20f,
+                infoTextSize.X + 20f, infoTextSize.Y + 20f, Color.Black * 0.8f);
             Draw.SpriteBatch.DrawString(
                 Draw.DefaultFont,
                 ManualText,
                 new Vector2(Engine.ViewWidth - infoTextSize.X - 10, Engine.ViewHeight - infoTextSize.Y - 10f),
                 Color.White
             );
-            
+
+            Draw.SpriteBatch.End();
+        }
+
+        private void RenderKeys() {
+            if (keys == null && mapData?.Levels != null) {
+                keys = new List<Vector2>();
+                foreach (LevelData levelData in mapData.Levels) {
+                    Rectangle bounds = levelData.Bounds;
+                    Vector2 basePosition = new Vector2(bounds.X, bounds.Y);
+                    IEnumerable<EntityData> keyEntityDatas = levelData.Entities
+                        .Where(entityData => entityData.Name == "key");
+                    foreach (EntityData keyEntityData in keyEntityDatas) {
+                        keys.Add((basePosition + keyEntityData.Position) / 8);
+                    }
+                }
+            }
+
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp,
+                DepthStencilState.None, RasterizerState.CullNone, null, Engine.ScreenMatrix);
+            if (MInput.Keyboard.Check(Keys.F1)) {
+                Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.25f);
+                if (keys != null && keys.Count > 0) {
+                    for (int i = 0; i < keys.Count; i++) {
+                        ActiveFont.DrawOutline((i+1).ToString(),
+                            (keys[i] - Camera.Position) *
+                            Camera.Zoom + new Vector2(960f, 532f), new Vector2(0.5f, 1f), Vector2.One * 1f, Color.Red,
+                            2f, Color.Black);
+                    }
+                }
+            }
+
             Draw.SpriteBatch.End();
         }
     }
