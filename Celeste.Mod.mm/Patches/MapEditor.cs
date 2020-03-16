@@ -38,6 +38,7 @@ namespace Celeste.Editor {
         private static AreaKey area;
         private Vector2 mousePosition;
         private MapData mapData;
+        private List<LevelTemplate> levels;
 
         private Session CurrentSession;
         private int zoomWaitFrames;
@@ -80,6 +81,9 @@ namespace Celeste.Editor {
         [MonoModIgnore]
         private extern void Save();
 
+        [MonoModIgnore]
+        private extern LevelTemplate TestCheck(Vector2 point);
+
         private void LoadLevel(LevelTemplate level, Vector2 at) {
             Save();
 
@@ -96,6 +100,7 @@ namespace Celeste.Editor {
         }
 
         public extern void orig_Update();
+
         public override void Update() {
             if (!SpeedrunToolInstalled) {
                 MakeMapEditorBetter();
@@ -103,9 +108,6 @@ namespace Celeste.Editor {
 
             orig_Update();
         }
-
-        [MonoModIgnore]
-        private extern LevelTemplate TestCheck(Vector2 point);
 
         private void MakeMapEditorBetter() {
             // press cancel button to return game
@@ -156,6 +158,7 @@ namespace Celeste.Editor {
             orig_Render();
             RenderManualText();
             RenderKeys();
+            RenderHighlightCurrentRoom();
         }
 
         private void RenderManualText() {
@@ -202,6 +205,16 @@ namespace Celeste.Editor {
                 }
             }
 
+            Draw.SpriteBatch.End();
+        }
+
+        private void RenderHighlightCurrentRoom() {
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp,
+                DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
+            if (CurrentSession != null) {
+                LevelTemplate currentTemplate = levels.Find(template => template.Name == CurrentSession.Level);
+                currentTemplate?.RenderHighlight(Camera, false, true);
+            }
             Draw.SpriteBatch.End();
         }
     }
