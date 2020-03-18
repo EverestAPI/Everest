@@ -1,50 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D5D0239D-FF95-4897-9484-1898AB7E82F5}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Celeste</RootNamespace>
+    <TargetFrameworks>net452</TargetFrameworks>
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <RootNamespace>Celeste</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
-    <OutputPath Condition=" '$(TravisCore)' == 'true' ">Artifact\</OutputPath>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath Condition=" '$(TravisCore)' == '' ">bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Celeste.Mod.mm.xml</DocumentationFile>
-    <NoWarn>CS1591</NoWarn>
-    <OutputPath>bin\Debug\</OutputPath>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <OutputPath Condition=" '$(TravisCore)' == '' ">bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize>true</Optimize>
-    <DebugType Condition=" '$(TravisCore)' == '' ">pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Management" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="Celeste">
       <HintPath>..\lib-stripped\Celeste.exe</HintPath>
       <Private>False</Private>
-    </Reference>
-    <Reference Include="DotNetZip, Version=1.13.5.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
-      <HintPath>..\packages\DotNetZip.1.13.5\lib\net40\DotNetZip.dll</HintPath>
     </Reference>
     <Reference Include="FNA">
       <HintPath>..\lib-stripped\FNA.dll</HintPath>
@@ -68,278 +39,30 @@
     <Reference Include="I18N.West">
       <HintPath>..\lib\I18N.West.dll</HintPath>
     </Reference>
-    <Reference Include="Jdenticon, Version=2.2.1.0, Culture=neutral, PublicKeyToken=3fcf9f6e3475a4f8, processorArchitecture=MSIL">
-      <HintPath>..\packages\Jdenticon-net.2.2.1\lib\net45\Jdenticon.dll</HintPath>
-    </Reference>
-    <Reference Include="KeraLua, Version=1.0.22.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
-      <HintPath>..\packages\KeraLua.1.0.22\lib\net45\KeraLua.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.11.1.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.1\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.20.1.1.4\lib\net40\MonoMod.exe</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.RuntimeDetour, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.20.1.1.4\lib\net40\MonoMod.RuntimeDetour.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.RuntimeDetour.HookGen, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.RuntimeDetour.HookGen.20.1.1.4\lib\net40\MonoMod.RuntimeDetour.HookGen.exe</HintPath>
-    </Reference>
-    <Reference Include="MonoMod.Utils, Version=20.1.1.4, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.Utils.20.1.1.4\lib\net40\MonoMod.Utils.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="NLua, Version=1.4.25.0, Culture=neutral, PublicKeyToken=6a194c04b9c89217, processorArchitecture=MSIL">
-      <HintPath>..\packages\NLua.1.4.25\lib\net45\NLua.dll</HintPath>
-    </Reference>
     <Reference Include="Steamworks.NET">
       <HintPath>..\lib-stripped\Steamworks.NET.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Management" />
-    <Reference Include="System.Xml" />
-    <Reference Include="YamlDotNet, Version=8.0.0.0, Culture=neutral, PublicKeyToken=ec19458f3c15af5e, processorArchitecture=MSIL">
-      <HintPath>..\packages\YamlDotNet.8.0.0\lib\net45\YamlDotNet.dll</HintPath>
-    </Reference>
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Mod\Core\CoreModuleSession.cs" />
-    <Compile Include="Mod\Entities\ActivateDreamBlocksTrigger.cs" />
-    <Compile Include="Mod\Entities\ChangeInventoryTrigger.cs" />
-    <Compile Include="Mod\Entities\CompleteAreaTrigger.cs" />
-    <Compile Include="Mod\Entities\CrystalShatterTrigger.cs" />
-    <Compile Include="Mod\Entities\CoreModeTrigger.cs" />
-    <Compile Include="Mod\Entities\CSGEN_GenericStrawberrySeeds.cs" />
-    <Compile Include="Mod\Entities\CustomNPC.cs" />
-    <Compile Include="Mod\Entities\GenericStrawberrySeed.cs" />
-    <Compile Include="Mod\Entities\LavaBlockerTrigger.cs" />
-    <Compile Include="Mod\Entities\CustomEntityAttribute.cs" />
-    <Compile Include="Mod\Entities\RegisterStrawberryAttribute.cs" />
-    <Compile Include="Mod\Entities\SmoothCameraOffsetTrigger.cs" />
-    <Compile Include="Mod\Entities\StarClimbGraphicsController.cs" />
-    <Compile Include="Mod\Entities\MusicLayerTrigger.cs" />
-    <Compile Include="Mod\Everest\Everest.LuaLoader.Caches.cs" />
-    <Compile Include="Mod\Everest\LuaTypeBuilder.cs" />
-    <Compile Include="Mod\Everest\Everest.LuaLoader.HookHelper.cs" />
-    <Compile Include="Mod\Everest\Everest.LuaLoader.cs" />
-    <Compile Include="Mod\Core\CoreMapDataProcessor.cs" />
-    <Compile Include="Mod\Module\EverestMapDataProcessor.cs" />
-    <Compile Include="Mod\Helpers\MapDataFixup.cs" />
-    <Compile Include="Mod\Helpers\ModUpdateInfo.cs" />
-    <Compile Include="Mod\Helpers\ModUpdaterHelper.cs" />
-    <Compile Include="Mod\Helpers\QueuedTaskHelper.cs" />
-    <Compile Include="Mod\Helpers\MainThreadHelper.cs" />
-    <Compile Include="Mod\Helpers\DirectoryProxy.cs" />
-    <Compile Include="Mod\Helpers\AssetReloadHelper.cs" />
-    <Compile Include="Mod\Helpers\XXHash.cs" />
-    <Compile Include="Mod\Helpers\LuaCoroutine.cs" />
-    <Compile Include="Mod\Helpers\XNAFNAShims.cs" />
-    <Compile Include="Mod\Module\EverestModuleBinarySession.cs" />
-    <Compile Include="Mod\Module\EverestModuleSession.cs" />
-    <Compile Include="Mod\Module\LuaModule.cs" />
-    <Compile Include="Mod\Module\NullModule.cs" />
-    <Compile Include="Mod\Entities\BadelineOldsiteEnd.cs" />
-    <Compile Include="Mod\Entities\DialogCutscene.cs" />
-    <Compile Include="Mod\Entities\DialogCutsceneTrigger.cs" />
-    <Compile Include="Mod\Entities\SpaceControllerBlocker.cs" />
-    <Compile Include="Mod\Entities\TriggerSpikesOriginal.cs" />
-    <Compile Include="Mod\Helpers\EndUserException.cs" />
-    <Compile Include="Mod\Helpers\SafeRoutine.cs" />
-    <Compile Include="Mod\Registry\DecalRegistry.cs" />
-    <Compile Include="Mod\Registry\IStrawberry.cs" />
-    <Compile Include="Mod\Registry\IStrawberrySeeded.cs" />
-    <Compile Include="Mod\Registry\StrawberryRegistry.cs" />
-    <Compile Include="Mod\UI\AutoModUpdater.cs" />
-    <Compile Include="Mod\UI\MainMenuModOptionsButton.cs" />
-    <Compile Include="Mod\UI\OuiDependencyDownloader.cs" />
-    <Compile Include="Mod\UI\OuiFileSelectSlotLevelSetPicker.cs" />
-    <Compile Include="Mod\UI\OuiFileSelectSlotSubmenu.cs" />
-    <Compile Include="Mod\UI\OuiGenericMenu.cs" />
-    <Compile Include="Mod\UI\OuiHelper_ChapterSelect_Reload.cs" />
-    <Compile Include="Mod\UI\OuiModUpdateList.cs" />
-    <Compile Include="Patches\LevelTemplate.cs" />
-    <Compile Include="Patches\MountainModel.cs" />
-    <Compile Include="Patches\MTN.cs" />
-    <Compile Include="Patches\ObjModel.cs" />
-    <Compile Include="Patches\MapEditor.cs" />
-    <Compile Include="Patches\CassetteBlock.cs" />
-    <Compile Include="Patches\Checkpoint.cs" />
-    <Compile Include="Patches\Commands.cs" />
-    <Compile Include="Patches\DashBlock.cs" />
-    <Compile Include="Patches\AudioState.cs" />
-    <Compile Include="Patches\DreamBlock.cs" />
-    <Compile Include="Patches\Monocle\SineWave.cs" />
-    <Compile Include="Patches\Monocle\Sprite.cs" />
-    <Compile Include="Patches\Holdable.cs" />
-    <Compile Include="Patches\Language.cs" />
-    <Compile Include="Patches\FinalBoss.cs" />
-    <Compile Include="Patches\BadelineOldsite.cs" />
-    <Compile Include="Patches\CrumblePlatform.cs" />
-    <Compile Include="Patches\EntityData.cs" />
-    <Compile Include="Patches\Monocle\SpriteBank.cs" />
-    <Compile Include="Patches\MusicFadeTrigger.cs" />
-    <Compile Include="Patches\IntroCrusher.cs" />
-    <Compile Include="Patches\LevelData.cs" />
-    <Compile Include="Patches\Maddy3D.cs" />
-    <Compile Include="Patches\ModeProperties.cs" />
-    <Compile Include="Patches\MountainRenderer.cs" />
-    <Compile Include="Patches\OuiFileSelect.cs" />
-    <Compile Include="Patches\OuiJournalGlobal.cs" />
-    <Compile Include="Patches\Pathfinder.cs" />
-    <Compile Include="Patches\CheckpointData.cs" />
-    <Compile Include="Patches\SlashFx.cs" />
-    <Compile Include="Patches\Platform.cs" />
-    <Compile Include="Patches\PreviewRecording.cs" />
-    <Compile Include="Patches\Postcard.cs" />
-    <Compile Include="Patches\ReturnMapHint.cs" />
-    <Compile Include="Patches\Pico8\Emulator.cs" />
-    <Compile Include="Patches\IntroCar.cs" />
-    <Compile Include="Patches\Session.cs" />
-    <Compile Include="Patches\SinkingPlatform.cs" />
-    <Compile Include="Patches\MovingPlatform.cs" />
-    <Compile Include="Patches\Cobweb.cs" />
-    <Compile Include="Patches\Cloud.cs" />
-    <Compile Include="Patches\CrystalStaticSpinner.cs" />
-    <Compile Include="Patches\RotateSpinner.cs" />
-    <Compile Include="Patches\CassetteBlockManager.cs" />
-    <Compile Include="Mod\Core\CoreModuleSaveData.cs" />
-    <Compile Include="Mod\Core\CoreModuleSettings.cs" />
-    <Compile Include="Mod\Entities\CustomMemorialText.cs" />
-    <Compile Include="Mod\Entities\CustomMemorial.cs" />
-    <Compile Include="Mod\Entities\CustomCoreMessage.cs" />
-    <Compile Include="Mod\Entities\FlagTrigger.cs" />
-    <Compile Include="Mod\Everest\Emoji.cs" />
-    <Compile Include="Mod\Everest\Everest.DebugRC.cs" />
-    <Compile Include="Mod\Everest\Everest.Discord.cs" />
-    <Compile Include="Mod\Helpers\DiscordRpc.cs" />
-    <Compile Include="Mod\Touch\TouchInputNodes.cs" />
-    <Compile Include="Mod\Touch\TouchRegion.cs" />
-    <Compile Include="Mod\Touch\TouchInputManager.cs" />
-    <Compile Include="Mod\Everest\Everest.Flags.cs" />
-    <Compile Include="Mod\Everest\TextInput.cs" />
-    <Compile Include="Mod\Helpers\XNAFormsHook.cs" />
-    <Compile Include="Mod\Helpers\Commands.cs" />
-    <Compile Include="Mod\Everest\Everest.Updater.cs" />
-    <Compile Include="Mod\Helpers\FakeAssembly.cs" />
-    <Compile Include="Mod\Helpers\RelinkerSymbolReaderProvider.cs" />
-    <Compile Include="Mod\Module\EverestModuleBinarySaveData.cs" />
-    <Compile Include="Mod\Module\EverestModuleSaveData.cs" />
-    <Compile Include="Mod\Module\EverestModuleBinarySettings.cs" />
-    <Compile Include="Mod\Module\EverestModuleSettings.cs" />
-    <Compile Include="Mod\Module\EverestModuleMetadata.cs" />
-    <Compile Include="Mod\Everest\ModAsset.cs" />
-    <Compile Include="Mod\Everest\ContentExtensions.cs" />
-    <Compile Include="Mod\Everest\Everest.Events.cs" />
-    <Compile Include="Mod\Everest\Everest.Content.cs" />
-    <Compile Include="Mod\Everest\Everest.Relinker.cs" />
-    <Compile Include="Mod\Everest\Everest.Loader.cs" />
-    <Compile Include="Mod\Everest\Everest.cs" />
-    <Compile Include="Mod\Core\CoreModule.cs" />
-    <Compile Include="Mod\Helpers\EverestContentManager.cs" />
-    <Compile Include="Mod\Module\EverestModule.cs" />
-    <Compile Include="Mod\Everest\Extensions.cs" />
-    <Compile Include="Mod\Helpers\FakeFileStream.cs" />
-    <Compile Include="Mod\Helpers\LogWriter.cs" />
-    <Compile Include="Mod\Everest\Logger.cs" />
-    <Compile Include="Mod\Helpers\FileProxy.cs" />
-    <Compile Include="Mod\Meta\IMeta.cs" />
-    <Compile Include="Mod\Meta\TextureMeta.cs" />
-    <Compile Include="Mod\Meta\MapMeta.cs" />
-    <Compile Include="Mod\Meta\MTextureMeta.cs" />
-    <Compile Include="Mod\Helpers\YamlHelper.cs" />
-    <Compile Include="Mod\UI\OuiHelper_Shutdown.cs" />
-    <Compile Include="Mod\UI\OuiHelper_ChapterSelect_LevelSet.cs" />
-    <Compile Include="Mod\UI\OuiSoundTest.cs" />
-    <Compile Include="Mod\UI\OuiModOptionString.cs" />
-    <Compile Include="Mod\UI\OuiLoggedProgress.cs" />
-    <Compile Include="Mod\UI\OuiVersionList.cs" />
-    <Compile Include="Mod\UI\SubHudRenderer.cs" />
-    <Compile Include="Mod\UI\TextMenuExt.cs" />
-    <Compile Include="Mod\UI\OuiMapList.cs" />
-    <Compile Include="Mod\UI\OuiModOptions.cs" />
-    <Compile Include="MonoModRules.cs" />
-    <Compile Include="Patches\Decal.cs" />
-    <Compile Include="Patches\FancyText.cs" />
-    <Compile Include="Patches\Monocle\PixelFontSize.cs" />
-    <Compile Include="Patches\Fonts.cs" />
-    <Compile Include="Patches\OuiFileNaming.cs" />
-    <Compile Include="Patches\SFX.cs" />
-    <Compile Include="Patches\Audio.cs" />
-    <Compile Include="Patches\FMOD\Studio\EventDescription.cs" />
-    <Compile Include="Patches\GameplayRenderer.cs" />
-    <Compile Include="Patches\CompleteRenderer.cs" />
-    <Compile Include="Patches\AreaKey.cs" />
-    <Compile Include="Patches\AreaComplete.cs" />
-    <Compile Include="Patches\BinaryPacker.cs" />
-    <Compile Include="Patches\GameLoader.cs" />
-    <Compile Include="Patches\LevelLoader.cs" />
-    <Compile Include="Patches\LevelExit.cs" />
-    <Compile Include="Patches\MapData.cs" />
-    <Compile Include="Patches\AreaStats.cs" />
-    <Compile Include="Patches\LevelEnter.cs" />
-    <Compile Include="Patches\Input.cs" />
-    <Compile Include="Patches\Monocle\ErrorLog.cs" />
-    <Compile Include="Patches\Monocle\RendererList.cs" />
-    <Compile Include="Patches\OuiFileSelectSlot.cs" />
-    <Compile Include="Patches\OuiChapterPanel.cs" />
-    <Compile Include="Patches\OuiChapterSelectIcon.cs" />
-    <Compile Include="Patches\OuiChapterSelect.cs" />
-    <Compile Include="Patches\OverworldLoader.cs" />
-    <Compile Include="Patches\Overworld.cs" />
-    <Compile Include="Patches\FireBall.cs" />
-    <Compile Include="Patches\HeartGem.cs" />
-    <Compile Include="Patches\Dust.cs" />
-    <Compile Include="Patches\Debris.cs" />
-    <Compile Include="Patches\CS10_Ending.cs" />
-    <Compile Include="Patches\RainFG.cs" />
-    <Compile Include="Patches\PlaybackData.cs" />
-    <Compile Include="Patches\MenuButton.cs" />
-    <Compile Include="Patches\StarJumpBlock.cs" />
-    <Compile Include="Patches\TrailManager.cs" />
-    <Compile Include="Patches\UnlockEverythingThingy.cs" />
-    <Compile Include="Patches\TheoCrystalCollider.cs" />
-    <Compile Include="Patches\Strawberry.cs" />
-    <Compile Include="Patches\UserIO.cs" />
-    <Compile Include="Patches\SaveData.cs" />
-    <Compile Include="Patches\Monocle\EntityList.cs" />
-    <Compile Include="Patches\Tags.cs" />
-    <Compile Include="Patches\TextMenu.cs" />
-    <Compile Include="Patches\MainMenuSmallButton.cs" />
-    <Compile Include="Patches\Monocle\Engine.cs" />
-    <Compile Include="Patches\Level.cs" />
-    <Compile Include="Patches\Player.cs" />
-    <Compile Include="Patches\PlayerHair.cs" />
-    <Compile Include="Patches\AreaData.cs" />
-    <Compile Include="Patches\Autotiler.cs" />
-    <Compile Include="Patches\Monocle\VirtualAsset.cs" />
-    <Compile Include="Patches\Monocle\MTexture.cs" />
-    <Compile Include="Patches\Monocle\VirtualTexture.cs" />
-    <Compile Include="Patches\Monocle\VirtualContent.cs" />
-    <Compile Include="Patches\Monocle\Calc.cs" />
-    <Compile Include="Patches\Monocle\Atlas.cs" />
-    <Compile Include="Patches\Monocle\Commands.cs" />
-    <Compile Include="Patches\Monocle\Coroutine.cs" />
-    <Compile Include="Patches\OuiMainMenu.cs" />
-    <Compile Include="Patches\Dialog.cs" />
-    <Compile Include="Patches\OuiTitleScreen.cs" />
-    <Compile Include="Patches\Celeste.cs" />
-    <Compile Include="Patches\OuiJournal.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.2" />
+    <PackageReference Include="MonoMod" Version="20.3.5.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.3.5.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.3.5.1" />
+    <PackageReference Include="MonoMod.Utils" Version="20.3.5.1" />
+    <PackageReference Include="DotNetZip" Version="1.13.6" />
+    <PackageReference Include="YamlDotNet" Version="8.1.0" />
+    <PackageReference Include="Jdenticon-net" Version="2.2.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="KeraLua" Version="1.0.22" />
+    <PackageReference Include="NLua" Version="1.4.25" />
   </ItemGroup>
+
+  <!--
+    Embedded resources need a logical name,
+    otherwise special chars (f.e. \) are replaced by dots.
+  -->
   <ItemGroup>
     <EmbeddedResource Include="Content\Dialog\English.txt">
       <LogicalName>Content\Dialog\English.txt</LogicalName>
@@ -347,8 +70,6 @@
     <EmbeddedResource Include="Content\Dialog\French.txt">
       <LogicalName>Content\Dialog\French.txt</LogicalName>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\thinking.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\thinking.png</LogicalName>
     </EmbeddedResource>
@@ -425,6 +146,7 @@
       <LogicalName>Content\Lua\typebuilder.lua</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
+
   <ItemGroup>
     <Content Include="..\lib-ext\discord-rpc.dll">
       <Link>discord-rpc.dll</Link>
@@ -454,29 +176,18 @@
       <Link>libMonoPosixHelper.dylib.dSYM\Contents\Resources\DWARF\libMonoPosixHelper.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <None Include="app.config" />
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup>
-    <Content Include="..\packages\KeraLua.1.0.22\runtimes\linux-x64\native\liblua53.so">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
       <Link>lib64\liblua53.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\packages\KeraLua.1.0.22\runtimes\osx\native\liblua53.dylib">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\osx\native\liblua53.dylib">
       <Link>liblua53.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\packages\KeraLua.1.0.22\runtimes\win-x86\native\lua53.dll">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\win-x86\native\lua53.dll">
       <Link>lua53.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <Import Project="..\packages\KeraLua.1.0.22\build\net45\KeraLua.targets" Condition="Exists('..\packages\KeraLua.1.0.22\build\net45\KeraLua.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\KeraLua.1.0.22\build\net45\KeraLua.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\KeraLua.1.0.22\build\net45\KeraLua.targets'))" />
-  </Target>
+  
 </Project>

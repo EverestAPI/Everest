@@ -30,8 +30,26 @@ namespace Celeste {
 
         extern public static void orig_Go(Session session, bool fromSaveData);
         public static void Go(Session session, bool fromSaveData) {
-            orig_Go(session, fromSaveData);
-            Everest.Events.Level.Enter(session, fromSaveData);
+            if (ErrorMessage != null) {
+                // We are entering the error screen. Invoke the original method which will display it.
+                orig_Go(session, fromSaveData);
+            } else {
+                try {
+                    orig_Go(session, fromSaveData);
+                    Everest.Events.Level.Enter(session, fromSaveData);
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Warn, "misc", $"Failed entering area {session.Area}");
+                    Logger.LogDetailed(e);
+
+                    string message = Dialog.Get("postcard_levelloadfailed")
+                        .Replace("((player))", SaveData.Instance.Name)
+                        .Replace("((sid))", session.Area.GetSID())
+                    ;
+
+                    LevelEnterExt.ErrorMessage = message;
+                    LevelEnter.Go(new Session(session.Area), false);
+                }
+            }
         }
 
         public static patch_LevelEnter ForceCreate(Session session, bool fromSaveData) {

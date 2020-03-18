@@ -314,6 +314,24 @@ namespace Celeste.Mod {
             return false;
         }
 
+        protected virtual void CreateModMenuSectionHeader(TextMenu menu, bool inGame, EventInstance snapshot) {
+            Type type = SettingsType;
+            EverestModuleSettings settings = _Settings;
+            if (type == null || settings == null)
+                return;
+
+            string typeName = type.Name.ToLowerInvariant();
+            if (typeName.EndsWith("settings"))
+                typeName = typeName.Substring(0, typeName.Length - 8);
+            string nameDefaultPrefix = $"modoptions_{typeName}_";
+
+            string name; // We lazily reuse this field for the props later on.
+            name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
+            name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
+
+            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+        }
+
         private Type _PrevSettingsType;
         private PropertyInfo[] _PrevSettingsProps;
         /// <summary>
@@ -344,12 +362,11 @@ namespace Celeste.Mod {
                 attribInGame.InGame != inGame)
                 return;
 
-            // The settings subheader.
-            string name; // We lazily reuse this field for the props later on.
-            name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
-            name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
-
-            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+            bool headerCreated = false;
+            if (GetType().GetMethod("CreateModMenuSection").DeclaringType != typeof(EverestModule)) {
+                CreateModMenuSectionHeader(menu, inGame, snapshot);
+                headerCreated = true;
+            }
 
             PropertyInfo[] props;
             if (type == _PrevSettingsType) {
@@ -369,6 +386,11 @@ namespace Celeste.Mod {
                 );
 
                 if (creator != null) {
+                    if (!headerCreated) {
+                        CreateModMenuSectionHeader(menu, inGame, snapshot);
+                        headerCreated = true;
+                    }
+
                     creator.GetFastDelegate()(settings, menu, inGame);
                     continue;
                 }
@@ -383,7 +405,7 @@ namespace Celeste.Mod {
                 if (!prop.CanRead || !prop.CanWrite)
                     continue;
 
-                name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
+                string name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
                 name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
 
                 bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
@@ -440,6 +462,11 @@ namespace Celeste.Mod {
 
                 if (item == null)
                     continue;
+
+                if (!headerCreated) {
+                    CreateModMenuSectionHeader(menu, inGame, snapshot);
+                    headerCreated = true;
+                }
 
                 menu.Add(item);
 

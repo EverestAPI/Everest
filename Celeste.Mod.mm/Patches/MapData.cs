@@ -65,6 +65,10 @@ namespace Celeste {
                 ModeProperties parentMode = parentArea?.Mode?.ElementAtOrDefault((int) Area.Mode);
                 if (parentMode != null) {
                     MapData parentMapData = parentMode.MapData;
+                    if (parentMapData == null) {
+                        Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed auto-assigning data from {Area} to its unloaded parent");
+                        return;
+                    }
 
                     parentMapData.Strawberries.AddRange(Strawberries);
 

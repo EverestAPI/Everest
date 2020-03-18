@@ -67,7 +67,7 @@ namespace Celeste {
                 areaOffs = areaOffsRaw;
 
             do {
-                areaMax = icons.FindLastIndex(i => i?.Area == areaMaxRaw);
+                areaMax = icons.FindLastIndex(i => i?.Area == areaMaxRaw || i.AssistModeUnlockable);
             } while (areaMax == -1 && --areaMaxRaw < areaOffsRaw);
             if (areaMax == -1)
                 areaMax = areaMaxRaw;
