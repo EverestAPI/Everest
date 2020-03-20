@@ -29,6 +29,5 @@ namespace Celeste.Mod.Helpers {
                 ).Union(fs).ToArray();
             }
         }
-
     }
 }

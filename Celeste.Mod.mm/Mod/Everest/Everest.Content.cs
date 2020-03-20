@@ -38,6 +38,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
     public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
     public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
+    public sealed class AssetTypeFont { private AssetTypeFont() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -668,6 +669,10 @@ namespace Celeste.Mod {
 
                 } else if (file.EndsWith(".lua")) {
                     type = typeof(AssetTypeLua);
+                    file = file.Substring(0, file.Length - 4);
+
+                } else if (file.EndsWith(".fnt")) {
+                    type = typeof(AssetTypeFont);
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (OnGuessType != null) {
