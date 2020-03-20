@@ -190,6 +190,14 @@ namespace Celeste.Editor {
                     }
                 }
             }
+            
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
+            if (keys != null && keys.Count > 0) {
+                for (int i = 0; i < keys.Count; i++) {
+                    Draw.HollowRect(keys[i].X - 1f, keys[i].Y - 2f, 3f, 3f, Color.Gold);
+                }
+            }
+            Draw.SpriteBatch.End();
 
             Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp,
                 DepthStencilState.None, RasterizerState.CullNone, null, Engine.ScreenMatrix);
@@ -198,13 +206,13 @@ namespace Celeste.Editor {
                 if (keys != null && keys.Count > 0) {
                     for (int i = 0; i < keys.Count; i++) {
                         ActiveFont.DrawOutline((i+1).ToString(),
-                            (keys[i] - Camera.Position) *
-                            Camera.Zoom + new Vector2(960f, 532f), new Vector2(0.5f, 1f), Vector2.One * 1f, Color.Red,
+                            (keys[i] - Camera.Position + Vector2.UnitX) *
+                            Camera.Zoom + new Vector2(960f, 540f), new Vector2(0.5f,0.5f), Vector2.One * 1f, Color.Gold,
                             2f, Color.Black);
+                        
                     }
                 }
             }
-
             Draw.SpriteBatch.End();
         }
 
