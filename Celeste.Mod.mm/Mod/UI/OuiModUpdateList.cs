@@ -26,6 +26,7 @@ namespace Celeste.Mod.UI {
         private Task task;
 
         private bool shouldRestart = false;
+        private bool willRestartMessageShown = false;
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
@@ -38,6 +39,7 @@ namespace Celeste.Mod.UI {
             menu.Add(new TextMenu.Header(Dialog.Clean("MODUPDATECHECKER_MENU_TITLE")));
 
             menu.Add(subHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")));
+            willRestartMessageShown = false;
 
             fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
             fetchingButton.Disabled = true;
@@ -91,6 +93,18 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            // check if the "press Back to restart" message has to be toggled
+            if (menu != null && subHeader != null && (shouldRestart && menu.Focused) != willRestartMessageShown) {
+                willRestartMessageShown = !willRestartMessageShown;
+                if (willRestartMessageShown) {
+                    subHeader.TextColor = Color.OrangeRed;
+                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+                } else {
+                    subHeader.TextColor = Color.Gray;
+                    subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
+                }
+            }
+
             if (menu != null && task != null && task.IsCompleted) {
                 // there is no download or install task in progress
 
@@ -223,11 +237,7 @@ namespace Celeste.Mod.UI {
                 ModUpdaterHelper.VerifyChecksum(update, zipPath);
 
                 // mark restarting as required, as we will do weird stuff like closing zips afterwards.
-                if (!shouldRestart) {
-                    shouldRestart = true;
-                    subHeader.TextColor = Color.OrangeRed;
-                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
-                }
+                shouldRestart = true;
 
                 // install it
                 button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";

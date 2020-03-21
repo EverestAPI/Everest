@@ -235,6 +235,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileSelectSubmenuChecks")]
     class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { };
 
+    /// Patches the Fonts.Prepare method to also include custom fonts.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFontsPrepare")]
+    class PatchFontsPrepareAttribute : Attribute { };
+
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -1892,6 +1898,20 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
                     instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                }
+            }
+        }
+
+        public static void PatchFontsPrepare(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
+            if (m_GetFiles == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).Name == "GetFiles") {
+                    instrs[instri].Operand = m_GetFiles;
                 }
             }
         }
