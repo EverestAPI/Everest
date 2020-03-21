@@ -170,5 +170,10 @@ namespace Celeste.Mod.Helpers {
 
             return availableUpdates;
         }
+
+        public static string FormatModName(string modNameRaw) {
+            string overrideName = $"modname_{modNameRaw.DialogKeyify()}".DialogCleanOrNull();
+            return overrideName ?? modNameRaw.SpacedPascalCase();
+        }
     }
 }

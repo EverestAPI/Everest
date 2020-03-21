@@ -84,7 +84,7 @@ namespace Celeste.Mod.UI {
             // iterate through all mods to update now.
             foreach (ModUpdateInfo update in updateList.Keys) {
                 // common beginning for all messages: f.e. [1/3] Auto-updating Polygon Dreams
-                string progressString = $"[{currentlyUpdatedModIndex}/{updateList.Count}] {Dialog.Clean("AUTOUPDATECHECKER_UPDATING")} {update.Name.SpacedPascalCase()}:";
+                string progressString = $"[{currentlyUpdatedModIndex}/{updateList.Count}] {Dialog.Clean("AUTOUPDATECHECKER_UPDATING")} {ModUpdaterHelper.FormatModName(update.Name)}:";
 
                 try {
                     // download it...
