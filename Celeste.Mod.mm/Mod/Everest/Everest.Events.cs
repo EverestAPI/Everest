@@ -154,6 +154,10 @@ namespace Celeste.Mod {
                 public delegate void CreateButtonsHandler(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists);
                 public static event CreateButtonsHandler OnCreateButtons;
                 internal static void HandleCreateButtons(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, bool fileExists) {
+                    if (OnCreateButtons == null) {
+                        return;
+                    }
+
                     foreach (Delegate del in OnCreateButtons.GetInvocationList()) {
                         // find the Everest module this delegate belongs to, and load the mod save data from it for the current slot.
                         EverestModule matchingModule = _Modules.Find(module => module.GetType().Assembly == del.Method.DeclaringType.Assembly);
