@@ -229,6 +229,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchSpinnerCreateSprites")]
     class PatchSpinnerCreateSpritesAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches the Fonts.Prepare method to also include custom fonts.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFontsPrepare")]
+    class PatchFontsPrepareAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -1836,6 +1842,21 @@ namespace MonoMod {
                 }
                 if (instrs[instri].OpCode == OpCodes.Ldc_R4 && ((float) instrs[instri].Operand) == 24f) {
                     instrs[instri].Operand = 576f;
+                }
+            }
+        }
+
+
+        public static void PatchFontsPrepare(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
+            if (m_GetFiles == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).Name == "GetFiles") {
+                    instrs[instri].Operand = m_GetFiles;
                 }
             }
         }

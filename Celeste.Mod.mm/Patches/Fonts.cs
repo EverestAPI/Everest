@@ -8,6 +8,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -23,5 +24,20 @@ namespace Celeste {
             return font;
         }
 
+        // don't change anything in this method, except for also listing custom fonts from mods
+        [MonoModIgnore]
+        [ProxyFileCalls]
+        [PatchFontsPrepare]
+        public static extern void Prepare();
+
+        private static string[] _GetFiles(string path, string searchPattern, SearchOption searchOption) {
+            string[] vanillaFiles = Directory.GetFiles(path, searchPattern, searchOption);
+
+            return Everest.Content.Map.Values
+                .Where(asset => asset.Type == typeof(AssetTypeFont))
+                .Select(asset => Path.Combine(Engine.ContentDirectory, asset.PathVirtual + "." + asset.Format).Replace('/', Path.DirectorySeparatorChar))
+                .Union(vanillaFiles)
+                .ToArray();
+        }
     }
 }
