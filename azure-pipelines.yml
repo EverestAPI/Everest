@@ -51,6 +51,7 @@ steps:
     artifactName: 'main'
     publishLocation: 'Container'
 
+# Post-build steps (obsolete).
 - task: PowerShell@2
 # condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   condition: not(always())
@@ -58,3 +59,10 @@ steps:
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
     arguments: '$(S3KEY) $(S3SECRET)'
+
+# Announce new stable versions on Discord (#modding_updates).
+- script: |
+    set /a "BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)"
+    curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **%BUILD_NUMBER%**.\"}" $(WEBHOOK_URL)
+  displayName: 'Celeste Discord webhook'
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/stable'))
