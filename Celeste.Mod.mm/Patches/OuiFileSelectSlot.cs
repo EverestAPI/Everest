@@ -14,7 +14,12 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
-    class patch_OuiFileSelectSlot : OuiFileSelectSlot {
+    public class patch_OuiFileSelectSlot : OuiFileSelectSlot {
+
+        /// <summary>
+        /// Interface used to tag OuiFileSelectSlot submenus.
+        /// </summary>
+        public interface ISubmenu { }
 
         // We're effectively in OuiFileSelectSlot, but still need to "expose" private fields to our mod.
         private OuiFileSelect fileSelect;
@@ -142,6 +147,9 @@ namespace Celeste {
                     buttons.Add(newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this));
                 }
             }
+
+            patch_SaveData.LoadModSaveData(FileSlot);
+            Everest.Events.FileSelectSlot.HandleCreateButtons(buttons, this, Exists);
         }
 
         public extern void orig_OnNewGameSelected();

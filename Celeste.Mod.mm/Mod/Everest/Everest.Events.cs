@@ -150,6 +150,24 @@ namespace Celeste.Mod {
                     => OnHandleDecalRegistry?.Invoke(decal, decalInfo);
             }
 
+            public static class FileSelectSlot {
+                public delegate void CreateButtonsHandler(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists);
+                public static event CreateButtonsHandler OnCreateButtons;
+                internal static void HandleCreateButtons(List<patch_OuiFileSelectSlot.Button> buttons, OuiFileSelectSlot slot, bool fileExists) {
+                    foreach (Delegate del in OnCreateButtons.GetInvocationList()) {
+                        // find the Everest module this delegate belongs to, and load the mod save data from it for the current slot.
+                        EverestModule matchingModule = _Modules.Find(module => module.GetType().Assembly == del.Method.DeclaringType.Assembly);
+                        EverestModuleSaveData modSaveData = null;
+                        if (matchingModule != null) {
+                            modSaveData = matchingModule._SaveData;
+                        }
+
+                        // call the delegate.
+                        del.DynamicInvoke(new object[] { buttons, slot, modSaveData, fileExists });
+                    }
+                }
+            }
+
         }
     }
 }
