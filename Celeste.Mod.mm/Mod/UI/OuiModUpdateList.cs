@@ -233,7 +233,7 @@ namespace Celeste.Mod.UI {
 
             try {
                 // download it...
-                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
+                button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
                 downloadMod(update, button, zipPath);
 
                 // verify its checksum
@@ -243,16 +243,16 @@ namespace Celeste.Mod.UI {
                 shouldRestart = true;
 
                 // install it
-                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
+                button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
                 ModUpdaterHelper.InstallModUpdate(update, mod, zipPath);
 
                 // done!
-                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
+                button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_UPDATED")})";
 
                 return true;
             } catch (Exception e) {
                 // update failed
-                button.Label = $"{update.Name.SpacedPascalCase()} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
+                button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
                 Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
                 Logger.LogDetailed(e);
 
@@ -273,9 +273,9 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
                 if (length > 0) {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
+                    button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                 } else {
-                    button.Label = $"{update.Name.SpacedPascalCase()} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
+                    button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
             });
         }
