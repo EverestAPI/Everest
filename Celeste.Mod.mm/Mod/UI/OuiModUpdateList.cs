@@ -205,6 +205,9 @@ namespace Celeste.Mod.UI {
                         menu.Selection = menu.LastPossibleSelection;
                     else
                         menu.MoveSelection(1);
+
+                    // remove this mod from the updatable mods list (it won't be updated by the "update all mods" button)
+                    updatableMods.Remove(new ModUpdateHolder() { update = update, metadata = mod, button = button });
                 } else {
                     // re-enable the button to allow the user to try again.
                     button.Disabled = false;
