@@ -84,6 +84,7 @@
 	MAPLIST_RELOAD= 		Reload
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Uncategorized
+	MAPLIST_SEARCH=			Search
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				Uncategorized
