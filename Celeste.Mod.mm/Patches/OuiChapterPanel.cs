@@ -107,7 +107,7 @@ namespace Celeste {
                 return set;
 
             }
-            
+
             AreaModeStats areaModeStats = save.Areas[area.ID].Modes[(int) area.Mode];
             set = areaModeStats.Checkpoints;
 
@@ -116,7 +116,7 @@ namespace Celeste {
                 set.Clear();
                 return set;
             }
-            
+
             set.RemoveWhere((string a) => !mode.Checkpoints.Any((CheckpointData b) => b.Level == a));
             AreaData[] subs = AreaData.Areas.Where(other =>
                 other.GetMeta()?.Parent == areaData.GetSID() &&

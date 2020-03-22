@@ -51,19 +51,19 @@ namespace Celeste {
 
             orig_ctor(texture, position, scale, depth);
         }
-        
+
         [MonoModIgnore]
         [MakeMethodPublic]
         public extern void MakeParallax(float amount);
-        
+
         [MonoModIgnore]
         [MakeMethodPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
-        
+
         [MonoModIgnore]
         [MakeMethodPublic]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
-        
+
         [MonoModIgnore]
         [MakeMethodPublic]
         public extern void MakeFloaty();
@@ -93,13 +93,13 @@ namespace Celeste {
                 Remove(image);
                 image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
-                   
+
                 // Handle properties
                 foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
                         DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                     } else {
-                        Logger.Log(LogLevel.Warn,"Decal Registry", $"Unknown property {property.Key} in decal {text}");
+                        Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
                     }
                 }
 
@@ -107,7 +107,7 @@ namespace Celeste {
                 if (image == null) {
                     Add(image = new DecalImage());
                 }
-                
+
             }
         }
     }

@@ -96,14 +96,12 @@ namespace Celeste.Mod.UI {
                 OuiHelper_ChapterSelect_Reload.Reload();
                 Overworld.Goto<OuiMapList>();
             }));
-            
-            //menu.Add(searchHeader = new TextMenu.SubHeader(search));
-            menu.Add(searchButton = new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => 
-            {
+
+            menu.Add(searchButton = new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
                 Searching = true;
             }));
-            
-            
+
+
             sets.Clear();
             foreach (AreaData area in AreaData.Areas) {
                 string levelSet = area.GetLevelSet();
@@ -135,7 +133,7 @@ namespace Celeste.Mod.UI {
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_list")));
 
             ReloadItems();
-            
+
             return menu;
         }
 
@@ -174,7 +172,7 @@ namespace Celeste.Mod.UI {
                 if ((filterSet == null && levelSet == "Celeste") || (filterSet != null && filterSet != levelSet))
                     continue;
 
-                
+
 
                 name = area.Name;
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
@@ -230,7 +228,7 @@ namespace Celeste.Mod.UI {
             if (menu.Height > menu.ScrollableMinSize) {
                 menu.Position.Y = menu.ScrollTargetY;
             }
-            
+
         }
 
         private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
@@ -330,11 +328,11 @@ namespace Celeste.Mod.UI {
                         Overworld.Goto<OuiChapterSelect>();
                     }
                 }
-                
-            }
-            
 
-            
+            }
+
+
+
             base.Update();
             if (Searching) {
                 // Otherwise spacebar will turn on free cam while searching
@@ -346,8 +344,8 @@ namespace Celeste.Mod.UI {
 
             }
             if (menu != null)
-            foreach (TextMenu.Item item in menu.GetItems())
-                item.Disabled = Searching;
+                foreach (TextMenu.Item item in menu.GetItems())
+                    item.Disabled = Searching;
         }
 
         public override void Render() {
@@ -355,7 +353,7 @@ namespace Celeste.Mod.UI {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
 
             // Draw the search
-            
+
             Vector2 value = menu.Position - menu.Justify * new Vector2(menu.Width, menu.Height);
             Vector2 pos = new Vector2(value.X + searchButton.Width + 30, value.Y + menu.GetYOffsetOf(searchButton) - (searchButton.Height() / 2f * 0.75f));
             ActiveFont.DrawOutline(search, pos, Vector2.Zero, Vector2.One * 0.75f, Color.White * menu.Alpha, 2f, Color.Black * (menu.Alpha * menu.Alpha * menu.Alpha));

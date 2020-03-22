@@ -190,7 +190,7 @@ namespace Celeste.Editor {
                     }
                 }
             }
-            
+
             Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
             if (keys != null && keys.Count > 0) {
                 for (int i = 0; i < keys.Count; i++) {
@@ -205,11 +205,11 @@ namespace Celeste.Editor {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.25f);
                 if (keys != null && keys.Count > 0) {
                     for (int i = 0; i < keys.Count; i++) {
-                        ActiveFont.DrawOutline((i+1).ToString(),
+                        ActiveFont.DrawOutline((i + 1).ToString(),
                             (keys[i] - Camera.Position + Vector2.UnitX) *
-                            Camera.Zoom + new Vector2(960f, 540f), new Vector2(0.5f,0.5f), Vector2.One * 1f, Color.Gold,
+                            Camera.Zoom + new Vector2(960f, 540f), new Vector2(0.5f, 0.5f), Vector2.One * 1f, Color.Gold,
                             2f, Color.Black);
-                        
+
                     }
                 }
             }

@@ -120,7 +120,7 @@ namespace Celeste.Mod {
                             info.CustomProperties.Add(property.Name, property.Attributes);
                         }
                     }
-                    
+
                     if (RegisteredDecals.ContainsKey(decalPath)) {
                         Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
                         RegisteredDecals[decalPath] = info;
@@ -128,7 +128,7 @@ namespace Celeste.Mod {
                         Logger.Log("Decal Registry", $"Registered decal {decalPath}");
                         RegisteredDecals.Add(decalPath, info);
                     }
-                    
+
                 }
             }
         }

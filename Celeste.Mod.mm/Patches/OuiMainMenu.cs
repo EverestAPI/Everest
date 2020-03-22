@@ -89,7 +89,7 @@ namespace Celeste {
                 List<MenuButton> switchedAroundButtons = new List<MenuButton>(buttons);
                 int debugOptionIndex = findButtonIndex("menu_debug", "menu/options");
                 int creditsOptionIndex = findButtonIndex("menu_credits", "menu/credits");
-                if(debugOptionIndex != -1 && creditsOptionIndex != -1) {
+                if (debugOptionIndex != -1 && creditsOptionIndex != -1) {
                     MenuButton debugButton = switchedAroundButtons[debugOptionIndex];
                     switchedAroundButtons.RemoveAt(debugOptionIndex);
                     if (creditsOptionIndex > debugOptionIndex) {
