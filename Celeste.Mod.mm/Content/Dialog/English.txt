@@ -33,9 +33,6 @@
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			An Everest update is available
 
-# File Select Naming
-	NAME_HINT_KEYBOARDINPUT=You're in keyboard input mode.
-	NAME_HINT_USECONTROLLER=Press A on a controller to switch to vanilla mode.
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
 	MODOPTIONS_NEEDSRELAUNCH=								Requires a restart to take effect
@@ -112,6 +109,9 @@
 	MODUPDATECHECKER_INSTALLING=	installing...
 	MODUPDATECHECKER_FAILED=		update failed!
 	MODUPDATECHECKER_WILLRESTART=	press Back to restart Celeste
+	MODUPDATECHECKER_UPDATE_ALL=	Update all mods
+	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Updating all mods...
+	MODUPDATECHECKER_UPDATE_ALL_DONE=	All mods have been updated.
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
