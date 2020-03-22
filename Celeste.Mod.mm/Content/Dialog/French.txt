@@ -125,6 +125,3 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installation de la mise à jour de {0} ({1} -> {2}) vers {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installation du mod {0} v.{1} vers {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERREUR: L'installation de {0} a échoué. Vérifiez votre log.txt pour plus d'informations.
-
-# Misc
-	UI_GIVEUP_HINT=			Votre progression est sauvegardée, mais vous devrez recommencer depuis le dernier :checkpoint:
