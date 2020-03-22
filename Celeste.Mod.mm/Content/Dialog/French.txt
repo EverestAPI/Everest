@@ -66,6 +66,7 @@
 	MAPLIST_RELOAD= 		Recharger
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Non-catégorisé
+	MAPLIST_SEARCH=			Rechercher
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				Non-catégorisé
