@@ -70,6 +70,15 @@
     <EmbeddedResource Include="Content\Dialog\French.txt">
       <LogicalName>Content\Dialog\French.txt</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Dialog\Simplified Chinese.txt">
+      <LogicalName>Content\Dialog\Simplified Chinese.txt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Dialog\Fonts\chinese.fnt">
+      <LogicalName>Content\Dialog\Fonts\chinese.fnt</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Dialog\Fonts\chinese_everest_0.png">
+      <LogicalName>Content\Dialog\Fonts\chinese_everest_0.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\thinking.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\thinking.png</LogicalName>
     </EmbeddedResource>
