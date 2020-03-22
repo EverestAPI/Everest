@@ -112,9 +112,6 @@
 	MODUPDATECHECKER_INSTALLING=	installing...
 	MODUPDATECHECKER_FAILED=		update failed!
 	MODUPDATECHECKER_WILLRESTART=	press Back to restart Celeste
-	MODUPDATECHECKER_UPDATE_ALL=	Update all mods
-	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Updating all mods...
-	MODUPDATECHECKER_UPDATE_ALL_DONE=	All mods have been updated.
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
