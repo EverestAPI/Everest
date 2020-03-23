@@ -60,6 +60,16 @@ namespace Celeste.Mod {
             internal static readonly Version _VersionMax = new Version(int.MaxValue, int.MaxValue);
 
             /// <summary>
+            /// The path to the Everest /Mods/modoptionsorder.txt file.
+            /// </summary>
+            public static string PathModOptionsOrder { get; internal set; }
+            internal static List<string> _ModOptionsOrder = new List<string>();
+            /// <summary>
+            /// The currently loaded mod mod options order.
+            /// </summary>
+            public static ReadOnlyCollection<string> ModOptionsOrder => _ModOptionsOrder?.AsReadOnly();
+
+            /// <summary>
             /// All mods on this list with a version lower than the specified version will never load.
             /// </summary>
             internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
@@ -109,6 +119,9 @@ namespace Celeste.Mod {
                     if (File.Exists(PathWhitelist)) {
                         _Whitelist = File.ReadAllLines(PathWhitelist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
+                }
+                if (File.Exists(PathModOptionsOrder)) {
+                    _ModOptionsOrder = File.ReadAllLines(PathModOptionsOrder).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                 }
 
                 if (Flags.IsDisabled)

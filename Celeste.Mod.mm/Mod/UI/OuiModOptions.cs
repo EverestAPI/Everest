@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -40,7 +41,25 @@ namespace Celeste.Mod.UI {
                 ImageScale = 0.5f
             });
 
-            foreach (EverestModule mod in Everest._Modules)
+            List<EverestModule> modules = new List<EverestModule>(Everest._Modules);
+            if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
+                foreach (string modName in Everest.Loader._ModOptionsOrder) {
+                    string modPath = Path.Combine(Everest.Loader.PathMods, modName);
+                    int index = modules.Select(mod => mod.Metadata.PathDirectory).ToList<string>().IndexOf(modPath);
+                    if (index != -1) {
+                        modules[index].CreateModMenuSection(menu, inGame, snapshot);
+                        modules.RemoveAt(index);
+                    } else {
+                        index = modules.Select(mod => mod.Metadata.PathArchive).ToList<string>().IndexOf(modPath);
+                        if (index != -1) {
+                            modules[index].CreateModMenuSection(menu, inGame, snapshot);
+                            modules.RemoveAt(index);
+                        }
+                    }
+                }
+            }
+
+            foreach (EverestModule mod in modules)
                 mod.CreateModMenuSection(menu, inGame, snapshot);
 
             if (menu.Height > menu.ScrollableMinSize) {
