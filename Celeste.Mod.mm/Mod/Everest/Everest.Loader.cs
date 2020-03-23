@@ -60,6 +60,16 @@ namespace Celeste.Mod {
             internal static readonly Version _VersionMax = new Version(int.MaxValue, int.MaxValue);
 
             /// <summary>
+            /// The path to the Everest /Mods/modoptionsorder.txt file.
+            /// </summary>
+            public static string PathModOptionsOrder { get; internal set; }
+            internal static List<string> _ModOptionsOrder = new List<string>();
+            /// <summary>
+            /// The currently loaded mod mod options order.
+            /// </summary>
+            public static ReadOnlyCollection<string> ModOptionsOrder => _ModOptionsOrder?.AsReadOnly();
+
+            /// <summary>
             /// All mods on this list with a version lower than the specified version will never load.
             /// </summary>
             internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
@@ -108,6 +118,17 @@ namespace Celeste.Mod {
                     PathWhitelist = Path.Combine(PathMods, NameWhitelist);
                     if (File.Exists(PathWhitelist)) {
                         _Whitelist = File.ReadAllLines(PathWhitelist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                    }
+                }
+                PathModOptionsOrder = Path.Combine(PathMods, "modoptionsorder.txt");
+                if (File.Exists(PathModOptionsOrder)) {
+                    _ModOptionsOrder = File.ReadAllLines(PathModOptionsOrder).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathModOptionsOrder)) {
+                        writer.WriteLine("# This is the ModOptions order file. Lines starting with # are ignored.");
+                        writer.WriteLine("# Mod folders and archives in this file will be displayed in the same order in the ModOptions menu.");
+                        writer.WriteLine("ExampleFolder");
+                        writer.WriteLine("SomeMod.zip");
                     }
                 }
 
