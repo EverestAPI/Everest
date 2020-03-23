@@ -120,8 +120,16 @@ namespace Celeste.Mod {
                         _Whitelist = File.ReadAllLines(PathWhitelist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
                 }
+                PathModOptionsOrder = Path.Combine(PathMods, "modoptionsorder.txt");
                 if (File.Exists(PathModOptionsOrder)) {
                     _ModOptionsOrder = File.ReadAllLines(PathModOptionsOrder).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathModOptionsOrder)) {
+                        writer.WriteLine("# This is the ModOptions order file. Lines starting with # are ignored.");
+                        writer.WriteLine("# Mod folders and archives in this file will be displayed in the same order in the ModOptions menu.");
+                        writer.WriteLine("ExampleFolder");
+                        writer.WriteLine("SomeMod.zip");
+                    }
                 }
 
                 if (Flags.IsDisabled)

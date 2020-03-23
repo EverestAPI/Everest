@@ -45,6 +45,7 @@ namespace Celeste.Mod.UI {
             if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
                 foreach (string modName in Everest.Loader._ModOptionsOrder) {
                     string modPath = Path.Combine(Everest.Loader.PathMods, modName);
+                    Logger.Log("test", modPath);
                     int index = modules.Select(mod => mod.Metadata.PathDirectory).ToList<string>().IndexOf(modPath);
                     if (index != -1) {
                         modules[index].CreateModMenuSection(menu, inGame, snapshot);
