@@ -28,6 +28,7 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
+        [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
         public static void Main(string[] args) {
@@ -107,6 +108,8 @@ namespace Celeste {
                 } catch (Exception e) {
                     CriticalFailureHandler(e);
                     return;
+                } finally {
+                    Instance?.Dispose();
                 }
 
                 Everest.Shutdown();

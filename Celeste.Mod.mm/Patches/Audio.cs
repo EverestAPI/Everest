@@ -22,6 +22,7 @@ namespace Celeste {
     static class patch_Audio {
 
         private static FMOD.Studio.System system;
+        private static bool ready;
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
@@ -65,6 +66,18 @@ namespace Celeste {
                 foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank)))
                     IngestBank(asset);
             }
+        }
+
+        [MonoModReplace]
+        public static void Unload() {
+            if (system == null)
+                return;
+            
+            // Vanilla only calls unloadAll.
+            system.unloadAll().CheckFMOD();
+            system.release().CheckFMOD();
+            system = null;
+            ready = false;
         }
 
         public static Bank IngestBank(ModAsset asset) {

@@ -235,15 +235,23 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileSelectSubmenuChecks")]
     class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { };
 
+    /// <summary>
     /// Patches the Fonts.Prepare method to also include custom fonts.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchFontsPrepare")]
     class PatchFontsPrepareAttribute : Attribute { };
 
+    /// <summary>
     /// Make the marked method the new entry point.
     /// </summary>
     [MonoModCustomMethodAttribute("MakeEntryPoint")]
     class MakeEntryPointAttribute : Attribute { };
+
+    /// <summary>
+    /// Patch the original Celeste entry point instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchCelesteMain")]
+    class PatchCelesteMainAttribute : Attribute { };
 
 
     static class MonoModRules {
@@ -1923,6 +1931,17 @@ namespace MonoMod {
 
         public static void MakeEntryPoint(MethodDefinition method, CustomAttribute attrib) {
             MonoModRule.Modder.Module.EntryPoint = method;
+        }
+
+        public static void PatchCelesteMain(MethodDefinition method, CustomAttribute attrib) {
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference)?.GetID() == "System.String SDL2.SDL::SDL_GetPlatform()") {
+                    instrs[instri].OpCode = OpCodes.Ldstr;
+                    instrs[instri].Operand = "Windows";
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

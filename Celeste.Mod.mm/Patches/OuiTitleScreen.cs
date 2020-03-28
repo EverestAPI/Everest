@@ -99,6 +99,15 @@ namespace Celeste {
                 };
                 Add(tween);
             }
+
+            if (alpha >= 1f && Selected && Input.MenuRight.Pressed && !Everest.RestartVanilla) {
+                // TODO: Show confirmation prompt with info about restarting into vanilla.
+                Everest.RestartVanilla = true;
+                new FadeWipe(Scene, false, () => {
+                    Engine.Scene = new Scene();
+                    Engine.Instance.Exit();
+                });
+            }
         }
 
         public extern void orig_Render();

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Mono.Cecil;
+using Monocle;
 using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
@@ -34,7 +35,9 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                StartEverest: // TODO: Return to Everest from Vanilla.
+                // TODO: Return to Everest from Vanilla.
+
+                StartEverest:
                 Console.WriteLine("Loading Everest");
                 using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
                     AppDomain ad = adw.AppDomain;
@@ -50,10 +53,8 @@ namespace Celeste.Mod {
                                 Thread.Sleep(1000);
                         }
 
-                        if (!status[0]) {
-                            // TODO: Handle being unable to unload the Everest AppDomain!
-                            return;
-                        }
+                        if (!status[0])
+                            throw new Exception("Cannot unload Everest. Please restart Celeste using --vanilla if needed.");
 
                         goto StartVanilla;
                     }
@@ -138,7 +139,11 @@ namespace Celeste.Mod {
                 }
 
             } catch (Exception e) {
-                patch_Celeste.CriticalFailureHandler(e);
+                e.LogDetailed("BOOT-CRITICAL");
+                try {
+                    ErrorLog.Write(e.ToString());
+                    ErrorLog.Open();
+                } catch { }
             }
         }
 

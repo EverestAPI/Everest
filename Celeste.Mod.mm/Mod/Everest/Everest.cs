@@ -407,11 +407,17 @@ namespace Celeste.Mod {
             _Initialized = true;
 
             DecalRegistry.LoadDecalRegistry();
+
+            Celeste.Instance.Disposed += Dispose;
         }
 
         internal static void Shutdown() {
             DebugRC.Shutdown();
             Events.Celeste.Shutdown();
+        }
+
+        internal static void Dispose(object sender, EventArgs args) {
+            Audio.Unload(); // This exists but never gets called by the vanilla game.
         }
 
         /// <summary>
