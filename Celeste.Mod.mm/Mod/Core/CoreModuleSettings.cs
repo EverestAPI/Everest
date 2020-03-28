@@ -66,7 +66,7 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool ShowEverestTitleScreen {
             get {
-                if (DateTime.Now.Month == 3 && DateTime.Now.Day == 28)
+                if (DateTime.Now.Month == 4 && DateTime.Now.Day == 1)
                     return TitleScreenType != "vanilla";
                 return TitleScreenType == "everest";
             }

@@ -24,6 +24,10 @@ namespace Celeste {
         private Image logo;
         private MTexture title;
         private List<MTexture> reflections;
+        private bool hideConfirmButton;
+
+        private float switchingToVanilla;
+        private float switchingToVanillaBack;
 
         private MTexture updateTex;
         private float updateAlpha;
@@ -100,13 +104,21 @@ namespace Celeste {
                 Add(tween);
             }
 
-            if (alpha >= 1f && Selected && Input.MenuRight.Pressed && !Everest.RestartVanilla) {
-                // TODO: Show confirmation prompt with info about restarting into vanilla.
-                Everest.RestartVanilla = true;
-                new FadeWipe(Scene, false, () => {
+            if (alpha >= 1f && Selected && Input.MenuRight && arrowToVanilla != null) {
+                switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 8f);
+                switchingToVanilla += Engine.DeltaTime;
+
+                if (switchingToVanilla >= 3f && !Everest.RestartVanilla) {
+                    Everest.RestartVanilla = true;
                     Engine.Scene = new Scene();
                     Engine.Instance.Exit();
-                });
+                }
+
+            } else if (switchingToVanilla < 3f) {
+                if (switchingToVanilla > 0f)
+                    switchingToVanillaBack = Math.Max(switchingToVanilla, switchingToVanillaBack);
+                switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 4f);
+                switchingToVanilla = 0f;
             }
         }
 
@@ -123,11 +135,28 @@ namespace Celeste {
                 reflections = vanillaReflections;
             }
 
+            float alphaPrev = alpha;
+            float textYPrev = textY;
+            float switchAlpha = Ease.CubeInOut(Calc.Clamp(Math.Max(switchingToVanilla, switchingToVanillaBack), 0f, 1f));
+            alpha = Calc.Clamp(alpha - switchAlpha, 0f, 1f);
+            textY += switchAlpha * 200f;
+
             orig_Render();
 
             arrowToVanilla?.DrawJustified(new Vector2(1920f - 80f + (textY - 1000f) * 2f, 540f), new Vector2(1f, 0.5f), Color.White * alpha);
             
             updateTex?.DrawJustified(new Vector2(80f - 4f, textY + 8f * (1f - updateAlpha) + 2f), new Vector2(1f, 1f), Color.White * updateAlpha, 0.8f);
+
+            alpha = alphaPrev;
+            textY = textYPrev;
+
+            if (switchAlpha > 0f) {
+                Draw.Rect(0f, 0f, 1920f, 1080f, Color.Black * switchAlpha);
+                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA"), new Vector2(960f + 40f * (1f - switchAlpha), 540f - 4f), new Vector2(0.5f, 1f), Vector2.One, Color.White * switchAlpha);
+                Draw.Rect(960f - 200f, 540f + 4f, 400f, 4f, Color.Black * switchAlpha);
+                Draw.HollowRect(960f - 200f, 540f + 4f, 400f, 4f, Color.DarkSlateGray * switchAlpha);
+                Draw.Rect(960f - 200f, 540f + 4f, 400f * Math.Max(switchingToVanilla, switchingToVanillaBack) / 3f, 4f, Color.White * switchAlpha);
+            }
         }
 
     }

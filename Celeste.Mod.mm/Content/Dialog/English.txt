@@ -33,6 +33,9 @@
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			An Everest update is available
 
+# Title Screen
+	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
+
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
 	MODOPTIONS_NEEDSRELAUNCH=								Requires a restart to take effect
