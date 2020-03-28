@@ -62,8 +62,21 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool ShowModOptionsInGame { get; set; } = true;
 
+        [YamlIgnore]
         [SettingInGame(false)]
-        public bool ShowEverestTitleScreen { get; set; } = true;
+        public bool ShowEverestTitleScreen {
+            get {
+                if (DateTime.Now.Month == 3 && DateTime.Now.Day == 28)
+                    return TitleScreenType != "vanilla";
+                return TitleScreenType == "everest";
+            }
+            set {
+                TitleScreenType = value ? "everest" : "vanilla";
+            }
+        }
+
+        [SettingIgnore]
+        public string TitleScreenType { get; set; }
 
         [SettingIgnore]
         public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;
