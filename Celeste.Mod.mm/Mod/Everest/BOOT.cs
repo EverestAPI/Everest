@@ -51,7 +51,12 @@ namespace Celeste.Mod {
                 using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
                     AppDomain ad = adw.AppDomain;
 
-                    ad.ExecuteAssembly(everestPath, args);
+                    // Separate thread for a separate Win32 message queue.
+                    Thread t = new Thread(() => {
+                        ad.ExecuteAssembly(everestPath, args);
+                    });
+                    t.Start();
+                    t.Join();
 
                     if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
                         for (int i = 0; i < 5; i++) {
@@ -139,7 +144,12 @@ namespace Celeste.Mod {
                     }
 
                     // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
-                    ad.ExecuteAssembly(vanillaPath, args);
+                    // Separate thread for a separate Win32 message queue.
+                    Thread t = new Thread(() => {
+                        ad.ExecuteAssembly(vanillaPath, args);
+                    });
+                    t.Start();
+                    t.Join();
 
                     return;
                 }
