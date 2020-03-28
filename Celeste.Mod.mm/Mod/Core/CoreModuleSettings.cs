@@ -62,6 +62,9 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool ShowModOptionsInGame { get; set; } = true;
 
+        [SettingInGame(false)]
+        public bool ShowEverestTitleScreen { get; set; } = true;
+
         [SettingIgnore]
         public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;
         [SettingNeedsRelaunch]

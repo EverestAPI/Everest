@@ -79,6 +79,12 @@
     <EmbeddedResource Include="Content\Dialog\Fonts\chinese_everest_0.png">
       <LogicalName>Content\Dialog\Fonts\chinese_everest_0.png</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\logo_everest.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\logo_everest.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\title_everest.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\title_everest.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\thinking.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\thinking.png</LogicalName>
     </EmbeddedResource>

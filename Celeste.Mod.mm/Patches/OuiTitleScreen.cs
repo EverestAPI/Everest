@@ -21,16 +21,45 @@ namespace Celeste {
         private string version;
         private float textY;
         private float alpha;
+        private Image logo;
+        private MTexture title;
+        private List<MTexture> reflections;
 
         private MTexture updateTex;
         private float updateAlpha;
         private bool updateChecked;
+
+        private Image vanillaLogo;
+        private MTexture vanillaTitle;
+        private List<MTexture> vanillaReflections;
+
+        private Image everestLogo;
+        private MTexture everestTitle;
+        private List<MTexture> everestReflections;
+
+        private MTexture arrowToVanilla;
 
         // Patching constructors is ugly.
         public extern void orig_ctor();
         [MonoModConstructor]
         public void ctor() {
             orig_ctor();
+
+            vanillaLogo = logo;
+            vanillaTitle = title;
+            vanillaReflections = reflections;
+
+            everestLogo = new Image(GFX.Gui["logo_everest"]);
+            everestLogo.CenterOrigin();
+            everestLogo.Position = new Vector2(1920f, 1080f) / 2f;
+
+            everestTitle = GFX.Gui["title_everest"];
+
+            everestReflections = new List<MTexture>();
+            for (int i = everestTitle.Height - 4; i > 0; i -= 4)
+                everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
+
+            arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
 
             if (!Everest.Flags.IsDisabled)
                 version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
@@ -74,7 +103,21 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
+            if (CoreModule.Settings.ShowEverestTitleScreen) {
+                logo = everestLogo;
+                title = everestTitle;
+                reflections = everestReflections;
+
+            } else {
+                logo = vanillaLogo;
+                title = vanillaTitle;
+                reflections = vanillaReflections;
+            }
+
             orig_Render();
+
+            arrowToVanilla?.DrawJustified(new Vector2(1920f - 80f + (textY - 1000f) * 2f, 540f), new Vector2(1f, 0.5f), Color.White * alpha);
+            
             updateTex?.DrawJustified(new Vector2(80f - 4f, textY + 8f * (1f - updateAlpha) + 2f), new Vector2(1f, 1f), Color.White * updateAlpha, 0.8f);
         }
 

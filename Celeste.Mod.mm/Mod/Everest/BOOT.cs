@@ -24,116 +24,121 @@ namespace Celeste.Mod {
 
         [MakeEntryPoint]
         private static void Main(string[] args) {
-            if (args.FirstOrDefault() == "--vanilla")
-                goto StartVanilla;
-
-            if (args.FirstOrDefault() == "--no-appdomain") {
-                Console.WriteLine("Loading Everest, no AppDomain");
-                patch_Celeste.Main(args);
-                return;
-            }
-
-            StartEverest: // TODO: Return to Everest from Vanilla.
-            Console.WriteLine("Loading Everest");
-            using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status))  {
-                AppDomain ad = adw.AppDomain;
-
-                EverestBootWrap wrap = new EverestBootWrap();
-                wrap.Args = args;
-                ad.DoCallBack(wrap.Run);
-
-                if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
-                    for (int i = 0; i < 5; i++) {
-                        adw.Dispose();
-                        if (!status[0])
-                            Thread.Sleep(1000);
-                    }
-
-                    if (!status[0]) {
-                        // TODO: Handle being unable to unload the Everest AppDomain!
-                        return;
-                    }
-
+            try {
+                if (args.FirstOrDefault() == "--vanilla")
                     goto StartVanilla;
+
+                if (args.FirstOrDefault() == "--no-appdomain") {
+                    Console.WriteLine("Loading Everest, no AppDomain");
+                    patch_Celeste.Main(args);
+                    return;
                 }
 
-                return;
-            }
+                StartEverest: // TODO: Return to Everest from Vanilla.
+                Console.WriteLine("Loading Everest");
+                using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
+                    AppDomain ad = adw.AppDomain;
 
+                    EverestBootWrap wrap = new EverestBootWrap();
+                    wrap.Args = args;
+                    ad.DoCallBack(wrap.Run);
 
-            StartVanilla:
-            using (AppDomainWrapper adw = new AppDomainWrapper("Celeste", out bool[] status))  {
-                Console.WriteLine("Loading Vanilla");
-                AppDomain ad = adw.AppDomain;
+                    if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
+                        for (int i = 0; i < 5; i++) {
+                            adw.Dispose();
+                            if (!status[0])
+                                Thread.Sleep(1000);
+                        }
 
-                string everestPath = typeof(Celeste).Assembly.Location;
-                string vanillaPath = Path.Combine(Path.GetDirectoryName(everestPath), "orig", "Celeste.exe");
-                string loaderPath = Path.Combine(Path.GetDirectoryName(everestPath), "EverestVanillaLoader.dll");
+                        if (!status[0]) {
+                            // TODO: Handle being unable to unload the Everest AppDomain!
+                            return;
+                        }
 
-                if (File.Exists(loaderPath))
-                    File.Delete(loaderPath);
+                        goto StartVanilla;
+                    }
 
-                // Separate the EverestVanillaLoader class into its own assembly.
-                // This is needed to not load Everest's Celeste.exe by accident.
-                string calFullName;
-                using (ModuleDefinition wrapper = ModuleDefinition.CreateModule("EverestVanillaLoader", new ModuleParameters() {
-                    ReflectionImporterProvider = MMReflectionImporter.Provider
-                }))
-                using (EverestVanillaLoaderMonoModder mm = new EverestVanillaLoaderMonoModder() {
-                    Module = wrapper,
-                    CleanupEnabled = false
-                }) {
-                    mm.WriterParameters.WriteSymbols = false;
-                    mm.WriterParameters.SymbolWriterProvider = null;
-
-                    mm.MapDependency(mm.Module, "Celeste");
-                    if (!mm.DependencyCache.TryGetValue("Celeste", out ModuleDefinition celeste))
-                        throw new FileNotFoundException("Celeste not found!");
-
-                    TypeDefinition orig = mm.Orig = mm.FindType("Celeste.Mod.BOOT/EverestVanillaLoader").Resolve();
-                    orig.DeclaringType = null;
-                    orig.IsNestedPublic = false;
-                    orig.IsPublic = true;
-                    orig.Namespace = "Celeste.Mod";
-                    calFullName = orig.FullName;
-
-                    wrapper.Architecture = celeste.Architecture;
-                    wrapper.Runtime = celeste.Runtime;
-                    wrapper.RuntimeVersion = celeste.RuntimeVersion;
-                    wrapper.Attributes = celeste.Attributes;
-                    wrapper.Characteristics = celeste.Characteristics;
-                    wrapper.Kind = ModuleKind.Dll;
-
-                    mm.PrePatchType(orig, forceAdd: true);
-                    mm.PatchType(orig);
-                    mm.PatchRefs();
-                    mm.Write(null, loaderPath);
-                };
-
-                try {
-                    // Move the current Celeste.exe away so that it won't get loaded by accident.
-                    if (File.Exists(everestPath + "_"))
-                        File.Delete(everestPath + "_");
-                    File.Move(everestPath, everestPath + "_");
-
-                    // Can't do this as it'd permanently change Assembly.GetEntryAssembly()
-                    // ad.ExecuteAssembly(loaderPath, new string[] { everestPath, vanillaPath, typeof(Celeste).Assembly.FullName });
-
-                    // Must use reflection as the separated type is different from doing typeof(EverestVanillaLoader) here.
-                    Type cal = ad.Load("EverestVanillaLoader").GetType(calFullName);
-                    ad.SetData("EverestPath", everestPath);
-                    ad.SetData("VanillaPath", vanillaPath);
-                    ad.SetData("CelesteName", typeof(Celeste).Assembly.FullName);
-                    ad.DoCallBack(cal.GetMethod("Run").CreateDelegate(typeof(CrossAppDomainDelegate)) as CrossAppDomainDelegate);
-
-                } finally {
-                    File.Move(everestPath + "_", everestPath);
+                    return;
                 }
 
-                // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
-                ad.ExecuteAssembly(vanillaPath, args);
 
-                return;
+                StartVanilla:
+                using (AppDomainWrapper adw = new AppDomainWrapper("Celeste", out bool[] status)) {
+                    Console.WriteLine("Loading Vanilla");
+                    AppDomain ad = adw.AppDomain;
+
+                    string everestPath = typeof(Celeste).Assembly.Location;
+                    string vanillaPath = Path.Combine(Path.GetDirectoryName(everestPath), "orig", "Celeste.exe");
+                    string loaderPath = Path.Combine(Path.GetDirectoryName(everestPath), "EverestVanillaLoader.dll");
+
+                    if (File.Exists(loaderPath))
+                        File.Delete(loaderPath);
+
+                    // Separate the EverestVanillaLoader class into its own assembly.
+                    // This is needed to not load Everest's Celeste.exe by accident.
+                    string calFullName;
+                    using (ModuleDefinition wrapper = ModuleDefinition.CreateModule("EverestVanillaLoader", new ModuleParameters() {
+                        ReflectionImporterProvider = MMReflectionImporter.Provider
+                    }))
+                    using (EverestVanillaLoaderMonoModder mm = new EverestVanillaLoaderMonoModder() {
+                        Module = wrapper,
+                        CleanupEnabled = false
+                    }) {
+                        mm.WriterParameters.WriteSymbols = false;
+                        mm.WriterParameters.SymbolWriterProvider = null;
+
+                        mm.MapDependency(mm.Module, "Celeste");
+                        if (!mm.DependencyCache.TryGetValue("Celeste", out ModuleDefinition celeste))
+                            throw new FileNotFoundException("Celeste not found!");
+
+                        TypeDefinition orig = mm.Orig = mm.FindType("Celeste.Mod.BOOT/EverestVanillaLoader").Resolve();
+                        orig.DeclaringType = null;
+                        orig.IsNestedPublic = false;
+                        orig.IsPublic = true;
+                        orig.Namespace = "Celeste.Mod";
+                        calFullName = orig.FullName;
+
+                        wrapper.Architecture = celeste.Architecture;
+                        wrapper.Runtime = celeste.Runtime;
+                        wrapper.RuntimeVersion = celeste.RuntimeVersion;
+                        wrapper.Attributes = celeste.Attributes;
+                        wrapper.Characteristics = celeste.Characteristics;
+                        wrapper.Kind = ModuleKind.Dll;
+
+                        mm.PrePatchType(orig, forceAdd: true);
+                        mm.PatchType(orig);
+                        mm.PatchRefs();
+                        mm.Write(null, loaderPath);
+                    };
+
+                    try {
+                        // Move the current Celeste.exe away so that it won't get loaded by accident.
+                        if (File.Exists(everestPath + "_"))
+                            File.Delete(everestPath + "_");
+                        File.Move(everestPath, everestPath + "_");
+
+                        // Can't do this as it'd permanently change Assembly.GetEntryAssembly()
+                        // ad.ExecuteAssembly(loaderPath, new string[] { everestPath, vanillaPath, typeof(Celeste).Assembly.FullName });
+
+                        // Must use reflection as the separated type is different from doing typeof(EverestVanillaLoader) here.
+                        Type cal = ad.Load("EverestVanillaLoader").GetType(calFullName);
+                        ad.SetData("EverestPath", everestPath);
+                        ad.SetData("VanillaPath", vanillaPath);
+                        ad.SetData("CelesteName", typeof(Celeste).Assembly.FullName);
+                        ad.DoCallBack(cal.GetMethod("Run").CreateDelegate(typeof(CrossAppDomainDelegate)) as CrossAppDomainDelegate);
+
+                    } finally {
+                        File.Move(everestPath + "_", everestPath);
+                    }
+
+                    // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
+                    ad.ExecuteAssembly(vanillaPath, args);
+
+                    return;
+                }
+
+            } catch (Exception e) {
+                patch_Celeste.CriticalFailureHandler(e);
             }
         }
 
