@@ -1,5 +1,6 @@
 ﻿using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Input;
 using Mono.Cecil;
 using Monocle;
@@ -201,6 +202,14 @@ namespace Celeste.Mod {
                         .GetType("Monocle.Engine")
                         .GetField("AssemblyDirectory", BindingFlags.NonPublic | BindingFlags.Static)
                         .SetValue(null, Path.GetDirectoryName(EverestPath));
+
+                    // Similar restrictions apply to XNA's TitleLocation.Path, which is reimplemented accurately by FNA.
+                    // Sadly, XNA uses GetEntryAssembly as well.
+                    // Luckily, some basic reflection exposed a (presumably cache) field that doesn't exist in FNA.
+                    typeof(TitleContainer).Assembly
+                        .GetType("Microsoft.Xna.Framework.TitleLocation")
+                        ?.GetField("_titleLocation", BindingFlags.NonPublic | BindingFlags.Static)
+                        ?.SetValue(null, Path.GetDirectoryName(EverestPath));
                 }
             }
 
