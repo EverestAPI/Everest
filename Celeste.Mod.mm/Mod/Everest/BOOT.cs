@@ -26,12 +26,20 @@ namespace Celeste.Mod {
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
+                string everestPath = typeof(Celeste).Assembly.Location;
+
                 if (args.FirstOrDefault() == "--vanilla")
                     goto StartVanilla;
 
                 if (args.FirstOrDefault() == "--no-appdomain") {
                     Console.WriteLine("Loading Everest, no AppDomain");
                     patch_Celeste.Main(args);
+                    return;
+                }
+
+                if (!AppDomain.CurrentDomain.IsDefaultAppDomain()) {
+                    patch_Celeste.Main(args);
+                    AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
                     return;
                 }
 
@@ -42,9 +50,7 @@ namespace Celeste.Mod {
                 using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
                     AppDomain ad = adw.AppDomain;
 
-                    EverestBootWrap wrap = new EverestBootWrap();
-                    wrap.Args = args;
-                    ad.DoCallBack(wrap.Run);
+                    ad.ExecuteAssembly(everestPath, args);
 
                     if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
                         for (int i = 0; i < 5; i++) {
@@ -68,7 +74,6 @@ namespace Celeste.Mod {
                     Console.WriteLine("Loading Vanilla");
                     AppDomain ad = adw.AppDomain;
 
-                    string everestPath = typeof(Celeste).Assembly.Location;
                     string vanillaPath = Path.Combine(Path.GetDirectoryName(everestPath), "orig", "Celeste.exe");
                     string loaderPath = Path.Combine(Path.GetDirectoryName(everestPath), "EverestVanillaLoader.dll");
 
@@ -144,19 +149,6 @@ namespace Celeste.Mod {
                     ErrorLog.Write(e.ToString());
                     ErrorLog.Open();
                 } catch { }
-            }
-        }
-
-        // This class gets serialized into the Everest AppDomain and is responsible for running Everest.
-        // No special precautions need to be made here regarding loading a different Celeste.exe.
-        [Serializable]
-        public class EverestBootWrap {
-            public string[] Args;
-
-            public void Run() {
-                patch_Celeste.Main(Args);
-
-                AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
             }
         }
 
