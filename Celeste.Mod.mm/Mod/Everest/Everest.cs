@@ -194,6 +194,8 @@ namespace Celeste.Mod {
 
         private static bool _SavingSettings;
 
+        internal static bool RestartVanilla;
+
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
             if (versionSplitIndex == -1) {
@@ -253,6 +255,7 @@ namespace Celeste.Mod {
 
         internal static void Boot() {
             Logger.Log(LogLevel.Info, "core", "Booting Everest");
+            Logger.Log(LogLevel.Info, "core", $"AppDomain: {AppDomain.CurrentDomain.FriendlyName ?? "???"}");
             Logger.Log(LogLevel.Info, "core", $"VersionCelesteString: {VersionCelesteString}");
 
             if (Type.GetType("Mono.Runtime") != null) {
@@ -404,6 +407,11 @@ namespace Celeste.Mod {
             _Initialized = true;
 
             DecalRegistry.LoadDecalRegistry();
+        }
+
+        internal static void Shutdown() {
+            DebugRC.Shutdown();
+            Events.Celeste.Shutdown();
         }
 
         /// <summary>

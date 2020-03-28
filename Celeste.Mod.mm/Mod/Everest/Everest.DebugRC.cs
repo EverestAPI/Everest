@@ -76,6 +76,11 @@ namespace Celeste.Mod {
                 });
             }
 
+            public static void Shutdown() {
+                Listener?.Abort();
+                Listener = null;
+            }
+
             private static void HandleRequest(HttpListenerContext c) {
                 Logger.Log(LogLevel.Verbose, "debugrc", $"Requested: {c.Request.RawUrl}");
 

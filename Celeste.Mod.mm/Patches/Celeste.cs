@@ -29,6 +29,7 @@ namespace Celeste {
         private bool firstLoad;
 
         public static extern void orig_Main(string[] args);
+        [MonoModPublic]
         public static void Main(string[] args) {
             Thread.CurrentThread.Name = "Main Thread";
 
@@ -108,7 +109,7 @@ namespace Celeste {
                     return;
                 }
 
-                Everest.Events.Celeste.Shutdown();
+                Everest.Shutdown();
 
                 Console.SetOut(logWriter.STDOUT);
                 logWriter.STDOUT = null;

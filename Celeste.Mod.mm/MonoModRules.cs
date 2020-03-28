@@ -240,6 +240,11 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchFontsPrepare")]
     class PatchFontsPrepareAttribute : Attribute { };
 
+    /// Make the marked method the new entry point.
+    /// </summary>
+    [MonoModCustomMethodAttribute("MakeEntryPoint")]
+    class MakeEntryPointAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -1914,6 +1919,10 @@ namespace MonoMod {
                     instrs[instri].Operand = m_GetFiles;
                 }
             }
+        }
+
+        public static void MakeEntryPoint(MethodDefinition method, CustomAttribute attrib) {
+            MonoModRule.Modder.Module.EntryPoint = method;
         }
 
         public static void PostProcessor(MonoModder modder) {
