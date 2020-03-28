@@ -28,6 +28,7 @@ namespace Celeste {
 
         private float switchingToVanilla;
         private float switchingToVanillaBack;
+        private const float switchingToVanillaDuration = 2f;
 
         private MTexture updateTex;
         private float updateAlpha;
@@ -108,13 +109,15 @@ namespace Celeste {
                 switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 8f);
                 switchingToVanilla += Engine.DeltaTime;
 
-                if (switchingToVanilla >= 3f && !Everest.RestartVanilla) {
+                if (switchingToVanilla >= switchingToVanillaDuration && !Everest.RestartVanilla) {
                     Everest.RestartVanilla = true;
-                    Engine.Scene = new Scene();
-                    Engine.Instance.Exit();
+                    new FadeWipe(Scene, false, () => {
+                        Engine.Scene = new Scene();
+                        Engine.Instance.Exit();
+                    });
                 }
 
-            } else if (switchingToVanilla < 3f) {
+            } else if (switchingToVanilla < switchingToVanillaDuration) {
                 if (switchingToVanilla > 0f)
                     switchingToVanillaBack = Math.Max(switchingToVanilla, switchingToVanillaBack);
                 switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 4f);
@@ -152,10 +155,11 @@ namespace Celeste {
 
             if (switchAlpha > 0f) {
                 Draw.Rect(0f, 0f, 1920f, 1080f, Color.Black * switchAlpha);
-                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA"), new Vector2(960f + 40f * (1f - switchAlpha), 540f - 4f), new Vector2(0.5f, 1f), Vector2.One, Color.White * switchAlpha);
-                Draw.Rect(960f - 200f, 540f + 4f, 400f, 4f, Color.Black * switchAlpha);
-                Draw.HollowRect(960f - 200f, 540f + 4f, 400f, 4f, Color.DarkSlateGray * switchAlpha);
-                Draw.Rect(960f - 200f, 540f + 4f, 400f * Math.Max(switchingToVanilla, switchingToVanillaBack) / 3f, 4f, Color.White * switchAlpha);
+                float offs = 40f * (1f - switchAlpha);
+                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA"), new Vector2(960f + offs, 540f - 4f), new Vector2(0.5f, 1f), Vector2.One, Color.White * switchAlpha);
+                Draw.Rect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.Black * switchAlpha * switchAlpha);
+                Draw.HollowRect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.DarkSlateGray * switchAlpha);
+                Draw.Rect(960f - 200f + offs, 540f + 4f, 400f * Calc.Clamp(Math.Max(switchingToVanilla, switchingToVanillaBack) / switchingToVanillaDuration, 0f, 1f), 4f, Color.White * switchAlpha);
             }
         }
 
