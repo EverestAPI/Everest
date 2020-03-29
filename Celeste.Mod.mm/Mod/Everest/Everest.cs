@@ -23,6 +23,7 @@ using YYProject.XXHash;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
 using MonoMod.RuntimeDetour;
+using MonoMod.RuntimeDetour.HookGen;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -343,7 +344,8 @@ namespace Celeste.Mod {
             _DetourModManager = new DetourModManager();
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner}: {from} -> {to.Method?.ToString() ?? "???"}");
+                object target = to.Target;
+                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
             };
             _DetourModManager.OnHook += (owner, from, to, target) => {
                 _DetourOwners.Add(owner);
@@ -356,6 +358,20 @@ namespace Celeste.Mod {
             _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
                 _DetourOwners.Add(owner);
                 Logger.Log(LogLevel.Verbose, "detour", $"new NativeDetour by {owner}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
+            };
+            HookEndpointManager.OnAdd += (from, to) => {
+                Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
+                _DetourOwners.Add(owner);
+                object target = to.Target;
+                Logger.Log(LogLevel.Verbose, "detour", $"new On.+= by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                return true;
+            };
+            HookEndpointManager.OnModify += (from, to) => {
+                Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
+                _DetourOwners.Add(owner);
+                object target = to.Target;
+                Logger.Log(LogLevel.Verbose, "detour", $"new IL.+= by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                return true;
             };
 
             // Before even initializing anything else, make sure to prepare any static flags.
