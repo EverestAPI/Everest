@@ -215,7 +215,17 @@ namespace Celeste.Mod.Core {
 
                 options.OnESC = options.OnCancel = () => {
                     Audio.Play(SFX.ui_main_button_back);
-                    options.CloseAndRun(Everest.SaveSettings(), () => level.Pause(returnIndex, minimal, false));
+                    options.CloseAndRun(Everest.SaveSettings(), () => {
+                        level.Pause(returnIndex, minimal, false);
+
+                        // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
+                        TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as TextMenu;
+                        TextMenu.Button modOptionsButton = textMenu?.GetItems().OfType<TextMenu.Button>()
+                            .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
+                        if (modOptionsButton != null) {
+                            textMenu.Selection = textMenu.IndexOf(modOptionsButton);
+                        }
+                    });
                 };
 
                 options.OnPause = () => {
