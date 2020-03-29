@@ -665,11 +665,14 @@ namespace Celeste.Mod {
             }
 
             Events.Celeste.OnShutdown += () => {
+                // If the game was installed via Steam, it should restart in a Steam context on its own.
                 Thread offspring = new Thread(() => {
                     Process game = new Process();
-                    // If the game was installed via Steam, it should restart in a Steam context on its own.
-                    if (!(Environment.OSVersion.Platform == PlatformID.Unix ||
-                        Environment.OSVersion.Platform == PlatformID.MacOSX)) {
+                    // Unix-likes use the wrapper script
+                    if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                        Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                        game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
+                    } else {
                         game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
                     }
                     game.StartInfo.WorkingDirectory = PathGame;
@@ -677,15 +680,6 @@ namespace Celeste.Mod {
                 });
                 offspring.Start();
             };
-
-            // Unix-likes can just fork-and-die to start the new game
-            if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                Logger.Log(LogLevel.Info, "info", Path.Combine(PathGame, "Celeste"));
-                Process fork = new Process();
-                fork.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                fork.Start();
-            }
 
             Engine.Instance.Exit();
 
