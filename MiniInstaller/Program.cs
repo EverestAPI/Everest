@@ -127,11 +127,19 @@ namespace MiniInstaller {
             if (!Directory.Exists(PathOrig)) {
                 LogLine("Creating backup orig directory");
                 Directory.CreateDirectory(PathOrig);
-                File.Copy(PathCelesteExe, Path.Combine(PathOrig, "Celeste.exe"));
-                if (File.Exists(PathCelesteExe + ".pdb"))
-                    File.Copy(PathCelesteExe + ".pdb", Path.Combine(PathOrig, "Celeste.exe.pdb"));
-                if (File.Exists(Path.ChangeExtension(PathCelesteExe, "mdb")))
-                    File.Copy(Path.ChangeExtension(PathCelesteExe, "mdb"), Path.Combine(PathOrig, "Celeste.mdb"));
+            }
+
+            Backup(PathCelesteExe);
+            Backup(PathCelesteExe + ".pdb");
+            Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
+            Backup(PathCelesteExe + ".config");
+        }
+
+        public static void Backup(string from) {
+            string to = Path.Combine(PathOrig, Path.GetFileName(from));
+            if (File.Exists(from) && !File.Exists(to)) {
+                LogLine($"Backing up {from} => {to}");
+                File.Copy(from, to);
             }
         }
 

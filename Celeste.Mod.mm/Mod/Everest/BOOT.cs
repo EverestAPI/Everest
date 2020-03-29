@@ -94,7 +94,8 @@ namespace Celeste.Mod {
                     }))
                     using (EverestVanillaLoaderMonoModder mm = new EverestVanillaLoaderMonoModder() {
                         Module = wrapper,
-                        CleanupEnabled = false
+                        CleanupEnabled = false,
+                        MissingDependencyThrow = false
                     }) {
                         mm.WriterParameters.WriteSymbols = false;
                         mm.WriterParameters.SymbolWriterProvider = null;

@@ -79,8 +79,10 @@ namespace Celeste.Mod {
                     } catch (ThreadInterruptedException) {
                         throw;
                     } catch (HttpListenerException e) {
+                        // 500 = Listener closed.
                         // 995 = I/O abort due to thread abort or application shutdown.
-                        if (e.ErrorCode != 995) {
+                        if (e.ErrorCode != 500 ||
+                            e.ErrorCode != 995) {
                             Logger.Log("debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
                         }
                     } catch (Exception e) {
