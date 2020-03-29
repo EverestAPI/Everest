@@ -120,12 +120,14 @@ namespace Celeste {
         }
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
-            if (e.IsTerminating) {
-                _CriticalFailureIsUnhandledException = true;
-                CriticalFailureHandler(e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception"));
+            if (!Everest.unixExit) {
+                if (e.IsTerminating) {
+                    _CriticalFailureIsUnhandledException = true;
+                    CriticalFailureHandler(e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception"));
 
-            } else {
-                (e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception")).LogDetailed("UNHANDLED");
+                } else {
+                    (e.ExceptionObject as Exception ?? new Exception("Unknown unhandled exception")).LogDetailed("UNHANDLED");
+                }
             }
         }
 
@@ -227,6 +229,7 @@ https://discord.gg/6qjaePQ");
 
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool AllocConsole();
+
 
         // Patching constructors is ugly.
         public extern void orig_ctor_Celeste();

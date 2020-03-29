@@ -609,6 +609,8 @@ namespace Celeste.Mod {
             Engine.Scene = scene;
         }
 
+        public static bool unixExit = false;
+
         private static IEnumerator _QuickFullRestart(bool fromOverworld) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
@@ -618,6 +620,15 @@ namespace Celeste.Mod {
                 save.BeforeSave();
                 UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
                 CoreModule.Instance.SaveSettings();
+            }
+
+            // Unix-likes can just fork-and-die to start the new game
+            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                unixExit = true;
+                Process fork = new Process();
+                fork.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
+                fork.Start();
             }
 
             Events.Celeste.OnShutdown += () => {
@@ -634,15 +645,6 @@ namespace Celeste.Mod {
                 offspring.Start();
                 patch_Audio.System?.release();
             };
-
-            // Unix-likes can just fork-and-die to start the new game
-            if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                Logger.Log(LogLevel.Info, "info", Path.Combine(PathGame, "Celeste"));
-                Process fork = new Process();
-                fork.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                fork.Start();
-            }
 
             Engine.Instance.Exit();
 
