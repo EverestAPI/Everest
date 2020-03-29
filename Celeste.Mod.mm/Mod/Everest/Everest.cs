@@ -197,7 +197,9 @@ namespace Celeste.Mod {
 
         private static bool _SavingSettings;
 
+        private static DetourModManager _DetourModManager;
         private static Hook _DynDataCollectionFinalizeFix;
+        private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
 
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
@@ -338,6 +340,24 @@ namespace Celeste.Mod {
                 })
             );
 
+            _DetourModManager = new DetourModManager();
+            _DetourModManager.OnILHook += (owner, from, to) => {
+                _DetourOwners.Add(owner);
+                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner}: {from} -> {to.Method?.ToString() ?? "???"}");
+            };
+            _DetourModManager.OnHook += (owner, from, to, target) => {
+                _DetourOwners.Add(owner);
+                Logger.Log(LogLevel.Verbose, "detour", $"new Hook by {owner}: {from} -> {to}" + (target == null ? "" : $" (target: {target})"));
+            };
+            _DetourModManager.OnDetour += (owner, from, to) => {
+                _DetourOwners.Add(owner);
+                Logger.Log(LogLevel.Verbose, "detour", $"new Detour by {owner}: {from} -> {to}");
+            };
+            _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
+                _DetourOwners.Add(owner);
+                Logger.Log(LogLevel.Verbose, "detour", $"new NativeDetour by {owner}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
+            };
+
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
@@ -433,6 +453,15 @@ namespace Celeste.Mod {
 
         internal static void Dispose(object sender, EventArgs args) {
             Audio.Unload(); // This exists but never gets called by the vanilla game.
+
+            if (_DetourModManager != null) {
+                foreach (Assembly asm in _DetourOwners)
+                    _DetourModManager.Unload(asm);
+
+                _DetourModManager.Dispose();
+                _DetourModManager = null;
+                _DetourOwners.Clear();
+            }
         }
 
         /// <summary>
