@@ -22,6 +22,7 @@ using System.Security.Cryptography;
 using YYProject.XXHash;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
+using MonoMod.RuntimeDetour;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -92,6 +93,8 @@ namespace Celeste.Mod {
         /// Path to Everest base location. Defaults to the game directory.
         /// </summary>
         public static string PathEverest { get; internal set; }
+
+        internal static bool RestartVanilla;
 
         /// <summary>
         /// The hasher used to determine the mod and installation hashes.
@@ -194,7 +197,7 @@ namespace Celeste.Mod {
 
         private static bool _SavingSettings;
 
-        internal static bool RestartVanilla;
+        private static Hook _DynDataCollectionFinalizeFix;
 
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
@@ -322,6 +325,18 @@ namespace Celeste.Mod {
                 if (Directory.Exists(modSettingsOld) && !Directory.Exists(modSettingsRIP))
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
+
+            // FIXME: Remove when updating to MonoMod 20.04
+            // See https://github.com/MonoMod/MonoMod/commit/a9749e3fcfad463e9bab01e2cf626ef7f00f932b for more info
+            // Don't undo this hook, at least not before unloading the AppDomain!
+            _DynDataCollectionFinalizeFix = new Hook(
+                typeof(DynData<>).Assembly.GetType("MonoMod.Utils._DataHelper_+CollectionDummy").GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance),
+                new Action<Action<object>, object>((orig, self) => {
+                    if (AppDomain.CurrentDomain.IsFinalizingForUnload())
+                        return;
+                    orig(self);
+                })
+            );
 
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
