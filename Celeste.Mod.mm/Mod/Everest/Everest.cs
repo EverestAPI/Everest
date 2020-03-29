@@ -632,7 +632,6 @@ namespace Celeste.Mod {
                     game.Start();
                 });
                 offspring.Start();
-                patch_Audio.System?.release();
             };
 
             // Unix-likes can just fork-and-die to start the new game

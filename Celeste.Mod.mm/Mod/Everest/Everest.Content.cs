@@ -236,6 +236,10 @@ namespace Celeste.Mod {
                     try {
                         new FileStream(fsma.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete).Dispose();
                         break;
+                    } catch (ThreadAbortException) {
+                        throw;
+                    } catch (ThreadInterruptedException) {
+                        throw;
                     } catch {
                         // Retry, but not infinitely.
                         if (timer.Elapsed.TotalSeconds >= 2D)

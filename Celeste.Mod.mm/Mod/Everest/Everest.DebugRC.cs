@@ -65,13 +65,26 @@ namespace Celeste.Mod {
                                     using (context.Response) {
                                         HandleRequest(context);
                                     }
+                                } catch (ThreadAbortException) {
+                                    throw;
+                                } catch (ThreadInterruptedException) {
+                                    throw;
                                 } catch (Exception e) {
-                                    Logger.Log("debugrc", "DebugRC failed responding: " + e);
+                                    Logger.Log("debugrc", $"DebugRC failed responding: {e}");
                                 }
                             }, Listener.GetContext());
                         }
+                    } catch (ThreadAbortException) {
+                        throw;
+                    } catch (ThreadInterruptedException) {
+                        throw;
+                    } catch (HttpListenerException e) {
+                        // 995 = I/O abort due to thread abort or application shutdown.
+                        if (e.ErrorCode != 995) {
+                            Logger.Log("debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
+                        }
                     } catch (Exception e) {
-                        Logger.Log("debugrc", "DebugRC failed listening: " + e);
+                        Logger.Log("debugrc", $"DebugRC failed listening: {e}");
                     }
                 });
             }
