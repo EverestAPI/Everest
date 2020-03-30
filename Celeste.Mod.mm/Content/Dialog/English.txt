@@ -35,6 +35,10 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
+    
+# Extra Key Mapping
+    KEY_CONFIG_ADDING= PRESS KEY TO ADD FOR
+    KEY_CONFIG_ADDITION_HINT= Hold SHIFT to set multiple keys
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
