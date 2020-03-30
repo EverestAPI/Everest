@@ -125,6 +125,7 @@ namespace Celeste.Mod {
                 }
             }
 
+            internal static bool SharedModder = true;
             private static MonoModder _Modder;
             public static MonoModder Modder {
                 get {
@@ -271,6 +272,11 @@ namespace Celeste.Mod {
                     Modder.Module.Dispose();
                     Modder.Module = null;
                     Modder.ReaderParameters.SymbolStream?.Dispose();
+
+                    if (!SharedModder) {
+                        Modder.Dispose();
+                        Modder = null;
+                    }
                 }
 
                 if (File.Exists(cachedChecksumPath)) {

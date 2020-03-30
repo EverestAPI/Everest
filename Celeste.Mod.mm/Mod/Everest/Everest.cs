@@ -459,6 +459,11 @@ namespace Celeste.Mod {
 
             DecalRegistry.LoadDecalRegistry();
 
+            // If anyone's still using the relinker past this point, at least make sure that it won't grow endlessly.
+            Relinker.Modder.Dispose();
+            Relinker.Modder = null;
+            Relinker.SharedModder = false;
+
             Celeste.Instance.Disposed += Dispose;
         }
 
