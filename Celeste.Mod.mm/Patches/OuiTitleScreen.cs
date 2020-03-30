@@ -48,7 +48,12 @@ namespace Celeste {
         public extern void orig_ctor();
         [MonoModConstructor]
         public void ctor() {
+            bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
+            Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
+
             orig_ctor();
+
+            Settings.Instance.LaunchWithFMODLiveUpdate = fmodLiveUpdate;
 
             vanillaLogo = logo;
             vanillaTitle = title;

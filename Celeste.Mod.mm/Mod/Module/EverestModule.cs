@@ -436,8 +436,10 @@ namespace Celeste.Mod {
                     item =
                         new TextMenu.Slider(name, (i) => {
                             string enumName = enumValues.GetValue(i).ToString();
-                            string fullName = $"{enumNamePrefix}{enumName.ToLowerInvariant()}";
-                            return fullName.DialogCleanOrNull() ?? enumName;
+                            return
+                                $"{enumNamePrefix}{enumName.ToLowerInvariant()}".DialogCleanOrNull() ??
+                                $"modoptions_{propType.Name.ToLowerInvariant()}_{enumName.ToLowerInvariant()}".DialogCleanOrNull() ??
+                                enumName;
                         }, 0, enumValues.Length - 1, (int) value)
                         .Change(v => prop.SetValue(settings, v))
                     ;

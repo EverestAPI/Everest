@@ -21,22 +21,53 @@ namespace Celeste.Mod.Core {
         // Example runtime setting that only shows up in the menu, not the settings file.
         // [SettingName("modoptions_coremodule_launchindebugmode")]
         [YamlIgnore]
-        public bool DebugMode {
+        public VanillaTristate DebugMode {
             get {
-                return Settings.Instance.LaunchInDebugMode;
+                return
+                    Settings.Instance.LaunchInDebugMode ? VanillaTristate.Always :
+                    DebugModeInEverest ? VanillaTristate.Everest :
+                    VanillaTristate.Never;
             }
             set {
-                if (Settings.Instance.LaunchInDebugMode == value)
+                switch (value) {
+                    case VanillaTristate.Never:
+                    default:
+                        DebugModeInEverest = false;
+                        Settings.Instance.LaunchInDebugMode = false;
+                        break;
+
+                    case VanillaTristate.Everest:
+                        DebugModeInEverest = true;
+                        Settings.Instance.LaunchInDebugMode = false;
+                        break;
+
+                    case VanillaTristate.Always:
+                        DebugModeInEverest = true;
+                        Settings.Instance.LaunchInDebugMode = true;
+                        break;
+                }
+            }
+        }
+
+        private bool _DebugModeInEverest;
+        [SettingIgnore]
+        public bool DebugModeInEverest {
+            get => _DebugModeInEverest;
+            set {
+                _DebugModeInEverest = value;
+
+                if (Celeste.PlayMode == Celeste.PlayModes.Debug == value)
                     return;
-                Settings.Instance.LaunchInDebugMode = value;
 
                 if (value) {
                     Celeste.PlayMode = Celeste.PlayModes.Debug;
-                    Engine.Commands.Enabled = true;
+                    if (Engine.Commands != null)
+                        Engine.Commands.Enabled = true;
 
                 } else {
                     Celeste.PlayMode = Celeste.PlayModes.Normal;
-                    Engine.Commands.Enabled = false;
+                    if (Engine.Commands != null)
+                        Engine.Commands.Enabled = false;
                 }
 
                 ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
@@ -46,14 +77,36 @@ namespace Celeste.Mod.Core {
         [YamlIgnore]
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
-        public bool LaunchWithFMODLiveUpdate {
+        public VanillaTristate LaunchWithFMODLiveUpdate {
             get {
-                return Settings.Instance.LaunchWithFMODLiveUpdate;
+                return
+                    Settings.Instance.LaunchWithFMODLiveUpdate ? VanillaTristate.Always :
+                    LaunchWithFMODLiveUpdateInEverest ? VanillaTristate.Everest :
+                    VanillaTristate.Never;
             }
             set {
-                Settings.Instance.LaunchWithFMODLiveUpdate = value;
+                switch (value) {
+                    case VanillaTristate.Never:
+                    default:
+                        LaunchWithFMODLiveUpdateInEverest = false;
+                        Settings.Instance.LaunchWithFMODLiveUpdate = false;
+                        break;
+
+                    case VanillaTristate.Everest:
+                        LaunchWithFMODLiveUpdateInEverest = true;
+                        Settings.Instance.LaunchWithFMODLiveUpdate = false;
+                        break;
+
+                    case VanillaTristate.Always:
+                        LaunchWithFMODLiveUpdateInEverest = true;
+                        Settings.Instance.LaunchWithFMODLiveUpdate = true;
+                        break;
+                }
             }
         }
+
+        [SettingIgnore]
+        public bool LaunchWithFMODLiveUpdateInEverest { get; set; }
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
@@ -207,6 +260,12 @@ namespace Celeste.Mod.Core {
                     })
                 );
             }
+        }
+
+        public enum VanillaTristate {
+            Never,
+            Everest,
+            Always
         }
 
     }

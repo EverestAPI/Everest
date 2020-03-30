@@ -38,7 +38,12 @@ namespace Celeste {
 
         public static extern void orig_Init();
         public static void Init() {
+            bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
+            Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
+
             orig_Init();
+
+            Settings.Instance.LaunchWithFMODLiveUpdate = fmodLiveUpdate;
 
             // Original code loads audio banks in GameLoader.LoadThread.
             Audio.Banks.Master = Audio.Banks.Load("Master Bank", true);
