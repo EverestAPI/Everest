@@ -52,7 +52,7 @@ namespace Celeste.Mod.Core {
         private bool _DebugModeInEverest;
         [SettingIgnore]
         public bool DebugModeInEverest {
-            get => _DebugModeInEverest;
+            get => _DebugModeInEverest || Settings.Instance.LaunchInDebugMode; // Everest debug mode must be enabled when vanilla debug mode is.
             set {
                 _DebugModeInEverest = value;
 
