@@ -764,6 +764,11 @@ namespace Celeste.Mod {
                         // It isn't known if the reloaded xml is part of the currently loaded level.
                         // Let's reload just to be safe.
                         AssetReloadHelper.ReloadLevel();
+
+                    } else if (next.Type == typeof(AssetTypeTutorial)) {
+                        PlaybackData.Load();
+                        AssetReloadHelper.ReloadLevel();
+
                     } else if (next.Type == typeof(AssetTypeDecalRegistry)) {
                         string fileContents;
                         using (StreamReader reader = new StreamReader(next.Stream)) {
@@ -771,6 +776,7 @@ namespace Celeste.Mod {
                         }
                         DecalRegistry.ReadDecalRegistryXml(fileContents);
                         AssetReloadHelper.ReloadLevel();
+
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
                         AssetReloadHelper.Do($"Reloading dialog: {name}", () => {
                             string languageFilePath = path + ".txt";
