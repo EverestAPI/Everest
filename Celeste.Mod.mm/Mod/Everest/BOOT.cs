@@ -44,19 +44,14 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                // TODO: Return to Everest from Vanilla.
+                // This gets skipped when directly starting into vanilla mode or when restarting into vanilla.
+                // Sadly returning from vanilla to Everest is impossible as vanilla forcibly kills the process outside of Windows.
 
-                StartEverest:
                 Console.WriteLine("Loading Everest");
                 using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
                     AppDomain ad = adw.AppDomain;
 
-                    // Separate thread for a separate Win32 message queue.
-                    Thread t = new Thread(() => {
-                        ad.ExecuteAssembly(everestPath, args);
-                    });
-                    t.Start();
-                    t.Join();
+                    ThreadIfNeeded(() => ad.ExecuteAssembly(everestPath, args));
 
                     if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
                         for (int i = 0; i < 5; i++) {
@@ -145,12 +140,7 @@ namespace Celeste.Mod {
                     }
 
                     // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
-                    // Separate thread for a separate Win32 message queue.
-                    Thread t = new Thread(() => {
-                        ad.ExecuteAssembly(vanillaPath, args);
-                    });
-                    t.Start();
-                    t.Join();
+                    ThreadIfNeeded(() => ad.ExecuteAssembly(vanillaPath, args));
 
                     return;
                 }
@@ -162,6 +152,21 @@ namespace Celeste.Mod {
                     ErrorLog.Open();
                 } catch { }
             }
+        }
+
+        public static void ThreadIfNeeded(ThreadStart start) {
+            if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
+                // macOS must run the game on the main thread. Otherwise this happens:
+                // https://cdn.discordapp.com/attachments/429775439423209472/694105211802746940/dump.txt
+                start();
+                return;
+            }
+
+            // Win32 requires a separate thread for a separate message queue / pump.
+            // Linux might benefit from additional thread local isolation.
+            Thread t = new Thread(start);
+            t.Start();
+            t.Join();
         }
 
         // Utility MonoModder responsible for separating EverestVanillaLoader into its own assembly.
