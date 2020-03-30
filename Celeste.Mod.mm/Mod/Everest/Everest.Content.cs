@@ -704,8 +704,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// Recrawl all currently loaded mods and recreate the content mappings. If you want to apply the new mapping, call Reprocess afterwards.
             /// </summary>
-            [Obsolete("Mod content should no longer be recrawled manually.")]
-            public static void Recrawl() {
+            internal static void Recrawl() {
                 lock (Map) {
                     Map.Clear();
                 }
