@@ -8,6 +8,7 @@ using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -250,6 +251,7 @@ namespace Celeste.Mod {
         public class AppDomainWrapper : IDisposable {
             public AppDomain AppDomain;
             private readonly bool[] _Status;
+            private IDictionary _EnvironmentVariables;
 
             public AppDomainWrapper(string suffix, out bool[] status) {
                 AppDomain pad = AppDomain.CurrentDomain;
@@ -257,7 +259,16 @@ namespace Celeste.Mod {
                     ApplicationBase = pad.BaseDirectory,
                     LoaderOptimization = LoaderOptimization.SingleDomain
                 });
+
                 _Status = status = new bool[1];
+                _EnvironmentVariables = Environment.GetEnvironmentVariables();
+
+                _SetEnvironmentVariables();
+            }
+
+            private void _SetEnvironmentVariables() {
+                foreach (DictionaryEntry entry in _EnvironmentVariables)
+                    Environment.SetEnvironmentVariable((string) entry.Key, (string) entry.Value);
             }
 
             public void Dispose() {
@@ -271,8 +282,13 @@ namespace Celeste.Mod {
                     AppDomain = null;
                     _Status[0] = true;
                     Console.WriteLine($"Unloaded AppDomain {name}");
+
                     GC.Collect();
                     GC.Collect();
+                    GC.WaitForPendingFinalizers();
+
+                    _SetEnvironmentVariables();
+
                 } catch (CannotUnloadAppDomainException e) {
                     _Status[0] = false;
                     Console.WriteLine($"COULDN'T UNLOAD APPDOMAIN {name}");
