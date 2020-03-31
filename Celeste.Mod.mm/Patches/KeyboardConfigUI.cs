@@ -10,6 +10,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Celeste {
     public class patch_KeyboardConfigUI : KeyboardConfigUI {
@@ -104,23 +105,27 @@ namespace Celeste {
             }
         }
 
+        // these keys only support a single mapping (they are not lists in the settings file).
+        private static Mappings[] keysWithSingleBindings = new Mappings[] { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
+
         private extern void orig_Remap(Mappings mapping);
         private void Remap(Mappings mapping) {
             orig_Remap(mapping);
             KeyboardState keyboard = Keyboard.GetState();
-            additiveRemap = keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift);
+            additiveRemap = (keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift))
+                && !keysWithSingleBindings.Contains(mapping);
         }
 
         [MonoModReplace]
         private void SetRemap(Keys key) {
             remapping = false;
             inputDelay = 0.25f;
-            if (key == Keys.None || 
-                (key == Keys.Left && remappingKey != Mappings.Left) || 
+            if (key == Keys.None ||
+                (key == Keys.Left && remappingKey != Mappings.Left) ||
                 (key == Keys.Right && remappingKey != Mappings.Right) ||
-                (key == Keys.Up && remappingKey != Mappings.Up) || 
-                (key == Keys.Down && remappingKey != Mappings.Down) || 
-                (key == Keys.Enter && remappingKey != Mappings.Confirm) || 
+                (key == Keys.Up && remappingKey != Mappings.Up) ||
+                (key == Keys.Down && remappingKey != Mappings.Down) ||
+                (key == Keys.Enter && remappingKey != Mappings.Confirm) ||
                 (key == Keys.Back && remappingKey != Mappings.Cancel)) {
                 return;
             }
