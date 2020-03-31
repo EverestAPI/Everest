@@ -8,6 +8,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
 using Microsoft.Xna.Framework.Graphics;
@@ -29,7 +30,10 @@ namespace Celeste.Editor {
                                           "Hold Shift:   Teleport to the mouse position\n" +
                                           "Cancel:       Exit debug map\n" +
                                           "Q:            Show red berries\n" +
-                                          "F1:           Show keys";
+                                          "F1:           Show keys\n" +
+                                          "F6:           Show/Hide instructions";
+
+        private const string MinimalManualText = "F6: Show/Hide instructions";
 
         private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
@@ -162,15 +166,24 @@ namespace Celeste.Editor {
         }
 
         private void RenderManualText() {
+            if (MInput.Keyboard.Pressed(Keys.F6)) {
+                CoreModule.Settings.ShowManualTextOnDebugMap = !CoreModule.Settings.ShowManualTextOnDebugMap;
+            }
+            
             Draw.SpriteBatch.Begin();
 
-            Vector2 infoTextSize = Draw.DefaultFont.MeasureString(ManualText);
-            Draw.Rect(Engine.ViewWidth - infoTextSize.X - 20, Engine.ViewHeight - infoTextSize.Y - 20f,
-                infoTextSize.X + 20f, infoTextSize.Y + 20f, Color.Black * 0.8f);
+            string text = MinimalManualText;
+            if (CoreModule.Settings.ShowManualTextOnDebugMap) {
+                text = ManualText;
+            }
+
+            Vector2 textSize = Draw.DefaultFont.MeasureString(text);
+            Draw.Rect(Engine.ViewWidth - textSize.X - 20, Engine.ViewHeight - textSize.Y - 20f,
+                textSize.X + 20f, textSize.Y + 20f, Color.Black * 0.8f);
             Draw.SpriteBatch.DrawString(
                 Draw.DefaultFont,
-                ManualText,
-                new Vector2(Engine.ViewWidth - infoTextSize.X - 10, Engine.ViewHeight - infoTextSize.Y - 10f),
+                text,
+                new Vector2(Engine.ViewWidth - textSize.X - 10, Engine.ViewHeight - textSize.Y - 10f),
                 Color.White
             );
 
@@ -191,7 +204,8 @@ namespace Celeste.Editor {
                 }
             }
 
-            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, 
+                DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
             if (keys != null && keys.Count > 0) {
                 for (int i = 0; i < keys.Count; i++) {
                     Draw.HollowRect(keys[i].X - 1f, keys[i].Y - 2f, 3f, 3f, Color.Gold);

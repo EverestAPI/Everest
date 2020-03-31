@@ -198,6 +198,8 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public int? QuickRestart { get; set; }
 
+        [SettingIgnore] public bool ShowManualTextOnDebugMap { get; set; } = true;
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;
