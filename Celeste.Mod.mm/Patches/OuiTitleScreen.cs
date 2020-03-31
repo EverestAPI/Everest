@@ -59,20 +59,21 @@ namespace Celeste {
             vanillaTitle = title;
             vanillaReflections = reflections;
 
-            everestLogo = new Image(GFX.Gui["logo_everest"]);
-            everestLogo.CenterOrigin();
-            everestLogo.Position = new Vector2(1920f, 1080f) / 2f;
+            if (!Everest.Flags.IsDisabled) {
+                everestLogo = new Image(GFX.Gui["logo_everest"]);
+                everestLogo.CenterOrigin();
+                everestLogo.Position = new Vector2(1920f, 1080f) / 2f;
 
-            everestTitle = GFX.Gui["title_everest"];
+                everestTitle = GFX.Gui["title_everest"];
 
-            everestReflections = new List<MTexture>();
-            for (int i = everestTitle.Height - 4; i > 0; i -= 4)
-                everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
+                everestReflections = new List<MTexture>();
+                for (int i = everestTitle.Height - 4; i > 0; i -= 4)
+                    everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
 
-            arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
+                arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
 
-            if (!Everest.Flags.IsDisabled)
                 version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
+            }
 
             // Initialize DebugRC here, as the play mode can change during the intro.
             Everest.DebugRC.Initialize();
@@ -132,6 +133,11 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
+            if (Everest.Flags.IsDisabled) {
+                orig_Render();
+                return;
+            }
+
             if (CoreModule.Settings.ShowEverestTitleScreen) {
                 logo = everestLogo;
                 title = everestTitle;

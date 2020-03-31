@@ -250,7 +250,7 @@ namespace Celeste.Mod {
                 else if (arg == "--headless")
                     Environment.SetEnvironmentVariable("EVEREST_HEADLESS", "1");
 
-                else if (arg == "--everest-disabled" || arg == "--speedrun")
+                else if (arg == "--everest-disabled")
                     Environment.SetEnvironmentVariable("EVEREST_DISABLED", "1");
 
                 else if (arg == "--whitelist" && queue.Count >= 1)
