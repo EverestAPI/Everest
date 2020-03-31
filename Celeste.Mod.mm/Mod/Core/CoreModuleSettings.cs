@@ -186,8 +186,12 @@ namespace Celeste.Mod.Core {
         public string MainMenuMode {
             get => _MainMenuMode;
             set {
+                string originalValue = _MainMenuMode;
                 _MainMenuMode = value;
-                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                if (value != originalValue) {
+                    // the main menu mode was changed; rebuild the main menu
+                    ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                }
             }
         }
 
