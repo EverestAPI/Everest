@@ -31,9 +31,9 @@ namespace Celeste.Editor {
                                           "Cancel:       Exit debug map\n" +
                                           "Q:            Show red berries\n" +
                                           "F1:           Show keys\n" +
-                                          "F6:           Show/Hide instructions";
+                                          "F5:           Show/Hide instructions";
 
-        private const string MinimalManualText = "F6: Show/Hide instructions";
+        private const string MinimalManualText = "F5: Show/Hide instructions";
 
         private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
@@ -166,7 +166,7 @@ namespace Celeste.Editor {
         }
 
         private void RenderManualText() {
-            if (MInput.Keyboard.Pressed(Keys.F6)) {
+            if (MInput.Keyboard.Pressed(Keys.F5)) {
                 CoreModule.Settings.ShowManualTextOnDebugMap = !CoreModule.Settings.ShowManualTextOnDebugMap;
             }
             
