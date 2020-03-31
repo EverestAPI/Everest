@@ -345,32 +345,32 @@ namespace Celeste.Mod {
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
             };
             _DetourModManager.OnHook += (owner, from, to, target) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new Hook by {owner}: {from} -> {to}" + (target == null ? "" : $" (target: {target})"));
+                Logger.Log(LogLevel.Verbose, "detour", $"new Hook by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}" + (target == null ? "" : $" (target: {target})"));
             };
             _DetourModManager.OnDetour += (owner, from, to) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new Detour by {owner}: {from} -> {to}");
+                Logger.Log(LogLevel.Verbose, "detour", $"new Detour by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}");
             };
             _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new NativeDetour by {owner}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
+                Logger.Log(LogLevel.Verbose, "detour", $"new NativeDetour by {owner.GetName().Name}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
             };
             HookEndpointManager.OnAdd += (from, to) => {
                 Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new On.+= by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                Logger.Log(LogLevel.Verbose, "detour", $"new On.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
                 return true;
             };
             HookEndpointManager.OnModify += (from, to) => {
                 Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new IL.+= by {owner}: {from} -> {to.Method?.ToString() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                Logger.Log(LogLevel.Verbose, "detour", $"new IL.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
                 return true;
             };
 
