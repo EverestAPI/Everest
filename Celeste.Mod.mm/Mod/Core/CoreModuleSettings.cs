@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using MonoMod.Utils;
+using MonoMod;
 
 namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
@@ -47,6 +48,18 @@ namespace Celeste.Mod.Core {
                         break;
                 }
             }
+        }
+
+        // before being a tri-state, DebugMode was a boolean. set up a property for compatibility.
+        [YamlIgnore]
+        [SettingIgnore]
+        [Obsolete("Use DebugMode instead.")]
+        public bool DebugModeOld {
+            [MonoModLinkFrom("System.Boolean Celeste.Mod.Core.CoreModuleSettings::get_DebugMode()")]
+            get => DebugMode != VanillaTristate.Never;
+
+            [MonoModLinkFrom("System.Void Celeste.Mod.Core.CoreModuleSettings::set_DebugMode(System.Boolean)")]
+            set => DebugMode = value ? VanillaTristate.Always : VanillaTristate.Never;
         }
 
         private bool _DebugModeInEverest;
