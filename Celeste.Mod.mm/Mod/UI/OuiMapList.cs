@@ -30,24 +30,30 @@ namespace Celeste.Mod.UI {
 
         private List<string> sets = new List<string>();
 
+        public bool Searching;
         private string search = "";
+        private TextMenu.Item searchButton;
+
+        public OuiMapList() {
+        }
+
         public void OnTextInput(char c) {
             if (Searching) {
                 if (c == (char) 13) {
                     // Enter
                     Scene.OnEndOfFrame += () => {
                         Searching = false;
-                        Input.MenuConfirm.ConsumeBuffer();
-                        Input.MenuConfirm.ConsumePress();
+                        MInput.Disabled = false;
                     };
+
                 } else if (c == (char) 8) {
                     // Backspace - trim.
                     if (search.Length > 0) {
                         search = search.Substring(0, search.Length - 1);
                         Audio.Play(SFX.ui_main_rename_entry_backspace);
-                        ReloadMenu();
+                        goto ValidButton;
                     } else {
-                        Audio.Play(SFX.ui_main_button_invalid);
+                        goto InvalidButton;
                     }
 
                 } else if (c == (char) 127) {
@@ -58,9 +64,9 @@ namespace Celeste.Mod.UI {
                     if (search.Length > 0) {
                         Audio.Play(SFX.ui_main_rename_entry_space);
                         search += c;
-                        ReloadMenu();
+                        goto ValidButton;
                     } else {
-                        Audio.Play(SFX.ui_main_button_invalid);
+                        goto InvalidButton;
                     }
 
                 } else if (!char.IsControl(c)) {
@@ -68,21 +74,27 @@ namespace Celeste.Mod.UI {
                     if (ActiveFont.FontSize.Characters.ContainsKey(c)) {
                         Audio.Play(SFX.ui_main_rename_entry_char);
                         search += c;
-                        ReloadMenu();
+                        goto ValidButton;
                     } else {
-                        Audio.Play(SFX.ui_main_button_invalid);
+                        goto InvalidButton;
                     }
                 }
-                //searchHeader.Title = search;
+
+                return;
+
+                ValidButton:
+                MInput.Disabled = true;
+                ReloadMenu();
+                return;
+
+                InvalidButton:
+                Audio.Play(SFX.ui_main_button_invalid);
+                MInput.Disabled = false;
+                return;
+
             }
         }
 
-        public OuiMapList() {
-        }
-
-        public bool Searching;
-
-        private TextMenu.Item searchButton;
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
             items.Clear();
@@ -99,6 +111,7 @@ namespace Celeste.Mod.UI {
 
             menu.Add(searchButton = new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
                 Searching = true;
+                MInput.Disabled = true;
             }));
 
 
@@ -171,8 +184,6 @@ namespace Celeste.Mod.UI {
 
                 if ((filterSet == null && levelSet == "Celeste") || (filterSet != null && filterSet != levelSet))
                     continue;
-
-
 
                 name = area.Name;
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
@@ -321,19 +332,21 @@ namespace Celeste.Mod.UI {
             if (menu != null && menu.Focused && Selected) {
                 Overworld.Maddy.Show = false;
 
-                if (!Searching) {
-                    if (Input.MenuCancel.Pressed ||
-                    Input.Pause.Pressed || Input.ESC.Pressed) {
+                if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
+                    if (!Searching) {
                         Audio.Play(SFX.ui_main_button_back);
                         Overworld.Goto<OuiChapterSelect>();
+
+                    } else {
+                        Searching = false;
+                        MInput.Disabled = false;
                     }
                 }
 
             }
 
-
-
             base.Update();
+
             if (Searching) {
                 // Otherwise spacebar will turn on free cam while searching
                 ((patch_MountainRenderer) Overworld.Mountain).SetFreeCam(false);
@@ -341,11 +354,13 @@ namespace Celeste.Mod.UI {
                 foreach (TextMenu.Item item in items) {
                     item.Disabled = true;
                 }
-
             }
+
             if (menu != null)
                 foreach (TextMenu.Item item in menu.GetItems())
                     item.Disabled = Searching;
+
+            MInput.Disabled = false;
         }
 
         public override void Render() {
