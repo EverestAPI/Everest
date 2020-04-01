@@ -306,15 +306,35 @@ namespace Celeste.Mod {
 
                     _SetEnvironmentVariables();
 
-                    // There's a slight chance that OpenGL might not be used right now.
-                    // This shouldn't cause any issues though as SDL2 always gets built with GL support... right?
-                    SDL.SDL_GL_ResetAttributes();
+                    _ResetXFNA();
 
                 } catch (CannotUnloadAppDomainException e) {
                     _Status[0] = false;
                     Console.WriteLine($"COULDN'T UNLOAD APPDOMAIN {name}");
                     Console.WriteLine(e);
                 }
+            }
+
+            [MonoModIgnore]
+            private static extern void _ResetXFNA();
+
+            [MonoModIfFlag("XNA")]
+            [MonoModPatch("_ResetXFNA")]
+            [MonoModReplace]
+            private static void _ResetXNA() {
+                // No resetting needed on XNA.
+            }
+
+            [MonoModIfFlag("FNA")]
+            [MonoModPatch("_ResetXFNA")]
+            [MonoModReplace]
+            private static void _ResetFNA() {
+                // GL attributes don't get reset, meaning that creating a GLES context in FNA once
+                // will make all following contexts GLES by default.
+
+                // There's a slight chance that OpenGL isn't even the current render.
+                // But that shouldn't cause any issues, as SDL2 always gets built with GL support... right?
+                SDL.SDL_GL_ResetAttributes();
             }
         }
 
