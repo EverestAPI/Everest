@@ -7,6 +7,7 @@ using Monocle;
 using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
+using SDL2;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -304,6 +305,10 @@ namespace Celeste.Mod {
                     GC.WaitForPendingFinalizers();
 
                     _SetEnvironmentVariables();
+
+                    // There's a slight chance that OpenGL might not be used right now.
+                    // This shouldn't cause any issues though as SDL2 always gets built with GL support... right?
+                    SDL.SDL_GL_ResetAttributes();
 
                 } catch (CannotUnloadAppDomainException e) {
                     _Status[0] = false;
