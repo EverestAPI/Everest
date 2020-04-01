@@ -18,6 +18,10 @@
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
 
+# Extra Key Mapping
+	KEY_CONFIG_ADDING= APPUYEZ SUR LA TOUCHE SUPPLÉMENTAIRE POUR
+	KEY_CONFIG_ADDITION_HINT= Utilisez Shift + Confirmer pour ajouter des touches
+
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
 	MODOPTIONS_NEEDSRELAUNCH=								Prendra effet après le redémarrage
