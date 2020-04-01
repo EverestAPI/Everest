@@ -277,7 +277,7 @@ namespace Celeste.Mod {
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
                 // Last line printed on error.
-                const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #game_modding channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
+                const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #modding_help channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
