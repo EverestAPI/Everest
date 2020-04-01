@@ -251,7 +251,7 @@ namespace Celeste.Mod {
         public class AppDomainWrapper : IDisposable {
             public AppDomain AppDomain;
             private readonly bool[] _Status;
-            private IDictionary _EnvironmentVariables;
+            private readonly Dictionary<string, string> _EnvironmentVariables;
 
             public AppDomainWrapper(string suffix, out bool[] status) {
                 AppDomain pad = AppDomain.CurrentDomain;
@@ -261,14 +261,30 @@ namespace Celeste.Mod {
                 });
 
                 _Status = status = new bool[1];
-                _EnvironmentVariables = Environment.GetEnvironmentVariables();
 
+                _EnvironmentVariables = _GetEnvironmentVariables();
                 _SetEnvironmentVariables();
             }
 
+            private Dictionary<string, string> _GetEnvironmentVariables() {
+                Dictionary<string, string> env = new Dictionary<string, string>();
+                foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
+                    env[(string) entry.Key] = (string) entry.Value;
+                return env;
+            }
+
             private void _SetEnvironmentVariables() {
-                foreach (DictionaryEntry entry in _EnvironmentVariables)
-                    Environment.SetEnvironmentVariable((string) entry.Key, (string) entry.Value);
+                foreach (string key in _GetEnvironmentVariables().Keys) {
+                    if (!_EnvironmentVariables.ContainsKey(key)) {
+                        // Console.WriteLine($"SET \"{key}\" = NULL");
+                        Environment.SetEnvironmentVariable(key, null);
+                    }
+                }
+
+                foreach (KeyValuePair<string, string> entry in _EnvironmentVariables) {
+                    // Console.WriteLine($"SET \"{entry.Key}\" = \"{entry.Value}\"");
+                    Environment.SetEnvironmentVariable(entry.Key, entry.Value);
+                }
             }
 
             public void Dispose() {
