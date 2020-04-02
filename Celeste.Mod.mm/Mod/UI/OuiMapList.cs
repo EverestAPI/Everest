@@ -189,7 +189,7 @@ namespace Celeste.Mod.UI {
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
 
                 // handle keyboard search
-                if (search != "" && !name.ToLower().StartsWith(search.ToLower()))
+                if (search != "" && !name.ToLower().Contains(search.ToLower()))
                     continue;
 
                 if (lastLevelSet != levelSet) {
