@@ -46,6 +46,7 @@ namespace Celeste {
                 { 'e', 8 },
                 { 'f', 8 },
                 { 'g', 8 },
+                { 'G', 8 }, // Reflection alt - unassigned in vanilla.
                 { 'h', 33 },
                 { 'i', 4 },
                 { 'j', 8 },
