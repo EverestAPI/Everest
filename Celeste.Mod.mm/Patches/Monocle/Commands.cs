@@ -159,6 +159,55 @@ namespace Monocle {
             Draw.SpriteBatch.End();
         }
 
+        private string[] sidTabResults = new string[0];
+        private int sidTabIndex = -1;
+
+        private extern void orig_HandleKey(Keys key);
+        private void HandleKey(Keys key) {
+            if (key == Keys.Tab && currentText.StartsWith("load_map ")) {
+                // handle tab autocomplete for SIDs
+
+                if (sidTabIndex == -1) {
+                    // search for SIDs that match what we started typing.
+                    string startOfSid = currentText.Substring("load_map ".Length);
+                    sidTabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                }
+
+                if (sidTabResults.Length != 0) {
+                    if (currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down) {
+                        // Shift+Tab => backwards
+                        sidTabIndex--;
+                    } else {
+                        // Tab => forwards
+                        sidTabIndex++;
+                    }
+
+                    // if sidTabIndex was -1 and we pressed Shift+Tab, we should display the last result.
+                    // (if we pressed Tab instead, sidTabIndex will be 0, which is what we want.)
+                    if (sidTabIndex == -2) {
+                        sidTabIndex = sidTabResults.Length - 1;
+                    }
+
+                    // wrap around if gone out of bounds
+                    if (sidTabIndex < 0) {
+                        sidTabIndex += sidTabResults.Length;
+                    }
+                    sidTabIndex %= sidTabResults.Length;
+
+                    // autocomplete
+                    currentText = "load_map " + sidTabResults[sidTabIndex];
+                }
+            } else {
+                if (key != Keys.Tab && key != Keys.LeftShift && key != Keys.RightShift && key != Keys.RightAlt && key != Keys.LeftAlt && key != Keys.RightControl && key != Keys.LeftControl) {
+                    // reset the tab index: next time we press Tab, autocomplete will search matching SIDs again.
+                    sidTabIndex = -1;
+                }
+
+                // proceed to vanilla code
+                orig_HandleKey(key);
+            }
+        }
+
         // Only required to be defined so that we can access it.
         [MonoModIgnore]
         private struct patch_Line {

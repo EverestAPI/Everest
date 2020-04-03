@@ -64,5 +64,54 @@ namespace Celeste {
             Engine.Commands.Log("====");
             Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
         }
+
+        [Command("load_map", "Load a map based on its SID (for example load_map Celeste/3-CelestialResort B 03)")]
+        private static void CmdLoadMap(string sid = null, string side = "A", string room = null) {
+            if (sid == null) {
+                Engine.Commands.Log("Please specify a map SID.");
+                return;
+            }
+
+            AreaMode mode;
+            switch (side.ToLowerInvariant()) {
+                case "a":
+                    mode = AreaMode.Normal;
+                    break;
+                case "b":
+                    mode = AreaMode.BSide;
+                    break;
+                case "c":
+                    mode = AreaMode.CSide;
+                    break;
+                default:
+                    Engine.Commands.Log($"{side} is not a valid side! Use A, B or C instead.");
+                    return;
+            }
+
+            AreaData areaData = patch_AreaData.Get(sid);
+            MapData mapData = null;
+            if (areaData?.Mode.Length > (int) mode) {
+                mapData = areaData?.Mode[(int) mode]?.MapData;
+            }
+            if (areaData == null) {
+                Engine.Commands.Log($"Map {sid} does not exist!");
+            } else if (mapData == null) {
+                Engine.Commands.Log($"Map {sid} has no {mode} mode!");
+            } else if (room != null && (mapData.Levels?.All(level => level.Name != room) ?? false)) {
+                Engine.Commands.Log($"Map {sid} / mode {mode} has no room named {room}!");
+            } else {
+                AreaKey area = new AreaKey(areaData.ID, mode);
+
+                // do pretty much the same as load/hard/rmx2 do.
+                SaveData.InitializeDebugMode();
+                SaveData.Instance.LastArea = area;
+                Session session = new Session(area);
+                if (room != null) {
+                    session.Level = room;
+                    session.FirstLevel = false;
+                }
+                Engine.Scene = new LevelLoader(session);
+            }
+        }
     }
 }
