@@ -41,19 +41,71 @@ namespace Celeste.Mod.UI {
                 ImageScale = 0.5f
             });
 
+            if (!inGame) {
+                List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
+
+                lock (Everest.Loader.Delayed) {
+                    if (Everest.Loader.Delayed.Count > 0) {
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
+                            string missingDepsString = "";
+                            if (mod.Item1.Dependencies != null) {
+                                // check for missing dependencies
+                                List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
+                                    .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+                                missingDependencies.AddRange(missingDependenciesForMod);
+
+                                if (missingDependenciesForMod.Count != 0) {
+                                    // format their names and versions, and join all of them in a single string
+                                    missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
+
+                                    // ensure that string is not too long, or else it would break the display
+                                    if (missingDepsString.Length > 40) {
+                                        missingDepsString = missingDepsString.Substring(0, 40) + "...";
+                                    }
+
+                                    // wrap that in a " ({list} not found)" message
+                                    missingDepsString = $" ({missingDepsString} {Dialog.Clean("modoptions_coremodule_notloaded_notfound")})";
+                                }
+                            }
+
+                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
+                                HeightExtra = 0f,
+                                TextColor = Color.PaleVioletRed
+                            });
+                        }
+                    }
+                }
+
+                if (Everest.Updater.HasUpdate) {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
+                        Everest.Updater.Update(Instance.Overworld.Goto<OuiLoggedProgress>());
+                    }));
+                }
+
+                if (missingDependencies.Count != 0) {
+                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
+                        OuiDependencyDownloader.MissingDependencies = missingDependencies;
+                        Instance.Overworld.Goto<OuiDependencyDownloader>();
+                    }));
+                }
+            }
+
+            // reorder Mod Options according to the modoptionsorder.txt file.
             List<EverestModule> modules = new List<EverestModule>(Everest._Modules);
             if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
                 foreach (string modName in Everest.Loader._ModOptionsOrder) {
-                    string modPath = Path.Combine(Everest.Loader.PathMods, modName);
-                    int index = modules.Select(mod => mod.Metadata.PathDirectory).ToList<string>().IndexOf(modPath);
-                    if (index != -1) {
-                        modules[index].CreateModMenuSection(menu, inGame, snapshot);
-                        modules.RemoveAt(index);
+                    if (modName.Equals("Everest", StringComparison.InvariantCultureIgnoreCase)) {
+                        // the current entry is for Everest Core
+                        createModMenuSectionAndDelete(modules, module => module.Metadata.Name == "Everest", menu, inGame, snapshot);
                     } else {
-                        index = modules.Select(mod => mod.Metadata.PathArchive).ToList<string>().IndexOf(modPath);
-                        if (index != -1) {
-                            modules[index].CreateModMenuSection(menu, inGame, snapshot);
-                            modules.RemoveAt(index);
+                        string modPath = Path.Combine(Everest.Loader.PathMods, modName);
+
+                        // check for both PathDirectory and PathArchive for each module.
+                        if (!createModMenuSectionAndDelete(modules, module => module.Metadata.PathDirectory == modPath, menu, inGame, snapshot)) {
+                            createModMenuSectionAndDelete(modules, module => module.Metadata.PathArchive == modPath, menu, inGame, snapshot);
                         }
                     }
                 }
@@ -67,6 +119,24 @@ namespace Celeste.Mod.UI {
             }
 
             return menu;
+        }
+
+        /// <summary>
+        /// Adds the mod menu section for the first element of 'modules' that matches 'criteria',
+        /// then removes it from the 'modules' list.
+        /// </summary>
+        /// <returns>true if an element matching 'criteria' was found, false otherwise.</returns>
+        private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
+            TextMenu menu, bool inGame, EventInstance snapshot) {
+
+            int matchingIndex = modules.FindIndex(criteria);
+            if (matchingIndex != -1) {
+                modules[matchingIndex].CreateModMenuSection(menu, inGame, snapshot);
+                modules.RemoveAt(matchingIndex);
+                return true;
+            }
+
+            return false;
         }
 
         private void ReloadMenu() {
