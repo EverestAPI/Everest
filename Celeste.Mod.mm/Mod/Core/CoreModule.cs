@@ -244,58 +244,6 @@ namespace Celeste.Mod.Core {
             // Optional - reload mod settings when entering the mod options.
             LoadSettings();
 
-            if (!inGame) {
-                List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
-
-                lock (Everest.Loader.Delayed) {
-                    if (Everest.Loader.Delayed.Count > 0) {
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
-
-                        foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
-                            string missingDepsString = "";
-                            if (mod.Item1.Dependencies != null) {
-                                // check for missing dependencies
-                                List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
-                                    .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
-                                missingDependencies.AddRange(missingDependenciesForMod);
-
-                                if (missingDependenciesForMod.Count != 0) {
-                                    // format their names and versions, and join all of them in a single string
-                                    missingDepsString = string.Join(", ", missingDependenciesForMod.Select(dependency => dependency.Name + " | v." + dependency.VersionString));
-
-                                    // ensure that string is not too long, or else it would break the display
-                                    if (missingDepsString.Length > 40) {
-                                        missingDepsString = missingDepsString.Substring(0, 40) + "...";
-                                    }
-
-                                    // wrap that in a " ({list} not found)" message
-                                    missingDepsString = $" ({missingDepsString} {Dialog.Clean("modoptions_coremodule_notloaded_notfound")})";
-                                }
-                            }
-
-                            menu.Add(new TextMenuExt.SubHeaderExt(mod.Item1.Name + " | v." + mod.Item1.VersionString + missingDepsString) {
-                                HeightExtra = 0f,
-                                TextColor = Color.PaleVioletRed
-                            });
-                        }
-                    }
-                }
-
-                if (Everest.Updater.HasUpdate) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
-                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
-                    }));
-                }
-
-                if (missingDependencies.Count != 0) {
-                    menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
-                        OuiDependencyDownloader.MissingDependencies = missingDependencies;
-                        OuiModOptions.Instance.Overworld.Goto<OuiDependencyDownloader>();
-                    }));
-                }
-            }
-
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
