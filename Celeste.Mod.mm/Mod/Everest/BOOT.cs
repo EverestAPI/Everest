@@ -138,7 +138,8 @@ namespace Celeste.Mod {
                         ad.DoCallBack(cal.GetMethod("Run").CreateDelegate(typeof(CrossAppDomainDelegate)) as CrossAppDomainDelegate);
 
                     } finally {
-                        File.Move(everestPath + "_", everestPath);
+                        if (File.Exists(everestPath + "_"))
+                            File.Move(everestPath + "_", everestPath);
                     }
 
                     // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
