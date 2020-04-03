@@ -81,36 +81,31 @@ namespace Celeste.Mod.UI {
 
                 if (Everest.Updater.HasUpdate) {
                     menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_update").Replace("((version))", Everest.Updater.Newest.Build.ToString())).Pressed(() => {
-                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                        Everest.Updater.Update(Instance.Overworld.Goto<OuiLoggedProgress>());
                     }));
                 }
 
                 if (missingDependencies.Count != 0) {
                     menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_downloaddeps")).Pressed(() => {
                         OuiDependencyDownloader.MissingDependencies = missingDependencies;
-                        OuiModOptions.Instance.Overworld.Goto<OuiDependencyDownloader>();
+                        Instance.Overworld.Goto<OuiDependencyDownloader>();
                     }));
                 }
             }
 
+            // reorder Mod Options according to the modoptionsorder.txt file.
             List<EverestModule> modules = new List<EverestModule>(Everest._Modules);
             if (Everest.Loader._ModOptionsOrder != null && Everest.Loader._ModOptionsOrder.Count > 0) {
                 foreach (string modName in Everest.Loader._ModOptionsOrder) {
-                    //Hack to allow user to position Everest Core in ModSettings
-                    if (modName.ToLower().Equals("everest")) {
-                        modules.Find(mod => mod.Metadata.Name == "Everest").CreateModMenuSection(menu, inGame, snapshot);
-                        continue;
-                    }
-                    string modPath = Path.Combine(Everest.Loader.PathMods, modName);
-                    int index = modules.Select(mod => mod.Metadata.PathDirectory).ToList<string>().IndexOf(modPath);
-                    if (index != -1) {
-                        modules[index].CreateModMenuSection(menu, inGame, snapshot);
-                        modules.RemoveAt(index);
+                    if (modName.Equals("Everest", StringComparison.InvariantCultureIgnoreCase)) {
+                        // the current entry is for Everest Core
+                        createModMenuSectionAndDelete(modules, module => module.Metadata.Name == "Everest", menu, inGame, snapshot);
                     } else {
-                        index = modules.Select(mod => mod.Metadata.PathArchive).ToList<string>().IndexOf(modPath);
-                        if (index != -1) {
-                            modules[index].CreateModMenuSection(menu, inGame, snapshot);
-                            modules.RemoveAt(index);
+                        string modPath = Path.Combine(Everest.Loader.PathMods, modName);
+
+                        // check for both PathDirectory and PathArchive for each module.
+                        if (!createModMenuSectionAndDelete(modules, module => module.Metadata.PathDirectory == modPath, menu, inGame, snapshot)) {
+                            createModMenuSectionAndDelete(modules, module => module.Metadata.PathArchive == modPath, menu, inGame, snapshot);
                         }
                     }
                 }
@@ -124,6 +119,24 @@ namespace Celeste.Mod.UI {
             }
 
             return menu;
+        }
+
+        /// <summary>
+        /// Adds the mod menu section for the first element of 'modules' that matches 'criteria',
+        /// then removes it from the 'modules' list.
+        /// </summary>
+        /// <returns>true if an element matching 'criteria' was found, false otherwise.</returns>
+        private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
+            TextMenu menu, bool inGame, EventInstance snapshot) {
+
+            int matchingIndex = modules.FindIndex(criteria);
+            if (matchingIndex != -1) {
+                modules[matchingIndex].CreateModMenuSection(menu, inGame, snapshot);
+                modules.RemoveAt(matchingIndex);
+                return true;
+            }
+
+            return false;
         }
 
         private void ReloadMenu() {

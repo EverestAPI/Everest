@@ -125,8 +125,9 @@ namespace Celeste.Mod {
                     _ModOptionsOrder = File.ReadAllLines(PathModOptionsOrder).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                 } else {
                     using (StreamWriter writer = File.CreateText(PathModOptionsOrder)) {
-                        writer.WriteLine("# This is the ModOptions order file. Lines starting with # are ignored.");
-                        writer.WriteLine("# Mod folders and archives in this file will be displayed in the same order in the ModOptions menu.");
+                        writer.WriteLine("# This is the Mod Options order file. Lines starting with # are ignored.");
+                        writer.WriteLine("# Mod folders and archives in this file will be displayed in the same order in the Mod Options menu.");
+                        writer.WriteLine("# To define the position of the \"Everest Core\" options, put \"Everest\" on a line.");
                         writer.WriteLine("ExampleFolder");
                         writer.WriteLine("SomeMod.zip");
                     }
