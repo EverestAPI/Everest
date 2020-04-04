@@ -8,7 +8,7 @@ namespace Celeste.Mod.UI {
     /// Modification of <see cref="OuiModOptionString"/> to handle numeric input.
     /// </summary>
     public class OuiNumberEntry : Oui, OuiModOptions.ISubmenu {
-        //Value is handled internally as a string
+        // Value is handled internally as a string
         public string StartingValue;
 
         private string _Value;
@@ -92,7 +92,7 @@ namespace Celeste.Mod.UI {
         /// <param name="allowNegatives"></param>
         /// <returns></returns>
         public OuiNumberEntry Init<T>(float value, Action<float> onValueChange, int maxValueLength = 12, bool allowDecimals = true, bool allowNegatives = true) where T : Oui {
-            _Value = StartingValue = value.ToString();
+            _Value = StartingValue = value.ToString($"F{maxValueLength}").TrimEnd('0').TrimEnd('.');
             this.OnValueChange = onValueChange;
 
             MaxValueLength = maxValueLength;
@@ -108,7 +108,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
-            TextInput.OnInput += OnTextInput;
+            TextInput.OnInput += OnKeyboardInput;
 
             Overworld.ShowInputUI = false;
 
@@ -117,7 +117,7 @@ namespace Celeste.Mod.UI {
             index = 0;
             line = 0;
 
-            //It just works
+            // It just works
             string letterChars = "7 8 9\n4 5 6\n1 2 3\n- 0 .";
             letters = letterChars.Split('\n');
 
@@ -175,7 +175,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            TextInput.OnInput -= OnTextInput;
+            TextInput.OnInput -= OnKeyboardInput;
 
             Overworld.ShowInputUI = true;
             Focused = false;
@@ -190,36 +190,25 @@ namespace Celeste.Mod.UI {
 
             Visible = false;
         }
-
-        public void OnTextInput(char c) {
+        public void OnKeyboardInput(char c) {
             if (MInput.GamePads[Input.Gamepad].Attached)
                 return;
 
+            OnTextInput(c);
+        }
+
+        public void OnTextInput(char c) {
             if (c == (char) 13) {
                 // Enter - confirm.
                 Finish();
 
             } else if (c == (char) 8) {
-                // Backspace - trim.
-                if (Value.Length > 1) {
-                    //temp variable used to avoid trying to parse "-" as float
-                    string temp = Value.Substring(0, Value.Length - 1);
-                    if (temp.Equals("-"))
-                        Value = "0";
-                    else
-                        Value = temp;
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                } else if (Value.Length == 1 && !Value.Equals("0")) {
-                    Value = "0";
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                }
+                Backspace();
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.
 
             } else if (c == '.') {
-                //Add decimal, only one '.' allowed in the value string
+                // Add decimal, only one '.' allowed in the value string
                 if (allowDecimals && Value.Length < MaxValueLength && !Value.Contains(".")) {
                     Audio.Play(SFX.ui_main_rename_entry_space);
                     Value += c;
@@ -228,7 +217,7 @@ namespace Celeste.Mod.UI {
                 }
 
             } else if (c == '-') {
-                //Toggle negative number
+                // Toggle negative number
                 if (allowNegatives) {
                     if (!Value.StartsWith("-"))
                         Value = string.Concat("-", Value);
@@ -269,9 +258,9 @@ namespace Celeste.Mod.UI {
                 goto End;
             }
 
-            if (Input.MenuRight.Pressed && (optionsIndex < 3 || !selectingOptions) && (Value.Length > 0 || !selectingOptions)) {
+            if (Input.MenuRight.Pressed && (optionsIndex < 2 || !selectingOptions) && (Value.Length > 0 || !selectingOptions)) {
                 if (selectingOptions) {
-                    optionsIndex = Math.Min(optionsIndex + 1, 3);
+                    optionsIndex = Math.Min(optionsIndex + 1, 2);
                 } else {
                     do {
                         index = (index + 1) % letters[line].Length;
@@ -312,15 +301,7 @@ namespace Celeste.Mod.UI {
                 if (selectingOptions) {
                     float pos = index * widestLetter;
                     float offs = boxWidth - boxPadding * 2f;
-                    if (Value.Length == 0 || pos < cancelWidth + (offs - cancelWidth - beginWidth - backspaceWidth - widestLetter * 3f) / 2f) {
-                        optionsIndex = 0;
-                    } else if (pos < offs - beginWidth - backspaceWidth - widestLetter * 2f) {
-                        optionsIndex = 1;
-                    } else if (pos < offs - beginWidth - widestLetter) {
-                        optionsIndex = 2;
-                    } else {
-                        optionsIndex = 3;
-                    }
+                    optionsIndex = 1;
                 }
 
                 wiggler.Start();
@@ -330,16 +311,7 @@ namespace Celeste.Mod.UI {
                 if (selectingOptions) {
                     line = letters.Length;
                     selectingOptions = false;
-                    float offs = boxWidth - boxPadding * 2f;
-                    if (optionsIndex == 0) {
-                        index = (int) (cancelWidth / 2f / widestLetter);
-                    } else if (optionsIndex == 1) {
-                        index = (int) ((offs - beginWidth - backspaceWidth / 2f - widestLetter * 2f) / widestLetter);
-                    } else if (optionsIndex == 2) {
-                        index = (int) ((offs - beginWidth - backspaceWidth / 2f - widestLetter) / widestLetter);
-                    } else if (optionsIndex == 3) {
-                        index = (int) ((offs - beginWidth / 2f) / widestLetter);
-                    }
+                    index = optionsIndex * 2;
                 }
                 do {
                     line--;
@@ -354,17 +326,13 @@ namespace Celeste.Mod.UI {
                 if (selectingOptions) {
                     if (optionsIndex == 0) {
                         Cancel();
-                    } else if (optionsIndex == 2) {
+                    } else if (optionsIndex == 1) {
                         Backspace();
-                    } else if (optionsIndex == 3) {
+                    } else if (optionsIndex == 2) {
                         Finish();
                     }
-                } else if (Value.Length < MaxValueLength) {
-                    Value += letters[line][index].ToString();
-                    wiggler.Start();
-                    Audio.Play(SFX.ui_main_rename_entry_char);
                 } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
+                    OnTextInput(letters[line][index]);
                 }
 
             } else if (Input.MenuCancel.Pressed) {
@@ -395,8 +363,16 @@ namespace Celeste.Mod.UI {
         }
 
         private void Backspace() {
-            if (Value.Length > 0) {
-                Value = Value.Substring(0, Value.Length - 1);
+            if (Value.Length > 1) {
+                // temp variable used to avoid trying to parse "-" as float
+                string temp = Value.Substring(0, Value.Length - 1);
+                if (temp.Equals("-"))
+                    Value = "0";
+                else
+                    Value = temp;
+                Audio.Play(SFX.ui_main_rename_entry_backspace);
+            } else if (Value.Length == 1 && !Value.Equals("0")) {
+                Value = "0";
                 Audio.Play(SFX.ui_main_rename_entry_backspace);
             } else {
                 Audio.Play(SFX.ui_main_button_invalid);
@@ -451,13 +427,13 @@ namespace Celeste.Mod.UI {
             pos.Y = boxtopleft.Y + boxHeight - lineHeight - boxPadding;
             Draw.Rect(pos.X, pos.Y - boxPadding * 0.5f, boxWidth - boxPadding * 2f, 4f, Color.White);
 
-            DrawOptionText(cancel, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 0) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 0);
+            DrawOptionText(cancel, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 0) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 0, !Focused);
             pos.X = boxtopleft.X + boxWidth - backspaceWidth - widestLetter - widestLetter - beginWidth - boxPadding;
 
-            DrawOptionText(backspace, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 2) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 2, Value.Length <= 0 || !Focused);
+            DrawOptionText(backspace, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 1) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 1, Value.Length <= 0 || !Focused);
             pos.X += backspaceWidth + widestLetter;
 
-            DrawOptionText(accept, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 3) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 3, Value.Length < 1 || !Focused);
+            DrawOptionText(accept, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 2) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 2, Value.Length < 1 || !Focused);
 
             ActiveFont.DrawEdgeOutline(Value, Position + new Vector2(960f, 286f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
 

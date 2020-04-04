@@ -446,7 +446,7 @@ namespace Celeste.Mod {
                     bool allowNegatives = attribNumber.AllowNegatives;
 
                     item =
-                        new TextMenu.Button(name + ": " + value)
+                        new TextMenu.Button(name + ": " + currentValue.ToString($"F{maxLength}").TrimEnd('0').TrimEnd('.'))
                         .Pressed(() => {
                             Audio.Play(SFX.ui_main_savefile_rename_start);
                             menu.SceneAs<Overworld>().Goto<OuiNumberEntry>().Init<OuiModOptions>(
