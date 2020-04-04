@@ -1951,8 +1951,9 @@ namespace MonoMod {
         }
 
         public static void RemoveCommandAttributeFromVanillaLoadMethod(MethodDefinition method, CustomAttribute attrib) {
-            // find the method in the same class with the same name, but with a (int, string) signature.
-            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.DeclaringType.FindMethod($"System.Void {method.Name}(System.Int32,System.String)").CustomAttributes;
+            // find the vanilla method: CmdLoadIDorSID(string, string) => CmdLoad(int, string)
+            string vanillaMethodName = method.Name.Replace("IDorSID", "");
+            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.DeclaringType.FindMethod($"System.Void {vanillaMethodName}(System.Int32,System.String)").CustomAttributes;
             for (int i = 0; i < attributes.Count; i++) {
                 // remove all Command attributes.
                 if (attributes[i]?.AttributeType.FullName == "Monocle.Command") {
