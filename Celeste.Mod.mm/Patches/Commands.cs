@@ -64,5 +64,66 @@ namespace Celeste {
             Engine.Commands.Log("====");
             Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
         }
+
+        // vanilla load commands: don't touch their bodies, but remove the [Command] attributes from them. We want to annotate ours instead.
+        [MonoModIgnore]
+        private static extern void CmdLoad(int id = 0, string level = null);
+        [MonoModIgnore]
+        private static extern void CmdHard(int id = 0, string level = null);
+        [MonoModIgnore]
+        private static extern void CmdRMX2(int id = 0, string level = null);
+
+        [Command("load", "test a level")]
+        [RemoveCommandAttributeFromVanillaLoadMethod]
+        private static void CmdLoad(string idOrSID = null, string level = null) {
+            if (int.TryParse(idOrSID, out int id)) {
+                CmdLoad(id, level);
+            } else {
+                loadMapBySID(idOrSID, level, AreaMode.Normal, CmdLoad);
+            }
+        }
+
+        [Command("hard", "test a hard level")]
+        [RemoveCommandAttributeFromVanillaLoadMethod]
+        private static void CmdHard(string idOrSID = null, string level = null) {
+            if (int.TryParse(idOrSID, out int id)) {
+                CmdHard(id, level);
+            } else {
+                loadMapBySID(idOrSID, level, AreaMode.BSide, CmdHard);
+            }
+        }
+
+        [Command("rmx2", "test a RMX2 level")]
+        [RemoveCommandAttributeFromVanillaLoadMethod]
+        private static void CmdRMX2(string idOrSID = null, string level = null) {
+            if (int.TryParse(idOrSID, out int id)) {
+                CmdRMX2(id, level);
+            } else {
+                loadMapBySID(idOrSID, level, AreaMode.CSide, CmdRMX2);
+            }
+        }
+
+        private static void loadMapBySID(string sid, string room, AreaMode mode, Action<int, string> vanillaLoadFunction) {
+            if (sid == null) {
+                Engine.Commands.Log("Please specify a map ID or SID.");
+                return;
+            }
+
+            AreaData areaData = patch_AreaData.Get(sid);
+            MapData mapData = null;
+            if (areaData?.Mode.Length > (int) mode) {
+                mapData = areaData?.Mode[(int) mode]?.MapData;
+            }
+            if (areaData == null) {
+                Engine.Commands.Log($"Map {sid} does not exist!");
+            } else if (mapData == null) {
+                Engine.Commands.Log($"Map {sid} has no {mode} mode!");
+            } else if (room != null && (mapData.Levels?.All(level => level.Name != room) ?? false)) {
+                Engine.Commands.Log($"Map {sid} / mode {mode} has no room named {room}!");
+            } else {
+                // go on with the vanilla load/hard/rmx2 function.
+                vanillaLoadFunction(areaData.ID, room);
+            }
+        }
     }
 }

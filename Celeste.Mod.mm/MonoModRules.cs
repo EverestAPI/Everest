@@ -253,6 +253,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchCelesteMain")]
     class PatchCelesteMainAttribute : Attribute { };
 
+    /// <summary>
+    /// Removes the [Command] attribute from the matching vanilla method in Celeste.Commands.
+    /// </summary>
+    [MonoModCustomMethodAttribute("RemoveCommandAttributeFromVanillaLoadMethod")]
+    class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -1940,6 +1946,18 @@ namespace MonoMod {
                 if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference)?.GetID() == "System.String SDL2.SDL::SDL_GetPlatform()") {
                     instrs[instri].OpCode = OpCodes.Ldstr;
                     instrs[instri].Operand = "Windows";
+                }
+            }
+        }
+
+        public static void RemoveCommandAttributeFromVanillaLoadMethod(MethodDefinition method, CustomAttribute attrib) {
+            // find the method in the same class with the same name, but with a (int, string) signature.
+            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.DeclaringType.FindMethod($"System.Void {method.Name}(System.Int32,System.String)").CustomAttributes;
+            for (int i = 0; i < attributes.Count; i++) {
+                // remove all Command attributes.
+                if (attributes[i]?.AttributeType.FullName == "Monocle.Command") {
+                    attributes.RemoveAt(i);
+                    i--;
                 }
             }
         }
