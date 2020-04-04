@@ -31,9 +31,6 @@ namespace Celeste.Mod {
             try {
                 string everestPath = typeof(Celeste).Assembly.Location;
 
-                if (args.FirstOrDefault() == "--vanilla")
-                    goto StartVanilla;
-
                 if (args.FirstOrDefault() == "--no-appdomain") {
                     Console.WriteLine("Loading Everest, no AppDomain");
                     patch_Celeste.Main(args);
@@ -45,6 +42,9 @@ namespace Celeste.Mod {
                     AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
                     return;
                 }
+
+                if (args.FirstOrDefault() == "--vanilla")
+                    goto StartVanilla;
 
                 // This gets skipped when directly starting into vanilla mode or when restarting into vanilla.
                 // Sadly returning from vanilla to Everest is impossible as vanilla forcibly kills the process outside of Windows.

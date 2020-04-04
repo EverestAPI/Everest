@@ -175,6 +175,10 @@
       <Link>libdiscord-rpc.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\lib-mono\libMonoPosixHelper.so">
+      <Link>libMonoPosixHelper.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="..\lib-mono\libMonoPosixHelper.dylib.dSYM\Contents\Info.plist">
       <Link>libMonoPosixHelper.dylib.dSYM\Contents\Info.plist</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
