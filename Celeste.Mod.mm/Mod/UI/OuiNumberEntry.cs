@@ -7,7 +7,7 @@ namespace Celeste.Mod.UI {
     /// <summary>
     /// Modification of <see cref="OuiModOptionString"/> to handle numeric input.
     /// </summary>
-    public class OuiNumberEntry : Oui {
+    public class OuiNumberEntry : Oui, OuiModOptions.ISubmenu {
         //Value is handled internally as a string
         public string StartingValue;
 
