@@ -92,31 +92,37 @@ namespace Celeste {
 
             if (File.Exists("log.txt"))
                 File.Delete("log.txt");
+
             using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter {
                 STDOUT = Console.Out,
                 File = fileWriter
             }) {
-                Console.SetOut(logWriter);
-
-                AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
-
                 try {
-                    Everest.ParseArgs(args);
-                    orig_Main(args);
-                } catch (Exception e) {
-                    CriticalFailureHandler(e);
-                    return;
+                    Console.SetOut(logWriter);
+
+                    AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
+
+                    try {
+                        Everest.ParseArgs(args);
+                        orig_Main(args);
+                    } catch (Exception e) {
+                        CriticalFailureHandler(e);
+                        return;
+                    } finally {
+                        Instance?.Dispose();
+                    }
+
+                    Everest.Shutdown();
                 } finally {
-                    Instance?.Dispose();
+                    if (logWriter.STDOUT != null) {
+                        Console.SetOut(logWriter.STDOUT);
+                        logWriter.STDOUT = null;
+                    }
                 }
-
-                Everest.Shutdown();
-
-                Console.SetOut(logWriter.STDOUT);
-                logWriter.STDOUT = null;
             }
+
         }
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
