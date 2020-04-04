@@ -669,6 +669,11 @@ namespace Celeste.Mod {
         }
 
         public static void QuickFullRestart() {
+            if (AppDomain.CurrentDomain.IsDefaultAppDomain()) {
+                SlowFullRestart();
+                return;
+            }
+
             Scene scene = new Scene();
             scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld)));
             Engine.Scene = scene;
@@ -685,21 +690,30 @@ namespace Celeste.Mod {
                 CoreModule.Instance.SaveSettings();
             }
 
-            Events.Celeste.OnShutdown += () => {
-                Process game = new Process();
-                // Unix-likes use the wrapper script
-                if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                    Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                    game.StartInfo.FileName = Path.Combine(PathGame, "Celeste");
-                } else {
-                    game.StartInfo.FileName = Path.Combine(PathGame, "Celeste.exe");
-                }
-                game.StartInfo.WorkingDirectory = PathGame;
-                game.Start();
-            };
-
+            AppDomain.CurrentDomain.SetData("EverestRestart", true);
             Engine.Instance.Exit();
+            yield break;
+        }
 
+        public static void SlowFullRestart() {
+            Scene scene = new Scene();
+            scene.HelperEntity.Add(new Coroutine(_SlowFullRestart(Engine.Scene is Overworld)));
+            Engine.Scene = scene;
+        }
+
+        private static IEnumerator _SlowFullRestart(bool fromOverworld) {
+            SaveData save = SaveData.Instance;
+            if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
+                if (!fromOverworld) {
+                    CoreModule.Settings.QuickRestart = save.FileSlot;
+                }
+                save.BeforeSave();
+                UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
+                CoreModule.Instance.SaveSettings();
+            }
+
+            Events.Celeste.OnShutdown += BOOT.StartCelesteProcess;
+            Engine.Instance.Exit();
             yield break;
         }
 

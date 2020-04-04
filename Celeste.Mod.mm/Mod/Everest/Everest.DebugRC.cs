@@ -275,10 +275,20 @@ header {
                 new RCEndPoint {
                     Path = "/hotswap",
                     Name = "Hotswap",
-                    InfoHTML = "Restart the entire game real quick.",
+                    InfoHTML = "Restart the entire game AppDomain real quick.",
                     Handle = c => {
                         Write(c, "OK.");
                         QuickFullRestart();
+                    }
+                },
+
+                new RCEndPoint {
+                    Path = "/coldswap",
+                    Name = "Coldswap",
+                    InfoHTML = "Restart the entire game process real quick.",
+                    Handle = c => {
+                        Write(c, "OK.");
+                        SlowFullRestart();
                     }
                 },
 

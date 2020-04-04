@@ -11,12 +11,14 @@ using SDL2;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
@@ -56,23 +58,28 @@ namespace Celeste.Mod {
                 if (args.FirstOrDefault() == "--vanilla")
                     goto StartVanilla;
 
+
                 // This gets skipped when directly starting into vanilla mode or when restarting into vanilla.
                 // Sadly returning from vanilla to Everest is impossible as vanilla forcibly kills the process outside of Windows.
 
+                StartEverest:
                 Console.WriteLine("Loading Everest");
                 using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
                     AppDomain ad = adw.AppDomain;
 
                     ThreadIfNeeded("EVEREST", () => ad.ExecuteAssembly(everestPath, args));
 
-                    if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
-                        for (int i = 0; i < 5; i++) {
-                            adw.Dispose();
-                            if (!status[0])
-                                Thread.Sleep(1000);
+                    if (ad.GetData("EverestRestart") as bool? ?? false) {
+                        if (!adw.WaitDispose()) {
+                            StartCelesteProcess();
+                            return;
                         }
 
-                        if (!status[0])
+                        goto StartEverest;
+                    }
+
+                    if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
+                        if (!adw.WaitDispose())
                             throw new Exception("Cannot unload Everest. Please restart Celeste using --vanilla if needed.");
 
                         goto StartVanilla;
@@ -169,6 +176,29 @@ namespace Celeste.Mod {
                 ErrorLog.Write(e.ToString());
                 ErrorLog.Open();
             } catch { }
+        }
+
+        // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
+        // This is also used by Everest.SlowFullRestart
+        public static void StartCelesteProcess() {
+            string path = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+
+            Process game = new Process();
+
+            // Unix-likes use the wrapper script
+            if (Environment.OSVersion.Platform == PlatformID.Unix ||
+                Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                game.StartInfo.FileName = Path.Combine(path, "Celeste");
+            } else {
+                game.StartInfo.FileName = Path.Combine(path, "Celeste.exe");
+            }
+
+            game.StartInfo.WorkingDirectory = path;
+
+            Regex escapeArg = new Regex(@"(\\+)$");
+            game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
+
+            game.Start();
         }
 
         public static void ThreadIfNeeded(string tag, ThreadStart start) {
@@ -336,6 +366,19 @@ namespace Celeste.Mod {
                     Console.WriteLine($"COULDN'T UNLOAD APPDOMAIN {name}");
                     Console.WriteLine(e);
                 }
+            }
+
+            public bool WaitDispose(int retries = 5, int sleep = 1000) {
+                for (int i = 0; i < retries; i++) {
+                    Dispose();
+
+                    if (_Status[0])
+                        return true;
+                    
+                    if (i < retries - 1)
+                        Thread.Sleep(sleep);
+                }
+                return false;
             }
 
             [MonoModIgnore]
