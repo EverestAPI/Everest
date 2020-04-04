@@ -38,7 +38,17 @@ namespace Celeste.Mod {
                 }
 
                 if (!AppDomain.CurrentDomain.IsDefaultAppDomain()) {
-                    patch_Celeste.Main(args);
+                    try {
+                        patch_Celeste.Main(args);
+
+                    } finally {
+                        // FNA registers an AppDomain-wide process exit handler to run SDL_Quit when the process exits.
+                        // That never gets fired when juggling AppDomains around though.
+                        typeof(Game).Assembly
+                            .GetType("Microsoft.Xna.Framework.SDL2_FNAPlatform")
+                            ?.GetMethod("ProgramExit")
+                            ?.Invoke(null, new object[] { null, null });
+                    }
                     AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
                     return;
                 }
