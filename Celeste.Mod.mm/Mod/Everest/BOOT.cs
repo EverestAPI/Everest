@@ -96,13 +96,20 @@ namespace Celeste.Mod {
 
                     string vanillaPath = Path.Combine(Path.GetDirectoryName(everestPath), "orig", "Celeste.exe");
                     string loaderPath = Path.Combine(Path.GetDirectoryName(everestPath), "EverestVanillaLoader.dll");
+                    string calFullName = "Celeste.Mod.EverestVanillaLoader";
 
-                    if (File.Exists(loaderPath))
-                        File.Delete(loaderPath);
+                    try {
+                        if (File.Exists(loaderPath))
+                            File.Delete(loaderPath);
+                    } catch (UnauthorizedAccessException) {
+                        // Assume that there is another instance running.
+                        if (File.Exists(loaderPath))
+                            goto SkipCreateEverestVanillaLoader;
+                        throw;
+                    }
 
                     // Separate the EverestVanillaLoader class into its own assembly.
                     // This is needed to not load Everest's Celeste.exe by accident.
-                    string calFullName;
                     using (ModuleDefinition wrapper = ModuleDefinition.CreateModule("EverestVanillaLoader", new ModuleParameters() {
                         ReflectionImporterProvider = MMReflectionImporter.Provider
                     }))
@@ -123,7 +130,6 @@ namespace Celeste.Mod {
                         orig.IsNestedPublic = false;
                         orig.IsPublic = true;
                         orig.Namespace = "Celeste.Mod";
-                        calFullName = orig.FullName;
 
                         wrapper.Architecture = celeste.Architecture;
                         wrapper.Runtime = celeste.Runtime;
@@ -137,6 +143,8 @@ namespace Celeste.Mod {
                         mm.PatchRefs();
                         mm.Write(null, loaderPath);
                     };
+
+                    SkipCreateEverestVanillaLoader:
 
                     try {
                         // Move the current Celeste.exe away so that it won't get loaded by accident.
