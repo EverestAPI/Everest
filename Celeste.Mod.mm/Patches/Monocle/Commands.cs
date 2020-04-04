@@ -164,12 +164,12 @@ namespace Monocle {
 
         private extern void orig_HandleKey(Keys key);
         private void HandleKey(Keys key) {
-            if (key == Keys.Tab && currentText.StartsWith("load_map ")) {
+            if (key == Keys.Tab && (currentText.StartsWith("load ") || currentText.StartsWith("hard ") || currentText.StartsWith("rmx2 "))) {
                 // handle tab autocomplete for SIDs
 
                 if (sidTabIndex == -1) {
                     // search for SIDs that match what we started typing.
-                    string startOfSid = currentText.Substring("load_map ".Length);
+                    string startOfSid = currentText.Substring(5);
                     sidTabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                 }
 
@@ -195,7 +195,7 @@ namespace Monocle {
                     sidTabIndex %= sidTabResults.Length;
 
                     // autocomplete
-                    currentText = "load_map " + sidTabResults[sidTabIndex];
+                    currentText = currentText.Substring(0, 5) + sidTabResults[sidTabIndex];
                 }
             } else {
                 if (key != Keys.Tab && key != Keys.LeftShift && key != Keys.RightShift && key != Keys.RightAlt && key != Keys.LeftAlt && key != Keys.RightControl && key != Keys.LeftControl) {
