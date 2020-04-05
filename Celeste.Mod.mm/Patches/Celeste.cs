@@ -137,7 +137,10 @@ namespace Celeste {
 
         private static bool _CriticalFailureIsUnhandledException;
         public static void CriticalFailureHandler(Exception e) {
+            Everest.LogDetours();
+
             (e ?? new Exception("Unknown exception")).LogDetailed("CRITICAL");
+
             ErrorLog.Write(
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
@@ -147,6 +150,7 @@ Probably by force-installing Everest on top of Everest on top of Everest.
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
 https://discord.gg/6qjaePQ");
+
             ErrorLog.Open();
             if (!_CriticalFailureIsUnhandledException)
                 Environment.Exit(-1);

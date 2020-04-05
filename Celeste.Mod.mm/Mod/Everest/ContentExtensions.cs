@@ -155,6 +155,10 @@ namespace Celeste.Mod {
             return tex;
         }
 
+        public static void LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data) {
+            _LoadTextureLazyPremultiply(gd, stream, out w, out h, out data);
+        }
+
         [MonoModIgnore]
         private static extern void _LoadTextureLazyPremultiply(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data);
 

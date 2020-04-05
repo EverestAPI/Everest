@@ -74,7 +74,6 @@ namespace Celeste.Mod {
         /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
-        private static List<Type> _ModuleTypes = new List<Type>();
         private static List<Assembly> _RelinkedAssemblies = new List<Assembly>();
 
         /// <summary>
@@ -201,6 +200,7 @@ namespace Celeste.Mod {
         private static DetourModManager _DetourModManager;
         private static Hook _DynDataCollectionFinalizeFix;
         private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
+        internal static List<string> _DetourLog = new List<string>();
 
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
@@ -345,32 +345,32 @@ namespace Celeste.Mod {
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new ILHook by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                _DetourLog.Add($"new ILHook by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
             };
             _DetourModManager.OnHook += (owner, from, to, target) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new Hook by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}" + (target == null ? "" : $" (target: {target})"));
+                _DetourLog.Add($"new Hook by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}" + (target == null ? "" : $" (target: {target})"));
             };
             _DetourModManager.OnDetour += (owner, from, to) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new Detour by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}");
+                _DetourLog.Add($"new Detour by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}");
             };
             _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
                 _DetourOwners.Add(owner);
-                Logger.Log(LogLevel.Verbose, "detour", $"new NativeDetour by {owner.GetName().Name}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
+                _DetourLog.Add($"new NativeDetour by {owner.GetName().Name}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
             };
             HookEndpointManager.OnAdd += (from, to) => {
                 Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new On.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                _DetourLog.Add($"new On.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
                 return true;
             };
             HookEndpointManager.OnModify += (from, to) => {
                 Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
                 _DetourOwners.Add(owner);
                 object target = to.Target;
-                Logger.Log(LogLevel.Verbose, "detour", $"new IL.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
+                _DetourLog.Add($"new IL.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
                 return true;
             };
 
@@ -492,7 +492,6 @@ namespace Celeste.Mod {
         public static void Register(this EverestModule module) {
             lock (_Modules) {
                 _Modules.Add(module);
-                _ModuleTypes.Add(module.GetType());
             }
 
             LuaLoader.Precache(module.GetType().Assembly);
@@ -622,14 +621,23 @@ namespace Celeste.Mod {
         /// Unregisters an already registered EverestModule (mod) dynamically. Invokes Unload.
         /// </summary>
         /// <param name="module"></param>
-        public static void Unregister(this EverestModule module) {
+        internal static void Unregister(this EverestModule module) {
             module.Unload();
+            _DetourModManager.Unload(module.GetType().Assembly);
+
+            // TODO: Unload from LuaLoader
+            // TODO: Unload from EntityLoaders
+            // TODO: Undo event listeners
+            // TODO: Unload from registries
+            // TODO: Make sure modules depending on this are unloaded as well.
+            // TODO: Unload content, textures, audio, maps, AAAAAAAAAAAAAAAAAAAAAAA
 
             lock (_Modules) {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
-                _ModuleTypes.RemoveAt(index);
             }
+
+            InvalidateInstallationHash();
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
         }
@@ -715,6 +723,18 @@ namespace Celeste.Mod {
             Events.Celeste.OnShutdown += BOOT.StartCelesteProcess;
             Engine.Instance.Exit();
             yield break;
+        }
+
+        public static void LogDetours() {
+            List<string> detours = _DetourLog;
+            _DetourLog = new List<string>();
+
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine();
+            foreach (string line in detours)
+                builder.AppendLine(line);
+
+            Logger.Log(LogLevel.Info, "detours", builder.ToString());
         }
 
         // A shared object a day keeps the GC away!

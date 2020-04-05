@@ -115,13 +115,16 @@ namespace Celeste.Mod {
         }
 
         public override void Update(GameTime gameTime) {
-            if (Queue.Count > 0) {
+            while (Queue.Count > 0) {
                 Action action;
                 lock (Queue) {
                     action = Queue.Dequeue();
                 }
                 action?.Invoke();
             }
+
+            if (gameTime == null)
+                return;
 
             base.Update(gameTime);
         }

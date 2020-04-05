@@ -145,6 +145,7 @@ namespace Celeste.Mod {
                         continue;
                     LoadZip(file);
                 }
+
                 files = Directory.GetDirectories(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
@@ -154,7 +155,6 @@ namespace Celeste.Mod {
                         continue;
                     LoadDir(file);
                 }
-
             }
 
             /// <summary>
@@ -522,13 +522,15 @@ namespace Celeste.Mod {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;
 
-                foreach (EverestModule other in _Modules) {
-                    EverestModuleMetadata meta = other.Metadata;
-                    if (meta.Name != depName)
-                        continue;
+                lock (_Modules) {
+                    foreach (EverestModule other in _Modules) {
+                        EverestModuleMetadata meta = other.Metadata;
+                        if (meta.Name != depName)
+                            continue;
 
-                    Version version = meta.Version;
-                    return VersionSatisfiesDependency(depVersion, version);
+                        Version version = meta.Version;
+                        return VersionSatisfiesDependency(depVersion, version);
+                    }
                 }
 
                 return false;

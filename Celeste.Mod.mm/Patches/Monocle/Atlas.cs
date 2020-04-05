@@ -29,6 +29,7 @@ namespace Monocle {
 
         public string DataMethod;
         public string DataPath;
+        public string RelativeDataPath;
         public string[] DataPaths;
         public AtlasDataFormat? DataFormat;
 
@@ -264,6 +265,7 @@ namespace Monocle {
             atlas.DataMethod = "FromAtlas";
             atlas.DataPath = path;
             atlas.DataFormat = format;
+            atlas.FixDataPath();
             Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
@@ -275,6 +277,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = dataPath;
             atlas.DataFormat = format;
+            atlas.FixDataPath();
             Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
@@ -286,6 +289,7 @@ namespace Monocle {
             atlas.DataPath = rootPath;
             atlas.DataPaths = new string[] { filename };
             atlas.DataFormat = format;
+            atlas.FixDataPath();
             Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
         }
@@ -295,13 +299,74 @@ namespace Monocle {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
             atlas.DataPath = path;
+            atlas.FixDataPath();
             Everest.Content.ProcessLoad(atlas, atlas.DataPath);
             return atlas;
+        }
+
+        private void FixDataPath() {
+            if (DataPath == null)
+                return;
+
+            string path = DataPath;
+            if (path.StartsWith(Everest.Content.PathContentOrig))
+                path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
+            path = path.Replace('\\', '/');
+            RelativeDataPath = path + "/";
         }
 
         public void ResetCaches() {
             if (orderedTexturesCache.Count > 0)
                 orderedTexturesCache = new Dictionary<string, List<MTexture>>();
+        }
+
+        public void Ingest(ModAsset asset) {
+            if (asset == null)
+                return;
+
+            // Crawl through all child assets.
+            if (asset.Type == typeof(AssetTypeDirectory)) {
+                lock (asset.Children) {
+                    foreach (ModAsset child in asset.Children)
+                        Ingest(child);
+                }
+                return;
+            }
+
+            // Forcibly add the mod content to the atlas.
+            if (asset.Type != typeof(Texture2D))
+                return;
+
+            string path = asset.PathVirtual;
+
+            if (!path.StartsWith(RelativeDataPath))
+                return;
+            path = path.Substring(RelativeDataPath.Length);
+
+            if (textures.TryGetValue(path, out MTexture mtex)) {
+                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{Path.GetFileName(DataPath)} + ({asset.Source?.Name ?? "???"}) {path}");
+                mtex.SetOverride(asset);
+                this[path] = mtex;
+                return;
+            }
+
+            VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+            MTextureMeta meta = asset.GetMeta<MTextureMeta>();
+            if (meta != null) {
+                // Apply width and height from meta.
+                if (meta.Width == 0)
+                    meta.Width = vtex.Width;
+                if (meta.Height == 0)
+                    meta.Height = vtex.Height;
+                mtex = new MTexture(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
+            } else {
+                // Apply width and height from replacement texture.
+                mtex = new MTexture(vtex);
+            }
+            mtex.AtlasPath = path;
+            mtex.SetAtlas(this);
+            mtex.SetOverride(asset);
+            this[path] = mtex;
         }
 
     }
@@ -346,64 +411,8 @@ namespace Monocle {
         /// <summary>
         /// Feed the given ModAsset into the atlas.
         /// </summary>
-        public static void Ingest(this Atlas atlas, ModAsset asset) {
-            if (asset == null)
-                return;
-
-            // Crawl through all child assets.
-            if (asset.Type == typeof(AssetTypeDirectory)) {
-                lock (asset.Children) {
-                    foreach (ModAsset child in asset.Children)
-                        atlas.Ingest(child);
-                }
-                return;
-            }
-
-            // Forcibly add the mod content to the atlas.
-            if (asset.Type != typeof(Texture2D))
-                return;
-
-            string parentPath = atlas.GetDataPath();
-            if (parentPath.StartsWith(Everest.Content.PathContentOrig))
-                parentPath = parentPath.Substring(Everest.Content.PathContentOrig.Length + 1);
-            parentPath = parentPath.Replace('\\', '/');
-
-            string path = asset.PathVirtual;
-
-            if (!path.StartsWith(parentPath + "/"))
-                return;
-            path = path.Substring(parentPath.Length + 1);
-
-            Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{Path.GetFileName(atlas.GetDataPath())} + ({asset.Source?.Name ?? "???"}) {path}");
-
-            MTexture mtex;
-
-            Dictionary<string, MTexture> textures = atlas.GetTextures();
-            if (textures.TryGetValue(path, out mtex)) {
-                mtex.SetOverride(asset);
-
-            } else {
-                VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
-                MTextureMeta meta = asset.GetMeta<MTextureMeta>();
-                if (meta != null) {
-                    // Apply width and height from meta.
-                    if (meta.Width == 0)
-                        meta.Width = vtex.Width;
-                    if (meta.Height == 0)
-                        meta.Height = vtex.Height;
-                    mtex = new MTexture(vtex, new Vector2(meta.X, meta.Y), meta.Width, meta.Height);
-                } else {
-                    // Apply width and height from replacement texture.
-                    mtex = new MTexture(vtex);
-                }
-                mtex.AtlasPath = path;
-                mtex.SetAtlas(atlas);
-                mtex.SetOverride(asset);
-            }
-
-            atlas.ResetCaches();
-            atlas[path] = mtex;
-        }
+        public static void Ingest(this Atlas self, ModAsset asset)
+            => ((patch_Atlas) self).Ingest(asset);
 
     }
 }

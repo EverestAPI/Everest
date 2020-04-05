@@ -872,10 +872,12 @@ namespace Celeste.Mod {
                 if (asset == null || mapping == null)
                     return;
 
-                if (asset is Atlas atlas)
+                if (asset is Atlas atlas) {
                     AssetReloadHelper.Do(load, $"Reloading texture{(mapping.Children.Count == 0 ? "" : "s")}: {Path.GetFileName(mapping.PathVirtual)}", () => {
-                        atlas.Ingest(mapping);
+                        atlas.ResetCaches();
+                        (atlas as patch_Atlas).Ingest(mapping);
                     });
+                }
 
                 OnProcessUpdate?.Invoke(asset, mapping, load);
             }

@@ -96,10 +96,16 @@ namespace Monocle {
                     premul = meta.Premultiplied;
 
                 using (stream) {
-                    if (premul)
+                    if (premul) {
                         Texture = MainThreadHelper.Get(() => Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream)).GetResult();
-                    else
-                        Texture = MainThreadHelper.Get(() => ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream)).GetResult();
+                    } else {
+                        ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
+                        Texture = MainThreadHelper.Get(() => {
+                            Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                            tex.SetData(data);
+                            return tex;
+                        }).GetResult();
+                    }
                 }
 
             } else if (Fallback != null) {
