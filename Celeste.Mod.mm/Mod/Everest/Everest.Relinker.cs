@@ -268,12 +268,13 @@ namespace Celeste.Mod {
                     e.LogDetailed();
                     return null;
                 } finally {
-                    Modder.ClearCaches(moduleSpecific: true);
-                    Modder.Module.Dispose();
-                    Modder.Module = null;
-                    Modder.ReaderParameters.SymbolStream?.Dispose();
+                    if (SharedModder) {
+                        Modder.ClearCaches(moduleSpecific: true);
+                        Modder.Module.Dispose();
+                        Modder.Module = null;
+                        Modder.ReaderParameters.SymbolStream?.Dispose();
 
-                    if (!SharedModder) {
+                    } else {
                         Modder.Dispose();
                         Modder = null;
                     }

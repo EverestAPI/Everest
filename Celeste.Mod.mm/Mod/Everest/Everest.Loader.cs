@@ -18,6 +18,7 @@ using MCC = Mono.Cecil.Cil;
 using MonoMod.Cil;
 using Microsoft.Xna.Framework;
 using Monocle;
+using System.Diagnostics;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -136,6 +137,8 @@ namespace Celeste.Mod {
                 if (Flags.IsDisabled)
                     return;
 
+                Stopwatch watch = Stopwatch.StartNew();
+
                 string[] files = Directory.GetFiles(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
@@ -155,6 +158,9 @@ namespace Celeste.Mod {
                         continue;
                     LoadDir(file);
                 }
+
+                watch.Stop();
+                Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
             }
 
             /// <summary>
