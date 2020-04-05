@@ -20,25 +20,21 @@ namespace Celeste.Mod.Helpers {
         public override void Write(string value) {
             STDOUT?.Write(value);
             File?.Write(value);
-            File?.Flush();
         }
 
         public override void WriteLine(string value) {
             STDOUT?.WriteLine(value);
             File?.WriteLine(value);
-            File?.Flush();
         }
 
         public override void Write(char value) {
             STDOUT?.Write(value);
             File?.Write(value);
-            File?.Flush();
         }
 
         public override void Write(char[] buffer, int index, int count) {
             STDOUT?.Write(buffer, index, count);
             File?.Write(buffer, index, count);
-            File?.Flush();
         }
 
         public override void Flush() {
