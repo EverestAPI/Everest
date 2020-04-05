@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -28,7 +29,23 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        public extern void orig_TweenOut(float time);
+        public new void TweenOut(float time) {
+            if (CoreModule.Settings.MainMenuMode == "rows") {
+                // nothing to do.
+                orig_TweenOut(time);
+            } else {
+                // shift the destination position from the menu entries further off-screen, so that "an Everest update is available" goes off-screen
+                // instead of sticking out on the left when pressing Climb. 210 is just enough for it to work on the French version (which is the longest one).
+                if (TweenFrom.X == -460f || TweenFrom.X == -320f) {
+                    TweenFrom.X -= 210f;
+                }
+
+                orig_TweenOut(time);
+            }
+        }
     }
+
     public static partial class MenuButtonExt {
 
         // Mods can't access patch_ classes directly.
