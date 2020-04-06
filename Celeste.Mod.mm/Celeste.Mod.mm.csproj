@@ -180,12 +180,12 @@
       <Link>libMonoPosixHelper.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.dylib.dSYM\Contents\Info.plist">
-      <Link>libMonoPosixHelper.dylib.dSYM\Contents\Info.plist</Link>
+    <Content Include="..\lib-mono\libmono-btls-shared.so">
+      <Link>libmono-btls-shared.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="..\lib-mono\libMonoPosixHelper.dylib.dSYM\Contents\Resources\DWARF\libMonoPosixHelper.dylib">
-      <Link>libMonoPosixHelper.dylib.dSYM\Contents\Resources\DWARF\libMonoPosixHelper.dylib</Link>
+      <Link>libMonoPosixHelper.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
