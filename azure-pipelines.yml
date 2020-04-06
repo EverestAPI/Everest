@@ -4,7 +4,7 @@
 # https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
 
 pool:
-  vmImage: 'windows-2019'
+  vmImage: 'windows-latest'
 
 variables:
   solution: '**/*.sln'
@@ -15,29 +15,23 @@ name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
 steps:
 # Pre-build steps.
-- task: UseDotNet@2
-  displayName: 'Install .NET Core SDK 3.1.x'
-  inputs:
-    packageType: sdk
-# FIXME: Upgrade to 3.1.x once https://github.com/dotnet/sourcelink/issues/524 is fixed.
-# Example failing build with 3.1.200: https://dev.azure.com/MonoMod/MonoMod/_build/results?buildId=142&view=results
-    version: '3.1.102'
-- task: NuGetCommand@2
+- task: DotNetCoreCLI@2
   displayName: 'Restore NuGet packages'
   inputs:
-    restoreSolution: '$(solution)'
+    command: 'restore'
+    projects: '**/*.csproj'
 - task: PowerShell@2
   displayName: 'Run azure-pipelines-prebuild.ps1'
   inputs:
     filePath: 'azure-pipelines-prebuild.ps1'
 
 # Build.
-- task: VSBuild@1
+- task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
-    solution: '$(solution)'
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'build'
+    projects: '**/*.csproj'
+    arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)"'
 
 # Create and "publish" main artifact.
 - task: CopyFiles@2
