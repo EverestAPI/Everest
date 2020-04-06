@@ -65,28 +65,30 @@ namespace Celeste {
         public static void LoadModData() {
             if (!ModsDataLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
-                    MapMeta meta;
-                    // Check if the meta for this asset exists and if it has a MountainModelDirectory specified
-                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory)) {
-                        // Create the mountain resources for this map if they don't exist already
-                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
-                            resources = new MountainResources();
-                            MountainMappings.Add(kvp.Key, resources);
-                        }
+                lock (Everest.Content.Map) {
+                    foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
+                        MapMeta meta;
+                        // Check if the meta for this asset exists and if it has a MountainModelDirectory specified
+                        if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory)) {
+                            // Create the mountain resources for this map if they don't exist already
+                            if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
+                                resources = new MountainResources();
+                                MountainMappings.Add(kvp.Key, resources);
+                            }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain"), out ModAsset mountain)) {
-                            resources.MountainTerrain = ObjModelExt.CreateFromStream(mountain.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain.obj"));
-                        }
+                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain"), out ModAsset mountain)) {
+                                resources.MountainTerrain = ObjModelExt.CreateFromStream(mountain.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain.obj"));
+                            }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "buildings"), out ModAsset buildings)) {
-                            resources.MountainBuildings = ObjModelExt.CreateFromStream(buildings.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "buildings.obj"));
-                        }
+                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "buildings"), out ModAsset buildings)) {
+                                resources.MountainBuildings = ObjModelExt.CreateFromStream(buildings.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "buildings.obj"));
+                            }
 
-                        if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall"), out ModAsset coreWall)) {
-                            resources.MountainCoreWall = ObjModelExt.CreateFromStream(coreWall.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall.obj"));
-                        }
+                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall"), out ModAsset coreWall)) {
+                                resources.MountainCoreWall = ObjModelExt.CreateFromStream(coreWall.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall.obj"));
+                            }
 
+                        }
                     }
                 }
                 Console.WriteLine(" - MODDED MTN DATA LOAD: " + stopwatch.ElapsedMilliseconds + "ms");
@@ -100,39 +102,41 @@ namespace Celeste {
         public static void LoadMod() {
             if (!ModsLoaded) {
                 Stopwatch stopwatch = Stopwatch.StartNew();
-                foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
-                    MapMeta meta;
-                    // Check if the meta for this asset exists and if it has a MountainTextureDirectory specified
-                    if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)) {
-                        // Create the mountain resources for this map if they don't exist already
-                        if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
-                            resources = new MountainResources();
-                            MountainMappings.Add(kvp.Key, resources);
-                        }
+                lock (Everest.Content.Map) {
+                    foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
+                        MapMeta meta;
+                        // Check if the meta for this asset exists and if it has a MountainTextureDirectory specified
+                        if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)) {
+                            // Create the mountain resources for this map if they don't exist already
+                            if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
+                                resources = new MountainResources();
+                                MountainMappings.Add(kvp.Key, resources);
+                            }
 
-                        resources.MountainTerrainTextures = new VirtualTexture[3];
-                        resources.MountainBuildingTextures = new VirtualTexture[3];
-                        resources.MountainSkyboxTextures = new VirtualTexture[3];
-                        for (int i = 0; i < 3; i++) {
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/'))) {
-                                resources.MountainSkyboxTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')].Texture;
+                            resources.MountainTerrainTextures = new VirtualTexture[3];
+                            resources.MountainBuildingTextures = new VirtualTexture[3];
+                            resources.MountainSkyboxTextures = new VirtualTexture[3];
+                            for (int i = 0; i < 3; i++) {
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/'))) {
+                                    resources.MountainSkyboxTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')].Texture;
+                                }
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/'))) {
+                                    resources.MountainTerrainTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')].Texture;
+                                }
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/'))) {
+                                    resources.MountainBuildingTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')].Texture;
+                                }
                             }
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/'))) {
-                                resources.MountainTerrainTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')].Texture;
+                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/'))) {
+                                resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
                             }
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/'))) {
-                                resources.MountainBuildingTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')].Texture;
-                            }
-                        }
-                        if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/'))) {
-                            resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
-                        }
 
-                        // Use the default textures if no custom ones were loaded
-                        resources.MountainStates[0] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
-                        resources.MountainStates[1] = new MountainState(resources.MountainTerrainTextures[1] ?? MTN.MountainTerrainTextures[1], resources.MountainBuildingTextures[1] ?? MTN.MountainBuildingTextures[1], resources.MountainSkyboxTextures[1] ?? MTN.MountainSkyboxTextures[1], Calc.HexToColor("13203E"));
-                        resources.MountainStates[2] = new MountainState(resources.MountainTerrainTextures[2] ?? MTN.MountainTerrainTextures[2], resources.MountainBuildingTextures[2] ?? MTN.MountainBuildingTextures[2], resources.MountainSkyboxTextures[2] ?? MTN.MountainSkyboxTextures[2], Calc.HexToColor("281A35"));
-                        resources.MountainStates[3] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
+                            // Use the default textures if no custom ones were loaded
+                            resources.MountainStates[0] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
+                            resources.MountainStates[1] = new MountainState(resources.MountainTerrainTextures[1] ?? MTN.MountainTerrainTextures[1], resources.MountainBuildingTextures[1] ?? MTN.MountainBuildingTextures[1], resources.MountainSkyboxTextures[1] ?? MTN.MountainSkyboxTextures[1], Calc.HexToColor("13203E"));
+                            resources.MountainStates[2] = new MountainState(resources.MountainTerrainTextures[2] ?? MTN.MountainTerrainTextures[2], resources.MountainBuildingTextures[2] ?? MTN.MountainBuildingTextures[2], resources.MountainSkyboxTextures[2] ?? MTN.MountainSkyboxTextures[2], Calc.HexToColor("281A35"));
+                            resources.MountainStates[3] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
+                        }
                     }
                 }
                 Console.WriteLine(" - MODDED MTN LOAD: " + stopwatch.ElapsedMilliseconds + "ms");

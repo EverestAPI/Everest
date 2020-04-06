@@ -33,11 +33,12 @@ namespace Celeste {
         private static string[] _GetFiles(string path, string searchPattern, SearchOption searchOption) {
             string[] vanillaFiles = Directory.GetFiles(path, searchPattern, searchOption);
 
-            return Everest.Content.Map.Values
-                .Where(asset => asset.Type == typeof(AssetTypeFont))
-                .Select(asset => Path.Combine(Engine.ContentDirectory, asset.PathVirtual + "." + asset.Format).Replace('/', Path.DirectorySeparatorChar))
-                .Union(vanillaFiles)
-                .ToArray();
+            lock (Everest.Content.Map)
+                return Everest.Content.Map.Values
+                    .Where(asset => asset.Type == typeof(AssetTypeFont))
+                    .Select(asset => Path.Combine(Engine.ContentDirectory, asset.PathVirtual + "." + asset.Format).Replace('/', Path.DirectorySeparatorChar))
+                    .Union(vanillaFiles)
+                    .ToArray();
         }
     }
 }

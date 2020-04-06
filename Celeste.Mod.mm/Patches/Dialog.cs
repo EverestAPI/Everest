@@ -36,7 +36,9 @@ namespace Celeste {
             List<string> allFiles = GetVanillaLanguageFileList(root, searchPattern, searchOption);
 
             // look up for all mod dialog files
-            List<string> modFiles = Everest.Content.Map.Values
+            List<string> modFiles;
+            lock (Everest.Content.Map)
+                modFiles = Everest.Content.Map.Values
                     .Where(a => a.Type == typeof(AssetTypeDialog) || a.Type == typeof(AssetTypeDialogExport))
                     .Select(a => Path.ChangeExtension(a.PathVirtual, "txt"))
                     .ToList();

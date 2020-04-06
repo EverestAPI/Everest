@@ -450,8 +450,9 @@ namespace Celeste.Mod {
             public static bool TryGet(string path, out ModAsset metadata, bool includeDirs = false) {
                 path = path.Replace('\\', '/');
 
-                if (Map.TryGetValue(path, out metadata) && metadata != null)
-                    return true;
+                lock (Map)
+                    if (Map.TryGetValue(path, out metadata) && metadata != null)
+                        return true;
 
                 metadata = null;
                 return false;
@@ -498,8 +499,9 @@ namespace Celeste.Mod {
 
                 path = string.Join("/", parts);
 
-                if (Map.TryGetValue(path, out metadata) && metadata != null && metadata.Type == typeof(T))
-                    return true;
+                lock (Map)
+                    if (Map.TryGetValue(path, out metadata) && metadata != null && metadata.Type == typeof(T))
+                        return true;
 
                 metadata = null;
                 return false;
@@ -534,14 +536,14 @@ namespace Celeste.Mod {
                 if (metadata != null && metadata.Type == typeof(AssetTypeDirectory) && !(metadata is ModAssetBranch))
                     return;
 
-                // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
-                if (!Map.TryGetValue(path, out ModAsset metadataPrev))
-                    metadataPrev = null;
-
-                if (metadata == null && metadataPrev != null && metadataPrev.Type == typeof(AssetTypeDirectory))
-                    return;
-
                 lock (Map) {
+                    // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
+                    if (!Map.TryGetValue(path, out ModAsset metadataPrev))
+                        metadataPrev = null;
+
+                    if (metadata == null && metadataPrev != null && metadataPrev.Type == typeof(AssetTypeDirectory))
+                        return;
+
                     if (metadata == null) {
                         Map[path] = null;
                         if (prefix != null)
@@ -557,30 +559,30 @@ namespace Celeste.Mod {
                         if (prefix != null)
                             Map[$"{prefix}:/{path}"] = metadata;
                     }
-                }
 
-                // If we're not already the highest level shadow "node"...
-                if (path != "") {
-                    // Add directories automatically.
-                    string pathDir = Path.GetDirectoryName(path).Replace('\\', '/');
-                    if (!Map.TryGetValue(pathDir, out ModAsset metadataDir)) {
-                        metadataDir = new ModAssetBranch {
-                            PathVirtual = pathDir,
-                            Type = typeof(AssetTypeDirectory)
-                        };
-                        Add(pathDir, metadataDir);
-                    }
-                    // If a previous mapping exists, replace it in the shadow structure.
-                    lock (metadataDir.Children) {
-                        int metadataPrevIndex = metadataDir.Children.IndexOf(metadataPrev);
-                        if (metadataPrevIndex != -1) {
-                            if (metadata == null) {
-                                metadataDir.Children.RemoveAt(metadataPrevIndex);
+                    // If we're not already the highest level shadow "node"...
+                    if (path != "") {
+                        // Add directories automatically.
+                        string pathDir = Path.GetDirectoryName(path).Replace('\\', '/');
+                        if (!Map.TryGetValue(pathDir, out ModAsset metadataDir)) {
+                            metadataDir = new ModAssetBranch {
+                                PathVirtual = pathDir,
+                                Type = typeof(AssetTypeDirectory)
+                            };
+                            Add(pathDir, metadataDir);
+                        }
+                        // If a previous mapping exists, replace it in the shadow structure.
+                        lock (metadataDir.Children) {
+                            int metadataPrevIndex = metadataDir.Children.IndexOf(metadataPrev);
+                            if (metadataPrevIndex != -1) {
+                                if (metadata == null) {
+                                    metadataDir.Children.RemoveAt(metadataPrevIndex);
+                                } else {
+                                    metadataDir.Children[metadataPrevIndex] = metadata;
+                                }
                             } else {
-                                metadataDir.Children[metadataPrevIndex] = metadata;
+                                metadataDir.Children.Add(metadata);
                             }
-                        } else {
-                            metadataDir.Children.Add(metadata);
                         }
                     }
                 }
@@ -705,9 +707,8 @@ namespace Celeste.Mod {
             /// Recrawl all currently loaded mods and recreate the content mappings. If you want to apply the new mapping, call Reprocess afterwards.
             /// </summary>
             internal static void Recrawl() {
-                lock (Map) {
+                lock (Map)
                     Map.Clear();
-                }
 
                 for (int i = 0; i < Mods.Count; i++) {
                     ModContent mod = Mods[i];
