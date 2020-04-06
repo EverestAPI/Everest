@@ -27,8 +27,8 @@ namespace Celeste {
             : base(oui, targetPosition, tweenFrom, onConfirm) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
-
     }
+
     public static partial class MenuButtonExt {
 
         // Mods can't access patch_ classes directly.

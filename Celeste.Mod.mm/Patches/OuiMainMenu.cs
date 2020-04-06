@@ -160,9 +160,9 @@ namespace Celeste {
                 }
 
             } else {
-                // Default list.
+                // Default list. offs is 210px further to the left than vanilla, to account for longer menu text ("an Everest update is available").
                 Vector2 pos = new Vector2(320f, 160f);
-                Vector2 offs = new Vector2(-640f, 0f);
+                Vector2 offs = new Vector2(-850f, 0f);
 
                 for (int i = 0; i < buttons.Count; i++) {
                     MenuButton button = buttons[i];
