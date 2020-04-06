@@ -62,6 +62,12 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public override void SaveSettings() {
+            Settings.CurrentVersion = Everest.Version.ToString();
+
+            base.SaveSettings();
+        }
+
         public override void Load() {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;

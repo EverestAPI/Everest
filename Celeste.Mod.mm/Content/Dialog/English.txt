@@ -156,3 +156,18 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installing update for {0} ({1} -> {2}) to {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installing mod {0} v.{1} to {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
+
+# OOBE (Out Of Box Experience) - first launch stuff
+	OOBE_WELCOME_HEADER=		Welcome to Everest!
+	OOBE_WELCOME_SUBHEADER=		What do you want to do?
+	OOBE_WELCOME_PLAY=			I want to PLAY mods.
+	OOBE_WELCOME_SPEEDRUN=		I want to SPEEDRUN.
+	OOBE_WELCOME_CREATE=		I want to CREATE mods.
+	OOBE_WELCOME_SKIP=			I don't need any help.
+
+	OOBE_SETTINGS_PLAY=			You can find and install mods on GameBanana.{n}Installed maps can be found on the world map.{n}Your progress is shared live as your Discord game status.{n}Use F6 in debug mode to toggle the new map debug screen.
+	OOBE_SETTINGS_SPEEDRUN=		Hold right on the title screen to restart into vanilla.{n}You can find and install mods on GameBanana.{n}Installed maps can be found on the world map.{n}Use F6 in debug mode to toggle the new map debug screen.
+	OOBE_SETTINGS_CREATE=		You can find and share mods on GameBanana.{n}Custom maps can be found on the world map.{n}Use F6 in debug mode to toggle the new map debug screen.{n}Press F5 to reload the current map, or CTRL+F5 to reload the game.{n}If you've got a non-QWERTY keyboard, . opens the console, q closes it.
+	OOBE_SETTINGS_SUBHEADER=	Here are some settings you might be interested in.
+	OOBE_SETTINGS_MORE=			You can change this and more in the Mod Options screen.
+	OOBE_SETTINGS_OK=			OK

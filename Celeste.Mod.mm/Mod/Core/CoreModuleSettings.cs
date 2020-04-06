@@ -215,7 +215,11 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public int? QuickRestart { get; set; }
 
-        [SettingIgnore] public bool ShowManualTextOnDebugMap { get; set; } = true;
+        [SettingIgnore]
+        public bool ShowManualTextOnDebugMap { get; set; } = true;
+
+        [SettingIgnore]
+        public string CurrentVersion { get; set; }
 
         /*
         [SettingRange(0, 10)]

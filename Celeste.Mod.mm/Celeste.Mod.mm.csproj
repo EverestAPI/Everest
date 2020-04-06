@@ -48,10 +48,10 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.2" />
-    <PackageReference Include="MonoMod" Version="20.3.5.1" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.3.5.1" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.3.5.1" />
-    <PackageReference Include="MonoMod.Utils" Version="20.3.5.1" />
+    <PackageReference Include="MonoMod" Version="20.4.3.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.4.3.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.4.3.1" />
+    <PackageReference Include="MonoMod.Utils" Version="20.4.3.1" />
     <PackageReference Include="DotNetZip" Version="1.13.6" />
     <PackageReference Include="YamlDotNet" Version="8.1.0" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
@@ -100,6 +100,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\everest.m.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\emoji\everest.m.png</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
