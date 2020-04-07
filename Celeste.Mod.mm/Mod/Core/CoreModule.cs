@@ -84,7 +84,12 @@ namespace Celeste.Mod.Core {
                 // CTRL + F5: Quick-restart the entire game.
                 if (MInput.Keyboard.Check(Keys.LeftControl) ||
                     MInput.Keyboard.Check(Keys.RightControl)) {
-                    Everest.QuickFullRestart();
+
+                    // block restarting while the game is starting up. this might lead to crashes
+                    if (!(Engine.Scene is GameLoader)) {
+                        Everest.QuickFullRestart();
+                    }
+
                     return;
                 }
 
