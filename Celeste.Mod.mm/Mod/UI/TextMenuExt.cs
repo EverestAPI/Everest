@@ -332,10 +332,8 @@ namespace Celeste {
                 return ActiveFont.Measure(Label).X + 32f;
             }
             public override float RightWidth() {
-                float num = 0f;
-                num = Math.Max(num, ActiveFont.Measure(min.ToString()).X);
-                num = Math.Max(num, ActiveFont.Measure(max.ToString()).X);
-                return num + 120f;
+                float width = Calc.Max(0f, ActiveFont.Measure(max.ToString()).X, ActiveFont.Measure(min.ToString()).X);
+                return width + 120f;
             }
             public override float Height() {
                 return ActiveFont.LineHeight;
@@ -347,17 +345,17 @@ namespace Celeste {
                 Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
                 ActiveFont.DrawOutline(Label, position, new Vector2(0f, 0.5f), Vector2.One, color, 2f, strokeColor);
                 if ((max - min) > 0) {
-                    float num = RightWidth();
-                    ActiveFont.DrawOutline(Index.ToString(), position + new Vector2(Container.Width - num * 0.5f + (float) lastDir * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f, color, 2f, strokeColor);
-                    Vector2 vector = Vector2.UnitX * (highlighted ? ((float) Math.Sin((double) (sine * 4f)) * 4f) : 0f);
-                    bool flag = Index > min;
-                    Color color2 = flag ? color : (Color.DarkSlateGray * alpha);
-                    Vector2 position2 = position + new Vector2(Container.Width - num + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (flag ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, color2, 2f, strokeColor);
-                    bool flag2 = Index < max;
-                    Color color3 = flag2 ? color : (Color.DarkSlateGray * alpha);
-                    Vector2 position3 = position + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (flag2 ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline(">", position3, new Vector2(0.5f, 0.5f), Vector2.One, color3, 2f, strokeColor);
+                    float rWidth = RightWidth();
+                    ActiveFont.DrawOutline(Index.ToString(), position + new Vector2(Container.Width - rWidth * 0.5f + lastDir * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f, color, 2f, strokeColor);
+                    
+                    Vector2 vector = Vector2.UnitX * (float)(highlighted ? (Math.Sin(sine * 4f) * 4f) : 0f);
+                    color = Index > min ? color : (Color.DarkSlateGray * alpha);
+
+                    Vector2 position2 = position + new Vector2(Container.Width - rWidth + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (Index > min ? vector : Vector2.Zero);
+                    ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, color, 2f, strokeColor);
+
+                    position2 = position + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (Index < max ? vector : Vector2.Zero);
+                    ActiveFont.DrawOutline(">", position2, new Vector2(0.5f, 0.5f), Vector2.One, color, 2f, strokeColor);
                 }
             }
         }
