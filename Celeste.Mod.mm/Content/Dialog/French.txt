@@ -138,3 +138,18 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installation de la mise à jour de {0} ({1} -> {2}) vers {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installation du mod {0} v.{1} vers {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERREUR: L'installation de {0} a échoué. Vérifiez votre log.txt pour plus d'informations.
+
+# OOBE (Out Of Box Experience) - first launch stuff
+	OOBE_WELCOME_HEADER=		Bienvenue dans Everest !
+	OOBE_WELCOME_SUBHEADER=		Que veux-tu faire ?
+	OOBE_WELCOME_PLAY=			Je veux JOUER à des mods.
+	OOBE_WELCOME_SPEEDRUN=		Je veux faire du SPEEDRUN.
+	OOBE_WELCOME_CREATE=		Je veux CRÉER des mods.
+	OOBE_WELCOME_SKIP=			Je n'ai pas besoin d'aide.
+
+	OOBE_SETTINGS_PLAY=			Tu peux trouver et installer des mods sur GameBanana.{n}Les maps installées apparaissent sur la carte du monde.{n}Ta progression est partagée en direct via ton statut de jeu Discord.{n}Utilise F6 lorsque le mode debug est activé pour ouvrir l'écran de debug de la map.
+	OOBE_SETTINGS_SPEEDRUN=		Maintiens "droite" sur l'écran titre pour démarrer le jeu de base (non moddé).{n}Tu peux trouver et installer des mods sur GameBanana.{n}Les maps installées apparaissent sur la carte du monde.{n}Utilise F6 lorsque le mode debug est activé pour ouvrir l'écran de debug de la map.
+	OOBE_SETTINGS_CREATE=		Tu peux trouver et partager des mods sur GameBanana.{n}Les maps apparaissent sur la carte du monde.{n}Utilise F6 lorsque le mode debug est activé pour ouvrir l'écran de debug de la map.{n}Utilise F5 pour recharger la map ouverte, ou Ctrl+F5 pour redémarrer le jeu.{n}Si tu n'as pas un clavier QWERTY, "." ouvre la console de debug, "q" la ferme.
+	OOBE_SETTINGS_SUBHEADER=	Voici quelques réglages qui pourraient t'intéresser.
+	OOBE_SETTINGS_MORE=			Tu peux changer ces réglages et d'autres dans le menu "Options des mods".
+	OOBE_SETTINGS_OK=			OK
