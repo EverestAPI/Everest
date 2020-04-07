@@ -71,7 +71,7 @@
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				未找到
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						关
-	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
+	MODOPTIONS_VANILLATRISTATE_EVEREST=						仅 EVEREST
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						开
 
 # Sound Test
@@ -146,3 +146,18 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					安装更新 {0} ({1} -> {2}) 到 {3}…
 	DEPENDENCYDOWNLOADER_INSTALLING=				安装 Mod {0} v.{1} 到 {2}…
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			错误：安装 {0} 失败，请查看你的 log.txt 文件获知详细信息。
+
+# OOBE (Out Of Box Experience) - first launch stuff
+	OOBE_WELCOME_HEADER=		欢迎来到 Everest！
+	OOBE_WELCOME_SUBHEADER=		你想要做什么？
+	OOBE_WELCOME_PLAY=			我想要玩 Mod
+	OOBE_WELCOME_SPEEDRUN=		我想要速通
+	OOBE_WELCOME_CREATE=		我想要制作 Mod
+	OOBE_WELCOME_SKIP=			跳过引导
+
+	OOBE_SETTINGS_PLAY=			你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}游戏进度将被同步到 Discord 游戏动态中。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。
+	OOBE_SETTINGS_SPEEDRUN=		在标题页按住右键重启进入原版 Celeste。{n}你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。
+	OOBE_SETTINGS_CREATE=		你可以在 GameBanana 网站上分享你创建的 Mod。{n}自制地图 Mod 可以在章节选择界面找到。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。{n}游戏中按下 F5 重新加载当前地图，按下 Ctrl+F5 快速重启游戏。{n}如果你的键盘没有 ~ 键，改用 . 键打开控制台，输入 q 并且回车关闭命令行。
+	OOBE_SETTINGS_SUBHEADER=	以下是一些你可能感兴趣的设置项
+	OOBE_SETTINGS_MORE=			你可以在 Mod 选项菜单中进行更多的修改
+	OOBE_SETTINGS_OK=			好的
