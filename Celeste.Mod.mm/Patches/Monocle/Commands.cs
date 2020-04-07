@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste;
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -25,6 +26,8 @@ namespace Monocle {
 
         private int mouseScroll;
         private int cursorScale;
+
+        private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
         [MonoModReplace] // Don't create orig_ method.
         internal void UpdateClosed() {
@@ -86,6 +89,10 @@ namespace Monocle {
                 // Convert screen to world position.
                 mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
                 mouseWorldPosition = cam.ScreenToCamera(mouseWorldPosition);
+                // CelesteTAS already displays world coordinates. If it is installed, leave that up to it.
+                if (!celesteTASInstalled.Value) {
+                    mouseText += $"\n world:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                }
                 mouseWorldPosition -= level.LevelOffset;
                 mouseText += $"\n level:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
                 // Convert world to world-snap position.
