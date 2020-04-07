@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 using static Celeste.TextMenu;
 
 namespace Celeste.Mod.UI {
-    public class OuiOOBE : Oui {
+    public class OuiOOBE : Oui, OuiModOptions.ISubmenu {
 
         private const float onScreenX = 960f;
         private const float offScreenLeftX = -960f;
         private const float offScreenRightX = 2880f;
 
+        private bool fromModOptions;
+        private float fade = 0f;
         private TextMenu menu;
         private Stack<TextMenu> steps = new Stack<TextMenu>();
         private int step = 0;
@@ -35,7 +37,7 @@ namespace Celeste.Mod.UI {
                         new Button(Dialog.Clean("OOBE_WELCOME_PLAY")).Pressed(Goto(1)),
                         new Button(Dialog.Clean("OOBE_WELCOME_SPEEDRUN")).Pressed(Goto(2)),
                         new Button(Dialog.Clean("OOBE_WELCOME_CREATE")).Pressed(Goto(3)),
-                        new Button(Dialog.Clean("OOBE_WELCOME_SKIP")).Pressed(GotoTitleScreen)
+                        new Button(Dialog.Clean("OOBE_WELCOME_SKIP")).Pressed(Exit)
                     };
 
 
@@ -72,7 +74,7 @@ namespace Celeste.Mod.UI {
                         ),
 
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
-                        new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(GotoTitleScreen)
+                        new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                     };
 
 
@@ -116,7 +118,7 @@ namespace Celeste.Mod.UI {
                         ),
 
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
-                        new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(GotoTitleScreen)
+                        new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                     };
 
 
@@ -164,7 +166,7 @@ namespace Celeste.Mod.UI {
                             ),
 
                             new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
-                            new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(GotoTitleScreen)
+                            new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                         };
 
                         fmod.NeedsRelaunch(menu);
@@ -253,6 +255,12 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Enter(Oui from) {
             Overworld.ShowInputUI = true;
+            fromModOptions = from is OuiModOptions;
+
+            if (fromModOptions)
+                Add(new Coroutine(FadeBgTo(1f)));
+            else
+                fade = 1f;
 
             steps.Clear();
             step = 0;
@@ -273,6 +281,9 @@ namespace Celeste.Mod.UI {
             Audio.Play(SFX.ui_main_whoosh_large_out);
             menu.Focused = false;
 
+            if (fromModOptions)
+                Add(new Coroutine(FadeBgTo(0f)));
+
             yield return Everest.SaveSettings();
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -287,6 +298,13 @@ namespace Celeste.Mod.UI {
             Overworld.Maddy.Hide();
         }
 
+        private IEnumerator FadeBgTo(float to) {
+            while (fade != to) {
+                yield return null;
+                fade = Calc.Approach(fade, to, Engine.DeltaTime * 2f);
+            }
+        }
+
         public override bool IsStart(Overworld overworld, Overworld.StartMode start) {
             if (start != Overworld.StartMode.Titlescreen || CoreModule.Settings.CurrentVersion != null)
                 return false;
@@ -296,22 +314,32 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (menu != null && menu.Focused &&
-                Selected && Input.MenuCancel.Pressed &&
-                steps.Count > 0) {
-                Audio.Play(SFX.ui_main_button_back);
-                Prev();
+                Selected && Input.MenuCancel.Pressed) {
+                if (steps.Count > 0) {
+                    Audio.Play(SFX.ui_main_button_back);
+                    Prev();
+                } else if (fromModOptions) {
+                    Overworld.Goto<OuiModOptions>();
+                }
             }
 
             base.Update();
         }
 
         public override void Render() {
-            Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black);
+            Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
 
             base.Render();
         }
 
-        public void GotoTitleScreen() {
+        public void Exit() {
+            if (fromModOptions)
+                Overworld.Goto<OuiModOptions>();
+            else
+                _GotoTitleScreen();
+        }
+
+        private void _GotoTitleScreen() {
             OuiTitleScreen title = Overworld.Goto<OuiTitleScreen>();
             title.IsStart(Overworld, Overworld.StartMode.Titlescreen);
             title.IsStart(Overworld, Overworld.StartMode.MainMenu);

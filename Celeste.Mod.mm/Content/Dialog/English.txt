@@ -76,6 +76,8 @@
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Sound Test
 
+	MODOPTIONS_COREMODULE_OOBE= 							Redo Initial Setup
+
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				not found
