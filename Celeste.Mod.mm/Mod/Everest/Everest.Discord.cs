@@ -145,6 +145,8 @@ namespace Celeste.Mod {
                     .Replace("((side))", ((char) ('A' + (int) session.Area.Mode)).ToString())
                     .Replace("((deaths))", session.Deaths.ToString())
                     .Replace("((strawberries))", session.Strawberries.Count.ToString())
+                    .Replace("((room))", session.LevelData.Name)
+                    .Replace("((chapternumber))", session.Area.ChapterIndex.ToString())
                 ;
             }
 
