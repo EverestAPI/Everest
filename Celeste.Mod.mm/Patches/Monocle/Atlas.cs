@@ -369,6 +369,30 @@ namespace Monocle {
             this[path] = mtex;
         }
 
+        // log missing subtextures when getting an animation (for example, decals)
+        public extern List<MTexture> orig_GetAtlasSubtextures(string key);
+        public new List<MTexture> GetAtlasSubtextures(string key) {
+            List<MTexture> result = orig_GetAtlasSubtextures(key);
+            if (result == null || result.Count == 0) {
+                Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
+            }
+            return result;
+        }
+
+        // log missing texture when getting one by ID (for example, tilesets)
+        public new MTexture this[string id] {
+            [MonoModReplace]
+            get {
+                if (!textures.ContainsKey(id)) {
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested texture that does not exist: {id}");
+                }
+                return textures[id];
+            }
+
+            // we don't want to modify the setter, but want it to exist in the patch class so that we can call it from within our patches.
+            [MonoModIgnore]
+            set { }
+        }
     }
     public static class AtlasExt {
 
