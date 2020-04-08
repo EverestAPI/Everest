@@ -3,16 +3,16 @@
 using System.Collections;
 
 namespace Celeste {
-    class patch_CS10_Ending : CS10_Ending {
-        public patch_CS10_Ending(Player player)
-            : base(player) {
+    class patch_CS08_Ending : CS08_Ending {
+        public patch_CS08_Ending()
+            : base() {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
         public extern IEnumerator orig_EndingRoutine();
 
         private IEnumerator EndingRoutine() {
-            patch_AreaComplete.InitAreaCompleteInfoForEverest(pieScreen: false);
+            patch_AreaComplete.InitAreaCompleteInfoForEverest(pieScreen: true);
 
             // call the original EndingRoutine, that will handle displaying the end screen.
             IEnumerator orig = orig_EndingRoutine();

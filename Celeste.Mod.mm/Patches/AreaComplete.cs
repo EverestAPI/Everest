@@ -22,6 +22,7 @@ namespace Celeste {
         private static string versionFull;
         private static Texture2D identicon;
         private static float everestTime;
+        private static bool isPieScreen; // on the pie screen, we should display the jdenticon on the left side of the screen, instead of the middle.
 
         public patch_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow, MapMetaCompleteScreen meta)
             : base(session, xml, atlas, snow) {
@@ -37,10 +38,10 @@ namespace Celeste {
         public override void Begin() {
             base.Begin();
 
-            InitAreaCompleteInfoForEverest();
+            InitAreaCompleteInfoForEverest(pieScreen: false);
         }
 
-        public static void InitAreaCompleteInfoForEverest() {
+        public static void InitAreaCompleteInfoForEverest(bool pieScreen) {
             if (Everest.Flags.IsDisabled)
                 return;
 
@@ -50,6 +51,8 @@ namespace Celeste {
                 using (Stream stream = Identicon.FromHash(Everest.InstallationHash, 100).SaveAsPng())
                     identicon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
             }
+
+            isPieScreen = pieScreen;
         }
 
         public extern void orig_End();
@@ -89,7 +92,7 @@ namespace Celeste {
             float waveStart = everestTime * 1.3f;
             float rotation = MathHelper.Pi * 0.02f * (float) Math.Sin(everestTime * 0.8f);
 
-            Vector2 position = new Vector2(1920f * 0.5f, 1080f - 150f);
+            Vector2 position = new Vector2(1920f * (isPieScreen ? 0.05f : 0.5f), 1080f - 150f);
             Rectangle clipRect = identicon.Bounds;
             clipRect.Height = sliceSize;
             int i = 0;
