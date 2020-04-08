@@ -284,11 +284,10 @@ namespace Celeste {
                     Audio.Play("event:/ui/main/button_toggle_off");
                     PreviousIndex = Index;
                     Index -= (fastMoveTimer < 1) ? 1 : (fastMoveTimer < 3) ? 10 : 25;
+                    Index = Math.Max(min, Index); // ensure we stay within bounds
                     lastDir = -1;
                     ValueWiggler.Start();
-                    if (OnValueChange != null) {
-                        OnValueChange(Index);
-                    }
+                    OnValueChange?.Invoke(Index);
                 }
             }
             public override void RightPressed() {
@@ -301,27 +300,24 @@ namespace Celeste {
                     Audio.Play("event:/ui/main/button_toggle_on");
                     PreviousIndex = Index;
                     Index += (fastMoveTimer < 1) ? 1 : (fastMoveTimer < 3) ? 10 : 25;
+                    Index = Math.Min(max, Index); // ensure we stay within bounds
                     lastDir = 1;
                     ValueWiggler.Start();
-                    if (OnValueChange != null) {
-                        OnValueChange(Index);
-                    }
+                    OnValueChange?.Invoke(Index);
                 }
             }
             public override void ConfirmPressed() {
-                if ((max - min) == 2) {
-                    if (Index == 0) {
+                if ((max - min) == 1) {
+                    if (Index == min) {
                         Audio.Play("event:/ui/main/button_toggle_on");
                     } else {
                         Audio.Play("event:/ui/main/button_toggle_off");
                     }
                     PreviousIndex = Index;
-                    Index = 1 - Index;
-                    lastDir = ((Index == 1) ? 1 : -1);
+                    lastDir = ((Index == min) ? 1 : -1);
+                    Index = ((Index == min) ? max : min);
                     ValueWiggler.Start();
-                    if (OnValueChange != null) {
-                        OnValueChange(Index);
-                    }
+                    OnValueChange?.Invoke(Index);
                 }
             }
 
@@ -349,13 +345,12 @@ namespace Celeste {
                     ActiveFont.DrawOutline(Index.ToString(), position + new Vector2(Container.Width - rWidth * 0.5f + lastDir * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f, color, 2f, strokeColor);
                     
                     Vector2 vector = Vector2.UnitX * (float)(highlighted ? (Math.Sin(sine * 4f) * 4f) : 0f);
-                    color = Index > min ? color : (Color.DarkSlateGray * alpha);
 
                     Vector2 position2 = position + new Vector2(Container.Width - rWidth + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (Index > min ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, color, 2f, strokeColor);
+                    ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, Index > min ? color : (Color.DarkSlateGray * alpha), 2f, strokeColor);
 
                     position2 = position + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (Index < max ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline(">", position2, new Vector2(0.5f, 0.5f), Vector2.One, color, 2f, strokeColor);
+                    ActiveFont.DrawOutline(">", position2, new Vector2(0.5f, 0.5f), Vector2.One, Index < max ? color : (Color.DarkSlateGray * alpha), 2f, strokeColor);
                 }
             }
         }

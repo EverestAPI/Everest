@@ -424,10 +424,18 @@ namespace Celeste.Mod {
                     propType == typeof(int) &&
                     (attribRange = prop.GetCustomAttribute<SettingRangeAttribute>()) != null
                 ) {
-                    item =
-                        new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
-                        .Change(v => prop.SetValue(settings, v))
-                    ;
+
+                    if (attribRange.LargeRange) {
+                        item =
+                            new TextMenuExt.IntSlider(name, attribRange.Min, attribRange.Max, (int) value)
+                            .Change(v => prop.SetValue(settings, v))
+                        ;
+                    } else {
+                        item =
+                            new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
+                            .Change(v => prop.SetValue(settings, v))
+                        ;
+                    }
 
                 } else if (propType.IsEnum) {
                     Array enumValues = Enum.GetValues(propType);
