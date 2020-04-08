@@ -181,8 +181,7 @@ namespace Celeste.Mod.UI {
             selectedBankPath = "";
             selectedPath = "";
 
-            Bank[] banks;
-            patch_Audio.System.getBankList(out banks);
+            patch_Audio.System.getBankList(out Bank[] banks);
             int bankI = 0;
             for (int i = 0; i <= 1; i++) {
                 bankI += digits[i] * (int) Math.Pow(0x10, (2 - 1) - i);
@@ -193,16 +192,18 @@ namespace Celeste.Mod.UI {
             Bank bank = banks[bankI];
             selectedBankPath = patch_Audio.GetBankName(bank);
 
-            EventDescription[] events;
-            bank.getEventList(out events);
+            bank.getEventList(out EventDescription[] events);
+            List<string> paths = events.Where(e => e?.isValid() ?? false).Select(e => patch_Audio.GetEventName(e)).ToList();
+            paths.Sort();
+
             int eventI = 0;
             for (int i = 2; i < digits.Length; i++) {
                 eventI += digits[i] * (int) Math.Pow(0x10, (digits.Length - 1) - i);
             }
-            if (eventI >= events.Length || !(events[eventI]?.isValid() ?? false))
+            if (eventI >= paths.Count)
                 return;
 
-            selectedPath = patch_Audio.GetEventName(events[eventI]);
+            selectedPath = paths[eventI];
         }
 
         public override void Render() {

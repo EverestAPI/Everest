@@ -329,18 +329,6 @@ namespace Celeste.Mod {
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
 
-            // FIXME: Remove when updating to MonoMod 20.04
-            // See https://github.com/MonoMod/MonoMod/commit/a9749e3fcfad463e9bab01e2cf626ef7f00f932b for more info
-            // Don't undo this hook, at least not before unloading the AppDomain!
-            _DynDataCollectionFinalizeFix = new Hook(
-                typeof(DynData<>).Assembly.GetType("MonoMod.Utils._DataHelper_+CollectionDummy").GetMethod("Finalize", BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance),
-                new Action<Action<object>, object>((orig, self) => {
-                    if (AppDomain.CurrentDomain.IsFinalizingForUnload())
-                        return;
-                    orig(self);
-                })
-            );
-
             _DetourModManager = new DetourModManager();
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
