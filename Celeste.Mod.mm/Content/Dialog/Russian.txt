@@ -29,8 +29,8 @@
 	MENU_MODOPTIONS= 		Настройки Модов
 	MENU_PAUSE_MODOPTIONS= 	Настройки Модов
 	
-	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		Неудалось загрузить 1 мод
-	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	Неудалось загрузить {0} мода
+	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		не удалось загрузить 1 мод
+	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	Не удалось загрузить {0} мода
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Есть новое обновление для Everest
 
 # Title Screen
@@ -42,7 +42,7 @@
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
-	MODOPTIONS_NEEDSRELAUNCH=								Необхадима перезагрузка что-бы иметь эффект
+	MODOPTIONS_NEEDSRELAUNCH=								Не обхадима перезагрузка чтобы иметь эффект
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Обновить Everest к ((version))
@@ -78,7 +78,7 @@
 
 	MODOPTIONS_COREMODULE_OOBE= 							Переделать начальную загрузку
 
-	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Неудалось загрузить некоторые моды.
+	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Не удалось загрузить некоторые моды.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Проверте ваш log.txt.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				не найдено
 
