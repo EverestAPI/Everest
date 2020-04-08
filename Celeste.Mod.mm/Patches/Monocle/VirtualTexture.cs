@@ -76,6 +76,13 @@ namespace Monocle {
             Preload();
         }
 
+        internal extern void orig_Unload();
+        internal override void Unload() {
+            _Texture_Reloading = true;
+            orig_Unload();
+            _Texture_Reloading = false;
+        }
+
         internal extern void orig_Reload();
         internal override void Reload() {
             _Texture_Reloading = true;
