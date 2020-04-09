@@ -87,7 +87,7 @@ namespace Celeste.Mod.UI {
         /// <typeparam name="T">Oui to return to on exit</typeparam>
         /// <param name="value">Initial value</param>
         /// <param name="onValueChange"></param>
-        /// <param name="maxValueLength"></param>
+        /// <param name="maxValueLength">Excluding "-" and "."</param>
         /// <param name="allowDecimals"></param>
         /// <param name="allowNegatives"></param>
         /// <returns></returns>
@@ -210,7 +210,7 @@ namespace Celeste.Mod.UI {
 
             } else if (c == '.') {
                 // Add decimal, only one '.' allowed in the value string
-                if (allowDecimals && Value.Length < MaxValueLength && !Value.Contains(".")) {
+                if (allowDecimals && Value.Length < TrueMaxLength() && !Value.Contains(".")) {
                     Audio.Play(SFX.ui_main_rename_entry_space);
                     Value += c;
                 } else {
@@ -243,6 +243,16 @@ namespace Celeste.Mod.UI {
             } else if (!char.IsControl(c)) {
                 Audio.Play(SFX.ui_main_button_invalid);
             }
+        }
+        private int TrueMaxLength() {
+            int trueMaxLength = MaxValueLength;
+            if (Value.Contains("-")) {
+                trueMaxLength++;
+            }
+            if (Value.Contains(".")) {
+                trueMaxLength++;
+            }
+            return trueMaxLength;
         }
 
         public override void Update() {
