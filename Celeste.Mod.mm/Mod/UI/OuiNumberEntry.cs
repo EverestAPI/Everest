@@ -109,6 +109,7 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Enter(Oui from) {
             TextInput.OnInput += OnKeyboardInput;
+            MInput.GamePads[Input.Gamepad].Attached = true;
 
             Overworld.ShowInputUI = false;
 
@@ -427,13 +428,13 @@ namespace Celeste.Mod.UI {
             pos.Y = boxtopleft.Y + boxHeight - lineHeight - boxPadding;
             Draw.Rect(pos.X, pos.Y - boxPadding * 0.5f, boxWidth - boxPadding * 2f, 4f, Color.White);
 
-            DrawOptionText(cancel, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 0) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 0, !Focused);
+            DrawOptionText(cancel, pos + new Vector2(15f, lineHeight + ((selectingOptions && optionsIndex == 0) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 0, !Focused);
             pos.X = boxtopleft.X + boxWidth - backspaceWidth - widestLetter - widestLetter - beginWidth - boxPadding;
 
-            DrawOptionText(backspace, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 1) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 1, Value.Length <= 0 || !Focused);
+            DrawOptionText(backspace, pos + new Vector2(15f, lineHeight + ((selectingOptions && optionsIndex == 1) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 1, Value.Length <= 0 || !Focused);
             pos.X += backspaceWidth + widestLetter;
 
-            DrawOptionText(accept, pos + new Vector2(0f, lineHeight + ((selectingOptions && optionsIndex == 2) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 2, Value.Length < 1 || !Focused);
+            DrawOptionText(accept, pos + new Vector2(10f, lineHeight + ((selectingOptions && optionsIndex == 2) ? wiggle : 0f)), new Vector2(0f, 1f), Vector2.One * optionsScale, selectingOptions && optionsIndex == 2, Value.Length < 1 || !Focused);
 
             ActiveFont.DrawEdgeOutline(Value, Position + new Vector2(960f, 286f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
 
@@ -443,6 +444,10 @@ namespace Celeste.Mod.UI {
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
             // Only draw "interactively" if the input method is a gamepad, not a keyboard.
             if (!MInput.GamePads[Input.Gamepad].Attached) {
+                selected = false;
+                disabled = true;
+            }
+            if((text.Equals("-") && !allowNegatives) || (text.Equals(".") && !allowDecimals)) {
                 selected = false;
                 disabled = true;
             }
