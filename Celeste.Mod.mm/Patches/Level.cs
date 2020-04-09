@@ -27,6 +27,8 @@ namespace Celeste {
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
 
+        private static HashSet<string> _LoadStrings; // Generated in MonoModRules.PatchLevelLoader
+
         public SubHudRenderer SubHudRenderer;
         public static Player NextLoadedPlayer;
         public static int SkipScreenWipes;
@@ -173,7 +175,7 @@ namespace Celeste {
                     Pause();
                 }
             } catch (Exception e) {
-                Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading level {Session.Area}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading level {Session.Area}");
                 e.LogDetailed();
 
                 string message = Dialog.Get("postcard_levelloadfailed");
@@ -345,6 +347,10 @@ namespace Celeste {
                     wire.Color = entityData.HexColor("color");
                 level.Add(wire);
                 return true;
+            }
+
+            if (!_LoadStrings.Contains(entityData.Name)) {
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading entity {entityData.Name}");
             }
 
             return false;
