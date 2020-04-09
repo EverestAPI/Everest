@@ -328,7 +328,8 @@ namespace Celeste {
                 return ActiveFont.Measure(Label).X + 32f;
             }
             public override float RightWidth() {
-                float width = Calc.Max(0f, ActiveFont.Measure(max.ToString()).X, ActiveFont.Measure(min.ToString()).X);
+                //Measure Index in case it is externally set ouside the bounds
+                float width = Calc.Max(0f, ActiveFont.Measure(max.ToString()).X, ActiveFont.Measure(min.ToString()).X, ActiveFont.Measure(Index.ToString()).X);
                 return width + 120f;
             }
             public override float Height() {
