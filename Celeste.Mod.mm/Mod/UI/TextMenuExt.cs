@@ -355,5 +355,425 @@ namespace Celeste {
                 }
             }
         }
+        /// <summary>
+        /// <see cref="TextMenu.Item"/> that acts as a Submenu for other Items.
+        /// <br></br><br></br>
+        /// Currently does not support recursive submenus
+        /// </summary>
+        public class SubMenu : TextMenu.Item {
+            public string Label;
+            MTexture Icon;
+
+            public List<TextMenu.Item> Items { get; private set; }
+
+            private List<TextMenu.Item> delayedAddItems;
+
+            public int Selection;
+
+            public TextMenu.Item Current {
+                get {
+                    if (Items.Count <= 0 || Selection < 0) {
+                        return null;
+                    }
+                    return Items[Selection];
+                }
+                set {
+                    Selection = Items.IndexOf(value);
+                }
+            }
+            public int FirstPossibleSelection {
+                get {
+                    for (int i = 0; i < Items.Count; i++) {
+                        if (Items[i] != null && Items[i].Hoverable) {
+                            return i;
+                        }
+                    }
+                    return 0;
+                }
+            }
+            public int LastPossibleSelection {
+                get {
+                    for (int i = Items.Count - 1; i >= 0; i--) {
+                        if (Items[i] != null && Items[i].Hoverable) {
+                            return i;
+                        }
+                    }
+                    return 0;
+                }
+            }
+            public float ScrollTargetY {
+                get {
+                    float min = (float) (Engine.Height - 150) - Container.Height * Container.Justify.Y;
+                    float max = 150f + Container.Height * Container.Justify.Y;
+                    return Calc.Clamp((float) (Engine.Height / 2) + Container.Height * Container.Justify.Y - this.GetYOffsetOf(Current), min, max);
+                }
+            }
+
+            public float ItemSpacing;
+            public float ItemIndent;
+            private Color HighlightColor;
+            public string ConfirmSfx;
+            public bool AlwaysCenter;
+
+            public float LeftColumnWidth;
+            public float RightColumnWidth;
+
+            public float TitleHeight { get; private set; }
+            public float MenuHeight { get; private set; }
+
+            public bool Focused;
+
+            private bool enterOnSelect;
+            private float ease;
+
+            private bool containerAutoScroll;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="label"></param>
+            /// <param name="enterOnSelect">Expand submenu when selected</param>
+            public SubMenu(string label, bool enterOnSelect) : base() {
+                //Item Constructor
+                ConfirmSfx = "event:/ui/main/button_select";
+                Label = label;
+                Icon = GFX.Gui["downarrow"];
+                Selectable = true;
+                IncludeWidthInMeasurement = true;
+
+                this.enterOnSelect = enterOnSelect;
+
+                OnEnter = delegate {
+                    if (this.enterOnSelect) {
+                        OnPressed();
+                    }
+                };
+                OnPressed = delegate {
+                    if (Items.Count > 0) {
+                        Container.Focused = false;
+                        this.Focused = true;
+                        FirstSelection();
+                    }
+                };
+
+
+                //Menu Constructor
+                Items = new List<TextMenu.Item>();
+                delayedAddItems = new List<TextMenu.Item>();
+                Selection = -1;
+                ItemSpacing = 4f;
+                ItemIndent = 20f;
+                HighlightColor = Color.White;
+
+                RecalculateSize();
+            }
+            #region Menu
+            /// <summary>
+            /// Add any non-submenu <see cref="TextMenu.Item"/> to the Submenu
+            /// </summary>
+            /// <param name="item">Item to be added</param>
+            /// <returns></returns>
+            public SubMenu Add(TextMenu.Item item) {
+                if (Container != null) {
+                    orig_Add(item);
+                    return this;
+                } else {
+                    delayedAddItems.Add(item);
+                    return this;
+                }
+            }
+            private SubMenu orig_Add(TextMenu.Item item) {
+                Items.Add(item);
+                item.Container = this.Container;
+                Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
+                Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
+                item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
+                if (Selection == -1) {
+                    FirstSelection();
+                }
+                RecalculateSize();
+                item.Added();
+                return this;
+            }
+            /// <summary>
+            /// Insert any non-submenu <see cref="TextMenu.Item"/> into the Submenu at <paramref name="index"/>
+            /// </summary>
+            /// <param name="index"></param>
+            /// <param name="item">Item to be inserted</param>
+            /// <returns></returns>v
+            public SubMenu Insert(int index, TextMenu.Item item) {
+                if (Container != null) {
+                    orig_Insert(index, item);
+                    return this;
+                } else {
+                    delayedAddItems.Insert(index, item);
+                    return this;
+                }
+            }
+            private SubMenu orig_Insert(int index, TextMenu.Item item) {
+                Items.Insert(index, item);
+                item.Container = this.Container;
+                Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
+                Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
+                item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
+                if (Selection == -1) {
+                    FirstSelection();
+                }
+                RecalculateSize();
+                item.Added();
+                return this;
+            }
+            /// <summary>
+            /// Remove any non-submenu <see cref="TextMenu.Item"/> from the Submenu
+            /// </summary>
+            /// <param name="item">Item to be removed</param>
+            /// <returns></returns>v
+            public SubMenu Remove(TextMenu.Item item) {
+                if (Container != null) {
+                    orig_Remove(item);
+                    return this;
+                } else {
+                    delayedAddItems.Remove(item);
+                    return this;
+                }
+            }
+            private SubMenu orig_Remove(TextMenu.Item item) {
+                int num = Items.IndexOf(item);
+                if (num == -1) {
+                    return this;
+                }
+                Items.RemoveAt(num);
+                item.Container = null;
+                Container.Remove(item.ValueWiggler);
+                Container.Remove(item.SelectWiggler);
+                RecalculateSize();
+                return this;
+            }
+            public void Clear() {
+                Items = new List<TextMenu.Item>();
+            }
+            public int IndexOf(TextMenu.Item item) {
+                return Items.IndexOf(item);
+            }
+            public void FirstSelection() {
+                Selection = -1;
+                MoveSelection(1, false);
+            }
+            public void MoveSelection(int direction, bool wiggle = false) {
+                int selection = Selection;
+                direction = Math.Sign(direction);
+                int num = 0;
+                using (List<TextMenu.Item>.Enumerator enumerator = Items.GetEnumerator()) {
+                    while (enumerator.MoveNext()) {
+                        if (enumerator.Current.Hoverable) {
+                            num++;
+                        }
+                    }
+                }
+                bool flag = num > 2;
+                do {
+                    Selection += direction;
+                    if (flag) {
+                        if (Selection < 0) {
+                            Selection = Items.Count - 1;
+                        } else if (Selection >= Items.Count) {
+                            Selection = 0;
+                        }
+                    } else if (Selection < 0 || Selection > Items.Count - 1) {
+                        Selection = Calc.Clamp(Selection, 0, Items.Count - 1);
+                        break;
+                    }
+                }
+                while (!Current.Hoverable);
+                if (!Current.Hoverable) {
+                    Selection = selection;
+                }
+                if (Selection != selection && Current != null) {
+                    if (selection >= 0 && Items[selection] != null && Items[selection].OnLeave != null) {
+                        Items[selection].OnLeave();
+                    }
+                    Current.OnEnter?.Invoke();
+                    if (wiggle) {
+                        Audio.Play((direction > 0) ? "event:/ui/main/rollover_down" : "event:/ui/main/rollover_up");
+                        Current.SelectWiggler.Start();
+                    }
+                }
+            }
+            public void RecalculateSize() {
+                TitleHeight = ActiveFont.LineHeight;
+                if (Items.Count < 1)
+                    return;
+                LeftColumnWidth = (RightColumnWidth = (MenuHeight = 0f));
+                foreach (TextMenu.Item item in Items) {
+                    if (item.IncludeWidthInMeasurement) {
+                        LeftColumnWidth = Math.Max(LeftColumnWidth, item.LeftWidth());
+                    }
+                }
+                foreach (TextMenu.Item item2 in Items) {
+                    if (item2.IncludeWidthInMeasurement) {
+                        RightColumnWidth = Math.Max(RightColumnWidth, item2.RightWidth());
+                    }
+                }
+                foreach (TextMenu.Item item3 in Items) {
+                    if (item3.Visible) {
+                        MenuHeight += item3.Height() + Container.ItemSpacing;
+                    }
+                }
+                MenuHeight -= Container.ItemSpacing;
+            }
+            public float GetYOffsetOf(TextMenu.Item item) {
+                if (item == null) {
+                    return 0f;
+                }
+                float offset = 0f;
+                foreach (TextMenu.Item item2 in Items) {
+                    if (item2.Visible) {
+                        offset += item2.Height() + ItemSpacing;
+                    }
+                    if (item2 == item) {
+                        break;
+                    }
+                }
+                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
+            }
+
+            private void menu_Added() {
+                foreach (TextMenu.Item item in delayedAddItems) {
+                    orig_Add(item);
+                }
+            }
+            private void menu_Update() {
+                OnUpdate?.Invoke();
+
+                //ease check needed to eat the first input from Container
+                if (Focused && ease > 0.9f) {
+                    if (Input.MenuDown.Pressed) {
+                        if (!Input.MenuDown.Repeating || Selection != LastPossibleSelection) {
+                            MoveSelection(1, true);
+                        }
+                    } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection)) {
+                        MoveSelection(-1, true);
+                    }
+                    if (Current != null) {
+                        if (Input.MenuLeft.Pressed) {
+                            Current.LeftPressed();
+                        }
+                        if (Input.MenuRight.Pressed) {
+                            Current.RightPressed();
+                        }
+                        if (Input.MenuConfirm.Pressed) {
+                            Current.ConfirmPressed();
+                            Current.OnPressed?.Invoke();
+                        }
+                        if (Input.MenuJournal.Pressed && Current.OnAltPressed != null) {
+                            Current.OnAltPressed();
+                        }
+                    }
+                    if (!Input.MenuConfirm.Pressed) {
+                        if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
+                            this.Focused = false;
+                            Audio.Play("event:/ui/main/button_back");
+                            Container.AutoScroll = containerAutoScroll;
+                            Container.Focused = true;
+                        }
+                    }
+                }
+                foreach (TextMenu.Item item in Items) {
+                    item.OnUpdate?.Invoke();
+                    item.Update();
+                }
+                if (Settings.Instance.DisableFlashes) {
+                    HighlightColor = TextMenu.HighlightColorA;
+                } else if (Engine.Scene.OnRawInterval(0.1f)) {
+                    if (HighlightColor == TextMenu.HighlightColorA) {
+                        HighlightColor = TextMenu.HighlightColorB;
+                    } else {
+                        HighlightColor = TextMenu.HighlightColorA;
+                    }
+                }
+                if (containerAutoScroll) {
+                    if (Container.Height > Container.ScrollableMinSize) {
+                        Container.Position.Y += (this.ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.0099999997764825821, (double) Engine.RawDeltaTime));
+                        return;
+                    }
+                    Container.Position.Y = 540f;
+                }
+            }
+            private void menu_Render(Vector2 position) {
+                RecalculateSize();
+                foreach (TextMenu.Item item in Items) {
+                    if (item.Visible) {
+                        float num = item.Height();
+                        Vector2 vector = position + new Vector2(0f, num * 0.5f + item.SelectWiggler.Value * 8f);
+                        if (vector.Y + num * 0.5f > 0f && vector.Y - num * 0.5f < (float) Engine.Height) {
+                            item.Render(vector, Focused && Current == item);
+                        }
+                        position.Y += num + ItemSpacing;
+                    }
+                }
+            }
+            #endregion
+            #region TextMenu.Item
+
+            public override void ConfirmPressed() {
+                containerAutoScroll = Container.AutoScroll;
+                Container.AutoScroll = false;
+                Audio.Play(ConfirmSfx);
+                base.ConfirmPressed();
+            }
+            public override float LeftWidth() {
+                return ActiveFont.Measure(Label).X;
+            }
+            public override float RightWidth() {
+                return Icon.Width;
+            }
+            public override float Height() {
+                //If there are no items, MenuHeight will actually be a negative number
+                if (Items.Count > 0)
+                    return TitleHeight + (MenuHeight * Ease.QuadOut(ease));
+                else
+                    return TitleHeight;
+            }
+            public override void Added() {
+                base.Added();
+                menu_Added();
+            }
+            public override void Update() {
+                if (Focused)
+                    ease = Calc.Approach(ease, 1f, Engine.DeltaTime * 4f);
+                else
+                    ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
+                base.Update();
+                menu_Update();
+            }
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
+
+                float alpha = Container.Alpha;
+                Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
+                Color strokeColor = Color.Black * (alpha * alpha * alpha);
+
+                bool flag = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
+
+                Vector2 titlePosition = top + (Vector2.UnitY * TitleHeight / 2) + (flag ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));
+                Vector2 justify = (flag) ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0.5f);
+                Vector2 iconJustify = (flag) ? new Vector2(ActiveFont.Measure(Label).X + Icon.Width, 5f) : new Vector2(ActiveFont.Measure(Label).X / 2 + Icon.Width, 5f);
+                SubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || Items.Count < 1 ? Color.DarkSlateGray : (this.Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
+                ActiveFont.DrawOutline(Label, titlePosition, justify, Vector2.One, color, 2f, strokeColor);
+
+                if (this.Focused && ease > 0.9f) {
+                    Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
+                    menu_Render(menuPosition);
+                }
+            }
+            private static void DrawIcon(Vector2 position, MTexture icon, Vector2 justify, bool outline, Color color, float scale) {
+                if (outline) {
+                    icon.DrawOutlineCentered(position + justify, color);
+                } else {
+                    icon.DrawCentered(position + justify, color, scale);
+                }
+            }
+            #endregion
+        }
     }
 }
