@@ -48,6 +48,7 @@ namespace Celeste.Mod.UI {
         private float backspaceWidth;
         private float beginWidth;
         private float optionsWidth;
+        private float keyboardWidth;
         private float boxWidth;
         private float boxHeight;
         private float pressedTimer;
@@ -66,12 +67,11 @@ namespace Celeste.Mod.UI {
                 return Position + new Vector2((1920f - boxWidth) / 2f, 360f + (680f - boxHeight) / 2f);
             }
         }
-        /// <summary>
-        /// Not actually the top center, just a brute-forced number
-        /// </summary>
-        private Vector2 boxtopcenter {
+
+
+        private Vector2 keyboardtopleft {
             get {
-                return Position + new Vector2((1920f - boxWidth / 2.9f) / 2f, 360f + (680f - boxHeight) / 2f);
+                return Position + new Vector2((1920f - keyboardWidth) / 2f, 360f + (680f - boxHeight) / 2f);
             }
         }
 
@@ -91,9 +91,9 @@ namespace Celeste.Mod.UI {
         /// <param name="allowDecimals"></param>
         /// <param name="allowNegatives"></param>
         /// <returns></returns>
-        public OuiNumberEntry Init<T>(float value, Action<float> onValueChange, int maxValueLength = 12, bool allowDecimals = true, bool allowNegatives = true) where T : Oui {
+        public OuiNumberEntry Init<T>(float value, Action<float> onValueChange, int maxValueLength = 6, bool allowDecimals = true, bool allowNegatives = true) where T : Oui {
             _Value = StartingValue = value.ToString($"F{maxValueLength}").TrimEnd('0').TrimEnd('.');
-            this.OnValueChange = onValueChange;
+            OnValueChange = onValueChange;
 
             MaxValueLength = maxValueLength;
 
@@ -152,6 +152,7 @@ namespace Celeste.Mod.UI {
             optionsWidth = cancelWidth + backspaceWidth + beginWidth + widestLetter * 3f;
             boxWidth = Math.Max(widestLine, optionsWidth) + boxPadding * 2f;
             boxHeight = (letters.Length + 1f) * lineHeight + letters.Length * lineSpacing + boxPadding * 3f;
+            keyboardWidth = widestLine + boxPadding * 2f;
 
             Visible = true;
 
@@ -413,7 +414,7 @@ namespace Celeste.Mod.UI {
 
             Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.8f * ease);
 
-            Vector2 pos = boxtopcenter + new Vector2(boxPadding, boxPadding);
+            Vector2 pos = keyboardtopleft + new Vector2(boxPadding, boxPadding);
 
             int letterIndex = 0;
             foreach (string letter in letters) {
@@ -427,7 +428,7 @@ namespace Celeste.Mod.UI {
                     DrawOptionText(letter[i].ToString(), posLetter, new Vector2(0.5f, 0.5f), scale, selected);
                     pos.X += widestLetter;
                 }
-                pos.X = boxtopcenter.X + boxPadding;
+                pos.X = keyboardtopleft.X + boxPadding;
                 pos.Y += lineHeight + lineSpacing * 1.4f;
                 letterIndex++;
             }
@@ -457,7 +458,7 @@ namespace Celeste.Mod.UI {
                 selected = false;
                 disabled = true;
             }
-            if((text.Equals("-") && !allowNegatives) || (text.Equals(".") && !allowDecimals)) {
+            if ((text.Equals("-") && !allowNegatives) || (text.Equals(".") && !allowDecimals)) {
                 selected = false;
                 disabled = true;
             }

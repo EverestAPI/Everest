@@ -72,7 +72,7 @@ namespace Celeste.Mod {
     public class SettingNumberInputAttribute : Attribute {
         public int MaxLength;
         public bool AllowNegatives;
-        public SettingNumberInputAttribute(bool allowNegatives = true, int maxLength = 12) {
+        public SettingNumberInputAttribute(bool allowNegatives = true, int maxLength = 6) {
             AllowNegatives = allowNegatives;
             MaxLength = maxLength;
         }
