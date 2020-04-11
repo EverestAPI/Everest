@@ -198,7 +198,6 @@ namespace Celeste.Mod {
         private static bool _SavingSettings;
 
         private static DetourModManager _DetourModManager;
-        private static Hook _DynDataCollectionFinalizeFix;
         private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
         internal static List<string> _DetourLog = new List<string>();
 

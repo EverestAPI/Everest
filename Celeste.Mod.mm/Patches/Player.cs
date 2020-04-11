@@ -167,6 +167,16 @@ namespace Celeste {
             return ExplodeLaunch(from, snapUp, false);
         }
 
+        private extern bool orig_Pickup(Holdable pickup);
+        private bool Pickup(Holdable pickup) {
+            // Madeline cannot grab something if she is dead...
+            // this causes frame-perfect crashes when grabbing a jelly and getting killed at the same time.
+            if (Dead) {
+                return false;
+            }
+
+            return orig_Pickup(pickup);
+        }
     }
     public static class PlayerExt {
 

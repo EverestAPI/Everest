@@ -100,7 +100,6 @@ namespace Celeste.Mod {
                     }
                 }
 
-            End:
                 DiscordRpc.Shutdown();
             }
 
