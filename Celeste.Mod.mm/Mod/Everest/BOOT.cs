@@ -36,7 +36,7 @@ namespace Celeste.Mod {
                 if (args.FirstOrDefault() == "--no-appdomain") {
                     Console.WriteLine("Loading Everest, no AppDomain");
                     patch_Celeste.Main(args);
-                    return;
+                    goto Exit;
                 }
 
                 if (!AppDomain.CurrentDomain.IsDefaultAppDomain()) {
@@ -52,7 +52,7 @@ namespace Celeste.Mod {
                             ?.Invoke(null, new object[] { null, null });
                     }
                     AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
-                    return;
+                    goto Exit;
                 }
 
                 if (args.FirstOrDefault() == "--vanilla")
@@ -72,7 +72,7 @@ namespace Celeste.Mod {
                     if (ad.GetData("EverestRestart") as bool? ?? false) {
                         if (!adw.WaitDispose()) {
                             StartCelesteProcess();
-                            return;
+                            goto Exit;
                         }
 
                         goto StartEverest;
@@ -85,7 +85,7 @@ namespace Celeste.Mod {
                         goto StartVanilla;
                     }
 
-                    return;
+                    goto Exit;
                 }
 
 
@@ -170,12 +170,19 @@ namespace Celeste.Mod {
                     // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
                     ThreadIfNeeded("VANILLA", () => ad.ExecuteAssembly(vanillaPath, args));
 
-                    return;
+                    goto Exit;
                 }
 
             } catch (Exception e) {
                 LogError("BOOT-CRITICAL", e);
+                goto Exit;
             }
+
+
+            // Needed because certain graphics drivers and native libs like to hang around for no reason.
+            // Vanilla does the same on macOS and Linux, but NVIDIA on Linux likes to waste time in DrvValidateVersion.
+            Exit:
+            Environment.Exit(0);
         }
 
         public static void LogError(string tag, Exception e) {
