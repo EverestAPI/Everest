@@ -4,6 +4,7 @@
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -45,34 +46,66 @@ namespace Celeste {
 
         private bool additiveRemap;
 
-        [MonoModRemove]
+        [MonoModIgnore]
         private extern string Label(Mappings mapping);
 
+        /// <summary>
+        /// Gets the label to display on-screen for a mapping.
+        /// </summary>
+        /// <param name="mapping">The mapping index</param>
+        /// <returns>The key name to display</returns>
         protected virtual string GetLabel(int mapping) {
-            return ((Mappings) mapping).ToString();
+            // call the vanilla method for this.
+            return Label((Mappings) mapping);
         }
 
+        /// <summary>
+        /// Adds a key mapping to the keyboard config screen.
+        /// </summary>
+        /// <param name="key">The mapping index</param>
+        /// <param name="list">The list of keys currently mapped to it</param>
         private void AddKeyConfigLine(int key, List<Keys> list) {
-            Add(new Setting(GetLabel(key), list).Pressed(delegate { Remap(key); }));
+            Add(new Setting(GetLabel(key), list).Pressed(() => Remap(key)));
         }
 
+        /// <summary>
+        /// Adds a key mapping to the keyboard config screen.
+        /// </summary>
+        /// <param name="key">The mapping (should be an enum value)</param>
+        /// <param name="list">The list of keys currently mapped to it</param>
         protected void AddKeyConfigLine(object key, List<Keys> list) {
             AddKeyConfigLine((int) key, list);
         }
 
-        protected List<Keys> ForceDefaultKey(Keys defaultKey, Keys key) {
-            List<Keys> list = new List<Keys> { key };
-            if (key != defaultKey)
+        /// <summary>
+        /// Forces a key to be bound to an action, in addition to the already bound key.
+        /// </summary>
+        /// <param name="defaultKey">The key to force bind</param>
+        /// <param name="boundKey">The key already bound</param>
+        /// <returns>A list containing both key and defaultKey</returns>
+        protected List<Keys> ForceDefaultKey(Keys defaultKey, Keys boundKey) {
+            List<Keys> list = new List<Keys> { boundKey };
+            if (boundKey != defaultKey)
                 list.Add(defaultKey);
             return list;
         }
 
-        protected List<Keys> ForceDefaultKey(Keys defaultKey, List<Keys> list) {
-            if (!list.Contains(defaultKey))
-                list.Add(defaultKey);
-            return list;
+        /// <summary>
+        /// Forces a key to be bound to an action, in addition to already bound keys.
+        /// </summary>
+        /// <param name="defaultKey">The key to force bind</param>
+        /// <param name="boundKeys">The list of keys already bound</param>
+        /// <returns>A list containing both keys in list and defaultKey</returns>
+        protected List<Keys> ForceDefaultKey(Keys defaultKey, List<Keys> boundKeys) {
+            if (!boundKeys.Contains(defaultKey))
+                boundKeys.Add(defaultKey);
+            return boundKeys;
         }
 
+        /// <summary>
+        /// Rebuilds the key mapping menu. Should clear the menu and add back all options.
+        /// </summary>
+        /// <param name="index">The index to focus on in the menu</param>
         [MonoModReplace]
         public virtual void Reload(int index = -1) {
             Clear();
@@ -114,8 +147,7 @@ namespace Celeste {
         }
 
         // these keys only support a single mapping (they are not lists in the settings file).
-        private static Mappings[] _keysWithSingleBindings = { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
-        protected static int[] keysWithSingleBindings = Array.ConvertAll(_keysWithSingleBindings, value => (int) value);
+        private static Mappings[] keysWithSingleBindings = { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
 
         [MonoModReplace]
         private void Remap(int mapping) {
@@ -125,81 +157,102 @@ namespace Celeste {
             Focused = false;
             KeyboardState keyboard = Keyboard.GetState();
             additiveRemap = (keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift))
-                && !keysWithSingleBindings.Contains(mapping);
+                && SupportsMultipleBindings(mapping);
+        }
+
+        /// <summary>
+        /// Determines if the key being set supports multiple bindings.
+        /// If this is the case, Shift+Confirm will allow to add a binding and Confirm will replace existing bindings.
+        /// </summary>
+        /// <param name="mapping">The mapping</param>
+        /// <returns>true if the key supports multiple bindings, false otherwise</returns>
+        private bool SupportsMultipleBindings(int mapping) {
+            return !keysWithSingleBindings.Contains((Mappings) mapping);
         }
 
         [MonoModReplace]
         private void SetRemap(Keys key) {
             remapping = false;
             inputDelay = 0.25f;
-            List<Keys> keyList = GetRemapList(currentlyRemapping, key);
-            if (keyList != null) {
-                if (!additiveRemap)
-                    keyList.Clear();
-                if (!keyList.Contains(key))
-                    keyList.Add(key);
-            }
+            RemapKey(currentlyRemapping, key, additiveRemap);
             Input.Initialize();
             Reload(Selection);
         }
 
-        protected virtual List<Keys> GetRemapList(int remapping, Keys newKey) {
-            Mappings mappedKey = (Mappings) remapping;
+        /// <summary>
+        /// Sets a new binding for a key.
+        /// </summary>
+        /// <param name="remapping">The mapping that is being edited</param>
+        /// <param name="newKey">The key that was just mapped</param>
+        /// <param name="addingKey">true if a key binding is being added, false if bindings are getting replaced</param>
+        protected virtual void RemapKey(int remapping, Keys newKey, bool addingKey) {
+            Mappings remappingKey = (Mappings) remapping;
             if (newKey == Keys.None ||
-                (newKey == Keys.Left && mappedKey != Mappings.Left) ||
-                (newKey == Keys.Right && mappedKey != Mappings.Right) ||
-                (newKey == Keys.Up && mappedKey != Mappings.Up) ||
-                (newKey == Keys.Down && mappedKey != Mappings.Down) ||
-                (newKey == Keys.Enter && mappedKey != Mappings.Confirm) ||
-                (newKey == Keys.Back && mappedKey != Mappings.Cancel)) {
-                return null;
+                (newKey == Keys.Left && remappingKey != Mappings.Left) ||
+                (newKey == Keys.Right && remappingKey != Mappings.Right) ||
+                (newKey == Keys.Up && remappingKey != Mappings.Up) ||
+                (newKey == Keys.Down && remappingKey != Mappings.Down) ||
+                (newKey == Keys.Enter && remappingKey != Mappings.Confirm) ||
+                (newKey == Keys.Back && remappingKey != Mappings.Cancel)) {
+                return;
             }
-            switch (mappedKey) {
+            List<Keys> keyList = null;
+            switch (remappingKey) {
                 case Mappings.Left:
                     Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
-                    return null;
+                    break;
                 case Mappings.Right:
                     Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
-                    return null;
+                    break;
                 case Mappings.Up:
                     Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
-                    return null;
+                    break;
                 case Mappings.Down:
                     Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
-                    return null;
+                    break;
                 case Mappings.Jump:
-                    return Settings.Instance.Jump;
+                    keyList = Settings.Instance.Jump;
+                    break;
                 case Mappings.Dash:
-                    return Settings.Instance.Dash;
+                    keyList = Settings.Instance.Dash;
+                    break;
                 case Mappings.Grab:
-                    return Settings.Instance.Grab;
+                    keyList = Settings.Instance.Grab;
+                    break;
                 case Mappings.Talk:
-                    return Settings.Instance.Talk;
+                    keyList = Settings.Instance.Talk;
+                    break;
                 case Mappings.Confirm:
                     if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Enter) {
-                            return Settings.Instance.Confirm;
+                            keyList = Settings.Instance.Confirm;
                         }
                     }
-                    return null;
+                    break;
                 case Mappings.Cancel:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Back) {
-                            return Settings.Instance.Cancel;
+                            keyList = Settings.Instance.Cancel;
                         }
                     }
-                    return null;
+                    break;
                 case Mappings.Pause:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
-                        return Settings.Instance.Pause;
+                        keyList = Settings.Instance.Pause;
                     }
-                    return null;
+                    break;
                 case Mappings.Journal:
-                    return Settings.Instance.Journal;
+                    keyList = Settings.Instance.Journal;
+                    break;
                 case Mappings.QuickRestart:
-                    return Settings.Instance.QuickRestart;
-                default:
-                    return null;
+                    keyList = Settings.Instance.QuickRestart;
+                    break;
+            }
+            if (keyList != null) {
+                if (!addingKey)
+                    keyList.Clear();
+                if (!keyList.Contains(newKey))
+                    keyList.Add(newKey);
             }
         }
 
