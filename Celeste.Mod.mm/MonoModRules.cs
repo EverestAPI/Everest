@@ -259,6 +259,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("RemoveCommandAttributeFromVanillaLoadMethod")]
     class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
 
+    /// <summary>
+    /// Patch the hardcoded DelayTime in TriggerSpikes to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTriggerSpikesDelayTime")]
+    class PatchTriggerSpikesDelayTimeAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -1990,6 +1996,26 @@ namespace MonoMod {
                 if (attributes[i]?.AttributeType.FullName == "Monocle.Command") {
                     attributes.RemoveAt(i);
                     i--;
+                }
+            }
+        }
+
+        public static void PatchTriggerSpikesDelayTime(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_customDelayTime = MonoModRule.Modder.FindType("Celeste.TriggerSpikes").Resolve().FindField("customDelayTime");
+            FieldDefinition f_Parent = method.DeclaringType.FindField("Parent");
+            if (f_customDelayTime == null || f_Parent == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 0.4f) {
+                    // replace 0.4f with this.Parent.customDelayTime
+                    instr.OpCode = OpCodes.Ldarg_0;
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_Parent));
+                    instrs.Insert(instri + 2, il.Create(OpCodes.Ldfld, f_customDelayTime));
                 }
             }
         }

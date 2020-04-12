@@ -32,7 +32,8 @@ namespace Celeste.Mod.Entities {
             => new TriggerSpikesOriginal(entityData, offset, Directions.Right);
 
         private const float RetractTime = 6f;
-        private const float DelayTime = 0.4f;
+        private const float DefaultDelayTime = 0.4f;
+        private float delayTime;
 
         private int size;
         private Directions direction;
@@ -50,14 +51,17 @@ namespace Celeste.Mod.Entities {
         private List<MTexture> spikeTextures;
 
         public TriggerSpikesOriginal(EntityData data, Vector2 offset, Directions dir)
-            : this(data.Position + offset, GetSize(data, dir), dir, data.Attr("type", "default")) {
+            : this(data.Position + offset, GetSize(data, dir), dir, data.Attr("type", "default"), data.Float("delayTime", DefaultDelayTime)) {
         }
 
-        public TriggerSpikesOriginal(Vector2 position, int size, Directions direction, string overrideType)
+        public TriggerSpikesOriginal(Vector2 position, int size, Directions direction, string overrideType) : this(position, size, direction, overrideType, DefaultDelayTime) { }
+
+        public TriggerSpikesOriginal(Vector2 position, int size, Directions direction, string overrideType, float delayTime)
             : base(position) {
             this.size = size;
             this.direction = direction;
             this.overrideType = overrideType;
+            this.delayTime = delayTime;
 
             switch (direction) {
                 case Directions.Up:
@@ -347,7 +351,7 @@ namespace Celeste.Mod.Entities {
                 if (!Triggered) {
                     Audio.Play("event:/game/03_resort/fluff_tendril_touch", Parent.Position + Position);
                     Triggered = true;
-                    DelayTimer = DelayTime;
+                    DelayTimer = Parent.delayTime;
                     RetractTimer = RetractTime;
                     return false;
                 }
