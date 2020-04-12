@@ -39,56 +39,64 @@ namespace Celeste {
 
         private float timeout;
 
-        private Mappings remappingKey;
+        private int currentlyRemapping;
 
         private bool closing;
 
         private bool additiveRemap;
 
-        [MonoModIgnore]
+        [MonoModRemove]
         private extern string Label(Mappings mapping);
 
-        private void addKeyConfigLine(Mappings key, List<Keys> list) {
-            Add(new Setting(Label(key), list).Pressed(delegate { Remap(key); }));
+        protected virtual string GetLabel(int mapping) {
+            return ((Mappings) mapping).ToString();
         }
 
-        private List<Keys> forceDefaultKey(Keys defaultKey, Keys key) {
+        private void AddKeyConfigLine(int key, List<Keys> list) {
+            Add(new Setting(GetLabel(key), list).Pressed(delegate { Remap(key); }));
+        }
+
+        protected void AddKeyConfigLine(object key, List<Keys> list) {
+            AddKeyConfigLine((int) key, list);
+        }
+
+        protected List<Keys> ForceDefaultKey(Keys defaultKey, Keys key) {
             List<Keys> list = new List<Keys> { key };
             if (key != defaultKey)
                 list.Add(defaultKey);
             return list;
         }
 
-        private List<Keys> forceDefaultKey(Keys defaultKey, List<Keys> list) {
+        protected List<Keys> ForceDefaultKey(Keys defaultKey, List<Keys> list) {
             if (!list.Contains(defaultKey))
                 list.Add(defaultKey);
             return list;
         }
 
         [MonoModReplace]
-        public void Reload(int index = -1) {
+        public virtual void Reload(int index = -1) {
             Clear();
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
-            addKeyConfigLine(Mappings.Left, forceDefaultKey(Keys.Left, Settings.Instance.Left));
-            addKeyConfigLine(Mappings.Right, forceDefaultKey(Keys.Right, Settings.Instance.Right));
-            addKeyConfigLine(Mappings.Up, forceDefaultKey(Keys.Up, Settings.Instance.Up));
-            addKeyConfigLine(Mappings.Down, forceDefaultKey(Keys.Down, Settings.Instance.Down));
+            AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, Settings.Instance.Left));
+            AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, Settings.Instance.Right));
+            AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, Settings.Instance.Up));
+            AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, Settings.Instance.Down));
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
-            addKeyConfigLine(Mappings.Jump, Settings.Instance.Jump);
-            addKeyConfigLine(Mappings.Dash, Settings.Instance.Dash);
-            addKeyConfigLine(Mappings.Grab, Settings.Instance.Grab);
-            addKeyConfigLine(Mappings.Talk, Settings.Instance.Talk);
+            AddKeyConfigLine(Mappings.Jump, Settings.Instance.Jump);
+            AddKeyConfigLine(Mappings.Dash, Settings.Instance.Dash);
+            AddKeyConfigLine(Mappings.Grab, Settings.Instance.Grab);
+            AddKeyConfigLine(Mappings.Talk, Settings.Instance.Talk);
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
-            addKeyConfigLine(Mappings.Confirm, forceDefaultKey(Keys.Enter, Settings.Instance.Confirm));
-            addKeyConfigLine(Mappings.Cancel, forceDefaultKey(Keys.Back, Settings.Instance.Cancel));
-            addKeyConfigLine(Mappings.Pause, forceDefaultKey(Keys.Escape, Settings.Instance.Pause));
-            addKeyConfigLine(Mappings.Journal, Settings.Instance.Journal);
-            addKeyConfigLine(Mappings.QuickRestart, Settings.Instance.QuickRestart);
+            AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, Settings.Instance.Confirm));
+            AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, Settings.Instance.Cancel));
+            AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, Settings.Instance.Pause));
+            AddKeyConfigLine(Mappings.Journal, Settings.Instance.Journal);
+            AddKeyConfigLine(Mappings.QuickRestart, Settings.Instance.QuickRestart);
             Add(new SubHeader(""));
 
             Button button = new Button(Dialog.Clean("KEY_CONFIG_RESET"));
@@ -106,11 +114,15 @@ namespace Celeste {
         }
 
         // these keys only support a single mapping (they are not lists in the settings file).
-        private static Mappings[] keysWithSingleBindings = new Mappings[] { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
+        private static Mappings[] _keysWithSingleBindings = { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
+        protected static int[] keysWithSingleBindings = Array.ConvertAll(_keysWithSingleBindings, value => (int) value);
 
-        private extern void orig_Remap(Mappings mapping);
-        private void Remap(Mappings mapping) {
-            orig_Remap(mapping);
+        [MonoModReplace]
+        private void Remap(int mapping) {
+            remapping = true;
+            currentlyRemapping = mapping;
+            timeout = 5f;
+            Focused = false;
             KeyboardState keyboard = Keyboard.GetState();
             additiveRemap = (keyboard.IsKeyDown(Keys.LeftShift) || keyboard.IsKeyDown(Keys.RightShift))
                 && !keysWithSingleBindings.Contains(mapping);
@@ -120,67 +132,7 @@ namespace Celeste {
         private void SetRemap(Keys key) {
             remapping = false;
             inputDelay = 0.25f;
-            if (key == Keys.None ||
-                (key == Keys.Left && remappingKey != Mappings.Left) ||
-                (key == Keys.Right && remappingKey != Mappings.Right) ||
-                (key == Keys.Up && remappingKey != Mappings.Up) ||
-                (key == Keys.Down && remappingKey != Mappings.Down) ||
-                (key == Keys.Enter && remappingKey != Mappings.Confirm) ||
-                (key == Keys.Back && remappingKey != Mappings.Cancel)) {
-                return;
-            }
-            List<Keys> keyList = null;
-            switch (remappingKey) {
-                case Mappings.Left:
-                    Settings.Instance.Left = ((key != Keys.Left) ? key : Keys.None);
-                    break;
-                case Mappings.Right:
-                    Settings.Instance.Right = ((key != Keys.Right) ? key : Keys.None);
-                    break;
-                case Mappings.Up:
-                    Settings.Instance.Up = ((key != Keys.Up) ? key : Keys.None);
-                    break;
-                case Mappings.Down:
-                    Settings.Instance.Down = ((key != Keys.Down) ? key : Keys.None);
-                    break;
-                case Mappings.Jump:
-                    keyList = Settings.Instance.Jump;
-                    break;
-                case Mappings.Dash:
-                    keyList = Settings.Instance.Dash;
-                    break;
-                case Mappings.Grab:
-                    keyList = Settings.Instance.Grab;
-                    break;
-                case Mappings.Talk:
-                    keyList = Settings.Instance.Talk;
-                    break;
-                case Mappings.Confirm:
-                    if (!Settings.Instance.Cancel.Contains(key) && !Settings.Instance.Pause.Contains(key)) {
-                        if (key != Keys.Enter) {
-                            keyList = Settings.Instance.Confirm;
-                        }
-                    }
-                    break;
-                case Mappings.Cancel:
-                    if (!Settings.Instance.Confirm.Contains(key) && !Settings.Instance.Pause.Contains(key)) {
-                        if (key != Keys.Back) {
-                            keyList = Settings.Instance.Cancel;
-                        }
-                    }
-                    break;
-                case Mappings.Pause:
-                    if (!Settings.Instance.Confirm.Contains(key) && !Settings.Instance.Cancel.Contains(key)) {
-                        keyList = Settings.Instance.Pause;
-                    }
-                    break;
-                case Mappings.Journal:
-                    keyList = Settings.Instance.Journal;
-                    break;
-                case Mappings.QuickRestart:
-                    keyList = Settings.Instance.QuickRestart;
-                    break;
-            }
+            List<Keys> keyList = GetRemapList(currentlyRemapping, key);
             if (keyList != null) {
                 if (!additiveRemap)
                     keyList.Clear();
@@ -189,6 +141,66 @@ namespace Celeste {
             }
             Input.Initialize();
             Reload(Selection);
+        }
+
+        protected virtual List<Keys> GetRemapList(int remapping, Keys newKey) {
+            Mappings mappedKey = (Mappings) remapping;
+            if (newKey == Keys.None ||
+                (newKey == Keys.Left && mappedKey != Mappings.Left) ||
+                (newKey == Keys.Right && mappedKey != Mappings.Right) ||
+                (newKey == Keys.Up && mappedKey != Mappings.Up) ||
+                (newKey == Keys.Down && mappedKey != Mappings.Down) ||
+                (newKey == Keys.Enter && mappedKey != Mappings.Confirm) ||
+                (newKey == Keys.Back && mappedKey != Mappings.Cancel)) {
+                return null;
+            }
+            switch (mappedKey) {
+                case Mappings.Left:
+                    Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
+                    return null;
+                case Mappings.Right:
+                    Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
+                    return null;
+                case Mappings.Up:
+                    Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
+                    return null;
+                case Mappings.Down:
+                    Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
+                    return null;
+                case Mappings.Jump:
+                    return Settings.Instance.Jump;
+                case Mappings.Dash:
+                    return Settings.Instance.Dash;
+                case Mappings.Grab:
+                    return Settings.Instance.Grab;
+                case Mappings.Talk:
+                    return Settings.Instance.Talk;
+                case Mappings.Confirm:
+                    if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                        if (newKey != Keys.Enter) {
+                            return Settings.Instance.Confirm;
+                        }
+                    }
+                    return null;
+                case Mappings.Cancel:
+                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                        if (newKey != Keys.Back) {
+                            return Settings.Instance.Cancel;
+                        }
+                    }
+                    return null;
+                case Mappings.Pause:
+                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
+                        return Settings.Instance.Pause;
+                    }
+                    return null;
+                case Mappings.Journal:
+                    return Settings.Instance.Journal;
+                case Mappings.QuickRestart:
+                    return Settings.Instance.QuickRestart;
+                default:
+                    return null;
+            }
         }
 
         [MonoModLinkTo("Celeste.TextMenu", "System.Void Render()")]
@@ -203,7 +215,7 @@ namespace Celeste {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.95f * Ease.CubeInOut(remappingEase));
                 Vector2 value = new Vector2(1920f, 1080f) * 0.5f;
                 ActiveFont.Draw(additiveRemap ? Dialog.Get("KEY_CONFIG_ADDING") : Dialog.Get("KEY_CONFIG_CHANGING"), value + new Vector2(0f, -8f), new Vector2(0.5f, 1f), Vector2.One * 0.7f, Color.LightGray * Ease.CubeIn(remappingEase));
-                ActiveFont.Draw(Label(remappingKey), value + new Vector2(0f, 8f), new Vector2(0.5f, 0f), Vector2.One * 2f, Color.White * Ease.CubeIn(remappingEase));
+                ActiveFont.Draw(GetLabel(currentlyRemapping), value + new Vector2(0f, 8f), new Vector2(0.5f, 0f), Vector2.One * 2f, Color.White * Ease.CubeIn(remappingEase));
             }
         }
     }
