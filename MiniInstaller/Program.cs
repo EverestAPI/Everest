@@ -99,10 +99,9 @@ namespace MiniInstaller {
                 return;
             }
 
-            PathEverestExe = Path.Combine(PathGame, "Everest.exe");
-            if (!File.Exists(PathEverestExe)) {
-                PathEverestExe = PathCelesteExe;
-            }
+            // Here lies a reminder that patching into Everest.exe only caused confusion and issues.
+            // RIP Everest.exe 2019 - 2020
+            PathEverestExe = PathCelesteExe;
 
             PathOrig = Path.Combine(PathGame, "orig");
             PathLog = Path.Combine(PathGame, "miniinstaller-log.txt");
