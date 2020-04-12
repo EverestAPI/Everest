@@ -52,7 +52,7 @@ namespace Celeste.Mod {
                             ?.Invoke(null, new object[] { null, null });
                     }
                     AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
-                    goto Exit;
+                    return;
                 }
 
                 if (args.FirstOrDefault() == "--vanilla")
@@ -182,6 +182,7 @@ namespace Celeste.Mod {
             // Needed because certain graphics drivers and native libs like to hang around for no reason.
             // Vanilla does the same on macOS and Linux, but NVIDIA on Linux likes to waste time in DrvValidateVersion.
             Exit:
+            Console.WriteLine("Exiting Celeste process");
             Environment.Exit(0);
         }
 
