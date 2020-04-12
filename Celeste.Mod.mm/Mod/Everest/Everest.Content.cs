@@ -20,6 +20,7 @@ using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
 using System.Threading;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace Celeste.Mod {
     // Special meta types.
@@ -155,6 +156,8 @@ namespace Celeste.Mod {
 
         private FileSystemWatcher watcher;
 
+        private Regex hiddenDirectoryRegex = new Regex(@"\/?([^\/]+\/)*Celeste\/Mods\/([^\/]+\/)*\.([^\/]+\/?)*");
+
         public FileSystemModContent(string path) {
             Path = path;
 
@@ -184,6 +187,14 @@ namespace Celeste.Mod {
                 dir = Path;
             if (root == null)
                 root = Path;
+
+
+            // Skip over hidden folders, keeps mods that use git in the top
+            // level from adding their entire git tree to the assets :)
+            if (hiddenDirectoryRegex.Match(dir).Success) {
+                Logger.Log("Everest", "Skipped crawling hidden directory " + dir);
+                return;
+            }
 
             if (File.Exists(dir)) {
                 string path = dir.Substring(root.Length + 1);
