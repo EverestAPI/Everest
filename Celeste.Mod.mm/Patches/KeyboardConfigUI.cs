@@ -166,7 +166,7 @@ namespace Celeste {
         /// </summary>
         /// <param name="mapping">The mapping</param>
         /// <returns>true if the key supports multiple bindings, false otherwise</returns>
-        private bool SupportsMultipleBindings(int mapping) {
+        protected virtual bool SupportsMultipleBindings(int mapping) {
             return !keysWithSingleBindings.Contains((Mappings) mapping);
         }
 
@@ -174,85 +174,81 @@ namespace Celeste {
         private void SetRemap(Keys key) {
             remapping = false;
             inputDelay = 0.25f;
-            RemapKey(currentlyRemapping, key, additiveRemap);
+            List<Keys> keyList = GetRemapList(currentlyRemapping, key);
+            if (keyList != null) {
+                if (!additiveRemap)
+                    keyList.Clear();
+                if (!keyList.Contains(key))
+                    keyList.Add(key);
+            }
             Input.Initialize();
             Reload(Selection);
         }
 
         /// <summary>
-        /// Sets a new binding for a key.
+        /// Returns the list used to remap keys during a remap operation.
+        /// This should be the a List<Keys> field in your settings class
         /// </summary>
-        /// <param name="remapping">The mapping that is being edited</param>
-        /// <param name="newKey">The key that was just mapped</param>
-        /// <param name="addingKey">true if a key binding is being added, false if bindings are getting replaced</param>
-        protected virtual void RemapKey(int remapping, Keys newKey, bool addingKey) {
-            Mappings remappingKey = (Mappings) remapping;
+        /// <param name="remapping">The int value of the mapping being remapped</param>
+        /// <param name="newKey">The new key that the user is attempting to set.</param>
+        /// <returns>the field to set keys with, otherwise return null to cancel the operation</returns>
+        protected virtual List<Keys> GetRemapList(int remapping, Keys newKey) {
+            Mappings mappedKey = (Mappings) remapping;
             if (newKey == Keys.None ||
-                (newKey == Keys.Left && remappingKey != Mappings.Left) ||
-                (newKey == Keys.Right && remappingKey != Mappings.Right) ||
-                (newKey == Keys.Up && remappingKey != Mappings.Up) ||
-                (newKey == Keys.Down && remappingKey != Mappings.Down) ||
-                (newKey == Keys.Enter && remappingKey != Mappings.Confirm) ||
-                (newKey == Keys.Back && remappingKey != Mappings.Cancel)) {
-                return;
+                (newKey == Keys.Left && mappedKey != Mappings.Left) ||
+                (newKey == Keys.Right && mappedKey != Mappings.Right) ||
+                (newKey == Keys.Up && mappedKey != Mappings.Up) ||
+                (newKey == Keys.Down && mappedKey != Mappings.Down) ||
+                (newKey == Keys.Enter && mappedKey != Mappings.Confirm) ||
+                (newKey == Keys.Back && mappedKey != Mappings.Cancel)) {
+                return null;
             }
-            List<Keys> keyList = null;
-            switch (remappingKey) {
+            switch (mappedKey) {
                 case Mappings.Left:
                     Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
-                    break;
+                    return null;
                 case Mappings.Right:
                     Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
-                    break;
+                    return null;
                 case Mappings.Up:
                     Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
-                    break;
+                    return null;
                 case Mappings.Down:
                     Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
-                    break;
+                    return null;
                 case Mappings.Jump:
-                    keyList = Settings.Instance.Jump;
-                    break;
+                    return Settings.Instance.Jump;
                 case Mappings.Dash:
-                    keyList = Settings.Instance.Dash;
-                    break;
+                    return Settings.Instance.Dash;
                 case Mappings.Grab:
-                    keyList = Settings.Instance.Grab;
-                    break;
+                    return Settings.Instance.Grab;
                 case Mappings.Talk:
-                    keyList = Settings.Instance.Talk;
-                    break;
+                    return Settings.Instance.Talk;
                 case Mappings.Confirm:
                     if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Enter) {
-                            keyList = Settings.Instance.Confirm;
+                            return Settings.Instance.Confirm;
                         }
                     }
-                    break;
+                    return null;
                 case Mappings.Cancel:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Back) {
-                            keyList = Settings.Instance.Cancel;
+                            return Settings.Instance.Cancel;
                         }
                     }
-                    break;
+                    return null;
                 case Mappings.Pause:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
-                        keyList = Settings.Instance.Pause;
+                        return Settings.Instance.Pause;
                     }
-                    break;
+                    return null;
                 case Mappings.Journal:
-                    keyList = Settings.Instance.Journal;
-                    break;
+                    return Settings.Instance.Journal;
                 case Mappings.QuickRestart:
-                    keyList = Settings.Instance.QuickRestart;
-                    break;
-            }
-            if (keyList != null) {
-                if (!addingKey)
-                    keyList.Clear();
-                if (!keyList.Contains(newKey))
-                    keyList.Add(newKey);
+                    return Settings.Instance.QuickRestart;
+                default:
+                    return null;
             }
         }
 
