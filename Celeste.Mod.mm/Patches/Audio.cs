@@ -78,7 +78,7 @@ namespace Celeste {
         public static void Unload() {
             if (system == null)
                 return;
-            
+
             // Vanilla only calls unloadAll.
             system.unloadAll().CheckFMOD();
             system.release().CheckFMOD();

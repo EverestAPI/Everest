@@ -169,7 +169,7 @@ namespace Celeste.Editor {
             if (MInput.Keyboard.Pressed(Keys.F5)) {
                 CoreModule.Settings.ShowManualTextOnDebugMap = !CoreModule.Settings.ShowManualTextOnDebugMap;
             }
-            
+
             Draw.SpriteBatch.Begin();
 
             string text = MinimalManualText;
@@ -204,7 +204,7 @@ namespace Celeste.Editor {
                 }
             }
 
-            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, 
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp,
                 DepthStencilState.None, RasterizerState.CullNone, null, Camera.Matrix * Engine.ScreenMatrix);
             if (keys != null && keys.Count > 0) {
                 for (int i = 0; i < keys.Count; i++) {

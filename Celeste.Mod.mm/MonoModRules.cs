@@ -1631,7 +1631,7 @@ namespace MonoMod {
         }
 
         public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
-            //MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
+            // MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
             if (IStrawberry == null) {
                 IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
             }

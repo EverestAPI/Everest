@@ -328,7 +328,7 @@ namespace Celeste {
                 return ActiveFont.Measure(Label).X + 32f;
             }
             public override float RightWidth() {
-                //Measure Index in case it is externally set ouside the bounds
+                // Measure Index in case it is externally set ouside the bounds
                 float width = Calc.Max(0f, ActiveFont.Measure(max.ToString()).X, ActiveFont.Measure(min.ToString()).X, ActiveFont.Measure(Index.ToString()).X);
                 return width + 120f;
             }
@@ -344,8 +344,8 @@ namespace Celeste {
                 if ((max - min) > 0) {
                     float rWidth = RightWidth();
                     ActiveFont.DrawOutline(Index.ToString(), position + new Vector2(Container.Width - rWidth * 0.5f + lastDir * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f, color, 2f, strokeColor);
-                    
-                    Vector2 vector = Vector2.UnitX * (float)(highlighted ? (Math.Sin(sine * 4f) * 4f) : 0f);
+
+                    Vector2 vector = Vector2.UnitX * (float) (highlighted ? (Math.Sin(sine * 4f) * 4f) : 0f);
 
                     Vector2 position2 = position + new Vector2(Container.Width - rWidth + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (Index > min ? vector : Vector2.Zero);
                     ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, Index > min ? color : (Color.DarkSlateGray * alpha), 2f, strokeColor);

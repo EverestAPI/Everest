@@ -98,7 +98,7 @@ namespace Celeste.Mod {
         /// Reads a DecalRegistry.xml file's contents
         /// </summary>
         public static void ReadDecalRegistryXml(string fileContents) {
-            //XmlElement file = Calc.LoadXML(path)["decals"];
+            // XmlElement file = Calc.LoadXML(path)["decals"];
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
             XmlElement file = doc["decals"];

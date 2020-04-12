@@ -390,7 +390,7 @@ namespace Celeste.Mod {
 
                     if (_Status[0])
                         return true;
-                    
+
                     if (i < retries - 1)
                         Thread.Sleep(sleep);
                 }

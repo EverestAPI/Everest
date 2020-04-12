@@ -46,7 +46,7 @@ namespace Celeste.Mod.UI {
                     return new TextMenu() {
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_PLAY")),
                         new SubHeader(""),
-                        
+
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
 
                         new OnOff(

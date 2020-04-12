@@ -30,12 +30,12 @@ using System.Runtime.CompilerServices;
 
 
 namespace YYProject.XXHash {
-    //see details: https://github.com/Cyan4973/xxHash/blob/dev/doc/xxhash_spec.md
+    // see details: https://github.com/Cyan4973/xxHash/blob/dev/doc/xxhash_spec.md
 
     /// <summary>
     /// Represents the class which provides a implementation of the xxHash32 algorithm.
     /// </summary>
-    ///<threadsafety static="true" instance="false"/>   
+    /// <threadsafety static="true" instance="false"/>   
     public sealed class XXHash32 : HashAlgorithm {
         private const uint PRIME32_1 = 2654435761U;
         private const uint PRIME32_2 = 2246822519U;
@@ -216,9 +216,9 @@ namespace YYProject.XXHash {
         private static uint Round32(uint input, uint value) => RotateLeft32_13(input + (value * PRIME32_2)) * PRIME32_1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint RotateLeft32_1(uint value) => (value << 1) | (value >> 31); //_ACC32_1
+        private static uint RotateLeft32_1(uint value) => (value << 1) | (value >> 31); // _ACC32_1
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint RotateLeft32_7(uint value) => (value << 7) | (value >> 25); //_ACC32_2
+        private static uint RotateLeft32_7(uint value) => (value << 7) | (value >> 25); // _ACC32_2
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint RotateLeft32_11(uint value) => (value << 11) | (value >> 21);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -228,7 +228,7 @@ namespace YYProject.XXHash {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint RotateLeft32_17(uint value) => (value << 17) | (value >> 15);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static uint RotateLeft32_18(uint value) => (value << 18) | (value >> 14); //_ACC32_4
+        private static uint RotateLeft32_18(uint value) => (value << 18) | (value >> 14); // _ACC32_4
 
         private void Initialize(uint seed) {
             HashSizeValue = 32;
