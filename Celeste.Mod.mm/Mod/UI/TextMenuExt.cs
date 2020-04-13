@@ -1,6 +1,7 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -531,11 +532,9 @@ namespace Celeste {
             /// <returns></returns>v
             public SubMenu Remove(TextMenu.Item item) {
                 if (Container != null) {
-                    int num = Items.IndexOf(item);
-                    if (num == -1) {
+                    if (!Items.Remove(item)) {
                         return this;
                     }
-                    Items.RemoveAt(num);
                     item.Container = null;
                     Container.Remove(item.ValueWiggler);
                     Container.Remove(item.SelectWiggler);
@@ -733,7 +732,6 @@ namespace Celeste {
             public override float LeftWidth() {
                 return ActiveFont.Measure(Label).X;
             }
-
             public override float RightWidth() {
                 return Icon.Width;
             }
@@ -787,6 +785,7 @@ namespace Celeste {
                     icon.DrawCentered(position + justify, color, scale);
                 }
             }
+
             #endregion
         }
 
@@ -799,15 +798,19 @@ namespace Celeste {
             public string Label;
             MTexture Icon;
 
+            //Menus are stored as lists associated with a label
             public List<Tuple<string, List<TextMenu.Item>>> Menus { get; private set; }
 
             private List<Tuple<string, List<TextMenu.Item>>> delayedAddMenus;
 
             public int MenuIndex;
+
             private int InitialSelection;
             public int Selection;
+
             private int lastDir;
             private float sine;
+
             public Action<int> OnValueChange;
 
             public List<TextMenu.Item> CurrentMenu {
@@ -855,14 +858,19 @@ namespace Celeste {
 
             public float ItemSpacing;
             public float ItemIndent;
+
             private Color HighlightColor;
+
             public string ConfirmSfx;
+
             public bool AlwaysCenter;
 
             public float LeftColumnWidth;
             public float RightColumnWidth;
 
             public float TitleHeight { get; private set; }
+
+            //Accessor property used to smootly(ish) transition between menu heights
             public float MenuHeight { get; private set; }
             private float _MenuHeight;
 
@@ -1149,7 +1157,6 @@ namespace Celeste {
             public override float LeftWidth() {
                 return ActiveFont.Measure(Label).X;
             }
-
             public override float RightWidth() {
                 float width = 0f;
                 foreach (string menu in Menus.Select(tuple => tuple.Item1)) {
