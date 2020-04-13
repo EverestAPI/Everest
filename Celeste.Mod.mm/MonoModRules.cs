@@ -265,6 +265,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchTriggerSpikesDelayTime")]
     class PatchTriggerSpikesDelayTimeAttribute : Attribute { };
 
+    /// <summary>
+    /// Patch the fake heart color to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFakeHeartColor")]
+    class PatchFakeHeartColorAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -2016,6 +2022,23 @@ namespace MonoMod {
                     instr.OpCode = OpCodes.Ldarg_0;
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_Parent));
                     instrs.Insert(instri + 2, il.Create(OpCodes.Ldfld, f_customDelayTime));
+                }
+            }
+        }
+
+        public static void PatchFakeHeartColor(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_getCustomColor = method.DeclaringType.FindMethod("Celeste.AreaMode _getCustomColor(Celeste.AreaMode,Celeste.FakeHeart)");
+            if (m_getCustomColor == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Choose") {
+                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 2, il.Create(OpCodes.Call, m_getCustomColor));
                 }
             }
         }
