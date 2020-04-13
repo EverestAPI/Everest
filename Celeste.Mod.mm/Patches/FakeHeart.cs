@@ -9,8 +9,8 @@ namespace Celeste {
             // dummy constructor
         }
 
-        // null is the vanilla (random) color.
-        private AreaMode? color;
+        // -1 is the vanilla (random) color.
+        private AreaMode color;
 
         [MonoModConstructor]
         [MonoModIgnore]
@@ -21,11 +21,7 @@ namespace Celeste {
         public void ctor(EntityData data, Vector2 offset) {
             ctor(data.Position + offset);
 
-            if (data.Has("color") && data.Attr("color") != "Random") {
-                color = data.Enum<AreaMode>("color");
-            } else {
-                color = null;
-            }
+            color = data.Enum<AreaMode>("color", (AreaMode) (-1));
         }
 
         [MonoModIgnore]
@@ -33,7 +29,7 @@ namespace Celeste {
         public extern override void Awake(Scene scene);
 
         private static AreaMode _getCustomColor(AreaMode vanillaColor, patch_FakeHeart self) {
-            return self.color ?? vanillaColor;
+            return self.color != (AreaMode) (-1) ? self.color : vanillaColor;
         }
     }
 }
