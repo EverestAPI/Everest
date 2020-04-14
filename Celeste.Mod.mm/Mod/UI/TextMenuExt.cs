@@ -409,9 +409,9 @@ namespace Celeste {
 
             public float ScrollTargetY {
                 get {
-                    float min = (float) (Engine.Height - 150) - Container.Height * Container.Justify.Y;
+                    float min = Engine.Height - 150f - Container.Height * Container.Justify.Y;
                     float max = 150f + Container.Height * Container.Justify.Y;
-                    return Calc.Clamp((float) (Engine.Height / 2) + Container.Height * Container.Justify.Y - this.GetYOffsetOf(Current), min, max);
+                    return Calc.Clamp((float) (Engine.Height / 2) + Container.Height * Container.Justify.Y - GetYOffsetOf(Current), min, max);
                 }
             }
 
@@ -457,7 +457,7 @@ namespace Celeste {
                 OnPressed = delegate {
                     if (Items.Count > 0) {
                         Container.Focused = false;
-                        this.Focused = true;
+                        Focused = true;
                         FirstSelection();
                     }
                 };
@@ -484,7 +484,7 @@ namespace Celeste {
             public SubMenu Add(TextMenu.Item item) {
                 if (Container != null) {
                     Items.Add(item);
-                    item.Container = this.Container;
+                    item.Container = Container;
                     Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
@@ -509,7 +509,7 @@ namespace Celeste {
             public SubMenu Insert(int index, TextMenu.Item item) {
                 if (Container != null) {
                     Items.Insert(index, item);
-                    item.Container = this.Container;
+                    item.Container = Container;
                     Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                     item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
@@ -562,14 +562,14 @@ namespace Celeste {
             public void MoveSelection(int direction, bool wiggle = false) {
                 int selection = Selection;
                 direction = Math.Sign(direction);
-                int num = 0;
+                int count = 0;
                 foreach (TextMenu.Item item in Items) {
                     if (item.Hoverable)
-                        num++;
+                        count++;
                 }
                 do {
                     Selection += direction;
-                    if (num > 2) {
+                    if (count > 2) {
                         if (Selection < 0) {
                             Selection = Items.Count - 1;
                         } else if (Selection >= Items.Count) {
@@ -626,11 +626,11 @@ namespace Celeste {
                     return 0f;
                 }
                 float offset = 0f;
-                foreach (TextMenu.Item item2 in Items) {
-                    if (item2.Visible) {
-                        offset += item2.Height() + ItemSpacing;
+                foreach (TextMenu.Item child in Items) {
+                    if (child.Visible) {
+                        offset += child.Height() + ItemSpacing;
                     }
-                    if (item2 == item) {
+                    if (child == item) {
                         break;
                     }
                 }
@@ -672,7 +672,7 @@ namespace Celeste {
                     }
                     if (!Input.MenuConfirm.Pressed) {
                         if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
-                            this.Focused = false;
+                            Focused = false;
                             Audio.Play("event:/ui/main/button_back");
                             Container.AutoScroll = containerAutoScroll;
                             Container.Focused = true;
@@ -697,7 +697,7 @@ namespace Celeste {
 
                 if (containerAutoScroll) {
                     if (Container.Height > Container.ScrollableMinSize) {
-                        Container.Position.Y += (this.ScrollTargetY - Container.Position.Y) * (1f - (float)Math.Pow(0.0099999997764825821, (double)Engine.RawDeltaTime));
+                        Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
                         return;
                     }
                     Container.Position.Y = 540f;
@@ -708,12 +708,12 @@ namespace Celeste {
                 RecalculateSize();
                 foreach (TextMenu.Item item in Items) {
                     if (item.Visible) {
-                        float num = item.Height();
-                        Vector2 vector = position + new Vector2(0f, num * 0.5f + item.SelectWiggler.Value * 8f);
-                        if (vector.Y + num * 0.5f > 0f && vector.Y - num * 0.5f < (float) Engine.Height) {
+                        float height = item.Height();
+                        Vector2 vector = position + new Vector2(0f, height * 0.5f + item.SelectWiggler.Value * 8f);
+                        if (vector.Y + height * 0.5f > 0f && vector.Y - height * 0.5f < Engine.Height) {
                             item.Render(vector, Focused && Current == item);
                         }
-                        position.Y += num + ItemSpacing;
+                        position.Y += height + ItemSpacing;
                     }
                 }
             }
@@ -765,19 +765,20 @@ namespace Celeste {
                 Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
-                bool flag = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
+                bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
 
-                Vector2 titlePosition = top + (Vector2.UnitY * TitleHeight / 2) + (flag ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));
-                Vector2 justify = (flag) ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0.5f);
-                Vector2 iconJustify = (flag) ? new Vector2(ActiveFont.Measure(Label).X + Icon.Width, 5f) : new Vector2(ActiveFont.Measure(Label).X / 2 + Icon.Width, 5f);
-                SubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || Items.Count < 1 ? Color.DarkSlateGray : (this.Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
+                Vector2 titlePosition = top + (Vector2.UnitY * TitleHeight / 2) + (uncentered ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));
+                Vector2 justify = uncentered ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0.5f);
+                Vector2 iconJustify = uncentered ? new Vector2(ActiveFont.Measure(Label).X + Icon.Width, 5f) : new Vector2(ActiveFont.Measure(Label).X / 2 + Icon.Width, 5f);
+                SubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || Items.Count < 1 ? Color.DarkSlateGray : (Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
                 ActiveFont.DrawOutline(Label, titlePosition, justify, Vector2.One, color, 2f, strokeColor);
 
-                if (this.Focused && ease > 0.9f) {
+                if (Focused && ease > 0.9f) {
                     Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
                     menu_Render(menuPosition);
                 }
             }
+
             private static void DrawIcon(Vector2 position, MTexture icon, Vector2 justify, bool outline, Color color, float scale) {
                 if (outline) {
                     icon.DrawOutlineCentered(position + justify, color);
@@ -852,7 +853,7 @@ namespace Celeste {
                 get {
                     float min = Engine.Height - 150 - Container.Height * Container.Justify.Y;
                     float max = 150f + Container.Height * Container.Justify.Y;
-                    return Calc.Clamp(Engine.Height / 2 + Container.Height * Container.Justify.Y - this.GetYOffsetOf(Current), min, max);
+                    return Calc.Clamp(Engine.Height / 2 + Container.Height * Container.Justify.Y - GetYOffsetOf(Current), min, max);
                 }
             }
 
@@ -915,7 +916,7 @@ namespace Celeste {
                 if (Container != null) {
                     if (items != null) {
                         foreach (TextMenu.Item item in items) {
-                            item.Container = this.Container;
+                            item.Container = Container;
                             Container.Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                             Container.Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f, null, false, false));
                             item.ValueWiggler.UseRawDeltaTime = (item.SelectWiggler.UseRawDeltaTime = true);
@@ -1033,7 +1034,7 @@ namespace Celeste {
 
             private void menu_Added() {
                 foreach (Tuple<string, List<TextMenu.Item>> menu in delayedAddMenus) {
-                    this.Add(menu.Item1, menu.Item2);
+                    Add(menu.Item1, menu.Item2);
                 }
                 MenuIndex = InitialSelection;
             }
@@ -1070,7 +1071,7 @@ namespace Celeste {
                     }
                     if (!Input.MenuConfirm.Pressed) {
                         if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
-                            this.Focused = false;
+                            Focused = false;
                             Audio.Play("event:/ui/main/button_back");
                             Container.AutoScroll = containerAutoScroll;
                             Container.Focused = true;
@@ -1094,7 +1095,7 @@ namespace Celeste {
                 }
                 if (containerAutoScroll) {
                     if (Container.Height > Container.ScrollableMinSize) {
-                        Container.Position.Y += (this.ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.0099999997764825821, (double) Engine.RawDeltaTime));
+                        Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
                         return;
                     }
                     Container.Position.Y = 540f;
@@ -1106,7 +1107,7 @@ namespace Celeste {
                     if (item.Visible) {
                         float itemHeight = item.Height();
                         Vector2 vector = position + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
-                        if (vector.Y + itemHeight * 0.5f > 0f && vector.Y - itemHeight * 0.5f < (float) Engine.Height) {
+                        if (vector.Y + itemHeight * 0.5f > 0f && vector.Y - itemHeight * 0.5f < Engine.Height) {
                             item.Render(vector, Focused && Current == item);
                         }
                         position.Y += itemHeight + ItemSpacing;
@@ -1115,6 +1116,7 @@ namespace Celeste {
             }
 
             #endregion
+
             #region TextMenu.Item
 
             public OptionSubMenu Change(Action<int> onValueChange) {
@@ -1149,7 +1151,7 @@ namespace Celeste {
                     containerAutoScroll = Container.AutoScroll;
                     Container.AutoScroll = false;
                     Container.Focused = false;
-                    this.Focused = true;
+                    Focused = true;
                     FirstSelection();
                 }
             }
@@ -1157,6 +1159,7 @@ namespace Celeste {
             public override float LeftWidth() {
                 return ActiveFont.Measure(Label).X;
             }
+
             public override float RightWidth() {
                 float width = 0f;
                 foreach (string menu in Menus.Select(tuple => tuple.Item1)) {
@@ -1194,12 +1197,12 @@ namespace Celeste {
                 Color color = Disabled ? Color.DarkSlateGray : ((highlighted ? Container.HighlightColor : Color.White) * alpha);
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
-                bool flag = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !this.AlwaysCenter;
+                bool uncentered = Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter;
 
-                Vector2 titlePosition = top + (Vector2.UnitY * TitleHeight / 2) + (flag ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));
-                Vector2 justify = (flag) ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0.5f);
-                Vector2 iconJustify = (flag) ? new Vector2(ActiveFont.Measure(Label).X + Icon.Width, 5f) : new Vector2(ActiveFont.Measure(Label).X / 2 + Icon.Width, 5f);
-                OptionSubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || CurrentMenu?.Count < 1 ? Color.DarkSlateGray : (this.Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
+                Vector2 titlePosition = top + (Vector2.UnitY * TitleHeight / 2) + (uncentered ? Vector2.Zero : new Vector2(Container.Width * 0.5f, 0f));
+                Vector2 justify = uncentered ? new Vector2(0f, 0.5f) : new Vector2(0.5f, 0.5f);
+                Vector2 iconJustify = uncentered ? new Vector2(ActiveFont.Measure(Label).X + Icon.Width, 5f) : new Vector2(ActiveFont.Measure(Label).X / 2 + Icon.Width, 5f);
+                OptionSubMenu.DrawIcon(titlePosition, Icon, iconJustify, true, (Disabled || CurrentMenu?.Count < 1 ? Color.DarkSlateGray : (Focused ? Container.HighlightColor : Color.White)) * alpha, 0.8f);
                 ActiveFont.DrawOutline(Label, titlePosition, justify, Vector2.One, color, 2f, strokeColor);
                 if (Menus.Count > 0) {
                     float rWidth = RightWidth();
@@ -1222,6 +1225,7 @@ namespace Celeste {
                     menu_Render(menuPosition);
                 }
             }
+
             private static void DrawIcon(Vector2 position, MTexture icon, Vector2 justify, bool outline, Color color, float scale) {
                 if (outline) {
                     icon.DrawOutlineCentered(position + justify, color);
@@ -1229,7 +1233,9 @@ namespace Celeste {
                     icon.DrawCentered(position + justify, color, scale);
                 }
             }
+
             #endregion
+
         }
     }
 }
