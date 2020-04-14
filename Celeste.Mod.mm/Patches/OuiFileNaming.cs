@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -70,12 +71,22 @@ namespace Celeste {
             return orig_Leave(next);
         }
 
+        [MonoModIgnore]
+        public extern void ResetDefaultName();
+
         public extern void orig_Update();
         public override void Update() {
             bool wasFocused = Focused;
             if (!Everest.Flags.IsDisabled) {
                 // Only "focus" if the input method is a gamepad, not a keyboard.
                 Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+
+                // If we aren't focused to kill controller input, still allow the player to Ctrl+S to choose a new name.
+                if (Selected && wasFocused && !Focused
+                    && !string.IsNullOrWhiteSpace(Name) && MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
+
+                    ResetDefaultName();
+                }
             }
 
             orig_Update();
@@ -94,6 +105,7 @@ namespace Celeste {
         [MonoModIgnore]
         private extern void Finish();
 
+        [PatchOuiFileNamingRendering]
         public extern void orig_Render();
         public override void Render() {
             int prevIndex = index;
@@ -116,5 +128,8 @@ namespace Celeste {
             orig_DrawOptionText(text, at, justify, scale, selected, disabled);
         }
 
+        private bool _shouldDisplaySwitchAlphabetPrompt() {
+            return Japanese && MInput.GamePads[Input.Gamepad].Attached;
+        }
     }
 }

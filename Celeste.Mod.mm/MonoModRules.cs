@@ -271,6 +271,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchFakeHeartColor")]
     class PatchFakeHeartColorAttribute : Attribute { };
 
+    /// <summary>
+    /// Patch the file naming rendering to hide the "switch between katakana and hiragana" prompt when the menu is not focused.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
+    class PatchOuiFileNamingRenderingAttribute : Attribute { };
+
 
     static class MonoModRules {
 
@@ -2039,6 +2045,23 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Choose") {
                     instrs.Insert(instri + 1, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri + 2, il.Create(OpCodes.Call, m_getCustomColor));
+                }
+            }
+        }
+
+        public static void PatchOuiFileNamingRendering(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_shouldDisplaySwitchAlphabetPrompt = method.DeclaringType.FindMethod("System.Boolean _shouldDisplaySwitchAlphabetPrompt()");
+            if (m_shouldDisplaySwitchAlphabetPrompt == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Japanese") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_shouldDisplaySwitchAlphabetPrompt;
                 }
             }
         }
