@@ -32,7 +32,9 @@ namespace Celeste {
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
         public static void Main(string[] args) {
-            Thread.CurrentThread.Name = "Main Thread";
+            if (Thread.CurrentThread.Name != "Main Thread") {
+                Thread.CurrentThread.Name = "Main Thread";
+            }
 
             if (File.Exists("launch.txt")) {
                 args =
