@@ -23,6 +23,14 @@ namespace Celeste {
         private static Texture2D identicon;
         private static float everestTime;
 
+        private float speedrunTimerEase;
+        private string speedrunTimerChapterString;
+        private string speedrunTimerFileString;
+        private string chapterSpeedrunText;
+        private AreaCompleteTitle title;
+        private CompleteRenderer complete;
+        private string version;
+
         public patch_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow, MapMetaCompleteScreen meta)
             : base(session, xml, atlas, snow) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -57,6 +65,18 @@ namespace Celeste {
             orig_End();
 
             DisposeAreaCompleteInfoForEverest();
+        }
+
+        [MonoModReplace]
+        private void RenderUI() {
+            base.Entities.Render();
+            AreaComplete.Info(speedrunTimerEase, speedrunTimerChapterString, speedrunTimerFileString, chapterSpeedrunText, version);
+            if (complete.HasUI && title != null)
+                title.Render();
+            if (speedrunTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
+                string label = Dialog.Clean("file_continue");
+                ButtonUI.Render(new Vector2(ButtonUI.Width(label, Input.MenuConfirm) * speedrunTimerEase, Engine.Height - 100f), label, Input.MenuConfirm, 0.75f);
+            }
         }
 
         public static void DisposeAreaCompleteInfoForEverest() {
