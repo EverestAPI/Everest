@@ -95,9 +95,12 @@ namespace Celeste {
         private void UpdateSprite() {
             orig_UpdateSprite();
 
-            // don't slow down the sprite (even if in space) for "intro wake up", because that makes that intro twice longer.
-            if (StateMachine.State == StIntroWakeUp) {
-                Sprite.Rate = 1f;
+            // Don't slow down the sprite (f.e. in space) for certain states,
+            // as their animations may become unbearably long
+            // or desynced from their sounds and thus broken.
+            if (StateMachine.State == StIntroWakeUp ||
+                StateMachine.State == StStarFly) {
+                Sprite.Rate = Sprite.Rate < 0f ? -1f : 1f;
             }
         }
 
