@@ -24,12 +24,6 @@ namespace Celeste {
         private static float everestTime;
 
         private float speedrunTimerEase;
-        private string speedrunTimerChapterString;
-        private string speedrunTimerFileString;
-        private string chapterSpeedrunText;
-        private AreaCompleteTitle title;
-        private CompleteRenderer complete;
-        private string version;
 
         public patch_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow, MapMetaCompleteScreen meta)
             : base(session, xml, atlas, snow) {
@@ -67,12 +61,9 @@ namespace Celeste {
             DisposeAreaCompleteInfoForEverest();
         }
 
-        [MonoModReplace]
+        private extern void orig_RenderUI();
         private void RenderUI() {
-            base.Entities.Render();
-            AreaComplete.Info(speedrunTimerEase, speedrunTimerChapterString, speedrunTimerFileString, chapterSpeedrunText, version);
-            if (complete.HasUI && title != null)
-                title.Render();
+            orig_RenderUI();
             if (speedrunTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
                 string label = Dialog.Clean("file_continue");
                 ButtonUI.Render(new Vector2(ButtonUI.Width(label, Input.MenuConfirm) * speedrunTimerEase, Engine.Height - 100f), label, Input.MenuConfirm, 0.75f);
