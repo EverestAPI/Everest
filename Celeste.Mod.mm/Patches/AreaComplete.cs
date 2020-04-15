@@ -24,6 +24,8 @@ namespace Celeste {
         private static float everestTime;
         private static bool isPieScreen; // on the pie screen, we should display the jdenticon on the left side of the screen, instead of the middle.
 
+        private float speedrunTimerEase;
+
         public patch_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow, MapMetaCompleteScreen meta)
             : base(session, xml, atlas, snow) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -60,6 +62,15 @@ namespace Celeste {
             orig_End();
 
             DisposeAreaCompleteInfoForEverest();
+        }
+
+        private extern void orig_RenderUI();
+        private void RenderUI() {
+            orig_RenderUI();
+            if (speedrunTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
+                string label = Dialog.Clean("file_continue");
+                ButtonUI.Render(new Vector2(ButtonUI.Width(label, Input.MenuConfirm) * speedrunTimerEase, Engine.Height - 100f), label, Input.MenuConfirm, 0.75f);
+            }
         }
 
         public static void DisposeAreaCompleteInfoForEverest() {
