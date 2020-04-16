@@ -2066,7 +2066,46 @@ namespace MonoMod {
             }
         }
 
+        public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
+            if (method?.Body == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+
+            Instruction instrPop = null;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instrs[instri - 1].OpCode == OpCodes.Callvirt && (instrs[instri - 1].Operand as MethodReference)?.GetID() == "Celeste.SoundSource Celeste.SoundSource::Stop(System.Boolean)" &&
+                    instr.OpCode == OpCodes.Pop) {
+                    instrPop = instr;
+                    break;
+                }
+            }
+
+            if (instrPop == null)
+                return;
+
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "Celeste.SoundSource Celeste.CrushBlock::currentMoveLoopSfx") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Dup));
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse, instrPop));
+                    instri++;
+                }
+            }
+        }
+
         public static void PostProcessor(MonoModder modder) {
+            // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
+            PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0")?.FindMethod("<AttackSequence>b__1"));
+
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
                 PatchAreaCompleteCtor(method);
