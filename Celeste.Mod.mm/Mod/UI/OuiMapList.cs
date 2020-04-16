@@ -33,6 +33,7 @@ namespace Celeste.Mod.UI {
         public bool Searching;
         private string search = "";
         private TextMenu.Item searchButton;
+        private bool searchConsumedButton;
 
         public OuiMapList() {
         }
@@ -83,13 +84,15 @@ namespace Celeste.Mod.UI {
                 return;
 
                 ValidButton:
+                searchConsumedButton = true;
                 MInput.Disabled = true;
+                MInput.UpdateNull();
+                MInput.UpdateNull();
                 ReloadMenu();
                 return;
 
                 InvalidButton:
                 Audio.Play(SFX.ui_main_button_invalid);
-                MInput.Disabled = false;
                 return;
 
             }
@@ -240,6 +243,9 @@ namespace Celeste.Mod.UI {
                 menu.Position.Y = menu.ScrollTargetY;
             }
 
+            // Don't allow pressing any buttons while searching
+            foreach (TextMenu.Item item in items)
+                item.Disabled = Searching;
         }
 
         private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
@@ -329,6 +335,13 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            if (Searching) {
+                MInput.Disabled = searchConsumedButton;
+            } else {
+                MInput.Disabled = false;
+            }
+            searchConsumedButton = false;
+
             if (menu != null && menu.Focused && Selected) {
                 Overworld.Maddy.Show = false;
 
@@ -345,22 +358,20 @@ namespace Celeste.Mod.UI {
 
             }
 
+            if (Searching)
+                MInput.Disabled = true;
+
             base.Update();
 
             if (Searching) {
                 // Otherwise spacebar will turn on free cam while searching
                 ((patch_MountainRenderer) Overworld.Mountain).SetFreeCam(false);
-                // Don't allow pressing any buttons while searching
-                foreach (TextMenu.Item item in items) {
-                    item.Disabled = true;
-                }
             }
 
+            // Don't allow pressing any buttons while searching
             if (menu != null)
                 foreach (TextMenu.Item item in menu.GetItems())
                     item.Disabled = Searching;
-
-            MInput.Disabled = false;
         }
 
         public override void Render() {
