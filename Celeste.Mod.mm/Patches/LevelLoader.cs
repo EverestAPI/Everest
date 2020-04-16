@@ -9,13 +9,17 @@ using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Xml;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
+
+        private static WeakReference<Thread> LastLoadingThread;
 
         public patch_LevelLoader(Session session, Vector2? startPosition = default(Vector2?))
             : base(session, startPosition) {
@@ -25,6 +29,12 @@ namespace Celeste {
         public extern void orig_ctor(Session session, Vector2? startPosition = default(Vector2?));
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default(Vector2?)) {
+            if (LastLoadingThread != null &&
+                LastLoadingThread.TryGetTarget(out Thread lastThread) &&
+                (lastThread?.IsAlive ?? false)) {
+                lastThread?.Abort();
+            }
+
             if (CoreModule.Settings.LazyLoading) {
                 MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
             }
@@ -131,6 +141,8 @@ namespace Celeste {
             GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
 
             orig_ctor(session, startPosition);
+
+            LastLoadingThread = patch_RunThread.Current;
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...
