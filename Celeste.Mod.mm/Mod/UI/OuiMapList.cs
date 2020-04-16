@@ -45,6 +45,21 @@ namespace Celeste.Mod.UI {
                     Scene.OnEndOfFrame += () => {
                         Searching = false;
                         MInput.Disabled = false;
+
+                        if (items.Count >= 2) {
+                            if (items.Count == 2) {
+                                Action pressed = (items[1] as TextMenuExt.ButtonExt)?.OnPressed;
+                                if (pressed != null) {
+                                    pressed.Invoke();
+                                    return;
+                                }
+                            }
+
+                            int index = menu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
+                            if (index > 0) {
+                                menu.Selection = index;
+                            }
+                        }
                     };
 
                 } else if (c == (char) 8) {
