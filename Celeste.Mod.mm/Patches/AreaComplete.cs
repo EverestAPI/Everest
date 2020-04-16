@@ -24,7 +24,8 @@ namespace Celeste {
         private static float everestTime;
         private static bool isPieScreen; // on the pie screen, we should display the jdenticon on the left side of the screen, instead of the middle.
 
-        private float speedrunTimerEase;
+        private float buttonTimerDelay;
+        private float buttonTimerEase;
 
         public patch_AreaComplete(Session session, XmlElement xml, Atlas atlas, HiresSnow snow, MapMetaCompleteScreen meta)
             : base(session, xml, atlas, snow) {
@@ -41,6 +42,9 @@ namespace Celeste {
             base.Begin();
 
             InitAreaCompleteInfoForEverest(pieScreen: false);
+
+            buttonTimerDelay = 2.2f;
+            buttonTimerEase = 0f;
         }
 
         public static void InitAreaCompleteInfoForEverest(bool pieScreen) {
@@ -64,12 +68,44 @@ namespace Celeste {
             DisposeAreaCompleteInfoForEverest();
         }
 
+        public extern void orig_Update();
+        public override void Update() {
+            orig_Update();
+
+            buttonTimerDelay -= Engine.DeltaTime;
+            if (buttonTimerDelay <= 0f) {
+                buttonTimerEase = Calc.Approach(buttonTimerEase, 1f, Engine.DeltaTime * 4f);
+            }
+        }
+
         private extern void orig_RenderUI();
         private void RenderUI() {
             orig_RenderUI();
-            if (speedrunTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
-                string label = Dialog.Clean("file_continue");
-                ButtonUI.Render(new Vector2(ButtonUI.Width(label, Input.MenuConfirm) * speedrunTimerEase, Engine.Height - 100f), label, Input.MenuConfirm, 0.75f);
+
+            if (buttonTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
+                MTexture button = Input.GuiButton(Input.MenuConfirm);
+
+                Vector2 pos = new Vector2(1860f - button.Width, 1020f - button.Height);
+                float alpha = buttonTimerEase * buttonTimerEase;
+                float scale = (0.9f + buttonTimerEase * 0.1f);
+
+                for (int x = -1; x <= 1; x++) {
+                    for (int y = -1; y <= 1; y++) {
+                        if (x != 0 && y != 0) {
+                            button.DrawCentered(
+                                pos + new Vector2(x, y),
+                                Color.Black * alpha * alpha * alpha * alpha,
+                                Vector2.One * scale
+                            );
+                        }
+                    }
+                }
+
+                button.DrawCentered(
+                    pos,
+                    Color.White * alpha,
+                    Vector2.One * scale
+                );
             }
         }
 
