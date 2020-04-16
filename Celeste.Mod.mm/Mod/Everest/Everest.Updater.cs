@@ -372,8 +372,9 @@ namespace Celeste.Mod {
                         installer.StartInfo.FileName = "mono";
                         installer.StartInfo.Arguments = $"\"{installerPath}\"";
                         if (File.Exists("/bin/sh")) {
+                            string pid = Process.GetCurrentProcess().Id.ToString();
                             installer.StartInfo.FileName = "/bin/sh";
-                            installer.StartInfo.Arguments = $"-c \"unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; mono MiniInstaller.exe\"";
+                            installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; mono MiniInstaller.exe\"";
                         }
                     }
                     installer.StartInfo.WorkingDirectory = extractedPath;
