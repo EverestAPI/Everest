@@ -156,7 +156,7 @@ namespace Celeste.Mod.UI {
                             });
 
                             // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                            // if there isnt, add it to the list of mods that can be updated via "update all"
+                            // if there isn't, add it to the list of mods that can be updated via "update all"
                             if (update.xxHash.Count > 1) {
                                 button.Disabled = true;
                             } else {
@@ -302,6 +302,9 @@ namespace Celeste.Mod.UI {
                         // if update is successful, remove this mod from the "update all" list
                         updatableMods.Remove(modupdate);
                         i--;
+                    } else {
+                        // stop trying to update further mods.
+                        break;
                     }
                 }
 

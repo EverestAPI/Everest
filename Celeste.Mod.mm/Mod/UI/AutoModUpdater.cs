@@ -118,6 +118,9 @@ namespace Celeste.Mod.UI {
 
                     // try to delete mod-update.zip if it still exists.
                     ModUpdaterHelper.TryDelete(zipPath);
+
+                    // stop trying to update further mods.
+                    break;
                 }
 
                 currentlyUpdatedModIndex++;
