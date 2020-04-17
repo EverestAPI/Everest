@@ -158,8 +158,9 @@
 
 # Mod Toggle Menu
 	MODOPTIONS_MODTOGGLE=				(DÉS)ACTIVER DES MODS
-	MODOPTIONS_MODTOGGLE_MESSAGE=		Si vous activez ou désactivez des mods, votre blacklist.txt et whitelist.txt
-	MODOPTIONS_MODTOGGLE_MESSAGE2=		seront remplacés, et Celeste va redémarrer pour appliquer les changements.
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Si vous activez ou désactivez des mods, votre blacklist.txt sera remplacé,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		et Celeste va redémarrer pour appliquer les changements.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Désactivez votre whitelist pour que ces réglages soient appliqués correctement.
 	MODOPTIONS_MODTOGGLE_ENABLEALL=		Tout activer
 	MODOPTIONS_MODTOGGLE_DISABLEALL=	Tout désactiver
 	MODOPTIONS_MODTOGGLE_CANCEL=		Annuler

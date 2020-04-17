@@ -7,10 +7,14 @@ namespace Celeste.Mod.UI {
     class OuiModToggler : OuiGenericMenu, OuiModOptions.ISubmenu {
         public override string MenuName => Dialog.Clean("MODOPTIONS_MODTOGGLE");
 
+        // list of all mods in the Mods folder
+        private List<string> allMods;
+        // list of currently blacklisted mods
         private HashSet<string> blacklistedMods;
+        // list of blacklisted mods when the menu was open
         private HashSet<string> blacklistedModsOriginal;
 
-        private TextMenuExt.SubHeaderExt restartMessage;
+        private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
 
         public OuiModToggler() {
@@ -18,9 +22,19 @@ namespace Celeste.Mod.UI {
         }
 
         protected override void addOptionsToMenu(TextMenu menu) {
+            // if there is a whitelist, warn the user that it will break those settings.
+            if (Everest.Loader.Whitelist != null) {
+                menu.Add(restartMessage1 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_WHITELISTWARN")) { TextColor = Color.OrangeRed });
+            }
 
-            menu.Add(restartMessage = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE")));
-            menu.Add(restartMessage2 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE2")) { HeightExtra = 0f });
+            // display the warning about blacklist.txt + restarting
+            menu.Add(restartMessage1 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE_1")));
+            menu.Add(restartMessage2 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE_2")) { HeightExtra = 0f });
+
+            // reduce spacing between the whitelist warning and the blacklist overwrite warning
+            if (Everest.Loader.Whitelist != null) {
+                restartMessage1.HeightExtra = 30f;
+            }
 
             // "enable all" and "disable all" buttons
             List<TextMenu.OnOff> allToggles = new List<TextMenu.OnOff>();
@@ -48,6 +62,7 @@ namespace Celeste.Mod.UI {
             }));
 
             // reset the mods list
+            allMods = new List<string>();
             blacklistedMods = new HashSet<string>();
 
             // crawl zips
@@ -70,6 +85,9 @@ namespace Celeste.Mod.UI {
                 }
             }
 
+            // sort the mods list alphabetically, for output in the blacklist.txt file later.
+            allMods.Sort();
+
             // clone the list to be able to check if the list changed when leaving the menu.
             blacklistedModsOriginal = new HashSet<string>(blacklistedMods);
         }
@@ -77,7 +95,7 @@ namespace Celeste.Mod.UI {
         private TextMenu.OnOff addFileToMenu(TextMenu menu, string file) {
             TextMenu.OnOff option;
 
-            bool enabled = !Everest.Loader._Blacklist.Contains(file) && (Everest.Loader._Whitelist == null || Everest.Loader._Whitelist.Contains(file));
+            bool enabled = !Everest.Loader._Blacklist.Contains(file);
             menu.Add(option = (TextMenu.OnOff) new TextMenu.OnOff(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled)
                 .Change(b => {
                     if (b) {
@@ -86,15 +104,16 @@ namespace Celeste.Mod.UI {
                         blacklistedMods.Add(file);
                     }
 
-                    if(blacklistedModsOriginal.SetEquals(blacklistedMods)) {
-                        restartMessage.TextColor = Color.Gray;
+                    if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
+                        restartMessage1.TextColor = Color.Gray;
                         restartMessage2.TextColor = Color.Gray;
                     } else {
-                        restartMessage.TextColor = Color.OrangeRed;
+                        restartMessage1.TextColor = Color.OrangeRed;
                         restartMessage2.TextColor = Color.OrangeRed;
                     }
                 }));
 
+            allMods.Add(file);
             if (!enabled) {
                 blacklistedMods.Add(file);
             }
@@ -108,16 +127,16 @@ namespace Celeste.Mod.UI {
                 overworld.Goto<OuiModOptions>();
             } else {
                 // save the blacklist
-                List<string> blacklistedList = blacklistedMods.ToList();
-                blacklistedList.Sort();
-                blacklistedList.Insert(0, "# This is the blacklist. Lines starting with # are ignored.");
-                blacklistedList.Insert(1, "# File generated through the \"Toggle Mods\" menu in Mod Options");
-                blacklistedList.Insert(2, "");
-                File.WriteAllLines(Everest.Loader.PathBlacklist, blacklistedList);
+                using (StreamWriter blacklistTxt = File.CreateText(Everest.Loader.PathBlacklist)) {
+                    // header
+                    blacklistTxt.WriteLine("# This is the blacklist. Lines starting with # are ignored.");
+                    blacklistTxt.WriteLine("# File generated through the \"Toggle Mods\" menu in Mod Options");
+                    blacklistTxt.WriteLine("");
 
-                // delete the whitelist
-                if (File.Exists(Everest.Loader.PathWhitelist)) {
-                    File.Delete(Everest.Loader.PathWhitelist);
+                    // write all mods, commenting out the ones we want unblacklisted.
+                    foreach (string mod in allMods) {
+                        blacklistTxt.WriteLine(blacklistedMods.Contains(mod) ? mod : $"# {mod}");
+                    }
                 }
 
                 // restart the game
