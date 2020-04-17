@@ -788,6 +788,7 @@ namespace Celeste {
             }
 
             #endregion
+
         }
 
         /// <summary>
@@ -1079,11 +1080,13 @@ namespace Celeste {
                     }
                 } else
                     wasFocused = false;
+
                 AfterInput:
                 foreach (TextMenu.Item item in CurrentMenu) {
                     item.OnUpdate?.Invoke();
                     item.Update();
                 }
+
                 if (Settings.Instance.DisableFlashes) {
                     HighlightColor = TextMenu.HighlightColorA;
                 } else if (Engine.Scene.OnRawInterval(0.1f)) {
@@ -1093,6 +1096,7 @@ namespace Celeste {
                         HighlightColor = TextMenu.HighlightColorA;
                     }
                 }
+
                 if (containerAutoScroll) {
                     if (Container.Height > Container.ScrollableMinSize) {
                         Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
@@ -1101,6 +1105,7 @@ namespace Celeste {
                     Container.Position.Y = 540f;
                 }
             }
+
             private void menu_Render(Vector2 position) {
                 RecalculateSize();
                 foreach (TextMenu.Item item in CurrentMenu) {
@@ -1208,17 +1213,15 @@ namespace Celeste {
                     float rWidth = RightWidth();
 
                     ActiveFont.DrawOutline(Menus[MenuIndex].Item1, titlePosition + new Vector2(Container.Width - rWidth * 0.5f + lastDir * ValueWiggler.Value * 8f, 0f), new Vector2(0.5f, 0.5f), Vector2.One * 0.8f, color, 2f, strokeColor);
-                    Vector2 vector = Vector2.UnitX * (highlighted ? ((float) Math.Sin(sine * 4f) * 4f) : 0f);
-                    Color color2 = MenuIndex > 0 ? color : (Color.DarkSlateGray * alpha);
-                    Vector2 position2 = titlePosition + new Vector2(Container.Width - rWidth + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (MenuIndex > 0 ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline("<", position2, new Vector2(0.5f, 0.5f), Vector2.One, color2, 2f, strokeColor);
+                    Vector2 wiggle = Vector2.UnitX * (highlighted ? ((float) Math.Sin(sine * 4f) * 4f) : 0f);
+                    Color arrowColor = MenuIndex > 0 ? color : (Color.DarkSlateGray * alpha);
+                    Vector2 arrowPosition = titlePosition + new Vector2(Container.Width - rWidth + 40f + ((lastDir < 0) ? (-ValueWiggler.Value * 8f) : 0f), 0f) - (MenuIndex > 0 ? wiggle : Vector2.Zero);
+                    ActiveFont.DrawOutline("<", arrowPosition, new Vector2(0.5f, 0.5f), Vector2.One, arrowColor, 2f, strokeColor);
 
-                    bool flag2 = MenuIndex < Menus.Count - 1;
-                    Color color3 = flag2 ? color : (Color.DarkSlateGray * alpha);
-                    Vector2 position3 = titlePosition + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (flag2 ? vector : Vector2.Zero);
-                    ActiveFont.DrawOutline(">", position3, new Vector2(0.5f, 0.5f), Vector2.One, color3, 2f, strokeColor);
+                    arrowColor = MenuIndex < Menus.Count - 1 ? color : (Color.DarkSlateGray * alpha);
+                    arrowPosition = titlePosition + new Vector2(Container.Width - 40f + ((lastDir > 0) ? (ValueWiggler.Value * 8f) : 0f), 0f) + (MenuIndex < Menus.Count - 1 ? wiggle : Vector2.Zero);
+                    ActiveFont.DrawOutline(">", arrowPosition, new Vector2(0.5f, 0.5f), Vector2.One, arrowColor, 2f, strokeColor);
                 }
-
 
                 if (CurrentMenu != null) {
                     Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
