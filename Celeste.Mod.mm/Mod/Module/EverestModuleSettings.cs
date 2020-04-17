@@ -81,6 +81,17 @@ namespace Celeste.Mod {
     }
 
     /// <summary>
+    /// Add a description shown when the setting is selected
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingSubTextAttribute : Attribute {
+        public string Description;
+        public SettingSubTextAttribute(string description) {
+            Description = description;
+        }
+    }
+
+    /// <summary>
     /// Ignore the setting in the default mod options menu handler.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
