@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
+using System.Configuration;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -408,6 +409,8 @@ namespace Celeste.Mod {
 
                 bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
 
+                string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
+
                 TextMenu.Item item = null;
                 Type propType = prop.PropertyType;
                 object value = prop.GetValue(settings);
@@ -480,6 +483,9 @@ namespace Celeste.Mod {
 
                 if (needsRelaunch)
                     item = item.NeedsRelaunch(menu);
+
+                if (description != null)
+                    item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
         }

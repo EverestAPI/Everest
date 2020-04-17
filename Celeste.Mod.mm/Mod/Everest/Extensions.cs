@@ -204,15 +204,48 @@ namespace Celeste.Mod {
                 containingMenu.Insert(items.IndexOf(option) + 1, needsRelaunchText);
             }
 
-            return option
-            .Enter(() => {
-                // make the text appear.
+            option.OnEnter += delegate {
+                // make the description appear.
                 needsRelaunchText.FadeVisible = true;
-            })
-            .Leave(() => {
-                // make the text disappear.
+            };
+            option.OnLeave += delegate {
+                // make the description disappear.
                 needsRelaunchText.FadeVisible = false;
-            });
+            };
+
+            return option;
+        }
+
+        /// <summary>
+        /// Add an Enter and Leave handler, displaying a description if selected.
+        /// </summary>
+        /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
+        /// <param name="description"></param>
+        /// <returns>The passed option.</returns>
+        public static TextMenu.Item AddDescription(this TextMenu.Item option, TextMenu containingMenu, string description) {
+            // build the description menu entry
+            TextMenuExt.EaseInSubHeaderExt descriptionText = new TextMenuExt.EaseInSubHeaderExt(description, false, containingMenu) {
+                TextColor = Color.Gray,
+                HeightExtra = 0f
+            };
+
+            List<TextMenu.Item> items = containingMenu.GetItems();
+            if (items.Contains(option)) {
+                // insert the description after the option.
+                containingMenu.Insert(items.IndexOf(option) + 1, descriptionText);
+            }
+
+            option.OnEnter += delegate {
+                // make the description appear.
+                descriptionText.FadeVisible = true;
+            };
+            option.OnLeave += delegate {
+                // make the description disappear.
+                descriptionText.FadeVisible = false;
+            };
+
+            return option;
         }
 
         // Celeste already ships with this.
