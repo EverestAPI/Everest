@@ -57,8 +57,8 @@
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Recharger aspects~
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
-
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
+	MODOPTIONS_COREMODULE_TOGGLEMODS= 						Activer ou désactiver des mods
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
@@ -155,3 +155,14 @@
 	OOBE_SETTINGS_SUBHEADER=	Voici quelques réglages qui pourraient t'intéresser.
 	OOBE_SETTINGS_MORE=			Tu peux changer ces réglages et d'autres dans le menu "Options des mods".
 	OOBE_SETTINGS_OK=			OK
+
+# Mod Toggle Menu
+	MODOPTIONS_MODTOGGLE=				(DÉS)ACTIVER DES MODS
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Si vous activez ou désactivez des mods, votre blacklist.txt sera remplacé,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		et Celeste va redémarrer pour appliquer les changements.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Désactivez votre whitelist pour que ces réglages soient appliqués correctement.
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		Tout activer
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	Tout désactiver
+	MODOPTIONS_MODTOGGLE_CANCEL=		Annuler
+	MODOPTIONS_MODTOGGLE_ZIPS=			Fichiers ZIP
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Dossiers

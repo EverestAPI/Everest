@@ -75,8 +75,8 @@
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload Assets~
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Sound Test
-
 	MODOPTIONS_COREMODULE_OOBE= 							Redo Initial Setup
+	MODOPTIONS_COREMODULE_TOGGLEMODS=						Enable or Disable Mods
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
@@ -173,3 +173,14 @@
 	OOBE_SETTINGS_SUBHEADER=	Here are some settings you might be interested in.
 	OOBE_SETTINGS_MORE=			You can change this and more in the Mod Options screen.
 	OOBE_SETTINGS_OK=			OK
+
+# Mod Toggle Menu
+	MODOPTIONS_MODTOGGLE=				TOGGLE MODS
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you enable or disable mods, your blacklist.txt will be replaced,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Disable your whitelist for these settings to be applied properly.
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		Enable All
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	Disable All
+	MODOPTIONS_MODTOGGLE_CANCEL=		Cancel
+	MODOPTIONS_MODTOGGLE_ZIPS=			Zip Files
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Directories
