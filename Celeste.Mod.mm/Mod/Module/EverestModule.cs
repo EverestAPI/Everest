@@ -485,7 +485,7 @@ namespace Celeste.Mod {
                     item = item.NeedsRelaunch(menu);
 
                 if (description != null)
-                    item = item.AddDescription(menu, description);
+                    item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
         }
