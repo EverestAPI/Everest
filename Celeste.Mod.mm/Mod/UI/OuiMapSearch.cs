@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
-    public class OuiMapList : Oui {
+    public class OuiMapSearch : Oui {
 
         private MountainCamera cameraStart;
         private MountainCamera cameraEnd;
@@ -23,12 +23,119 @@ namespace Celeste.Mod.UI {
 
         private float alpha = 0f;
 
-        private int type = 2;
-        private int side = 0;
-
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
 
         private List<string> sets = new List<string>();
+
+        public static bool FromChapterSelect = false;
+        public bool Searching;
+        private string search = "";
+        private string searchPrev = "";
+        private TextMenu.Item searchButton;
+        private bool searchConsumedButton;
+        private int itemCount;
+        private TextMenu.SubHeader resultHeader;
+
+        private void clearSearch() {
+            Searching = false;
+            search = "";
+            searchPrev = "";
+        }
+
+        private void cleanExit() {
+            clearSearch();
+            if (FromChapterSelect) {
+                Audio.Play(SFX.ui_main_button_back);
+                Overworld.Goto<OuiChapterSelect>();
+            } else {
+                Overworld.Goto<OuiMapList>();
+            }
+        }
+
+        public void OnTextInput(char c) {
+
+            if (!Searching)
+                return;
+
+            if (c == (char) 13) {
+                // Enter
+                Scene.OnEndOfFrame += () => {
+                    Searching = false;
+                    MInput.Disabled = false;
+
+                    if (items.Count >= 1) {
+                        if (items.Count == 2) {
+                            Action pressed = (items[1] as TextMenuExt.ButtonExt)?.OnPressed;
+                            if (pressed != null) {
+                                clearSearch();
+                                pressed.Invoke();
+                                return;
+                            }
+                        }
+
+                        int index = menu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
+                        if (index > 0) {
+                            menu.Selection = index;
+                        }
+                    }
+                };
+
+            } else if (c == (char) 8) {
+                // Backspace - trim.
+                if (search.Length > 0) {
+                    search = search.Substring(0, search.Length - 1);
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    goto ValidButton;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                    Searching = false;
+                    goto ValidButton;
+                }
+
+            } else if (c == (char) 127) {
+                // Delete - clear.
+                if (search.Length > 0) {
+                    clearSearch();
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    goto ValidButton;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                    cleanExit();
+                    goto ValidButton;
+                }
+
+            } else if (c == ' ') {
+                // Space - append.
+                if (search.Length > 0) {
+                    search += c;
+                }
+                Audio.Play(SFX.ui_main_rename_entry_space);
+                goto ValidButton;
+
+            } else if (!char.IsControl(c)) {
+                // Any other character - append.
+                if (ActiveFont.FontSize.Characters.ContainsKey(c)) {
+                    Audio.Play(SFX.ui_main_rename_entry_char);
+                    search += c;
+                    goto ValidButton;
+                } else {
+                    goto InvalidButton;
+                }
+            }
+
+            return;
+
+            ValidButton:
+            searchConsumedButton = true;
+            MInput.Disabled = true;
+            MInput.UpdateNull();
+            MInput.UpdateNull();
+            return;
+
+            InvalidButton:
+            Audio.Play(SFX.ui_main_button_invalid);
+            return;
+        }
 
         private TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
@@ -36,51 +143,13 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
 
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
-
-            menu.Add(new TextMenu.Button(Dialog.Clean("maplist_reload")).Pressed(() => {
-                Audio.Play(SFX.ui_postgame_unlock_newchapter);
-                Overworld.Mountain.UntiltedCamera = cameraStart;
-                OuiHelper_ChapterSelect_Reload.Reload();
-                Overworld.Goto<OuiMapList>();
+            menu.Add(searchButton = new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
+                Searching = true;
+                MInput.Disabled = true;
+                ReloadMenu();
             }));
 
-            sets.Clear();
-            foreach (AreaData area in AreaData.Areas) {
-                string levelSet = area.GetLevelSet();
-                if (string.IsNullOrEmpty(levelSet))
-                    continue;
-                if (levelSet == "Celeste")
-                    continue;
-                if (sets.Contains(levelSet))
-                    continue;
-                sets.Add(levelSet);
-            }
-
-            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_type"), value => {
-                if (value == 0)
-                    return Dialog.Clean("levelset_celeste");
-                if (value == 1)
-                    return Dialog.Clean("maplist_type_everything");
-                if (value == 2)
-                    return Dialog.Clean("maplist_type_allmods");
-                return DialogExt.CleanLevelSet(sets[value - 3]);
-            }, 0, 2 + sets.Count, type).Change(value => {
-                type = value;
-                ReloadItems();
-            }));
-
-            menu.Add(new TextMenu.Slider(Dialog.Clean("maplist_side"), value => ((char) ('A' + value)).ToString(), 0, Enum.GetValues(typeof(AreaMode)).Length - 1, side).Change(value => {
-                side = value;
-                ReloadItems();
-            }));
-
-            menu.Add(new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
-                OuiMapSearch.FromChapterSelect = false;
-                Overworld.Goto<OuiMapSearch>();
-            }));
-
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_list")));
+            menu.Add(resultHeader = new TextMenu.SubHeader(itemCount.ToString() + " " + (itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"))));
 
             ReloadItems();
 
@@ -88,16 +157,10 @@ namespace Celeste.Mod.UI {
         }
 
         private void ReloadItems() {
+            itemCount = 0;
             foreach (TextMenu.Item item in items)
                 menu.Remove(item);
             items.Clear();
-
-            string filterSet = null;
-            if (type == 0) {
-                filterSet = "Celeste";
-            } else if (type >= 3) {
-                filterSet = sets[type - 3];
-            }
 
             string lastLevelSet = null;
             LevelSetStats levelSetStats = null;
@@ -110,7 +173,7 @@ namespace Celeste.Mod.UI {
             List<AreaStats> areaStatsAll = save.Areas;
             for (int i = 0; i < AreaData.Areas.Count; i++) {
                 AreaData area = AreaData.Get(i);
-                if (area == null || !area.HasMode((AreaMode) side))
+                if (area == null || !area.HasMode(AreaMode.Normal))
                     continue;
 
                 // TODO: Make subchapters hidden by default in the map list, even in debug mode.
@@ -119,11 +182,14 @@ namespace Celeste.Mod.UI {
 
                 string levelSet = area.GetLevelSet();
 
-                if (type != 1 && ((filterSet == null && levelSet == "Celeste") || (filterSet != null && filterSet != levelSet)))
-                    continue;
-
                 name = area.Name;
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
+
+                // handle keyboard search
+                if (search != "" && !name.ToLower().Contains(search.ToLower()))
+                    continue;
+
+                itemCount++;
 
                 if (lastLevelSet != levelSet) {
                     lastLevelSet = levelSet;
@@ -147,16 +213,16 @@ namespace Celeste.Mod.UI {
 
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     button.Disabled = true;
-                if (side == 1 && !areaStatsAll[i].Cassette)
-                    button.Disabled = true;
-                if (side >= 2 && levelSetUnlockedModes < (side + 1))
-                    button.Disabled = true;
 
                 menu.Add(button.Pressed(() => {
-                    Inspect(area, (AreaMode) side);
+                    clearSearch();
+                    Inspect(area, AreaMode.Normal);
                 }));
                 items.Add(button);
             }
+
+            if (resultHeader != null)
+                resultHeader.Title = itemCount.ToString() + " " + (itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"));
 
             // compute a delay so that options don't take more than a second to show up if many mods are installed.
             float delayBetweenOptions = 0.03f;
@@ -170,6 +236,10 @@ namespace Celeste.Mod.UI {
             if (menu.Height > menu.ScrollableMinSize) {
                 menu.Position.Y = menu.ScrollTargetY;
             }
+
+            // Don't allow pressing any buttons while searching
+            foreach (TextMenu.Item item in items)
+                item.Disabled = Searching;
         }
 
         private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
@@ -211,6 +281,9 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
+            TextInput.OnInput += OnTextInput;
+
+            Searching = true;
 
             ReloadMenu();
 
@@ -233,6 +306,12 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
+            TextInput.OnInput -= OnTextInput;
+
+            FromChapterSelect = false;
+
+            Searching = false;
+            MInput.Disabled = false;
 
             menu.Focused = false;
 
@@ -255,23 +334,56 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            if (Searching) {
+                MInput.Disabled = searchConsumedButton;
+            }
+            searchConsumedButton = false;
 
             if (menu != null && menu.Focused && Selected) {
                 Overworld.Maddy.Show = false;
 
+                if (search != searchPrev) {
+                    ReloadItems();
+                    searchPrev = search;
+                }
+
                 if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
-                    Audio.Play(SFX.ui_main_button_back);
-                    Overworld.Goto<OuiChapterSelect>();
+                    if (Searching) {
+                        Searching = false;
+                        MInput.Disabled = false;
+                        if (search == "")
+                            cleanExit();
+                    } else {
+                        cleanExit();
+                    }
                 }
 
             }
 
+            MInput.Disabled = Searching;
+
             base.Update();
+
+            if (Searching) {
+                // Otherwise spacebar will turn on free cam while searching
+                ((patch_MountainRenderer) Overworld.Mountain).SetFreeCam(false);
+            }
+
+            // Don't allow pressing any buttons while searching
+            if (menu != null)
+                foreach (TextMenu.Item item in menu.GetItems())
+                    item.Disabled = Searching;
         }
 
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+
+
+            // Draw the search
+            Vector2 value = menu.Position - menu.Justify * new Vector2(menu.Width, menu.Height);
+            Vector2 pos = new Vector2(value.X + (menu.Width / 2), value.Y + menu.GetYOffsetOf(searchButton) + searchButton.Height() + 5f);
+            ActiveFont.DrawOutline(search + (Searching ? "_" : ""), pos, new Vector2(0.5f), Vector2.One * 0.75f, Color.White * menu.Alpha, 2f, Color.Black * (menu.Alpha * menu.Alpha * menu.Alpha));
 
             base.Render();
         }

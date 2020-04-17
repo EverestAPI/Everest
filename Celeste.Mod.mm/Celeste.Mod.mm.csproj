@@ -104,6 +104,33 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\everest.m.png">
       <LogicalName>Content\Graphics\Atlases\Gui\emoji\everest.m.png</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions_new.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions_new.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.png</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\langnoicon.png">
+      <LogicalName>Content\Graphics\Atlases\Gui\menu\langnoicon.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\reloader\cogwheel.png">
       <LogicalName>Content\Graphics\Atlases\Gui\reloader\cogwheel.png</LogicalName>
     </EmbeddedResource>
@@ -142,33 +169,6 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Content\Lua\typebuilder.lua">
       <LogicalName>Content\Lua\typebuilder.lua</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions_new.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions_new.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\langnoicon.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\langnoicon.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 
@@ -211,24 +211,4 @@
     </Content>
   </ItemGroup>
   
-  <ItemGroup>
-    <None Remove="Content\Dialog\English.txt" />
-    <None Remove="Content\Dialog\French.txt" />
-    <None Remove="Content\Dialog\Simplified Chinese.txt" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\maplistsearch.meta.yaml" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\maplistsearch.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\modoptions.xcf" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\modoptions_new.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\modoptions.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\maplist.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\mapsearch.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\everest.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\langnoicon.png" />
-    <None Remove="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Content\Graphics\Atlases\Gui\menu\" />
-  </ItemGroup>
 </Project>

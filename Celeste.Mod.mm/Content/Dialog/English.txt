@@ -98,8 +98,8 @@
 	MAPLIST_SIDE= 			  Side
 	MAPLIST_RELOAD= 		  Reload
 	MAPLIST_LIST= 			  Maps
-	MAPLIST_UNCATEGORIZED= 	  Uncategorized
-	MAPLIST_SEARCH=			  Search
+    MAPLIST_UNCATEGORIZED= 	  Uncategorized
+    MAPLIST_SEARCH=			  Search
     MAPLIST_RESULTS_SINGULAR= result found  
     MAPLIST_RESULTS_PLURAL=   results found
 

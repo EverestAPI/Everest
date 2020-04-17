@@ -187,7 +187,6 @@ namespace Celeste {
                     Overworld.Maddy.Hide(true);
                     Audio.Play(SFX.ui_main_button_select);
                     Audio.Play(SFX.ui_main_whoosh_large_in);
-                    OuiMapList.FromKeybind = false;
                     OuiMapList list = Overworld.Goto<OuiMapList>();
                     list.OuiIcons = icons;
                     return;
@@ -195,8 +194,8 @@ namespace Celeste {
                     Overworld.Maddy.Hide(true);
                     Audio.Play(SFX.ui_main_button_select);
                     Audio.Play(SFX.ui_main_whoosh_large_in);
-                    OuiMapList.FromKeybind = true;
-                    OuiMapList list = Overworld.Goto<OuiMapList>();
+                    OuiMapSearch.FromChapterSelect = true;
+                    OuiMapSearch list = Overworld.Goto<OuiMapSearch>();
                     list.OuiIcons = icons;
                     return;
                 }
