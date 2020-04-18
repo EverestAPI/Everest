@@ -5,6 +5,7 @@ using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
+using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -14,17 +15,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste {
-    class patch_OVR {
+    class patch_HiresSnow : HiresSnow {
 
-        public static extern void orig_Load();
-        public static void Load() {
-            orig_Load();
+        public patch_HiresSnow(float overlayAlpha = 0.45f)
+            : base(overlayAlpha) {
+            // no-op.
+        }
 
+        public extern void orig_ctor(float overlayAlpha = 0.45f);
+        [MonoModConstructor]
+        public void ctor(float overlayAlpha = 0.45f) {
             // THe vanilla overlay texture has got a 4x4 transparent blob formed by transparent pixels at each corner.
             MTexture overlay = OVR.Atlas["overlay"];
             if (overlay.Texture.GetMetadata() == null) {
                 Texture2D texture = overlay.Texture.Texture;
-                if (overlay.ClipRect.X == 0 && overlay.ClipRect.Y == 0 && overlay.ClipRect.Width == texture.Width && overlay.ClipRect.Height == texture.Height) {
+                if (overlay.ClipRect.X == 0 && overlay.ClipRect.Y == 0 &&
+                    overlay.ClipRect.Width == texture.Width && overlay.ClipRect.Height == texture.Height) {
                     Color[] data = new Color[texture.Width * texture.Height];
                     texture.GetData(data);
 
@@ -59,6 +65,8 @@ namespace Celeste {
                     }
                 }
             }
+
+            orig_ctor(overlayAlpha);
         }
 
     }
