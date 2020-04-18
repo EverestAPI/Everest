@@ -90,18 +90,18 @@
 	SOUNDTEST_TITLE=	SOUND TEST
 
 # Maplist
-	MAPLIST_TITLE= 			  MAP LIST
-	MAPLIST_FILTERS= 		  Filters
-	MAPLIST_TYPE= 			  From
-    MAPLIST_TYPE_ALLMODS=     All Mods
-    MAPLIST_TYPE_EVERYTHING=  Everything
-	MAPLIST_SIDE= 			  Side
-	MAPLIST_RELOAD= 		  Reload
-	MAPLIST_LIST= 			  Maps
-    MAPLIST_UNCATEGORIZED= 	  Uncategorized
-    MAPLIST_SEARCH=			  Search
-    MAPLIST_RESULTS_SINGULAR= result found  
-    MAPLIST_RESULTS_PLURAL=   results found
+	MAPLIST_TITLE= 			MAP LIST
+	MAPLIST_FILTERS= 		Filters
+	MAPLIST_TYPE= 			From
+	MAPLIST_TYPE_ALLMODS= 	All Mods
+	MAPLIST_SIDE= 			Side
+	MAPLIST_RELOAD= 		Reload
+	MAPLIST_LIST= 			Maps
+	MAPLIST_UNCATEGORIZED= 	Uncategorized
+	MAPLIST_SEARCH=			Search
+	MAPLIST_TYPE_EVERYTHING=  Everything
+	MAPLIST_RESULTS_SINGULAR= {0} result found  
+	MAPLIST_RESULTS_PLURAL=   {0} results found
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				Uncategorized

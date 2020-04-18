@@ -37,7 +37,6 @@ namespace Celeste.Mod.UI {
         private TextMenu.SubHeader resultHeader;
 
         private void clearSearch() {
-            Searching = false;
             search = "";
             searchPrev = "";
         }
@@ -149,7 +148,7 @@ namespace Celeste.Mod.UI {
                 ReloadMenu();
             }));
 
-            menu.Add(resultHeader = new TextMenu.SubHeader(itemCount.ToString() + " " + (itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"))));
+            menu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"), itemCount)));
 
             ReloadItems();
 
@@ -185,6 +184,9 @@ namespace Celeste.Mod.UI {
                 name = area.Name;
                 name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
 
+                if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
+                    continue;
+
                 // handle keyboard search
                 if (search != "" && !name.ToLower().Contains(search.ToLower()))
                     continue;
@@ -210,9 +212,6 @@ namespace Celeste.Mod.UI {
                 if (area.Icon != "areas/null")
                     button.Icon = area.Icon;
                 button.IconWidth = 64f;
-
-                if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
-                    button.Disabled = true;
 
                 menu.Add(button.Pressed(() => {
                     clearSearch();
@@ -309,8 +308,6 @@ namespace Celeste.Mod.UI {
             TextInput.OnInput -= OnTextInput;
 
             FromChapterSelect = false;
-
-            Searching = false;
             MInput.Disabled = false;
 
             menu.Focused = false;
@@ -329,6 +326,7 @@ namespace Celeste.Mod.UI {
             }
 
             menu.Visible = Visible = false;
+            Searching = false;
             menu.RemoveSelf();
             menu = null;
         }

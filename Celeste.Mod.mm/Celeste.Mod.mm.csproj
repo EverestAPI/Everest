@@ -125,9 +125,6 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.png</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.meta.yaml</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\langnoicon.png">
       <LogicalName>Content\Graphics\Atlases\Gui\menu\langnoicon.png</LogicalName>
     </EmbeddedResource>
@@ -210,5 +207,4 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  
 </Project>
