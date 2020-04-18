@@ -190,7 +190,7 @@ namespace Celeste {
                     OuiMapList list = Overworld.Goto<OuiMapList>();
                     list.OuiIcons = icons;
                     return;
-                } else if (Input.Grab.Pressed) {
+                } else if (Input.QuickRestart.Pressed) {
                     Overworld.Maddy.Hide(true);
                     Audio.Play(SFX.ui_main_button_select);
                     Audio.Play(SFX.ui_main_whoosh_large_in);
@@ -276,7 +276,7 @@ namespace Celeste {
                     pos.Y -= 128f;
                 }
                 GFX.Gui["menu/mapsearch"].DrawCentered(pos, Color.White * Ease.CubeOut(searchEase));
-                Input.GuiButton(Input.Grab).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+                Input.GuiButton(Input.QuickRestart).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
             }
 
             if (levelsetEase > 0f) {

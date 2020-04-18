@@ -16,7 +16,7 @@ namespace Celeste.Mod.UI {
 
         public List<OuiChapterSelectIcon> OuiIcons;
 
-        private TextMenu menu;
+        private SearchMenu menu;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -31,10 +31,75 @@ namespace Celeste.Mod.UI {
         public bool Searching;
         private string search = "";
         private string searchPrev = "";
-        private TextMenu.Item searchButton;
+        private TextMenu.Item searchTitle;
         private bool searchConsumedButton;
         private int itemCount;
         private TextMenu.SubHeader resultHeader;
+
+        private class SearchMenu : Entity {
+            public bool leftFocused {
+                get => leftMenu.Focused;
+                set {
+                    leftMenu.Focused = value;
+                    rightMenu.Focused = !value;
+                }
+            }
+            public TextMenu leftMenu;
+            public TextMenu rightMenu;
+            private float leftOffset;
+            private float rightOffset;
+            public int Selection {
+                get => currentMenu.Selection;
+                set => currentMenu.Selection = value;
+            }
+            public TextMenu currentMenu {
+                get {
+                    return leftFocused ? leftMenu : rightMenu;
+                }
+            }
+            public bool Focused {
+                get => leftMenu.Focused || rightMenu.Focused;
+                set {
+                    if (value) {
+                        leftFocused = true;
+                    } else {
+                        leftMenu.Focused = false;
+                        rightMenu.Focused = false;
+                    }
+                }
+            }
+
+            public SearchMenu(TextMenu leftMenu, TextMenu rightMenu) {
+                Position = Vector2.Zero;
+                this.leftMenu = leftMenu;
+                this.rightMenu = rightMenu;
+            }
+
+            public override void Added(Scene scene) {
+                base.Added(scene);
+                rightMenu.InnerContent = TextMenu.InnerContentMode.TwoColumn;
+                leftMenu.Position.X = Engine.Width / -4f;
+                rightMenu.Position.X = Engine.Width / 4f;
+                leftOffset = leftMenu.Position.X;
+                rightOffset = rightMenu.Position.X;
+                rightMenu.Focused = false;
+                scene.Add(leftMenu);
+                scene.Add(rightMenu);
+            }
+
+            public override void Removed(Scene scene) {
+                scene.Remove(leftMenu);
+                scene.Remove(rightMenu);
+                base.Removed(scene);
+            }
+
+            public override void Update() {
+                base.Update();
+                leftMenu.Position.X = leftOffset + Position.X;
+                rightMenu.Position.X = rightOffset + Position.X;
+            }
+
+        }
 
         private void clearSearch() {
             search = "";
@@ -59,8 +124,7 @@ namespace Celeste.Mod.UI {
             if (c == (char) 13) {
                 // Enter
                 Scene.OnEndOfFrame += () => {
-                    Searching = false;
-                    MInput.Disabled = false;
+                    switchMenu();
 
                     if (items.Count >= 1) {
                         if (items.Count == 2) {
@@ -72,9 +136,9 @@ namespace Celeste.Mod.UI {
                             }
                         }
 
-                        int index = menu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
+                        int index = menu.rightMenu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
                         if (index > 0) {
-                            menu.Selection = index;
+                            menu.rightMenu.Selection = index;
                         }
                     }
                 };
@@ -86,9 +150,12 @@ namespace Celeste.Mod.UI {
                     Audio.Play(SFX.ui_main_rename_entry_backspace);
                     goto ValidButton;
                 } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                    Searching = false;
-                    goto ValidButton;
+                    if (Input.MenuCancel.Pressed) {
+                        Audio.Play(SFX.ui_main_button_invalid);
+                        switchMenu();
+                        goto ValidButton;
+                    }
+                    return;
                 }
 
             } else if (c == (char) 127) {
@@ -136,19 +203,13 @@ namespace Celeste.Mod.UI {
             return;
         }
 
-        private TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new TextMenu();
+        private SearchMenu CreateMenu(bool inGame, EventInstance snapshot) {
+            menu = new SearchMenu(new TextMenu(), new TextMenu());
             items.Clear();
 
-            menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
+            menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
 
-            menu.Add(searchButton = new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
-                Searching = true;
-                MInput.Disabled = true;
-                ReloadMenu();
-            }));
-
-            menu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"), itemCount)));
+            menu.rightMenu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"), itemCount)));
 
             ReloadItems();
 
@@ -158,7 +219,7 @@ namespace Celeste.Mod.UI {
         private void ReloadItems() {
             itemCount = 0;
             foreach (TextMenu.Item item in items)
-                menu.Remove(item);
+                menu.rightMenu.Remove(item);
             items.Clear();
 
             string lastLevelSet = null;
@@ -202,7 +263,7 @@ namespace Celeste.Mod.UI {
                     string setname = DialogExt.CleanLevelSet(levelSet);
                     TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                     levelSetHeader.Alpha = 0f;
-                    menu.Add(levelSetHeader);
+                    menu.rightMenu.Add(levelSetHeader);
                     items.Add(levelSetHeader);
                 }
 
@@ -213,7 +274,10 @@ namespace Celeste.Mod.UI {
                     button.Icon = area.Icon;
                 button.IconWidth = 64f;
 
-                menu.Add(button.Pressed(() => {
+                if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
+                    button.Disabled = true;
+
+                menu.rightMenu.Add(button.Pressed(() => {
                     clearSearch();
                     Inspect(area, AreaMode.Normal);
                 }));
@@ -232,8 +296,8 @@ namespace Celeste.Mod.UI {
             for (int i = 0; i < items.Count; i++)
                 Add(new Coroutine(FadeIn(i, delayBetweenOptions, items[i])));
 
-            if (menu.Height > menu.ScrollableMinSize) {
-                menu.Position.Y = menu.ScrollTargetY;
+            if (menu.rightMenu.Height > menu.rightMenu.ScrollableMinSize) {
+                menu.rightMenu.Position.Y = menu.rightMenu.ScrollTargetY;
             }
 
             // Don't allow pressing any buttons while searching
@@ -262,8 +326,10 @@ namespace Celeste.Mod.UI {
             Vector2 position = Vector2.Zero;
 
             int selected = -1;
+            bool leftSelected = true;
             if (menu != null) {
                 position = menu.Position;
+                leftSelected = menu.leftFocused;
                 selected = menu.Selection;
                 Scene.Remove(menu);
             }
@@ -285,6 +351,8 @@ namespace Celeste.Mod.UI {
             Searching = true;
 
             ReloadMenu();
+
+            menu.rightMenu.MinWidth = menu.rightMenu.Width;
 
             menu.Visible = (Visible = true);
             menu.Focused = false;
@@ -308,6 +376,7 @@ namespace Celeste.Mod.UI {
             TextInput.OnInput -= OnTextInput;
 
             FromChapterSelect = false;
+
             MInput.Disabled = false;
 
             menu.Focused = false;
@@ -331,6 +400,16 @@ namespace Celeste.Mod.UI {
             menu = null;
         }
 
+        private void switchMenu() {
+            bool nextIsLeft = !menu.leftFocused;
+            if (nextIsLeft || items.Count > 1) {
+                menu.leftFocused = nextIsLeft;
+                Searching = nextIsLeft;
+                MInput.Disabled = nextIsLeft;
+                menu.currentMenu.Selection = nextIsLeft ? -1 : 2;
+            }
+        }
+
         public override void Update() {
             if (Searching) {
                 MInput.Disabled = searchConsumedButton;
@@ -347,13 +426,22 @@ namespace Celeste.Mod.UI {
 
                 if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
                     if (Searching) {
-                        Searching = false;
-                        MInput.Disabled = false;
-                        if (search == "")
-                            cleanExit();
+                        switchMenu();
                     } else {
                         cleanExit();
                     }
+                }
+
+                if (Input.MenuRight.Pressed) {
+                    if (!menu.leftFocused)
+                        return;
+                    switchMenu();
+                }
+
+                if (Input.MenuLeft.Pressed) {
+                    if (menu.leftFocused)
+                        return;
+                    switchMenu();
                 }
 
             }
@@ -369,7 +457,7 @@ namespace Celeste.Mod.UI {
 
             // Don't allow pressing any buttons while searching
             if (menu != null)
-                foreach (TextMenu.Item item in menu.GetItems())
+                foreach (TextMenu.Item item in menu.rightMenu.GetItems())
                     item.Disabled = Searching;
         }
 
@@ -377,11 +465,13 @@ namespace Celeste.Mod.UI {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
 
-
+            TextMenu leftMenu = menu.leftMenu;
             // Draw the search
-            Vector2 value = menu.Position - menu.Justify * new Vector2(menu.Width, menu.Height);
-            Vector2 pos = new Vector2(value.X + (menu.Width / 2), value.Y + menu.GetYOffsetOf(searchButton) + searchButton.Height() + 5f);
-            ActiveFont.DrawOutline(search + (Searching ? "_" : ""), pos, new Vector2(0.5f), Vector2.One * 0.75f, Color.White * menu.Alpha, 2f, Color.Black * (menu.Alpha * menu.Alpha * menu.Alpha));
+            if (searchTitle != null) {
+                Vector2 value = leftMenu.Position + leftMenu.Justify * new Vector2(leftMenu.Width, leftMenu.Height);
+                Vector2 pos = new Vector2(value.X - 200f, value.Y + leftMenu.GetYOffsetOf(searchTitle) + 1f);
+                ActiveFont.DrawOutline(search + (Searching ? "_" : ""), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * leftMenu.Alpha, 2f, Color.Black * (leftMenu.Alpha * leftMenu.Alpha * leftMenu.Alpha));
+            }
 
             base.Render();
         }
