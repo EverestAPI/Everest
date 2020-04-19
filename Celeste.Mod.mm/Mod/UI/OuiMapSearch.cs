@@ -30,15 +30,25 @@ namespace Celeste.Mod.UI {
         private List<string> sets = new List<string>();
 
         public static bool FromChapterSelect = false;
+
         public bool Searching;
+
         private string search = "";
         private string searchPrev = "";
+
         private TextMenu.Item searchTitle;
+
         private bool searchConsumedButton;
+
         private int itemCount;
+        private int matchCount;
+
         private TextMenu.SubHeader resultHeader;
 
+        private static TextMenuExt.SubHeaderExt perfectMatchHeader;
+
         private class SearchMenu : Entity {
+
             public bool leftFocused {
                 get => leftMenu.Focused;
                 set {
@@ -46,19 +56,23 @@ namespace Celeste.Mod.UI {
                     rightMenu.Focused = !value;
                 }
             }
+
             public TextMenu leftMenu;
             public TextMenu rightMenu;
             private float leftOffset;
             private float rightOffset;
+
             public int Selection {
                 get => currentMenu.Selection;
                 set => currentMenu.Selection = value;
             }
+
             public TextMenu currentMenu {
                 get {
                     return leftFocused ? leftMenu : rightMenu;
                 }
             }
+
             public bool Focused {
                 get => leftMenu.Focused || rightMenu.Focused;
                 set {
@@ -129,7 +143,7 @@ namespace Celeste.Mod.UI {
                     switchMenu();
 
                     if (items.Count >= 1) {
-                        if (items.Count == 2) {
+                        if (items.Count == 2 || matchCount == 1) {
                             Action pressed = (items[1] as TextMenuExt.ButtonExt)?.OnPressed;
                             if (pressed != null) {
                                 clearSearch();
@@ -221,6 +235,7 @@ namespace Celeste.Mod.UI {
 
         private void ReloadItems() {
             itemCount = 0;
+            matchCount = 0;
             foreach (TextMenu.Item item in items)
                 menu.rightMenu.Remove(item);
             items.Clear();
@@ -259,19 +274,6 @@ namespace Celeste.Mod.UI {
 
                 itemCount++;
 
-                if (lastLevelSet != levelSet) {
-                    lastLevelSet = levelSet;
-                    levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
-                    levelSetAreaOffset = levelSetStats.AreaOffset;
-                    levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
-                    levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                    string setname = DialogExt.CleanLevelSet(levelSet);
-                    TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
-                    levelSetHeader.Alpha = 0f;
-                    menu.rightMenu.Add(levelSetHeader);
-                    items.Add(levelSetHeader);
-                }
-
                 TextMenuExt.ButtonExt button = new TextMenuExt.ButtonExt(name);
                 button.Alpha = 0f;
 
@@ -282,31 +284,40 @@ namespace Celeste.Mod.UI {
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     button.Disabled = true;
 
-                menu.rightMenu.Add(button.Pressed(() => {
-                    clearSearch();
-                    Inspect(area, AreaMode.Normal);
-                }));
-                
-                items.Add(button);
-
                 if (name.ToLower() == search.ToLower()) {
                     if (!matched) {
-                        TextMenuExt.SubHeaderExt header = new TextMenuExt.SubHeaderExt(Dialog.Clean("maplist_search_match"));
-                        menu.rightMenu.Insert(0, header);
-                        items.Insert(0, header);
+                        perfectMatchHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("maplist_search_match"));
+                        menu.rightMenu.Insert(0, perfectMatchHeader);
+                        items.Insert(0, perfectMatchHeader);
                         matched = true;
                     }
-                    TextMenuExt.ButtonExt newButton = new TextMenuExt.ButtonExt(name);
-                    // We have to make a deep clone of the button so that the loading animation looks ok
-                    newButton.Alpha = 0f;
-                    newButton.IconWidth = 64f;
-                    newButton.Icon = button.Icon;
-                    newButton.Disabled = button.Disabled;
-                    menu.rightMenu.Insert(1, newButton.Pressed(() => {
+                    matchCount++;
+                    menu.rightMenu.Insert(1, button.Pressed(() => {
                         clearSearch();
                         Inspect(area, AreaMode.Normal);
                     }));
-                    items.Insert(1, newButton);
+                    items.Insert(1, button);
+                } else {
+
+                    if (lastLevelSet != levelSet) {
+                        lastLevelSet = levelSet;
+                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetAreaOffset = levelSetStats.AreaOffset;
+                        levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
+                        levelSetUnlockedModes = levelSetStats.UnlockedModes;
+                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
+                        levelSetHeader.Alpha = 0f;
+                        menu.rightMenu.Add(levelSetHeader);
+                        items.Add(levelSetHeader);
+                    }
+
+                    menu.rightMenu.Add(button.Pressed(() => {
+                        clearSearch();
+                        Inspect(area, AreaMode.Normal);
+                    }));
+
+                    items.Add(button);
                 }
             }
 
