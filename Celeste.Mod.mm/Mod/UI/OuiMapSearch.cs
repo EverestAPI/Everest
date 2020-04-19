@@ -238,6 +238,9 @@ namespace Celeste.Mod.UI {
         private void ReloadItems() {
             itemCount = 0;
             matchCount = 0;
+
+            menu.rightMenu.Selection = 0;
+
             foreach (TextMenu.Item item in items)
                 menu.rightMenu.Remove(item);
             items.Clear();
