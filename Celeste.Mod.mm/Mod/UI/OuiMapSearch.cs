@@ -23,6 +23,8 @@ namespace Celeste.Mod.UI {
 
         private float alpha = 0f;
 
+        private Color searchBarColor;
+
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
 
         private List<string> sets = new List<string>();
@@ -182,7 +184,8 @@ namespace Celeste.Mod.UI {
                 // Any other character - append.
                 if (ActiveFont.FontSize.Characters.ContainsKey(c)) {
                     Audio.Play(SFX.ui_main_rename_entry_char);
-                    search += c;
+                    if (ActiveFont.Measure(search + c + "_").X < 542)
+                        search += c;
                     goto ValidButton;
                 } else {
                     goto InvalidButton;
@@ -228,6 +231,8 @@ namespace Celeste.Mod.UI {
             int levelSetUnlockedAreas = int.MaxValue;
             int levelSetUnlockedModes = int.MaxValue;
             string name;
+
+            bool matched = false;
 
             SaveData save = SaveData.Instance;
             List<AreaStats> areaStatsAll = save.Areas;
@@ -281,7 +286,28 @@ namespace Celeste.Mod.UI {
                     clearSearch();
                     Inspect(area, AreaMode.Normal);
                 }));
+                
                 items.Add(button);
+
+                if (name.ToLower() == search.ToLower()) {
+                    if (!matched) {
+                        TextMenuExt.SubHeaderExt header = new TextMenuExt.SubHeaderExt(Dialog.Clean("maplist_search_match"));
+                        menu.rightMenu.Insert(0, header);
+                        items.Insert(0, header);
+                        matched = true;
+                    }
+                    TextMenuExt.ButtonExt newButton = new TextMenuExt.ButtonExt(name);
+                    // We have to make a deep clone of the button so that the loading animation looks ok
+                    newButton.Alpha = 0f;
+                    newButton.IconWidth = 64f;
+                    newButton.Icon = button.Icon;
+                    newButton.Disabled = button.Disabled;
+                    menu.rightMenu.Insert(1, newButton.Pressed(() => {
+                        clearSearch();
+                        Inspect(area, AreaMode.Normal);
+                    }));
+                    items.Insert(1, newButton);
+                }
             }
 
             if (resultHeader != null)
@@ -347,6 +373,9 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Enter(Oui from) {
             TextInput.OnInput += OnTextInput;
+
+            searchBarColor = Color.DarkSlateGray;
+            searchBarColor.A = 80;
 
             Searching = true;
 
@@ -470,6 +499,7 @@ namespace Celeste.Mod.UI {
             if (searchTitle != null) {
                 Vector2 value = leftMenu.Position + leftMenu.Justify * new Vector2(leftMenu.Width, leftMenu.Height);
                 Vector2 pos = new Vector2(value.X - 200f, value.Y + leftMenu.GetYOffsetOf(searchTitle) + 1f);
+                Draw.Rect(pos + new Vector2(-8f, 32f), 416, (int) (ActiveFont.HeightOf("l" + search) + 8) * -1, searchBarColor);
                 ActiveFont.DrawOutline(search + (Searching ? "_" : ""), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * leftMenu.Alpha, 2f, Color.Black * (leftMenu.Alpha * leftMenu.Alpha * leftMenu.Alpha));
             }
 
