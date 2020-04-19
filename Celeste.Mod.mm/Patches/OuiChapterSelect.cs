@@ -247,7 +247,7 @@ namespace Celeste {
             orig_Update();
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
-            searchEase = Calc.Approach(searchEase, (display && !disableInput && Focused && !Input.GuiInputController()) ? 1f : 0f, Engine.DeltaTime * 4f);
+            searchEase = Calc.Approach(searchEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
             levelsetEase = Calc.Approach(levelsetEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
         }
 
@@ -275,8 +275,7 @@ namespace Celeste {
                     pos.Y -= 128f;
                 }
                 GFX.Gui["menu/mapsearch"].DrawCentered(pos, Color.White * Ease.CubeOut(searchEase));
-                if (!Input.GuiInputController())
-                    Input.GuiButton(Input.QuickRestart).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
             }
 
             if (levelsetEase > 0f) {

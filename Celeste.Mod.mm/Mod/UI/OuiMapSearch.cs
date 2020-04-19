@@ -155,6 +155,7 @@ namespace Celeste.Mod.UI {
                         int index = menu.rightMenu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
                         if (index > 0) {
                             menu.rightMenu.Selection = index;
+                            Audio.Play(SFX.ui_main_button_select);
                         }
                     }
                 };
@@ -167,7 +168,7 @@ namespace Celeste.Mod.UI {
                     goto ValidButton;
                 } else {
                     if (Input.MenuCancel.Pressed) {
-                        Audio.Play(SFX.ui_main_button_invalid);
+                        Audio.Play(SFX.ui_main_button_back);
                         switchMenu();
                         goto ValidButton;
                     }
@@ -189,7 +190,8 @@ namespace Celeste.Mod.UI {
             } else if (c == ' ') {
                 // Space - append.
                 if (search.Length > 0) {
-                    search += c;
+                    if (ActiveFont.Measure(search + c + "_").X < 542)
+                        search += c;
                 }
                 Audio.Play(SFX.ui_main_rename_entry_space);
                 goto ValidButton;
@@ -442,14 +444,16 @@ namespace Celeste.Mod.UI {
             menu = null;
         }
 
-        private void switchMenu() {
+        private bool switchMenu() {
             bool nextIsLeft = !menu.leftFocused;
             if (nextIsLeft || items.Count > 1) {
                 menu.leftFocused = nextIsLeft;
                 Searching = nextIsLeft;
                 MInput.Disabled = nextIsLeft;
                 menu.currentMenu.Selection = nextIsLeft ? -1 : 2;
+                return true;
             }
+            return false;
         }
 
         public override void Update() {
@@ -468,7 +472,9 @@ namespace Celeste.Mod.UI {
 
                 if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
                     if (Searching && search != "") {
-                        switchMenu();
+                        if (!switchMenu()) {
+                            cleanExit();
+                        }
                     } else {
                         cleanExit();
                     }
@@ -477,12 +483,14 @@ namespace Celeste.Mod.UI {
                 if (Input.MenuRight.Pressed) {
                     if (!menu.leftFocused)
                         return;
+                    Audio.Play(SFX.ui_main_button_toggle_on);
                     switchMenu();
                 }
 
                 if (Input.MenuLeft.Pressed) {
                     if (menu.leftFocused)
                         return;
+                    Audio.Play(SFX.ui_main_button_toggle_off);
                     switchMenu();
                 }
 

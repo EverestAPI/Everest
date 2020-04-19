@@ -76,7 +76,7 @@ namespace Celeste {
 
         public extern void orig_Update();
         public override void Update() {
-            if (base.Selected && Focused) {
+            if (Selected && Focused) {
                 if (Input.QuickRestart.Pressed) {
                     Overworld.Goto<OuiChapterSelect>();
                     Overworld.Goto<OuiMapSearch>();
