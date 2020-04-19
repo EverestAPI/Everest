@@ -81,6 +81,10 @@
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Non-catégorisé
 	MAPLIST_SEARCH=			Rechercher
+	MAPLIST_SEARCH_MATCH=	Correspondance exacte
+	MAPLIST_TYPE_EVERYTHING=  Tout
+	MAPLIST_RESULTS_SINGULAR= {0} résultat trouvé
+	MAPLIST_RESULTS_PLURAL=   {0} résultats trouvés
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				Non-catégorisé

@@ -228,7 +228,7 @@ namespace Celeste.Mod.UI {
 
             menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
 
-            menu.rightMenu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"), itemCount)));
+            menu.rightMenu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount)));
 
             ReloadItems();
 
@@ -323,8 +323,9 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            if (resultHeader != null)
-                resultHeader.Title = itemCount.ToString() + " " + (itemCount == 1 ? Dialog.Clean("maplist_results_singular") : Dialog.Clean("maplist_results_plural"));
+            if (resultHeader != null) {
+                resultHeader.Title = string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount);
+            }
 
             // compute a delay so that options don't take more than a second to show up if many mods are installed.
             float delayBetweenOptions = 0.03f;
