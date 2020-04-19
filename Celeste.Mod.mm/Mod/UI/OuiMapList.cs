@@ -76,7 +76,6 @@ namespace Celeste.Mod.UI {
             }));
 
             menu.Add(new TextMenu.Button(Dialog.Clean("maplist_search")).Pressed(() => {
-                OuiMapSearch.FromChapterSelect = false;
                 Overworld.Goto<OuiMapSearch>();
             }));
 

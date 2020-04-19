@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
 
         private List<string> sets = new List<string>();
 
-        public static bool FromChapterSelect = false;
+        public bool FromChapterSelect = false;
 
         public bool Searching;
 
@@ -388,6 +388,8 @@ namespace Celeste.Mod.UI {
             searchBarColor = Color.DarkSlateGray;
             searchBarColor.A = 80;
 
+            FromChapterSelect = !(from is OuiMapList);
+
             Searching = true;
 
             ReloadMenu();
@@ -465,7 +467,7 @@ namespace Celeste.Mod.UI {
                 }
 
                 if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
-                    if (Searching) {
+                    if (Searching && search != "") {
                         switchMenu();
                     } else {
                         cleanExit();
