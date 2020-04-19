@@ -34,6 +34,7 @@ namespace Celeste {
         private float inputDelay;
 
         private float maplistEase;
+        private float searchEase;
         private float levelsetEase;
         private string currentLevelSet;
 
@@ -181,13 +182,22 @@ namespace Celeste {
             KeyboardState keys = Keyboard.GetState();
             _keys = keys;
 
-            if (Focused && !disableInput && display && (Input.Pause.Pressed || Input.ESC.Pressed)) {
-                Overworld.Maddy.Hide(true);
-                Audio.Play(SFX.ui_main_button_select);
-                Audio.Play(SFX.ui_main_whoosh_large_in);
-                OuiMapList list = Overworld.Goto<OuiMapList>();
-                list.OuiIcons = icons;
-                return;
+            if (Focused && !disableInput && display) {
+                if (Input.Pause.Pressed || Input.ESC.Pressed) {
+                    Overworld.Maddy.Hide(true);
+                    Audio.Play(SFX.ui_main_button_select);
+                    Audio.Play(SFX.ui_main_whoosh_large_in);
+                    OuiMapList list = Overworld.Goto<OuiMapList>();
+                    list.OuiIcons = icons;
+                    return;
+                } else if (Input.QuickRestart.Pressed) {
+                    Overworld.Maddy.Hide(true);
+                    Audio.Play(SFX.ui_main_button_select);
+                    Audio.Play(SFX.ui_main_whoosh_large_in);
+                    OuiMapSearch list = Overworld.Goto<OuiMapSearch>();
+                    list.OuiIcons = icons;
+                    return;
+                }
             }
 
             // note: Engine.DeltaTime is removed from inputDelay before being compared to zero in the orig method.
@@ -237,6 +247,7 @@ namespace Celeste {
             orig_Update();
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
+            searchEase = Calc.Approach(searchEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
             levelsetEase = Calc.Approach(levelsetEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
         }
 
@@ -254,6 +265,17 @@ namespace Celeste {
                     pos.Y -= 128f;
                 GFX.Gui["menu/maplist"].DrawCentered(pos, Color.White * Ease.CubeOut(maplistEase));
                 (Input.GuiInputController() ? Input.GuiButton(Input.Pause) : Input.GuiButton(Input.ESC)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
+            }
+
+            if (searchEase > 0f) {
+                Vector2 pos = new Vector2(128f * Ease.CubeOut(searchEase), 1080f - 128f);
+                if (journalEnabled) {
+                    pos.Y -= 256f;
+                } else {
+                    pos.Y -= 128f;
+                }
+                GFX.Gui["menu/mapsearch"].DrawCentered(pos, Color.White * Ease.CubeOut(searchEase));
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
             }
 
             if (levelsetEase > 0f) {
