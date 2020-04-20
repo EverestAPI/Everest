@@ -355,6 +355,7 @@ namespace Celeste.Mod {
             // Any attributes we may want to get and read from later.
             SettingInGameAttribute attribInGame;
             SettingRangeAttribute attribRange;
+            SettingNumberInputAttribute attribNumber;
 
             // If the settings type has got the InGame attrib, only show it in the matching situation.
             if ((attribInGame = type.GetCustomAttribute<SettingInGameAttribute>()) != null &&
@@ -440,6 +441,34 @@ namespace Celeste.Mod {
                         ;
                     }
 
+                } else if ((propType == typeof(int) || propType == typeof(float)) &&
+                    (attribNumber = prop.GetCustomAttribute<SettingNumberInputAttribute>()) != null) {
+
+                    float currentValue;
+                    Action<float> valueSetter;
+                    if (propType == typeof(int)) {
+                        currentValue = (int) value;
+                        valueSetter = v => prop.SetValue(settings, (int) v);
+                    } else {
+                        currentValue = (float) value;
+                        valueSetter = v => prop.SetValue(settings, v);
+                    }
+                    int maxLength = attribNumber.MaxLength;
+                    bool allowNegatives = attribNumber.AllowNegatives;
+
+                    item =
+                        new TextMenu.Button(name + ": " + currentValue.ToString($"F{maxLength}").TrimEnd('0').TrimEnd('.'))
+                        .Pressed(() => {
+                            Audio.Play(SFX.ui_main_savefile_rename_start);
+                            menu.SceneAs<Overworld>().Goto<OuiNumberEntry>().Init<OuiModOptions>(
+                                currentValue,
+                                valueSetter,
+                                maxLength,
+                                propType == typeof(float),
+                                allowNegatives
+                            );
+                        })
+                    ;
                 } else if (propType.IsEnum) {
                     Array enumValues = Enum.GetValues(propType);
                     Array.Sort((int[]) enumValues);

@@ -72,6 +72,19 @@ namespace Celeste.Mod {
     }
 
     /// <summary>
+    /// Shows a button that will open a number input screen. Supported on int and float properties.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingNumberInputAttribute : Attribute {
+        public int MaxLength;
+        public bool AllowNegatives;
+        public SettingNumberInputAttribute(bool allowNegatives = true, int maxLength = 6) {
+            AllowNegatives = allowNegatives;
+            MaxLength = maxLength;
+        }
+    }
+
+    /// <summary>
     /// Any options with this attribute will notify the user that a restart is required to apply the changes.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
