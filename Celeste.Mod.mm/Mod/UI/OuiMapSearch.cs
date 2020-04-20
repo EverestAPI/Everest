@@ -214,7 +214,6 @@ namespace Celeste.Mod.UI {
             searchConsumedButton = true;
             MInput.Disabled = true;
             MInput.UpdateNull();
-            MInput.UpdateNull();
             return;
 
             InvalidButton:
@@ -499,8 +498,6 @@ namespace Celeste.Mod.UI {
                 }
 
             }
-
-            MInput.Disabled = Searching;
 
             base.Update();
 
