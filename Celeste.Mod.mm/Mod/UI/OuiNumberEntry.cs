@@ -70,8 +70,6 @@ namespace Celeste.Mod.UI {
                 return Position + new Vector2((1920f - boxWidth) / 2f, 360f + (680f - boxHeight) / 2f);
             }
         }
-
-
         private Vector2 keyboardTopLeft {
             get {
                 return Position + new Vector2((1920f - keyboardWidth) / 2f, 360f + (680f - boxHeight) / 2f);
@@ -96,8 +94,8 @@ namespace Celeste.Mod.UI {
         /// <param name="allowDecimals">If decimal numbers should be allowed</param>
         /// <param name="allowNegatives">If negative numbers should be allowed</param>
         /// <returns></returns>
-        public OuiNumberEntry Init<T>(float value, Action<float> onValueChange, int maxValueLength = 6, bool allowDecimals = true, bool allowNegatives = true) where T : Oui {
-
+        public OuiNumberEntry Init<T>(float value, Action<float> onValueChange,
+            int maxValueLength = 6, bool allowDecimals = true, bool allowNegatives = true) where T : Oui {
             _Value = StartingValue = value.ToString($"F{maxValueLength}").TrimEnd('0').TrimEnd('.');
             OnValueChange = onValueChange;
 
@@ -202,6 +200,7 @@ namespace Celeste.Mod.UI {
 
             Visible = false;
         }
+
         public void OnKeyboardInput(char c) {
             // Only accept direct keyboard input when no controller is attached.
             if (MInput.GamePads[Input.Gamepad].Attached)

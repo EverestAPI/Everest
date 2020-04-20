@@ -428,7 +428,6 @@ namespace Celeste.Mod.UI {
                 pos.Y += lineHeight + lineSpacing;
                 letterIndex++;
             }
-            
             float wiggle = wiggler.Value * 8f;
 
             pos.Y = boxtopleft.Y + boxHeight - lineHeight - boxPadding;
