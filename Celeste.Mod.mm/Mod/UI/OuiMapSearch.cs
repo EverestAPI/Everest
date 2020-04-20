@@ -238,8 +238,6 @@ namespace Celeste.Mod.UI {
             itemCount = 0;
             matchCount = 0;
 
-            menu.rightMenu.Selection = 0;
-
             foreach (TextMenu.Item item in items)
                 menu.rightMenu.Remove(item);
             items.Clear();
@@ -251,6 +249,7 @@ namespace Celeste.Mod.UI {
             int levelSetUnlockedModes = int.MaxValue;
             string name;
 
+            string[] searchHunks = search.Split(' ').Select(hunk => hunk.ToLower()).ToArray();
             bool matched = false;
 
             SaveData save = SaveData.Instance;
@@ -266,14 +265,27 @@ namespace Celeste.Mod.UI {
 
                 string levelSet = area.GetLevelSet();
 
-                name = area.Name;
-                name = name.DialogCleanOrNull() ?? name.SpacedPascalCase();
+                string id = area.Name;
+                name = id.DialogCleanOrNull() ?? id.SpacedPascalCase();
 
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     continue;
 
-                // handle keyboard search
-                if (search != "" && !name.ToLower().Contains(search.ToLower()))
+                List<String> matchTargets = new List<string> {
+                    id,
+                    name,
+                    levelSet,
+                    DialogExt.CleanLevelSet(levelSet)
+                }.Select(text => text.ToLower()).ToList();
+
+                List<string> unmatchedHunks = searchHunks.ToList();
+
+                foreach (string hunk in searchHunks) {
+                    if (matchTargets.Any(target => target.Contains(hunk)))
+                        unmatchedHunks.Remove(hunk);
+                }
+
+                if (unmatchedHunks.Count > 0)
                     continue;
 
                 itemCount++;
@@ -345,6 +357,8 @@ namespace Celeste.Mod.UI {
             // Don't allow pressing any buttons while searching
             foreach (TextMenu.Item item in items)
                 item.Disabled = Searching;
+
+            menu.rightMenu.Selection = itemCount > 1 ? 1 : 0;
         }
 
         private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
