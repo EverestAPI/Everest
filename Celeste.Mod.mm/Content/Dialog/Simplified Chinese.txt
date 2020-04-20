@@ -8,6 +8,8 @@
 	FONT=Noto Sans CJK SC Medium,64
 	BEGIN=true
 
+# chinese.fnt 添加的字符为：…列刷吼库排未校横毕版秒类装详输送额启缩夹官匹
+
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}谢谢你((player))！{/big}{n}不过我们的 {#ff1144}((sid)){#} 在另一座山。
 	POSTCARD_LEVELLOADFAILED= 	{big}不好意思!{/big}{n}{#ff1144}((sid)){#} 加载失败了。{n}请把你的 {#44adf7}log.txt{#}{n} 文件发送给作者。
@@ -80,18 +82,22 @@
 	SOUNDTEST_TITLE=	试听音效
 
 # Maplist
-	MAPLIST_TITLE= 			地图列表
-	MAPLIST_FILTERS= 		过滤
-	MAPLIST_TYPE= 			来自
-	MAPLIST_TYPE_ALLMODS= 	所有 Mod
-	MAPLIST_SIDE= 			面
-	MAPLIST_RELOAD= 		重新加载
-	MAPLIST_LIST= 			地图
-	MAPLIST_UNCATEGORIZED= 	未分类
-	MAPLIST_SEARCH=			搜索
+	MAPLIST_TITLE= 				地图列表
+	MAPLIST_FILTERS= 			过滤
+	MAPLIST_TYPE= 				来自
+	MAPLIST_TYPE_ALLMODS= 		全部 Mod
+	MAPLIST_SIDE= 				面
+	MAPLIST_RELOAD= 			重新加载
+	MAPLIST_LIST= 				地图
+	MAPLIST_UNCATEGORIZED= 		未分类
+	MAPLIST_SEARCH=				搜索
+	MAPLIST_SEARCH_MATCH=		完全匹配
+	MAPLIST_TYPE_EVERYTHING=	全部
+	MAPLIST_RESULTS_SINGULAR=	搜索到 {0} 个结果
+	MAPLIST_RESULTS_PLURAL=		搜索到 {0} 个结果
 
-	LEVELSET_CELESTE= 		Celeste
-	LEVELSET_= 				未分类
+	LEVELSET_CELESTE= 			官图
+	LEVELSET_= 					未分类
 
 # Updater
 	UPDATER_TITLE= 					更新
