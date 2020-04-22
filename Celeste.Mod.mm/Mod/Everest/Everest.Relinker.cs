@@ -254,6 +254,8 @@ namespace Celeste.Mod {
 
                     prePatch?.Invoke(modder);
 
+                    modder.ParseRules(modder.Module);
+
                     modder.AutoPatch();
 
                     try {
