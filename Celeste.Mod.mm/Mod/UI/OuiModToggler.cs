@@ -66,21 +66,43 @@ namespace Celeste.Mod.UI {
             blacklistedMods = new HashSet<string>();
 
             // crawl zips
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
             string[] files = Directory.GetFiles(Everest.Loader.PathMods);
+            bool headerInserted = false;
             for (int i = 0; i < files.Length; i++) {
                 string file = Path.GetFileName(files[i]);
                 if (file.EndsWith(".zip")) {
+                    if (!headerInserted) {
+                        menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
+                        headerInserted = true;
+                    }
                     allToggles.Add(addFileToMenu(menu, file));
                 }
             }
 
             // crawl directories
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_DIRECTORIES")));
             files = Directory.GetDirectories(Everest.Loader.PathMods);
+            headerInserted = false;
             for (int i = 0; i < files.Length; i++) {
                 string file = Path.GetFileName(files[i]);
                 if (file != "Cache") {
+                    if (!headerInserted) {
+                        menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_DIRECTORIES")));
+                        headerInserted = true;
+                    }
+                    allToggles.Add(addFileToMenu(menu, file));
+                }
+            }
+
+            // crawl map bins
+            files = Directory.GetFiles(Everest.Loader.PathMods);
+            headerInserted = false;
+            for (int i = 0; i < files.Length; i++) {
+                string file = Path.GetFileName(files[i]);
+                if (file.EndsWith(".bin")) {
+                    if (!headerInserted) {
+                        menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_BINS")));
+                        headerInserted = true;
+                    }
                     allToggles.Add(addFileToMenu(menu, file));
                 }
             }
