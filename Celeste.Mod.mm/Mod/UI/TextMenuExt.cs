@@ -637,13 +637,45 @@ namespace Celeste {
                 return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
             }
 
-            private void menu_Added() {
+            #endregion
+
+            #region TextMenu.Item
+
+            public override void ConfirmPressed() {
+                containerAutoScroll = Container.AutoScroll;
+                Container.AutoScroll = false;
+                Audio.Play(ConfirmSfx);
+                base.ConfirmPressed();
+            }
+
+            public override float LeftWidth() {
+                return ActiveFont.Measure(Label).X;
+            }
+            public override float RightWidth() {
+                return Icon.Width;
+            }
+
+            public override float Height() {
+                //If there are no items, MenuHeight will actually be a negative number
+                if (Items.Count > 0)
+                    return TitleHeight + (MenuHeight * Ease.QuadOut(ease));
+                else
+                    return TitleHeight;
+            }
+
+            public override void Added() {
+                base.Added();
                 foreach (TextMenu.Item item in delayedAddItems) {
                     Add(item);
                 }
             }
 
-            private void menu_Update() {
+            public override void Update() {
+                if (Focused)
+                    ease = Calc.Approach(ease, 1f, Engine.DeltaTime * 4f);
+                else
+                    ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
+                base.Update();
                 OnUpdate?.Invoke();
 
                 //ease check needed to eat the first input from Container
@@ -704,60 +736,6 @@ namespace Celeste {
                 }
             }
 
-            private void menu_Render(Vector2 position) {
-                RecalculateSize();
-                foreach (TextMenu.Item item in Items) {
-                    if (item.Visible) {
-                        float height = item.Height();
-                        Vector2 vector = position + new Vector2(0f, height * 0.5f + item.SelectWiggler.Value * 8f);
-                        if (vector.Y + height * 0.5f > 0f && vector.Y - height * 0.5f < Engine.Height) {
-                            item.Render(vector, Focused && Current == item);
-                        }
-                        position.Y += height + ItemSpacing;
-                    }
-                }
-            }
-
-            #endregion
-
-            #region TextMenu.Item
-
-            public override void ConfirmPressed() {
-                containerAutoScroll = Container.AutoScroll;
-                Container.AutoScroll = false;
-                Audio.Play(ConfirmSfx);
-                base.ConfirmPressed();
-            }
-
-            public override float LeftWidth() {
-                return ActiveFont.Measure(Label).X;
-            }
-            public override float RightWidth() {
-                return Icon.Width;
-            }
-
-            public override float Height() {
-                //If there are no items, MenuHeight will actually be a negative number
-                if (Items.Count > 0)
-                    return TitleHeight + (MenuHeight * Ease.QuadOut(ease));
-                else
-                    return TitleHeight;
-            }
-
-            public override void Added() {
-                base.Added();
-                menu_Added();
-            }
-
-            public override void Update() {
-                if (Focused)
-                    ease = Calc.Approach(ease, 1f, Engine.DeltaTime * 4f);
-                else
-                    ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
-                base.Update();
-                menu_Update();
-            }
-
             public override void Render(Vector2 position, bool highlighted) {
                 Vector2 top = new Vector2(position.X, position.Y - (Height() / 2));
 
@@ -775,7 +753,17 @@ namespace Celeste {
 
                 if (Focused && ease > 0.9f) {
                     Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
-                    menu_Render(menuPosition);
+                    RecalculateSize();
+                    foreach (TextMenu.Item item in Items) {
+                        if (item.Visible) {
+                            float height = item.Height();
+                            Vector2 itemPosition = menuPosition + new Vector2(0f, height * 0.5f + item.SelectWiggler.Value * 8f);
+                            if (itemPosition.Y + height * 0.5f > 0f && itemPosition.Y - height * 0.5f < Engine.Height) {
+                                item.Render(itemPosition, Focused && Current == item);
+                            }
+                            menuPosition.Y += height + ItemSpacing;
+                        }
+                    }
                 }
             }
 
@@ -1033,93 +1021,6 @@ namespace Celeste {
                 return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
             }
 
-            private void menu_Added() {
-                foreach (Tuple<string, List<TextMenu.Item>> menu in delayedAddMenus) {
-                    Add(menu.Item1, menu.Item2);
-                }
-                MenuIndex = InitialSelection;
-            }
-
-            private void menu_Update() {
-                OnUpdate?.Invoke();
-                //ease check needed to eat the first input from this.Container
-                if (Focused) {
-                    if (!wasFocused) {
-                        wasFocused = true;
-                        goto AfterInput;
-                    }
-                    if (Input.MenuDown.Pressed) {
-                        if (!Input.MenuDown.Repeating || Selection != LastPossibleSelection) {
-                            MoveSelection(1, true);
-                        }
-                    } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection)) {
-                        MoveSelection(-1, true);
-                    }
-                    if (Current != null) {
-                        if (Input.MenuLeft.Pressed) {
-                            Current.LeftPressed();
-                        }
-                        if (Input.MenuRight.Pressed) {
-                            Current.RightPressed();
-                        }
-                        if (Input.MenuConfirm.Pressed) {
-                            Current.ConfirmPressed();
-                            Current.OnPressed?.Invoke();
-                        }
-                        if (Input.MenuJournal.Pressed && Current.OnAltPressed != null) {
-                            Current.OnAltPressed();
-                        }
-                    }
-                    if (!Input.MenuConfirm.Pressed) {
-                        if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
-                            Focused = false;
-                            Audio.Play("event:/ui/main/button_back");
-                            Container.AutoScroll = containerAutoScroll;
-                            Container.Focused = true;
-                        }
-                    }
-                } else
-                    wasFocused = false;
-
-                AfterInput:
-                foreach (TextMenu.Item item in CurrentMenu) {
-                    item.OnUpdate?.Invoke();
-                    item.Update();
-                }
-
-                if (Settings.Instance.DisableFlashes) {
-                    HighlightColor = TextMenu.HighlightColorA;
-                } else if (Engine.Scene.OnRawInterval(0.1f)) {
-                    if (HighlightColor == TextMenu.HighlightColorA) {
-                        HighlightColor = TextMenu.HighlightColorB;
-                    } else {
-                        HighlightColor = TextMenu.HighlightColorA;
-                    }
-                }
-
-                if (containerAutoScroll) {
-                    if (Container.Height > Container.ScrollableMinSize) {
-                        Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
-                        return;
-                    }
-                    Container.Position.Y = 540f;
-                }
-            }
-
-            private void menu_Render(Vector2 position) {
-                RecalculateSize();
-                foreach (TextMenu.Item item in CurrentMenu) {
-                    if (item.Visible) {
-                        float itemHeight = item.Height();
-                        Vector2 vector = position + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
-                        if (vector.Y + itemHeight * 0.5f > 0f && vector.Y - itemHeight * 0.5f < Engine.Height) {
-                            item.Render(vector, Focused && Current == item);
-                        }
-                        position.Y += itemHeight + ItemSpacing;
-                    }
-                }
-            }
-
             #endregion
 
             #region TextMenu.Item
@@ -1183,7 +1084,10 @@ namespace Celeste {
 
             public override void Added() {
                 base.Added();
-                menu_Added();
+                foreach (Tuple<string, List<TextMenu.Item>> menu in delayedAddMenus) {
+                    Add(menu.Item1, menu.Item2);
+                }
+                MenuIndex = InitialSelection;
             }
 
             public override void Update() {
@@ -1191,8 +1095,71 @@ namespace Celeste {
 
                 sine += Engine.RawDeltaTime;
                 base.Update();
-                if (CurrentMenu != null)
-                    menu_Update();
+                if (CurrentMenu != null) {
+                    OnUpdate?.Invoke();
+                    //ease check needed to eat the first input from this.Container
+                    if (Focused) {
+                        if (!wasFocused) {
+                            wasFocused = true;
+                            goto AfterInput;
+                        }
+                        if (Input.MenuDown.Pressed) {
+                            if (!Input.MenuDown.Repeating || Selection != LastPossibleSelection) {
+                                MoveSelection(1, true);
+                            }
+                        } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection)) {
+                            MoveSelection(-1, true);
+                        }
+                        if (Current != null) {
+                            if (Input.MenuLeft.Pressed) {
+                                Current.LeftPressed();
+                            }
+                            if (Input.MenuRight.Pressed) {
+                                Current.RightPressed();
+                            }
+                            if (Input.MenuConfirm.Pressed) {
+                                Current.ConfirmPressed();
+                                Current.OnPressed?.Invoke();
+                            }
+                            if (Input.MenuJournal.Pressed && Current.OnAltPressed != null) {
+                                Current.OnAltPressed();
+                            }
+                        }
+                        if (!Input.MenuConfirm.Pressed) {
+                            if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
+                                Focused = false;
+                                Audio.Play("event:/ui/main/button_back");
+                                Container.AutoScroll = containerAutoScroll;
+                                Container.Focused = true;
+                            }
+                        }
+                    } else
+                        wasFocused = false;
+
+                    AfterInput:
+                    foreach (TextMenu.Item item in CurrentMenu) {
+                        item.OnUpdate?.Invoke();
+                        item.Update();
+                    }
+
+                    if (Settings.Instance.DisableFlashes) {
+                        HighlightColor = TextMenu.HighlightColorA;
+                    } else if (Engine.Scene.OnRawInterval(0.1f)) {
+                        if (HighlightColor == TextMenu.HighlightColorA) {
+                            HighlightColor = TextMenu.HighlightColorB;
+                        } else {
+                            HighlightColor = TextMenu.HighlightColorA;
+                        }
+                    }
+
+                    if (containerAutoScroll) {
+                        if (Container.Height > Container.ScrollableMinSize) {
+                            Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
+                            return;
+                        }
+                        Container.Position.Y = 540f;
+                    }
+                }
             }
 
             public override void Render(Vector2 position, bool highlighted) {
@@ -1225,7 +1192,17 @@ namespace Celeste {
 
                 if (CurrentMenu != null) {
                     Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
-                    menu_Render(menuPosition);
+                    RecalculateSize();
+                    foreach (TextMenu.Item item in CurrentMenu) {
+                        if (item.Visible) {
+                            float itemHeight = item.Height();
+                            Vector2 itemPosition = menuPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
+                            if (itemPosition.Y + itemHeight * 0.5f > 0f && itemPosition.Y - itemHeight * 0.5f < Engine.Height) {
+                                item.Render(itemPosition, Focused && Current == item);
+                            }
+                            menuPosition.Y += itemHeight + ItemSpacing;
+                        }
+                    }
                 }
             }
 
