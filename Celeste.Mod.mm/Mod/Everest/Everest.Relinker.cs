@@ -199,6 +199,8 @@ namespace Celeste.Mod {
                 if (depResolver == null)
                     depResolver = GenerateModDependencyResolver(meta);
 
+                bool temporaryASM = false;
+
                 try {
                     MonoModder modder = Modder;
 
@@ -258,12 +260,24 @@ namespace Celeste.Mod {
 
                     modder.AutoPatch();
 
+                    RetryWrite:
                     try {
                         modder.WriterParameters.WriteSymbols = true;
                         modder.Write();
                     } catch {
-                        modder.WriterParameters.WriteSymbols = false;
-                        modder.Write();
+                        try {
+                            modder.WriterParameters.WriteSymbols = false;
+                            modder.Write();
+                        } catch when (!temporaryASM) {
+                            temporaryASM = true;
+                            long stamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                            cachedPath = Path.Combine(Path.GetTempPath(), $"Everest.Relinked.{Path.GetFileNameWithoutExtension(cachedPath)}.{stamp}.dll");
+                            modder.Module.Name += "." + stamp;
+                            modder.Module.Assembly.Name.Name += "." + stamp;
+                            modder.OutputPath = cachedPath;
+                            modder.WriterParameters.WriteSymbols = true;
+                            goto RetryWrite;
+                        }
                     }
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}");
@@ -285,7 +299,9 @@ namespace Celeste.Mod {
                 if (File.Exists(cachedChecksumPath)) {
                     File.Delete(cachedChecksumPath);
                 }
-                File.WriteAllLines(cachedChecksumPath, checksums);
+                if (!temporaryASM) {
+                    File.WriteAllLines(cachedChecksumPath, checksums);
+                }
 
                 Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta}");
                 try {

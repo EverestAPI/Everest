@@ -613,7 +613,10 @@ namespace Celeste.Mod {
         /// <param name="module"></param>
         internal static void Unregister(this EverestModule module) {
             module.Unload();
-            _DetourModManager.Unload(module.GetType().Assembly);
+
+            Assembly asm = module.GetType().Assembly;
+            _DetourModManager.Unload(asm);
+            _RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader
             // TODO: Unload from EntityLoaders

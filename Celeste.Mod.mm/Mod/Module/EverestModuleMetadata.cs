@@ -13,44 +13,38 @@ namespace Celeste.Mod {
     /// <summary>
     /// Any module metadata, usually mirroring the data in your metadata.yaml
     /// </summary>
-    public class EverestModuleMetadata {
+    public sealed class EverestModuleMetadata {
 
         /// <summary>
         /// The collection of mod metadatas this mod metadata is part of. Set at runtime.
         /// </summary>
-        public virtual EverestModuleMetadata[] Multimeta { get; set; }
+        public EverestModuleMetadata[] Multimeta { get; set; }
 
         /// <summary>
         /// The path to the ZIP of the mod. In case of unzipped mods, an empty string. Set at runtime.
         /// </summary>
         [YamlIgnore]
-        public virtual string PathArchive { get; set; }
+        public string PathArchive { get; set; }
 
         /// <summary>
         /// The path to the directory of the mod. In case of .zips, an empty string. Set at runtime.
         /// </summary>
         [YamlIgnore]
-        public virtual string PathDirectory { get; set; }
+        public string PathDirectory { get; set; }
 
         /// <summary>
         /// The name of the mod.
         /// </summary>
-        public virtual string Name { get; set; }
-
-        /// <summary>
-        /// The icon of the mod to be used in the mod menu.
-        /// Everest loads icon.png by default, but this can also be set by the mod at runtime.
-        /// </summary>
-        public virtual Texture2D Icon { get; set; }
+        public string Name { get; set; }
 
         /// <summary>
         /// The mod version.
         /// </summary>
         [YamlIgnore]
-        public virtual Version Version { get; set; } = new Version(1, 0);
+        public Version Version { get; set; } = new Version(1, 0);
         protected string _VersionString;
         [YamlMember(Alias = "Version")]
-        public virtual string VersionString {
+        public string VersionString {
             get {
                 return _VersionString;
             }
@@ -67,17 +61,19 @@ namespace Celeste.Mod {
         /// <summary>
         /// The path of the mod .dll inside the ZIP or the absolute DLL path if in a directory.
         /// </summary>
-        public virtual string DLL { get; set; }
+        public string DLL { get; set; }
 
         /// <summary>
         /// The dependencies of the mod.
         /// </summary>
-        public virtual List<EverestModuleMetadata> Dependencies { get; set; } = new List<EverestModuleMetadata>();
+        public List<EverestModuleMetadata> Dependencies { get; set; } = new List<EverestModuleMetadata>();
 
         /// <summary>
         /// The runtime mod hash. Might not be determined by all mod content.
         /// </summary>
-        public virtual byte[] Hash { get; set; }
+        public byte[] Hash { get; set; }
+
+        internal FileSystemWatcher DevWatcher;
 
         public override string ToString() {
             return Name + " " + Version;

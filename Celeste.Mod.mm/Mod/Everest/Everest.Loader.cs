@@ -168,8 +168,7 @@ namespace Celeste.Mod {
 
                 Watcher = new FileSystemWatcher {
                     Path = PathMods,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
-                    IncludeSubdirectories = true
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
                 };
 
                 Watcher.Created += LoadAutoUpdated;
@@ -182,8 +181,8 @@ namespace Celeste.Mod {
                 if (!AutoLoadNewMods)
                     return;
 
-                Logger.Log("content", $"Possible new mod container: {e.FullPath}");
-                QueuedTaskHelper.Do(e.FullPath, () => AssetReloadHelper.Do($"Loading new mod: {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
+                Logger.Log(LogLevel.Info, "loader", $"Possible new mod container: {e.FullPath}");
+                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"Loading new mod: {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
                     if (Directory.Exists(e.FullPath))
                         LoadDir(e.FullPath);
                     else if (e.FullPath.EndsWith(".zip"))
@@ -212,8 +211,6 @@ namespace Celeste.Mod {
                 EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
-                // In case the icon appears before the metadata in the .zip, store it temporarily, set it later.
-                Texture2D icon = null;
                 using (ZipFile zip = new ZipFile(archive)) {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
@@ -248,17 +245,7 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
-                        if (entry.FileName == "icon.png") {
-                            using (Stream stream = entry.ExtractStream())
-                                icon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
-                            continue;
-                        }
                     }
-                }
-
-                if (meta != null) {
-                    if (icon != null)
-                        meta.Icon = icon;
                 }
 
                 ZipModContent contentMeta = new ZipModContent(archive);
@@ -483,8 +470,6 @@ namespace Celeste.Mod {
                     }
                 }
 
-                ApplyModHackfixes(meta, asm);
-
                 if (asm == null) {
                     // Register a null module for content mods.
                     new NullModule(meta).Register();
@@ -504,6 +489,23 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
                     return;
                 }
+
+                if (File.Exists(meta.DLL)) {
+                    FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
+                        Path = Path.GetDirectoryName(meta.DLL),
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+                    };
+
+                    watcher.Changed += (s, e) => {
+                        if (e.FullPath != meta.DLL)
+                            return;
+                        ReloadModAssembly(s, e);
+                    };
+
+                    watcher.EnableRaisingEvents = true;
+                }
+
+                ApplyModHackfixes(meta, asm);
 
                 Content.Crawl(new AssemblyModContent(asm) {
                     Mod = meta,
@@ -528,6 +530,27 @@ namespace Celeste.Mod {
                         mod.Register();
                     }
                 }
+            }
+
+            internal static void ReloadModAssembly(object source, FileSystemEventArgs e) {
+                if (!File.Exists(e.FullPath))
+                    return;
+
+                ((FileSystemWatcher) source).Dispose();
+
+                Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
+                QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
+                    EverestModule module = _Modules.FirstOrDefault(m => m.Metadata.DLL == e.FullPath);
+                    if (module == null)
+                        return;
+
+                    AssetReloadHelper.Do($"Reloading mod assembly: {Path.GetFileName(e.FullPath)}", () => {
+                        Unregister(module);
+                        using (FileStream stream = File.OpenRead(e.FullPath))
+                            LoadModAssembly(module.Metadata, Relinker.GetRelinkedAssembly(module.Metadata, stream));
+                    });
+                    AssetReloadHelper.ReloadLevel();
+                });
             }
 
             /// <summary>
