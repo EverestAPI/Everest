@@ -33,6 +33,8 @@ namespace Celeste.Mod.UI {
         private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
 
         public override IEnumerator Enter(Oui from) {
+            Everest.Loader.AutoLoadNewMods = false;
+
             menu = new TextMenu();
 
             // display the title and a dummy "Fetching" button
@@ -72,6 +74,8 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
+            Everest.Loader.AutoLoadNewMods = true;
+
             Audio.Play(SFX.ui_main_whoosh_large_out);
             menu.Focused = false;
 

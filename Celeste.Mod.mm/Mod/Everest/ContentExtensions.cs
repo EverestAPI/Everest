@@ -38,7 +38,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="input">The input texture.</param>
         /// <returns>The output texture, matching the input MTexture's ClipRect.</returns>
-        public static Texture2D GetSubtextureCopy(this MTexture input) {
+        public static unsafe Texture2D GetSubtextureCopy(this MTexture input) {
             if (input == null)
                 return null;
             // TODO: Non-copy-to-CPU codepath!
@@ -47,9 +47,18 @@ namespace Celeste.Mod {
             input.Texture.Texture.GetData(dataInput);
             Color[] dataOutput = new Color[input.ClipRect.Width * input.ClipRect.Height];
 
-            for (int y = input.ClipRect.Height - 1; y > -1; y--)
-                for (int x = input.ClipRect.Width - 1; x > -1; x--)
-                    dataOutput[y * input.ClipRect.Width + x] = dataInput[(input.ClipRect.Y + y) * input.Texture.Texture.Width + input.ClipRect.X + x];
+            int cx = input.ClipRect.X;
+            int cy = input.ClipRect.Y;
+            int cw = input.ClipRect.Width;
+            int ch = input.ClipRect.Height;
+            int tw = input.Texture.Texture.Width;
+
+            fixed (Color* rawInput = dataInput)
+            fixed (Color* rawOutput = dataOutput) {
+                for (int y = ch - 1; y > -1; y--)
+                    for (int x = cw - 1; x > -1; x--)
+                        dataOutput[y * cw + x] = rawInput[(cy + y) * tw + cx + x];
+            }
 
             Texture2D output = new Texture2D(Celeste.Instance.GraphicsDevice, input.ClipRect.Width, input.ClipRect.Height);
             output.SetData(dataOutput);
@@ -61,7 +70,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="input">The input texture.</param>
         /// <returns>The output texture, matching the input MTexture's Width and Height, with padding.</returns>
-        public static Texture2D GetPaddedSubtextureCopy(this MTexture input) {
+        public static unsafe Texture2D GetPaddedSubtextureCopy(this MTexture input) {
             if (input == null)
                 return null;
             // TODO: Non-copy-to-CPU codepath!
@@ -70,12 +79,20 @@ namespace Celeste.Mod {
             input.Texture.Texture.GetData(dataInput);
             Color[] dataOutput = new Color[input.Width * input.Height];
 
-            int xo = (int) Math.Round(input.DrawOffset.X);
-            int yo = (int) Math.Round(input.DrawOffset.Y) * input.Width;
+            int cx = input.ClipRect.X;
+            int cy = input.ClipRect.Y;
+            int cw = input.ClipRect.Width;
+            int ch = input.ClipRect.Height;
+            int tw = input.Texture.Texture.Width;
+            int iw = input.Width;
+            int offs = (int) Math.Round(input.DrawOffset.X) + (int) Math.Round(input.DrawOffset.Y) * input.Width;
 
-            for (int y = input.ClipRect.Height - 1; y > -1; y--)
-                for (int x = input.ClipRect.Width - 1; x > -1; x--)
-                    dataOutput[y * input.Width + x + yo + xo] = dataInput[(input.ClipRect.Y + y) * input.Texture.Texture.Width + input.ClipRect.X + x];
+            fixed (Color* rawInput = dataInput)
+            fixed (Color* rawOutput = dataOutput) {
+                for (int y = ch - 1; y > -1; y--)
+                    for (int x = cw - 1; x > -1; x--)
+                        rawOutput[y * iw + x + offs] = rawInput[(cy + y) * tw + cx + x];
+            }
 
             Texture2D output = new Texture2D(Celeste.Instance.GraphicsDevice, input.Width, input.Height);
             output.SetData(dataOutput);
@@ -87,7 +104,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="texture">The input texture.</param>
         /// <returns>A premultiplied copy of the input texture.</returns>
-        public static Texture2D Premultiply(this Texture2D texture) {
+        public static unsafe Texture2D Premultiply(this Texture2D texture) {
             if (texture == null)
                 return null;
             // TODO: Non-copy-to-CPU codepath!
@@ -95,18 +112,20 @@ namespace Celeste.Mod {
             Color[] data = new Color[texture.Width * texture.Height];
             texture.GetData(data);
 
-            for (int i = 0; i < data.Length; i++) {
-                Color c = data[i];
-                if (c.A == 0 || c.A == 255)
-                    // Skip mul by 0 or 1
-                    continue;
-                c = new Color(
-                    (int) Math.Round(c.R * c.A / 255D),
-                    (int) Math.Round(c.G * c.A / 255D),
-                    (int) Math.Round(c.B * c.A / 255D),
-                    c.A
-                );
-                data[i] = c;
+            fixed (Color* raw = data) {
+                for (int i = data.Length - 1; i > -1; i--) {
+                    Color c = raw[i];
+                    if (c.A == 0 || c.A == 255)
+                        // Skip mul by 0 or 1
+                        continue;
+                    c = new Color(
+                        (int) Math.Round(c.R * c.A / 255D),
+                        (int) Math.Round(c.G * c.A / 255D),
+                        (int) Math.Round(c.B * c.A / 255D),
+                        c.A
+                    );
+                    raw[i] = c;
+                }
             }
 
             texture.SetData(data);
@@ -118,7 +137,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="texture">The input texture.</param>
         /// <returns>A postdivided copy of the input texture.</returns>
-        public static Texture2D Postdivide(this Texture2D texture) {
+        public static unsafe Texture2D Postdivide(this Texture2D texture) {
             if (texture == null)
                 return null;
             // TODO: Non-copy-to-CPU codepath!
@@ -126,19 +145,21 @@ namespace Celeste.Mod {
             Color[] data = new Color[texture.Width * texture.Height];
             texture.GetData(data);
 
-            for (int i = 0; i < data.Length; i++) {
-                Color c = data[i];
-                if (c.A == 0 || c.A == 255)
-                    // Skip div by 0 or 1
-                    continue;
-                float a = c.A;
-                c = new Color(
-                    (int) Math.Round(255D * c.R / a),
-                    (int) Math.Round(255D * c.G / a),
-                    (int) Math.Round(255D * c.B / a),
-                    c.A
-                );
-                data[i] = c;
+            fixed (Color* raw = data) {
+                for (int i = data.Length - 1; i > -1; i--) {
+                    Color c = raw[i];
+                    if (c.A == 0 || c.A == 255)
+                        // Skip div by 0 or 1
+                        continue;
+                    float a = c.A;
+                    c = new Color(
+                        (int) Math.Round(255D * c.R / a),
+                        (int) Math.Round(255D * c.G / a),
+                        (int) Math.Round(255D * c.B / a),
+                        c.A
+                    );
+                    raw[i] = c;
+                }
             }
 
             texture.SetData(data);

@@ -588,19 +588,22 @@ namespace Celeste.Mod {
             // Attempt to load mods after their dependencies have been loaded.
             // Only load and lock the delayed list if we're not already loading delayed mods.
             if (Interlocked.CompareExchange(ref Loader.DelayedLock, 1, 0) == 0) {
-                lock (Loader.Delayed) {
-                    for (int i = Loader.Delayed.Count - 1; i > -1; i--) {
-                        Tuple<EverestModuleMetadata, Action> entry = Loader.Delayed[i];
-                        if (!Loader.DependenciesLoaded(entry.Item1))
-                            continue;
+                try {
+                    lock (Loader.Delayed) {
+                        for (int i = Loader.Delayed.Count - 1; i > -1; i--) {
+                            Tuple<EverestModuleMetadata, Action> entry = Loader.Delayed[i];
+                            if (!Loader.DependenciesLoaded(entry.Item1))
+                                continue;
 
-                        Loader.LoadMod(entry.Item1);
-                        Loader.Delayed.RemoveAt(i);
+                            Loader.LoadMod(entry.Item1);
+                            Loader.Delayed.RemoveAt(i);
 
-                        entry.Item2?.Invoke();
+                            entry.Item2?.Invoke();
+                        }
                     }
+                } finally {
+                    Interlocked.Decrement(ref Loader.DelayedLock);
                 }
-                Interlocked.Decrement(ref Loader.DelayedLock);
             }
         }
 
@@ -714,6 +717,9 @@ namespace Celeste.Mod {
 
         public static void LogDetours() {
             List<string> detours = _DetourLog;
+            if (detours.Count == 0)
+                return;
+
             _DetourLog = new List<string>();
 
             StringBuilder builder = new StringBuilder();

@@ -936,6 +936,8 @@ namespace Celeste.Mod {
                 string pathDump = Path.Combine(PathDUMP, assetName);
                 Directory.CreateDirectory(Path.GetDirectoryName(pathDump));
 
+                Logger.Log(LogLevel.Verbose, "dump", $"{assetNameFull} {asset.GetType().FullName}");
+
                 if (asset is IMeta) {
                     if (!File.Exists(pathDump + ".meta.yaml"))
                         using (Stream stream = File.OpenWrite(pathDump + ".meta.yaml"))

@@ -100,6 +100,10 @@ namespace Celeste.Mod {
                 Tuple.Create("Nameguy's D-Sides", _VersionMax, "Monika's D-Sides", _VersionMax),
             };
 
+            internal static FileSystemWatcher Watcher;
+
+            public static bool AutoLoadNewMods { get; internal set; }
+
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
@@ -161,6 +165,31 @@ namespace Celeste.Mod {
 
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
+
+                Watcher = new FileSystemWatcher {
+                    Path = PathMods,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
+                    IncludeSubdirectories = true
+                };
+
+                Watcher.Created += LoadAutoUpdated;
+
+                Watcher.EnableRaisingEvents = true;
+                AutoLoadNewMods = true;
+            }
+
+            private static void LoadAutoUpdated(object source, FileSystemEventArgs e) {
+                if (!AutoLoadNewMods)
+                    return;
+
+                Logger.Log("content", $"Possible new mod container: {e.FullPath}");
+                QueuedTaskHelper.Do(e.FullPath, () => AssetReloadHelper.Do($"Loading new mod: {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
+                    if (Directory.Exists(e.FullPath))
+                        LoadDir(e.FullPath);
+                    else if (e.FullPath.EndsWith(".zip"))
+                        LoadZip(e.FullPath);
+                    ((patch_OuiMainMenu) (AssetReloadHelper.ReturnToScene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+                })));
             }
 
             /// <summary>

@@ -92,6 +92,12 @@ namespace Celeste {
                 }
             }
 
+            if (args.Contains("--nolog")) {
+                MainInner(args);
+                Everest.Shutdown();
+                return;
+            }
+
             if (File.Exists("log.txt"))
                 File.Delete("log.txt");
 
@@ -104,19 +110,7 @@ namespace Celeste {
                 try {
                     Console.SetOut(logWriter);
 
-                    AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
-
-                    try {
-                        Everest.ParseArgs(args);
-                        orig_Main(args);
-                    } catch (Exception e) {
-                        CriticalFailureHandler(e);
-                        return;
-                    } finally {
-                        Instance?.Dispose();
-                    }
-
-                    Everest.Shutdown();
+                    MainInner(args);
                 } finally {
                     if (logWriter.STDOUT != null) {
                         Console.SetOut(logWriter.STDOUT);
@@ -125,6 +119,22 @@ namespace Celeste {
                 }
             }
 
+        }
+
+        private static void MainInner(string[] args) {
+            AppDomain.CurrentDomain.UnhandledException += UnhandledExceptionHandler;
+
+            try {
+                Everest.ParseArgs(args);
+                orig_Main(args);
+            } catch (Exception e) {
+                CriticalFailureHandler(e);
+                return;
+            } finally {
+                Instance?.Dispose();
+            }
+
+            Everest.Shutdown();
         }
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {

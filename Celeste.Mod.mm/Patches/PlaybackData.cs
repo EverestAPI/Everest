@@ -27,7 +27,7 @@ namespace Celeste {
             try {
                 T value = func();
 
-                if (value is string s && s.Length >= 1024) {
+                if (value is string s && s.Length > 1024) {
                     throw new InvalidDataException("String longer than 1024 characters!");
                 }
 

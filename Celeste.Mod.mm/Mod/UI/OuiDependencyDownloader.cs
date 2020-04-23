@@ -11,26 +11,31 @@ namespace Celeste.Mod.UI {
     class OuiDependencyDownloader : OuiLoggedProgress {
         public static List<EverestModuleMetadata> MissingDependencies;
 
-        private bool shouldAutoRestart;
+        private bool shouldAutoExit;
         private bool shouldRestart;
 
         private Task task = null;
 
         public override IEnumerator Enter(Oui from) {
+            Everest.Loader.AutoLoadNewMods = false;
+
             Title = Dialog.Clean("DEPENDENCYDOWNLOADER_TITLE");
             task = new Task(downloadAllDependencies);
             Lines = new List<string>();
             Progress = 0;
             ProgressMax = 0;
-            shouldAutoRestart = true;
+            shouldAutoExit = true;
             shouldRestart = false;
 
             task.Start();
 
-            IEnumerator enterBase = base.Enter(from);
-            while (enterBase.MoveNext())
-                yield return enterBase.Current;
-            yield break;
+            return base.Enter(from);
+        }
+
+        public override IEnumerator Leave(Oui next) {
+            Everest.Loader.AutoLoadNewMods = true;
+
+            return base.Leave(next);
         }
 
         private void downloadAllDependencies() {
@@ -38,7 +43,7 @@ namespace Celeste.Mod.UI {
             LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE"));
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
             if (availableDownloads == null) {
-                shouldAutoRestart = false;
+                shouldAutoExit = false;
                 shouldRestart = false;
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
@@ -75,23 +80,23 @@ namespace Celeste.Mod.UI {
                     } else if (dependency.Name == "Everest") {
                         Logger.Log("OuiDependencyDownloader", $"Everest should be updated");
                         shouldUpdateEverest = true;
-                        shouldAutoRestart = false;
+                        shouldAutoExit = false;
 
                     // TODO: maybe check more precisely for blacklisted mods? We're only basing ourselves on the name here.
                     } else if (Everest.Loader.Blacklist.Contains($"{dependency.Name}.zip")) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
                         modsBlacklisted.Add(dependency.Name);
-                        shouldAutoRestart = false;
+                        shouldAutoExit = false;
 
                     } else if (!availableDownloads.ContainsKey(dependency.Name)) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} was not found in the database");
                         modsNotFound.Add(dependency.Name);
-                        shouldAutoRestart = false;
+                        shouldAutoExit = false;
 
                     } else if (availableDownloads[dependency.Name].xxHash.Count > 1) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} has multiple versions and cannot be installed automatically");
                         modsNotInstallableAutomatically.Add(dependency.Name);
-                        shouldAutoRestart = false;
+                        shouldAutoExit = false;
 
                     } else if (!isVersionCompatible(dependency.Version, availableDownloads[dependency.Name].Version)) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} has a version in database ({availableDownloads[dependency.Name].Version}) that would not satisfy dependency ({dependency.Version})");
@@ -101,7 +106,7 @@ namespace Celeste.Mod.UI {
                         requiredVersions.Add(dependency.Version);
                         modsWithIncompatibleVersionInDatabase[dependency.Name] = requiredVersions;
                         modsDatabaseVersions[dependency.Name] = availableDownloads[dependency.Name].Version;
-                        shouldAutoRestart = false;
+                        shouldAutoExit = false;
 
                     } else {
                         EverestModuleMetadata installedVersion = null;
@@ -154,18 +159,25 @@ namespace Celeste.Mod.UI {
             Progress = 1;
             ProgressMax = 1;
 
-            if (shouldAutoRestart) {
+            if (shouldAutoExit) {
                 // there are no errors to display: restart automatically
-                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING"));
-                for (int i = 3; i > 0; --i) {
-                    Lines[Lines.Count - 1] = string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_RESTARTING_IN"), i);
-                    Thread.Sleep(1000);
-                }
-                Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING");
+                if (shouldRestart) {
+                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING"));
+                    for (int i = 3; i > 0; --i) {
+                        Lines[Lines.Count - 1] = string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_RESTARTING_IN"), i);
+                        Thread.Sleep(1000);
+                    }
+                    Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_RESTARTING");
 
-                Everest.QuickFullRestart();
+                    Everest.QuickFullRestart();
+
+                } else {
+                    Exit();
+                }
+
             } else if (shouldRestart) {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART"));
+
             } else {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK"));
             }
@@ -211,20 +223,22 @@ namespace Celeste.Mod.UI {
                 ModUpdaterHelper.VerifyChecksum(mod, downloadDestination);
 
                 // 3. Install mod
-                shouldRestart = true;
                 if (installedVersion != null) {
+                    shouldRestart = true;
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_UPDATING"), mod.Name, installedVersion.Version, mod.Version, installedVersion.PathArchive));
                     ModUpdaterHelper.InstallModUpdate(mod, installedVersion, downloadDestination);
                 } else {
                     string installDestination = Path.Combine(Everest.Loader.PathMods, $"{mod.Name}.zip");
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALLING"), mod.Name, mod.Version, installDestination));
                     File.Move(downloadDestination, installDestination);
+                    Everest.Loader.LoadZip(installDestination);
                 }
+
             } catch (Exception e) {
                 // install failed
                 LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALL_FAILED"), mod.Name));
                 Logger.LogDetailed(e);
-                shouldAutoRestart = false;
+                shouldAutoExit = false;
 
                 // try to delete the file if it still exists.
                 if (File.Exists(downloadDestination)) {
@@ -240,19 +254,23 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             // handle pressing the Back key
-            if (task != null && !shouldAutoRestart && (task.IsCompleted || task.IsCanceled || task.IsFaulted) && Input.MenuCancel.Pressed) {
+            if (task != null && !shouldAutoExit && (task.IsCompleted || task.IsCanceled || task.IsFaulted) && Input.MenuCancel.Pressed) {
                 if (shouldRestart) {
                     Everest.QuickFullRestart();
                 } else {
-                    // go back to mod options instead
-                    task = null;
-                    Lines.Clear();
-                    Audio.Play(SFX.ui_main_button_back);
-                    Overworld.Goto<OuiModOptions>();
+                    Exit();
                 }
             }
 
             base.Update();
+        }
+
+        public void Exit() {
+            task = null;
+            Lines.Clear();
+            ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            Audio.Play(SFX.ui_main_button_back);
+            Overworld.Goto<OuiModOptions>();
         }
     }
 }
