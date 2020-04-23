@@ -651,6 +651,7 @@ namespace Celeste {
             public override float LeftWidth() {
                 return ActiveFont.Measure(Label).X;
             }
+
             public override float RightWidth() {
                 return Icon.Width;
             }
