@@ -19,6 +19,7 @@ using MonoMod.Cil;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System.Diagnostics;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -490,7 +491,7 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (File.Exists(meta.DLL)) {
+                if (File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
                     FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
                         Path = Path.GetDirectoryName(meta.DLL),
                         NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,

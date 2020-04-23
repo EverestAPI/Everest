@@ -219,6 +219,9 @@ namespace Celeste.Mod.Core {
         public bool ShowManualTextOnDebugMap { get; set; } = true;
 
         [SettingIgnore]
+        public bool CodeReload { get; set; } = true;
+
+        [SettingIgnore]
         public string CurrentVersion { get; set; }
 
         /*

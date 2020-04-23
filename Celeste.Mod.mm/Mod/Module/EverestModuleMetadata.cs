@@ -73,6 +73,11 @@ namespace Celeste.Mod {
         /// </summary>
         public byte[] Hash { get; set; }
 
+        /// <summary>
+        /// Whether this module supports experimental live code reloading or not.
+        /// </summary>
+        public bool SupportsCodeReload { get; set; } = true;
+
         internal FileSystemWatcher DevWatcher;
 
         public override string ToString() {
