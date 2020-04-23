@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Xna.Framework;
+using System.IO;
+using MonoMod.Utils;
 
 namespace Celeste {
     static class patch_PlaybackData {
@@ -20,17 +22,91 @@ namespace Celeste {
         public static Dictionary<string, List<Player.ChaserState>> Tutorials;
 #pragma warning restore CS0649
 
-        public static extern void orig_Load();
+        private static T _<T>(string info, Func<T> func) {
+            bool err = true;
+            try {
+                T value = func();
 
-        [MonoModIgnore]
-        public static extern List<Player.ChaserState> Import(byte[] buffer);
+                if (value is string s && s.Length >= 1024) {
+                    throw new InvalidDataException("String longer than 1024 characters!");
+                }
 
+                Logger.Log(LogLevel.Verbose, "PlaybackData.ImportVerbose", $"{info} = {value}");
+                err = false;
+                return value;
+            } finally {
+                if (err)
+                    Logger.Log(LogLevel.Verbose, "PlaybackData.ImportVerbose", $"{info} ERROR");
+            }
+        }
+
+        public static List<Player.ChaserState> ImportVerbose(byte[] buffer) {
+            using (BinaryReader reader = new BinaryReader(new MemoryStream(buffer))) {
+                List<Player.ChaserState> list = new List<Player.ChaserState>();
+
+                int version = 1;
+                if (_("HEADER", reader.ReadString) == "TIMELINE") {
+                    version = reader.ReadInt32();
+                } else {
+                    reader.BaseStream.Seek(0L, SeekOrigin.Begin);
+                }
+
+                int frameCount = reader.ReadInt32();
+                for (int i = 0; i < frameCount; i++) {
+                    Player.ChaserState state = default;
+                    state.Position.X = _("Position.X", reader.ReadSingle);
+                    state.Position.Y = _("Position.Y", reader.ReadSingle);
+                    state.TimeStamp = _("TimeStamp", reader.ReadSingle);
+                    state.Animation = _("Animation", reader.ReadString);
+                    state.Facing = (Facings) _("Facing", reader.ReadInt32);
+                    state.OnGround = _("OnGround", reader.ReadBoolean);
+                    state.HairColor = new Color(_("HairColor.R", reader.ReadByte), _("HairColor.G", reader.ReadByte), _("HairColor.B", reader.ReadByte), 255);
+                    state.Depth = _("Depth", reader.ReadInt32);
+                    state.Sounds = 0;
+                    if (version == 1) {
+                        state.Scale = new Vector2((float) state.Facing, 1f);
+                        state.DashDirection = Vector2.Zero;
+                    } else {
+                        state.Scale.X = _("Scale.X", reader.ReadSingle);
+                        state.Scale.Y = _("Scale.Y", reader.ReadSingle);
+                        state.DashDirection.X = _("DashDirection.X", reader.ReadSingle);
+                        state.DashDirection.Y = _("DashDirection.Y", reader.ReadSingle);
+                    }
+                    list.Add(state);
+                }
+
+                return list;
+            }
+        }
+
+        public static extern List<Player.ChaserState> orig_Import(byte[] buffer);
+        public static List<Player.ChaserState> Import(byte[] buffer) {
+            try {
+                return orig_Import(buffer);
+            } catch {
+                try {
+                    return ImportVerbose(buffer);
+                } catch (Exception e) {
+                    e.LogDetailed();
+                    return null;
+                }
+            }
+        }
+
+        [MonoModReplace]
         public static void Load() {
             // Vanilla Celeste uses .Add, which throws on conflicts.
             Tutorials?.Clear();
 
             // load vanilla tutorials
-            orig_Load();
+            foreach (string path in Directory.GetFiles(Path.Combine(Engine.ContentDirectory, "Tutorials"))) {
+                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+                Logger.Log("PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
+
+                List<Player.ChaserState> tutorial = Import(File.ReadAllBytes(path));
+                if (tutorial != null)
+                    PlaybackData.Tutorials.Add(fileNameWithoutExtension, tutorial);
+            }
 
             // load mod tutorials
             if (Everest.Content.TryGet<AssetTypeDirectory>("Tutorials", out ModAsset dir, true)) {
@@ -52,9 +128,9 @@ namespace Celeste {
 
                     // load tutorial.
                     Logger.Log("PlaybackData", $"Loading tutorial: {tutorialPath}");
-                    byte[] buffer = child.Data;
-                    List<Player.ChaserState> tutorial = Import(buffer);
-                    Tutorials[tutorialPath] = tutorial;
+                    List<Player.ChaserState> tutorial = Import(child.Data);
+                    if (tutorial != null)
+                        Tutorials[tutorialPath] = tutorial;
                 }
             }
         }
