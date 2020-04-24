@@ -96,6 +96,8 @@ namespace Celeste.Mod {
 
         internal static bool RestartVanilla;
 
+        internal static bool _ContentLoaded;
+
         /// <summary>
         /// The hasher used to determine the mod and installation hashes.
         /// </summary>
@@ -575,6 +577,8 @@ namespace Celeste.Mod {
 
             module.LoadSettings();
             module.Load();
+            if (_ContentLoaded)
+                module.LoadContent(true);
             if (_Initialized)
                 module.Initialize();
 

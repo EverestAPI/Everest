@@ -299,6 +299,8 @@ https://discord.gg/6qjaePQ");
 
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
+
+            Everest._ContentLoaded = true;
         }
 
         protected override void OnExiting(object sender, EventArgs args) {
