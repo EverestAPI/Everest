@@ -577,10 +577,13 @@ namespace Celeste.Mod {
 
             module.LoadSettings();
             module.Load();
-            if (_ContentLoaded)
+            if (_ContentLoaded) {
                 module.LoadContent(true);
-            if (_Initialized)
+            }
+            if (_Initialized) {
+                Tracker.Initialize();
                 module.Initialize();
+            }
 
             InvalidateInstallationHash();
 
