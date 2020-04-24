@@ -65,19 +65,8 @@ namespace Celeste.Mod.UI {
             allMods = new List<string>();
             blacklistedMods = new HashSet<string>();
 
-            // crawl zips
-            string[] files = Directory.GetFiles(Everest.Loader.PathMods);
-            bool headerInserted = false;
-            for (int i = 0; i < files.Length; i++) {
-                string file = Path.GetFileName(files[i]);
-                if (file.EndsWith(".zip")) {
-                    if (!headerInserted) {
-                        menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
-                        headerInserted = true;
-                    }
-                    allToggles.Add(addFileToMenu(menu, file));
-                }
-            }
+            string[] files;
+            bool headerInserted;
 
             // crawl directories
             files = Directory.GetDirectories(Everest.Loader.PathMods);
@@ -87,6 +76,20 @@ namespace Celeste.Mod.UI {
                 if (file != "Cache") {
                     if (!headerInserted) {
                         menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_DIRECTORIES")));
+                        headerInserted = true;
+                    }
+                    allToggles.Add(addFileToMenu(menu, file));
+                }
+            }
+
+            // crawl zips
+            files = Directory.GetFiles(Everest.Loader.PathMods);
+            headerInserted = false;
+            for (int i = 0; i < files.Length; i++) {
+                string file = Path.GetFileName(files[i]);
+                if (file.EndsWith(".zip")) {
+                    if (!headerInserted) {
+                        menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
                         headerInserted = true;
                     }
                     allToggles.Add(addFileToMenu(menu, file));
