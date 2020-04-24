@@ -368,6 +368,19 @@ namespace Celeste {
             });
         }
 
+        public extern Vector2 orig_GetFullCameraTargetAt(Player player, Vector2 at);
+        public new Vector2 GetFullCameraTargetAt(Player player, Vector2 at) {
+            Vector2 originalPosition = player.Position;
+            player.Position = at;
+            foreach (Entity trigger in Tracker.GetEntities<Trigger>()) {
+                if (trigger is SmoothCameraOffsetTrigger smoothCameraOffset && player.CollideCheck(trigger)) {
+                    smoothCameraOffset.OnStay(player);
+                }
+            }
+            player.Position = originalPosition;
+
+            return orig_GetFullCameraTargetAt(player, at);
+        }
     }
     public static class LevelExt {
 

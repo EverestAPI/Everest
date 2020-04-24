@@ -1077,10 +1077,7 @@ namespace Celeste {
 
             public override float Height() {
                 //If there are no items, MenuHeight will actually be a negative number
-                if (CurrentMenu != null && CurrentMenu.Count > 0)
-                    return TitleHeight + (MenuHeight);
-                else
-                    return TitleHeight;
+                return TitleHeight + Math.Max(MenuHeight, 0);
             }
 
             public override void Added() {
@@ -1191,17 +1188,18 @@ namespace Celeste {
                     ActiveFont.DrawOutline(">", arrowPosition, new Vector2(0.5f, 0.5f), Vector2.One, arrowColor, 2f, strokeColor);
                 }
 
-                if (CurrentMenu != null) {
-                    Vector2 menuPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
+                if (CurrentMenu != null) { 
+                    Vector2 itemPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
+                    float menuYOffset = itemPosition.Y;
                     RecalculateSize();
                     foreach (TextMenu.Item item in CurrentMenu) {
                         if (item.Visible) {
                             float itemHeight = item.Height();
-                            Vector2 itemPosition = menuPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
-                            if (itemPosition.Y + itemHeight * 0.5f > 0f && itemPosition.Y - itemHeight * 0.5f < Engine.Height) {
-                                item.Render(itemPosition, Focused && Current == item);
+                            Vector2 itemOffset = itemPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
+                            if (itemOffset.Y - menuYOffset < MenuHeight && itemOffset.Y + itemHeight * 0.5f > 0f && itemOffset.Y - itemHeight * 0.5f < Engine.Height) {
+                                item.Render(itemOffset, Focused && Current == item);
                             }
-                            menuPosition.Y += itemHeight + ItemSpacing;
+                            itemPosition.Y += itemHeight + ItemSpacing;
                         }
                     }
                 }
