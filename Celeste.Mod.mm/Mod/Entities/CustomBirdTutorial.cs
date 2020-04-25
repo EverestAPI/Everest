@@ -3,6 +3,7 @@ using Monocle;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
+using MonoMod.Utils;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/customBirdTutorial")]
@@ -45,6 +46,8 @@ namespace Celeste.Mod.Entities {
                 info = Dialog.Clean(infoString);
             }
 
+            int extraAdvance = 0;
+
             // go ahead and parse the controls. Controls can be textures, VirtualButtons, directions or strings.
             string[] controlsStrings = data.Attr("controls").Split(',');
             controls = new object[controlsStrings.Length];
@@ -62,17 +65,36 @@ namespace Celeste.Mod.Entities {
                     if (matchingInput?.GetValue(null)?.GetType() == typeof(VirtualButton)) {
                         // this is a button.
                         controls[i] = matchingInput.GetValue(null);
-                    } else if (controlString.StartsWith("dialog:")) {
-                        // treat that as a dialog key.
-                        controls[i] = Dialog.Clean(controlString.Substring("dialog:".Length));
                     } else {
-                        // treat that as a plain string.
-                        controls[i] = controlString;
+                        // when BirdTutorialGui renders text, it is offset by 1px on the right.
+                        // width computation doesn't take this 1px into account, so we should add it back in.
+                        extraAdvance++;
+                        if (i == 0) {
+                            // as the text is rendered 1px to the right, if the first thing is a string, there will be 1px more padding on the left.
+                            // we should add that extra px on the right as well.
+                            extraAdvance++;
+                        }
+
+                        if (controlString.StartsWith("dialog:")) {
+                            // treat that as a dialog key.
+                            controls[i] = Dialog.Clean(controlString.Substring("dialog:".Length));
+                        } else {
+                            // treat that as a plain string.
+                            controls[i] = controlString;
+                        }
                     }
                 }
             }
 
             gui = new BirdTutorialGui(this, new Vector2(0f, -16f), info, controls);
+
+            DynData<BirdTutorialGui> guiData = new DynData<BirdTutorialGui>(gui);
+            // if there is no first line, resize the bubble accordingly.
+            if (string.IsNullOrEmpty(infoString)) {
+                guiData["infoHeight"] = 0f;
+            }
+            // apply the extra width.
+            guiData["controlsWidth"] = guiData.Get<float>("controlsWidth") + extraAdvance;
         }
 
         public override void Awake(Scene scene) {
