@@ -533,11 +533,9 @@ namespace Celeste.Mod {
                 }
             }
 
-            internal static void ReloadModAssembly(object source, FileSystemEventArgs e) {
+            internal static void ReloadModAssembly(object source, FileSystemEventArgs e, bool retrying = false) {
                 if (!File.Exists(e.FullPath))
                     return;
-
-                ((FileSystemWatcher) source).Dispose();
 
                 Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
@@ -546,9 +544,23 @@ namespace Celeste.Mod {
                         return;
 
                     AssetReloadHelper.Do($"Reloading mod assembly: {Path.GetFileName(e.FullPath)}", () => {
-                        Unregister(module);
+                        Assembly asm = null;
                         using (FileStream stream = File.OpenRead(e.FullPath))
-                            LoadModAssembly(module.Metadata, Relinker.GetRelinkedAssembly(module.Metadata, stream));
+                            asm = Relinker.GetRelinkedAssembly(module.Metadata, stream);
+
+                        if (asm == null) {
+                            if (!retrying) {
+                                // Retry.
+                                QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
+                                    ReloadModAssembly(source, e, true);
+                                });
+                            }
+                            return;
+                        }
+
+                        ((FileSystemWatcher) source).Dispose();
+                        Unregister(module);
+                        LoadModAssembly(module.Metadata, asm);
                     });
                     AssetReloadHelper.ReloadLevel();
                 });
