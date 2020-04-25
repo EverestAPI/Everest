@@ -20,6 +20,7 @@ using Celeste.Mod.Helpers;
 using Celeste.Mod.Core;
 using System.Threading;
 using System.Diagnostics;
+using Celeste.Mod.UI;
 
 namespace Celeste.Mod {
     // Special meta types.
@@ -768,6 +769,13 @@ namespace Celeste.Mod {
 
                             if (levelPrev?.Session.MapData == mode.MapData)
                                 AssetReloadHelper.ReloadLevel();
+
+                        } else {
+                            // What can go wrong?
+                            AssetReloadHelper.Do($"Reloading all maps", () => {
+                                OuiHelper_ChapterSelect_Reload.Reload(false);
+                            });
+                            AssetReloadHelper.ReloadLevel();
                         }
 
                     } else if (next.Type == typeof(AssetTypeXml)) {
@@ -838,6 +846,23 @@ namespace Celeste.Mod {
                 if (!Mods.Contains(meta))
                     Mods.Add(meta);
                 meta._Crawl();
+
+                if (_ContentLoaded) {
+                    // We're late-loading this mod and thus need to manually ingest new assets.
+                    Logger.Log(LogLevel.Info, "content", $"Late ingest via update for {meta.Name}");
+
+                    Stopwatch loadTimerPrev = Celeste.LoadTimer; // Trick AssetReloadHelper into insta-running callbacks.
+                    Stopwatch loadTimer = Stopwatch.StartNew();
+
+                    try {
+                        Celeste.LoadTimer = loadTimer;
+                        foreach (ModAsset asset in meta.List)
+                            Update(Get(asset.PathVirtual, true), asset);
+                    } finally {
+                        loadTimer.Stop();
+                        Celeste.LoadTimer = loadTimerPrev;
+                    }
+                }
             }
 
             /// <summary>

@@ -28,29 +28,46 @@ namespace Celeste.Mod.UI {
         }
 
         public static void Reload() {
+            Reload(true);
+        }
+
+        public static void Reload(bool recrawl) {
+            SaveData saveData = SaveData.Instance;
+
             // ChapterSelect only updates the ID.
-            string lastAreaSID = AreaData.Get(SaveData.Instance.LastArea.ID)?.ToKey().GetSID() ?? AreaKey.Default.GetSID();
+            string lastAreaSID = saveData == null ? null : (AreaData.Get(saveData.LastArea.ID)?.ToKey().GetSID() ?? AreaKey.Default.GetSID());
             // Note: SaveData.Instance.LastArea is reset by AreaData.Interlude_Safe -> SaveData.LevelSetStats realizing that AreaOffset == -1
             // Store the "resolved" last selected area in a local variable, then re-set it after reloading.
 
             // Reload all maps.
-            Everest.Content.Recrawl();
+            if (recrawl)
+                Everest.Content.Recrawl();
             AreaData.Unload();
             AreaData.Load();
             AreaData.ReloadMountainViews();
 
             // Fake a save data reload to resync the save data to the new area list.
-            AreaData lastArea = AreaDataExt.Get(lastAreaSID);
-            SaveData.Instance.LastArea = lastArea?.ToKey() ?? AreaKey.Default;
-            SaveData.Instance.BeforeSave();
-            SaveData.Instance.AfterInitialize();
+            if (saveData != null) {
+                AreaData lastArea = AreaDataExt.Get(lastAreaSID);
+                saveData.LastArea = lastArea?.ToKey() ?? AreaKey.Default;
+                saveData.BeforeSave();
+                saveData.AfterInitialize();
+            }
 
-            Overworld overworld = (Engine.Scene.Entities.FindFirst<Oui>())?.Overworld;
-            if (overworld == null)
-                return;
-            if (overworld.Mountain.Area >= AreaData.Areas.Count)
-                overworld.Mountain.EaseCamera(0, AreaData.Areas[0].MountainIdle, null, true);
-            overworld.ReloadMenus((Overworld.StartMode) (-1));
+            if (Engine.Scene is Overworld overworld) {
+                if (overworld.Mountain.Area >= AreaData.Areas.Count)
+                    overworld.Mountain.EaseCamera(0, AreaData.Areas[0].MountainIdle, null, true);
+
+                OuiChapterSelect chapterSelect = overworld.GetUI<OuiChapterSelect>();
+                overworld.UIs.Remove(chapterSelect);
+                overworld.Remove(chapterSelect);
+
+                chapterSelect = new OuiChapterSelect();
+                chapterSelect.Visible = false;
+                overworld.Add(chapterSelect);
+                overworld.UIs.Add(chapterSelect);
+                chapterSelect.IsStart(overworld, (Overworld.StartMode) (-1));
+            }
         }
 
     }
