@@ -35,6 +35,8 @@ namespace Celeste.Mod.UI {
         public override void Begin() {
             base.Begin();
 
+            Everest.Loader.AutoLoadNewMods = false;
+
             // add on-screen elements like GameLoader/OverworldLoader
             Add(new HudRenderer());
             Add(snow);
@@ -60,6 +62,12 @@ namespace Celeste.Mod.UI {
                     autoUpdate(updateList);
                 }
             }).Start();
+        }
+
+        public override void End() {
+            base.End();
+
+            Everest.Loader.AutoLoadNewMods = true;
         }
 
         private IEnumerator Routine() {
