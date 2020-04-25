@@ -42,7 +42,7 @@ namespace Celeste.Mod {
         /// </summary>
         [YamlIgnore]
         public Version Version { get; set; } = new Version(1, 0);
-        protected string _VersionString;
+        private string _VersionString;
         [YamlMember(Alias = "Version")]
         public string VersionString {
             get {

@@ -252,6 +252,15 @@ namespace Celeste.Mod.UI {
             string[] searchHunks = search.Split(' ').Select(hunk => hunk.ToLower()).ToArray();
             bool matched = false;
 
+            for (int i = 0; i < AreaData.Areas.Count; i++) {
+                AreaData area = AreaData.Get(i);
+                string id = area.Name;
+                name = id.DialogCleanOrNull() ?? id.SpacedPascalCase();
+                if (name.ToLower() == search.ToLower()) {
+                    matchCount++;
+                }
+            }
+
             SaveData save = SaveData.Instance;
             List<AreaStats> areaStatsAll = save.Areas;
             for (int i = 0; i < AreaData.Areas.Count; i++) {
@@ -307,12 +316,25 @@ namespace Celeste.Mod.UI {
                         items.Insert(0, perfectMatchHeader);
                         matched = true;
                     }
-                    matchCount++;
+
                     menu.rightMenu.Insert(1, button.Pressed(() => {
                         clearSearch();
                         Inspect(area, AreaMode.Normal);
                     }));
                     items.Insert(1, button);
+
+                    if (matchCount > 1) {
+                        lastLevelSet = levelSet;
+                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetAreaOffset = levelSetStats.AreaOffset;
+                        levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
+                        levelSetUnlockedModes = levelSetStats.UnlockedModes;
+                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
+                        levelSetHeader.Alpha = 0f;
+                        menu.rightMenu.Insert(1, levelSetHeader);
+                        items.Insert(1, levelSetHeader);
+                    }
                 } else {
 
                     if (lastLevelSet != levelSet) {
@@ -350,6 +372,8 @@ namespace Celeste.Mod.UI {
             for (int i = 0; i < items.Count; i++)
                 Add(new Coroutine(FadeIn(i, delayBetweenOptions, items[i])));
 
+            menu.rightMenu.Selection = itemCount > 0 ? 1 : 0;
+
             if (menu.rightMenu.Height > menu.rightMenu.ScrollableMinSize) {
                 menu.rightMenu.Position.Y = menu.rightMenu.ScrollTargetY;
             }
@@ -357,8 +381,6 @@ namespace Celeste.Mod.UI {
             // Don't allow pressing any buttons while searching
             foreach (TextMenu.Item item in items)
                 item.Disabled = Searching;
-
-            menu.rightMenu.Selection = itemCount > 1 ? 1 : 0;
         }
 
         private IEnumerator FadeIn(int i, float delayBetweenOptions, TextMenuExt.IItemExt item) {
