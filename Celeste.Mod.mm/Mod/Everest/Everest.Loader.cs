@@ -491,7 +491,7 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
+                if (string.IsNullOrEmpty(meta.PathArchive) && File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
                     FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
                         Path = Path.GetDirectoryName(meta.DLL),
                         NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
