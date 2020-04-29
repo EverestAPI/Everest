@@ -26,6 +26,9 @@ namespace Celeste.Mod.UI {
         private bool confirmToContinue = false;
         private bool shouldContinue = false;
 
+        private bool showCancel = false;
+        private bool skipUpdate = false;
+
         public AutoModUpdater(HiresSnow snow) {
             this.snow = snow;
 
@@ -100,6 +103,9 @@ namespace Celeste.Mod.UI {
 
                     Logger.Log("AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
                     Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
+                        // show "cancel" once the first progress report has been received.
+                        showCancel = true;
+
                         if (length > 0) {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
                                 $"({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
@@ -107,7 +113,27 @@ namespace Celeste.Mod.UI {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
                                 $"({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                         }
+                        return !skipUpdate;
                     });
+
+                    if (skipUpdate) {
+                        Logger.Log("AutoModUpdater", "Update was skipped");
+
+                        // try to delete mod-update.zip if it still exists.
+                        ModUpdaterHelper.TryDelete(zipPath);
+
+                        if (restartRequired) {
+                            // stop trying to update mods; restart right away
+                            break;
+                        } else {
+                            // proceed to the game right away
+                            shouldContinue = true;
+                            return;
+                        }
+                    }
+
+                    // don't show "cancel" during install.
+                    showCancel = false;
 
                     // verify its checksum
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_VERIFYING")}";
@@ -133,6 +159,9 @@ namespace Celeste.Mod.UI {
 
                 currentlyUpdatedModIndex++;
             }
+
+            // don't show "cancel" anymore, install ended.
+            showCancel = false;
 
             if (!failuresOccured) {
                 // restart when everything is done
@@ -170,6 +199,11 @@ namespace Celeste.Mod.UI {
 
                 if (confirmToContinue)
                     shouldContinue = true;
+            }
+
+            // if Back is pressed, we should cancel the update.
+            if (Input.MenuCancel.Pressed && showCancel) {
+                skipUpdate = true;
             }
         }
 
@@ -212,6 +246,11 @@ namespace Celeste.Mod.UI {
             if (modUpdatingSubMessage != null) {
                 // render sub-text (appears smaller under the text)
                 drawText(modUpdatingSubMessage, anchor + new Vector2(53f, 40f), 0.5f);
+            }
+
+            if (showCancel) {
+                string label = Dialog.Clean("AUTOUPDATECHECKER_SKIP");
+                ButtonUI.Render(new Vector2(1880f, 1024f), label, Input.MenuCancel, 0.5f, 1f);
             }
 
             Draw.SpriteBatch.End();

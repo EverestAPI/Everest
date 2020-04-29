@@ -1,14 +1,11 @@
-﻿using Celeste.Mod.Core;
-using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.UI {
     class OuiModUpdateList : Oui, OuiModOptions.ISubmenu {
@@ -31,6 +28,8 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
         private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
+
+        private static bool ongoingUpdateCancelled = false;
 
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
@@ -183,6 +182,11 @@ namespace Celeste.Mod.UI {
                 }
             }
 
+            if (Input.MenuCancel.Pressed) {
+                // cancel any ongoing download (this has no effect if no download is ongoing anyway).
+                ongoingUpdateCancelled = true;
+            }
+
             base.Update();
         }
 
@@ -232,6 +236,9 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         /// <returns>Bool wether the update failed or not</returns>
         private bool doDownloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
+            // first, reset the "cancelled" flag.
+            ongoingUpdateCancelled = false;
+
             // we will download the mod to Celeste_Directory/[update.GetHashCode()].zip at first.
             string zipPath = Path.Combine(Everest.PathGame, $"modupdate-{update.GetHashCode()}.zip");
 
@@ -239,6 +246,17 @@ namespace Celeste.Mod.UI {
                 // download it...
                 button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_DOWNLOADING")})";
                 downloadMod(update, button, zipPath);
+
+                if (ongoingUpdateCancelled) {
+                    Logger.Log("OuiModUpdateList", "Update was cancelled");
+
+                    // try to delete mod-update.zip if it still exists.
+                    ModUpdaterHelper.TryDelete(zipPath);
+
+                    // update was cancelled!
+                    button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_CANCELLED")})";
+                    return false;
+                }
 
                 // verify its checksum
                 ModUpdaterHelper.VerifyChecksum(update, zipPath);
@@ -281,6 +299,7 @@ namespace Celeste.Mod.UI {
                 } else {
                     button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
+                return !ongoingUpdateCancelled;
             });
         }
 

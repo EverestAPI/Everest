@@ -297,6 +297,7 @@ namespace Celeste.Mod {
                         }
 
                         progress.ProgressMax = (int) length;
+                        return true; // continue downloading
                     });
                 } catch (Exception e) {
                     progress.LogLine("Download failed!");
@@ -401,8 +402,9 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="url">The URL to download the file from</param>
             /// <param name="destPath">The path the file should be downloaded to</param>
-            /// <param name="progressCallback">A method called periodically as the download progresses. Parameters are progress, length and speed in KiB/s</param>
-            public static void DownloadFileWithProgress(string url, string destPath, Action<int, long, int> progressCallback) {
+            /// <param name="progressCallback">A method called periodically as the download progresses. Parameters are progress, length and speed in KiB/s.
+            /// Should return true for the download to continue, false for it to be cancelled.</param>
+            public static void DownloadFileWithProgress(string url, string destPath, Func<int, long, int, bool> progressCallback) {
                 DateTime timeStart = DateTime.Now;
 
                 if (File.Exists(destPath))
@@ -444,7 +446,9 @@ namespace Celeste.Mod {
                             timeLastSpeed = DateTime.Now;
                         }
 
-                        progressCallback(pos, length, speed);
+                        if (!progressCallback(pos, length, speed)) {
+                            break;
+                        }
                     }
                 }
             }

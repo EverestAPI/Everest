@@ -213,6 +213,7 @@ namespace Celeste.Mod.UI {
                         Lines[Lines.Count - 1] = $"{((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         ProgressMax = 0;
                     }
+                    return true;
                 });
 
                 ProgressMax = 0;
