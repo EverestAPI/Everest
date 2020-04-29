@@ -26,6 +26,7 @@ namespace Celeste {
         private const int scarfSegmentSize = 2; // We can't change consts.
         private MTexture scarf;
         private MTexture[] scarfSegments;
+        private MTexture levelSetScarf;
         private float ease;
         private float journallEase;
         private bool journalEnabled;
@@ -110,6 +111,13 @@ namespace Celeste {
             for (int i = 0; i <= SaveData.Instance.UnlockedAreas && !journalEnabled; i++)
                 if (SaveData.Instance.Areas[i].Modes[0].TimePlayed > 0L && !AreaData.Get(i).Interlude)
                     journalEnabled = true;
+
+            levelSetScarf = GFX.Gui.GetOrDefault("areas/" + currentLevelSet + "/hover", GFX.Gui["areas/hover"]);
+            scarf = levelSetScarf;
+            scarfSegments = new MTexture[scarf.Height / 2];
+            for (int j = 0; j < scarfSegments.Length; j++) {
+                scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
+            }
 
             OuiChapterSelectIcon unselected = null;
             if (from is OuiChapterPanel) {
@@ -245,6 +253,17 @@ namespace Celeste {
             }
 
             orig_Update();
+
+            if (Focused && display) {
+                string nextScarf = "areas/" + AreaData.Areas[area].Name.ToLowerInvariant() + "_hover";
+                if (!nextScarf.Equals(scarf.AtlasPath)) {
+                    scarf = GFX.Gui.GetOrDefault(nextScarf, levelSetScarf);
+                    scarfSegments = new MTexture[scarf.Height / 2];
+                    for (int j = 0; j < scarfSegments.Length; j++) {
+                        scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
+                    }
+                }
+            }
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
             searchEase = Calc.Approach(searchEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
