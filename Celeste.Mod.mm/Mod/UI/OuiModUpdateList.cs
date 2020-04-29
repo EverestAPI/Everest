@@ -148,7 +148,7 @@ namespace Celeste.Mod.UI {
                             if (metadata.VersionString != update.Version)
                                 versionUpdate = $"{metadata.VersionString} > {update.Version}";
 
-                            TextMenu.Button button = new TextMenu.Button($"{metadata.Name.SpacedPascalCase()} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+                            TextMenu.Button button = new TextMenu.Button($"{ModUpdaterHelper.FormatModName(metadata.Name)} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
                             button.Pressed(() => {
                                 // make the menu non-interactive
                                 menu.Focused = false;
