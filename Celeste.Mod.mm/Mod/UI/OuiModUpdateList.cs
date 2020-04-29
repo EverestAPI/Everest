@@ -23,13 +23,13 @@ namespace Celeste.Mod.UI {
         private Task task;
 
         private bool shouldRestart = false;
-        private bool willRestartMessageShown = false;
 
         private Dictionary<string, ModUpdateInfo> updateCatalog = null;
         private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
         private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
 
         private static bool ongoingUpdateCancelled = false;
+        private bool menuOnScreen = false;
 
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
@@ -40,7 +40,6 @@ namespace Celeste.Mod.UI {
             menu.Add(new TextMenu.Header(Dialog.Clean("MODUPDATECHECKER_MENU_TITLE")));
 
             menu.Add(subHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")));
-            willRestartMessageShown = false;
 
             fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
             fetchingButton.Disabled = true;
@@ -58,6 +57,7 @@ namespace Celeste.Mod.UI {
             }
 
             menu.Focused = true;
+            menuOnScreen = true;
 
             task = new Task(() => {
                 // 1. Download the mod updates database
@@ -77,6 +77,7 @@ namespace Celeste.Mod.UI {
 
             Audio.Play(SFX.ui_main_whoosh_large_out);
             menu.Focused = false;
+            menuOnScreen = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
                 menu.X = onScreenX + 1920f * Ease.CubeIn(p);
@@ -97,11 +98,13 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             // check if the "press Back to restart" message has to be toggled
-            if (menu != null && subHeader != null && (shouldRestart && menu.Focused) != willRestartMessageShown) {
-                willRestartMessageShown = !willRestartMessageShown;
-                if (willRestartMessageShown) {
+            if (menu != null && subHeader != null) {
+                if (menu.Focused && shouldRestart) {
                     subHeader.TextColor = Color.OrangeRed;
                     subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+                } else if (!menu.Focused && ongoingUpdateCancelled && menuOnScreen) {
+                    subHeader.TextColor = Color.Gray;
+                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_CANCELLING")})";
                 } else {
                     subHeader.TextColor = Color.Gray;
                     subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
@@ -294,12 +297,16 @@ namespace Celeste.Mod.UI {
             Logger.Log("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
             Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
+                if (ongoingUpdateCancelled) {
+                    return false;
+                }
+
                 if (length > 0) {
                     button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s)";
                 } else {
                     button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
-                return !ongoingUpdateCancelled;
+                return true;
             });
         }
 

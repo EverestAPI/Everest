@@ -98,13 +98,17 @@ namespace Celeste.Mod.UI {
                 string progressString = $"[{currentlyUpdatedModIndex}/{updateList.Count}] {Dialog.Clean("AUTOUPDATECHECKER_UPDATING")} {ModUpdaterHelper.FormatModName(update.Name)}:";
 
                 try {
+                    // show the cancel button for downloading
+                    showCancel = true;
+
                     // download it...
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")}";
 
                     Logger.Log("AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
                     Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
-                        // show "cancel" once the first progress report has been received.
-                        showCancel = true;
+                        if (skipUpdate) {
+                            return false;
+                        }
 
                         if (length > 0) {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
@@ -113,8 +117,11 @@ namespace Celeste.Mod.UI {
                             modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")} " +
                                 $"({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                         }
-                        return !skipUpdate;
+                        return true;
                     });
+
+                    // hide the cancel button for downloading, download is done
+                    showCancel = false;
 
                     if (skipUpdate) {
                         Logger.Log("AutoModUpdater", "Update was skipped");
@@ -131,9 +138,6 @@ namespace Celeste.Mod.UI {
                             return;
                         }
                     }
-
-                    // don't show "cancel" during install.
-                    showCancel = false;
 
                     // verify its checksum
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_VERIFYING")}";
@@ -204,6 +208,7 @@ namespace Celeste.Mod.UI {
             // if Back is pressed, we should cancel the update.
             if (Input.MenuCancel.Pressed && showCancel) {
                 skipUpdate = true;
+                modUpdatingMessage = Dialog.Clean("AUTOUPDATECHECKER_SKIPPING");
             }
         }
 
