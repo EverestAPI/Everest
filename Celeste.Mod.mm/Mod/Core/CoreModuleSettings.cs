@@ -219,7 +219,15 @@ namespace Celeste.Mod.Core {
         public bool ShowManualTextOnDebugMap { get; set; } = true;
 
         [SettingIgnore]
-        public bool CodeReload { get; set; } = true;
+        public bool CodeReload_WIP { get; set; } = false;
+
+        // TODO: Once CodeReload is no longer WIP, remove this and rename ^ to non-WIP.
+        [SettingIgnore]
+        [YamlIgnore]
+        public bool CodeReload {
+            get => CodeReload_WIP;
+            set => CodeReload_WIP = value;
+        }
 
         [SettingIgnore]
         public string CurrentVersion { get; set; }
