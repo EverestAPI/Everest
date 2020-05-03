@@ -118,14 +118,9 @@ namespace Celeste {
                 if (areaUnclamp != area)
                     unselected.Hide();
             }
-            else {
-                levelSetScarf = GFX.Gui.GetOrDefault("areas/" + currentLevelSet + "/hover", GFX.Gui["areas/hover"]);
-                scarf = levelSetScarf;
-                scarfSegments = new MTexture[scarf.Height / 2];
-                for (int j = 0; j < scarfSegments.Length; j++) {
-                    scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
-                }
-            }
+
+            levelSetScarf = GFX.Gui.GetOrDefault("areas/" + currentLevelSet + "/hover", GFX.Gui["areas/hover"]);
+            updateScarf();
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
@@ -256,19 +251,23 @@ namespace Celeste {
             orig_Update();
 
             if (Focused && display) {
-                string nextScarf = "areas/" + AreaData.Areas[area].Name.ToLowerInvariant() + "_hover";
-                if (!nextScarf.Equals(scarf.AtlasPath)) {
-                    scarf = GFX.Gui.GetOrDefault(nextScarf, levelSetScarf);
-                    scarfSegments = new MTexture[scarf.Height / 2];
-                    for (int j = 0; j < scarfSegments.Length; j++) {
-                        scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
-                    }
-                }
+                updateScarf();
             }
 
             maplistEase = Calc.Approach(maplistEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
             searchEase = Calc.Approach(searchEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
             levelsetEase = Calc.Approach(levelsetEase, (display && !disableInput && Focused) ? 1f : 0f, Engine.DeltaTime * 4f);
+        }
+
+        private void updateScarf() {
+            string nextScarf = "areas/" + AreaData.Areas[area].Name.ToLowerInvariant() + "_hover";
+            if (!nextScarf.Equals(scarf.AtlasPath)) {
+                scarf = GFX.Gui.GetOrDefault(nextScarf, levelSetScarf);
+                scarfSegments = new MTexture[scarf.Height / 2];
+                for (int j = 0; j < scarfSegments.Length; j++) {
+                    scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
+                }
+            }
         }
 
         public extern void orig_Render();
