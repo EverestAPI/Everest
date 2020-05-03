@@ -112,18 +112,19 @@ namespace Celeste {
                 if (SaveData.Instance.Areas[i].Modes[0].TimePlayed > 0L && !AreaData.Get(i).Interlude)
                     journalEnabled = true;
 
-            levelSetScarf = GFX.Gui.GetOrDefault("areas/" + currentLevelSet + "/hover", GFX.Gui["areas/hover"]);
-            scarf = levelSetScarf;
-            scarfSegments = new MTexture[scarf.Height / 2];
-            for (int j = 0; j < scarfSegments.Length; j++) {
-                scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
-            }
-
             OuiChapterSelectIcon unselected = null;
             if (from is OuiChapterPanel) {
                 (unselected = icons[areaUnclamp]).Unselect();
                 if (areaUnclamp != area)
                     unselected.Hide();
+            }
+            else {
+                levelSetScarf = GFX.Gui.GetOrDefault("areas/" + currentLevelSet + "/hover", GFX.Gui["areas/hover"]);
+                scarf = levelSetScarf;
+                scarfSegments = new MTexture[scarf.Height / 2];
+                for (int j = 0; j < scarfSegments.Length; j++) {
+                    scarfSegments[j] = scarf.GetSubtexture(0, j * 2, scarf.Width, 2, null);
+                }
             }
 
             bool isVanilla = currentLevelSet == "Celeste";
