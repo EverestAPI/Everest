@@ -122,13 +122,16 @@ namespace Celeste.Mod.Entities {
 
         /// <summary>
         /// Makes the tutorial bubble disappear and the bird fly away.
-        /// Requires <see cref="TriggerShowTutorial"/> to have been called first.
         /// </summary>
         public void TriggerHideTutorial() {
-            if (triggered && !flewAway) {
+            if (!flewAway) {
                 flewAway = true;
 
-                Add(new Coroutine(HideTutorial()));
+                if (triggered) {
+                    Add(new Coroutine(HideTutorial()));
+                }
+                triggered = true;
+
                 Add(new Coroutine(StartleAndFlyAway()));
 
                 if (onlyOnce) {
