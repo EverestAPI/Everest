@@ -94,10 +94,12 @@ namespace Celeste.Mod {
                     } catch (ObjectDisposedException) {
                     }
 
+                    Action nextAction = null;
                     lock (Queue) {
                         if (Queue.Count > 0)
-                            Queue.Dequeue()?.Invoke();
+                            nextAction = Queue.Dequeue();
                     }
+                    nextAction?.Invoke();
                 }
 
                 DiscordRpc.Shutdown();
@@ -128,17 +130,17 @@ namespace Celeste.Mod {
                     if (DiscordPresence.startTimestamp == 0)
                         DiscordPresence.startTimestamp = DateTimeToDiscordTime(DateTime.UtcNow);
                     DiscordPresence.endTimestamp = 0;
-
-                    UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame, level.Session);
                 }
+
+                UpdateText(CoreModule.Settings.DiscordTextInGame, CoreModule.Settings.DiscordSubtextInGame, level.Session);
             }
             private static void OnLevelExit(Level level, LevelExit exit, LevelExit.Mode mode, Session session, HiresSnow snow) {
                 lock (DiscordPresence) {
                     DiscordPresence.startTimestamp = 0;
                     DiscordPresence.endTimestamp = 0;
-
-                    UpdateText(CoreModule.Settings.DiscordTextInMenu);
                 }
+
+                UpdateText(CoreModule.Settings.DiscordTextInMenu);
             }
 
             internal static void OnStrawberryCollect() {
