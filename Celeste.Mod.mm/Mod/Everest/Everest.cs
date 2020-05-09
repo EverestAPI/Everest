@@ -585,6 +585,21 @@ namespace Celeste.Mod {
                 module.Initialize();
             }
 
+            if (Engine.Scene is Overworld overworld) {
+                // we already are in the overworld. Register new Ouis real quick!
+                Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypes();
+                foreach (Type type in types) {
+                    if (typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract && !overworld.UIs.Any(ui => ui.GetType() == type)) {
+                        Logger.Log("core", $"Instanciating UI from {module.Metadata}: {type.FullName}");
+
+                        Oui oui = (Oui) Activator.CreateInstance(type);
+                        oui.Visible = false;
+                        overworld.Add(oui);
+                        overworld.UIs.Add(oui);
+                    }
+                }
+            }
+
             InvalidateInstallationHash();
 
             EverestModuleMetadata meta = module.Metadata;
@@ -602,10 +617,9 @@ namespace Celeste.Mod {
                             if (!Loader.DependenciesLoaded(entry.Item1))
                                 continue;
 
+                            entry.Item2?.Invoke();
                             Loader.LoadMod(entry.Item1);
                             Loader.Delayed.RemoveAt(i);
-
-                            entry.Item2?.Invoke();
                         }
                     }
                 } finally {
