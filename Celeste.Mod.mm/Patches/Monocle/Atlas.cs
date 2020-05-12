@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -350,7 +351,14 @@ namespace Monocle {
                 return;
             }
 
-            VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+            VirtualTexture vtex;
+            try {
+                vtex = VirtualContentExt.CreateTexture(asset);
+            } catch {
+                // The game is going to crash from this. Log the offending texture to make debugging easier.
+                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");
+                throw;
+            }
             MTextureMeta meta = asset.GetMeta<MTextureMeta>();
             if (meta != null) {
                 // Apply width and height from meta.
