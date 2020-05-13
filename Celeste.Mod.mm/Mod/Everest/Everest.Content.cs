@@ -189,7 +189,7 @@ namespace Celeste.Mod {
             int lastIndexOfSlash = dir.LastIndexOf(System.IO.Path.DirectorySeparatorChar);
             // Ignore hidden files and directories.
             if (lastIndexOfSlash != -1 &&
-                lastIndexOfSlash > root.Length + 1 && // Make sure to not skip crawling in hidden mods.
+                lastIndexOfSlash >= root.Length && // Make sure to not skip crawling in hidden mods.
                 dir.Length > lastIndexOfSlash + 1 &&
                 dir[lastIndexOfSlash + 1] == '.') {
                 // Logger.Log(LogLevel.Verbose, "content", $"Skipped crawling hidden file or directory {dir.Substring(root.Length + 1)}");
