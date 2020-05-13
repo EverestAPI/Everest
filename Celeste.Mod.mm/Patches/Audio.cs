@@ -34,6 +34,9 @@ namespace Celeste {
         private static Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
         private static Dictionary<IntPtr, Stream> modBankStreams = new Dictionary<IntPtr, Stream>();
 
+        private static HashSet<string> ingestedModBankPaths = new HashSet<string>();
+        public static bool AudioInitialized { get; private set; } = false;
+
         [MonoModIgnore]
         internal static extern void CheckFmod(RESULT result);
 
@@ -72,6 +75,18 @@ namespace Celeste {
                 foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank)))
                     IngestBank(asset);
             }
+
+            AudioInitialized = true;
+        }
+
+        public static void IngestNewBanks() {
+            lock (Everest.Content.Map) {
+                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank))) {
+                    if (!ingestedModBankPaths.Contains(asset.PathVirtual)) {
+                        IngestBank(asset);
+                    }
+                }
+            }
         }
 
         [MonoModReplace]
@@ -88,6 +103,7 @@ namespace Celeste {
 
         public static Bank IngestBank(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathVirtual);
+            ingestedModBankPaths.Add(asset.PathVirtual);
 
             Bank bank;
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))

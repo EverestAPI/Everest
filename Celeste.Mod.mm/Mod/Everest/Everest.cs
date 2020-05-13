@@ -605,6 +605,11 @@ namespace Celeste.Mod {
             EverestModuleMetadata meta = module.Metadata;
             meta.Hash = GetChecksum(meta);
 
+            // Audio banks are cached, and as such use the module's hash. We can only ingest those now.
+            if (patch_Audio.AudioInitialized) {
+                patch_Audio.IngestNewBanks();
+            }
+
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
 
             // Attempt to load mods after their dependencies have been loaded.
