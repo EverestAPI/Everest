@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -29,5 +30,11 @@ namespace Celeste {
             base.BeforeRender();
         }
 
+        public extern void orig_Update();
+        public override void Update() {
+            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+                orig_Update();
+            }
+        }
     }
 }

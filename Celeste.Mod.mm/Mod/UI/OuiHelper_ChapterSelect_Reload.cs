@@ -1,6 +1,7 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     public class OuiHelper_ChapterSelect_Reload : Oui {
+        internal static string AreaReloadLock = "lock";
 
         public OuiHelper_ChapterSelect_Reload() {
         }
@@ -42,16 +44,19 @@ namespace Celeste.Mod.UI {
             // Reload all maps.
             if (recrawl)
                 Everest.Content.Recrawl();
-            AreaData.Unload();
-            AreaData.Load();
-            AreaData.ReloadMountainViews();
 
-            // Fake a save data reload to resync the save data to the new area list.
-            if (saveData != null) {
-                AreaData lastArea = AreaDataExt.Get(lastAreaSID);
-                saveData.LastArea = lastArea?.ToKey() ?? AreaKey.Default;
-                saveData.BeforeSave();
-                saveData.AfterInitialize();
+            lock (AreaReloadLock) { // prevent anything from calling AreaData.Get during this.
+                AreaData.Unload();
+                AreaData.Load();
+                AreaData.ReloadMountainViews();
+
+                // Fake a save data reload to resync the save data to the new area list.
+                if (saveData != null) {
+                    AreaData lastArea = AreaDataExt.Get(lastAreaSID);
+                    saveData.LastArea = lastArea?.ToKey() ?? AreaKey.Default;
+                    saveData.BeforeSave();
+                    saveData.AfterInitialize();
+                }
             }
 
             if (Engine.Scene is Overworld overworld) {

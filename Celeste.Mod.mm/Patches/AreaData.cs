@@ -4,6 +4,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Meta;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -165,7 +166,10 @@ namespace Celeste {
         public static new AreaData Get(int id) {
             if (id < 0)
                 return null;
-            return Areas[id];
+
+            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+                return Areas[id];
+            }
         }
 
         public static AreaData Get(AreaStats stats) {
@@ -175,7 +179,9 @@ namespace Celeste {
         }
 
         public static AreaData Get(string sid) {
-            return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.GetSID() == sid);
+            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+                return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.GetSID() == sid);
+            }
         }
 
         public static extern void orig_Load();
