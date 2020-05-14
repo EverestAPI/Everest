@@ -95,8 +95,9 @@ namespace Celeste {
                 return;
 
             // Vanilla only calls unloadAll.
-            system.unloadAll().CheckFMOD();
-            system.release().CheckFMOD();
+            // Avoid CheckFMOD as unload can happen after failed init.
+            system.unloadAll();
+            system.release();
             system = null;
             ready = false;
         }
