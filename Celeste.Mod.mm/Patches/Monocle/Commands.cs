@@ -217,11 +217,9 @@ namespace Monocle {
 
         // Fix for https://github.com/EverestAPI/Everest/issues/167
         private extern void orig_EnterCommand();
-        private void EnterCommand()
-        {
+        private void EnterCommand() {
             // only accept commands that will be correctly parsed
-            if (! string.IsNullOrWhiteSpace(currentText.Replace(",", "")))
-            {
+            if (!string.IsNullOrWhiteSpace(currentText.Replace(",", ""))) {
                 orig_EnterCommand();
             }
         }
