@@ -215,6 +215,17 @@ namespace Monocle {
             }
         }
 
+        // Fix for https://github.com/EverestAPI/Everest/issues/167
+        private extern void orig_EnterCommand();
+        private void EnterCommand()
+        {
+            // only accept commands that will be correctly parsed
+            if (! string.IsNullOrWhiteSpace(currentText.Replace(",", "")))
+            {
+                orig_EnterCommand();
+            }
+        }
+
         // Only required to be defined so that we can access it.
         [MonoModIgnore]
         private struct patch_Line {
