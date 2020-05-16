@@ -75,7 +75,7 @@ namespace Celeste {
 
         [Command("load", "test a level")]
         [RemoveCommandAttributeFromVanillaLoadMethod]
-        private static void CmdLoadIDorSID(string idOrSID = null, string level = null) {
+        private static void CmdLoadIDorSID(string idOrSID = "0", string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdLoad(id, level);
             } else {
@@ -85,7 +85,7 @@ namespace Celeste {
 
         [Command("hard", "test a hard level")]
         [RemoveCommandAttributeFromVanillaLoadMethod]
-        private static void CmdHardIDorSID(string idOrSID = null, string level = null) {
+        private static void CmdHardIDorSID(string idOrSID = "0", string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdHard(id, level);
             } else {
@@ -95,7 +95,7 @@ namespace Celeste {
 
         [Command("rmx2", "test a RMX2 level")]
         [RemoveCommandAttributeFromVanillaLoadMethod]
-        private static void CmdRMX2IDorSID(string idOrSID = null, string level = null) {
+        private static void CmdRMX2IDorSID(string idOrSID = "0", string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdRMX2(id, level);
             } else {
