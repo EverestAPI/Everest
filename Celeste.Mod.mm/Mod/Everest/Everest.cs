@@ -585,7 +585,7 @@ namespace Celeste.Mod {
                 module.Initialize();
             }
 
-            if (Engine.Scene is Overworld overworld) {
+            if (Engine.Instance != null && Engine.Scene is Overworld overworld) {
                 // we already are in the overworld. Register new Ouis real quick!
                 Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypes();
                 foreach (Type type in types) {
