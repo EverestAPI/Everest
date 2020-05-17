@@ -31,6 +31,7 @@ namespace Celeste.Editor {
                                           "Cancel:       Exit debug map\n" +
                                           "Q:            Show red berries\n" +
                                           "F1:           Show keys\n" +
+                                          "F2:           Center on current respawn point\n" +
                                           "F5:           Show/Hide instructions";
 
         private const string MinimalManualText = "F5: Show/Hide instructions";
@@ -56,30 +57,18 @@ namespace Celeste.Editor {
         public extern void orig_ctor(AreaKey area, bool reloadMapData = true);
         [MonoModConstructor]
         public void ctor(AreaKey area, bool reloadMapData = true) {
-            AreaKey prevArea = patch_MapEditor.area;
-
             orig_ctor(area, reloadMapData);
 
+            // set CurrentSession if the session corresponds to the level being edited
             CurrentSession = (Engine.Scene as Level)?.Session ?? SaveData.Instance?.CurrentSession;
             if (CurrentSession == null || CurrentSession.Area != area) {
                 CurrentSession = null;
                 return;
             }
 
-            if (prevArea == area)
-                return;
-
-            Vector2 pos;
-            if (CurrentSession.RespawnPoint != null) {
-                pos = CurrentSession.RespawnPoint.Value;
-            } else {
-                Point lvlCenter = CurrentSession.LevelData.Bounds.Center;
-                pos = new Vector2(lvlCenter.X, lvlCenter.Y);
-            }
-
             Camera.CenterOrigin();
             Camera.Zoom = 6f;
-            Camera.Position = pos / 8f;
+            CenterViewOnCurrentRespawn();
         }
 
         [MonoModIgnore]
@@ -104,7 +93,6 @@ namespace Celeste.Editor {
         }
 
         public extern void orig_Update();
-
         public override void Update() {
             if (!SpeedrunToolInstalled) {
                 MakeMapEditorBetter();
@@ -132,6 +120,11 @@ namespace Celeste.Editor {
 
                     LoadLevel(level, mousePosition * 8f);
                 }
+            }
+
+            // press F2 to center on current respawn
+            if (MInput.Keyboard.Pressed(Keys.F2)) {
+                CenterViewOnCurrentRespawn();
             }
 
             // speed up camera when zoom out
@@ -238,6 +231,12 @@ namespace Celeste.Editor {
                 currentTemplate?.RenderHighlight(Camera, false, true);
             }
             Draw.SpriteBatch.End();
+        }
+
+        private void CenterViewOnCurrentRespawn() {
+            if (CurrentSession?.RespawnPoint != null) {
+                Camera.Position = CurrentSession.RespawnPoint.Value / 8f;
+            }
         }
     }
 }
