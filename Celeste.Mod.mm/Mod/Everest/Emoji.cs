@@ -47,6 +47,10 @@ namespace Celeste.Mod {
             }
         }
 
+        internal static bool IsInitialized() {
+            return Initialized;
+        }
+
         internal static void Auto() {
             if (Initialized)
                 return;

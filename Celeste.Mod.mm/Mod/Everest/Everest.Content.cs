@@ -913,9 +913,40 @@ namespace Celeste.Mod {
                         atlas.ResetCaches();
                         (atlas as patch_Atlas).Ingest(mapping);
                     });
+
+                    // if the atlas is (or contains) an emoji, register it.
+                    if (Emoji.IsInitialized()) {
+                        if (refreshEmojis(mapping)) {
+                            MainThreadHelper.Do(() => {
+                                Logger.Log("content", "Reloading fonts after late emoji registration");
+                                Fonts.Reload();
+                            });
+                        }
+                    }
                 }
 
                 OnProcessUpdate?.Invoke(asset, mapping, load);
+            }
+
+            /// <summary>
+            /// Searches for emoji in the given mod asset (recursively), returns true if at least one was found.
+            /// </summary>
+            private static bool refreshEmojis(ModAsset mapping) {
+                if (mapping.Type == typeof(AssetTypeDirectory)) {
+                    lock (mapping.Children) {
+                        bool emojiFilled = false;
+                        foreach (ModAsset child in mapping.Children) {
+                            emojiFilled = refreshEmojis(child) || emojiFilled;
+                        }
+                        return emojiFilled;
+                    }
+                } else if (mapping.PathVirtual.StartsWith("Graphics/Atlases/Gui/emoji/")) {
+                    string emojiName = mapping.PathVirtual.Substring(27);
+                    Logger.Log("content", $"Late registering emoji: {emojiName}");
+                    Emoji.Register(emojiName, GFX.Gui["emoji/" + emojiName]);
+                    return true;
+                }
+                return false;
             }
 
             /// <summary>

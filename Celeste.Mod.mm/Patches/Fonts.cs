@@ -16,6 +16,10 @@ using System.Xml;
 
 namespace Celeste {
     static class patch_Fonts {
+#pragma warning disable CS0649 // field is never assigned (it is in vanilla code)
+        // make vanilla private fields accessible to our patch.
+        private static Dictionary<string, PixelFont> loadedFonts;
+#pragma warning restore CS0649
 
         public static extern PixelFont orig_Load(string face);
         public static PixelFont Load(string face) {
@@ -39,6 +43,19 @@ namespace Celeste {
                     .Select(asset => Path.Combine(Engine.ContentDirectory, asset.PathVirtual + "." + asset.Format).Replace('/', Path.DirectorySeparatorChar))
                     .Union(vanillaFiles)
                     .ToArray();
+        }
+
+        [MonoModReplace] // this method is both unused and broken in vanilla.
+        public static void Reload() {
+            List<string> fontsToReload = new List<string>();
+            foreach (string item in loadedFonts.Keys) {
+                fontsToReload.Add(item);
+            }
+            foreach (string fontToReload in fontsToReload) {
+                loadedFonts[fontToReload].Dispose();
+                loadedFonts.Remove(fontToReload); // this line is missing from the vanilla method.
+                Load(fontToReload);
+            }
         }
     }
 }
