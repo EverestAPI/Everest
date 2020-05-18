@@ -241,6 +241,60 @@ namespace Celeste {
         }
 
         /// <summary>
+        /// Convenience class for creating a <see cref="TextMenu.Option{T}"/> from an enum class.<br></br>
+        /// Not to be confused with <see cref="EnumerableSlider{T}"/>
+        /// </summary>
+        /// <typeparam name="T">Enum Type</typeparam>
+        public class EnumSlider<T> : TextMenu.Option<T> where T : Enum {
+
+            /// <summary>
+            /// Creates a new <see cref="EnumSlider{T}"/>
+            /// </summary>
+            /// <param name="label">Slider label (defaults to enum name)</param>
+            /// <param name="startValue">Initial value</param>
+            public EnumSlider(string label = null, T startValue = default) : base(label ?? typeof(T).Name) {
+                Array enumValues = Enum.GetValues(typeof(T));
+                foreach (T value in enumValues) {
+                    Add(value.ToString(), value, value.Equals(startValue));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Convenience class for creating a <see cref="TextMenu.Option{T}"/> from a <see cref="IEnumerable{T}"/>.<br></br>
+        /// Not to be confused with <see cref="EnumSlider{T}"/>
+        /// </summary>
+        /// <typeparam name="T">Value Type</typeparam>
+        public class EnumerableSlider<T> : TextMenu.Option<T> {
+
+            /// <summary>
+            /// Creates a new <see cref="EnumerableSlider{T}"/>
+            /// </summary>
+            /// <param name="label">Slider label</param>
+            /// <param name="options"></param>
+            /// <param name="startValue">Initial value</param>
+            public EnumerableSlider(string label, IEnumerable<T> options, T startValue) 
+                : base(label) {
+                foreach (T value in options) {
+                    Add(value.ToString(), value, value.Equals(startValue));
+                }
+            }
+
+            /// <summary>
+            /// Creates a new <see cref="EnumerableSlider{T}"/>
+            /// </summary>
+            /// <param name="label">Slider label</param>
+            /// <param name="options">IEnumerable of type <see cref="KeyValuePair{T, string}"/></param>
+            /// <param name="startValue">Initial value</param>
+            public EnumerableSlider(string label, IEnumerable<KeyValuePair<T, string>> options, T startValue) 
+                : base(label) {
+                foreach (KeyValuePair<T, string> kvp in options) {
+                    Add(kvp.Value, kvp.Key, kvp.Key.Equals(startValue));
+                }
+            }
+        }
+
+        /// <summary>
 		/// A Slider optimized for large integer ranges.<br></br>
 		/// Inherits directly from <see cref="TextMenu.Item"/>
 		/// </summary>
