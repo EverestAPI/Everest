@@ -67,7 +67,6 @@ namespace Celeste.Editor {
             }
 
             Camera.CenterOrigin();
-            Camera.Zoom = 6f;
             CenterViewOnCurrentRespawn();
         }
 
