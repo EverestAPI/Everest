@@ -117,8 +117,7 @@ namespace Celeste.Mod {
         public override void Update(GameTime gameTime) {
             if (Queue.Count > 0) {
                 // run as many tasks as possible in 10 milliseconds (a frame is ~16ms).
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 while (stopwatch.ElapsedMilliseconds < 10) {
                     Action action = null;
                     lock (Queue) {
@@ -128,6 +127,7 @@ namespace Celeste.Mod {
                     }
                     action?.Invoke();
                 }
+                stopwatch.Stop();
             }
 
             if (gameTime == null)
