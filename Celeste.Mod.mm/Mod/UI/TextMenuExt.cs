@@ -441,7 +441,7 @@ namespace Celeste {
             /// <param name="enterOnSelect">Expand submenu when selected</param>
             public SubMenu(string label, bool enterOnSelect) : base() {
                 //Item Constructor
-                ConfirmSfx = "event:/ui/main/button_select";
+                ConfirmSfx = SFX.ui_main_button_select;
                 Label = label;
                 Icon = GFX.Gui["downarrow"];
                 Selectable = true;
@@ -451,14 +451,7 @@ namespace Celeste {
 
                 OnEnter = delegate {
                     if (this.enterOnSelect) {
-                        OnPressed();
-                    }
-                };
-                OnPressed = delegate {
-                    if (Items.Count > 0) {
-                        Container.Focused = false;
-                        Focused = true;
-                        FirstSelection();
+                        ConfirmPressed();
                     }
                 };
 
@@ -559,6 +552,11 @@ namespace Celeste {
                 MoveSelection(1, false);
             }
 
+            public void LastSelection() {
+                Selection = LastPossibleSelection;
+                MoveSelection(0, false);
+            }
+
             public void MoveSelection(int direction, bool wiggle = false) {
                 int selection = Selection;
                 direction = Math.Sign(direction);
@@ -569,6 +567,15 @@ namespace Celeste {
                 }
                 do {
                     Selection += direction;
+                    if (enterOnSelect) {
+                        if (Selection < 0 || Selection >= Items.Count) {
+                            //Avoid crash when getting Current item
+                            Selection = selection;
+                            Exit();
+                            Container.MoveSelection(direction, true);
+                            return;
+                        }
+                    }
                     if (count > 2) {
                         if (Selection < 0) {
                             Selection = Items.Count - 1;
@@ -591,7 +598,7 @@ namespace Celeste {
                     }
                     Current.OnEnter?.Invoke();
                     if (wiggle) {
-                        Audio.Play(direction > 0 ? "event:/ui/main/rollover_down" : "event:/ui/main/rollover_up");
+                        Audio.Play(direction > 0 ? SFX.ui_main_roll_down : SFX.ui_main_roll_up);
                         Current.SelectWiggler.Start();
                     }
                 }
@@ -637,15 +644,33 @@ namespace Celeste {
                 return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
             }
 
+            public void Exit() {
+                Current.OnLeave?.Invoke();
+                Focused = false;
+                if (!Input.MenuUp.Repeating && !Input.MenuDown.Repeating)
+                    Audio.Play(SFX.ui_main_button_back);
+                Container.AutoScroll = containerAutoScroll;
+                Container.Focused = true;
+            }
+
             #endregion
 
             #region TextMenu.Item
 
             public override void ConfirmPressed() {
-                containerAutoScroll = Container.AutoScroll;
-                Container.AutoScroll = false;
-                Audio.Play(ConfirmSfx);
-                base.ConfirmPressed();
+                if (Items.Count > 0) {
+                    Container.Focused = false;
+                    Focused = true;
+                    if (Input.MenuUp.Pressed)
+                        LastSelection();
+                    else
+                        FirstSelection();
+                    containerAutoScroll = Container.AutoScroll;
+                    Container.AutoScroll = false;
+                    if (!Input.MenuUp.Repeating && !Input.MenuDown.Repeating)
+                        Audio.Play(ConfirmSfx);
+                    base.ConfirmPressed();
+                }
             }
 
             public override float LeftWidth() {
@@ -677,15 +702,12 @@ namespace Celeste {
                 else
                     ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
                 base.Update();
-                OnUpdate?.Invoke();
 
                 //ease check needed to eat the first input from Container
                 if (Focused && ease > 0.9f) {
-                    if (Input.MenuDown.Pressed) {
-                        if (!Input.MenuDown.Repeating || Selection != LastPossibleSelection) {
-                            MoveSelection(1, true);
-                        }
-                    } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection)) {
+                    if (Input.MenuDown.Pressed && (!Input.MenuDown.Repeating || Selection != LastPossibleSelection || enterOnSelect)) {
+                         MoveSelection(1, true);
+                    } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection || enterOnSelect)) {
                         MoveSelection(-1, true);
                     }
                     if (Current != null) {
@@ -705,10 +727,7 @@ namespace Celeste {
                     }
                     if (!Input.MenuConfirm.Pressed) {
                         if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
-                            Focused = false;
-                            Audio.Play("event:/ui/main/button_back");
-                            Container.AutoScroll = containerAutoScroll;
-                            Container.Focused = true;
+                            Exit();
                         }
                     }
                 }
@@ -728,7 +747,7 @@ namespace Celeste {
                     }
                 }
 
-                if (containerAutoScroll) {
+                if (Focused && containerAutoScroll) {
                     if (Container.Height > Container.ScrollableMinSize) {
                         Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
                         return;
@@ -872,7 +891,7 @@ namespace Celeste {
 
             public OptionSubMenu(string label) : base() {
                 //Item Constructor
-                ConfirmSfx = "event:/ui/main/button_select";
+                ConfirmSfx = SFX.ui_main_button_select;
                 Label = label;
                 Icon = GFX.Gui["downarrow"];
 
@@ -1033,7 +1052,7 @@ namespace Celeste {
 
             public override void LeftPressed() {
                 if (MenuIndex > 0) {
-                    Audio.Play("event:/ui/main/button_toggle_off");
+                    Audio.Play(SFX.ui_main_button_toggle_off);
                     MenuIndex--;
                     lastDir = -1;
                     ValueWiggler.Start();
@@ -1044,7 +1063,7 @@ namespace Celeste {
 
             public override void RightPressed() {
                 if (MenuIndex < Menus.Count - 1) {
-                    Audio.Play("event:/ui/main/button_toggle_on");
+                    Audio.Play(SFX.ui_main_button_toggle_on);
                     MenuIndex++;
                     lastDir = 1;
                     ValueWiggler.Start();
@@ -1094,17 +1113,14 @@ namespace Celeste {
                 sine += Engine.RawDeltaTime;
                 base.Update();
                 if (CurrentMenu != null) {
-                    OnUpdate?.Invoke();
-                    //ease check needed to eat the first input from this.Container
                     if (Focused) {
+                        //ease check needed to eat the first input from this.Container
                         if (!wasFocused) {
                             wasFocused = true;
                             goto AfterInput;
                         }
-                        if (Input.MenuDown.Pressed) {
-                            if (!Input.MenuDown.Repeating || Selection != LastPossibleSelection) {
-                                MoveSelection(1, true);
-                            }
+                        if (Input.MenuDown.Pressed && (!Input.MenuDown.Repeating || Selection != LastPossibleSelection)) {
+                            MoveSelection(1, true);
                         } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection)) {
                             MoveSelection(-1, true);
                         }
@@ -1125,8 +1141,9 @@ namespace Celeste {
                         }
                         if (!Input.MenuConfirm.Pressed) {
                             if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
+                                Current.OnLeave?.Invoke();
                                 Focused = false;
-                                Audio.Play("event:/ui/main/button_back");
+                                Audio.Play(SFX.ui_main_button_back);
                                 Container.AutoScroll = containerAutoScroll;
                                 Container.Focused = true;
                             }
@@ -1135,9 +1152,11 @@ namespace Celeste {
                         wasFocused = false;
 
                     AfterInput:
-                    foreach (TextMenu.Item item in CurrentMenu) {
-                        item.OnUpdate?.Invoke();
-                        item.Update();
+                    foreach (Tuple<string, List<TextMenu.Item>> menu in Menus) {
+                        foreach (TextMenu.Item item in menu.Item2) {
+                            item.OnUpdate?.Invoke();
+                            item.Update();
+                        }
                     }
 
                     if (Settings.Instance.DisableFlashes) {
@@ -1150,7 +1169,7 @@ namespace Celeste {
                         }
                     }
 
-                    if (containerAutoScroll) {
+                    if (Focused && containerAutoScroll) {
                         if (Container.Height > Container.ScrollableMinSize) {
                             Container.Position.Y += (ScrollTargetY - Container.Position.Y) * (1f - (float) Math.Pow(0.01f, Engine.RawDeltaTime));
                             return;
