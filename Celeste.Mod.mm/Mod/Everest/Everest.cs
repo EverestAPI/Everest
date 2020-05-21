@@ -24,6 +24,7 @@ using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
 using MonoMod.RuntimeDetour;
 using MonoMod.RuntimeDetour.HookGen;
+using Celeste.Mod.UI;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -583,6 +584,12 @@ namespace Celeste.Mod {
             if (_Initialized) {
                 Tracker.Initialize();
                 module.Initialize();
+
+                // check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
+                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
+                    Logger.Log("core", $"Module {module.Metadata} has map data processors: reloading maps.");
+                    OuiHelper_ChapterSelect_Reload.Reload(false);
+                }
             }
 
             if (Engine.Instance != null && Engine.Scene is Overworld overworld) {
@@ -617,14 +624,18 @@ namespace Celeste.Mod {
             if (Interlocked.CompareExchange(ref Loader.DelayedLock, 1, 0) == 0) {
                 try {
                     lock (Loader.Delayed) {
-                        for (int i = Loader.Delayed.Count - 1; i > -1; i--) {
+                        for (int i = 0; i < Loader.Delayed.Count; i++) {
                             Tuple<EverestModuleMetadata, Action> entry = Loader.Delayed[i];
                             if (!Loader.DependenciesLoaded(entry.Item1))
-                                continue;
+                                continue; // dependencies are still missing!
 
+                            Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
                             entry.Item2?.Invoke();
                             Loader.LoadMod(entry.Item1);
                             Loader.Delayed.RemoveAt(i);
+
+                            // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
+                            i = -1;
                         }
                     }
                 } finally {

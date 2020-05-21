@@ -93,7 +93,10 @@ namespace Celeste.Mod {
             if (id < 0) {
                 id = _Registered.Count;
                 _Registered.Add(name);
-                _IDs[name] = id;
+
+                lock (_IDs) {
+                    _IDs[name] = id;
+                }
 
                 _IsMonochrome.Add(monochrome);
 
@@ -157,8 +160,10 @@ namespace Celeste.Mod {
             if (text == null)
                 return text;
             // TODO: This trashes the GC and doesn't allow escaping!
-            foreach (KeyValuePair<string, int> kvp in _IDs)
-                text = text.Replace(":" + kvp.Key + ":", ((char) (Start + kvp.Value)).ToString());
+            lock (_IDs) {
+                foreach (KeyValuePair<string, int> kvp in _IDs)
+                    text = text.Replace(":" + kvp.Key + ":", ((char) (Start + kvp.Value)).ToString());
+            }
             return text;
         }
 
