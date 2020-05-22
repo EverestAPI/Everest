@@ -40,16 +40,21 @@ namespace Celeste {
         public void DeactivateNoRoutine() {
             if (playerHasDreamDash) {
                 playerHasDreamDash = false;
+
                 Setup();
+
                 if (occlude == null) {
                     occlude = new LightOcclude(1f);
                 }
                 Add(occlude);
+
                 whiteHeight = 1f;
                 whiteFill = 0f;
+
                 if (shaker != null) {
                     shaker.On = false;
                 }
+
                 SurfaceSoundIndex = 11;
             }
         }
@@ -57,6 +62,7 @@ namespace Celeste {
         public IEnumerator Deactivate() {
             Level level = SceneAs<Level>();
             yield return 1f;
+
             Input.Rumble(RumbleStrength.Light, RumbleLength.Long);
             if (shaker == null) {
                 shaker = new Shaker(true, t => {
@@ -72,7 +78,9 @@ namespace Celeste {
             }
             shaker.On = false;
             yield return 0.5f;
+
             DeactivateNoRoutine();
+
             whiteHeight = 1f;
             whiteFill = 1f;
             for (float yOffset = 1f; yOffset > 0f; yOffset -= Engine.DeltaTime * 0.5f) {
@@ -97,6 +105,7 @@ namespace Celeste {
         public IEnumerator FastDeactivate() {
             Level level = SceneAs<Level>();
             yield return null;
+
             Input.Rumble(RumbleStrength.Light, RumbleLength.Short);
             if (shaker == null) {
                 shaker = new Shaker(true, t => {
@@ -112,15 +121,19 @@ namespace Celeste {
             }
             shaker.On = false;
             yield return 0.1f;
+
             DeactivateNoRoutine();
+
             whiteHeight = 1f;
             whiteFill = 1f;
+
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Width, TopCenter, Vector2.UnitX * Width / 2, Color.White, (float) Math.PI);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Width, BottomCenter, Vector2.UnitX * Width / 2, Color.White, 0);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Height, CenterLeft, Vector2.UnitY * Height / 2, Color.White, (float) Math.PI * 1.5f);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Height, CenterRight, Vector2.UnitY * Height / 2, Color.White, (float) Math.PI / 2);
             level.Shake(0.3f);
             yield return 0.1f;
+
             while (whiteFill > 0f) {
                 whiteFill -= Engine.DeltaTime * 3f;
                 yield return null;
@@ -130,6 +143,7 @@ namespace Celeste {
         public IEnumerator FastActivate() {
             Level level = SceneAs<Level>();
             yield return null;
+
             Input.Rumble(RumbleStrength.Light, RumbleLength.Short);
             if (shaker == null) {
                 shaker = new Shaker(true, t => {
@@ -145,15 +159,19 @@ namespace Celeste {
             }
             shaker.On = false;
             yield return 0.1f;
+
             ActivateNoRoutine();
+
             whiteHeight = 1f;
             whiteFill = 1f;
+
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Width, TopCenter, Vector2.UnitX * Width / 2, Color.White, (float) Math.PI);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Width, BottomCenter, Vector2.UnitX * Width / 2, Color.White, 0);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Height, CenterLeft, Vector2.UnitY * Height / 2, Color.White, (float) Math.PI * 1.5f);
             level.ParticlesFG.Emit(Strawberry.P_WingsBurst, (int) Height, CenterRight, Vector2.UnitY * Height / 2, Color.White, (float) Math.PI / 2);
             level.Shake(0.3f);
             yield return 0.1f;
+
             while (whiteFill > 0f) {
                 whiteFill -= Engine.DeltaTime * 3f;
                 yield return null;
