@@ -220,9 +220,16 @@ namespace Celeste.Mod {
                             DebugSymbolFormat.Auto;
                     }
 
-                    modder.Read();
-
-                    modder.ReaderParameters.ReadSymbols = false;
+                    try {
+                        modder.ReaderParameters.ReadSymbols = true;
+                        modder.Read();
+                    } catch {
+                        modder.ReaderParameters.SymbolStream?.Dispose();
+                        modder.ReaderParameters.SymbolStream = null;
+                        modder.ReaderParameters.ReadSymbols = false;
+                        stream.Seek(0, SeekOrigin.Begin);
+                        modder.Read();
+                    }
 
                     if (modder.ReaderParameters.SymbolReaderProvider != null &&
                         modder.ReaderParameters.SymbolReaderProvider is RelinkerSymbolReaderProvider) {
@@ -317,15 +324,18 @@ namespace Celeste.Mod {
 
             private static MissingDependencyResolver GenerateModDependencyResolver(EverestModuleMetadata meta) {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                    return delegate (MonoModder mod, ModuleDefinition main, string name, string fullName) {
-                        string asmName = name + ".dll";
+                    return (mod, main, name, fullName) => {
+                        string path = name + ".dll";
+                        if (!string.IsNullOrEmpty(meta.DLL))
+                            path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+                        path = path.Replace('\\', '/');
+
                         using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                             foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName != asmName)
+                                if (entry.FileName != path)
                                     continue;
-                                using (MemoryStream stream = entry.ExtractStream()) {
+                                using (MemoryStream stream = entry.ExtractStream())
                                     return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
-                                }
                             }
                         }
                         return null;
@@ -333,11 +343,14 @@ namespace Celeste.Mod {
                 }
 
                 if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                    return delegate (MonoModder mod, ModuleDefinition main, string name, string fullName) {
-                        string asmPath = Path.Combine(meta.PathDirectory, name + ".dll");
-                        if (!File.Exists(asmPath))
-                            return null;
-                        return ModuleDefinition.ReadModule(asmPath, mod.GenReaderParameters(false, asmPath));
+                    return (mod, main, name, fullName) => {
+                        string path = name + ".dll";
+                        if (!string.IsNullOrEmpty(meta.DLL))
+                            path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+                        if (!File.Exists(path))
+                            Path.Combine(meta.PathDirectory, path);
+
+                        return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
                     };
                 }
 

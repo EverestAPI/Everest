@@ -636,15 +636,19 @@ namespace Celeste.Mod {
 
             private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
                 => (sender, args) => {
-                    AssemblyName asmName = args?.Name == null ? null : new AssemblyName(args.Name);
-                    if (string.IsNullOrEmpty(asmName?.Name))
+                    AssemblyName name = args?.Name == null ? null : new AssemblyName(args.Name);
+                    if (string.IsNullOrEmpty(name?.Name))
                         return null;
 
+                    string path = name.Name + ".dll";
+                    if (!string.IsNullOrEmpty(meta.DLL))
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+
                     if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                        string asmPath = asmName.Name + ".dll";
+                        string zipPath = path.Replace('\\', '/');
                         using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                             foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName == asmPath)
+                                if (entry.FileName == zipPath)
                                     using (MemoryStream stream = entry.ExtractStream())
                                         return Relinker.GetRelinkedAssembly(meta, stream);
                             }
@@ -652,9 +656,11 @@ namespace Celeste.Mod {
                     }
 
                     if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                        string asmPath = Path.Combine(meta.PathDirectory, asmName.Name + ".dll");
-                        if (File.Exists(asmPath))
-                            using (FileStream stream = File.OpenRead(asmPath))
+                        string filePath = path;
+                        if (!File.Exists(filePath))
+                            Path.Combine(meta.PathDirectory, filePath);
+                        if (File.Exists(filePath))
+                            using (FileStream stream = File.OpenRead(filePath))
                                 return Relinker.GetRelinkedAssembly(meta, stream);
                     }
 
