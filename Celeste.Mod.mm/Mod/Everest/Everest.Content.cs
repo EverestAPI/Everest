@@ -556,9 +556,9 @@ namespace Celeste.Mod {
                         return;
 
                     if (metadata == null) {
-                        Map[path] = null;
+                        Map.Remove(path);
                         if (prefix != null)
-                            Map[$"{prefix}:/{path}"] = null;
+                            Map.Remove($"{prefix}:/{path}");
 
                     } else {
                         if (Map.TryGetValue(path, out ModAsset existing) && existing != null &&
