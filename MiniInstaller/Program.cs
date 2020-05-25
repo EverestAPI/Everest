@@ -69,7 +69,9 @@ namespace MiniInstaller {
                     LogLine(e.ToString());
                     LogLine("");
                     LogLine("Installing Everest failed.");
-                    LogLine("Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                    LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
+                    LogLine("");
+                    LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
                     LogLine("or join the #modding_help channel on Discord (invite in the repo).");
                     LogLine("Make sure to upload your miniinstaller-log.txt");
                     return 1;
