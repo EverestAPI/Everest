@@ -348,7 +348,9 @@ namespace Celeste.Mod {
                         if (!string.IsNullOrEmpty(meta.DLL))
                             path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
                         if (!File.Exists(path))
-                            Path.Combine(meta.PathDirectory, path);
+                            path = Path.Combine(meta.PathDirectory, path);
+                        if (!File.Exists(path))
+                            return null;
 
                         return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
                     };
