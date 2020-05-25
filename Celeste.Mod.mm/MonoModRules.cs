@@ -387,7 +387,7 @@ namespace MonoMod {
             if (version.Major == 0)
                 version = versionMin;
             if (version < versionMin)
-                throw new Exception($"Unsupported version of Celeste: {version}. The minimum required version of Celeste is: {versionMin}.");
+                throw new Exception($"Unsupported version of Celeste: {version}");
 
             // Ensure that Celeste assembly is not already modded
             // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
