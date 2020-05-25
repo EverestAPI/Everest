@@ -658,7 +658,7 @@ namespace Celeste.Mod {
                     if (!string.IsNullOrEmpty(meta.PathDirectory)) {
                         string filePath = path;
                         if (!File.Exists(filePath))
-                            Path.Combine(meta.PathDirectory, filePath);
+                            path = Path.Combine(meta.PathDirectory, filePath);
                         if (File.Exists(filePath))
                             using (FileStream stream = File.OpenRead(filePath))
                                 return Relinker.GetRelinkedAssembly(meta, stream);
