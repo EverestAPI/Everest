@@ -389,10 +389,12 @@ namespace MonoMod {
             if (version < versionMin)
                 throw new Exception($"Unsupported version of Celeste: {version}");
 
-            // Ensure that Celeste assembly is not already modded
-            // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
-            if (MonoModRule.Modder.FindType("MonoMod.WasHere") != null)
-                throw new Exception("This version of Celeste is already modded. You need a clean install of Celeste to mod it.");
+            if (IsCeleste) {
+                // Ensure that Celeste assembly is not already modded
+                // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
+                if (MonoModRule.Modder.FindType("MonoMod.WasHere") != null)
+                    throw new Exception("This version of Celeste is already modded. You need a clean install of Celeste to mod it.");
+            }
 
 
             // Set up flags.
