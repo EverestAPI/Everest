@@ -129,14 +129,18 @@ namespace Celeste.Mod.UI {
         private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
             TextMenu menu, bool inGame, EventInstance snapshot) {
 
+            bool foundMatch = false;
+
+            // find all modules matching the criteria, and create their mod menu sections.
             int matchingIndex = modules.FindIndex(criteria);
-            if (matchingIndex != -1) {
+            while (matchingIndex != -1) {
                 modules[matchingIndex].CreateModMenuSection(menu, inGame, snapshot);
                 modules.RemoveAt(matchingIndex);
-                return true;
+                foundMatch = true;
+                matchingIndex = modules.FindIndex(criteria);
             }
 
-            return false;
+            return foundMatch;
         }
 
         private void ReloadMenu() {
