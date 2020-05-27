@@ -1,13 +1,10 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Monocle {
@@ -28,11 +25,64 @@ namespace Monocle {
             Everest.Content.ProcessLoad(this, XMLPath);
         }
 
-        public extern void orig_ctor(Atlas atlas, string xmlPath);
         [MonoModConstructor]
+        [MonoModReplace]
         public void ctor(Atlas atlas, string xmlPath) {
             XMLPath = xmlPath;
-            orig_ctor(atlas, xmlPath);
+            orig_ctor(atlas, LoadSpriteBank(xmlPath));
+        }
+
+        /// <summary>
+        /// Load SpriteBank from file and merge mod SpriteBanks.
+        /// </summary>
+        /// <param name="filename">Xml file to load</param>
+        /// <returns></returns>
+        public static XmlDocument LoadSpriteBank(string filename) {
+            XmlDocument spriteBankXml = new XmlDocument();
+            if (patch_Calc.orig_ContentXMLExists(filename)) {
+                spriteBankXml = patch_Calc.orig_LoadContentXML(filename);
+            } else {
+                //For any mods that load their own SpriteBanks
+                return Calc.LoadContentXML(filename);
+            }
+
+            XmlElement sprites = spriteBankXml["Sprites"];
+
+            string modAssetPath = filename.Substring(0, filename.Length - 4).Replace('\\', '/');
+
+            //Find all mod files that match this one
+            List<ModAsset> modAssets;
+            lock (Everest.Content.Map)
+                modAssets = Everest.Content.Map.Values
+                    .Where(a => a.Type == typeof(AssetTypeSpriteBank) && a.PathVirtual.Equals(modAssetPath))
+                    .ToList();
+
+            foreach (ModAsset modAsset in modAssets) {
+                string modPath = modAsset.Source.Mod.PathDirectory;
+                if (string.IsNullOrEmpty(modPath))
+                    modPath = modAsset.Source.Mod.PathArchive;
+
+                using (Stream stream = modAsset.Stream) {
+                    XmlDocument modXml = new XmlDocument();
+                    modXml.Load(stream);
+
+                    foreach (XmlNode node in modXml["Sprites"].ChildNodes) {
+                        if (!(node is XmlElement))
+                            continue;
+
+                        XmlNode importedNode = spriteBankXml.ImportNode(node, true);
+
+                        XmlNode existingNode = sprites.SelectSingleNode(node.Name);
+                        if (existingNode != null) {
+                            //Unfortuately we don't know what spritebank added the element that's being replaced
+                            Logger.Log(LogLevel.Warn, "Content", $"CONFLICT in {modPath}{Path.DirectorySeparatorChar}{filename}: Overriding element {node.Name}.");
+                            sprites.ReplaceChild(importedNode, existingNode);
+                        } else
+                            sprites.AppendChild(importedNode);
+                    }
+                }
+            }
+            return spriteBankXml;
         }
 
     }
