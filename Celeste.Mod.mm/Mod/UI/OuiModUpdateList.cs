@@ -328,6 +328,10 @@ namespace Celeste.Mod.UI {
                 menu.Focused = false;
                 for (int i = 0; i < updatableMods.Count; i++) {
                     ModUpdateHolder modupdate = updatableMods[i];
+
+                    // focus on the mod being updated, to ensure it is on-screen.
+                    focusOn(modupdate.button);
+
                     if (doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button)) {
                         // if update is successful, remove this mod from the "update all" list
                         updatableMods.Remove(modupdate);
@@ -337,6 +341,9 @@ namespace Celeste.Mod.UI {
                         break;
                     }
                 }
+
+                // focus back on the "update all mods" button.
+                focusOn(updateAllButton);
 
                 // enable all (remaining) mod update buttons + the "update all" button if any mod is left to update
                 foreach (ModUpdateHolder modupdate in updatableMods) {
@@ -353,6 +360,13 @@ namespace Celeste.Mod.UI {
                 menu.Focused = true;
             });
             task.Start();
+        }
+
+        private void focusOn(TextMenu.Button button) {
+            int index = menu.GetItems().IndexOf(button);
+            if (index != -1) {
+                menu.Selection = index;
+            }
         }
 
         private struct ModUpdateHolder {
