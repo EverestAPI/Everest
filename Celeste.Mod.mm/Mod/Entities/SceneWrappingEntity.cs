@@ -17,7 +17,7 @@ namespace Celeste.Mod.Entities {
 
         public readonly Scene WrappedScene;
         public readonly SceneRenderer Renderer;
-        
+
         public bool Initialized { get; private set; }
 
         public event Action<Scene> OnBegin;
