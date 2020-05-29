@@ -38,6 +38,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
     public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
     public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
+    public sealed class AssetTypeSpriteBank { private AssetTypeSpriteBank() { } }
     public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
     public sealed class AssetTypeFont { private AssetTypeFont() { } }
 
@@ -425,6 +426,7 @@ namespace Celeste.Mod {
                 typeof(AssetTypeDialog),
                 typeof(AssetTypeDialogExport),
                 typeof(AssetTypeAhorn),
+                typeof(AssetTypeSpriteBank)
             };
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
@@ -641,6 +643,15 @@ namespace Celeste.Mod {
                     Logger.Log("Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
+
+                } else if (
+                    file == "Graphics/Sprites.xml" || 
+                    file == "Graphics/SpritesGui.xml" || 
+                    file == "Graphics/Portraits.xml"
+                ) {
+                    type = typeof(AssetTypeSpriteBank);
+                    file = file.Substring(0, file.Length - 4);
+
                 } else if (file.EndsWith(".yaml")) {
                     type = typeof(AssetTypeYaml);
                     file = file.Substring(0, file.Length - 5);
@@ -778,7 +789,7 @@ namespace Celeste.Mod {
                             AssetReloadHelper.ReloadLevel();
                         }
 
-                    } else if (next.Type == typeof(AssetTypeXml)) {
+                    } else if (next.Type == typeof(AssetTypeXml) || next.Type == typeof(AssetTypeSpriteBank)) {
                         // It isn't known if the reloaded xml is part of the currently loaded level.
                         // Let's reload just to be safe.
                         AssetReloadHelper.ReloadLevel();
