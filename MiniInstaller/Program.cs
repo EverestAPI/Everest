@@ -46,6 +46,12 @@ namespace MiniInstaller {
 
                 try {
 
+                    if (!IsMonoVersionCompatible()) {
+                        LogLine("Everest installer only works with Mono 5 and higher.");
+                        LogLine("Please upgrade Mono and run the installer again.");
+                        throw new Exception("Incompatible Mono version");
+                    }
+
                     WaitForGameExit();
 
                     Backup();
@@ -82,6 +88,37 @@ namespace MiniInstaller {
             }
 
             return 0;
+        }
+
+        public static bool IsMonoVersionCompatible() {
+            // Outdated Mono versions can corrupt Celeste.exe when patching.
+            // (see https://github.com/EverestAPI/Everest/issues/62)
+
+            try {
+                // Mono version detection code: https://stackoverflow.com/a/4180030
+                Type monoRuntimeType = Type.GetType("Mono.Runtime");
+                if (monoRuntimeType != null) {
+                    MethodInfo getDisplayNameMethod = monoRuntimeType.GetMethod("GetDisplayName", BindingFlags.NonPublic | BindingFlags.Static);
+                    if (getDisplayNameMethod != null) {
+                        string version = (string) getDisplayNameMethod.Invoke(null, null);
+                        // version should look like this: "6.8.0.123 (tarball Tue May 12 15:13:37 UTC 2020)"
+                        int majorVersion = int.Parse(version.Split('.')[0]);
+
+                        // major 5 should work while people have issues with major 4
+                        if (majorVersion < 5) {
+                            return false;
+                        }
+                    }
+                }
+                // if the runtime isn't Mono or if Mono isn't too old, it should be compatible
+                return true;
+            } catch (Exception) {
+                // ignore exception and continue, we don't want to block users if "GetDisplayName" changes
+                LogLine("Could not determine Mono version.");
+                LogLine("Everest installer works with Mono 5 and higher.");
+                LogLine("Please see https://github.com/EverestAPI/Everest/issues/62 if you run into issues.");
+                return true;
+            }
         }
 
         public static void SetupPaths() {
