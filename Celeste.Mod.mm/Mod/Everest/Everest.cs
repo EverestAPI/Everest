@@ -762,12 +762,8 @@ namespace Celeste.Mod {
 
             _DetourLog = new List<string>();
 
-            StringBuilder builder = new StringBuilder();
-            builder.AppendLine();
             foreach (string line in detours)
-                builder.AppendLine(line);
-
-            Logger.Log(LogLevel.Info, "detours", builder.ToString());
+                Logger.Log(LogLevel.Info, "detours", line);
         }
 
         // A shared object a day keeps the GC away!
