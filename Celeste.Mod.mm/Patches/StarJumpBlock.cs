@@ -71,8 +71,7 @@ namespace Celeste {
                     AddJumpThru(item);
                 }
             }
-            foreach (Solid solid in Scene.Tracker.GetEntities<StarJumpBlock>()) {
-                patch_StarJumpBlock block = solid as patch_StarJumpBlock;
+            foreach (patch_StarJumpBlock block in Scene.Tracker.GetEntities<patch_StarJumpBlock>()) {
                 if (!block.HasGroup && block.sinks == sinks && (Scene.CollideCheck(new Rectangle((int) from.X - 1, (int) from.Y, (int) from.Width + 2, (int) from.Height), block) || Scene.CollideCheck(new Rectangle((int) from.X, (int) from.Y - 1, (int) from.Width, (int) from.Height + 2), block))) {
                     AddToGroupAndFindChildren(block);
                 }
@@ -82,8 +81,7 @@ namespace Celeste {
         private void AddJumpThru(StarJumpThru jp) {
             Jumpthrus.Add(jp);
             Moves.Add(jp, jp.Position);
-            foreach (Solid solid in Scene.Tracker.GetEntities<StarJumpBlock>()) {
-                patch_StarJumpBlock block = solid as patch_StarJumpBlock;
+            foreach (patch_StarJumpBlock block in Scene.Tracker.GetEntities<patch_StarJumpBlock>()) {
                 if (!block.HasGroup && block.sinks == sinks && Scene.CollideCheck(new Rectangle((int) jp.X - 1, (int) jp.Y, (int) jp.Width + 2, (int) jp.Height), block)) {
                     AddToGroupAndFindChildren(block);
                 }
@@ -124,8 +122,8 @@ namespace Celeste {
 
         [MonoModReplace]
         public bool Open(float x, float y) {
-            Solid block = Scene.CollideFirst<StarJumpBlock>(new Vector2(X + x + 4f, Y + y + 4f));
-            return !(block != null && ((patch_StarJumpBlock) block).sinks == sinks);
+            patch_StarJumpBlock block = Scene.CollideFirst<patch_StarJumpBlock>(new Vector2(X + x + 4f, Y + y + 4f));
+            return !(block != null && block.sinks == sinks);
         }
 
         public extern void orig_Awake(Scene scene);
