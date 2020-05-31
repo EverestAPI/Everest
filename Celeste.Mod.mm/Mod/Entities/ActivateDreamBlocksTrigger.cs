@@ -3,7 +3,7 @@ using Monocle;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/activateDreamBlocksTrigger")]
-    class ActivateDreamBlocksTrigger : Trigger {
+    public class ActivateDreamBlocksTrigger : Trigger {
         private bool rumble;
         public ActivateDreamBlocksTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
