@@ -2066,6 +2066,28 @@ namespace MonoMod {
             if (f_Event == null)
                 return;
 
+            // We also need to do special work in the cctor.
+            MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
+            if (m_cctor == null)
+                return;
+
+            FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
+            if (f_LoadStrings == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
+            ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
+
+            // Remove cctor ret for simplicity. Re-add later.
+            cctor_instrs.RemoveAt(cctor_instrs.Count - 1);
+
+            TypeDefinition td_LoadStrings = f_LoadStrings.FieldType.Resolve();
+            MethodReference m_LoadStrings_Add = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("Add"));
+            m_LoadStrings_Add.DeclaringType = f_LoadStrings.FieldType;
+            MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("System.Void .ctor()"));
+            m_LoadStrings_ctor.DeclaringType = f_LoadStrings.FieldType;
+            cctor_il.Emit(OpCodes.Newobj, m_LoadStrings_ctor);
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -2110,7 +2132,18 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Pop));
                     instrs.Insert(instri++, il.Create(OpCodes.Ret));
                 }
+
+                if (instr.OpCode == OpCodes.Ldstr) {
+                    cctor_il.Emit(OpCodes.Dup);
+                    cctor_il.Emit(OpCodes.Ldstr, instr.Operand);
+                    cctor_il.Emit(OpCodes.Callvirt, m_LoadStrings_Add);
+                    cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
+                }
+
             }
+
+            cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
+            cctor_il.Emit(OpCodes.Ret);
         }
 
         public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
