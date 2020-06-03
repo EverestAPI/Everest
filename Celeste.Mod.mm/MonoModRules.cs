@@ -271,6 +271,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
+    /// <summary>
+    /// Include check for custom events.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
+    class PatchEventTriggerOnEnterAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2044,6 +2050,65 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Japanese") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_shouldDisplaySwitchAlphabetPrompt;
+                }
+            }
+        }
+
+        public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Boolean TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)");
+            if (m_TriggerCustomEvent == null)
+                return;
+
+            FieldDefinition f_Event = method.DeclaringType.FindField("Event");
+            if (f_Event == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                ldfld     string Celeste.EventTrigger::Event // We're here
+                stloc*
+                ldloc*
+                call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 0 &&
+                        instri < instrs.Count - 4 &&
+                        instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EventTrigger::Event" &&
+                        instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
+                        instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
+                        instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                    ) {
+                    // Insert a call to our own event handler here.
+                    // If it returns true, return.
+
+                    // Load "this" onto stack
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+
+                    //Load Player parameter onto stack
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_1));
+
+                    //Load Event field onto stack again
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_Event));
+
+                    // Call our static custom event handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_TriggerCustomEvent));
+
+                    // If we returned false, branch to ldfld. We still have the event ID on stack.
+                    // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
+                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    // Otherwise, pop the event and return to skip any original event handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Pop));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ret));
                 }
             }
         }
