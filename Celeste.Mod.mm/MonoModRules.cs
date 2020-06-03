@@ -271,6 +271,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
+    /// <summary>
+    /// Include the option to use Y range of trigger nodes.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchRumbleTriggerAwake")]
+    class PatchRumbleTriggerAwakeAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2044,6 +2050,61 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Japanese") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_shouldDisplaySwitchAlphabetPrompt;
+                }
+            }
+        }
+
+        public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrig) {
+            MethodDefinition m_entity_get_Y = MonoModRule.Modder.FindType("Monocle.Entity").Resolve().FindMethod("get_Y");
+            if (m_entity_get_Y == null)
+                return;
+
+            FieldDefinition f_constrainHeight = method.DeclaringType.FindField("constrainHeight");
+            FieldDefinition f_top = method.DeclaringType.FindField("top");
+            FieldDefinition f_bottom = method.DeclaringType.FindField("bottom");
+            if (f_constrainHeight == null || f_top == null || f_bottom == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /*
+                    ldloc.*
+                    callvirt	instance float32 Monocle.Entity::get_X()
+                    ldarg.0
+                    ldfld	float32 Celeste.RumbleTrigger::left
+                    blt.un.s	ldloca.s
+                    ldloc.*
+                    callvirt	instance float32 Monocle.Entity::get_X()
+                    ldarg.0
+                    ldfld	float32 Celeste.RumbleTrigger::right // We are here
+                    bgt.un.s	ldloca.s
+                 */
+                if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
+                    Instruction noYRange = instrs[instri + 2];
+
+                    //Copy relevant instructions and modify as needed
+                    Instruction[] instrCopy = new Instruction[10];
+                    for (int i = 0; i < 10; i++) {
+                        instrCopy[i] = il.Create(instrs[instri + i - 8].OpCode, instrs[instri + i - 8].Operand);
+                        if (instrCopy[i].OpCode == OpCodes.Callvirt)
+                            instrCopy[i].Operand = m_entity_get_Y;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "left")
+                            instrCopy[i].Operand = f_top;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
+                            instrCopy[i].Operand = f_bottom;
+                    }
+
+                    instri += 2;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_constrainHeight));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYRange));
+
+                    // Insert copied instructions
+                    instrs.InsertRange(instri, instrCopy);
+                    instri += instrCopy.Length;
                 }
             }
         }
