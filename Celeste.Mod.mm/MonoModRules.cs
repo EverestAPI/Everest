@@ -2127,7 +2127,8 @@ namespace MonoMod {
 
                     // If we returned false, branch to ldfld. We still have the event ID on stack.
                     // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
-                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instri++;
                     // Otherwise, pop the event and return to skip any original event handler.
                     instrs.Insert(instri++, il.Create(OpCodes.Pop));
                     instrs.Insert(instri++, il.Create(OpCodes.Ret));

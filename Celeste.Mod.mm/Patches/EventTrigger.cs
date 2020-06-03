@@ -33,7 +33,8 @@ namespace Celeste {
             }
 
             if (!_LoadStrings.Contains(eventID)) {
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading entity {eventID}");
+                Logger.Log(LogLevel.Warn, "EventTrigger", $"Event '{eventID}' does not exist!");
+                return true; //To a avoid hard crash on missing event
             }
 
             return false;
