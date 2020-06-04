@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod;
 using System.Collections.Generic;
 
@@ -10,7 +11,7 @@ namespace Celeste {
 
         private static HashSet<string> _LoadStrings; // Generated in MonoModRules.PatchEventTriggerOnEnter
 
-        public delegate CutsceneEntity CutsceneLoader(EventTrigger trigger, Player player, string eventID);
+        public delegate Entity CutsceneLoader(EventTrigger trigger, Player player, string eventID);
         public static readonly Dictionary<string, CutsceneLoader> CutsceneLoaders = new Dictionary<string, CutsceneLoader>();
 
         private patch_EventTrigger(EntityData data, Vector2 offset) : base(data, offset) {
@@ -25,7 +26,7 @@ namespace Celeste {
                 return true;
 
             if (CutsceneLoaders.TryGetValue(eventID, out CutsceneLoader loader)) {
-                CutsceneEntity loaded = loader(trigger, player, eventID);
+                Entity loaded = loader(trigger, player, eventID);
                 if (loaded != null) {
                     trigger.Scene.Add(loaded);
                     return true;

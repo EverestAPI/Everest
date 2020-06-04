@@ -2,10 +2,10 @@
 
 namespace Celeste.Mod.Entities {
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
-    public class CustomCutsceneAttribute : Attribute {
+    public class CustomEventAttribute : Attribute {
         public string[] IDs;
 
-        public CustomCutsceneAttribute(params string[] ids) {
+        public CustomEventAttribute(params string[] ids) {
             IDs = ids;
         }
     }

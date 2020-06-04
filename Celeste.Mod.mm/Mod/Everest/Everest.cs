@@ -575,8 +575,8 @@ namespace Celeste.Mod {
                 NoDefinedBerryNames:
                 ;
 
-                // Search for all CutsceneEntities marked with the CustomCutsceneAttribute.
-                foreach (CustomCutsceneAttribute attrib in type.GetCustomAttributes<CustomCutsceneAttribute>()) {
+                // Search for all Entities marked with the CustomEventAttribute.
+                foreach (CustomEventAttribute attrib in type.GetCustomAttributes<CustomEventAttribute>()) {
                     foreach (string idFull in attrib.IDs) {
                         string id;
                         string genName;
@@ -605,19 +605,19 @@ namespace Celeste.Mod {
 
                         gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string)});
                         if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
-                            loader = (trigger, player, eventID) => (CutsceneEntity) gen.Invoke(null, new object[] { trigger, player, eventID });
+                            loader = (trigger, player, eventID) => (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
                             goto RegisterCutsceneLoader;
                         }
 
                         ctor = type.GetConstructor(new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
                         if (ctor != null) {
-                            loader = (trigger, player, eventID) => (CutsceneEntity) ctor.Invoke(new object[] { trigger, player, eventID});
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID});
                             goto RegisterCutsceneLoader;
                         }
 
                         ctor = type.GetConstructor(_EmptyTypeArray);
                         if (ctor != null) {
-                            loader = (trigger, player, eventID) => (CutsceneEntity) ctor.Invoke(_EmptyObjectArray);
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(_EmptyObjectArray);
                             goto RegisterCutsceneLoader;
                         }
 
