@@ -639,6 +639,7 @@ namespace Celeste.Mod {
             if (_Initialized) {
                 Tracker.Initialize();
                 module.Initialize();
+                Input.Initialize();
 
                 // check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
                 if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
