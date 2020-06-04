@@ -574,6 +574,61 @@ namespace Celeste.Mod {
                 }
                 NoDefinedBerryNames:
                 ;
+
+                // Search for all Entities marked with the CustomEventAttribute.
+                foreach (CustomEventAttribute attrib in type.GetCustomAttributes<CustomEventAttribute>()) {
+                    foreach (string idFull in attrib.IDs) {
+                        string id;
+                        string genName;
+                        string[] split = idFull.Split('=');
+
+                        if (split.Length == 1) {
+                            id = split[0];
+                            genName = "Load";
+
+                        } else if (split.Length == 2) {
+                            id = split[0];
+                            genName = split[1];
+
+                        } else {
+                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
+                            continue;
+                        }
+
+                        id = id.Trim();
+                        genName = genName.Trim();
+
+                        patch_EventTrigger.CutsceneLoader loader = null;
+
+                        ConstructorInfo ctor;
+                        MethodInfo gen;
+
+                        gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string)});
+                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                            loader = (trigger, player, eventID) => (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
+                        if (ctor != null) {
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID});
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        if (ctor != null) {
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        RegisterCutsceneLoader:
+                        if (loader == null) {
+                            Logger.Log(LogLevel.Warn, "core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
+                            continue;
+                        }
+                        patch_EventTrigger.CutsceneLoaders[id] = loader;
+                    }
+                }
             }
 
             module.LoadSettings();
