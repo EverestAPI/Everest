@@ -145,7 +145,7 @@ namespace Celeste.Mod.Entities {
             menu.RemoveSelf();
             menu = null;
             exiting = true;
-            bool toAreaQuit = ((patch_SaveData) SaveData.Instance).Areas_Safe[0].Modes[0].Completed && Celeste.PlayMode != Celeste.PlayModes.Event;
+            bool toAreaQuit = SaveData.Instance.Areas[0].Modes[0].Completed && Celeste.PlayMode != Celeste.PlayModes.Event;
             new FadeWipe(this, false, delegate {
                 if (toAreaQuit) {
                     Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit, snow);
