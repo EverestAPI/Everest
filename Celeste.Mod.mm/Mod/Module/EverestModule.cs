@@ -314,7 +314,7 @@ namespace Celeste.Mod {
             return false;
         }
 
-        public void OnInputInitialize() {
+        public virtual void OnInputInitialize() {
             if (SettingsType == null)
                 return;
 
