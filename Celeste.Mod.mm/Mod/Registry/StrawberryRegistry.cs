@@ -59,6 +59,12 @@ namespace Celeste.Mod {
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.
         public static void Register(Type type, string name, bool tracked = true, bool blocksNormalCollection = false) {
             registeredBerries.Add(new RegisteredBerry(type, name, tracked, blocksNormalCollection));
+
+            // clear caches, so that next calls to the getter methods also include the berry that was just registered.
+            _getRegisteredBerries = null;
+            _getTrackableBerries = null;
+            _getBerryTypes = null;
+            _getBerryNames = null;
         }
 
         // Register the strawberry or similar collectible with the Strawberry Registry, allowing it to be auto-collected at level end and be trackable.

@@ -486,6 +486,8 @@ namespace Celeste.Mod {
 
             LuaLoader.Precache(module.GetType().Assembly);
 
+            bool newStrawberriesRegistered = false;
+
             foreach (Type type in module.GetType().Assembly.GetTypes()) {
                 // Search for all entities marked with the CustomEntityAttribute.
                 foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
@@ -570,6 +572,7 @@ namespace Celeste.Mod {
 
                     foreach (string name in names) {
                         StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
+                        newStrawberriesRegistered = true;
                     }
                 }
                 NoDefinedBerryNames:
@@ -603,7 +606,7 @@ namespace Celeste.Mod {
                         ConstructorInfo ctor;
                         MethodInfo gen;
 
-                        gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string)});
+                        gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
                         if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
                             loader = (trigger, player, eventID) => (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
                             goto RegisterCutsceneLoader;
@@ -611,7 +614,7 @@ namespace Celeste.Mod {
 
                         ctor = type.GetConstructor(new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
                         if (ctor != null) {
-                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID});
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID });
                             goto RegisterCutsceneLoader;
                         }
 
@@ -641,9 +644,10 @@ namespace Celeste.Mod {
                 module.Initialize();
                 Input.Initialize();
 
-                // check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
-                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log("core", $"Module {module.Metadata} has map data processors: reloading maps.");
+                // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
+                // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
+                if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
+                    Logger.Log("core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
                     OuiHelper_ChapterSelect_Reload.Reload(false);
                 }
             }
