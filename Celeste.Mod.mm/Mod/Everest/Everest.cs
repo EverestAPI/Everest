@@ -712,7 +712,7 @@ namespace Celeste.Mod {
             module.Unload();
 
             Assembly asm = module.GetType().Assembly;
-            _DetourModManager.Unload(asm);
+            MainThreadHelper.Do(() => _DetourModManager.Unload(asm));
             _RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader
