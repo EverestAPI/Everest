@@ -183,7 +183,7 @@ namespace Celeste.Mod {
                     return;
 
                 Logger.Log(LogLevel.Info, "loader", $"Possible new mod container: {e.FullPath}");
-                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"Loading new mod: {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
+                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_LOADINGNEWMOD")} {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
                     if (Directory.Exists(e.FullPath))
                         LoadDir(e.FullPath);
                     else if (e.FullPath.EndsWith(".zip"))
@@ -543,7 +543,7 @@ namespace Celeste.Mod {
                     if (module == null)
                         return;
 
-                    AssetReloadHelper.Do($"Reloading mod assembly: {Path.GetFileName(e.FullPath)}", () => {
+                    AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
                         Assembly asm = null;
                         using (FileStream stream = File.OpenRead(e.FullPath))
                             asm = Relinker.GetRelinkedAssembly(module.Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);

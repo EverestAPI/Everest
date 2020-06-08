@@ -21,8 +21,10 @@ namespace Celeste.Mod.UI {
 
             Reload();
 
-            Audio.Play(SFX.ui_world_whoosh_400ms_back);
-            Overworld.Goto<OuiChapterSelect>();
+            AssetReloadHelper.Do("", null, () => {
+                Audio.Play(SFX.ui_world_whoosh_400ms_back);
+                Overworld.Goto<OuiChapterSelect>();
+            });
         }
 
         public override IEnumerator Leave(Oui next) {
@@ -41,10 +43,16 @@ namespace Celeste.Mod.UI {
             // Note: SaveData.Instance.LastArea is reset by AreaData.Interlude_Safe -> SaveData.LevelSetStats realizing that AreaOffset == -1
             // Store the "resolved" last selected area in a local variable, then re-set it after reloading.
 
-            // Reload all maps.
-            if (recrawl)
-                Everest.Content.Recrawl();
+            if (recrawl) {
+                // Reload all maps.
+                Everest.Content.Recrawl(throughAssetReloadHelper: true);
+                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), () => ReloadAreaData(saveData, lastAreaSID));
+            } else {
+                ReloadAreaData(saveData, lastAreaSID);
+            }
+        }
 
+        private static void ReloadAreaData(SaveData saveData, string lastAreaSID) {
             lock (AreaReloadLock) { // prevent anything from calling AreaData.Get during this.
                 AreaData.Unload();
                 AreaData.Load();
@@ -74,6 +82,5 @@ namespace Celeste.Mod.UI {
                 chapterSelect.IsStart(overworld, (Overworld.StartMode) (-1));
             }
         }
-
     }
 }
