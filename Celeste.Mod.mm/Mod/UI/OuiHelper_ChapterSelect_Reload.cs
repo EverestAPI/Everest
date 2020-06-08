@@ -13,6 +13,8 @@ namespace Celeste.Mod.UI {
     public class OuiHelper_ChapterSelect_Reload : Oui {
         internal static string AreaReloadLock = "lock";
 
+        private static bool reloading = false;
+
         public OuiHelper_ChapterSelect_Reload() {
         }
 
@@ -36,6 +38,15 @@ namespace Celeste.Mod.UI {
         }
 
         public static void Reload(bool recrawl) {
+            if (reloading) {
+                // we are already reloading! (that can happen if we encounter a map while recrawling.
+                // since we are reloading all maps when done recrawling, we can skip reloading maps for now.)
+                Logger.Log("OuiHelper_ChapterSelect_Reload", "Skipping reloading since another reload is already in progress");
+                return;
+            }
+
+            reloading = true;
+
             SaveData saveData = SaveData.Instance;
 
             // ChapterSelect only updates the ID.
@@ -81,6 +92,8 @@ namespace Celeste.Mod.UI {
                 overworld.UIs.Add(chapterSelect);
                 chapterSelect.IsStart(overworld, (Overworld.StartMode) (-1));
             }
+
+            reloading = false;
         }
     }
 }
