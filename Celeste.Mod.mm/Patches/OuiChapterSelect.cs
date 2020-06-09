@@ -219,13 +219,6 @@ namespace Celeste {
                     return;
                 }
 
-                if (keys[Keys.F5] == KeyState.Down && keysPrev[Keys.F5] == KeyState.Up) {
-                    Audio.Play(SFX.ui_postgame_unlock_newchapter);
-                    Audio.Play(SFX.ui_world_whoosh_1000ms_forward);
-                    Overworld.Goto<OuiHelper_ChapterSelect_Reload>();
-                    return;
-                }
-
                 // We don't want to copy the entire Update method, but still prevent the option from going out of bounds.
                 GetMinMaxArea(out int areaOffs, out int areaMax);
                 if (area < areaOffs) {
