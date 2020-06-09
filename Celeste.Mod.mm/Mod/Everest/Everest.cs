@@ -767,7 +767,7 @@ namespace Celeste.Mod {
         }
 
         public static void QuickFullRestart() {
-            if (AppDomain.CurrentDomain.IsDefaultAppDomain()) {
+            if (AppDomain.CurrentDomain.IsDefaultAppDomain() || !CoreModule.Settings.RestartAppDomain) {
                 SlowFullRestart();
                 return;
             }
