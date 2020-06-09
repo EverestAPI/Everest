@@ -648,7 +648,7 @@ namespace Celeste.Mod {
                 // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
                 if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
                     Logger.Log("core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
-                    OuiHelper_ChapterSelect_Reload.Reload(false);
+                    AssetReloadHelper.ReloadAllMaps();
                 }
             }
 

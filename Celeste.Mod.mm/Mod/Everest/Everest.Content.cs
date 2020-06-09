@@ -725,25 +725,6 @@ namespace Celeste.Mod {
                 return file;
             }
 
-            /// <summary>
-            /// Recrawl all currently loaded mods and recreate the content mappings. If you want to apply the new mapping, call Reprocess afterwards.
-            /// </summary>
-            internal static void Recrawl(bool throughAssetReloadHelper = false) {
-                lock (Map)
-                    Map.Clear();
-
-                for (int i = 0; i < Mods.Count; i++) {
-                    ModContent mod = Mods[i];
-
-                    if (throughAssetReloadHelper) {
-                        AssetReloadHelper.Do($"[{i + 1}/{Mods.Count}] {Dialog.Clean("ASSETRELOADHELPER_RELOADINGMOD")} " + ModUpdaterHelper.FormatModName(mod.Mod?.Name),
-                            () => RecrawlMod(mod));
-                    } else {
-                        RecrawlMod(mod);
-                    }
-                }
-            }
-
             private static void RecrawlMod(ModContent mod) {
                 mod.List.Clear();
                 mod.Map.Clear();
@@ -794,7 +775,7 @@ namespace Celeste.Mod {
                         } else {
                             // What can go wrong?
                             AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), () => {
-                                OuiHelper_ChapterSelect_Reload.Reload(false);
+                                AssetReloadHelper.ReloadAllMaps();
                             });
                             AssetReloadHelper.ReloadLevel();
                         }

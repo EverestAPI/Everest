@@ -77,7 +77,6 @@
 	MAPLIST_TYPE= 			De
 	MAPLIST_TYPE_ALLMODS= 	Tous les mods
 	MAPLIST_SIDE= 			Face
-	MAPLIST_RELOAD= 		Recharger
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Non-catégorisé
 	MAPLIST_SEARCH=			Rechercher
@@ -178,7 +177,6 @@
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...
-	ASSETRELOADHELPER_RELOADINGMOD=			Rechargement du mod
 	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Déchargement de la texture :
 	ASSETRELOADHELPER_RELOADINGMAPNAME=		Rechargement de la map :
 	ASSETRELOADHELPER_RELOADINGALLMAPS=		Rechargement de toutes les maps...
