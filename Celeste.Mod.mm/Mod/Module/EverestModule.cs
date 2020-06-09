@@ -625,6 +625,11 @@ namespace Celeste.Mod {
                 if (!typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType))
                     continue;
                 
+                if (!headerCreated) {
+                    CreateModMenuSectionHeader(menu, inGame, snapshot);
+                    headerCreated = true;
+                }
+                
                 CreateModMenuSectionKeyBindings(menu, inGame, snapshot);
                 break;
             }
