@@ -180,6 +180,11 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? MultithreadedGC { get; set; } = null;
 
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool RestartAppDomain_WIP { get; set; } = false;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
