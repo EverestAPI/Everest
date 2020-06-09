@@ -32,7 +32,7 @@ namespace Celeste {
 
         public extern void orig_Update();
         public override void Update() {
-            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+            lock (AssetReloadHelper.AreaReloadLock) {
                 orig_Update();
             }
         }

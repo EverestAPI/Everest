@@ -16,6 +16,7 @@ using System.Linq;
 namespace Celeste {
     public class patch_KeyboardConfigUI : KeyboardConfigUI {
 
+        [MonoModIgnore]
         private enum Mappings {
             Left,
             Right,
@@ -64,7 +65,7 @@ namespace Celeste {
         /// </summary>
         /// <param name="key">The mapping index</param>
         /// <param name="list">The list of keys currently mapped to it</param>
-        private void AddKeyConfigLine(int key, List<Keys> list) {
+        protected void AddKeyConfigLine(int key, List<Keys> list) {
             Add(new Setting(GetLabel(key), list).Pressed(() => Remap(key)));
         }
 
@@ -73,8 +74,8 @@ namespace Celeste {
         /// </summary>
         /// <param name="key">The mapping (should be an enum value)</param>
         /// <param name="list">The list of keys currently mapped to it</param>
-        protected void AddKeyConfigLine(object key, List<Keys> list) {
-            AddKeyConfigLine((int) key, list);
+        protected void AddKeyConfigLine<T>(T key, List<Keys> list) where T : Enum {
+            AddKeyConfigLine(key.GetHashCode(), list);
         }
 
         /// <summary>
@@ -149,7 +150,6 @@ namespace Celeste {
         // these keys only support a single mapping (they are not lists in the settings file).
         private static Mappings[] keysWithSingleBindings = { Mappings.Left, Mappings.Right, Mappings.Up, Mappings.Down };
 
-        [MonoModReplace]
         private void Remap(int mapping) {
             remapping = true;
             currentlyRemapping = mapping;
@@ -203,27 +203,36 @@ namespace Celeste {
                 (newKey == Keys.Back && mappedKey != Mappings.Cancel)) {
                 return null;
             }
+
             switch (mappedKey) {
                 case Mappings.Left:
                     Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
                     return null;
+
                 case Mappings.Right:
                     Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
                     return null;
+
                 case Mappings.Up:
                     Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
                     return null;
+
                 case Mappings.Down:
                     Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
                     return null;
+
                 case Mappings.Jump:
                     return Settings.Instance.Jump;
+
                 case Mappings.Dash:
                     return Settings.Instance.Dash;
+
                 case Mappings.Grab:
                     return Settings.Instance.Grab;
+
                 case Mappings.Talk:
                     return Settings.Instance.Talk;
+
                 case Mappings.Confirm:
                     if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Enter) {
@@ -231,6 +240,7 @@ namespace Celeste {
                         }
                     }
                     return null;
+
                 case Mappings.Cancel:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Back) {
@@ -238,15 +248,19 @@ namespace Celeste {
                         }
                     }
                     return null;
+
                 case Mappings.Pause:
                     if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
                         return Settings.Instance.Pause;
                     }
                     return null;
+
                 case Mappings.Journal:
                     return Settings.Instance.Journal;
+
                 case Mappings.QuickRestart:
                     return Settings.Instance.QuickRestart;
+
                 default:
                     return null;
             }

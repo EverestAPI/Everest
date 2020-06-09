@@ -486,6 +486,8 @@ namespace Celeste.Mod {
 
             LuaLoader.Precache(module.GetType().Assembly);
 
+            bool newStrawberriesRegistered = false;
+
             foreach (Type type in module.GetType().Assembly.GetTypes()) {
                 // Search for all entities marked with the CustomEntityAttribute.
                 foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
@@ -570,10 +572,66 @@ namespace Celeste.Mod {
 
                     foreach (string name in names) {
                         StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
+                        newStrawberriesRegistered = true;
                     }
                 }
                 NoDefinedBerryNames:
                 ;
+
+                // Search for all Entities marked with the CustomEventAttribute.
+                foreach (CustomEventAttribute attrib in type.GetCustomAttributes<CustomEventAttribute>()) {
+                    foreach (string idFull in attrib.IDs) {
+                        string id;
+                        string genName;
+                        string[] split = idFull.Split('=');
+
+                        if (split.Length == 1) {
+                            id = split[0];
+                            genName = "Load";
+
+                        } else if (split.Length == 2) {
+                            id = split[0];
+                            genName = split[1];
+
+                        } else {
+                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
+                            continue;
+                        }
+
+                        id = id.Trim();
+                        genName = genName.Trim();
+
+                        patch_EventTrigger.CutsceneLoader loader = null;
+
+                        ConstructorInfo ctor;
+                        MethodInfo gen;
+
+                        gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
+                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                            loader = (trigger, player, eventID) => (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
+                        if (ctor != null) {
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID });
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        if (ctor != null) {
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            goto RegisterCutsceneLoader;
+                        }
+
+                        RegisterCutsceneLoader:
+                        if (loader == null) {
+                            Logger.Log(LogLevel.Warn, "core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
+                            continue;
+                        }
+                        patch_EventTrigger.CutsceneLoaders[id] = loader;
+                    }
+                }
             }
 
             module.LoadSettings();
@@ -584,11 +642,13 @@ namespace Celeste.Mod {
             if (_Initialized) {
                 Tracker.Initialize();
                 module.Initialize();
+                Input.Initialize();
 
-                // check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
-                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log("core", $"Module {module.Metadata} has map data processors: reloading maps.");
-                    OuiHelper_ChapterSelect_Reload.Reload(false);
+                // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
+                // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
+                if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
+                    Logger.Log("core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
+                    AssetReloadHelper.ReloadAllMaps();
                 }
             }
 
@@ -652,7 +712,7 @@ namespace Celeste.Mod {
             module.Unload();
 
             Assembly asm = module.GetType().Assembly;
-            _DetourModManager.Unload(asm);
+            MainThreadHelper.Do(() => _DetourModManager.Unload(asm));
             _RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader
@@ -707,7 +767,7 @@ namespace Celeste.Mod {
         }
 
         public static void QuickFullRestart() {
-            if (AppDomain.CurrentDomain.IsDefaultAppDomain()) {
+            if (AppDomain.CurrentDomain.IsDefaultAppDomain() || !CoreModule.Settings.RestartAppDomain_WIP) {
                 SlowFullRestart();
                 return;
             }

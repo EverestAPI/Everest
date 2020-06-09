@@ -645,8 +645,8 @@ namespace Celeste.Mod {
                     file = file.Substring(0, file.Length - 4);
 
                 } else if (
-                    file == "Graphics/Sprites.xml" || 
-                    file == "Graphics/SpritesGui.xml" || 
+                    file == "Graphics/Sprites.xml" ||
+                    file == "Graphics/SpritesGui.xml" ||
                     file == "Graphics/Portraits.xml"
                 ) {
                     type = typeof(AssetTypeSpriteBank);
@@ -725,19 +725,10 @@ namespace Celeste.Mod {
                 return file;
             }
 
-            /// <summary>
-            /// Recrawl all currently loaded mods and recreate the content mappings. If you want to apply the new mapping, call Reprocess afterwards.
-            /// </summary>
-            internal static void Recrawl() {
-                lock (Map)
-                    Map.Clear();
-
-                for (int i = 0; i < Mods.Count; i++) {
-                    ModContent mod = Mods[i];
-                    mod.List.Clear();
-                    mod.Map.Clear();
-                    Crawl(mod);
-                }
+            private static void RecrawlMod(ModContent mod) {
+                mod.List.Clear();
+                mod.Map.Clear();
+                Crawl(mod);
             }
 
             /// <summary>
@@ -748,7 +739,7 @@ namespace Celeste.Mod {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
                         if (target is MTexture mtex) {
-                            AssetReloadHelper.Do($"Unloading texture: {Path.GetFileName(prev.PathVirtual)}", () => {
+                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_UNLOADINGTEXTURE")} {Path.GetFileName(prev.PathVirtual)}", () => {
                                 mtex.UndoOverride(prev);
                             });
                         }
@@ -774,7 +765,7 @@ namespace Celeste.Mod {
                             .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
 
                         if (mode != null) {
-                            AssetReloadHelper.Do($"Reloading map: {name}", () => {
+                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAPNAME")} {name}", () => {
                                 mode.MapData.Reload();
                             });
 
@@ -783,8 +774,8 @@ namespace Celeste.Mod {
 
                         } else {
                             // What can go wrong?
-                            AssetReloadHelper.Do($"Reloading all maps", () => {
-                                OuiHelper_ChapterSelect_Reload.Reload(false);
+                            AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), () => {
+                                AssetReloadHelper.ReloadAllMaps();
                             });
                             AssetReloadHelper.ReloadLevel();
                         }
@@ -807,7 +798,7 @@ namespace Celeste.Mod {
                         AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
-                        AssetReloadHelper.Do($"Reloading dialog: {name}", () => {
+                        AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGDIALOG")} {name}", () => {
                             string languageFilePath = path + ".txt";
 
                             // fix the language case if broken.
@@ -920,10 +911,11 @@ namespace Celeste.Mod {
                     return;
 
                 if (asset is Atlas atlas) {
-                    AssetReloadHelper.Do(load, $"Reloading texture{(mapping.Children.Count == 0 ? "" : "s")}: {Path.GetFileName(mapping.PathVirtual)}", () => {
-                        atlas.ResetCaches();
-                        (atlas as patch_Atlas).Ingest(mapping);
-                    });
+                    string reloadingText = Dialog.Language == null ? "" : Dialog.Clean(mapping.Children.Count == 0 ? "ASSETRELOADHELPER_RELOADINGTEXTURE" : "ASSETRELOADHELPER_RELOADINGTEXTURES");
+                    AssetReloadHelper.Do(load, $"{reloadingText} {Path.GetFileName(mapping.PathVirtual)}", () => {
+                            atlas.ResetCaches();
+                            (atlas as patch_Atlas).Ingest(mapping);
+                        });
 
                     // if the atlas is (or contains) an emoji, register it.
                     if (Emoji.IsInitialized()) {

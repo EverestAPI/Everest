@@ -38,13 +38,6 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
 
-            menu.Add(new TextMenu.Button(Dialog.Clean("maplist_reload")).Pressed(() => {
-                Audio.Play(SFX.ui_postgame_unlock_newchapter);
-                Overworld.Mountain.UntiltedCamera = cameraStart;
-                OuiHelper_ChapterSelect_Reload.Reload();
-                Overworld.Goto<OuiMapList>();
-            }));
-
             sets.Clear();
             foreach (AreaData area in AreaData.Areas) {
                 string levelSet = area.GetLevelSet();

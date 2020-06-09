@@ -4,7 +4,7 @@
 
 ----
 
-[![Build Status](https://dev.azure.com/EverestAPI/Everest/_apis/build/status/EverestAPI.Everest?branchName=master)](https://dev.azure.com/EverestAPI/Everest/_build/latest?definitionId=3&branchName=master)
+[![Build Status](https://dev.azure.com/EverestAPI/Everest/_apis/build/status/EverestAPI.Everest?branchName=master)](https://dev.azure.com/EverestAPI/Everest/_build?definitionId=3)
 
 [**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
 

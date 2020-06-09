@@ -21,6 +21,7 @@ using _Level = Celeste.Level;
 using _Player = Celeste.Player;
 using _OuiJournal = Celeste.OuiJournal;
 using _Decal = Celeste.Decal;
+using _EventTrigger = Celeste.EventTrigger;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -170,6 +171,13 @@ namespace Celeste.Mod {
                         del.DynamicInvoke(new object[] { buttons, slot, modSaveData, fileExists });
                     }
                 }
+            }
+
+            public static class EventTrigger {
+                public delegate bool TriggerEventHandler(_EventTrigger trigger, _Player player, string eventID);
+                public static event TriggerEventHandler OnEventTrigger;
+                internal static bool TriggerEvent(_EventTrigger trigger, _Player player, string eventID)
+                    => OnEventTrigger?.InvokeWhileFalse(trigger, player, eventID) ?? false;
             }
 
         }

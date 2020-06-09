@@ -71,6 +71,10 @@ namespace Celeste.Mod.Meta {
 
         public MapMetaCompleteScreen CompleteScreen { get; set; }
 
+        public MapMetaCompleteScreen LoadingVignetteScreen { get; set; }
+
+        public MapMetaTextVignette LoadingVignetteText { get; set; }
+
         public MapMetaCassetteModifier CassetteModifier { get; set; }
 
         public void Parse(BinaryPacker.Element meta) {
@@ -233,6 +237,12 @@ namespace Celeste.Mod.Meta {
 
                 if (CompleteScreen != null)
                     meta.CompleteScreen = CompleteScreen;
+
+                if (LoadingVignetteScreen != null)
+                    meta.LoadingVignetteScreen = LoadingVignetteScreen;
+
+                if (LoadingVignetteText != null)
+                    meta.LoadingVignetteText = LoadingVignetteText;
 
                 if (CassetteModifier != null)
                     meta.CassetteModifier = CassetteModifier;
@@ -465,7 +475,7 @@ namespace Celeste.Mod.Meta {
         [YamlMember(Alias = "Offset")] public float[] OffsetArray { get; set; }
         public MapMetaCompleteScreenLayer[] Layers { get; set; }
     }
-    public class MapMetaCompleteScreenLayer {
+    public class MapMetaCompleteScreenLayer { 
         public string Type { get; set; }
         public string[] Images { get; set; }
         [YamlIgnore] public Vector2 Position => PositionArray.ToVector2() ?? Vector2.Zero;
@@ -476,6 +486,12 @@ namespace Celeste.Mod.Meta {
         public float Alpha { get; set; } = 1f;
         [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
+    }
+
+    public class MapMetaTextVignette {
+        public string Dialog { get; set; }
+        [YamlIgnore] public Vector2 SnowDirection => SnowDirectionArray.ToVector2() ?? Vector2.UnitY; //Snowing downwards by default
+        [YamlMember(Alias = "SnowDirection")] public float[] SnowDirectionArray { get; set; }
     }
 
     public class MapMetaCassetteModifier {

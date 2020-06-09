@@ -32,9 +32,10 @@ namespace Celeste {
             }
         }
 
-        public patch_CompleteRenderer(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null)
+        public patch_CompleteRenderer(XmlElement xml, Atlas atlas, float delay, Action onDoneSlide = null, MapMetaCompleteScreen meta = null)
             : base(xml, atlas, delay, onDoneSlide) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            // meta parameter is included to allow instantiating CompleteRenderer with it
         }
 
         // We're hooking the original constructor, but still need to call it somehow...

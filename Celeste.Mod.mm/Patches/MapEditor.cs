@@ -15,7 +15,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste.Editor {
     class patch_MapEditor : MapEditor {
-        private static readonly Lazy<bool> _SpeedrunToolInstalled = new Lazy<bool>(() =>
+        private static readonly Lazy<bool> _OldSpeedrunToolInstalled = new Lazy<bool>(() =>
             Everest.Modules.Any(module => {
                 EverestModuleMetadata meta = module?.Metadata;
                 if (meta == null || meta.Version == null)
@@ -36,7 +36,7 @@ namespace Celeste.Editor {
 
         private const string MinimalManualText = "F5: Show/Hide instructions";
 
-        private static bool SpeedrunToolInstalled => _SpeedrunToolInstalled.Value;
+        private static bool OldSpeedrunToolInstalled => _OldSpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
 
         private static Camera Camera;
@@ -57,6 +57,7 @@ namespace Celeste.Editor {
         public extern void orig_ctor(AreaKey area, bool reloadMapData = true);
         [MonoModConstructor]
         public void ctor(AreaKey area, bool reloadMapData = true) {
+            AreaKey prevArea = patch_MapEditor.area;
             orig_ctor(area, reloadMapData);
 
             // set CurrentSession if the session corresponds to the level being edited
@@ -66,8 +67,9 @@ namespace Celeste.Editor {
                 return;
             }
 
-            Camera.CenterOrigin();
-            CenterViewOnCurrentRespawn();
+            if (prevArea != area) {
+                CenterViewOnCurrentRespawn();
+            }
         }
 
         [MonoModIgnore]
@@ -93,8 +95,14 @@ namespace Celeste.Editor {
 
         public extern void orig_Update();
         public override void Update() {
-            if (!SpeedrunToolInstalled) {
+            // The following feature is from an older version of SpeedrunTool
+            if (!OldSpeedrunToolInstalled) {
                 MakeMapEditorBetter();
+            }
+            
+            // press F2 to center on current respawn
+            if (MInput.Keyboard.Pressed(Keys.F2)) {
+                CenterViewOnCurrentRespawn();
             }
 
             orig_Update();
@@ -119,11 +127,6 @@ namespace Celeste.Editor {
 
                     LoadLevel(level, mousePosition * 8f);
                 }
-            }
-
-            // press F2 to center on current respawn
-            if (MInput.Keyboard.Pressed(Keys.F2)) {
-                CenterViewOnCurrentRespawn();
             }
 
             // speed up camera when zoom out

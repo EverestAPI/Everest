@@ -95,7 +95,6 @@
 	MAPLIST_TYPE= 			От
 	MAPLIST_TYPE_ALLMODS= 	Все Моды
 	MAPLIST_SIDE= 			Сторона
-	MAPLIST_RELOAD= 		Перезагрузить
 	MAPLIST_LIST= 			Карты
 	MAPLIST_UNCATEGORIZED= 	Некатегоризированные
 	MAPLIST_SEARCH=			Поиск

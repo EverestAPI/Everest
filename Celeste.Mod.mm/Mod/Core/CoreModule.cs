@@ -97,7 +97,7 @@ namespace Celeste.Mod.Core {
                 if (level == null)
                     return;
 
-                AssetReloadHelper.Do("Reloading map", () => {
+                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
                 });
                 AssetReloadHelper.ReloadLevel();

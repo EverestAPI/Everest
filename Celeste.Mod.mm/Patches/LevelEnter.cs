@@ -12,6 +12,7 @@ using MonoMod;
 using System.Collections;
 using Monocle;
 using Celeste.Mod.Meta;
+using Celeste.Mod.Entities;
 
 namespace Celeste {
     class patch_LevelEnter : Scene {
@@ -35,7 +36,9 @@ namespace Celeste {
                 orig_Go(session, fromSaveData);
             } else {
                 try {
-                    orig_Go(session, fromSaveData);
+                    if (!PlayCustomVignette(session, fromSaveData))
+                        orig_Go(session, fromSaveData);
+
                     Everest.Events.Level.Enter(session, fromSaveData);
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "misc", $"Failed entering area {session.Area}");
@@ -54,6 +57,30 @@ namespace Celeste {
 
         public static patch_LevelEnter ForceCreate(Session session, bool fromSaveData) {
             return new patch_LevelEnter(session, fromSaveData);
+        }
+
+        public static bool PlayCustomVignette(Session session, bool fromSaveData) {
+            bool playVignette = !fromSaveData && session.StartedFromBeginning;
+            AreaData area = AreaData.Get(session);
+            MapMetaCompleteScreen screen;
+            MapMetaTextVignette text;
+
+            if (playVignette && (screen = area.GetMeta()?.LoadingVignetteScreen) != null && screen.Atlas != null) {
+                Engine.Scene = new CustomScreenVignette(session, meta: screen);
+                return true;
+            } else if (playVignette && (text = area.GetMeta()?.LoadingVignetteText) != null && text.Dialog != null) {
+                HiresSnow snow = null;
+                if (Engine.Scene is Overworld)
+                    snow = (Engine.Scene as Overworld).Snow;
+
+                if (snow != null && text.SnowDirection != null)
+                    snow.Direction = text.SnowDirection;
+
+                Engine.Scene = new CustomTextVignette(session, text.Dialog, snow);
+                return true;
+            }
+
+            return false;
         }
 
         private extern IEnumerator orig_Routine();

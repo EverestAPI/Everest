@@ -50,9 +50,17 @@ namespace Celeste.Mod {
                     CoreModule.Settings.DebugRCPort <= 0)
                     return;
 
-                Listener = new HttpListener();
-                Listener.Prefixes.Add($"http://localhost:{CoreModule.Settings.DebugRCPort}/");
-                Listener.Start();
+                try {
+                    Listener = new HttpListener();
+                    Listener.Prefixes.Add($"http://localhost:{CoreModule.Settings.DebugRCPort}/");
+                    Listener.Start();
+                } catch (Exception e) {
+                    e.LogDetailed();
+                    try {
+                        Listener?.Stop();
+                    } catch { }
+                    return;
+                }
 
                 ThreadPool.QueueUserWorkItem(_ => {
                     Logger.Log(LogLevel.Info, "debugrc", $"Started DebugRC thread, available via http://localhost:{CoreModule.Settings.DebugRCPort}/");

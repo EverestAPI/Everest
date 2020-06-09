@@ -167,7 +167,7 @@ namespace Celeste {
             if (id < 0)
                 return null;
 
-            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+            lock (AssetReloadHelper.AreaReloadLock) {
                 return Areas[id];
             }
         }
@@ -179,7 +179,7 @@ namespace Celeste {
         }
 
         public static AreaData Get(string sid) {
-            lock (OuiHelper_ChapterSelect_Reload.AreaReloadLock) {
+            lock (AssetReloadHelper.AreaReloadLock) {
                 return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.GetSID() == sid);
             }
         }

@@ -144,13 +144,32 @@ namespace Celeste.Mod {
                         }
                     };
 
+                    ((DefaultAssemblyResolver) _Modder.AssemblyResolver).ResolveFailure += OnRelinkerResolveFailure;
+
                     return _Modder;
                 }
                 set {
                     _Modder = value;
                 }
             }
-            
+
+            private static AssemblyDefinition OnRelinkerResolveFailure(object sender, AssemblyNameReference reference) {
+                if (reference.FullName.ToLowerInvariant().Contains("fna") || reference.FullName.ToLowerInvariant().Contains("xna")) {
+                    AssemblyName[] asmRefs = typeof(Celeste).Assembly.GetReferencedAssemblies();
+                    for (int ari = 0; ari < asmRefs.Length; ari++) {
+                        AssemblyName asmRef = asmRefs[ari];
+                        if (!asmRef.FullName.ToLowerInvariant().Contains("xna") &&
+                            !asmRef.FullName.ToLowerInvariant().Contains("fna") &&
+                            !asmRef.FullName.ToLowerInvariant().Contains("monogame")
+                        )
+                            continue;
+                        return ((DefaultAssemblyResolver) _Modder.AssemblyResolver).Resolve(AssemblyNameReference.Parse(asmRef.FullName));
+                    }
+                }
+
+                return null;
+            }
+
             [Obsolete("Use the variant with an explicit assembly name instead.")]
             /// <summary>
             /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
