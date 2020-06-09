@@ -183,7 +183,7 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool RestartAppDomain { get; set; } = true;
+        public bool RestartAppDomain_WIP { get; set; } = false;
 
         public string InputGui { get; set; } = "";
 
