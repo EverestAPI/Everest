@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -149,6 +150,15 @@ namespace Celeste.Mod {
                 return Dialog.Clean(input, language);
             else
                 return null;
+        }
+
+        /// <summary>
+        /// Get a Vector2 from a Point.
+        /// </summary>
+        /// <param name="p">The input Point.</param>
+        /// <returns>The output Vector2.</returns>
+        public static Vector2 ToVector2(this Point p) {
+            return new Vector2(p.X, p.Y);
         }
 
         /// <summary>
