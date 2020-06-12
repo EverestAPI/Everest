@@ -2180,7 +2180,7 @@ namespace MonoMod {
             TypeReference t_Point = m_Rectangle_get_Center.ReturnType;
             FieldReference f_Point_Y = MonoModRule.Modder.Module.ImportReference(t_Point.Resolve().FindField("Y"));
             MethodReference m_Point_ToVector2 = MonoModRule.Modder.Module.GetType("Celeste.Mod.Extensions").FindMethod($"Microsoft.Xna.Framework.Vector2 Celeste.Mod.Extensions::ToVector2(Microsoft.Xna.Framework.Point)");
-            if (t_Point == null|| f_Point_Y == null || m_Point_ToVector2 == null)
+            if (t_Point == null || f_Point_Y == null || m_Point_ToVector2 == null)
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
@@ -2189,7 +2189,7 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 // If we have reached the end of the code to be patched, put everything back to normal.
-                if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri+1].Operand).FullName == "Celeste.Player") {
+                if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri + 1].Operand).FullName == "Celeste.Player") {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldloc_2));
                     instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_Component_get_Entity));
                     instrs.Insert(instri++, il.Create(OpCodes.Stloc_3));
@@ -2200,14 +2200,24 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Entity") {
                     instrs[instri].Operand = m_WaterInteraction_get_Bounds;
                     instr.Operand = m_WaterInteraction_get_Bounds;
-                    instrs[++instri].OpCode = OpCodes.Stloc;
+                    instrs[++instri].OpCode = OpCodes.Stloc_S;
                     instrs[instri].Operand = v_Bounds;
                 }
 
                 // Retrieve the Bounds instead of the entity
                 if (instr.OpCode == OpCodes.Ldloc_3) {
-                    instr.OpCode = OpCodes.Ldloc;
-                    instr.Operand = v_Bounds;
+                    if (instrs[instri + 1].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 1].Operand).Name == "get_Center") {
+                        instr.OpCode = OpCodes.Ldloca_S;
+                        instr.Operand = v_Bounds;
+
+                        if (instrs[instri + 2].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 2].Operand).Name == "Y") {
+                            // cast the Y position to float because it is compared to another float.
+                            instrs.Insert(instri + 3, il.Create(OpCodes.Conv_R4));
+                        }
+                    } else {
+                        instr.OpCode = OpCodes.Ldloc_S;
+                        instr.Operand = v_Bounds;
+                    }
                 }
 
                 // Replace any methods that use the entity
@@ -2226,12 +2236,16 @@ namespace MonoMod {
 
                 // Replace the Rectangle creation
                 if (instr.OpCode == OpCodes.Newobj && ((MethodReference) instr.Operand).FullName == "System.Void Microsoft.Xna.Framework.Rectangle::.ctor(System.Int32,System.Int32,System.Int32,System.Int32)") {
-                    instr.OpCode = OpCodes.Ldloc;
+                    instr.OpCode = OpCodes.Ldloc_S;
                     instr.Operand = v_Bounds;
 
+                    instri--;
+
                     // Discard previous Rectangle args
-                    for (int i = 0;i<4;i++)
-                        instrs.Insert(instri, il.Create(OpCodes.Pop));
+                    while (instrs[instri].OpCode != OpCodes.Call || ((MethodReference) instrs[instri].Operand).FullName != "Monocle.Scene Monocle.Entity::get_Scene()") {
+                        instrs.RemoveAt(instri);
+                        instri--;
+                    }
                 }
             }
         }
