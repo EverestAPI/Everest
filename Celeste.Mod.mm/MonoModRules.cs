@@ -277,6 +277,18 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
+    /// <summary>
+    /// Add ITriggerable interface to the IntroCrusher class.
+    /// </summary>
+    [MonoModCustomAttribute("PatchIntroCrusherInterface")]
+    class PatchIntroCrusherInterfaceAttribute : Attribute { };
+
+    /// <summary>
+    /// Include checks for manual triggering.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
+    class PatchIntroCrusherSequenceAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2145,6 +2157,74 @@ namespace MonoMod {
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
             cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchIntroCrusherInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
+            InterfaceImplementation ITriggerable = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.Entities.ITriggerable"));
+            if (ITriggerable == null)
+                return;
+
+            ((TypeDefinition) provider).Interfaces.Add(ITriggerable);
+        }
+
+        public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_triggered = method.DeclaringType.FindField("triggered");
+            FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
+
+
+            FieldReference f_this = null;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            // Steam FNA is weird, and all the local variables are messed up.
+            bool isSteamFNA = method.Body.Variables[2].VariableType.FullName != "Celeste.Player";
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                
+                if (instr.OpCode == (isSteamFNA ? OpCodes.Ldloc_1 : OpCodes.Ldloc_2) &&
+                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
+                    // Get the instruction at the beginning of this while loop.
+                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
+                    // Get the instruction after the end of this while statement
+                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_triggered));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, breakTarget));
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
+                }
+
+                if (instr.OpCode == OpCodes.Ldloc_3 && // The value stored in loc_3 is different between versions, but it still works the same.
+                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
+                    // Get the instruction at the beginning of this while loop.
+                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
+                    // Get the instruction after the end of this while statement
+                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
+                }
+            }
         }
 
         public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
