@@ -2183,6 +2183,9 @@ namespace MonoMod {
             if (t_Point == null || f_Point_Y == null || m_Point_ToVector2 == null)
                 return;
 
+            // Steam FNA is weird, and stores the entity in variable 5 instead of 3.
+            bool isSteamFNA = method.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -2190,9 +2193,9 @@ namespace MonoMod {
 
                 // If we have reached the end of the code to be patched, put everything back to normal.
                 if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri + 1].Operand).FullName == "Celeste.Player") {
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldloc_2));
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Ldloc_S, (byte) 4) : il.Create(OpCodes.Ldloc_2));
                     instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_Component_get_Entity));
-                    instrs.Insert(instri++, il.Create(OpCodes.Stloc_3));
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Stloc_S, (byte) 5) : il.Create(OpCodes.Stloc_3));
                     break;
                 }
 
@@ -2205,7 +2208,7 @@ namespace MonoMod {
                 }
 
                 // Retrieve the Bounds instead of the entity
-                if (instr.OpCode == OpCodes.Ldloc_3) {
+                if ((!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || (isSteamFNA && instr.OpCode == OpCodes.Ldloc_S && ((VariableReference) instr.Operand).Index == 5)) {
                     if (instrs[instri + 1].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 1].Operand).Name == "get_Center") {
                         instr.OpCode = OpCodes.Ldloca_S;
                         instr.Operand = v_Bounds;
