@@ -2228,13 +2228,14 @@ namespace MonoMod {
                     instr.Operand = m_Entity_CollideCheck;
 
                 if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Center") {
+                    instr.OpCode = OpCodes.Call;
                     instr.Operand = m_Rectangle_get_Center;
 
                     Instruction next = instrs[++instri];
                     if (next.OpCode == OpCodes.Ldfld)
                         next.Operand = f_Point_Y;
                     else
-                        instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_Point_ToVector2));
+                        instrs.Insert(instri, il.Create(OpCodes.Call, m_Point_ToVector2));
                 }
 
                 // Replace the Rectangle creation
