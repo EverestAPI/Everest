@@ -40,7 +40,7 @@ namespace Celeste {
         public extern override void Awake(Scene scene);
 
         public static void ManuallyTrigger(Vector2 position, float delay, bool triggerUnconstrained = true) {
-            foreach(patch_RumbleTrigger rumbleTrigger in Engine.Scene.Entities.FindAll<patch_RumbleTrigger>()) {
+            foreach (patch_RumbleTrigger rumbleTrigger in Engine.Scene.Entities.FindAll<patch_RumbleTrigger>()) {
                 if (rumbleTrigger.manualTrigger && position.X >= rumbleTrigger.left && position.X <= rumbleTrigger.right) {
                     if (rumbleTrigger.constrainHeight) {
                         if (position.Y >= rumbleTrigger.top && position.Y <= rumbleTrigger.bottom)
