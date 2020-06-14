@@ -559,6 +559,18 @@ namespace Celeste.Mod {
                         }
 
                         ((FileSystemWatcher) source).Dispose();
+
+                        // be sure to save this module's save data and session before reloading it, so that they are not lost.
+                        if (SaveData.Instance != null) {
+                            Logger.Log("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                            module.SaveSaveData(SaveData.Instance.FileSlot);
+
+                            if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                                Logger.Log("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                module.SaveSession(SaveData.Instance.FileSlot);
+                            }
+                        }
+
                         Unregister(module);
                         LoadModAssembly(module.Metadata, asm);
                     });

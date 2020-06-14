@@ -102,6 +102,8 @@ namespace Celeste.Mod.UI {
 
             Overworld.ShowInputUI = false;
 
+            Engine.Commands.Enabled = false;
+
             selectingOptions = false;
             optionsIndex = 0;
             index = 0;
@@ -171,6 +173,8 @@ namespace Celeste.Mod.UI {
             Overworld.ShowInputUI = true;
             Focused = false;
 
+            Engine.Commands.Enabled = true;
+
             Vector2 posFrom = Position;
             Vector2 posTo = new Vector2(0f, 1080f);
             for (float t = 0f; t < 1f; t += Engine.DeltaTime * 2f) {
@@ -224,6 +228,7 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             bool wasFocused = Focused;
+
             // Only "focus" if the input method is a gamepad, not a keyboard.
             Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
 

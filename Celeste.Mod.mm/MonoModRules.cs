@@ -272,16 +272,28 @@ namespace MonoMod {
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
     /// <summary>
+    /// Include the option to use Y range of trigger nodes.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchRumbleTriggerAwake")]
+    class PatchRumbleTriggerAwakeAttribute : Attribute { };
+
+    /// <summary>
     /// Include check for custom events.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
     /// <summary>
-    /// Check collision to make it customizable.
+    /// Modify collision to make it customizable.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchWaterUpdate")]
     class PatchWaterUpdateAttribute : Attribute { };
+
+    /// <summary>
+    /// Add custom dialog to fake hearts.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
+    class PatchFakeHeartDialogAttribute : Attribute { };
 
     static class MonoModRules {
 
@@ -2060,6 +2072,61 @@ namespace MonoMod {
             }
         }
 
+        public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrig) {
+            MethodDefinition m_entity_get_Y = MonoModRule.Modder.FindType("Monocle.Entity").Resolve().FindMethod("get_Y");
+            if (m_entity_get_Y == null)
+                return;
+
+            FieldDefinition f_constrainHeight = method.DeclaringType.FindField("constrainHeight");
+            FieldDefinition f_top = method.DeclaringType.FindField("top");
+            FieldDefinition f_bottom = method.DeclaringType.FindField("bottom");
+
+            if (f_constrainHeight == null || f_top == null || f_bottom == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                /*
+                        ldloc.*
+                        callvirt	instance float32 Monocle.Entity::get_X()
+                        ldarg.0
+                        ldfld	float32 Celeste.RumbleTrigger::left
+                        blt.un.s	ldloca.s
+                        ldloc.*
+                        callvirt	instance float32 Monocle.Entity::get_X()
+                        ldarg.0
+                        ldfld	float32 Celeste.RumbleTrigger::right // We are here
+                        bgt.un.s	ldloca.s
+                     */
+                if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
+                    Instruction noYRange = instrs[instri + 2];
+
+                    //Copy relevant instructions and modify as needed
+                    Instruction[] instrCopy = new Instruction[10];
+                    for (int i = 0; i < 10; i++) {
+                        instrCopy[i] = il.Create(instrs[instri + i - 8].OpCode, instrs[instri + i - 8].Operand);
+                        if (instrCopy[i].OpCode == OpCodes.Callvirt)
+                            instrCopy[i].Operand = m_entity_get_Y;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "left")
+                            instrCopy[i].Operand = f_top;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
+                            instrCopy[i].Operand = f_bottom;
+                    }
+
+                    instri += 2;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_constrainHeight));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYRange));
+
+                    // Insert copied instructions
+                    instrs.InsertRange(instri, instrCopy);
+                    instri += instrCopy.Length;
+                }
+            }
+        }
+
         public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute attrib) {
             if (!method.HasBody)
                 return;
@@ -2249,6 +2316,48 @@ namespace MonoMod {
                     while (instrs[instri].OpCode != OpCodes.Call || ((MethodReference) instrs[instri].Operand).FullName != "Monocle.Scene Monocle.Entity::get_Scene()") {
                         instrs.RemoveAt(instri);
                         instri--;
+                    }
+                }
+            }
+        }
+
+        public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_fakeHeartDialog = method.DeclaringType.FindField("fakeHeartDialog");
+            FieldReference f_keepGoingDialog = method.DeclaringType.FindField("keepGoingDialog");
+            if (f_fakeHeartDialog == null || f_keepGoingDialog == null)
+                return;
+
+            FieldDefinition f_this = null;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldstr) { 
+                    if (((string) instr.Operand) == "CH9_FAKE_HEART") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_fakeHeartDialog;
+                        
+                    } else if (((string) instr.Operand) == "CH9_KEEP_GOING") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_keepGoingDialog;
                     }
                 }
             }

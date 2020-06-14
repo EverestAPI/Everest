@@ -7,6 +7,7 @@ using System;
 
 namespace Celeste {
     class patch_WaterInteraction : WaterInteraction {
+
         public Rectangle Bounds {
             get {
                 if (_bounds != null) {

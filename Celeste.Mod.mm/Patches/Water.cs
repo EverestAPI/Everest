@@ -11,9 +11,7 @@ namespace Celeste {
 
         [MonoModIgnore] // we don't want to change anything in the method...
         [PatchWaterUpdate] // ... except manipulating it manually with MonoModRules
-        public override void Update() {
-
-        }
+        public extern override void Update();
 
     }
 }

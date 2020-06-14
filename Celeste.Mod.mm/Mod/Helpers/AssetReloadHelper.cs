@@ -134,7 +134,7 @@ namespace Celeste.Mod {
                     return;
 
                 ReloadingLevel = true;
-                Do($"Reloading level", () => {
+                Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGLEVEL"), () => {
                     try {
                         LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
 
