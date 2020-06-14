@@ -277,6 +277,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
+    /// <summary>
+    /// Add custom dialog to fake hearts.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
+    class PatchFakeHeartDialogAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2145,6 +2151,48 @@ namespace MonoMod {
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
             cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_fakeHeartDialog = method.DeclaringType.FindField("fakeHeartDialog");
+            FieldReference f_keepGoingDialog = method.DeclaringType.FindField("keepGoingDialog");
+            if (f_fakeHeartDialog == null || f_keepGoingDialog == null)
+                return;
+
+            FieldDefinition f_this = null;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldstr) { 
+                    if (((string) instr.Operand) == "CH9_FAKE_HEART") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_fakeHeartDialog;
+                        
+                    } else if (((string) instr.Operand) == "CH9_KEEP_GOING") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_keepGoingDialog;
+                    }
+                }
+            }
         }
 
         public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
