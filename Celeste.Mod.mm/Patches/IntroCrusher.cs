@@ -23,6 +23,8 @@ namespace Celeste {
         private float delay;
         private bool triggered;
 
+        private float speed;
+
         public patch_IntroCrusher(Vector2 position, int width, int height, Vector2 node)
             : base(position, width, height, true) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -37,6 +39,8 @@ namespace Celeste {
 
             manualTrigger = data.Bool("manualTrigger");
             delay = data.Float("delay", 1.2f);
+
+            speed = data.Float("speed", 2f);
 
             string tiletype = data.Attr("tiletype");
             if (!string.IsNullOrEmpty(tiletype)) {

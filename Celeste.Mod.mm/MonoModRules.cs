@@ -2171,6 +2171,7 @@ namespace MonoMod {
             FieldReference f_triggered = method.DeclaringType.FindField("triggered");
             FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
             FieldReference f_delay = method.DeclaringType.FindField("delay");
+            FieldReference f_speed = method.DeclaringType.FindField("speed");
 
 
             FieldReference f_this = null;
@@ -2246,6 +2247,15 @@ namespace MonoMod {
 
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                }
+
+                // Allow for custom movement speed
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 2f &&
+                    instrs[instri + 1].OpCode == OpCodes.Call && ((MethodReference) instrs[instri + 1].Operand).Name == "get_DeltaTime") {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_speed;
                 }
             }
         }
