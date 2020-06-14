@@ -2170,6 +2170,7 @@ namespace MonoMod {
         public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
             FieldReference f_triggered = method.DeclaringType.FindField("triggered");
             FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
+            FieldReference f_delay = method.DeclaringType.FindField("delay");
 
 
             FieldReference f_this = null;
@@ -2223,6 +2224,28 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
                     instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
+                }
+
+                // Allow for custom activation delay
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 1.2f) {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_this;
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_delay));
+                }
+
+                // If the delay is less than, or equal to zero, don't add a shaker.
+                if (instr.OpCode == OpCodes.Ldarg_0 &&
+                    instrs[instri + 1].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 1].Operand).Name == "<shaker>5__3" &&
+                    instrs[instri + 2].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 2].Operand).Name == "Add") {
+                    Instruction breakTarget = instrs[instri + 3];
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_delay));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldc_R4, 0f));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ble, breakTarget));
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                 }
             }
         }

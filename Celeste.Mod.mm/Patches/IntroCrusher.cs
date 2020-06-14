@@ -20,6 +20,7 @@ namespace Celeste {
         public string levelFlags;
 
         private bool manualTrigger;
+        private float delay;
         private bool triggered;
 
         public patch_IntroCrusher(Vector2 position, int width, int height, Vector2 node)
@@ -35,6 +36,7 @@ namespace Celeste {
             levelFlags = data.Attr("flags");
 
             manualTrigger = data.Bool("manualTrigger");
+            delay = data.Float("delay", 1.2f);
 
             string tiletype = data.Attr("tiletype");
             if (!string.IsNullOrEmpty(tiletype)) {
