@@ -2095,9 +2095,9 @@ namespace MonoMod {
                         bgt.un.s	ldloca.s
                      */
                 if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
-                    Instruction noYRange = instrs[instri + 2];
+                    Instruction noYRange = instrs[instri - 8];
 
-                    //Copy relevant instructions and modify as needed
+                    // Copy relevant instructions and modify as needed
                     Instruction[] instrCopy = new Instruction[10];
                     for (int i = 0; i < 10; i++) {
                         instrCopy[i] = il.Create(instrs[instri + i - 8].OpCode, instrs[instri + i - 8].Operand);
@@ -2107,9 +2107,14 @@ namespace MonoMod {
                             instrCopy[i].Operand = f_top;
                         if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
                             instrCopy[i].Operand = f_bottom;
+                        if (instrCopy[i].OpCode == OpCodes.Cgt_Un) {
+                            // we are in Steam FNA, and want to replace this with another blt.un.s like 5 instructions before
+                            instrCopy[i].OpCode = instrCopy[i - 5].OpCode;
+                            instrCopy[i].Operand = instrCopy[i - 5].Operand;
+                        }
                     }
 
-                    instri += 2;
+                    instri -= 8;
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_constrainHeight));
                     instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYRange));
@@ -2117,6 +2122,8 @@ namespace MonoMod {
                     // Insert copied instructions
                     instrs.InsertRange(instri, instrCopy);
                     instri += instrCopy.Length;
+
+                    instri += 8;
                 }
             }
         }
@@ -2239,13 +2246,13 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Ldstr) { 
+                if (instr.OpCode == OpCodes.Ldstr) {
                     if (((string) instr.Operand) == "CH9_FAKE_HEART") {
                         instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                         instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                         instr.OpCode = OpCodes.Ldfld;
                         instr.Operand = f_fakeHeartDialog;
-                        
+
                     } else if (((string) instr.Operand) == "CH9_KEEP_GOING") {
                         instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                         instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
