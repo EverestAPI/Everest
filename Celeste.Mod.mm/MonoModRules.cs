@@ -2095,7 +2095,7 @@ namespace MonoMod {
                         bgt.un.s	ldloca.s
                      */
                 if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
-                    Instruction noYRange = instrs[instri - 8];
+                    Instruction noYConstraintTarget = instrs[instri - 8];
 
                     // Copy relevant instructions and modify as needed
                     Instruction[] instrCopy = new Instruction[10];
@@ -2108,8 +2108,8 @@ namespace MonoMod {
                         if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
                             instrCopy[i].Operand = f_bottom;
                         if (instrCopy[i].OpCode == OpCodes.Cgt_Un) {
-                            // we are in Steam FNA, and want to replace this with another blt.un.s like 5 instructions before
-                            instrCopy[i].OpCode = instrCopy[i - 5].OpCode;
+                            // we are in Steam FNA, and want to replace this with a blg.un.s with the same target as 5 instructions before
+                            instrCopy[i].OpCode = OpCodes.Bgt_Un_S;
                             instrCopy[i].Operand = instrCopy[i - 5].Operand;
                         }
                     }
@@ -2117,13 +2117,22 @@ namespace MonoMod {
                     instri -= 8;
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_constrainHeight));
-                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYRange));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYConstraintTarget));
 
                     // Insert copied instructions
                     instrs.InsertRange(instri, instrCopy);
                     instri += instrCopy.Length;
 
                     instri += 8;
+                }
+            }
+
+            // Fix some issues with short-form branch instructions now being out of range
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                if (instr.Operand is Instruction i &&
+                    Math.Abs(i.Offset - instr.Offset) > 102) {
+                    instr.OpCode = instr.OpCode.ToLongOp();
                 }
             }
         }
