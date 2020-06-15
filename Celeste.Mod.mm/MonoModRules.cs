@@ -284,6 +284,12 @@ namespace MonoMod {
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
     /// <summary>
+    /// Modify collision to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchWaterUpdate")]
+    class PatchWaterUpdateAttribute : Attribute { };
+
+    /// <summary>
     /// Add custom dialog to fake hearts.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
@@ -2228,6 +2234,107 @@ namespace MonoMod {
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
             cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchWaterUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodReference m_Component_get_Entity = MonoModRule.Modder.Module.GetType("Monocle.Component").FindMethod("Monocle.Entity get_Entity()");
+            if (m_Component_get_Entity == null)
+                return;
+
+            MethodReference m_WaterInteraction_get_Bounds = MonoModRule.Modder.Module.GetType("Celeste.WaterInteraction").FindProperty("Bounds").GetMethod;
+            TypeReference t_Rectangle = m_WaterInteraction_get_Bounds.ReturnType;
+            if (m_WaterInteraction_get_Bounds == null || t_Rectangle == null)
+                return;
+
+            VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
+            method.Body.Variables.Add(v_Bounds);
+
+            MethodReference m_Entity_CollideCheck = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindMethod($"System.Boolean CollideRect({t_Rectangle.FullName})");
+            if (m_Entity_CollideCheck == null)
+                return;
+
+            MethodReference m_Rectangle_get_Center = MonoModRule.Modder.Module.ImportReference(t_Rectangle.Resolve().FindProperty("Center").GetMethod);
+            if (m_Rectangle_get_Center == null)
+                return;
+
+            TypeReference t_Point = m_Rectangle_get_Center.ReturnType;
+            FieldReference f_Point_Y = MonoModRule.Modder.Module.ImportReference(t_Point.Resolve().FindField("Y"));
+            MethodReference m_Point_ToVector2 = MonoModRule.Modder.Module.GetType("Celeste.Mod.Extensions").FindMethod($"Microsoft.Xna.Framework.Vector2 Celeste.Mod.Extensions::ToVector2(Microsoft.Xna.Framework.Point)");
+            if (t_Point == null || f_Point_Y == null || m_Point_ToVector2 == null)
+                return;
+
+            // Steam FNA is weird, and stores the entity in variable 5 instead of 3.
+            bool isSteamFNA = method.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                // If we have reached the end of the code to be patched, put everything back to normal.
+                if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri + 1].Operand).FullName == "Celeste.Player") {
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Ldloc_S, (byte) 4) : il.Create(OpCodes.Ldloc_2));
+                    instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_Component_get_Entity));
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Stloc_S, (byte) 5) : il.Create(OpCodes.Stloc_3));
+                    break;
+                }
+
+                // Load the WaterInteraction Bounds into a local variable
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Entity") {
+                    instrs[instri].Operand = m_WaterInteraction_get_Bounds;
+                    instr.Operand = m_WaterInteraction_get_Bounds;
+                    instrs[++instri].OpCode = OpCodes.Stloc_S;
+                    instrs[instri].Operand = v_Bounds;
+                }
+
+                // Retrieve the Bounds instead of the entity
+                if ((!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || (isSteamFNA && instr.OpCode == OpCodes.Ldloc_S && ((VariableReference) instr.Operand).Index == 5)) {
+                    if (instrs[instri + 1].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 1].Operand).Name == "get_Center") {
+                        instr.OpCode = OpCodes.Ldloca_S;
+                        instr.Operand = v_Bounds;
+
+                        if (instrs[instri + 2].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 2].Operand).Name == "Y") {
+                            // cast the Y position to float because it is compared to another float.
+                            instrs.Insert(instri + 3, il.Create(OpCodes.Conv_R4));
+                        }
+                    } else {
+                        instr.OpCode = OpCodes.Ldloc_S;
+                        instr.Operand = v_Bounds;
+                    }
+                }
+
+                // Replace any methods that use the entity
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).FullName == "System.Boolean Monocle.Entity::CollideCheck(Monocle.Entity)")
+                    instr.Operand = m_Entity_CollideCheck;
+
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Center") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_Rectangle_get_Center;
+
+                    Instruction next = instrs[++instri];
+                    if (next.OpCode == OpCodes.Ldfld)
+                        next.Operand = f_Point_Y;
+                    else
+                        instrs.Insert(instri, il.Create(OpCodes.Call, m_Point_ToVector2));
+                }
+
+                // Replace the Rectangle creation
+                if (instr.OpCode == OpCodes.Newobj && ((MethodReference) instr.Operand).FullName == "System.Void Microsoft.Xna.Framework.Rectangle::.ctor(System.Int32,System.Int32,System.Int32,System.Int32)") {
+                    instr.OpCode = OpCodes.Ldloc_S;
+                    instr.Operand = v_Bounds;
+
+                    instri--;
+
+                    // Discard previous Rectangle args
+                    while (instrs[instri].OpCode != OpCodes.Call || ((MethodReference) instrs[instri].Operand).FullName != "Monocle.Scene Monocle.Entity::get_Scene()") {
+                        instrs.RemoveAt(instri);
+                        instri--;
+                    }
+                }
+            }
         }
 
         public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {
