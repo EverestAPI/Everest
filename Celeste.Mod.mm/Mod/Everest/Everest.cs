@@ -424,10 +424,8 @@ namespace Celeste.Mod {
             // Start requesting the version list ASAP.
             Updater.RequestAll();
 
-            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
-                // Request the mod update list as well.
-                ModUpdaterHelper.RunAsyncCheckForModUpdates();
-            }
+            // Request the mod update list as well.
+            ModUpdaterHelper.RunAsyncCheckForModUpdates();
         }
 
         internal static bool _Initialized;
