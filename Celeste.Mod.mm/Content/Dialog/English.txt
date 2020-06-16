@@ -32,6 +32,8 @@
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			An Everest update is available
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		An update is available for 1 mod
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Updates are available for {0} mods
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
