@@ -424,10 +424,8 @@ namespace Celeste.Mod {
             // Start requesting the version list ASAP.
             Updater.RequestAll();
 
-            if (CoreModule.Settings.AutoUpdateModsOnStartup) {
-                // Request the mod update list as well.
-                ModUpdaterHelper.RunAsyncCheckForModUpdates();
-            }
+            // Request the mod update list as well.
+            ModUpdaterHelper.RunAsyncCheckForModUpdates();
         }
 
         internal static bool _Initialized;
@@ -643,6 +641,18 @@ namespace Celeste.Mod {
                 Tracker.Initialize();
                 module.Initialize();
                 Input.Initialize();
+
+                if (SaveData.Instance != null) {
+                    // we are in a save. we are expecting the save data to already be loaded at this point
+                    Logger.Log("core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                    module.LoadSaveData(SaveData.Instance.FileSlot);
+
+                    if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                        // we are in a level. we are expecting the session to already be loaded at this point
+                        Logger.Log("core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                        module.LoadSession(SaveData.Instance.FileSlot, false);
+                    }
+                }
 
                 // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
                 // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.

@@ -14,6 +14,8 @@
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Une mise à jour d'Everest est disponible
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Mise à jour disponible pour 1 mod
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
 	
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
@@ -177,6 +179,7 @@
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...
+	ASSETRELOADHELPER_RELOADINGLEVEL=		Rechargement du niveau...
 	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Déchargement de la texture :
 	ASSETRELOADHELPER_RELOADINGMAPNAME=		Rechargement de la map :
 	ASSETRELOADHELPER_RELOADINGALLMAPS=		Rechargement de toutes les maps...
