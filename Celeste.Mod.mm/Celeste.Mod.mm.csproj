@@ -56,7 +56,7 @@
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="KeraLua" Version="1.2.3" />
+    <PackageReference Include="KeraLua" Version="1.0.29" />
     <PackageReference Include="NLua" Version="1.4.32" />
   </ItemGroup>
 
@@ -194,15 +194,15 @@
       <Link>libMonoPosixHelper.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.29\runtimes\linux-x64\native\liblua53.so">
       <Link>lib64\liblua53.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\osx\native\liblua53.dylib">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.29\runtimes\osx\native\liblua53.dylib">
       <Link>liblua53.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\win-x86\native\lua53.dll">
+    <Content Include="$(NuGetPackageRoot)\keralua\1.0.29\runtimes\win-x86\native\lua53.dll">
       <Link>lua53.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
