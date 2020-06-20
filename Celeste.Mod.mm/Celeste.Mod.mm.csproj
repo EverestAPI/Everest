@@ -48,16 +48,16 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.2" />
-    <PackageReference Include="MonoMod" Version="20.5.2.5" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.5.2.5" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.5.2.5" />
-    <PackageReference Include="MonoMod.Utils" Version="20.5.2.5" />
-    <PackageReference Include="DotNetZip" Version="1.13.6" />
-    <PackageReference Include="YamlDotNet" Version="8.1.0" />
+    <PackageReference Include="MonoMod" Version="20.5.21.5" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.5.21.5" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.5.21.5" />
+    <PackageReference Include="MonoMod.Utils" Version="20.5.21.5" />
+    <PackageReference Include="DotNetZip" Version="1.13.8" />
+    <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="KeraLua" Version="1.0.22" />
-    <PackageReference Include="NLua" Version="1.4.25" />
+    <PackageReference Include="KeraLua" Version="1.2.3" />
+    <PackageReference Include="NLua" Version="1.4.32" />
   </ItemGroup>
 
   <!--
