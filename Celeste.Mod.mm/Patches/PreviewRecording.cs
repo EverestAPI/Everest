@@ -1,19 +1,13 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste {
     class patch_PreviewRecording : PreviewRecording {
+        private Session currentSession;
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
@@ -23,5 +17,44 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        public extern void orig_ctor(string filename);
+        
+        [MonoModConstructor]
+        public void ctor(string filename) {
+            orig_ctor(filename);
+
+            currentSession = (Engine.Scene as Level)?.Session;
+        }
+        
+        public extern void orig_Update();
+
+        public override void Update() {
+            orig_Update();
+            PressCancelBackToPreviousScene();
+        }
+
+        private void PressCancelBackToPreviousScene() {
+            if (Input.ESC.Pressed || Input.MenuCancel.Pressed) {
+                if (currentSession != null) {
+                    Engine.Scene = new LevelLoader(currentSession);
+                } else {
+                    Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen);
+                }
+            }
+        }
+        
+        public extern void orig_Render();
+        public override void Render() {
+            orig_Render();
+            RenderManual();
+        }
+
+        private void RenderManual() {
+            Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp,
+                null, RasterizerState.CullNone, null, Engine.ScreenMatrix);
+            ActiveFont.Draw("Cancel: Back to Previous Scene", new Vector2(8f, 80f),
+                new Vector2(0f, 0f), Vector2.One * 0.5f, Color.White);
+            Draw.SpriteBatch.End();
+        }
     }
 }
