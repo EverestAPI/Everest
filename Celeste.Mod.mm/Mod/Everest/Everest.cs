@@ -700,8 +700,14 @@ namespace Celeste.Mod {
                                 continue; // dependencies are still missing!
 
                             Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
-                            entry.Item2?.Invoke();
-                            Loader.LoadMod(entry.Item1);
+
+                            if (Loader.DependencyLoaded(entry.Item1)) {
+                                // a duplicate of the mod was loaded while it was sitting in the delayed list.
+                                Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1} already loaded!");
+                            } else {
+                                entry.Item2?.Invoke();
+                                Loader.LoadMod(entry.Item1);
+                            }
                             Loader.Delayed.RemoveAt(i);
 
                             // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
