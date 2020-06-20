@@ -1,25 +1,16 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+﻿#pragma warning disable CS0414 // The field 'patch_IntroCrusher.triggered' is assigned but its value is never used
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
 using Monocle;
-using Celeste.Mod.Meta;
+using MonoMod;
 using System.Collections;
+using System.Linq;
 
 namespace Celeste {
     // : Solid because base.Added
+    [PatchIntroCrusherInterface]
     class patch_IntroCrusher : Solid {
 
         // We're effectively in IntroCrusher, but still need to "expose" private fields to our mod.
@@ -27,6 +18,12 @@ namespace Celeste {
         private TileGrid tilegrid;
 
         public string levelFlags;
+
+        private bool manualTrigger;
+        private float delay;
+        private bool triggered;
+
+        private float speed;
 
         public patch_IntroCrusher(Vector2 position, int width, int height, Vector2 node)
             : base(position, width, height, true) {
@@ -39,6 +36,11 @@ namespace Celeste {
             orig_ctor(data, offset);
 
             levelFlags = data.Attr("flags");
+
+            manualTrigger = data.Bool("manualTrigger");
+            delay = data.Float("delay", 1.2f);
+
+            speed = data.Float("speed", 2f);
 
             string tiletype = data.Attr("tiletype");
             if (!string.IsNullOrEmpty(tiletype)) {
@@ -64,7 +66,23 @@ namespace Celeste {
             }
         }
 
+        [PatchInterface]
+        public void Trigger() {
+            if (manualTrigger)
+                triggered = true;
+        }
+
+        [PatchInterface]
+        public void StartTriggered() {
+            if (manualTrigger) {
+                triggered = true;
+                Position = end;
+                Remove(Get<Coroutine>());
+            }
+        }
+
         [MonoModIgnore]
+        [PatchIntroCrusherSequence]
         private extern IEnumerator Sequence();
 
     }
