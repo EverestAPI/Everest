@@ -101,6 +101,25 @@
 	
 	UPDATER_SRC_BUILDBOT= 			Constructions automatiques
 	
+# Everest Updater
+	EVERESTUPDATER_NOTSUPPORTED=	La mise à jour n'est pas supportée sur cette plateforme - annulation.
+	EVERESTUPDATER_NOUPDATE=		Pas de mise à jour à installer - annulation.
+	EVERESTUPDATER_UPDATING=		Mise à jour vers la version {0} (branche : {1}) @ {2}
+	EVERESTUPDATER_DOWNLOADING=		Téléchargement
+	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Téléchargement :
+	EVERESTUPDATER_DOWNLOADFAILED=	Le téléchargement a échoué.
+	EVERESTUPDATER_DOWNLOADFINISHED=	Téléchargement terminé.
+	EVERESTUPDATER_EXTRACTING=		Extraction du .zip de la mise à jour
+	EVERESTUPDATER_ZIPENTRIES=		fichiers
+	EVERESTUPDATER_EXTRACTIONFAILED=	L'extraction a échoué.
+	EVERESTUPDATER_EXTRACTIONFINISHED=	Extraction terminée.
+	EVERESTUPDATER_RESTARTING=		Redémarrage
+	EVERESTUPDATER_RESTARTINGIN=	Redémarrage dans {0}
+	EVERESTUPDATER_STARTINGFAILED=	Le lancement de l'installateur a échoué.
+	EVERESTUPDATER_ERRORHINT1=		Merci de créer une "issue" sur GitHub @ https://github.com/EverestAPI/Everest
+	EVERESTUPDATER_ERRORHINT2=		ou de rejoindre le salon #modding_help sur Discord (invitation sur le dépôt GitHub),
+	EVERESTUPDATER_ERRORHINT3=		et envoyez votre log.txt.
+
 # Mod Updater
 	MODUPDATECHECKER_MENU_TITLE=	MISE À JOUR DES MODS
 	MODUPDATECHECKER_NOUPDATE=		Aucune mise à jour disponible
@@ -135,6 +154,7 @@
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Téléchargement de la base de données de mods...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Certains de vos mods demandent une version plus récente d'Everest. Installez-la depuis le menu "Changer de version d'Everest".
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest va être mis à jour vers la version {0} pour que certains mods puissent fonctionner. Appuyez sur Confirmer pour continuer.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERREUR: {0} possède plusieurs versions et ne peut pas être installé automatiquement. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ATTENTION: {0}.zip est dans votre blacklist. Retirez-le de la blacklist pour pouvoir l'utiliser comme une dépendance.

@@ -260,7 +260,7 @@ namespace Celeste.Mod {
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
                 if (!Flags.SupportUpdatingEverest) {
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
-                    progress.LogLine("Updating not supported on this platform - cancelling.");
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTSUPPORTED"));
                     return;
                 }
 
@@ -269,7 +269,7 @@ namespace Celeste.Mod {
                 if (version == null) {
                     // Exit immediately.
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
-                    progress.LogLine("No update - cancelling.");
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOUPDATE"));
                     return;
                 }
 
@@ -277,46 +277,46 @@ namespace Celeste.Mod {
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
                 // Last line printed on error.
-                const string errorHint = "\nPlease create a new issue on GitHub @ https://github.com/EverestAPI/Everest\nor join the #modding_help channel on Discord (invite in the repo).\nMake sure to upload your log.txt";
+                string errorHint = $"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}";
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
 
-                progress.LogLine($"Updating to {version.Name} (branch: {version.Branch}) @ {version.URL}");
+                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Branch, version.URL));
 
-                progress.LogLine($"Downloading");
+                progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADING"));
                 try {
                     DownloadFileWithProgress(version.URL, zipPath, (position, length, speed) => {
                         if (length > 0) {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
+                                $"{Dialog.Clean("EVERESTUPDATER_DOWNLOADING_PROGRESS")} {((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                             progress.Progress = position;
                         } else {
                             progress.Lines[progress.Lines.Count - 1] =
-                                $"Downloading: {((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
+                                $"{Dialog.Clean("EVERESTUPDATER_DOWNLOADING_PROGRESS")} {((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s";
                         }
 
                         progress.ProgressMax = (int) length;
                         return true; // continue downloading
                     });
                 } catch (Exception e) {
-                    progress.LogLine("Download failed!");
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
                     return;
                 }
-                progress.LogLine("Download finished.");
+                progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
-                progress.LogLine("Extracting update .zip");
+                progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
                     using (ZipFile zip = new ZipFile(zipPath)) {
-                        progress.LogLine($"{zip.Entries.Count} entries");
+                        progress.LogLine($"{zip.Entries.Count} {Dialog.Clean("EVERESTUPDATER_ZIPENTRIES")}");
                         progress.Progress = 0;
                         progress.ProgressMax = zip.Entries.Count;
 
@@ -342,24 +342,21 @@ namespace Celeste.Mod {
                         }
                     }
                 } catch (Exception e) {
-                    progress.LogLine("Extraction failed!");
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
                     return;
                 }
-                progress.LogLine("Extraction finished.");
+                progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
 
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
-                String action = "Restarting";
-                if (Environment.OSVersion.Platform == PlatformID.Unix) {
-                    action = "Updating";
-                }
+                string action = Dialog.Clean("EVERESTUPDATER_RESTARTING");
                 progress.LogLine(action);
                 for (int i = 3; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = $"{action} in {i}";
+                    progress.Lines[progress.Lines.Count - 1] = string.Format(Dialog.Get("EVERESTUPDATER_RESTARTINGIN"), i);
                     Thread.Sleep(1000);
                 }
                 progress.Lines[progress.Lines.Count - 1] = action;
@@ -386,13 +383,11 @@ namespace Celeste.Mod {
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
                         installer.Start();
-                        progress.LogLine("Patching the game in-place");
-                        progress.LogLine("Restarting");
                     } else {
                         installer.Start();
                     }
                 } catch (Exception e) {
-                    progress.LogLine("Starting installer failed!");
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
