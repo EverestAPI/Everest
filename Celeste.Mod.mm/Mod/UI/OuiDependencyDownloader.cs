@@ -14,6 +14,8 @@ namespace Celeste.Mod.UI {
         private bool shouldAutoExit;
         private bool shouldRestart;
 
+        private Everest.Updater.Entry everestVersionToInstall;
+
         private Task task = null;
 
         public override IEnumerator Enter(Oui from) {
@@ -41,6 +43,9 @@ namespace Celeste.Mod.UI {
         private void downloadAllDependencies() {
             // 1. Compute the list of dependencies we must download.
             LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE"));
+
+            Everest.Updater.Entry everestVersionToInstall = null;
+
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
             if (availableDownloads == null) {
                 shouldAutoExit = false;
@@ -58,7 +63,7 @@ namespace Celeste.Mod.UI {
                 Dictionary<string, EverestModuleMetadata> modsToUpdateCurrentVersions = new Dictionary<string, EverestModuleMetadata>();
 
                 // Everest should be updated to satisfy a dependency on Everest
-                bool shouldUpdateEverest = false;
+                bool shouldUpdateEverestManually = false;
 
                 // these mods are absent from the database
                 HashSet<string> modsNotFound = new HashSet<string>();
@@ -79,10 +84,21 @@ namespace Celeste.Mod.UI {
 
                     } else if (dependency.Name == "Everest") {
                         Logger.Log("OuiDependencyDownloader", $"Everest should be updated");
-                        shouldUpdateEverest = true;
                         shouldAutoExit = false;
 
-                    // TODO: maybe check more precisely for blacklisted mods? We're only basing ourselves on the name here.
+                        if (dependency.Version.Major != 1 || dependency.Version.Build > 0 || dependency.Version.Revision > 0) {
+                            // the Everest version is not 1.XXX.0.0: Everest should be updated manually because this shouldn't happen.
+                            shouldUpdateEverestManually = true;
+
+                        } else if (!shouldUpdateEverestManually && (everestVersionToInstall == null || everestVersionToInstall.Build < dependency.Version.Minor)) {
+                            everestVersionToInstall = findEverestVersionToInstall(dependency.Version.Minor);
+                            if (everestVersionToInstall == null) {
+                                // a suitable version was not found! so, it should be installed manually.
+                                shouldUpdateEverestManually = true;
+                            }
+                        }
+
+                        // TODO: maybe check more precisely for blacklisted mods? We're only basing ourselves on the name here.
                     } else if (Everest.Loader.Blacklist.Contains($"{dependency.Name}.zip")) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
                         modsBlacklisted.Add(dependency.Name);
@@ -139,7 +155,7 @@ namespace Celeste.Mod.UI {
                     downloadDependency(modToUpdate, modsToUpdateCurrentVersions[modToUpdate.Name]);
 
                 // display all mods that couldn't be accounted for
-                if (shouldUpdateEverest)
+                if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
                 foreach (string mod in modsNotFound)
@@ -175,6 +191,10 @@ namespace Celeste.Mod.UI {
                     Exit();
                 }
 
+            } else if (everestVersionToInstall != null) {
+                LogLine("\n" + string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_EVEREST_UPDATE"), everestVersionToInstall.Build));
+                this.everestVersionToInstall = everestVersionToInstall;
+
             } else if (shouldRestart) {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART"));
 
@@ -195,6 +215,20 @@ namespace Celeste.Mod.UI {
             }
 
             return Everest.Loader.VersionSatisfiesDependency(requiredVersion, databaseVersion);
+        }
+
+        private Everest.Updater.Entry findEverestVersionToInstall(int requestedBuild) {
+            foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
+                foreach (Everest.Updater.Entry entry in source.Entries) {
+                    if (entry.Build >= requestedBuild) {
+                        // we found a suitable build! return it.
+                        return entry;
+                    }
+                }
+            }
+
+            // we checked the whole version list and didn't find anything suitable, so...
+            return null;
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {
@@ -254,8 +288,14 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            // handle pressing Confirm to install a new Everest version
+            if (everestVersionToInstall != null) {
+                if (Input.MenuConfirm.Pressed && Focused) {
+                    Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>(), everestVersionToInstall);
+                }
+            }
             // handle pressing the Back key
-            if (task != null && !shouldAutoExit && (task.IsCompleted || task.IsCanceled || task.IsFaulted) && Input.MenuCancel.Pressed) {
+            else if (task != null && !shouldAutoExit && (task.IsCompleted || task.IsCanceled || task.IsFaulted) && Input.MenuCancel.Pressed && Focused) {
                 if (shouldRestart) {
                     Everest.QuickFullRestart();
                 } else {
