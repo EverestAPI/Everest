@@ -7,7 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste {
     class patch_PreviewRecording : PreviewRecording {
-        private Session currentSession;
+        public Session CurrentSession;
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [ProxyFileCalls] // ... except for proxying all System.IO.File.* calls to Celeste.Mod.FileProxy.*
@@ -23,7 +23,11 @@ namespace Celeste {
         public void ctor(string filename) {
             orig_ctor(filename);
 
-            currentSession = (Engine.Scene as Level)?.Session;
+            if (Engine.Scene is patch_PreviewRecording previewDialog) {
+                CurrentSession = previewDialog.CurrentSession;
+            } else {
+                CurrentSession = (Engine.Scene as Level)?.Session;
+            }
         }
         
         public extern void orig_Update();
@@ -35,8 +39,8 @@ namespace Celeste {
 
         private void PressCancelBackToPreviousScene() {
             if (Input.ESC.Pressed || Input.MenuCancel.Pressed) {
-                if (currentSession != null) {
-                    Engine.Scene = new LevelLoader(currentSession);
+                if (CurrentSession != null) {
+                    Engine.Scene = new LevelLoader(CurrentSession);
                 } else {
                     Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen);
                 }
