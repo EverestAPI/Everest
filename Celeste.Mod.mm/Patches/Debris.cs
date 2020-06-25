@@ -3,6 +3,7 @@
 
 using Microsoft.Xna.Framework;
 using Monocle;
+using System.Collections.Generic;
 
 namespace Celeste {
     class patch_Debris : Debris {
@@ -17,8 +18,10 @@ namespace Celeste {
         public new Debris Init(Vector2 pos, char tileset, bool playSound) {
             patch_Debris debris = (patch_Debris) orig_Init(pos, tileset, playSound);
 
-            if (((patch_Autotiler) GFX.FGAutotiler).TryGetCustomDebris(out string path, tileset))
-                debris.image.Texture = GFX.Game["debris/" + path];
+            if (((patch_Autotiler) GFX.FGAutotiler).TryGetCustomDebris(out string path, tileset)) {
+                List<MTexture> textures = GFX.Game.GetAtlasSubtextures("debris/" + path);
+                debris.image.Texture = Calc.Choose(Calc.Random, textures);
+            }
 
             return debris;
         }
