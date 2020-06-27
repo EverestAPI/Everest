@@ -41,6 +41,8 @@ namespace Celeste {
                 heartIsEnd = mapMetaModeProperties.HeartIsEnd.Value;
             }
 
+            heartIsEnd &= !IsFake;
+
             if (heartIsEnd) {
                 List<IStrawberry> strawbs = new List<IStrawberry>();
                 ReadOnlyCollection<Type> regBerries = StrawberryRegistry.GetBerryTypes();
@@ -61,7 +63,7 @@ namespace Celeste {
         private bool IsCompleteArea(bool value) {
             MapMetaModeProperties meta = (Scene as Level)?.Session.MapData.GetMeta();
             if (meta?.HeartIsEnd != null)
-                return meta.HeartIsEnd.Value;
+                return meta.HeartIsEnd.Value && !IsFake;
 
             return value;
         }
