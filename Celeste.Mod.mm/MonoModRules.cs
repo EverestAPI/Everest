@@ -296,12 +296,6 @@ namespace MonoMod {
     class PatchFakeHeartDialogAttribute : Attribute { };
 
     /// <summary>
-    /// Add ITriggerable interface to the IntroCrusher class.
-    /// </summary>
-    [MonoModCustomAttribute("PatchIntroCrusherInterface")]
-    class PatchIntroCrusherInterfaceAttribute : Attribute { };
-
-    /// <summary>
     /// Include checks for manual triggering.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
@@ -2389,14 +2383,6 @@ namespace MonoMod {
                     }
                 }
             }
-        }
-
-        public static void PatchIntroCrusherInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
-            InterfaceImplementation ITriggerable = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.Entities.ITriggerable"));
-            if (ITriggerable == null)
-                return;
-
-            ((TypeDefinition) provider).Interfaces.Add(ITriggerable);
         }
 
         public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {

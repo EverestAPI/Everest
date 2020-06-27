@@ -2,6 +2,7 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -10,7 +11,6 @@ using System.Linq;
 
 namespace Celeste {
     // : Solid because base.Added
-    [PatchIntroCrusherInterface]
     class patch_IntroCrusher : Solid {
 
         // We're effectively in IntroCrusher, but still need to "expose" private fields to our mod.
@@ -47,6 +47,8 @@ namespace Celeste {
                 Remove(tilegrid);
                 Add(tilegrid = GFX.FGAutotiler.GenerateBox(tiletype[0], data.Width / 8, data.Height / 8).TileGrid);
             }
+
+            Add(new EntityTriggerListener(Trigger, StartTriggered));
         }
 
         public extern void orig_Added(Scene scene);
@@ -66,13 +68,11 @@ namespace Celeste {
             }
         }
 
-        [PatchInterface]
         public void Trigger() {
             if (manualTrigger)
                 triggered = true;
         }
 
-        [PatchInterface]
         public void StartTriggered() {
             if (manualTrigger) {
                 triggered = true;
