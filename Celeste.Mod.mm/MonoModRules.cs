@@ -307,6 +307,18 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
     class PatchIntroCrusherSequenceAttribute : Attribute { };
 
+    /// <summary>
+    /// Add support for onlyX attribute.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLookoutRoutine")]
+    class PatchLookoutRoutineAttribute : Attribute { };
+
+    /// <summary>
+    /// Add support for onlyX attribute.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLookoutHudRender")]
+    class PatchLookoutHudRenderAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2408,7 +2420,7 @@ namespace MonoMod {
 
             FieldReference f_this = null;
 
-            // The gem collection routine is stored in a compiler-generated method.
+            // The introcrusher sequence routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
                     continue;
@@ -2488,6 +2500,107 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                     instr.OpCode = OpCodes.Ldfld;
                     instr.Operand = f_speed;
+                }
+            }
+        }
+
+        public static void PatchLookoutRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_onlyX = method.DeclaringType.FindField("onlyX");
+
+            FieldReference f_hud = method.DeclaringType.FindField("hud");
+            FieldReference f_Hud_OnlyX = f_hud.FieldType.Resolve().FindField("OnlyX");
+
+            FieldReference f_vector2_Y = MonoModRule.Modder.Module.ImportReference(MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve().FindField("Y"));
+
+            FieldReference f_this = null;
+
+            // The lookout routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                // Copy the value in "onlyX" into the corresponding field in Lookout.Hud
+                if (instr.OpCode == OpCodes.Stfld && ((FieldReference) instr.Operand).Name == "OnlyY") {
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_hud));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_onlyX));
+                    instrs.Insert(++instri, il.Create(OpCodes.Stfld, f_Hud_OnlyX));
+                }
+
+                // If onlyX is true, disable any Y movement
+                if (instr.OpCode == OpCodes.Stfld && ((FieldReference) instr.Operand).Name == "X" &&
+                    instrs[instri - 1].OpCode == OpCodes.Ldc_R4) {
+                    // Create the first instruction of our code block, and make the previous check (for onlyY) break to it.
+                    Instruction patchBreakTarget = il.Create(OpCodes.Ldarg_0);
+                    Instruction breakInstr = instr;
+                    while (breakInstr.OpCode != OpCodes.Brfalse_S)
+                        breakInstr = breakInstr.Previous;
+                    breakInstr.Operand = patchBreakTarget;
+
+                    Instruction breakTarget = instrs[instri + 1]; // The break target for our code block.
+
+                    // Get the instruction that loads the Vector2 we're modifying.
+                    Instruction vector2Loc = il.Create(instrs[instri - 2].OpCode, instrs[instri - 2].Operand);
+
+                    instrs.Insert(++instri, patchBreakTarget);
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_onlyX));
+                    instrs.Insert(++instri, il.Create(OpCodes.Brfalse_S, breakTarget));
+                    // Steam FNA stores the Vector2 in a compiler generated field.
+                    if (vector2Loc.OpCode == OpCodes.Ldflda)
+                        instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(++instri, vector2Loc);
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldc_R4, 0f));
+                    instrs.Insert(++instri, il.Create(OpCodes.Stfld, f_vector2_Y));
+
+                    break; // We only want this to be applied to the first occurrence.
+                }
+            }
+        }
+
+        public static void PatchLookoutHudRender(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            FieldReference f_TrackMode = method.DeclaringType.FindField("TrackMode");
+            FieldReference f_OnlyX = method.DeclaringType.FindField("OnlyX");
+            if (f_TrackMode == null || f_OnlyX == null)
+                return;
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldstr && ((string) instr.Operand) == "towerarrow") {
+                    Instruction branchTarget = instr;
+                    while (branchTarget.OpCode != OpCodes.Ldfld || ((FieldReference) branchTarget.Operand).Name != "TrackMode") {
+                        branchTarget = branchTarget.Next;
+                    }
+                    branchTarget = branchTarget.Previous;
+
+                    instri += 3; // Move after the current block of code.
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_TrackMode));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue, branchTarget));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_OnlyX));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue, branchTarget));
                 }
             }
         }
