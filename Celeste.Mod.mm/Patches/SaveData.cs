@@ -19,6 +19,8 @@ namespace Celeste {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
+        public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
+
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
 
@@ -293,6 +295,9 @@ namespace Celeste {
             if (LevelSets == null)
                 LevelSets = new List<LevelSetStats>();
 
+            if (LevelSetRecycleBin == null)
+                LevelSetRecycleBin = new List<LevelSetStats>();
+
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
 
@@ -300,10 +305,18 @@ namespace Celeste {
             foreach (AreaData area in AreaData.Areas) {
                 string set = area.GetLevelSet();
                 if (!LevelSets.Exists(other => other.Name == set)) {
-                    LevelSets.Add(new LevelSetStats {
-                        Name = set,
-                        UnlockedAreas = set == "Celeste" ? UnlockedAreas_Unsafe : 0
-                    });
+                    LevelSetStats recycleBinLevelSet = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set);
+                    if (recycleBinLevelSet != null) {
+                        // the level set is actually in the recycle bin - restore it.
+                        LevelSets.Add(recycleBinLevelSet);
+                        LevelSetRecycleBin.Remove(recycleBinLevelSet);
+                    } else {
+                        // create a new LevelSetStats entry.
+                        LevelSets.Add(new LevelSetStats {
+                            Name = set,
+                            UnlockedAreas = set == "Celeste" ? UnlockedAreas_Unsafe : 0
+                        });
+                    }
                 }
             }
 
@@ -317,8 +330,15 @@ namespace Celeste {
 
                 int offset = set.AreaOffset;
                 if (offset == -1) {
-                    // LevelSet gone - let's remove it to prevent any unwanted accesses.
-                    // We previously kept the LevelSetStats around in case the levelset resurfaces later on, but as it turns out, this breaks some stuff.
+                    // LevelSet gone - let's move it to the recycle bin.
+                    LevelSetStats levelSetAlreadyInRecycleBin = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set.Name);
+                    if (levelSetAlreadyInRecycleBin != null) {
+                        // a level set with the same name already exists in the recycle bin - replace it.
+                        LevelSetRecycleBin.Remove(levelSetAlreadyInRecycleBin);
+                    }
+                    LevelSetRecycleBin.Add(set);
+
+                    // now, remove it to prevent any unwanted access.
                     LevelSets.RemoveAt(lsi);
                     lsi--;
                     continue;
