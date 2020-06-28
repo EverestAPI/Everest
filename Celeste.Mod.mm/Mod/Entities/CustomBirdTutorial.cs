@@ -8,7 +8,7 @@ using MonoMod.Utils;
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/customBirdTutorial")]
     [Tracked]
-    class CustomBirdTutorial : BirdNPC {
+    public class CustomBirdTutorial : BirdNPC {
         public string BirdId;
         private bool onlyOnce;
         private bool caw;

@@ -8,12 +8,20 @@ namespace Celeste {
         public static extern void orig_Initialize();
         public static void Initialize() {
             orig_Initialize();
+
+            foreach (EverestModule mod in Everest._Modules)
+                mod.OnInputInitialize();
+                    
             Everest.Events.Input.Initialize();
         }
 
         public static extern void orig_Deregister();
         public static void Deregister() {
             orig_Deregister();
+
+            foreach (EverestModule mod in Everest._Modules)
+                mod.OnInputDeregister();
+
             Everest.Events.Input.Deregister();
         }
 

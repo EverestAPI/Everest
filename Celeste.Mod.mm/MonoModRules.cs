@@ -260,12 +260,6 @@ namespace MonoMod {
     class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
 
     /// <summary>
-    /// Patch the hardcoded DelayTime in TriggerSpikes to make it customizable.
-    /// </summary>
-    [MonoModCustomMethodAttribute("PatchTriggerSpikesDelayTime")]
-    class PatchTriggerSpikesDelayTimeAttribute : Attribute { };
-
-    /// <summary>
     /// Patch the fake heart color to make it customizable.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchFakeHeartColor")]
@@ -277,6 +271,35 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
+    /// <summary>
+    /// Include the option to use Y range of trigger nodes.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchRumbleTriggerAwake")]
+    class PatchRumbleTriggerAwakeAttribute : Attribute { };
+
+    /// <summary>
+    /// Include check for custom events.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
+    class PatchEventTriggerOnEnterAttribute : Attribute { };
+
+    /// <summary>
+    /// Modify collision to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchWaterUpdate")]
+    class PatchWaterUpdateAttribute : Attribute { };
+
+    /// <summary>
+    /// Add custom dialog to fake hearts.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
+    class PatchFakeHeartDialogAttribute : Attribute { };
+
+    /// <summary>
+    /// Include checks for manual triggering.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
+    class PatchIntroCrusherSequenceAttribute : Attribute { };
 
     static class MonoModRules {
 
@@ -2021,26 +2044,6 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchTriggerSpikesDelayTime(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_customDelayTime = MonoModRule.Modder.FindType("Celeste.TriggerSpikes").Resolve().FindField("customDelayTime");
-            FieldDefinition f_Parent = method.DeclaringType.FindField("Parent");
-            if (f_customDelayTime == null || f_Parent == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 0.4f) {
-                    // replace 0.4f with this.Parent.customDelayTime
-                    instr.OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_Parent));
-                    instrs.Insert(instri + 2, il.Create(OpCodes.Ldfld, f_customDelayTime));
-                }
-            }
-        }
-
         public static void PatchFakeHeartColor(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_getCustomColor = method.DeclaringType.FindMethod("Celeste.AreaMode _getCustomColor(Celeste.AreaMode,Celeste.FakeHeart)");
             if (m_getCustomColor == null)
@@ -2071,6 +2074,406 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Japanese") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_shouldDisplaySwitchAlphabetPrompt;
+                }
+            }
+        }
+
+        public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrig) {
+            MethodDefinition m_entity_get_Y = MonoModRule.Modder.FindType("Monocle.Entity").Resolve().FindMethod("get_Y");
+            if (m_entity_get_Y == null)
+                return;
+
+            FieldDefinition f_constrainHeight = method.DeclaringType.FindField("constrainHeight");
+            FieldDefinition f_top = method.DeclaringType.FindField("top");
+            FieldDefinition f_bottom = method.DeclaringType.FindField("bottom");
+
+            if (f_constrainHeight == null || f_top == null || f_bottom == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                /*
+                        ldloc.*
+                        callvirt	instance float32 Monocle.Entity::get_X()
+                        ldarg.0
+                        ldfld	float32 Celeste.RumbleTrigger::left
+                        blt.un.s	ldloca.s
+                        ldloc.*
+                        callvirt	instance float32 Monocle.Entity::get_X()
+                        ldarg.0
+                        ldfld	float32 Celeste.RumbleTrigger::right // We are here
+                        bgt.un.s	ldloca.s
+                     */
+                if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
+                    Instruction noYConstraintTarget = instrs[instri - 8];
+
+                    // Copy relevant instructions and modify as needed
+                    Instruction[] instrCopy = new Instruction[10];
+                    for (int i = 0; i < 10; i++) {
+                        instrCopy[i] = il.Create(instrs[instri + i - 8].OpCode, instrs[instri + i - 8].Operand);
+                        if (instrCopy[i].OpCode == OpCodes.Callvirt)
+                            instrCopy[i].Operand = m_entity_get_Y;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "left")
+                            instrCopy[i].Operand = f_top;
+                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
+                            instrCopy[i].Operand = f_bottom;
+                        if (instrCopy[i].OpCode == OpCodes.Cgt_Un) {
+                            // we are in Steam FNA, and want to replace this with a blg.un.s with the same target as 5 instructions before
+                            instrCopy[i].OpCode = OpCodes.Bgt_Un_S;
+                            instrCopy[i].Operand = instrCopy[i - 5].Operand;
+                        }
+                    }
+
+                    instri -= 8;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_constrainHeight));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, noYConstraintTarget));
+
+                    // Insert copied instructions
+                    instrs.InsertRange(instri, instrCopy);
+                    instri += instrCopy.Length;
+
+                    instri += 8;
+                }
+            }
+
+            // Fix some issues with short-form branch instructions now being out of range
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                if (instr.Operand is Instruction i &&
+                    Math.Abs(i.Offset - instr.Offset) > 102) {
+                    instr.OpCode = instr.OpCode.ToLongOp();
+                }
+            }
+        }
+
+        public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Boolean TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)");
+            if (m_TriggerCustomEvent == null)
+                return;
+
+            FieldDefinition f_Event = method.DeclaringType.FindField("Event");
+            if (f_Event == null)
+                return;
+
+            // We also need to do special work in the cctor.
+            MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
+            if (m_cctor == null)
+                return;
+
+            FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
+            if (f_LoadStrings == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
+            ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
+
+            // Remove cctor ret for simplicity. Re-add later.
+            cctor_instrs.RemoveAt(cctor_instrs.Count - 1);
+
+            TypeDefinition td_LoadStrings = f_LoadStrings.FieldType.Resolve();
+            MethodReference m_LoadStrings_Add = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("Add"));
+            m_LoadStrings_Add.DeclaringType = f_LoadStrings.FieldType;
+            MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("System.Void .ctor()"));
+            m_LoadStrings_ctor.DeclaringType = f_LoadStrings.FieldType;
+            cctor_il.Emit(OpCodes.Newobj, m_LoadStrings_ctor);
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                /* We expect something similar enough to the following:
+                ldfld     string Celeste.EventTrigger::Event // We're here
+                stloc*
+                ldloc*
+                call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 0 &&
+                        instri < instrs.Count - 4 &&
+                        instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EventTrigger::Event" &&
+                        instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
+                        instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
+                        instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                    ) {
+                    // Insert a call to our own event handler here.
+                    // If it returns true, return.
+
+                    // Load "this" onto stack
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+
+                    //Load Player parameter onto stack
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_1));
+
+                    //Load Event field onto stack again
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_Event));
+
+                    // Call our static custom event handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_TriggerCustomEvent));
+
+                    // If we returned false, branch to ldfld. We still have the event ID on stack.
+                    // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instri++;
+                    // Otherwise, pop the event and return to skip any original event handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Pop));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ret));
+                }
+
+                if (instr.OpCode == OpCodes.Ldstr) {
+                    cctor_il.Emit(OpCodes.Dup);
+                    cctor_il.Emit(OpCodes.Ldstr, instr.Operand);
+                    cctor_il.Emit(OpCodes.Callvirt, m_LoadStrings_Add);
+                    cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
+                }
+
+            }
+
+            cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
+            cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchWaterUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodReference m_Component_get_Entity = MonoModRule.Modder.Module.GetType("Monocle.Component").FindMethod("Monocle.Entity get_Entity()");
+            if (m_Component_get_Entity == null)
+                return;
+
+            MethodReference m_WaterInteraction_get_Bounds = MonoModRule.Modder.Module.GetType("Celeste.WaterInteraction").FindProperty("Bounds").GetMethod;
+            TypeReference t_Rectangle = m_WaterInteraction_get_Bounds.ReturnType;
+            if (m_WaterInteraction_get_Bounds == null || t_Rectangle == null)
+                return;
+
+            VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
+            method.Body.Variables.Add(v_Bounds);
+
+            MethodReference m_Entity_CollideCheck = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindMethod($"System.Boolean CollideRect({t_Rectangle.FullName})");
+            if (m_Entity_CollideCheck == null)
+                return;
+
+            MethodReference m_Rectangle_get_Center = MonoModRule.Modder.Module.ImportReference(t_Rectangle.Resolve().FindProperty("Center").GetMethod);
+            if (m_Rectangle_get_Center == null)
+                return;
+
+            TypeReference t_Point = m_Rectangle_get_Center.ReturnType;
+            FieldReference f_Point_Y = MonoModRule.Modder.Module.ImportReference(t_Point.Resolve().FindField("Y"));
+            MethodReference m_Point_ToVector2 = MonoModRule.Modder.Module.GetType("Celeste.Mod.Extensions").FindMethod($"Microsoft.Xna.Framework.Vector2 Celeste.Mod.Extensions::ToVector2(Microsoft.Xna.Framework.Point)");
+            if (t_Point == null || f_Point_Y == null || m_Point_ToVector2 == null)
+                return;
+
+            // Steam FNA is weird, and stores the entity in variable 5 instead of 3.
+            bool isSteamFNA = method.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                // If we have reached the end of the code to be patched, put everything back to normal.
+                if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri + 1].Operand).FullName == "Celeste.Player") {
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Ldloc_S, (byte) 4) : il.Create(OpCodes.Ldloc_2));
+                    instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_Component_get_Entity));
+                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Stloc_S, (byte) 5) : il.Create(OpCodes.Stloc_3));
+                    break;
+                }
+
+                // Load the WaterInteraction Bounds into a local variable
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Entity") {
+                    instrs[instri].Operand = m_WaterInteraction_get_Bounds;
+                    instr.Operand = m_WaterInteraction_get_Bounds;
+                    instrs[++instri].OpCode = OpCodes.Stloc_S;
+                    instrs[instri].Operand = v_Bounds;
+                }
+
+                // Retrieve the Bounds instead of the entity
+                if ((!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || (isSteamFNA && instr.OpCode == OpCodes.Ldloc_S && ((VariableReference) instr.Operand).Index == 5)) {
+                    if (instrs[instri + 1].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 1].Operand).Name == "get_Center") {
+                        instr.OpCode = OpCodes.Ldloca_S;
+                        instr.Operand = v_Bounds;
+
+                        if (instrs[instri + 2].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 2].Operand).Name == "Y") {
+                            // cast the Y position to float because it is compared to another float.
+                            instrs.Insert(instri + 3, il.Create(OpCodes.Conv_R4));
+                        }
+                    } else {
+                        instr.OpCode = OpCodes.Ldloc_S;
+                        instr.Operand = v_Bounds;
+                    }
+                }
+
+                // Replace any methods that use the entity
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).FullName == "System.Boolean Monocle.Entity::CollideCheck(Monocle.Entity)")
+                    instr.Operand = m_Entity_CollideCheck;
+
+                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Center") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_Rectangle_get_Center;
+
+                    Instruction next = instrs[++instri];
+                    if (next.OpCode == OpCodes.Ldfld)
+                        next.Operand = f_Point_Y;
+                    else
+                        instrs.Insert(instri, il.Create(OpCodes.Call, m_Point_ToVector2));
+                }
+
+                // Replace the Rectangle creation
+                if (instr.OpCode == OpCodes.Newobj && ((MethodReference) instr.Operand).FullName == "System.Void Microsoft.Xna.Framework.Rectangle::.ctor(System.Int32,System.Int32,System.Int32,System.Int32)") {
+                    instr.OpCode = OpCodes.Ldloc_S;
+                    instr.Operand = v_Bounds;
+
+                    instri--;
+
+                    // Discard previous Rectangle args
+                    while (instrs[instri].OpCode != OpCodes.Call || ((MethodReference) instrs[instri].Operand).FullName != "Monocle.Scene Monocle.Entity::get_Scene()") {
+                        instrs.RemoveAt(instri);
+                        instri--;
+                    }
+                }
+            }
+        }
+
+        public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_fakeHeartDialog = method.DeclaringType.FindField("fakeHeartDialog");
+            FieldReference f_keepGoingDialog = method.DeclaringType.FindField("keepGoingDialog");
+            if (f_fakeHeartDialog == null || f_keepGoingDialog == null)
+                return;
+
+            FieldDefinition f_this = null;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldstr) {
+                    if (((string) instr.Operand) == "CH9_FAKE_HEART") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_fakeHeartDialog;
+
+                    } else if (((string) instr.Operand) == "CH9_KEEP_GOING") {
+                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
+                        instr.OpCode = OpCodes.Ldfld;
+                        instr.Operand = f_keepGoingDialog;
+                    }
+                }
+            }
+        }
+
+        public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_triggered = method.DeclaringType.FindField("triggered");
+            FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
+            FieldReference f_delay = method.DeclaringType.FindField("delay");
+            FieldReference f_speed = method.DeclaringType.FindField("speed");
+
+
+            FieldReference f_this = null;
+
+            // The gem collection routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                f_this = method.DeclaringType.FindField("<>4__this");
+                break;
+            }
+
+            if (!method.HasBody || f_this == null)
+                return;
+
+            // Steam FNA is weird, and all the local variables are messed up.
+            bool isSteamFNA = method.Body.Variables[2].VariableType.FullName != "Celeste.Player";
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == (isSteamFNA ? OpCodes.Ldloc_1 : OpCodes.Ldloc_2) &&
+                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
+                    // Get the instruction at the beginning of this while loop.
+                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
+                    // Get the instruction after the end of this while statement
+                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_triggered));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, breakTarget));
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
+                }
+
+                if (instr.OpCode == OpCodes.Ldloc_3 && // The value stored in loc_3 is different between versions, but it still works the same.
+                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
+                    // Get the instruction at the beginning of this while loop.
+                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
+                    // Get the instruction after the end of this while statement
+                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
+                }
+
+                // Allow for custom activation delay
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 1.2f) {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_this;
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_delay));
+                }
+
+                // If the delay is less than, or equal to zero, don't add a shaker.
+                if (instr.OpCode == OpCodes.Ldarg_0 &&
+                    instrs[instri + 1].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 1].Operand).Name == "<shaker>5__3" &&
+                    instrs[instri + 2].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 2].Operand).Name == "Add") {
+                    Instruction breakTarget = instrs[instri + 3];
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_delay));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldc_R4, 0f));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ble, breakTarget));
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                }
+
+                // Allow for custom movement speed
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 2f &&
+                    instrs[instri + 1].OpCode == OpCodes.Call && ((MethodReference) instrs[instri + 1].Operand).Name == "get_DeltaTime") {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_speed;
                 }
             }
         }

@@ -59,6 +59,7 @@ namespace Celeste {
 
         public extern IEnumerator orig_Enter(Oui from);
         public override IEnumerator Enter(Oui from) {
+            Engine.Commands.Enabled = false;
             if (!Everest.Flags.IsDisabled)
                 TextInput.OnInput += OnTextInput;
             return orig_Enter(from);
@@ -66,6 +67,7 @@ namespace Celeste {
 
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
+            Engine.Commands.Enabled = true;
             if (!Everest.Flags.IsDisabled)
                 TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);

@@ -36,6 +36,12 @@ namespace Celeste {
                 Thread.CurrentThread.Name = "Main Thread";
             }
 
+            if (File.Exists("BuildIsXNA.txt"))
+                File.Delete("BuildIsXNA.txt");
+            if (File.Exists("BuildIsFNA.txt"))
+                File.Delete("BuildIsFNA.txt");
+            File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
+
             if (File.Exists("launch.txt")) {
                 args =
                     File.ReadAllLines("launch.txt")

@@ -273,7 +273,7 @@ namespace Celeste {
             /// <param name="label">Slider label</param>
             /// <param name="options"></param>
             /// <param name="startValue">Initial value</param>
-            public EnumerableSlider(string label, IEnumerable<T> options, T startValue) 
+            public EnumerableSlider(string label, IEnumerable<T> options, T startValue)
                 : base(label) {
                 foreach (T value in options) {
                     Add(value.ToString(), value, value.Equals(startValue));
@@ -286,7 +286,7 @@ namespace Celeste {
             /// <param name="label">Slider label</param>
             /// <param name="options">IEnumerable of type <see cref="KeyValuePair{T, string}"/></param>
             /// <param name="startValue">Initial value</param>
-            public EnumerableSlider(string label, IEnumerable<KeyValuePair<T, string>> options, T startValue) 
+            public EnumerableSlider(string label, IEnumerable<KeyValuePair<T, string>> options, T startValue)
                 : base(label) {
                 foreach (KeyValuePair<T, string> kvp in options) {
                     Add(kvp.Value, kvp.Key, kvp.Key.Equals(startValue));
@@ -494,7 +494,7 @@ namespace Celeste {
             /// <param name="label"></param>
             /// <param name="enterOnSelect">Expand submenu when selected</param>
             public SubMenu(string label, bool enterOnSelect) : base() {
-                //Item Constructor
+                // Item Constructor
                 ConfirmSfx = SFX.ui_main_button_select;
                 Label = label;
                 Icon = GFX.Gui["downarrow"];
@@ -510,7 +510,7 @@ namespace Celeste {
                 };
 
 
-                //Menu Constructor
+                // Menu Constructor
                 Items = new List<TextMenu.Item>();
                 delayedAddItems = new List<TextMenu.Item>();
                 Selection = -1;
@@ -623,7 +623,7 @@ namespace Celeste {
                     Selection += direction;
                     if (enterOnSelect) {
                         if (Selection < 0 || Selection >= Items.Count) {
-                            //Avoid crash when getting Current item
+                            // Avoid crash when getting Current item
                             Selection = selection;
                             Exit();
                             Container.MoveSelection(direction, true);
@@ -736,7 +736,7 @@ namespace Celeste {
             }
 
             public override float Height() {
-                //If there are no items, MenuHeight will actually be a negative number
+                // If there are no items, MenuHeight will actually be a negative number
                 if (Items.Count > 0)
                     return TitleHeight + (MenuHeight * Ease.QuadOut(ease));
                 else
@@ -757,10 +757,10 @@ namespace Celeste {
                     ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
                 base.Update();
 
-                //ease check needed to eat the first input from Container
+                // ease check needed to eat the first input from Container
                 if (Focused && ease > 0.9f) {
                     if (Input.MenuDown.Pressed && (!Input.MenuDown.Repeating || Selection != LastPossibleSelection || enterOnSelect)) {
-                         MoveSelection(1, true);
+                        MoveSelection(1, true);
                     } else if (Input.MenuUp.Pressed && (!Input.MenuUp.Repeating || Selection != FirstPossibleSelection || enterOnSelect)) {
                         MoveSelection(-1, true);
                     }
@@ -862,7 +862,7 @@ namespace Celeste {
             public string Label;
             MTexture Icon;
 
-            //Menus are stored as lists associated with a label
+            // Menus are stored as lists associated with a label
             public List<Tuple<string, List<TextMenu.Item>>> Menus { get; private set; }
 
             private List<Tuple<string, List<TextMenu.Item>>> delayedAddMenus;
@@ -934,7 +934,7 @@ namespace Celeste {
 
             public float TitleHeight { get; private set; }
 
-            //Accessor property used to smootly(ish) transition between menu heights
+            // Accessor property used to smootly(ish) transition between menu heights
             public float MenuHeight { get; private set; }
             private float _MenuHeight;
 
@@ -944,7 +944,7 @@ namespace Celeste {
             private bool containerAutoScroll;
 
             public OptionSubMenu(string label) : base() {
-                //Item Constructor
+                // Item Constructor
                 ConfirmSfx = SFX.ui_main_button_select;
                 Label = label;
                 Icon = GFX.Gui["downarrow"];
@@ -955,7 +955,7 @@ namespace Celeste {
                 MenuIndex = 0;
 
 
-                //Menu Constructor
+                // Menu Constructor
                 Menus = new List<Tuple<string, List<TextMenu.Item>>>();
                 delayedAddMenus = new List<Tuple<string, List<TextMenu.Item>>>();
 
@@ -1149,7 +1149,7 @@ namespace Celeste {
             }
 
             public override float Height() {
-                //If there are no items, MenuHeight will actually be a negative number
+                // If there are no items, MenuHeight will actually be a negative number
                 return TitleHeight + Math.Max(MenuHeight, 0);
             }
 
@@ -1168,7 +1168,7 @@ namespace Celeste {
                 base.Update();
                 if (CurrentMenu != null) {
                     if (Focused) {
-                        //ease check needed to eat the first input from this.Container
+                        // ease check needed to eat the first input from this.Container
                         if (!wasFocused) {
                             wasFocused = true;
                             goto AfterInput;
@@ -1261,7 +1261,7 @@ namespace Celeste {
                     ActiveFont.DrawOutline(">", arrowPosition, new Vector2(0.5f, 0.5f), Vector2.One, arrowColor, 2f, strokeColor);
                 }
 
-                if (CurrentMenu != null) { 
+                if (CurrentMenu != null) {
                     Vector2 itemPosition = new Vector2(top.X + ItemIndent, top.Y + TitleHeight + ItemSpacing);
                     float menuYOffset = itemPosition.Y;
                     RecalculateSize();

@@ -183,7 +183,7 @@ namespace Celeste.Mod {
                     return;
 
                 Logger.Log(LogLevel.Info, "loader", $"Possible new mod container: {e.FullPath}");
-                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"Loading new mod: {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
+                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_LOADINGNEWMOD")} {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
                     if (Directory.Exists(e.FullPath))
                         LoadDir(e.FullPath);
                     else if (e.FullPath.EndsWith(".zip"))
@@ -446,7 +446,7 @@ namespace Celeste.Mod {
                             string entryName = entry.FileName.Replace('\\', '/');
                             if (entryName == meta.DLL) {
                                 using (MemoryStream stream = entry.ExtractStream())
-                                    asm = Relinker.GetRelinkedAssembly(meta, stream);
+                                    asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
                             }
 
                             if (entryName == "main.lua") {
@@ -462,7 +462,7 @@ namespace Celeste.Mod {
                 } else {
                     if (!string.IsNullOrEmpty(meta.DLL) && File.Exists(meta.DLL)) {
                         using (FileStream stream = File.OpenRead(meta.DLL))
-                            asm = Relinker.GetRelinkedAssembly(meta, stream);
+                            asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
                     }
 
                     if (File.Exists(Path.Combine(meta.PathDirectory, "main.lua"))) {
@@ -543,10 +543,10 @@ namespace Celeste.Mod {
                     if (module == null)
                         return;
 
-                    AssetReloadHelper.Do($"Reloading mod assembly: {Path.GetFileName(e.FullPath)}", () => {
+                    AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
                         Assembly asm = null;
                         using (FileStream stream = File.OpenRead(e.FullPath))
-                            asm = Relinker.GetRelinkedAssembly(module.Metadata, stream);
+                            asm = Relinker.GetRelinkedAssembly(module.Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
 
                         if (asm == null) {
                             if (!retrying) {
@@ -559,6 +559,18 @@ namespace Celeste.Mod {
                         }
 
                         ((FileSystemWatcher) source).Dispose();
+
+                        // be sure to save this module's save data and session before reloading it, so that they are not lost.
+                        if (SaveData.Instance != null) {
+                            Logger.Log("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                            module.SaveSaveData(SaveData.Instance.FileSlot);
+
+                            if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                                Logger.Log("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                module.SaveSession(SaveData.Instance.FileSlot);
+                            }
+                        }
+
                         Unregister(module);
                         LoadModAssembly(module.Metadata, asm);
                     });
@@ -650,7 +662,7 @@ namespace Celeste.Mod {
                             foreach (ZipEntry entry in zip.Entries) {
                                 if (entry.FileName == zipPath)
                                     using (MemoryStream stream = entry.ExtractStream())
-                                        return Relinker.GetRelinkedAssembly(meta, stream);
+                                        return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
                             }
                         }
                     }
@@ -661,7 +673,7 @@ namespace Celeste.Mod {
                             path = Path.Combine(meta.PathDirectory, filePath);
                         if (File.Exists(filePath))
                             using (FileStream stream = File.OpenRead(filePath))
-                                return Relinker.GetRelinkedAssembly(meta, stream);
+                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
                     }
 
                     return null;

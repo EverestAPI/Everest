@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using System.Configuration;
+using Microsoft.Xna.Framework.Input;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -313,6 +314,81 @@ namespace Celeste.Mod {
             return false;
         }
 
+        public virtual void OnInputInitialize() {
+            if (SettingsType == null)
+                return;
+
+            object settings = _Settings;
+            if (settings == null)
+                return;
+
+            foreach (PropertyInfo prop in SettingsType.GetProperties()) {
+                if (!prop.CanRead)
+                    continue;
+
+                if (typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType)) {
+                    if (!(prop.GetValue(settings) is ButtonBinding binding)) {
+                        binding = new ButtonBinding();
+
+                        DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
+                        if (defaults != null) {
+                            if (defaults.Button != 0)
+                                binding.Buttons.Add(defaults.Button);
+                            if (defaults.Key != 0)
+                                binding.Keys.Add(defaults.Key);
+                        }
+
+                        prop.SetValue(settings, binding);
+                    }
+
+                    VirtualButton vbutton = new VirtualButton();
+                    foreach (Keys key in binding.Keys)
+                        vbutton.Nodes.Add(new VirtualButton.KeyboardKey(key));
+
+                    foreach (Buttons button_ in binding.Buttons) {
+                        Buttons button = button_;
+                        if ((button & Buttons.LeftTrigger) == Buttons.LeftTrigger) {
+                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                            button &= ~Buttons.LeftTrigger;
+                        }
+                        if ((button & Buttons.RightTrigger) == Buttons.RightTrigger) {
+                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                            button &= ~Buttons.RightTrigger;
+                        }
+                        if (button != 0) {
+                            vbutton.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, button));
+                        }
+                    }
+
+                    binding.Button = vbutton;
+
+                } else if (false) {
+                    // TODO: JoystickBindings
+                }
+            }
+        }
+
+        public virtual void OnInputDeregister() {
+            if (SettingsType == null)
+                return;
+
+            object settings = _Settings;
+            foreach (PropertyInfo prop in SettingsType.GetProperties()) {
+                if (!prop.CanRead)
+                    continue;
+
+                if (typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType)) {
+                    if (!(prop.GetValue(settings) is ButtonBinding binding))
+                        continue;
+
+                    binding.Button?.Deregister();
+
+                } else if (false) {
+                    // TODO: JoystickBindings
+                }
+            }
+        }
+
         protected virtual void CreateModMenuSectionHeader(TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
@@ -329,6 +405,24 @@ namespace Celeste.Mod {
             name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
             menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+        }
+
+        protected virtual void CreateModMenuSectionKeyBindings(TextMenu menu, bool inGame, EventInstance snapshot) {
+            menu.Add(new TextMenu.Button(Dialog.Clean("options_keyconfig")).Pressed(() => {
+                menu.Focused = false;
+                Engine.Scene.Add(new ModuleSettingsKeyboardConfigUI(this) {
+                    OnClose = () => menu.Focused = true
+                });
+                Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
+            }));
+
+            menu.Add(new TextMenu.Button(Dialog.Clean("options_btnconfig")).Pressed(() => {
+                menu.Focused = false;
+                Engine.Scene.Add(new ModuleSettingsButtonConfigUI(this) {
+                    OnClose = () => menu.Focused = true
+                });
+                Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
+            }));
         }
 
         private Type _PrevSettingsType;
@@ -517,6 +611,28 @@ namespace Celeste.Mod {
                     item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
+            foreach (PropertyInfo prop in type.GetProperties()) {
+                if ((attribInGame = prop.GetCustomAttribute<SettingInGameAttribute>()) != null &&
+                    attribInGame.InGame != inGame)
+                    continue;
+
+                if (prop.GetCustomAttribute<SettingIgnoreAttribute>() != null)
+                    continue;
+
+                if (!prop.CanRead || !prop.CanWrite)
+                    continue;
+
+                if (!typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType))
+                    continue;
+                
+                if (!headerCreated) {
+                    CreateModMenuSectionHeader(menu, inGame, snapshot);
+                    headerCreated = true;
+                }
+                
+                CreateModMenuSectionKeyBindings(menu, inGame, snapshot);
+                break;
+            }
         }
 
         /// <summary>

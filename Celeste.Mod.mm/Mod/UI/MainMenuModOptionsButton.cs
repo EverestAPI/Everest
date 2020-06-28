@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 
@@ -19,12 +20,20 @@ namespace Celeste.Mod.UI {
             : base(labelName, iconName, oui, targetPosition, tweenFrom, onConfirm) {
 
             int delayedModCount = Everest.Loader.Delayed.Count;
+
+            // if the update check failed or isn't done yet, assume there are no updates (no message in main menu).
+            int modUpdatesAvailable = ModUpdaterHelper.IsAsyncUpdateCheckingDone() ? (ModUpdaterHelper.GetAsyncLoadedModUpdates()?.Count ?? 0) : 0;
+
             if (delayedModCount > 1) {
                 subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD"), delayedModCount);
             } else if (delayedModCount == 1) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD");
             } else if (Everest.Updater.HasUpdate) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_UPDATE_AVAILABLE");
+            } else if (modUpdatesAvailable > 1) {
+                subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE"), modUpdatesAvailable);
+            } else if (modUpdatesAvailable == 1) {
+                subText = Dialog.Clean("MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE");
             } else {
                 subText = null;
             }

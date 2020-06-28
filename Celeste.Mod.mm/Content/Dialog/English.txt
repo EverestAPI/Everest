@@ -32,6 +32,8 @@
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			An Everest update is available
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		An update is available for 1 mod
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Updates are available for {0} mods
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
@@ -95,7 +97,6 @@
 	MAPLIST_TYPE= 			From
 	MAPLIST_TYPE_ALLMODS= 	All Mods
 	MAPLIST_SIDE= 			Side
-	MAPLIST_RELOAD= 		Reload
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Uncategorized
 	MAPLIST_SEARCH=			Search
@@ -117,6 +118,25 @@
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 	
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
+	
+# Everest Updater
+	EVERESTUPDATER_NOTSUPPORTED=	Updating not supported on this platform - cancelling.
+	EVERESTUPDATER_NOUPDATE=		No update - cancelling.
+	EVERESTUPDATER_UPDATING=		Updating to {0} (branch: {1}) @ {2}
+	EVERESTUPDATER_DOWNLOADING=		Downloading
+	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Downloading:
+	EVERESTUPDATER_DOWNLOADFAILED=	Download failed!
+	EVERESTUPDATER_DOWNLOADFINISHED=	Download finished.
+	EVERESTUPDATER_EXTRACTING=		Extracting update .zip
+	EVERESTUPDATER_ZIPENTRIES=		entries
+	EVERESTUPDATER_EXTRACTIONFAILED=	Extraction failed!
+	EVERESTUPDATER_EXTRACTIONFINISHED=	Extraction finished.
+	EVERESTUPDATER_RESTARTING=		Restarting
+	EVERESTUPDATER_RESTARTINGIN=	Restarting in {0}
+	EVERESTUPDATER_STARTINGFAILED=	Starting installer failed!
+	EVERESTUPDATER_ERRORHINT1=		Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest
+	EVERESTUPDATER_ERRORHINT2=		or join the #modding_help channel on Discord (invite in the repo).
+	EVERESTUPDATER_ERRORHINT3=		Make sure to upload your log.txt
 
 # Mod Updater
 	MODUPDATECHECKER_MENU_TITLE=	MOD UPDATES
@@ -152,6 +172,7 @@
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest will be updated to {0} to make some mods work. Press Confirm to continue.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			WARNING: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
@@ -193,3 +214,15 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Zip Files
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Directories
 	MODOPTIONS_MODTOGGLE_BINS=			Map Bin Files
+
+# Asset Reload Helper
+	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map
+	ASSETRELOADHELPER_RELOADINGLEVEL=		Reloading level
+	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Unloading texture:
+	ASSETRELOADHELPER_RELOADINGMAPNAME=		Reloading map:
+	ASSETRELOADHELPER_RELOADINGALLMAPS=		Reloading all maps
+	ASSETRELOADHELPER_RELOADINGDIALOG=		Reloading dialog:
+	ASSETRELOADHELPER_RELOADINGTEXTURE=		Reloading texture:
+	ASSETRELOADHELPER_RELOADINGTEXTURES=	Reloading textures:
+	ASSETRELOADHELPER_LOADINGNEWMOD=		Loading new mod:
+	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Reloading mod assembly:

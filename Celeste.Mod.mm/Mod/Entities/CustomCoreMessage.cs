@@ -14,17 +14,20 @@ namespace Celeste.Mod.Entities {
     /// 
     /// Checks for the following new attributes:
     /// - `string dialog` (default: `app_ending`)
+    /// - `bool outline` (default: `false`)
     /// </summary>
     [CustomEntity("everest/coreMessage")]
     public class CustomCoreMessage : Entity {
 
         private string text;
         private float alpha;
+        private bool outline;
 
         public CustomCoreMessage(EntityData data, Vector2 offset)
             : base(data.Position + offset) {
             Tag = Tags.HUD;
             text = Dialog.Clean(data.Attr("dialog", "app_ending")).Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)[data.Int("line", 0)];
+            outline = data.Bool("outline");
         }
 
         public override void Update() {
@@ -41,7 +44,10 @@ namespace Celeste.Mod.Entities {
             Vector2 pos = (Position - cam + (Position - posTmp) * 0.2f) * 6f;
             if (SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode)
                 pos.X = 1920f - pos.X;
-            ActiveFont.Draw(text, pos, new Vector2(0.5f, 0.5f), Vector2.One * 1.25f, Color.White * alpha);
+            if (outline)
+                ActiveFont.DrawOutline(text, pos, new Vector2(0.5f, 0.5f), Vector2.One * 1.25f, Color.White * alpha, 2f, Color.Black * alpha);
+            else
+                ActiveFont.Draw(text, pos, new Vector2(0.5f, 0.5f), Vector2.One * 1.25f, Color.White * alpha);
         }
 
     }

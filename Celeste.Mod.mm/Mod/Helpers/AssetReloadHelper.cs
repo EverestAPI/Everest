@@ -15,9 +15,10 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public class AssetReloadHelper : Scene {
-
         private static readonly FieldInfo f_Engine_scene = typeof(Engine).GetField("scene", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo f_Engine_nextScene = typeof(Engine).GetField("nextScene", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        internal static string AreaReloadLock = "lock";
 
         private static readonly Queue<ReloadAction> QueuePending = new Queue<ReloadAction>();
         private static readonly Queue<ReloadAction> QueueDone = new Queue<ReloadAction>();
@@ -133,7 +134,7 @@ namespace Celeste.Mod {
                     return;
 
                 ReloadingLevel = true;
-                Do($"Reloading level", () => {
+                Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGLEVEL"), () => {
                     try {
                         LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
 
@@ -179,6 +180,44 @@ namespace Celeste.Mod {
                         patch_Level.ShouldAutoPause = false;
                     }
                 });
+            }
+        }
+
+        public static void ReloadAllMaps() {
+            SaveData saveData = SaveData.Instance;
+
+            // ChapterSelect only updates the ID.
+            string lastAreaSID = saveData == null ? null : (AreaData.Get(saveData.LastArea.ID)?.ToKey().GetSID() ?? AreaKey.Default.GetSID());
+            // Note: SaveData.Instance.LastArea is reset by AreaData.Interlude_Safe -> SaveData.LevelSetStats realizing that AreaOffset == -1
+            // Store the "resolved" last selected area in a local variable, then re-set it after reloading.
+
+            lock (AreaReloadLock) { // prevent anything from calling AreaData.Get during this.
+                AreaData.Unload();
+                AreaData.Load();
+                AreaData.ReloadMountainViews();
+
+                // Fake a save data reload to resync the save data to the new area list.
+                if (saveData != null) {
+                    AreaData lastArea = AreaDataExt.Get(lastAreaSID);
+                    saveData.LastArea = lastArea?.ToKey() ?? AreaKey.Default;
+                    saveData.BeforeSave();
+                    saveData.AfterInitialize();
+                }
+            }
+
+            if (Engine.Scene is Overworld overworld) {
+                if (overworld.Mountain.Area >= AreaData.Areas.Count)
+                    overworld.Mountain.EaseCamera(0, AreaData.Areas[0].MountainIdle, null, true);
+
+                OuiChapterSelect chapterSelect = overworld.GetUI<OuiChapterSelect>();
+                overworld.UIs.Remove(chapterSelect);
+                overworld.Remove(chapterSelect);
+
+                chapterSelect = new OuiChapterSelect();
+                chapterSelect.Visible = false;
+                overworld.Add(chapterSelect);
+                overworld.UIs.Add(chapterSelect);
+                chapterSelect.IsStart(overworld, (Overworld.StartMode) (-1));
             }
         }
 

@@ -103,8 +103,8 @@ namespace Celeste.Mod.UI {
 
             exit = () => Overworld.Goto<T>();
 
-            //These don't prevent a negative/decimal number from being passed in via value
-            //They just disable '.' and '-'
+            // These don't prevent a negative/decimal number from being passed in via value
+            // They just disable '.' and '-'
             this.allowDecimals = allowDecimals;
             this.allowNegatives = allowNegatives;
 

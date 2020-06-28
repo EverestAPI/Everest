@@ -14,6 +14,8 @@
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Une mise à jour d'Everest est disponible
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Mise à jour disponible pour 1 mod
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
 	
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
@@ -77,7 +79,6 @@
 	MAPLIST_TYPE= 			De
 	MAPLIST_TYPE_ALLMODS= 	Tous les mods
 	MAPLIST_SIDE= 			Face
-	MAPLIST_RELOAD= 		Recharger
 	MAPLIST_LIST= 			Maps
 	MAPLIST_UNCATEGORIZED= 	Non-catégorisé
 	MAPLIST_SEARCH=			Rechercher
@@ -100,6 +101,25 @@
 	
 	UPDATER_SRC_BUILDBOT= 			Constructions automatiques
 	
+# Everest Updater
+	EVERESTUPDATER_NOTSUPPORTED=	La mise à jour n'est pas supportée sur cette plateforme - annulation.
+	EVERESTUPDATER_NOUPDATE=		Pas de mise à jour à installer - annulation.
+	EVERESTUPDATER_UPDATING=		Mise à jour vers la version {0} (branche : {1}) @ {2}
+	EVERESTUPDATER_DOWNLOADING=		Téléchargement
+	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Téléchargement :
+	EVERESTUPDATER_DOWNLOADFAILED=	Le téléchargement a échoué.
+	EVERESTUPDATER_DOWNLOADFINISHED=	Téléchargement terminé.
+	EVERESTUPDATER_EXTRACTING=		Extraction du .zip de la mise à jour
+	EVERESTUPDATER_ZIPENTRIES=		fichiers
+	EVERESTUPDATER_EXTRACTIONFAILED=	L'extraction a échoué.
+	EVERESTUPDATER_EXTRACTIONFINISHED=	Extraction terminée.
+	EVERESTUPDATER_RESTARTING=		Redémarrage
+	EVERESTUPDATER_RESTARTINGIN=	Redémarrage dans {0}
+	EVERESTUPDATER_STARTINGFAILED=	Le lancement de l'installateur a échoué.
+	EVERESTUPDATER_ERRORHINT1=		Merci de créer une "issue" sur GitHub @ https://github.com/EverestAPI/Everest
+	EVERESTUPDATER_ERRORHINT2=		ou de rejoindre le salon #modding_help sur Discord (invitation sur le dépôt GitHub),
+	EVERESTUPDATER_ERRORHINT3=		et envoyez votre log.txt.
+
 # Mod Updater
 	MODUPDATECHECKER_MENU_TITLE=	MISE À JOUR DES MODS
 	MODUPDATECHECKER_NOUPDATE=		Aucune mise à jour disponible
@@ -134,6 +154,7 @@
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Téléchargement de la base de données de mods...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Certains de vos mods demandent une version plus récente d'Everest. Installez-la depuis le menu "Changer de version d'Everest".
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest va être mis à jour vers la version {0} pour que certains mods puissent fonctionner. Appuyez sur Confirmer pour continuer.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERREUR: {0} possède plusieurs versions et ne peut pas être installé automatiquement. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ATTENTION: {0}.zip est dans votre blacklist. Retirez-le de la blacklist pour pouvoir l'utiliser comme une dépendance.
@@ -175,3 +196,15 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Fichiers ZIP
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Dossiers
 	MODOPTIONS_MODTOGGLE_BINS=			Fichiers .bin de maps
+
+# Asset Reload Helper
+	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...
+	ASSETRELOADHELPER_RELOADINGLEVEL=		Rechargement du niveau...
+	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Déchargement de la texture :
+	ASSETRELOADHELPER_RELOADINGMAPNAME=		Rechargement de la map :
+	ASSETRELOADHELPER_RELOADINGALLMAPS=		Rechargement de toutes les maps...
+	ASSETRELOADHELPER_RELOADINGDIALOG=		Rechargement des dialogues :
+	ASSETRELOADHELPER_RELOADINGTEXTURE=		Rechargement de la texture :
+	ASSETRELOADHELPER_RELOADINGTEXTURES=	Rechargement des textures :
+	ASSETRELOADHELPER_LOADINGNEWMOD=		Chargement du nouveau mod :
+	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Rechargement de la DLL :

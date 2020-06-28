@@ -4,7 +4,7 @@ using Monocle;
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/customBirdTutorialTrigger")]
     [Tracked]
-    class CustomBirdTutorialTrigger : Trigger {
+    public class CustomBirdTutorialTrigger : Trigger {
         public string BirdId;
         public bool ShowTutorial;
 

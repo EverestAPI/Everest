@@ -144,6 +144,8 @@ namespace Celeste.Mod {
                         }
                     };
 
+                    ((DefaultAssemblyResolver) _Modder.AssemblyResolver).ResolveFailure += OnRelinkerResolveFailure;
+
                     return _Modder;
                 }
                 set {
@@ -151,6 +153,24 @@ namespace Celeste.Mod {
                 }
             }
 
+            private static AssemblyDefinition OnRelinkerResolveFailure(object sender, AssemblyNameReference reference) {
+                if (reference.FullName.ToLowerInvariant().Contains("fna") || reference.FullName.ToLowerInvariant().Contains("xna")) {
+                    AssemblyName[] asmRefs = typeof(Celeste).Assembly.GetReferencedAssemblies();
+                    for (int ari = 0; ari < asmRefs.Length; ari++) {
+                        AssemblyName asmRef = asmRefs[ari];
+                        if (!asmRef.FullName.ToLowerInvariant().Contains("xna") &&
+                            !asmRef.FullName.ToLowerInvariant().Contains("fna") &&
+                            !asmRef.FullName.ToLowerInvariant().Contains("monogame")
+                        )
+                            continue;
+                        return ((DefaultAssemblyResolver) _Modder.AssemblyResolver).Resolve(AssemblyNameReference.Parse(asmRef.FullName));
+                    }
+                }
+
+                return null;
+            }
+
+            [Obsolete("Use the variant with an explicit assembly name instead.")]
             /// <summary>
             /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
             /// </summary>
@@ -161,13 +181,26 @@ namespace Celeste.Mod {
             /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
+                MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null)
+                => GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream, depResolver, checksumsExtra, prePatch);
+
+            /// <summary>
+            /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
+            /// </summary>
+            /// <param name="meta">The mod metadata, used for caching, among other things.</param>
+            /// <param name="stream">The stream to read the .dll from.</param>
+            /// <param name="depResolver">An optional dependency resolver.</param>
+            /// <param name="checksumsExtra">Any optional checksums</param>
+            /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
+            /// <returns>The loaded, relinked assembly.</returns>
+            public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
                 if (!Flags.SupportRelinkingMods) {
                     Logger.Log(LogLevel.Warn, "relinker", "Relinker disabled!");
                     return null;
                 }
 
-                string cachedPath = GetCachedPath(meta);
+                string cachedPath = GetCachedPath(meta, asmname);
                 string cachedChecksumPath = cachedPath.Substring(0, cachedPath.Length - 4) + ".sum";
 
                 string[] checksums = new string[2 + (checksumsExtra?.Length ?? 0)];
@@ -184,13 +217,13 @@ namespace Celeste.Mod {
 
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
-                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta}");
+                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
                     try {
                         Assembly asm = Assembly.LoadFrom(cachedPath);
                         _RelinkedAssemblies.Add(asm);
                         return asm;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
                         e.LogDetailed();
                         return null;
                     }
@@ -287,7 +320,7 @@ namespace Celeste.Mod {
                         }
                     }
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta}");
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
                     e.LogDetailed();
                     return null;
                 } finally {
@@ -310,13 +343,13 @@ namespace Celeste.Mod {
                     File.WriteAllLines(cachedChecksumPath, checksums);
                 }
 
-                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta}");
+                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname}");
                 try {
                     Assembly asm = Assembly.LoadFrom(cachedPath);
                     _RelinkedAssemblies.Add(asm);
                     return asm;
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta}");
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
                     e.LogDetailed();
                     return null;
                 }
@@ -389,13 +422,22 @@ namespace Celeste.Mod {
                 return null;
             }
 
+            [Obsolete("Use the variant with an explicit assembly name instead.")]
             /// <summary>
             /// Get the cached path of a given mod's relinked .dll
             /// </summary>
             /// <param name="meta">The mod metadata.</param>
             /// <returns>The full path to the cached relinked .dll</returns>
             public static string GetCachedPath(EverestModuleMetadata meta)
-                => Path.Combine(Loader.PathCache, meta.Name + "." + Path.GetFileNameWithoutExtension(meta.DLL) + ".dll");
+                => GetCachedPath(meta, Path.GetFileNameWithoutExtension(meta.DLL));
+
+            /// <summary>
+            /// Get the cached path of a given mod's relinked .dll
+            /// </summary>
+            /// <param name="meta">The mod metadata.</param>
+            /// <returns>The full path to the cached relinked .dll</returns>
+            public static string GetCachedPath(EverestModuleMetadata meta, string asmname)
+                => Path.Combine(Loader.PathCache, meta.Name + "." + asmname + ".dll");
 
             /// <summary>
             /// Get the checksum for a given mod's .dll or the containing .zip

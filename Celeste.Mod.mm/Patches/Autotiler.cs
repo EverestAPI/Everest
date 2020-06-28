@@ -1,18 +1,15 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
-using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Celeste {
     class patch_Autotiler : Autotiler {
+
+        private Dictionary<char, patch_TerrainType> lookup;
 
         public patch_Autotiler(string filename)
             : base(filename) {
@@ -25,11 +22,18 @@ namespace Celeste {
 
             if (xml.HasAttr("sound"))
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
+
+            if (xml.HasAttr("debris"))
+                data.Debris = xml.Attr("debris");
+        }
+
+        public bool TryGetCustomDebris(out string path, char tiletype) {
+            return !string.IsNullOrEmpty(path = lookup[tiletype].Debris);
         }
 
         // Required because TerrainType is private.
-        [MonoModIgnore]
         private class patch_TerrainType {
+            public string Debris;
         }
 
     }

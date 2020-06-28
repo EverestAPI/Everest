@@ -11,7 +11,7 @@ namespace Celeste.Mod.Entities {
     /// - `onlyOnce`: enable to have the trigger remove itself when the player leaves it.
     /// </summary>
     [CustomEntity("everest/smoothCameraOffsetTrigger", "SpringCollab2020/SmoothCameraOffsetTrigger")]
-    class SmoothCameraOffsetTrigger : Trigger {
+    public class SmoothCameraOffsetTrigger : Trigger {
 
         private Vector2 offsetFrom;
         private Vector2 offsetTo;
