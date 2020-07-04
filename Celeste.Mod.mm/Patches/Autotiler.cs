@@ -7,14 +7,12 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Xml;
 
 namespace Celeste {
     class patch_Autotiler : Autotiler {
 
         private Dictionary<char, patch_TerrainType> lookup;
-        private byte[] adjacent;
 
         public patch_Autotiler(string filename)
             : base(filename) {
@@ -47,7 +45,7 @@ namespace Celeste {
             } else
                 data.ScanHeight = 3;
 
-            XmlNodeList fills = xml.SelectNodes("set[starts-with(@mask, 'fill')]"); // Faster to just use an attr, but this is cleaner & easier to use.
+            XmlNodeList fills = xml.SelectNodes("set[starts-with(@mask, 'fill')]"); // Faster to ask for an attr on the tileset node, but this is cleaner & easier to use.
             if (fills != null && fills.Count > 0) {
 
                 data.CustomFills = new List<patch_Tiles>();
@@ -55,7 +53,7 @@ namespace Celeste {
                     data.CustomFills.Add(new patch_Tiles());
             }
 
-            if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3)
+            if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
                 orig_ReadInto(data, tileset, xml);
             else
                 ReadIntoCustomTemplate(data, tileset, xml);
@@ -69,71 +67,115 @@ namespace Celeste {
 
         private void ReadIntoCustomTemplate(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             foreach (XmlNode child in xml) {
-                if (child is XmlElement) {
-                    XmlElement node = child as XmlElement;
+                if (child is XmlElement node) {
+                    if (node.Name == "set") { // Potential somewhat breaking change, although there is no reason for another name to have been used.
+                        string text = node.Attr("mask");
+                        patch_Tiles tiles;
+                        if (text == "center") {
+                            if (data.CustomFills != null)
+                                Logger.Log(LogLevel.Warn, "Autotiler", "\"Center\" tiles will not be used if Custom Fills are present.");
 
-                    string text = node.Attr("mask");
-                    patch_Tiles tiles;
-                    if (text == "center") {
-                        if (data.CustomFills != null)
-                            Logger.Log(LogLevel.Warn, "Autotiler", "\"Center\" tiles will not be used if Custom Fills are present.");
+                            tiles = data.Center;
+                        } else if (text == "padding") {
+                            if (data.CustomFills != null)
+                                Logger.Log(LogLevel.Warn, "Autotiler", "\"Padding\" tiles will not be used if Custom Fills are present.");
 
-                        tiles = data.Center;
-                    } else if (text == "padding") {
-                        if (data.CustomFills != null)
-                            Logger.Log(LogLevel.Warn, "Autotiler", "\"Padding\" tiles will not be used if Custom Fills are present.");
+                            tiles = data.Padded;
+                        } else if (text.StartsWith("fill")) {
+                            tiles = data.CustomFills[int.Parse(text.Substring(4))];
+                        } else {
+                            patch_Masked masked = new patch_Masked();
+                            masked.Mask = new byte[data.ScanWidth * data.ScanHeight];
+                            tiles = masked.Tiles;
 
-                        tiles = data.Padded;
-                    } else if (text.StartsWith("fill")) {
-                        tiles = data.CustomFills[int.Parse(text.Substring(4))];
-                    } else {
-                        patch_Masked masked = new patch_Masked();
-                        masked.Mask = new byte[data.ScanWidth * data.ScanHeight];
-                        tiles = masked.Tiles;
-
-                        try {
-                            // Allows for spacer characters like '-' in the xml
-                            int maskIdx = 0;
-                            foreach (char c in text) {
-                                switch (c) {
-                                    case '0':
-                                        masked.Mask[maskIdx++] = 0; // No tile
-                                        break;
-                                    case '1':
-                                        masked.Mask[maskIdx++] = 1; // Tile
-                                        break;
-                                    case 'x':
-                                    case 'X':
-                                        masked.Mask[maskIdx++] = 2; // Any
-                                        break;
+                            try {
+                                // Allows for spacer characters like '-' in the xml
+                                int i = 0;
+                                foreach (char c in text) {
+                                    switch (c) {
+                                        case '0':
+                                            masked.Mask[i++] = 0; // No tile
+                                            break;
+                                        case '1':
+                                            masked.Mask[i++] = 1; // Tile
+                                            break;
+                                        case 'x':
+                                        case 'X':
+                                            masked.Mask[i++] = 2; // Any
+                                            break;
+                                        case 'y':
+                                        case 'Y':
+                                            masked.Mask[i++] = 3; // Not this tile
+                                            break;
+                                        case 'z':
+                                        case 'Z':
+                                            break; // Reserved
+                                        default: // Custom filters
+                                            if (char.IsLetter(c))
+                                                masked.Mask[i++] = GetByteLookup(c);
+                                            break;
+                                        /* 
+                                         * Error handling for characters that don't exist in a defined filter could be added,
+                                         * but is slightly more likely to break old custom tilesets if someone has defined a mask that containes nonstandard spacers (usually '-')
+                                        */
+                                    }
                                 }
+                            } catch (IndexOutOfRangeException e) {
+                                throw new IndexOutOfRangeException("Mask size is greater than the size specified by scanWidth and scanHeight (defaults to 3x3).", e);
                             }
-                        } catch (IndexOutOfRangeException e) {
-                            throw new IndexOutOfRangeException("Mask size is greater than the size specified by scanWidth and scanHeight.", e);
+                            data.Masked.Add(masked);
                         }
-                        data.Masked.Add(masked);
-                    }
 
-                    foreach (string tile in node.Attr("tiles").Split(';')) {
-                        string[] subtexture = tile.Split(',');
-                        int x = int.Parse(subtexture[0]);
-                        int y = int.Parse(subtexture[1]);
+                        foreach (string tile in node.Attr("tiles").Split(';')) {
+                            string[] subtexture = tile.Split(',');
+                            int x = int.Parse(subtexture[0]);
+                            int y = int.Parse(subtexture[1]);
 
-                        tiles.Textures.Add(tileset[x, y]);
-                    }
+                            tiles.Textures.Add(tileset[x, y]);
+                        }
 
-                    if (node.HasAttr("sprites")) {
-                        foreach (string sprites in node.Attr("sprites").Split(','))
-                            tiles.OverlapSprites.Add(sprites);
-                        tiles.HasOverlays = true;
+                        if (node.HasAttr("sprites")) {
+                            foreach (string sprites in node.Attr("sprites").Split(','))
+                                tiles.OverlapSprites.Add(sprites);
+                            tiles.HasOverlays = true;
+                        }
+
+                    } else if (node.Name == "define") {
+                        byte id = GetByteLookup(node.AttrChar("id"));
+                        string filter = node.Attr("filter");
+
+                        if (node.AttrBool("ignore"))
+                            data.blacklists[id] = filter;
+                        else
+                            data.whitelists[id] = filter;
                     }
                 }
             }
 
             data.Masked.Sort((patch_Masked a, patch_Masked b) => {
+                // Sorts the masks to give preference to more specific masks.
+                // Order is Custom Filters -> "Not This" -> "Any" -> Everything else
+                int aFilters = 0;
+                int bFilters = 0;
+                int aNots = 0;
+                int bNots = 0;
                 int aAnys = 0;
                 int bAnys = 0;
                 for (int i = 0; i < data.ScanWidth * data.ScanHeight; i++) {
+                    if (a.Mask[i] >= 10) {
+                        aFilters++;
+                    }
+                    if (b.Mask[i] >= 10) {
+                        bFilters++;
+                    }
+
+                    if (a.Mask[i] == 3) {
+                        aNots++;
+                    }
+                    if (b.Mask[i] == 3) {
+                        bNots++;
+                    }
+
                     if (a.Mask[i] == 2) {
                         aAnys++;
                     }
@@ -141,8 +183,24 @@ namespace Celeste {
                         bAnys++;
                     }
                 }
+                if (aFilters > 0 || bFilters > 0)
+                    return aFilters - bFilters;
+
+                if (aNots > 0 || bNots > 0)
+                    return aNots - bNots;
+
                 return aAnys - bAnys;
             });
+        }
+
+        private byte GetByteLookup(char c) {
+            if (char.IsLower(c))
+                // Take the letter, convert it into a number from 10 to 36
+                return (byte) ((c - 'a') + 10);
+            else if (char.IsUpper(c))
+                // Take the letter, convert it into a number from 37 to 63
+                return (byte) ((c - 'A') + 37);
+            throw new Exception("Parameter c must be an uppercase or lowercase letter.");
         }
 
         [MonoModIgnore]
@@ -162,27 +220,32 @@ namespace Celeste {
             char tile = GetTile(mapData, x, y, forceFill, forceID, behaviour);
             if (IsEmpty(tile))
                 return null;
-            patch_TerrainType terrainType = lookup[tile];
+            patch_TerrainType terrainType;
+            try { // Satisfies error handling for the orig_ method too.
+                terrainType = lookup[tile];
+            } catch (KeyNotFoundException e) {
+                throw new KeyNotFoundException("Level contains a tileset that is not defined.");
+            }
 
             int width = terrainType.ScanWidth;
             int height = terrainType.ScanHeight;
 
-            if (terrainType.CustomFills == null && width == 3 && height == 3) {
+            if (terrainType.CustomFills == null && width == 3 && height == 3 && terrainType.whitelists.Count == 0 && terrainType.blacklists.Count == 0) {
                 return orig_TileHandler(mapData, x, y, forceFill, forceID, behaviour); // Default tileset, default handler.
             }
 
             bool fillTile = true;
-            adjacent = new byte[width * height];
+            char[] adjacent = new char[width * height];
 
             int idx = 0;
             for (int yOffset = 0; yOffset < height; yOffset++) {
                 for (int xOffset = 0; xOffset < width; xOffset++) {
-                    // Integer division will effectively truncate the "middle" tile
-                    bool tilePresent = CheckTile(terrainType, mapData, x + (xOffset - width / 2), y + (yOffset - height / 2), forceFill, behaviour);
+                    // Integer division will effectively truncate the "middle" (this) tile
+                    bool tilePresent = TryGetTile(terrainType, mapData, x + (xOffset - width / 2), y + (yOffset - height / 2), forceFill, forceID, behaviour, out char adjTile);
                     if (!tilePresent && behaviour.EdgesIgnoreOutOfLevel && !CheckForSameLevel(x, y, x + xOffset, y + yOffset)) {
                         tilePresent = true;
                     }
-                    adjacent[idx++] = (byte) (tilePresent ? 1 : 0);
+                    adjacent[idx++] = adjTile;
                     if (!tilePresent)
                         fillTile = false;
                 }
@@ -207,16 +270,69 @@ namespace Celeste {
                     if (item.Mask[i] == 2) // Matches Any
                         continue;
 
-                    if (item.Mask[i] != adjacent[i]) {
+                    if (item.Mask[i] == 1 && IsEmpty(adjacent[i])) {
                         matched = false;
                         break;
                     }
+
+                    if (item.Mask[i] == 0 && !IsEmpty(adjacent[i])) {
+                        matched = false;
+                        break;
+                    }
+
+                    if (item.Mask[i] == 3 && adjacent[i] == tile) {
+                        matched = false;
+                        break;
+                    }
+
+                    if (terrainType.blacklists.Count > 0) {
+                        if (terrainType.blacklists.ContainsKey(item.Mask[i]) && terrainType.blacklists[item.Mask[i]].Contains(adjacent[i].ToString())) {
+                            matched = false;
+                            break;
+                        }
+
+                    }
+                    
+                    if (terrainType.whitelists.Count > 0) {
+                        if (terrainType.whitelists.ContainsKey(item.Mask[i]) && !terrainType.whitelists[item.Mask[i]].Contains(adjacent[i].ToString())) {
+                            matched = false;
+                            break;
+                        }
+
+                    }
+
                 }
+
                 if (matched)
                     return item.Tiles;
             }
 
             return null;
+        }
+
+        // Replaces "CheckTile" in modded TileHandler method.
+        private bool TryGetTile(patch_TerrainType set, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, char forceID, Behaviour behaviour, out char tile) {
+            tile = '0';
+            if (forceFill.Contains(x, y)) {
+                tile = forceID;
+                return true;
+            }
+
+            if (mapData == null) { // Not entirely sure how this should be handled best.
+                return behaviour.EdgesExtend;
+            }
+
+            if (x >= 0 && y >= 0 && x < mapData.Columns && y < mapData.Rows) {
+                tile = mapData[x, y];
+                return !IsEmpty(tile) && !set.Ignore(tile);
+            }
+
+            if (!behaviour.EdgesExtend) {
+                return false;
+            }
+
+            tile = mapData[Calc.Clamp(x, 0, mapData.Columns - 1), Calc.Clamp(y, 0, mapData.Rows - 1)];
+            return !IsEmpty(tile) && !set.Ignore(tile);
         }
 
         private int GetDepth(patch_TerrainType terrainType, VirtualMap<char> mapData, int x, int y, Rectangle forceFill, Behaviour behaviour, int depth) {
@@ -257,6 +373,21 @@ namespace Celeste {
             public int ScanWidth;
             public int ScanHeight;
             public List<patch_Tiles> CustomFills;
+
+            public Dictionary<byte, string> whitelists;
+            public Dictionary<byte, string> blacklists;
+
+            [MonoModIgnore]
+            public extern bool Ignore(char c);
+
+            public extern void orig_ctor(char id);
+            [MonoModConstructor]
+            public void ctor(char id) {
+                orig_ctor(id);
+
+                whitelists = new Dictionary<byte, string>();
+                blacklists = new Dictionary<byte, string>();
+            }
 
         }
 
