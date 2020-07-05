@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Helpers;
+﻿using Celeste.Mod;
+using Celeste.Mod.Helpers;
 using System;
 using System.Collections.Generic;
 
@@ -23,7 +24,7 @@ namespace Monocle {
             orig_Initialize();
 
             // search for entities with [TrackedAs]
-            Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypes();
+            Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
             foreach (Type type in types) {
                 object[] customAttributes = type.GetCustomAttributes(typeof(TrackedAsAttribute), inherit: false);
                 foreach (object customAttribute in customAttributes) {

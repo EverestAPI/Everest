@@ -486,7 +486,7 @@ namespace Celeste.Mod {
 
             bool newStrawberriesRegistered = false;
 
-            foreach (Type type in module.GetType().Assembly.GetTypes()) {
+            foreach (Type type in module.GetType().Assembly.GetTypesSafe()) {
                 // Search for all entities marked with the CustomEntityAttribute.
                 foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
                     foreach (string idFull in attrib.IDs) {
@@ -664,7 +664,7 @@ namespace Celeste.Mod {
 
             if (Engine.Instance != null && Engine.Scene is Overworld overworld) {
                 // we already are in the overworld. Register new Ouis real quick!
-                Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypes();
+                Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
                 foreach (Type type in types) {
                     if (typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract && !overworld.UIs.Any(ui => ui.GetType() == type)) {
                         Logger.Log("core", $"Instanciating UI from {module.Metadata}: {type.FullName}");

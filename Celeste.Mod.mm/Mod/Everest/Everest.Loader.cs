@@ -515,7 +515,7 @@ namespace Celeste.Mod {
 
                 Type[] types;
                 try {
-                    types = asm.GetTypes();
+                    types = asm.GetTypesSafe();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
                     e.LogDetailed();

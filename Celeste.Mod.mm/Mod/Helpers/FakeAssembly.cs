@@ -40,7 +40,7 @@ namespace Celeste.Mod.Helpers {
                 if (added.Contains(asm))
                     continue;
                 added.Add(asm);
-                types.AddRange(asm.GetTypes());
+                types.AddRange(asm.GetTypesSafe());
             }
             return types.ToArray();
         }
