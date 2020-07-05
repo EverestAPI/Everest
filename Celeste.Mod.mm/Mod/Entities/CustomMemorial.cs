@@ -15,9 +15,14 @@ namespace Celeste.Mod.Entities {
     /// Checks for the following new attributes:
     /// - `string dialog` (default: `memorial`)
     /// - `string sprite` (default: `scenery/memorial/memorial`)
+    /// - `float spacing` (default: 8)
+    /// - `DreamingMode dreamingMode` (default: BasedOnMetadata)
     /// </summary>
     [CustomEntity("everest/memorial")]
     public class CustomMemorial : Entity {
+        public enum DreamingMode {
+            On, Off, BasedOnMetadata
+        }
 
         private Image sprite;
         private CustomMemorialText text;
@@ -27,8 +32,12 @@ namespace Celeste.Mod.Entities {
 
         private string textText;
         private float textSpacing;
+        private DreamingMode dreamingMode;
 
         public CustomMemorial(Vector2 position, string texture, string dialog, float spacing)
+            : this(position, texture, dialog, spacing, DreamingMode.BasedOnMetadata) { }
+
+        public CustomMemorial(Vector2 position, string texture, string dialog, float spacing, DreamingMode dreamingMode)
             : base(position) {
             Tag = Tags.PauseUpdate;
             if (!string.IsNullOrWhiteSpace(texture)) {
@@ -38,6 +47,7 @@ namespace Celeste.Mod.Entities {
 
             textText = Dialog.Clean(dialog);
             textSpacing = spacing;
+            this.dreamingMode = dreamingMode;
 
             Depth = 100;
 
@@ -46,18 +56,17 @@ namespace Celeste.Mod.Entities {
             Add(loopingSfx = new SoundSource());
         }
 
-        public CustomMemorial(EntityData data, Vector2 offset)
-            : this(data.Position + offset, data.Attr("sprite", "scenery/memorial/memorial"), data.Attr("dialog", "memorial"), data.Float("spacing", 8f)) {
-        }
+        public CustomMemorial(EntityData data, Vector2 offset) : this(data.Position + offset, data.Attr("sprite", "scenery/memorial/memorial"),
+            data.Attr("dialog", "memorial"), data.Float("spacing", 8f), data.Enum("dreamingMode", DreamingMode.BasedOnMetadata)) { }
 
         public override void Added(Scene scene) {
             base.Added(scene);
 
             Level level = (Level) scene;
 
-            level.Add(text = new CustomMemorialText(this, level.Session.Dreaming, textText, textSpacing));
+            level.Add(text = new CustomMemorialText(this, isDreaming(), textText, textSpacing));
 
-            if (level.Session.Dreaming) {
+            if (isDreaming()) {
                 Add(dreamyText = new Sprite(GFX.Game, "scenery/memorial/floatytext"));
                 dreamyText.AddLoop("dreamy", "", 0.1f);
                 dreamyText.Play("dreamy", false, false);
@@ -81,7 +90,7 @@ namespace Celeste.Mod.Entities {
 
             Player player = Scene.Tracker.GetEntity<Player>();
 
-            bool dreaming = level.Session.Dreaming;
+            bool dreaming = isDreaming();
             wasShowing = text.Show;
             text.Show = player != null && CollideCheck(player);
 
@@ -101,5 +110,15 @@ namespace Celeste.Mod.Entities {
             loopingSfx.Resume();
         }
 
+        private bool isDreaming() {
+            switch (dreamingMode) {
+                case DreamingMode.On:
+                    return true;
+                case DreamingMode.Off:
+                    return false;
+                default:
+                    return (Scene as Level).Session.Dreaming;
+            }
+        }
     }
 }
