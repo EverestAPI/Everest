@@ -22,15 +22,13 @@ namespace Celeste {
             // no-op.
         }
 
-        public extern void orig_ctor(Func<bool> isDashing);
-        [MonoModConstructor]
-        public void ctor(Func<bool> isDashing) {
-            orig_ctor(isDashing);
-        }
+        [MonoModIgnore] // Ignore this...
+        [MonoModConstructor] // ...but make sure MonoMod treats it as a constructor.
+        public extern void ctor(Func<bool> isDashing);
 
         [MonoModConstructor]
         public void ctor(Rectangle bounds, Func<bool> isDashing) {
-            orig_ctor(isDashing);
+            ctor(isDashing);
             _bounds = bounds;
         }
 
