@@ -32,7 +32,10 @@ namespace MiniInstaller {
         public static int Main(string[] args) {
             Console.WriteLine("Everest MiniInstaller");
 
-            SetupPaths();
+            if (!SetupPaths()) {
+                // setting up paths failed (Celeste.exe was not found).
+                return 1;
+            }
 
             if (File.Exists(PathLog))
                 File.Delete(PathLog);
@@ -121,7 +124,7 @@ namespace MiniInstaller {
             }
         }
 
-        public static void SetupPaths() {
+        public static bool SetupPaths() {
             PathGame = Directory.GetCurrentDirectory();
 
             if (Path.GetFileName(PathGame) == "everest-update" &&
@@ -135,7 +138,7 @@ namespace MiniInstaller {
             if (!File.Exists(PathCelesteExe)) {
                 LogLine("Celeste.exe not found!");
                 LogLine("Did you extract the .zip into the same place as Celeste?");
-                return;
+                return false;
             }
 
             // Here lies a reminder that patching into Everest.exe only caused confusion and issues.
@@ -149,6 +152,7 @@ namespace MiniInstaller {
                 LogLine("Creating Mods directory");
                 Directory.CreateDirectory(Path.Combine(PathGame, "Mods"));
             }
+            return true;
         }
 
         public static void WaitForGameExit() {
