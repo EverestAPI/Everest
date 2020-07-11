@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -39,15 +40,28 @@ namespace Celeste {
 
         public ObjModel MountainCoreWall;
 
+        public ObjModel MountainMoon;
+
+        public ObjModel MountainBird;
+
         public VirtualTexture[] MountainTerrainTextures;
 
         public VirtualTexture[] MountainBuildingTextures;
 
         public VirtualTexture[] MountainSkyboxTextures;
 
+        public VirtualTexture MountainMoonTexture;
+
         public VirtualTexture MountainFogTexture;
 
+        public VirtualTexture MountainSpaceTexture;
+        public VirtualTexture MountainSpaceStarsTexture;
+        public VirtualTexture MountainStarStreamTexture;
+
         public MountainState[] MountainStates = new MountainState[4];
+
+        public Color? StarFogColor;
+        public Color[] StarStreamColors;
     }
 
     public static class MTNExt {
@@ -88,6 +102,13 @@ namespace Celeste {
                                 resources.MountainCoreWall = ObjModelExt.CreateFromStream(coreWall.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall.obj"));
                             }
 
+                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "bird"), out ModAsset bird)) {
+                                resources.MountainBird = ObjModelExt.CreateFromStream(bird.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "bird.obj"));
+                            }
+
+                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "moon"), out ModAsset moon)) {
+                                resources.MountainMoon = ObjModelExt.CreateFromStream(moon.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "moon.obj"));
+                            }
                         }
                     }
                 }
@@ -106,7 +127,7 @@ namespace Celeste {
                     foreach (KeyValuePair<string, ModAsset> kvp in Everest.Content.Map) {
                         MapMeta meta;
                         // Check if the meta for this asset exists and if it has a MountainTextureDirectory specified
-                        if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null && !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)) {
+                        if (kvp.Value != null && (meta = kvp.Value.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
                             // Create the mountain resources for this map if they don't exist already
                             if (!MountainMappings.TryGetValue(kvp.Key, out MountainResources resources)) {
                                 resources = new MountainResources();
@@ -116,19 +137,43 @@ namespace Celeste {
                             resources.MountainTerrainTextures = new VirtualTexture[3];
                             resources.MountainBuildingTextures = new VirtualTexture[3];
                             resources.MountainSkyboxTextures = new VirtualTexture[3];
-                            for (int i = 0; i < 3; i++) {
-                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/'))) {
-                                    resources.MountainSkyboxTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')].Texture;
+                            if (!string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)) {
+                                for (int i = 0; i < 3; i++) {
+                                    if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/'))) {
+                                        resources.MountainSkyboxTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "skybox_" + i).Replace('\\', '/')].Texture;
+                                    }
+                                    if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/'))) {
+                                        resources.MountainTerrainTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')].Texture;
+                                    }
+                                    if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/'))) {
+                                        resources.MountainBuildingTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')].Texture;
+                                    }
                                 }
-                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/'))) {
-                                    resources.MountainTerrainTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "mountain_" + i).Replace('\\', '/')].Texture;
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/'))) {
+                                    resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
                                 }
-                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/'))) {
-                                    resources.MountainBuildingTextures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "buildings_" + i).Replace('\\', '/')].Texture;
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "moon").Replace('\\', '/'))) {
+                                    resources.MountainMoonTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "moon").Replace('\\', '/')].Texture;
+                                }
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "space").Replace('\\', '/'))) {
+                                    resources.MountainSpaceTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "space").Replace('\\', '/')].Texture;
+                                }
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "spacestars").Replace('\\', '/'))) {
+                                    resources.MountainSpaceStarsTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "spacestars").Replace('\\', '/')].Texture;
+                                }
+                                if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "starstream").Replace('\\', '/'))) {
+                                    resources.MountainStarStreamTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "starstream").Replace('\\', '/')].Texture;
                                 }
                             }
-                            if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/'))) {
-                                resources.MountainFogTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "fog").Replace('\\', '/')].Texture;
+
+                            if (meta.Mountain.StarFogColor != null) {
+                                resources.StarFogColor = Calc.HexToColor(meta.Mountain.StarFogColor);
+                            }
+                            if (meta.Mountain.StarStreamColors != null) {
+                                resources.StarStreamColors = new Color[meta.Mountain.StarStreamColors.Length];
+                                for (int i = 0; i < meta.Mountain.StarStreamColors.Length; i++) {
+                                    resources.StarStreamColors[i] = Calc.HexToColor(meta.Mountain.StarStreamColors[i]);
+                                }
                             }
 
                             // Use the default textures if no custom ones were loaded
