@@ -34,7 +34,7 @@ namespace Celeste.Mod.UI {
 
                 // 2. Find out what actually has been updated
                 if (updateCatalog != null) {
-                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog);
+                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
                 }
             }
         }
