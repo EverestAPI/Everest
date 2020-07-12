@@ -425,7 +425,7 @@ namespace Celeste.Mod {
             Updater.RequestAll();
 
             // Request the mod update list as well.
-            ModUpdaterHelper.RunAsyncCheckForModUpdates();
+            ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
         }
 
         internal static bool _Initialized;
