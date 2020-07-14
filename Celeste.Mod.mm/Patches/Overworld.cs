@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Overworld : Overworld {
+        private bool customizedChapterSelectMusic = false;
 
         public patch_Overworld(OverworldLoader loader)
             : base(loader) {
@@ -45,14 +46,22 @@ namespace Celeste {
                     if (backgroundMusic != null) {
                         // current map has custom background music
                         Audio.SetMusic(backgroundMusic);
+                        customizedChapterSelectMusic = true;
                     } else {
                         // current map has no custom background music
-                        SetNormalMusic();
+                        restoreNormalMusicIfCustomized();
                     }
                 } else {
                     // no save is loaded or we are not in chapter select
-                    SetNormalMusic();
+                    restoreNormalMusicIfCustomized();
                 }
+            }
+        }
+
+        private void restoreNormalMusicIfCustomized() {
+            if (customizedChapterSelectMusic) {
+                SetNormalMusic();
+                customizedChapterSelectMusic = false;
             }
         }
     }
