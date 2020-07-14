@@ -62,6 +62,9 @@ namespace Celeste {
 
         public Color? StarFogColor;
         public Color[] StarStreamColors;
+
+        public Color[] StarBeltColors1;
+        public Color[] StarBeltColors2;
     }
 
     public static class MTNExt {
@@ -170,10 +173,13 @@ namespace Celeste {
                                 resources.StarFogColor = Calc.HexToColor(meta.Mountain.StarFogColor);
                             }
                             if (meta.Mountain.StarStreamColors != null) {
-                                resources.StarStreamColors = new Color[meta.Mountain.StarStreamColors.Length];
-                                for (int i = 0; i < meta.Mountain.StarStreamColors.Length; i++) {
-                                    resources.StarStreamColors[i] = Calc.HexToColor(meta.Mountain.StarStreamColors[i]);
-                                }
+                                resources.StarStreamColors = parseColorArray(meta.Mountain.StarStreamColors);
+                            }
+                            if (meta.Mountain.StarBeltColors1 != null) {
+                                resources.StarBeltColors1 = parseColorArray(meta.Mountain.StarBeltColors1);
+                            }
+                            if (meta.Mountain.StarBeltColors2 != null) {
+                                resources.StarBeltColors2 = parseColorArray(meta.Mountain.StarBeltColors2);
                             }
 
                             // Use the default textures if no custom ones were loaded
@@ -187,6 +193,14 @@ namespace Celeste {
                 Console.WriteLine(" - MODDED MTN LOAD: " + stopwatch.ElapsedMilliseconds + "ms");
             }
             ModsLoaded = true;
+        }
+
+        private static Color[] parseColorArray(string[] array) {
+            Color[] result = new Color[array.Length];
+            for (int i = 0; i < array.Length; i++) {
+                result[i] = Calc.HexToColor(array[i]);
+            }
+            return result;
         }
     }
 }
