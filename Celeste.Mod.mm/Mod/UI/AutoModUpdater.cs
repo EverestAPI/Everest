@@ -49,22 +49,6 @@ namespace Celeste.Mod.UI {
             Entity entity = new Entity();
             entity.Add(new Coroutine(Routine()));
             Add(entity);
-
-            // run the update check task asynchronously
-            new Task(() => {
-                // display "checking for updates" message, in case the async task is not done yet.
-                modUpdatingMessage = Dialog.Clean("AUTOUPDATECHECKER_CHECKING");
-
-                SortedDictionary<ModUpdateInfo, EverestModuleMetadata> updateList = ModUpdaterHelper.GetAsyncLoadedModUpdates();
-                if (updateList == null || updateList.Count == 0) {
-                    // no mod update, clear message and continue right away.
-                    modUpdatingMessage = null;
-                    shouldContinue = true;
-                } else {
-                    // install mod updates
-                    autoUpdate(updateList);
-                }
-            }).Start();
         }
 
         public override void End() {
@@ -74,9 +58,31 @@ namespace Celeste.Mod.UI {
         }
 
         private IEnumerator Routine() {
-            // wait until we can continue (async task finished, or player hit Confirm to continue)
-            while (!shouldContinue)
+            // display "checking for updates" message, in case the async task is not done yet.
+            modUpdatingMessage = Dialog.Clean("AUTOUPDATECHECKER_CHECKING");
+
+            // wait until the update check is over.
+            showCancel = true;
+            while (!ModUpdaterHelper.IsAsyncUpdateCheckingDone() && !skipUpdate) {
                 yield return null;
+            }
+            showCancel = false;
+
+            if (!skipUpdate) {
+                SortedDictionary<ModUpdateInfo, EverestModuleMetadata> updateList = ModUpdaterHelper.GetAsyncLoadedModUpdates();
+                if (updateList == null || updateList.Count == 0) {
+                    // no mod update, clear message and continue right away.
+                    modUpdatingMessage = null;
+                    shouldContinue = true;
+                } else {
+                    // install mod updates
+                    new Task(() => autoUpdate(updateList)).Start();
+                }
+
+                // wait until we can continue (async task finished, or player hit Confirm to continue)
+                while (!shouldContinue)
+                    yield return null;
+            }
 
             // proceed to the title screen, as GameLoader would do it normally.
             Engine.Scene = new OverworldLoader(Overworld.StartMode.Titlescreen, snow);

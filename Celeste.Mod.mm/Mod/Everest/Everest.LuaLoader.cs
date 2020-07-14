@@ -139,7 +139,7 @@ namespace Celeste.Mod {
 
                 name = name + ".";
                 foreach (Assembly asm in asms) {
-                    foreach (Type expType in asm.GetTypes()) {
+                    foreach (Type expType in asm.GetTypesSafe()) {
                         if (!expType.IsPublic)
                             continue;
                         if (expType.FullName.StartsWith(name)) {
@@ -166,7 +166,7 @@ namespace Celeste.Mod {
                     // no-op.
                 }
 
-                foreach (Type type in asm.GetTypes()) {
+                foreach (Type type in asm.GetTypesSafe()) {
                     // Non-public type instances can still be passed / returned.
                     /*
                     if (!type.IsPublic)

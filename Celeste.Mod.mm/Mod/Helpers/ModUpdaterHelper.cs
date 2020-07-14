@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -49,15 +50,18 @@ namespace Celeste.Mod.Helpers {
         /// List all mods needing an update, by comparing the installed mods' hashes with the ones in the update checker database.
         /// </summary>
         /// <param name="updateCatalog">The update checker database (must not be null!)</param>
+        /// <param name="excludeBlacklist">If mods present in updaterblacklist.txt should be excluded from the result</param>
         /// <returns>A map listing all the updates: info from the update checker database => info from the installed mod</returns>
-        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> ListAvailableUpdates(Dictionary<string, ModUpdateInfo> updateCatalog) {
+        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> ListAvailableUpdates(Dictionary<string, ModUpdateInfo> updateCatalog, bool excludeBlacklist) {
             SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>(new MostRecentUpdatedFirst());
 
             Logger.Log("ModUpdaterHelper", "Checking for updates");
 
             foreach (EverestModule module in Everest.Modules) {
                 EverestModuleMetadata metadata = module.Metadata;
-                if (metadata.PathArchive != null && updateCatalog.ContainsKey(metadata.Name)) {
+                if (metadata.PathArchive != null && updateCatalog.ContainsKey(metadata.Name)
+                    && (!excludeBlacklist || !Everest.Loader.UpdaterBlacklist.Any(path => Path.Combine(Everest.Loader.PathMods, path) == metadata.PathArchive))) {
+
                     string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
                     Logger.Log("ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
                     if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
@@ -142,12 +146,13 @@ namespace Celeste.Mod.Helpers {
 
         /// <summary>
         /// Run a check for mod updates asynchronously.
+        /// <param name="excludeBlacklist">If mods present in updaterblacklist.txt should be excluded from the result</param>
         /// </summary>
-        public static void RunAsyncCheckForModUpdates() {
+        public static void RunAsyncCheckForModUpdates(bool excludeBlacklist) {
             updateCheckTask = new Task(() => {
                 Dictionary<string, ModUpdateInfo> updateCatalog = DownloadModUpdateList();
                 if (updateCatalog != null) {
-                    availableUpdates = ListAvailableUpdates(updateCatalog);
+                    availableUpdates = ListAvailableUpdates(updateCatalog, excludeBlacklist);
                 }
             });
             updateCheckTask.Start();

@@ -237,6 +237,9 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string CurrentVersion { get; set; }
 
+        [SettingIgnore]
+        public string CurrentBranch { get; set; }
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;

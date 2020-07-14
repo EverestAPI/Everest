@@ -24,8 +24,22 @@ namespace Celeste.Mod.UI {
 
         private bool shouldRestart = false;
 
-        private Dictionary<string, ModUpdateInfo> updateCatalog = null;
-        private SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+        private class CheckForUpdates {
+            public Dictionary<string, ModUpdateInfo> updateCatalog = null;
+            public SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+
+            public void Fetch() {
+                // 1. Download the mod updates database
+                updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
+
+                // 2. Find out what actually has been updated
+                if (updateCatalog != null) {
+                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
+                }
+            }
+        }
+
+        private CheckForUpdates currentCheckForUpdates = null;
         private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
 
         private static bool ongoingUpdateCancelled = false;
@@ -59,16 +73,8 @@ namespace Celeste.Mod.UI {
             menu.Focused = true;
             menuOnScreen = true;
 
-            task = new Task(() => {
-                // 1. Download the mod updates database
-                updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
-
-                // 2. Find out what actually has been updated
-                if (updateCatalog != null) {
-                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog);
-                }
-            });
-
+            currentCheckForUpdates = new CheckForUpdates();
+            task = new Task(() => currentCheckForUpdates.Fetch());
             task.Start();
         }
 
@@ -89,8 +95,7 @@ namespace Celeste.Mod.UI {
             menu.RemoveSelf();
             menu = null;
 
-            updateCatalog = null;
-            availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+            currentCheckForUpdates = null;
             updatableMods = new List<ModUpdateHolder>();
 
             task = null;
@@ -123,19 +128,19 @@ namespace Celeste.Mod.UI {
                     menu.Remove(fetchingButton);
                     fetchingButton = null;
 
-                    if (updateCatalog == null) {
+                    if (currentCheckForUpdates.updateCatalog == null) {
                         // display an error message
                         TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
                         button.Disabled = true;
                         menu.Add(button);
-                    } else if (availableUpdatesCatalog.Count == 0) {
+                    } else if (currentCheckForUpdates.availableUpdatesCatalog.Count == 0) {
                         // display a dummy "no update available" button
                         TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
                         button.Disabled = true;
                         menu.Add(button);
                     } else {
                         // if there are multiple updates...
-                        if (availableUpdatesCatalog.Count > 1) {
+                        if (currentCheckForUpdates.availableUpdatesCatalog.Count > 1) {
                             // display an "update all" button at the top of the list
                             updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
                             updateAllButton.Pressed(() => downloadAllMods());
@@ -144,8 +149,8 @@ namespace Celeste.Mod.UI {
                         }
 
                         // then, display one button per update
-                        foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
-                            EverestModuleMetadata metadata = availableUpdatesCatalog[update];
+                        foreach (ModUpdateInfo update in currentCheckForUpdates.availableUpdatesCatalog.Keys) {
+                            EverestModuleMetadata metadata = currentCheckForUpdates.availableUpdatesCatalog[update];
 
                             string versionUpdate = metadata.VersionString;
                             if (metadata.VersionString != update.Version)
@@ -188,6 +193,12 @@ namespace Celeste.Mod.UI {
             if (Input.MenuCancel.Pressed) {
                 // cancel any ongoing download (this has no effect if no download is ongoing anyway).
                 ongoingUpdateCancelled = true;
+
+                if (menu != null && currentCheckForUpdates.updateCatalog == null && task != null && !task.IsCompleted) {
+                    // cancelling out during check for updates: go back to mod options instead
+                    Audio.Play(SFX.ui_main_button_back);
+                    Overworld.Goto<OuiModOptions>();
+                }
             }
 
             base.Update();

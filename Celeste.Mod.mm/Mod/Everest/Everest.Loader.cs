@@ -72,6 +72,16 @@ namespace Celeste.Mod {
             public static ReadOnlyCollection<string> ModOptionsOrder => _ModOptionsOrder?.AsReadOnly();
 
             /// <summary>
+            /// The path to the Everest /Mods/updaterblacklist.txt file.
+            /// </summary>
+            public static string PathUpdaterBlacklist { get; internal set; }
+            internal static List<string> _UpdaterBlacklist = new List<string>();
+            /// <summary>
+            /// The currently loaded mod updater blacklist.
+            /// </summary>
+            public static ReadOnlyCollection<string> UpdaterBlacklist => _UpdaterBlacklist?.AsReadOnly();
+
+            /// <summary>
             /// All mods on this list with a version lower than the specified version will never load.
             /// </summary>
             internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
@@ -135,6 +145,17 @@ namespace Celeste.Mod {
                         writer.WriteLine("# Mod folders and archives in this file will be displayed in the same order in the Mod Options menu.");
                         writer.WriteLine("# To define the position of the \"Everest Core\" options, put \"Everest\" on a line.");
                         writer.WriteLine("ExampleFolder");
+                        writer.WriteLine("SomeMod.zip");
+                    }
+                }
+
+                PathUpdaterBlacklist = Path.Combine(PathMods, "updaterblacklist.txt");
+                if (File.Exists(PathUpdaterBlacklist)) {
+                    _UpdaterBlacklist = File.ReadAllLines(PathUpdaterBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathUpdaterBlacklist)) {
+                        writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
+                        writer.WriteLine("# Put the name of a mod zip here to prevent it from being auto-updated and to show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
                     }
                 }
@@ -515,7 +536,7 @@ namespace Celeste.Mod {
 
                 Type[] types;
                 try {
-                    types = asm.GetTypes();
+                    types = asm.GetTypesSafe();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
                     e.LogDetailed();

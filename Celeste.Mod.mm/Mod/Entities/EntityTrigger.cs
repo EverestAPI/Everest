@@ -15,7 +15,7 @@ namespace Celeste.Mod.Entities {
         private float right;
         private float top;
         private float bottom;
-        private List<ITriggerable> entities;
+        private List<EntityTriggerListener> listeners;
 
         private bool triggered;
 
@@ -24,7 +24,7 @@ namespace Celeste.Mod.Entities {
             persistent = data.Bool("persistent");
             this.id = id;
 
-            entities = new List<ITriggerable>();
+            listeners = new List<EntityTriggerListener>();
 
             Vector2[] array = data.NodesOffset(offset);
             if (array.Length >= 2) {
@@ -40,14 +40,13 @@ namespace Celeste.Mod.Entities {
 
             bool alreadyTriggered = persistent && SceneAs<Level>().Session.GetFlag(id.ToString());
 
-            foreach (Entity entity in scene.Entities) {
-                if (entity is ITriggerable triggerable) {
-                    if (entity.X >= left && entity.X <= right && entity.Y >= top && entity.Y <= bottom) { 
-                        if (alreadyTriggered)
-                            triggerable.StartTriggered();
-                        else
-                            entities.Add(triggerable);
-                    }
+            foreach (EntityTriggerListener listener in scene.Tracker.GetComponents<EntityTriggerListener>()) {
+                Entity entity = listener.Entity;
+                if (entity.X >= left && entity.X <= right && entity.Y >= top && entity.Y <= bottom) { 
+                    if (alreadyTriggered)
+                        listener.OnStartTriggered?.Invoke();
+                    else
+                        listeners.Add(listener);
                 }
             }
 
@@ -76,8 +75,8 @@ namespace Celeste.Mod.Entities {
                 if (persistent)
                     SceneAs<Level>().Session.SetFlag(id.ToString());
 
-                foreach (ITriggerable entity in entities) {
-                    entity.Trigger();
+                foreach (EntityTriggerListener listener in listeners) {
+                    listener.OnTrigger?.Invoke();
                 }
             }
         }
