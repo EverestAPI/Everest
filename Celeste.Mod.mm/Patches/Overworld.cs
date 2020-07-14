@@ -34,6 +34,25 @@ namespace Celeste {
         public override void Update() {
             lock (AssetReloadHelper.AreaReloadLock) {
                 orig_Update();
+
+                if (string.IsNullOrEmpty(Audio.CurrentMusic)) {
+                    // don't change music if no music is currently playing
+                    return;
+                }
+
+                if (SaveData.Instance != null && (IsCurrent<OuiChapterSelect>() || IsCurrent<OuiChapterPanel>() || IsCurrent<OuiMapList>() || IsCurrent<OuiMapSearch>())) {
+                    string backgroundMusic = AreaData.Get(SaveData.Instance.LastArea)?.GetMeta()?.Mountain?.BackgroundMusic;
+                    if (backgroundMusic != null) {
+                        // current map has custom background music
+                        Audio.SetMusic(backgroundMusic);
+                    } else {
+                        // current map has no custom background music
+                        SetNormalMusic();
+                    }
+                } else {
+                    // no save is loaded or we are not in chapter select
+                    SetNormalMusic();
+                }
             }
         }
     }

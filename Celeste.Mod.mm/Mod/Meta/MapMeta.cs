@@ -449,6 +449,7 @@ namespace Celeste.Mod.Meta {
     public class MapMetaMountain {
         public string MountainModelDirectory { get; set; } = null;
         public string MountainTextureDirectory { get; set; } = null;
+        public string BackgroundMusic { get; set; } = null;
         public string StarFogColor { get; set; } = null;
         public string[] StarStreamColors { get; set; } = null;
         public MapMetaMountainCamera Idle { get; set; } = null;
