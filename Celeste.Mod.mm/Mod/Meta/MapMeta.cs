@@ -452,6 +452,8 @@ namespace Celeste.Mod.Meta {
         public string BackgroundMusic { get; set; } = null;
         public string StarFogColor { get; set; } = null;
         public string[] StarStreamColors { get; set; } = null;
+        public string[] StarBeltColors1 { get; set; } = null;
+        public string[] StarBeltColors2 { get; set; } = null;
         public MapMetaMountainCamera Idle { get; set; } = null;
         public MapMetaMountainCamera Select { get; set; } = null;
         public MapMetaMountainCamera Zoom { get; set; } = null;
