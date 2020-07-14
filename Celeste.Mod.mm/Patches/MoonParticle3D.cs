@@ -28,17 +28,17 @@ namespace Celeste {
                 for (int i = 0; i < 20; i++) {
                     Add(new Particle(OVR.Atlas["star"], Calc.Random.Choose(starColors1), center, 1f, matrix));
                 }
-                for (int j = 0; j < 30; j++) {
+                for (int i = 0; i < 30; i++) {
                     Add(new Particle(OVR.Atlas["snow"], Calc.Random.Choose(starColors1), center, 0.3f, matrix));
                 }
             }
-            Matrix matrix2 = Matrix.CreateRotationZ(0.8f) * Matrix.CreateRotationX(0.4f);
+            matrix = Matrix.CreateRotationZ(0.8f) * Matrix.CreateRotationX(0.4f);
             if (starColors2.Length != 0) {
-                for (int k = 0; k < 20; k++) {
-                    Add(new Particle(OVR.Atlas["star"], Calc.Random.Choose(starColors2), center, 1f, matrix2));
+                for (int i = 0; i < 20; i++) {
+                    Add(new Particle(OVR.Atlas["star"], Calc.Random.Choose(starColors2), center, 1f, matrix));
                 }
-                for (int l = 0; l < 30; l++) {
-                    Add(new Particle(OVR.Atlas["snow"], Calc.Random.Choose(starColors2), center, 0.3f, matrix2));
+                for (int i = 0; i < 30; i++) {
+                    Add(new Particle(OVR.Atlas["snow"], Calc.Random.Choose(starColors2), center, 0.3f, matrix));
                 }
             }
         }
