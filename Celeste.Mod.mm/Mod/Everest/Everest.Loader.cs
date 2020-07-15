@@ -409,8 +409,8 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (DependencyLoaded(meta)) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} already loaded!");
+                if (Modules.Any(module => module.Metadata.Name == meta.Name)) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
 
