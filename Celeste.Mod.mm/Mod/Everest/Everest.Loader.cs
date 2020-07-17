@@ -155,7 +155,7 @@ namespace Celeste.Mod {
                 } else {
                     using (StreamWriter writer = File.CreateText(PathUpdaterBlacklist)) {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
-                        writer.WriteLine("# Put the name of a mod zip here to prevent it from being auto-updated and to show update notifications on the title screen.");
+                        writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
                     }
                 }
