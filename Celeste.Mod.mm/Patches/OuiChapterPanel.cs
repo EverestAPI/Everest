@@ -18,6 +18,20 @@ namespace Celeste {
 
         private bool instantClose = false;
 
+        // Make private fields accessible to our mod.
+        [MonoModIgnore]
+        private List<Option> options { get; set; }
+        [MonoModIgnore]
+        private int option { get; set; }
+        [MonoModIgnore]
+        private class Option {
+            public string Label;
+            public string ID;
+            public MTexture Icon;
+        }
+        [MonoModIgnore]
+        private extern Option AddRemixButton();
+
         [MonoModReplace]
         public static new string GetCheckpointPreviewName(AreaKey area, string level) {
             return _GetCheckpointPreviewName(area, level);
@@ -57,7 +71,22 @@ namespace Celeste {
                     SaveData.Instance.LastArea.ID = area.ID;
             }
 
-            return orig_IsStart(overworld, start);
+            bool isStart = orig_IsStart(overworld, start);
+
+            if (isStart && option >= options.Count && options.Count == 1) {
+                // we are coming back from a B/C-side and we didn't unlock B-sides. Force-add it.
+                AddRemixButton();
+            }
+            if (isStart && option >= options.Count && options.Count == 2) {
+                // we are coming back from a C-side we did not unlock. Force-add it.
+                options.Add(new Option {
+                    Label = Dialog.Clean("overworld_remix2"),
+                    Icon = GFX.Gui["menu/rmx2"],
+                    ID = "C"
+                });
+            }
+
+            return isStart;
         }
 
         public extern IEnumerator orig_Enter(Oui from);
