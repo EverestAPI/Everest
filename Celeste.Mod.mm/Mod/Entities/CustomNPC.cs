@@ -32,7 +32,8 @@ namespace Celeste.Mod.Entities {
         public event Action<int> OnStart;
         public event Action OnEnd;
 
-        public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
+        public CustomNPC(EntityData data, Vector2 offset, EntityID id) 
+            : base(data.Position + offset) {
             this.id = id;
 
             spritePath = data.Attr("sprite", ""); // Path is from Graphics/Atlases/Gameplay/characters

@@ -2,17 +2,10 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_TextMenu : TextMenu {

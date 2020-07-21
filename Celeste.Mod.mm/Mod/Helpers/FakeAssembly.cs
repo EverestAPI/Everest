@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Runtime.Serialization;
 using System.Security.Policy;
 
@@ -25,7 +24,7 @@ namespace Celeste.Mod.Helpers {
         private static FakeAssembly _EntryAssembly;
         [MonoModLinkFrom("System.Reflection.Assembly System.Reflection.Assembly::GetEntryAssembly()")]
         public static Assembly GetFakeEntryAssembly()
-            => _EntryAssembly != null ? _EntryAssembly : (_EntryAssembly = new FakeAssembly(typeof(Celeste).Assembly));
+            => _EntryAssembly ?? (_EntryAssembly = new FakeAssembly(typeof(Celeste).Assembly));
 
         [MonoModLinkTo("System.Reflection.Assembly", "System.Reflection.Assembly GetEntryAssembly()")]
         [MonoModRemove]

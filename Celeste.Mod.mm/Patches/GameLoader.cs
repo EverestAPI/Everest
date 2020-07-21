@@ -7,17 +7,12 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
-using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_GameLoader : GameLoader {

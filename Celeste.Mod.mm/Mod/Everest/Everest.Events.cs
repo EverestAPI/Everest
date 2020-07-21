@@ -1,27 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using Monocle;
-using MonoMod;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-
-using _OuiMainMenu = Celeste.OuiMainMenu;
-using _Level = Celeste.Level;
-using _Player = Celeste.Player;
-using _OuiJournal = Celeste.OuiJournal;
 using _Decal = Celeste.Decal;
 using _EventTrigger = Celeste.EventTrigger;
+using _Level = Celeste.Level;
+using _OuiJournal = Celeste.OuiJournal;
+using _OuiMainMenu = Celeste.OuiMainMenu;
+using _Player = Celeste.Player;
 
 namespace Celeste.Mod {
     public static partial class Everest {

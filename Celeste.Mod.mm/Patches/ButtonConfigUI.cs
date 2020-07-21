@@ -4,14 +4,12 @@
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Celeste {
     public class patch_ButtonConfigUI : ButtonConfigUI {

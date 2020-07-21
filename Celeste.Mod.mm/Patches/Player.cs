@@ -56,8 +56,7 @@ namespace Celeste {
 
             framesAlive = int.MaxValue;
 
-            Level level = Scene as Level;
-            if (level != null) {
+            if (Scene is Level) {
                 framesAlive = 0;
             }
 

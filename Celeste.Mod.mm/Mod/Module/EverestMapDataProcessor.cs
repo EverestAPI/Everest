@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Celeste.Mod {
     public abstract class EverestMapDataProcessor {

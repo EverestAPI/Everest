@@ -1,9 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Monocle;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
 using MonoMod.Utils;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/customBirdTutorial")]
@@ -29,7 +29,8 @@ namespace Celeste.Mod.Entities {
             { "DownRight", new Vector2(1, 1) }
         };
 
-        public CustomBirdTutorial(EntityData data, Vector2 offset) : base(data, offset) {
+        public CustomBirdTutorial(EntityData data, Vector2 offset) 
+            : base(data, offset) {
             BirdId = data.Attr("birdId");
             onlyOnce = data.Bool("onlyOnce");
             caw = data.Bool("caw");

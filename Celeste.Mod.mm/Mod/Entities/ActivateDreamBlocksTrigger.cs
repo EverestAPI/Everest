@@ -7,6 +7,7 @@ namespace Celeste.Mod.Entities {
         private bool rumble;
         private bool deactivate;
         private bool fastAnimation;
+
         public ActivateDreamBlocksTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
             rumble = data.Bool("fullRoutine");

@@ -3,15 +3,15 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
-using Monocle;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste.Editor {
     class patch_MapEditor : MapEditor {

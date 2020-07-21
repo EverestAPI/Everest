@@ -1,14 +1,10 @@
 ﻿using Celeste.Mod.Core;
-using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static Celeste.TextMenu;
 
 namespace Celeste.Mod.UI {

@@ -2,14 +2,8 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Monocle {
@@ -19,8 +13,7 @@ namespace Monocle {
 
         public static extern XmlDocument orig_LoadContentXML(string filename);
         public static XmlDocument LoadContentXML(string filename) {
-            ModAsset asset;
-            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out asset)) {
+            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out ModAsset asset)) {
                 XmlDocument doc = new XmlDocument();
                 using (Stream stream = asset.Stream)
                     doc.Load(stream);
@@ -33,8 +26,7 @@ namespace Monocle {
 
         public static extern XmlDocument orig_LoadXML(string filename);
         public static XmlDocument LoadXML(string filename) {
-            ModAsset asset;
-            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out asset)) {
+            if (Everest.Content.TryGet<AssetTypeXml>(filename.Substring(0, filename.Length - 4), out ModAsset asset)) {
                 XmlDocument doc = new XmlDocument();
                 using (Stream stream = asset.Stream)
                     doc.Load(stream);

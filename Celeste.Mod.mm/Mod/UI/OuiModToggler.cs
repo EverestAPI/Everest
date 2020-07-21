@@ -1,7 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Celeste.Mod.UI {
     class OuiModToggler : OuiGenericMenu, OuiModOptions.ISubmenu {

@@ -1,12 +1,10 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
-using MonoMod.Utils;
 using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace MonoMod {
     /// <summary>
@@ -448,7 +446,7 @@ namespace MonoMod {
 
                 // We only want to replace System.IO.File.* calls.
                 MethodReference calling = instr.Operand as MethodReference;
-                MethodDefinition replacement = null;
+                MethodDefinition replacement;
 
                 if (calling?.DeclaringType?.FullName == "System.IO.File") {
                     if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
@@ -582,7 +580,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
@@ -624,7 +621,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
@@ -977,8 +973,6 @@ namespace MonoMod {
         }
 
         public static void PatchTransitionRoutine(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_this = null;
-
             MethodDefinition m_GCCollect = method.DeclaringType.FindMethod("System.Void _GCCollect()");
             if (m_GCCollect == null)
                 return;
@@ -988,7 +982,6 @@ namespace MonoMod {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
                 break;
             }
 
@@ -996,7 +989,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
@@ -1364,7 +1356,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
@@ -1648,8 +1639,6 @@ namespace MonoMod {
         }
 
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_this = null;
-
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
             if (m_GetCheckpoints == null)
                 return;
@@ -1659,7 +1648,6 @@ namespace MonoMod {
                 if (!nest.Name.StartsWith("<SwapRoutine>d__"))
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
                 break;
             }
 
@@ -1667,7 +1655,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 1; instri < instrs.Count - 5; instri++) {
                 Instruction instr = instrs[instri];
 
@@ -2007,7 +1994,6 @@ namespace MonoMod {
             if (m_GetFiles == null)
                 return;
 
-            ILProcessor il = method.Body.GetILProcessor();
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).Name == "GetFiles") {
@@ -2021,7 +2007,6 @@ namespace MonoMod {
         }
 
         public static void PatchCelesteMain(MethodDefinition method, CustomAttribute attrib) {
-            ILProcessor il = method.Body.GetILProcessor();
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference)?.GetID() == "System.String SDL2.SDL::SDL_GetPlatform()") {
@@ -2067,7 +2052,6 @@ namespace MonoMod {
                 return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 

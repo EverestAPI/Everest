@@ -2,11 +2,9 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 
 namespace Celeste {
@@ -75,7 +73,7 @@ namespace Celeste {
                                 list3.Add(item2);
                             } else if (a == "f") {
                                 for (int m = 1; m < Math.Min(4, array.Length); m++) {
-                                    VertexPositionTexture item3 = default(VertexPositionTexture);
+                                    VertexPositionTexture item3 = default;
                                     string[] array2 = array[m].Split('/');
                                     if (array2[0].Length > 0) {
                                         item3.Position = list2[int.Parse(array2[0]) - 1];

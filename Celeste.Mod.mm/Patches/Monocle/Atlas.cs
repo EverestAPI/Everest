@@ -3,19 +3,12 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
-using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using MonoMod.Utils;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using Logger = Celeste.Mod.Logger;
 

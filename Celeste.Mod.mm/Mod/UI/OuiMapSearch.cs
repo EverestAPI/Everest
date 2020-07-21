@@ -5,8 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     public class OuiMapSearch : Oui {
@@ -280,7 +278,7 @@ namespace Celeste.Mod.UI {
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     continue;
 
-                List<String> matchTargets = new List<string> {
+                List<string> matchTargets = new List<string> {
                     id,
                     name,
                     levelSet,

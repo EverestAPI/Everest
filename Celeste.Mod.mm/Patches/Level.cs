@@ -6,19 +6,18 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
+using Celeste.Mod.Meta;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections;
-using System.Linq;
-using Celeste.Mod.Meta;
-using MonoMod.Utils;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reflection;
+using System.Linq;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -74,7 +73,7 @@ namespace Celeste {
                     }
                 }
                 Completed = true;
-                SaveData.Instance.RegisterCompletion(this.Session);
+                SaveData.Instance.RegisterCompletion(Session);
                 Everest.Events.Level.Complete(this);
             }
         }

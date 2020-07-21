@@ -2,20 +2,9 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
 using Monocle;
-using Celeste.Mod.Meta;
+using MonoMod;
 
 namespace Celeste {
     class patch_IntroCar : IntroCar {

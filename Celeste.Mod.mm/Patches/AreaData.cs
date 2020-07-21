@@ -4,19 +4,13 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Meta;
-using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_AreaData : AreaData {
@@ -55,8 +49,7 @@ namespace Celeste {
                 rawOrder = null;
             }
 
-            int orderTmp;
-            if (int.TryParse(rawOrder, out orderTmp))
+            if (int.TryParse(rawOrder, out int orderTmp))
                 order = orderTmp;
             else
                 order = null;
@@ -327,18 +320,12 @@ namespace Celeste {
                     continue;
                 }
 
-                int? order;
-                AreaMode side;
-                string name;
-                ParseName(path, out order, out side, out name);
+                ParseName(path, out int? order, out AreaMode side, out string name);
 
                 // Also check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
                 for (int ii = 0; ii < Areas.Count; ii++) {
                     AreaData other = Areas[ii];
-                    int? otherOrder;
-                    AreaMode otherSide;
-                    string otherName;
-                    ParseName(other.Mode[0].Path, out otherOrder, out otherSide, out otherName);
+                    ParseName(other.Mode[0].Path, out int? otherOrder, out AreaMode otherSide, out string otherName);
 
                     if (area.GetLevelSet() == other.GetLevelSet() && order == otherOrder && name == otherName && side != otherSide &&
                         !other.HasMode(side)) {
@@ -437,15 +424,9 @@ namespace Celeste {
             if (string.IsNullOrEmpty(aMeta?.Parent) && !string.IsNullOrEmpty(bMeta?.Parent))
                 return -1;
 
-            int? aOrder;
-            AreaMode aSide;
-            string aName;
-            ParseName(aSID, out aOrder, out aSide, out aName);
+            ParseName(aSID, out int? aOrder, out AreaMode aSide, out string aName);
 
-            int? bOrder;
-            AreaMode bSide;
-            string bName;
-            ParseName(bSID, out bOrder, out bSide, out bName);
+            ParseName(bSID, out int? bOrder, out AreaMode bSide, out string bName);
 
             // put the "unordered" levels at the end. (Farewell is one of them.)
             if (aOrder != null && bOrder == null)

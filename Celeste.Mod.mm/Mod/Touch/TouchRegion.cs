@@ -1,23 +1,7 @@
-﻿using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
 using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -93,7 +77,7 @@ namespace Celeste.Mod {
             }
 
             if (!enabled)
-                touch = default(TouchLocation);
+                touch = default;
 
             TouchPrev = Touch;
             Touch = touch;

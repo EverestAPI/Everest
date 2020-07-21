@@ -5,15 +5,9 @@
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Monocle {
     static class patch_VirtualContent {
@@ -37,8 +31,7 @@ namespace Monocle {
             // We use / instead of \ in mod content paths.
             pathMod = pathMod.Replace('\\', '/');
 
-            ModAsset asset;
-            if (Everest.Content.TryGet<Texture2D>(pathMod, out asset)) {
+            if (Everest.Content.TryGet<Texture2D>(pathMod, out ModAsset asset)) {
                 vt = (VirtualTexture) (object) new patch_VirtualTexture(asset);
             } else {
                 vt = (VirtualTexture) (object) new patch_VirtualTexture(path);

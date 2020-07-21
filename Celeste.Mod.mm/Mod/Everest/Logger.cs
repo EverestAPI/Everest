@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Logger {
@@ -68,8 +64,7 @@ namespace Celeste.Mod {
             for (Exception e_ = e; e_ != null; e_ = e_.InnerException) {
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine(e_.GetType().FullName + ": " + e_.Message + "\n" + e_.StackTrace);
-                if (e_ is ReflectionTypeLoadException) {
-                    ReflectionTypeLoadException rtle = (ReflectionTypeLoadException) e_;
+                if (e_ is ReflectionTypeLoadException rtle) {
                     for (int i = 0; i < rtle.Types.Length; i++) {
                         Console.WriteLine("ReflectionTypeLoadException.Types[" + i + "]: " + rtle.Types[i]);
                     }

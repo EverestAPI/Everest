@@ -1,21 +1,13 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Ionic.Zip;
 using Mono.Cecil;
 using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
-using Mono.Cecil.Pdb;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -65,8 +57,7 @@ namespace Celeste.Mod {
                                 string pathRelinked = Path.Combine(Path.GetDirectoryName(path), nameRelinked);
                                 if (!File.Exists(pathRelinked))
                                     continue;
-                                ModuleDefinition relinked;
-                                if (!StaticRelinkModuleCache.TryGetValue(nameRelinkedNeutral, out relinked)) {
+                                if (!StaticRelinkModuleCache.TryGetValue(nameRelinkedNeutral, out ModuleDefinition relinked)) {
                                     relinked = ModuleDefinition.ReadModule(pathRelinked, new ReaderParameters(ReadingMode.Immediate));
                                     StaticRelinkModuleCache[nameRelinkedNeutral] = relinked;
                                 }
@@ -241,8 +232,7 @@ namespace Celeste.Mod {
                     modder.OutputPath = cachedPath;
                     modder.MissingDependencyResolver = depResolver;
 
-                    string symbolPath;
-                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
+                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out string symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
                     modder.ReaderParameters.ReadSymbols = modder.ReaderParameters.SymbolStream != null;
                     if (modder.ReaderParameters.SymbolReaderProvider != null &&
                         modder.ReaderParameters.SymbolReaderProvider is RelinkerSymbolReaderProvider) {

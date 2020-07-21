@@ -1,23 +1,11 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 using SD = System.Drawing;
 using SDI = System.Drawing.Imaging;
-using System.Runtime.InteropServices;
 
 namespace Celeste.Mod {
     public static class ContentExtensions {

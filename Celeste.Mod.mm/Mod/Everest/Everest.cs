@@ -1,30 +1,24 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
+using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod.RuntimeDetour;
+using MonoMod.RuntimeDetour.HookGen;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Security;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using System.Globalization;
 using System.Security.Cryptography;
+using System.Threading;
 using YYProject.XXHash;
-using Celeste.Mod.Entities;
-using Celeste.Mod.Helpers;
-using MonoMod.RuntimeDetour;
-using MonoMod.RuntimeDetour.HookGen;
-using Celeste.Mod.UI;
 
 namespace Celeste.Mod {
     public static partial class Everest {

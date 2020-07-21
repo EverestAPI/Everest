@@ -7,7 +7,6 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using FMOD;
 using FMOD.Studio;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -15,9 +14,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     static class patch_Audio {
@@ -59,8 +55,7 @@ namespace Celeste {
 
             // Prepopulate cachedPaths, as it's being used directly.
             foreach (Bank bank in patch_Banks.Banks.Values) {
-                EventDescription[] descs;
-                bank.getEventList(out descs);
+                bank.getEventList(out EventDescription[] descs);
                 foreach (EventDescription desc in descs) {
                     if (!desc.isValid())
                         continue;
@@ -131,8 +126,7 @@ namespace Celeste {
                 system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
             }
 
-            ModAsset assetGUIDs;
-            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out assetGUIDs)) {
+            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out ModAsset assetGUIDs)) {
                 IngestGUIDs(assetGUIDs);
             }
 
@@ -160,8 +154,7 @@ namespace Celeste {
                         continue;
                     string path = line.Substring(indexOfSpace + 1);
 
-                    EventDescription _event;
-                    if (system.getEventByID(id, out _event) <= RESULT.OK) {
+                    if (system.getEventByID(id, out EventDescription _event) <= RESULT.OK) {
                         _event.unloadSampleData();
                         cachedPaths[id] = path;
                         cachedModEvents[path] = _event;

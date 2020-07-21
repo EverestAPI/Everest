@@ -1,20 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using MonoMod;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
+﻿using Ionic.Zip;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using Ionic.Zip;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
 
 namespace Celeste.Mod {
     public abstract class ModAsset {
@@ -53,9 +40,7 @@ namespace Celeste.Mod {
         /// </summary>
         public virtual Stream Stream {
             get {
-                Stream stream;
-                bool isSection;
-                Open(out stream, out isSection);
+                Open(out Stream stream, out bool isSection);
                 return stream;
             }
         }
@@ -105,7 +90,7 @@ namespace Celeste.Mod {
                     using (StreamReader reader = new StreamReader(Stream))
                         result = YamlHelper.Deserializer.Deserialize<T>(reader);
                 } catch {
-                    result = default(T);
+                    result = default;
                     return false;
                 }
                 return true;
@@ -113,7 +98,7 @@ namespace Celeste.Mod {
 
             // TODO: Deserialize AssetTypeXml
 
-            result = default(T);
+            result = default;
             return false;
         }
 
@@ -123,8 +108,7 @@ namespace Celeste.Mod {
         /// <typeparam name="T">The target type.</typeparam>
         /// <returns>The asset in its deserialized (object) form or default(T).</returns>
         public T Deserialize<T>() {
-            T result;
-            TryDeserialize(out result);
+            TryDeserialize(out T result);
             return result;
         }
 
@@ -135,12 +119,11 @@ namespace Celeste.Mod {
         /// <param name="meta">The requested meta object.</param>
         /// <returns>True if deserializing the meta asset succeeded, false otherwise.</returns>
         public bool TryGetMeta<T>(out T meta) {
-            ModAsset metaAsset;
-            if (Everest.Content.TryGet(PathVirtual + ".meta", out metaAsset) &&
+            if (Everest.Content.TryGet(PathVirtual + ".meta", out ModAsset metaAsset) &&
                 metaAsset.TryDeserialize(out meta)
             )
                 return true;
-            meta = default(T);
+            meta = default;
             return false;
         }
 
@@ -150,8 +133,7 @@ namespace Celeste.Mod {
         /// <typeparam name="T">The target meta type.</typeparam>
         /// <returns>The requested meta object or default(T).</returns>
         public T GetMeta<T>() {
-            T meta;
-            TryGetMeta(out meta);
+            TryGetMeta(out T meta);
             return meta;
         }
 

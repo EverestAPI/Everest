@@ -2,17 +2,13 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Celeste.Mod;
-using MonoMod;
-using System.Collections;
-using Monocle;
-using Celeste.Mod.Meta;
 using Celeste.Mod.Entities;
+using Celeste.Mod.Meta;
+using Monocle;
+using MonoMod;
+using System;
+using System.Collections;
 
 namespace Celeste {
     class patch_LevelEnter : Scene {
