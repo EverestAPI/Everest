@@ -270,7 +270,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap buttons during a remap operation.
-        /// This should be the a List<Buttons> field in your settings class
+        /// This should be the a List&lt;Buttons&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newBtn">The new button that the user is attempting to set.</param>

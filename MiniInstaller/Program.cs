@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Celeste.Mod;
-using System.Reflection;
+﻿using Celeste.Mod.Helpers;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading;
-using Celeste.Mod.Helpers;
+using System.Xml;
 
 namespace MiniInstaller {
     public class Program {
@@ -67,6 +64,8 @@ namespace MiniInstaller {
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
                     MakeLargeAddressAware(PathEverestExe);
+                    CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
+
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -323,6 +322,22 @@ namespace MiniInstaller {
                 return e.Name == asm.FullName || e.Name == asm.GetName().Name ? asm : null;
             };
             return asm;
+        }
+
+        static void CombineXMLDoc(string xmlFrom, string xmlTo) {
+            LogLine("Combining documentation");
+            XmlDocument from = new XmlDocument();
+            from.Load(xmlFrom);
+            XmlDocument to = new XmlDocument();
+            to.Load(xmlTo);
+
+            foreach (XmlNode node in from.DocumentElement.LastChild) {
+                XmlAttribute name = node.Attributes["name", node.NamespaceURI];
+                name.Value = name.Value.Replace("patch_", "");
+            }
+
+            to.DocumentElement.AppendChild(to.ImportNode(from.DocumentElement.LastChild, true));
+            to.Save(xmlTo);
         }
 
     }

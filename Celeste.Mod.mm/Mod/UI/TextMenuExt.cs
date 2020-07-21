@@ -279,7 +279,7 @@ namespace Celeste {
             /// Creates a new <see cref="EnumerableSlider{T}"/>
             /// </summary>
             /// <param name="label">Slider label</param>
-            /// <param name="options">IEnumerable of type <see cref="KeyValuePair{T, string}"/></param>
+            /// <param name="options">IEnumerable containing <typeparamref name="T"/>, <see cref="string"/> pairs.</param>
             /// <param name="startValue">Initial value</param>
             public EnumerableSlider(string label, IEnumerable<KeyValuePair<T, string>> options, T startValue)
                 : base(label) {

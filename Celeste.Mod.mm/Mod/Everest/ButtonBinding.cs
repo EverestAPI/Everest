@@ -71,8 +71,10 @@ namespace Celeste.Mod {
 
         #region VirtualButton Members
 
+        /// <inheritdoc cref="VirtualButton.ConsumeBuffer"/>
         public void ConsumeBuffer() => Button?.ConsumeBuffer();
 
+        /// <inheritdoc cref="VirtualButton.ConsumePress"/>
         public void ConsumePress() => Button?.ConsumePress();
 
         public void SetRepeat(float repeatTime) => Button?.SetRepeat(repeatTime);

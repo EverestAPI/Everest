@@ -10,13 +10,22 @@ using _Player = Celeste.Player;
 
 namespace Celeste.Mod {
     public static partial class Everest {
+        /// <summary>
+        /// Events that are called at various points in the game.
+        /// </summary>
         public static class Events {
 
             public static class Celeste {
+                /// <summary>
+                /// Called after the main gameloop has finished running.
+                /// </summary>
                 public static event Action OnExiting;
                 internal static void Exiting()
                     => OnExiting?.Invoke();
 
+                /// <summary>
+                /// Called just before the Main method exits.
+                /// </summary>
                 public static event Action OnShutdown;
                 internal static void Shutdown()
                     => OnShutdown?.Invoke();
@@ -37,6 +46,9 @@ namespace Celeste.Mod {
 
             public static class MainMenu {
                 public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);
+                /// <summary>
+                /// Called after <see cref="_OuiMainMenu.CreateButtons"/>.
+                /// </summary>
                 public static event CreateButtonsHandler OnCreateButtons;
                 internal static void CreateButtons(_OuiMainMenu menu, List<MenuButton> buttons)
                     => OnCreateButtons?.Invoke(menu, buttons);
@@ -44,21 +56,33 @@ namespace Celeste.Mod {
 
             public static class Level {
                 public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
+                /// <summary>
+                /// Called after <see cref="_Level.Pause(int, bool, bool)"/>.
+                /// </summary>
                 public static event PauseHandler OnPause;
                 internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
                     => OnPause?.Invoke(level, startIndex, minimal, quickReset);
 
                 public delegate void CreatePauseMenuButtonsHandler(_Level level, TextMenu menu, bool minimal);
+                /// <summary>
+                /// Called when the Level's pause menu is created.
+                /// </summary>
                 public static event CreatePauseMenuButtonsHandler OnCreatePauseMenuButtons;
                 internal static void CreatePauseMenuButtons(_Level level, TextMenu menu, bool minimal)
                     => OnCreatePauseMenuButtons?.Invoke(level, menu, minimal);
 
                 public delegate void TransitionToHandler(_Level level, LevelData next, Vector2 direction);
+                /// <summary>
+                /// Called after <see cref="_Level.TransitionTo(LevelData, Vector2)"/>
+                /// </summary>
                 public static event TransitionToHandler OnTransitionTo;
                 internal static void TransitionTo(_Level level, LevelData next, Vector2 direction)
                     => OnTransitionTo?.Invoke(level, next, direction);
 
                 public delegate bool LoadEntityHandler(_Level level, LevelData levelData, Vector2 offset, EntityData entityData);
+                /// <summary>
+                /// Called during <see cref="patch_Level.LoadCustomEntity(EntityData, _Level)"/>.
+                /// </summary>
                 public static event LoadEntityHandler OnLoadEntity;
                 internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
                     => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;

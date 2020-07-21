@@ -1,0 +1,437 @@
+<?xml version="1.0"?>
+<!--
+
+This is a file containing Hand-Written(!) documentation for Celeste and Monocle.
+
+Please DO NOT REMOVE THIS and modify it carefully.
+
+-->
+<doc>
+  <assembly>
+      <name>Celeste</name>
+  </assembly>
+  <members name="Celeste">
+  </members>
+  <members name="Monocle">
+    <member name="M:Monocle.Engine.RenderCore">
+      <summary>
+        Override if you want to change the core rendering functionality of Monocle Engine.<br/>
+        By default, this simply sets the render target to null, clears the screen, and renders the current Scene.
+      </summary>
+    </member>
+    <member name="M:Monocle.Engine.OnSceneTransition">
+      <summary>
+        Called after a Scene ends, before the next Scene begins.
+      </summary>
+    </member>
+    <member name="P:Monocle.Engine.Scene">
+      <summary>
+        The currently active Scene. Note that if set, the Scene will not actually change until the end of the Update.
+      </summary>
+    </member>
+
+
+    <member name="M:Monocle.Scene.OnInterval(System.Float32)">
+      <summary>
+        Returns whether the Scene timer has passed the given time interval since the last frame. <br/>
+        Ex: given 2.0f, this will return true once every 2 seconds.
+      </summary>
+      <param name="interval">The time interval to check for</param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.OnInterval(System.Float32,System.Float32)">
+      <summary>
+        Returns whether the Scene timer has passed the given time interval since the last frame.
+        Ex: given 2.0f, this will return true once every 2 seconds
+      </summary>
+      <param name="interval">The time interval to check for</param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.CreateAndAdd``1">
+      <summary>
+        Shortcut to call Engine.Pooler.Create, add the Entity to this Scene, and return it. Entity type must be marked as Pooled.
+      </summary>
+      <typeparam name="T">Pooled Entity type to create</typeparam>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.Item(Monocle.BitTag)">
+      <summary>
+        Quick access to entire tag lists of Entities. Result will never be null.
+      </summary>
+      <param name="tag">The tag list to fetch</param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.Add(Monocle.Entity)">
+      <summary>
+        Shortcut function for adding an Entity to the Scene's Entities list.
+      </summary>
+      <param name="entity">The Entity to add</param>
+    </member>
+    <member name="M:Monocle.Scene.Remove(Monocle.Entity)">
+      <summary>
+        Shortcut function for removing an Entity from the Scene's Entities list.
+      </summary>
+      <param name="entity">The Entity to remove</param>
+    </member>
+    <member name="M:Monocle.Scene.Add(System.Collections.Generic.IEnumerable{Monocle.Entity})">
+      <summary>
+        Shortcut function for adding a set of Entities from the Scene's Entities list
+      </summary>
+      <param name="entities">The Entities to add</param>
+    </member>
+    <member name="M:Monocle.Scene.Remove(System.Collections.Generic.IEnumerable{Monocle.Entity})">
+      <summary>
+        Shortcut function for removing a set of Entities from the Scene's Entities list
+      </summary>
+      <param name="entities">The Entities to remove</param>
+    </member>
+    <member name="M:Monocle.Scene.Add(Monocle.Entity[])">
+      <summary>
+        Shortcut function for adding a set of Entities from the Scene's Entities list
+      </summary>
+      <param name="entities">The Entities to add</param>
+    </member>
+    <member name="M:Monocle.Scene.Remove(Monocle.Entity[])">
+      <summary>
+        Shortcut function for removing a set of Entities from the Scene's Entities list
+      </summary>
+      <param name="entities">The Entities to remove</param>
+    </member>
+    <member name="M:Monocle.Scene.GetEnumerator">
+      <summary>
+        Allows you to iterate through all Entities in the Scene
+      </summary>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        Allows you to iterate through all Entities in the Scene
+      </summary>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Scene.Add(Monocle.Renderer)">
+      <summary>
+        Shortcut function to add a Renderer to the Renderer list
+      </summary>
+      <param name="renderer">The Renderer to add</param>
+    </member>
+    <member name="M:Monocle.Scene.Remove(Monocle.Renderer)">
+      <summary>
+        Shortcut function to remove a Renderer from the Renderer list
+      </summary>
+      <param name="renderer">The Renderer to remove</param>
+    </member>
+
+
+    <member name="M:Monocle.Entity.SceneBegin">
+      <summary>
+        Called when the containing Scene Begins.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.SceneEnd">
+      <summary>
+        Called when the containing Scene Ends.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.Awake">
+      <summary>
+        Called before the frame starts, after Entities are added and removed, on the frame that the Entity was added.<br/>
+        Useful if you added two Entities in the same frame, and need them to detect each other before they start Updating.
+      </summary>
+      <param name="scene"></param>
+    </member>
+    <member name="M:Monocle.Entity.Added">
+      <summary>
+        Called when this Entity is added to a Scene, which only occurs immediately before each Update.<br/>
+        Keep in mind, other Entities to be added this frame may be added after this Entity.<br/>
+        See <see cref="M:Monocle.Entity.Awake"/> for after all Entities are added, but still before the frame Updates.
+      </summary>
+      <param name="scene"></param>
+    </member>
+    <member name="M:Monocle.Entity.Removed">
+      <summary>
+        Called when the Entity is removed from a Scene.
+      </summary>
+      <param name="scene"></param>
+    </member>
+    <member name="M:Monocle.Entity.Update">
+      <summary>
+        Do game logic here, but do not render here. Not called if the Entity is not Active.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.Render">
+      <summary>
+        Draw the Entity here. Not called if the Entity is not Visible.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.DebugRender">
+      <summary>
+        Draw any debug visuals here. Only called if the console is open, but still called even if the Entity is not Visible.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.HandleGraphicsReset">
+      <summary>
+        Called when the graphics device resets. When this happens, any RenderTargets or other contents of VRAM will be wiped and need to be regenerated.
+      </summary>
+    </member>
+    <member name="M:Monocle.Entity.Add(Monocle.Component)">
+      <summary>
+        Shortcut function for adding a Component to the Entity's Components list.
+      </summary>
+      <param name="component">The Component to add.</param>
+    </member>
+    <member name="M:Monocle.Entity.Remove(Monocle.Component)">
+      <summary>
+        Shortcut function for removing an Component from the Entity's Components list.
+      </summary>
+      <param name="component">The Component to remove.</param>
+    </member>
+    <member name="M:Monocle.Entity.Add(Monocle.Component[])">
+      <summary>
+        Shortcut function for adding a set of Components from the Entity's Components list.
+      </summary>
+      <param name="components">The Components to add.</param>
+    </member>
+    <member name="M:Monocle.Entity.Remove(Monocle.Component[])">
+      <summary>
+        Shortcut function for removing a set of Components from the Entity's Components list.
+      </summary>
+      <param name="components">The Components to remove.</param>
+    </member>
+    <member name="M:Monocle.Entity.GetEnumerator">
+      <summary>
+        Allows you to iterate through all Components in the Entity.
+      </summary>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Entity.System#Collections#IEnumerable#GetEnumerator">
+      <summary>
+        Allows you to iterate through all Components in the Entity.
+      </summary>
+      <returns></returns>
+    </member>
+
+
+    <member name="M:Monocle.Calc.Range(System.Random,System.Int32,System.Int32)">
+      <summary>
+        Returns a random integer between min (inclusive) and max (exclusive)
+      </summary>
+      <param name="random"></param>
+      <param name="min"></param>
+      <param name="max"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Calc.Range(System.Random,System.Single,System.Single)">
+      <summary>
+        Returns a random float between min (inclusive) and max (exclusive)
+      </summary>
+      <param name="random"></param>
+      <param name="min"></param>
+      <param name="max"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Calc.Range(System.Random,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)">
+      <summary>
+        Returns a random Vector2, and x- and y-values of which are between min (inclusive) and max (exclusive)
+      </summary>
+      <param name="random"></param>
+      <param name="min"></param>
+      <param name="max"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.Calc.ReadCSVIntWithTricks(System.String)">
+      <summary>
+        Read positive-integer CSV with some added tricks.
+        Use - to add inclusive range. Ex: 3-6 = 3,4,5,6
+        Use * to add multiple values. Ex: 4*3 = 4,4,4
+      </summary>
+      <param name="csv"></param>
+      <returns></returns>
+    </member>
+
+
+    <member name="M:Monocle.ChoiceSet`1.Set(`0,System.Int32)">
+      <summary>
+        Sets the weight of a choice
+      </summary>
+      <param name="choice"></param>
+      <param name="weight"></param>
+    </member>
+    <member name="P:Monocle.ChoiceSet`1.Item(`0)">
+      <summary>
+        Sets the weight of a choice, or gets its weight
+      </summary>
+      <param name="choice"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.ChoiceSet`1.Set(`0,System.Single)">
+      <summary>
+        Sets the chance of a choice. The chance is calculated based on the current state of ChoiceSet, so if
+        other choices are changed later the chance will not be guaranteed to remain the same
+      </summary>
+      <param name="choice"></param>
+      <param name="chance">A chance between 0 and 1.0f</param>
+    </member>
+    <member name="M:Monocle.ChoiceSet`1.SetMany(System.Single,`0[])">
+      <summary>
+        Sets the chance of many choices. Takes the chance of any of the given choices being picked, not the chance of
+        any individual choice. The chances are calculated based on the current state of ChoiceSet, so if
+        other choices are changed later the chances will not be guaranteed to remain the same
+      </summary>
+      <param name="totalChance"></param>
+      <param name="choices">A chance between 0 and 1.0f</param>
+    </member>
+    <member name="M:Monocle.ChoiceSet`1.Get(System.Random)">
+      <summary>
+        Chooses a random choice in the set
+      </summary>
+      <param name="random"></param>
+      <returns></returns>
+    </member>
+    <member name="M:Monocle.ChoiceSet`1.Get">
+      <summary>
+        Chooses a random choice in the set, using Calc.Random to choose
+      </summary>
+      <returns></returns>
+    </member>
+
+
+    <member name="T:Monocle.Chooser`1">
+      <summary>
+        Utility class for making weighted random choices from a set.
+      </summary>
+    </member>
+    <member name="M:Monocle.Chooser`1.#ctor(`0,System.Single)">
+      <summary>
+        Initialize with a single choice with the given weight.
+      </summary>
+    </member>
+    <member name="M:Monocle.Chooser`1.#ctor(`0[])">
+      <summary>
+        Initialize with a list of choices, all with a weight of 1.
+      </summary>
+    </member>
+    <member name="M:Monocle.Chooser`1.FromString``1(System.String)">
+      <summary>
+        Parses a chooser from a string.
+      </summary>
+      <param name="data">Choices to parse. Format: "choice0:weight,choice1:weight,..."</param>
+      <returns></returns>
+    </member>
+
+
+    <member name="P:Monocle.Draw.Renderer">
+      <summary>
+        The currently-rendering Renderer
+      </summary>
+    </member>
+    <member name="P:Monocle.Draw.SpriteBatch">
+      <summary>
+        All 2D rendering is done through this SpriteBatch instance
+      </summary>
+    </member>
+    <member name="P:Monocle.Draw.DefaultFont">
+      <summary>
+        The default Monocle font (Consolas 12). Loaded automatically by Monocle at startup
+      </summary>
+    </member>
+    <member name="F:Monocle.Draw.Particle">
+      <summary>
+        A subtexture used to draw particle systems.
+        Will be generated at startup, but you can replace this with a subtexture from your Atlas to reduce texture swaps.
+        Should be a 2x2 white pixel
+      </summary>
+    </member>
+    <member name="F:Monocle.Draw.Pixel">
+      <summary>
+        A subtexture used to draw rectangles and lines.
+        Will be generated at startup, but you can replace this with a subtexture from your Atlas to reduce texture swaps.
+        Use the top left pixel of your Particle Subtexture if you replace it!
+        Should be a 1x1 white pixel
+      </summary>
+    </member>
+
+
+    <member name="M:Monocle.SaveLoad.SerializeToFile``1(``0,System.String,Monocle.SaveLoad.SerializeModes)">
+      <summary>
+        Save an object to a file so you can load it later
+      </summary>
+    </member>
+    <member name="M:Monocle.SaveLoad.SafeSerializeToFile``1(``0,System.String,Monocle.SaveLoad.SerializeModes)">
+      <summary>
+        Save an object to a file so you can load it later.
+        Will not crash if the save fails
+      </summary>
+      <returns>Whether the save succeeded</returns>
+    </member>
+    <member name="M:Monocle.SaveLoad.DeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes)">
+      <summary>
+        Load an object that was previously serialized to a file
+      </summary>
+    </member>
+    <member name="M:Monocle.SaveLoad.SafeDeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes,System.Boolean)">
+      <summary>
+        Load an object that was previously serialized to a file
+        If the load fails or the file does not exist, default(T) will be returned
+      </summary>
+    </member>
+    <member name="M:Monocle.SaveLoad.SafeDeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes,System.Boolean@,System.Boolean)">
+      <summary>
+        Load an object that was previously serialized to a file
+        If the load fails or the file does not exist, default(T) will be returned
+      </summary>
+      <param name="loadError">True if the load fails despite the requested file existing (for example due to corrupted data)</param>
+    </member>
+
+
+    <member name="T:Monocle.VirtualAxis">
+    <summary>
+      A virtual input represented as a float between -1 and 1
+    </summary>
+    </member>
+
+
+    <member name="T:Monocle.VirtualButton">
+      <summary>
+        A virtual input that is represented as a boolean. As well as simply checking the current button state, you can ask whether it was just pressed or released this frame. You can also keep the button press stored in a buffer for a limited time, or until it is consumed by calling ConsumeBuffer()
+      </summary>
+    </member>
+    <member name="M:Monocle.VirtualButton.ConsumeBuffer">
+      <summary>
+        Ends the Press buffer for this button
+      </summary>
+    </member>
+    <member name="M:Monocle.VirtualButton.ConsumePress">
+      <summary>
+        This button will not register a Press for the rest of the current frame, but otherwise continues to function normally. If the player continues to hold the button, next frame will not count as a Press. Also ends the Press buffer for this button
+      </summary>
+    </member>
+
+    
+    <member name="T:Monocle.VirtualInput">
+      <summary>
+        Represents a virtual button, axis or joystick whose state is determined by the state of its VirtualInputNodes
+      </summary>
+    </member>
+    <member name="T:Monocle.VirtualInputNode">
+      <summary>
+        Add these to your VirtualInput to define how it determines its current input state.
+        For example, if you want to check whether a keyboard key is pressed, create a VirtualButton and add to it a VirtualButton.KeyboardKey
+      </summary>
+    </member>
+
+
+    <member name="T:Monocle.VirtualIntegerAxis">
+      <summary>
+        A virtual input that is represented as a int that is either -1, 0, or 1
+      </summary>
+    </member>
+
+
+    <member name="T:Monocle.VirtualJoystick">
+      <summary>
+        A virtual input that is represented as a Vector2, with both X and Y as values between -1 and 1
+      </summary>
+    </member>
+  </members>
+</doc>

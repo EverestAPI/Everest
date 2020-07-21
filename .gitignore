@@ -249,3 +249,6 @@ ModelManifest.xml
 
 # Nix build result
 result
+
+# Auto-generated XML doc
+Celeste.Mod.mm/Celeste.Mod.mm.xml
