@@ -217,7 +217,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Celeste.xml">
+    <None Include="../lib-stripped/Celeste.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

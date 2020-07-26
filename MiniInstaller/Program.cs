@@ -325,15 +325,33 @@ namespace MiniInstaller {
         }
 
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
-            LogLine("Combining documentation");
+            LogLine("Combining xmlDocs");
             XmlDocument from = new XmlDocument();
             from.Load(xmlFrom);
             XmlDocument to = new XmlDocument();
             to.Load(xmlTo);
 
-            foreach (XmlNode node in from.DocumentElement.LastChild) {
+            XmlNodeList members = from.DocumentElement.LastChild.ChildNodes;
+
+            // Reverse for loop so that we can remove nodes without breaking everything
+            for (int i = members.Count - 1; i >= 0; i--) { 
+                XmlNode node = members[i];
                 XmlAttribute name = node.Attributes["name", node.NamespaceURI];
-                name.Value = name.Value.Replace("patch_", "");
+                string noPatch = name.Value.Replace("patch_", "");
+                if (!noPatch.Equals(name.Value)) {
+                    // Remove internal inheritdoc members that would otherwise override "vanilla" celeste members.
+                    if (node.ChildNodes.Count == 1 && 
+                        node.FirstChild.Name.Equals("inheritdoc") && 
+                        node.FirstChild.Attributes["cref", node.FirstChild.NamespaceURI].Value.Equals(noPatch)) {
+                        node.ParentNode.RemoveChild(node);
+                        continue;
+                    }
+                    name.Value = noPatch;
+                }
+
+                // Fix up any references to patch_ class members.
+                foreach (XmlAttribute cref in node.SelectNodes(".//@cref"))
+                    cref.Value = cref.Value.Replace("patch_", "");
             }
 
             to.DocumentElement.AppendChild(to.ImportNode(from.DocumentElement.LastChild, true));

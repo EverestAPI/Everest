@@ -12,9 +12,19 @@ namespace Celeste {
 
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
+
+        /// <summary>
+        /// The items contained in this menu.
+        /// </summary>
         public List<Item> Items => items;
 
         // Basically the same as Add(), but with an index parameter.
+        /// <summary>
+        /// Insert a <see cref="TextMenu.Item"/> at position <paramref name="index"/> in the menu.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public TextMenu Insert(int index, Item item) {
             items.Insert(index, item);
             item.Container = this;
@@ -33,6 +43,11 @@ namespace Celeste {
         }
 
         // The reverse of Add()
+        /// <summary>
+        /// Remove a <see cref="TextMenu.Item"/> from the menu.
+        /// </summary>
+        /// <param name="item">A <see cref="TextMenu.Item"/> contained in this menu.</param>
+        /// <returns></returns>
         public TextMenu Remove(Item item) {
             int index = items.IndexOf(item);
             if (index == -1)
@@ -47,6 +62,7 @@ namespace Celeste {
             return this;
         }
 
+        /// <inheritdoc cref="TextMenu.GetYOffsetOf(Item)"/>
         [MonoModReplace]
         public new float GetYOffsetOf(Item targetItem) {
             // this is a small fix of the vanilla method to better support invisible menu items.

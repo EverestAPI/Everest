@@ -161,10 +161,11 @@ namespace Celeste {
             return orig;
         }
 
+        /// <inheritdoc cref="Dialog.Has(string, Language)"/>
         [MonoModReplace]
         public static bool Has(string name, Language language = null) {
             if (string.IsNullOrEmpty(name))
-                return true;
+                return false;
 
             name = name.DialogKeyify();
             if (language == null)
@@ -179,6 +180,7 @@ namespace Celeste {
             return false;
         }
 
+        /// <inheritdoc cref="Dialog.Get(string, Language)"/>
         [MonoModReplace]
         public static string Get(string name, Language language = null) {
             if (string.IsNullOrEmpty(name))
@@ -197,6 +199,7 @@ namespace Celeste {
             return "[" + name + "]";
         }
 
+        /// <inheritdoc cref="Dialog.Clean(string, Language)"/>
         [MonoModReplace]
         public static string Clean(string name, Language language = null) {
             if (string.IsNullOrEmpty(name))
@@ -215,6 +218,10 @@ namespace Celeste {
             return "{" + name + "}";
         }
 
+        /// <summary>
+        /// Same as Dialog.Clean, but for level set names.
+        /// Tries to find a value under both "LEVELSET_NAME" and "NAME", otherwise returns name.SpacedPascalCase()
+        /// </summary>
         public static string CleanLevelSet(string name) {
             if (string.IsNullOrEmpty(name)) {
                 return Dialog.Clean("levelset_");

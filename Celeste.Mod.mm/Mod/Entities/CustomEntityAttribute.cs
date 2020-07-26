@@ -7,7 +7,7 @@ namespace Celeste.Mod.Entities {
     /// <br></br>
     /// This Entity will be loaded when a matching ID is detected.
     /// <br></br>
-    /// <see href="https://github.com/EverestAPI/Resources/wiki/Custom-Entities-and-Triggers#customentity">Read More.</see>
+    /// <seealso href="https://github.com/EverestAPI/Resources/wiki/Custom-Entities-and-Triggers#customentity">Read More.</seealso>
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class CustomEntityAttribute : Attribute {
