@@ -5,18 +5,18 @@ namespace Celeste.Mod.Entities {
     [CustomEntity("everest/activateDreamBlocksTrigger")]
     public class ActivateDreamBlocksTrigger : Trigger {
         private bool rumble;
-        private bool deactivate;
+        private bool activate;
         private bool fastAnimation;
         public ActivateDreamBlocksTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
             rumble = data.Bool("fullRoutine");
-            deactivate = data.Bool("deactivate");
+            activate = data.Bool("activate", true);
             fastAnimation = data.Bool("fastAnimation");
         }
 
         public override void OnEnter(Player player) {
             Level level = Scene as Level;
-            if (!deactivate && !level.Session.Inventory.DreamDash) {
+            if (activate && !level.Session.Inventory.DreamDash) {
                 level.Session.Inventory.DreamDash = true;
                 foreach (DreamBlock dreamBlock in level.Tracker.GetEntities<DreamBlock>()) {
                     if (rumble) {
@@ -27,7 +27,7 @@ namespace Celeste.Mod.Entities {
                     } else
                         dreamBlock.ActivateNoRoutine();
                 }
-            } else if (deactivate && level.Session.Inventory.DreamDash) {
+            } else if (!activate && level.Session.Inventory.DreamDash) {
                 level.Session.Inventory.DreamDash = false;
                 foreach (DreamBlock dreamBlock in level.Tracker.GetEntities<DreamBlock>()) {
                     if (rumble) {
