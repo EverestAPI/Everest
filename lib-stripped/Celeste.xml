@@ -302,6 +302,192 @@ How these should be structured is poorly documented, so if having nested members
         </member>
       </members>
     </members>
+    <members name="Triggers">
+      <members name="Trigger">
+        <member name="T:Celeste.Trigger">
+            <summary>
+            An invisible entity that performs an action when the player enters or exits.
+            </summary>
+        </member>
+        <member name="P:Celeste.Trigger.PlayerIsInside">
+            <summary>
+            Whether the player is currently inside the trigger bounds.
+            </summary>
+        </member>
+        <member name="M:Celeste.Trigger.OnEnter(Celeste.Player)">
+            <summary>
+            Called when the player first enters the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.OnStay(Celeste.Player)">
+            <summary>
+            Called every frame the player remains in the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.OnLeave(Celeste.Player)">
+            <summary>
+            Called when the player leaves the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.GetPositionLerp(Celeste.Player,Celeste.Trigger.PositionModes)">
+            <summary>
+            Get the player's position within the trigger as a range from 0-1.
+            </summary>
+            <param name="player"></param>
+            <param name="mode">The mode used to calculate the lerp.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Celeste.Trigger.PositionModes">
+            <summary>
+            How the position lerp should be calculated.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.NoEffect">
+            <summary>
+            Returns 1f.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.HorizontalCenter">
+            <summary>
+            How close the player is to the center of the trigger, on the X axis.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.VerticalCenter">
+            <summary>
+            How close the player is to the center of the trigger, on the Y axis.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.TopToBottom">
+            <summary>
+            Lerp from top to bottom of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.BottomToTop">
+            <summary>
+            Lerp from bottom to top of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.LeftToRight">
+            <summary>
+            Lerp from left to right of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.RightToLeft">
+            <summary>
+            Lerp from right to left of the trigger.
+            </summary>
+        </member>
+    </members>
+    </members>
+    <members name="Components">
+      <members name="Listeners">
+        <members name="CoreModeListener">
+          <member name="T:Celeste.CoreModeListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs an action when <see cref="P:Celeste.Level.CoreMode"/> is changed.
+              </summary>
+          </member>
+          <member name="M:Celeste.CoreModeListener.#ctor(System.Action{Celeste.Session.CoreModes})">
+              <summary>
+              Create a new <see cref="T:Celeste.CoreModeListener"/>.
+              </summary>
+              <param name="onChange">Invoked when <see cref="P:Celeste.Level.CoreMode"/> is changed.</param>
+          </member>
+          <member name="F:Celeste.CoreModeListener.OnChange">
+              <summary>
+              Invoked when <see cref="P:Celeste.Level.CoreMode"/> is changed.
+              </summary>
+          </member>
+        </members>
+        <members name="DashListener">
+          <member name="T:Celeste.DashListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs an action when the <see cref="T:Celeste.Player"/> dashes.
+              </summary>
+          </member>
+          <member name="M:Celeste.DashListener.#ctor">
+              <summary>
+              Create a new <see cref="T:Celeste.DashListener"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.DashListener.OnDash">
+              <summary>
+              Invoked when the <see cref="T:Celeste.Player"/> dashes.
+              </summary>
+          </member>
+          <member name="F:Celeste.DashListener.OnSet">
+              <summary>
+              Unused in vanilla Celeste.
+              </summary>
+          </member>
+        </members>
+        <members name="TransitionListener">
+          <member name="T:Celeste.TransitionListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs actions while transitioning between <see cref="T:Celeste.Level"/>s.
+              </summary>
+          </member>
+          <member name="M:Celeste.TransitionListener.#ctor">
+              <summary>
+              Create a new <see cref="T:Celeste.TransitionListener"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnInBegin">
+              <summary>
+              Invoked at the start of a transition into the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnInEnd">
+              <summary>
+              Invoked at the end of a transition into the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnIn">
+              <summary>
+              Invoked every frame while transitioning into the <see cref="T:Celeste.Level"/> containing this component.<br/>
+              Accepts as parameter the progress of the transition from <c>0-1</c>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnOutBegin">
+              <summary>
+              Invoked at the start of a transition out of the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnOut">
+              <summary>
+              Invoked every frame while transitioning out of the <see cref="T:Celeste.Level"/> containing this component.<br/>
+              Accepts as parameter the progress of the transition from <c>0-1</c>.
+              </summary>
+          </member>
+        </members>
+      </members>
+      <members name="WaterInteraction">
+        <member name="T:Celeste.WaterInteraction">
+            <summary>
+            A <see cref="T:Monocle.Component"/> that allows <see cref="T:Celeste.Water"/> to interact visually with an entity.
+            </summary>
+        </member>
+        <member name="M:Celeste.WaterInteraction.#ctor(System.Func{System.Boolean})">
+            <summary>
+            Creates a new <see cref="T:Celeste.WaterInteraction"/>.
+            </summary>
+            <param name="isDashing">Used to determine the force of impact against the <see cref="T:Celeste.Water"/>.</param>
+        </member>
+        <member name="F:Celeste.WaterInteraction.IsDashing">
+            <summary>
+            Determines the force of impact against the <see cref="T:Celeste.Water"/>.
+            </summary>
+        </member>
+        <member name="F:Celeste.WaterInteraction.DrippingOffset">
+            <summary>
+            Vertical offset for drip particles.
+            </summary>
+        </member>
+      </members>
+    </members>
     <members name="Dialogue">
       <members name="Dialog">
         <member name="T:Celeste.Dialog">
@@ -946,6 +1132,101 @@ How these should be structured is poorly documented, so if having nested members
         </members>
     </members>
     </members>
+    <members name="Other">
+      <members name="ScreenWipe">
+        <member name="T:Celeste.ScreenWipe">
+            <summary>
+            A <see cref="T:Monocle.Renderer"/> used to draw a series of <see cref="T:Microsoft.Xna.Framework.Graphics.VertexPositionColor"/> on the screen.
+            </summary>
+        </member>
+        <member name="P:Celeste.ScreenWipe.Right">
+            <summary>
+            The right bound of the wipe.
+            </summary>
+        </member>
+        <member name="P:Celeste.ScreenWipe.Bottom">
+            <summary>
+            The bottom bound of the wipe.
+            </summary>
+        </member>
+        <member name="M:Celeste.ScreenWipe.#ctor(Monocle.Scene,System.Boolean,System.Action)">
+            <summary>
+            
+            </summary>
+            <param name="scene">The scene to add this <see cref="T:Celeste.ScreenWipe"/> to.</param>
+            <param name="wipeIn">Whether to wipe inwards or outwards.</param>
+            <param name="onComplete">An action to perform after the wipe has ended.</param>
+        </member>
+        <member name="M:Celeste.ScreenWipe.Wait">
+            <summary>
+            Get an <see cref="T:System.Collections.IEnumerator"/> that waits until the wipe completes.<br/>
+            Should be used when using a <see cref="T:Celeste.ScreenWipe"/> in a <see cref="T:Monocle.Coroutine"/>.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.ScreenWipe.Cancel">
+            <summary>
+            Cancel and remove this ScreenWipe.
+            </summary>
+        </member>
+        <member name="M:Celeste.ScreenWipe.DrawPrimitives(Microsoft.Xna.Framework.Graphics.VertexPositionColor[])">
+            <summary>
+            Draw a shape to the screen using a set of vertices.
+            </summary>
+            <param name="vertices"></param>
+        </member>
+        <member name="F:Celeste.ScreenWipe.WipeColor">
+            <summary>
+            The color of the wipe.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Scene">
+            <summary>
+            The scene this wipe was added to.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.WipeIn">
+            <summary>
+            Whether to wipe inwards or outwards.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Percent">
+            <summary>
+            How much of the screenwipe has been completed.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.OnComplete">
+            <summary>
+            An action to perform after the wipe has ended.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Completed">
+            <summary>
+            Whether the wipe has completed.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Duration">
+            <summary>
+            How long this wipe animation will take.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.EndTimer">
+            <summary>
+            How long the wipe will be on screen.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Left">
+            <summary>
+            The left bound of the wipe.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Top">
+            <summary>
+            The top bound of the wipe.
+            </summary>
+        </member>
+    </members>
+    </members>
   </members>
   
   <!--
@@ -1153,6 +1434,217 @@ How these should be structured is poorly documented, so if having nested members
       </member>
     </members>
     
+    <members name="Components">
+      <members name="Component">
+        <member name="M:Monocle.Component.Added(Monocle.Entity)">
+            <summary>
+            Called when this Component is added to an Entity.
+            </summary>
+            <param name="entity"></param>
+        </member>
+        <member name="M:Monocle.Component.Removed(Monocle.Entity)">
+            <summary>
+            Called when this Component is removed from an Entity.
+            </summary>
+            <param name="entity"></param>
+        </member>
+        <member name="M:Monocle.Component.EntityAdded(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.Added(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.EntityRemoved(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.Removed(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.SceneEnd(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.SceneEnd(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.EntityAwake">
+            <inheritdoc cref="M:Monocle.Entity.Awake(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.Update">
+            <summary>
+            Do game logic here, but do not render here. Not called if the Component is not Active.
+            </summary>
+        </member>
+        <member name="M:Monocle.Component.Render">
+            <summary>
+            Draw the Component here. Not called if the Component is not Visible.
+            </summary>
+        </member>
+        <member name="M:Monocle.Component.DebugRender(Monocle.Camera)">
+            <summary>
+            Draw any debug visuals here. Only called if the console is open, but still called even if the Component is not Visible.
+            </summary>
+            <param name="camera"></param>
+        </member>
+        <member name="M:Monocle.Component.HandleGraphicsReset">
+            <inheritdoc cref="M:Monocle.Entity.HandleGraphicsReset"/>
+        </member>
+        <member name="M:Monocle.Component.HandleGraphicsCreate">
+            <inheritdoc cref="M:Monocle.Entity.HandleGraphicsCreate"/>
+        </member>
+    </members>
+    </members>
+    
+    <members name="Input">
+      <members name="VirtualAxis">
+        <member name="T:Monocle.VirtualAxis">
+          <summary>
+            A virtual input represented as a float between -1 and 1
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualButton">
+        <member name="T:Monocle.VirtualButton">
+          <summary>
+            A virtual input that is represented as a boolean. As well as simply checking the current button state, you can ask whether it was just pressed or released this frame. You can also keep the button press stored in a buffer for a limited time, or until it is consumed by calling ConsumeBuffer()
+          </summary>
+        </member>
+        <member name="M:Monocle.VirtualButton.ConsumeBuffer">
+          <summary>
+            Ends the Press buffer for this button
+          </summary>
+        </member>
+        <member name="M:Monocle.VirtualButton.ConsumePress">
+          <summary>
+            This button will not register a Press for the rest of the current frame, but otherwise continues to function normally. If the player continues to hold the button, next frame will not count as a Press. Also ends the Press buffer for this button
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualInput">
+        <member name="T:Monocle.VirtualInput">
+          <summary>
+            Represents a virtual button, axis or joystick whose state is determined by the state of its VirtualInputNodes
+          </summary>
+        </member>
+        <member name="T:Monocle.VirtualInputNode">
+          <summary>
+            Add these to your VirtualInput to define how it determines its current input state.
+            For example, if you want to check whether a keyboard key is pressed, create a VirtualButton and add to it a VirtualButton.KeyboardKey
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualIntegerAxis">
+        <member name="T:Monocle.VirtualIntegerAxis">
+          <summary>
+            A virtual input that is represented as a int that is either -1, 0, or 1
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualJoystick">
+        <member name="T:Monocle.VirtualJoystick">
+          <summary>
+            A virtual input that is represented as a Vector2, with both X and Y as values between -1 and 1
+          </summary>
+        </member>
+      </members>
+    </members>
+  
+    <members name="Particles">
+      <members name="ParticleType">
+        <member name="T:Monocle.ParticleType">
+            <summary>
+            A template from which <see cref="T:Monocle.Particle"/>s can be created.
+            </summary>
+        </member>
+        <member name="M:Monocle.ParticleType.#ctor">
+            <summary>
+            Create a new ParticleType with default-initialized fields.
+            </summary>
+        </member>
+        <member name="M:Monocle.ParticleType.#ctor(Monocle.ParticleType)">
+            <summary>
+            Create a copy of another ParticleType.
+            </summary>
+            <param name="copyFrom">The ParticleType to copy.</param>
+        </member>
+        <member name="F:Monocle.ParticleType.Source">
+            <summary>
+            If set, the particle will use this texture.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.SourceChooser">
+            <summary>
+            If set, the particle will use a texture from its choices.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.Size">
+            <summary>
+            The scale of the texture.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.SpinFlippedChance">
+            <summary>
+            If true, the spin direction has a 50% chance of being flipped.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ScaleOut">
+            <summary>
+            Whether the particle size will cube out over its lifetime.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.UseActualDeltaTime">
+            <summary>
+            Whether to update based on <see cref="P:Monocle.Engine.RawDeltaTime"/> instead of <see cref="P:Monocle.Engine.DeltaTime"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Static">
+            <summary>
+            Particle color will be set to <see cref="F:Monocle.ParticleType.Color"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Choose">
+            <summary>
+            Particle color will be randomly chosen from <see cref="F:Monocle.ParticleType.Color"/> and <see cref="F:Monocle.ParticleType.Color2"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Blink">
+            <summary>
+            Particle color will be swap between <see cref="F:Monocle.ParticleType.Color"/> and <see cref="F:Monocle.ParticleType.Color2"/> every second. 
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Fade">
+            <summary>
+            Particle color will fade from <see cref="F:Monocle.ParticleType.Color"/> to <see cref="F:Monocle.ParticleType.Color2"/> from start to end of life. 
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.None">
+            <summary>
+            Particle will not fade.  
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.Linear">
+            <summary>
+            Particle will fade linearly from start to end of life.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.Late">
+            <summary>
+            Particle will fade linearly starting when the particle has 1/4 life remaining.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.InAndOut">
+            <summary>
+            Particle will fade in for first quarter, and fade out for last quarter of life.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.None">
+            <summary>
+            Particle will start with the default orientation.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.Random">
+            <summary>
+            Particle will start rotated at a random angle.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.SameAsDirection">
+            <summary>
+            Particle will always be rotated towards its direction of travel.
+            </summary>
+        </member>
+    </members>
+    </members>
+      
     <members name="Util">
       <members name="Calc">
         <member name="M:Monocle.Calc.Range(System.Random,System.Int32,System.Int32)">
@@ -1326,63 +1818,32 @@ How these should be structured is poorly documented, so if having nested members
           <param name="loadError">True if the load fails despite the requested file existing (for example due to corrupted data)</param>
         </member>
        </members>
-    </members>
-    
-    <members name="Input">
-      <members name="VirtualAxis">
-        <member name="T:Monocle.VirtualAxis">
-          <summary>
-            A virtual input represented as a float between -1 and 1
-          </summary>
-        </member>
-      </members>
-      <members name="VirtualButton">
-        <member name="T:Monocle.VirtualButton">
-          <summary>
-            A virtual input that is represented as a boolean. As well as simply checking the current button state, you can ask whether it was just pressed or released this frame. You can also keep the button press stored in a buffer for a limited time, or until it is consumed by calling ConsumeBuffer()
-          </summary>
-        </member>
-        <member name="M:Monocle.VirtualButton.ConsumeBuffer">
-          <summary>
-            Ends the Press buffer for this button
-          </summary>
-        </member>
-        <member name="M:Monocle.VirtualButton.ConsumePress">
-          <summary>
-            This button will not register a Press for the rest of the current frame, but otherwise continues to function normally. If the player continues to hold the button, next frame will not count as a Press. Also ends the Press buffer for this button
-          </summary>
-        </member>
-      </members>
-      <members name="VirtualInput">
-        <member name="T:Monocle.VirtualInput">
-          <summary>
-            Represents a virtual button, axis or joystick whose state is determined by the state of its VirtualInputNodes
-          </summary>
-        </member>
-        <member name="T:Monocle.VirtualInputNode">
-          <summary>
-            Add these to your VirtualInput to define how it determines its current input state.
-            For example, if you want to check whether a keyboard key is pressed, create a VirtualButton and add to it a VirtualButton.KeyboardKey
-          </summary>
-        </member>
-      </members>
-      <members name="VirtualIntegerAxis">
-        <member name="T:Monocle.VirtualIntegerAxis">
-          <summary>
-            A virtual input that is represented as a int that is either -1, 0, or 1
-          </summary>
-        </member>
-      </members>
-      <members name="VirtualJoystick">
-        <member name="T:Monocle.VirtualJoystick">
-          <summary>
-            A virtual input that is represented as a Vector2, with both X and Y as values between -1 and 1
-          </summary>
-        </member>
+      <members name="Tracker">
+        <members name="Tracked">
+            <member name="T:Monocle.Tracked">
+                <summary>
+                Marks an entity or component to be added to the Tracker.
+                </summary>
+            </member>
+            <member name="M:Monocle.Tracked.#ctor(System.Boolean)">
+                <summary>
+                Marks an entity or component to be added to the Tracker.
+                </summary>
+                <param name="inherited">Whether all child classes should also be tracked.</param>
+            </member>
+            <member name="F:Monocle.Tracked.Inherited">
+                <summary>
+                Whether all child classes should also be tracked.
+                </summary>
+            </member>
+        </members>
       </members>
     </members>
   </members>
-
+  
+  <!--
+  From https://github.com/WardBenjamin/SimplexNoise/blob/master/SimplexNoise/Noise.cs
+  -->
   <members name="SimplexNoise">
     <members name="Noise">
         <member name="T:SimplexNoise.Noise">
