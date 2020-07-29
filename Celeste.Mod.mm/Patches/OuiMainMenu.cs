@@ -4,6 +4,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using MonoMod;
 using System;
@@ -75,12 +76,15 @@ namespace Celeste {
                 /* CL  111  444
                  * IM  222  555
                  * B-  333  666
+                 * 
+                 * If there are more than 6 options, shift the start position up and Climb slightly up.
                  */
-                Vector2 startPos = new Vector2(140f, 700f);
+                int rowCount = Math.Max(3, buttons.Count / 2);
                 Vector2 itemSize = new Vector2(600f, 80f);
                 Vector2 offsStart = new Vector2(0f, 640f);
+                Vector2 startPos = new Vector2(140f, 700f) - new Vector2(0, (rowCount - 3) * itemSize.Y);
 
-                List<MenuButton>[] rows = new List<MenuButton>[3];
+                List<MenuButton>[] rows = new List<MenuButton>[rowCount];
                 for (int iy = 0; iy < rows.Length; iy++) {
                     rows[iy] = new List<MenuButton>();
                 }
@@ -110,8 +114,8 @@ namespace Celeste {
 
                     if (button == climbButton) {
                         pos.X += 140f;
-                        pos.Y -= 30f;
-                        height = 3;
+                        pos.Y += (rowCount - 3) * itemSize.Y / 2 - 30f;
+                        height = rowCount;
                     }
 
                     for (int iy = y; iy < y + height && iy < rows.Length; iy++) {
@@ -156,6 +160,11 @@ namespace Celeste {
                         button.RightButton = button.RightButton ?? (ix < row.Count - 1 ? row[ix + 1] : row[0]);
                         button.UpButton = button.UpButton ?? (rowUp[ix < rowUp.Count ? ix : (rowUp.Count - 1)]);
                         button.DownButton = button.DownButton ?? (rowDown[ix < rowDown.Count ? ix : (rowDown.Count - 1)]);
+
+                        if (iy != rows.Length - 1 && button is MainMenuModOptionsButton modOptions) {
+                            // Mod Options isn't on the last row => make its sub-text closer to prevent overlap.
+                            modOptions.SmallSubTextSpacing = true;
+                        }
                     }
                 }
 
