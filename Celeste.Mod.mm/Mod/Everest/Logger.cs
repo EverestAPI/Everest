@@ -9,8 +9,17 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Logger {
+        private static LogLevel Level = LogLevel.Info;
 
         // TODO: Allow displaying mod log in future ImGui UI
+
+        /// <summary>
+        /// Set the level of verbosity for the logger
+        /// </summary>
+        /// <param name="level">The level of verbosity. Any messages more verbose than this will be discarded.</param>
+        public static void SetLevel(LogLevel level) {
+            this.Level = level;
+        }
 
         /// <summary>
         /// Log a string to the console and to log.txt
@@ -26,6 +35,7 @@ namespace Celeste.Mod {
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
+            if (level < this.Level) return;
             Console.Write("(");
             Console.Write(DateTime.Now);
             Console.Write(") [Everest] [");
@@ -53,6 +63,7 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void LogDetailed(LogLevel level, string tag, string str) {
+            if (level < this.Level) return;
             Log(level, tag, str);
             Console.WriteLine(new StackTrace(1, true).ToString());
         }
@@ -88,10 +99,10 @@ namespace Celeste.Mod {
 
     }
     public enum LogLevel {
-        Verbose,
-        Debug,
-        Info,
-        Warn,
-        Error
+        Verbose = 0,
+        Debug = 1,
+        Info = 2,
+        Warn = 3,
+        Error = 4
     }
 }
