@@ -240,6 +240,9 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string CurrentBranch { get; set; }
 
+        [SettingIgnore]
+        public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+
         /*
         [SettingRange(0, 10)]
         public int ExampleSlider { get; set; } = 5;
