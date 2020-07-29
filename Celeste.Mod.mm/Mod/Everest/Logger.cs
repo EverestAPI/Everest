@@ -18,7 +18,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="level">The level of verbosity. Any messages more verbose than this will be discarded.</param>
         public static void SetLevel(LogLevel level) {
-            this.Level = level;
+            Logger.Level = level;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace Celeste.Mod {
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
-            if (level < this.Level) return;
+            if (level < Logger.Level) return;
             Console.Write("(");
             Console.Write(DateTime.Now);
             Console.Write(") [Everest] [");
@@ -63,7 +63,7 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void LogDetailed(LogLevel level, string tag, string str) {
-            if (level < this.Level) return;
+            if (level < Logger.Level) return;
             Log(level, tag, str);
             Console.WriteLine(new StackTrace(1, true).ToString());
         }
