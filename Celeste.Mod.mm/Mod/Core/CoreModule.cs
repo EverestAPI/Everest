@@ -79,7 +79,7 @@ namespace Celeste.Mod.Core {
             }
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
-                Logger.SetLogLevelFromYaml(new Regex(logLevel.Key), logLevel.Value);
+                Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
             }
         }
 
