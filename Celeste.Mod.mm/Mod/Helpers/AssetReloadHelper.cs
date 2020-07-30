@@ -290,6 +290,7 @@ namespace Celeste.Mod {
 
             } finally {
                 Worker = null;
+                Current = null;
             }
         }
 
