@@ -16,12 +16,12 @@ namespace Celeste.Mod {
 
         /// <summary>
         /// Sets the minimum log level to be written in the logs for lines matching the given tag prefix.
+        /// <br />
         /// When using this, make sure the tag prefix is restrictive enough not to impact other mods
         /// (for example, if all your tags follow the format MyMod/xxx, use "MyMod/" as a prefix).
         /// </summary>
         /// <param name="tagPrefix">The prefix of the log tags to affect with this log level</param>
         /// <param name="minimumLevel">The minimum level of logs to print out in the logs</param>
-        /// (useful to make levels set by code overridable through modsettings-Everest.celeste)</param>
         public static void SetLogLevel(string tagPrefix, LogLevel minimumLevel) {
             minimumLevels[tagPrefix] = minimumLevel;
             minimumLevelsCache.Clear();
