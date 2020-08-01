@@ -7,6 +7,8 @@ namespace Celeste.Mod.UI {
     class MainMenuModOptionsButton : MainMenuSmallButton {
         private string subText;
 
+        public bool SmallSubTextSpacing = false;
+
         public override float ButtonHeight {
             get {
                 if (subText == null)
@@ -44,7 +46,8 @@ namespace Celeste.Mod.UI {
 
             if (subText != null) {
                 Vector2 offset = new Vector2(Ease.CubeInOut(this.GetEase()) * 32f, this.GetWiggler().Value * 8f);
-                ActiveFont.DrawOutline(subText, Position + offset + new Vector2(84f, 84f), new Vector2(0f, 0.5f), Vector2.One * 0.6f, Color.OrangeRed, 2f, Color.Black);
+                ActiveFont.DrawOutline(subText, Position + offset + new Vector2(84f, SmallSubTextSpacing ? 70f : 84f),
+                    new Vector2(0f, 0.5f), Vector2.One * 0.6f, Color.OrangeRed, 2f, Color.Black);
             }
         }
     }

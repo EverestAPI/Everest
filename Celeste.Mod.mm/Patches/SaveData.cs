@@ -406,6 +406,11 @@ namespace Celeste {
                 }
             }
 
+            // Assign SaveData for the level sets in the recycle bin to prevent crashes.
+            foreach (LevelSetStats set in LevelSetRecycleBin) {
+                set.SaveData = this;
+            }
+
             // Order the levelsets to appear just as their areas appear in AreaData.Areas
             LevelSets.Sort((set1, set2) => set1.AreaOffset.CompareTo(set2.AreaOffset));
 

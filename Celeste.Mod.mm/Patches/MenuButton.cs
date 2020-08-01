@@ -1,10 +1,14 @@
-﻿using Microsoft.Xna.Framework;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Microsoft.Xna.Framework;
+using Monocle;
 using System;
 
 namespace Celeste {
     abstract class patch_MenuButton : MenuButton {
 
         private bool selected;
+        private Tween tween;
         public bool _Selected {
             get => selected;
             set => selected = value;
@@ -13,6 +17,26 @@ namespace Celeste {
         public patch_MenuButton(Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm)
             : base(oui, targetPosition, tweenFrom, onConfirm) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+        public extern void orig_TweenOut(float time);
+        public extern void orig_TweenIn(float time);
+
+        public new void TweenIn(float time) {
+            orig_TweenIn(time);
+
+            tween.OnComplete = t => {
+                t.RemoveSelf();
+                tween = null;
+            };
+        }
+
+        public new void TweenOut(float time) {
+            orig_TweenOut(time);
+
+            tween.OnComplete = t => {
+                t.RemoveSelf();
+                tween = null;
+            };
         }
     }
 

@@ -140,6 +140,11 @@ namespace Celeste {
             orig_ctor(session, startPosition);
 
             LastLoadingThread = patch_RunThread.Current;
+
+            // get rid of all entities in the pooler to make sure they don't keep references to the previous level.
+            foreach (Queue<Entity> entities in ((patch_Pooler) Engine.Pooler).Pools.Values) {
+                entities.Clear();
+            }
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...
