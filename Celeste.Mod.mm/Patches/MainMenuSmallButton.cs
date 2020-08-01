@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // field is never assigned to, and will always have its default value
 
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -8,10 +9,8 @@ using System;
 namespace Celeste {
     class patch_MainMenuSmallButton : MainMenuSmallButton {
 
-#pragma warning disable CS0649 // field is never assigned: it is in vanilla code
         private float ease;
         private Wiggler wiggler;
-#pragma warning restore CS0649
 
         // expose these fields to extending classes.
         public float Ease => ease;

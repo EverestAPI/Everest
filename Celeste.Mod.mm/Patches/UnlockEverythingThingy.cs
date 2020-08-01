@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-
-using Monocle;
+﻿using Monocle;
 using MonoMod;
 
 namespace Celeste {

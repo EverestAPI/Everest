@@ -9,7 +9,7 @@ namespace Celeste {
 
         [MonoModIgnore]
         public new int Area { get; private set; }
-        [MonoModIgnore]
+
         private bool inFreeCameraDebugMode;
 
         public float EaseCamera(int area, MountainCamera transform, float? duration = null, bool nearTarget = true) {

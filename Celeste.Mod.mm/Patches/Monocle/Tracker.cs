@@ -1,4 +1,6 @@
-﻿using Celeste.Mod;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste.Mod;
 using Celeste.Mod.Helpers;
 using System;
 using System.Collections.Generic;
@@ -16,10 +18,7 @@ namespace Monocle {
     }
 
     class patch_Tracker : Tracker {
-#pragma warning disable CS0626 // method, operator or getter is tagged external and has no attribute
         public static extern void orig_Initialize();
-#pragma warning restore CS0626
-
         public new static void Initialize() {
             orig_Initialize();
 

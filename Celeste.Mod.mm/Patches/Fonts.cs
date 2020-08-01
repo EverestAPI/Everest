@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
 using Monocle;
@@ -9,10 +10,8 @@ using System.Linq;
 
 namespace Celeste {
     static class patch_Fonts {
-#pragma warning disable CS0649 // field is never assigned (it is in vanilla code)
         // make vanilla private fields accessible to our patch.
         private static Dictionary<string, PixelFont> loadedFonts;
-#pragma warning restore CS0649
 
         public static extern PixelFont orig_Load(string face);
         public static PixelFont Load(string face) {

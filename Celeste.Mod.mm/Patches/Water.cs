@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using MonoMod;
 
 namespace Celeste {

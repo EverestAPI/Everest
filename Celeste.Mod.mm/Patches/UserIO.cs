@@ -1,5 +1,4 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
 using MonoMod;
