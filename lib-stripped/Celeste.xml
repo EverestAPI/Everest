@@ -108,13 +108,6 @@ How these should be structured is poorly documented, so if having nested members
             <param name="defaultValue"></param>
             <returns></returns>
         </member>
-        <member name="M:Celeste.EntityData.orig_Has(System.String)">
-            <summary>
-            Vanilla method. Use <see cref="M:Celeste.EntityData.Has(System.String)"/> instead.
-            </summary>
-            <param name="key"></param>
-            <returns></returns>
-        </member>
         <member name="F:Celeste.EntityData.ID">
             <summary>
             A semi-unique id for this entity.
@@ -160,6 +153,13 @@ How these should be structured is poorly documented, so if having nested members
         <member name="F:Celeste.EntityData.Values">
             <summary>
             Attributes for this entity.
+            </summary>
+        </member>
+    </members>
+      <members name="EntityID">
+        <member name="T:Celeste.EntityID">
+            <summary>
+            A semi-unique id consisting of the level name and entity id (<see cref="T:System.Int32"/>).
             </summary>
         </member>
     </members>
@@ -589,6 +589,61 @@ How these should be structured is poorly documented, so if having nested members
             <param name="alpha"></param>
         </member>
     </members>
+      <members name="Oui">
+        <member name="T:Celeste.Oui">
+          <summary>
+            An entity representing a screen in the <see cref="T:Celeste.Overworld"/>.
+            <br/><br/>
+            Oui components must be added and removed in <see cref="M:Celeste.Oui.Enter(Celeste.Oui)"/> and <see cref="M:Celeste.Oui.Leave(Celeste.Oui)"/>.<br/>
+            A parameter-less constructor is required.
+          </summary>
+        </member>
+        <member name="P:Celeste.Oui.Overworld">
+          <summary>
+            The current Overworld.
+          </summary>
+        </member>
+        <member name="P:Celeste.Oui.Selected">
+          <summary>
+            Whether this is the current Oui.
+          </summary>
+        </member>
+        <member name="M:Celeste.Oui.IsStart(Celeste.Overworld,Celeste.Overworld.StartMode)">
+          <summary>
+            Whether this Oui should be the initial one based on the <see cref="T:Celeste.Overworld.StartMode"/>.
+          </summary>
+          <param name="overworld">The current Overworld.</param>
+          <param name="start">
+            The current <see cref="T:Celeste.Overworld.StartMode"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="M:Celeste.Oui.Enter(Celeste.Oui)">
+          <summary>
+            Called when entering this Oui using <see cref="M:Celeste.Overworld.Goto``1"/>.<br/>
+            Entities and Components should be added to the <see cref="P:Celeste.Oui.Overworld"/> here.
+          </summary>
+          <param name="from">
+            The previous <see cref="T:Celeste.Oui"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="M:Celeste.Oui.Leave(Celeste.Oui)">
+          <summary>
+            Called when leaving this Oui using <see cref="M:Celeste.Overworld.Goto``1"/>.<br/>
+            Entities and Components should be removed from the <see cref="P:Celeste.Oui.Overworld"/> here.
+          </summary>
+          <param name="from">
+            The next <see cref="T:Celeste.Oui"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="F:Celeste.Oui.Focused">
+          <summary>
+            Should be set manually in <see cref="M:Celeste.Oui.Enter(Celeste.Oui)"/> and <see cref="M:Celeste.Oui.Leave(Celeste.Oui)"/>.
+          </summary>
+        </member>
+      </members>
       <members name="TextMenu">
         <member name="T:Celeste.TextMenu">
             <summary>
@@ -1485,6 +1540,155 @@ How these should be structured is poorly documented, so if having nested members
     </members>
     </members>
     
+    <members name="Graphics">
+      <members name="Atlas">
+        <member name="T:Monocle.Atlas">
+            <summary>
+            Used for storing and retrieving <see cref="T:Monocle.MTexture"/>s from images and packed textures.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.Sources">
+            <summary>
+            The list of textures used by this Atlas.
+            </summary>
+        </member>
+        <member name="T:Monocle.Atlas.AtlasDataFormat">
+            <summary>
+            Used to determine how data should be read.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.TexturePacker_Sparrow">
+            <summary>
+            Presumeably for use with <see href="https://www.codeandweb.com/texturepacker/starling">this</see>.<br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchXml">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchBinary">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchXmlOrBinary">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchBinaryNoAtlas">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.Packer">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/>. Reads .meta files.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.PackerNoAtlas">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/>. Reads .meta files with associated .data files.
+            </summary>
+        </member>
+        <member name="M:Monocle.Atlas.FromAtlas(System.String,Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from a packed texture file into an Atlas.
+            </summary>
+            <param name="path"></param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromMultiAtlas(System.String,System.String[],Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from multiple packed texture files into an Atlas.
+            </summary>
+            <param name="rootPath">The common root of all paths in <paramref name="dataPath"/>.</param>
+            <param name="dataPath">An array of filepaths contained within <paramref name="rootPath"/>.</param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromMultiAtlas(System.String,System.String,Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from multiple XML atlas data files into an Atlas.
+            </summary>
+            <param name="rootPath">The directory where the files are contained.</param>
+            <param name="filename">
+            The base filename of the xml files.<br/>
+            (<c>filename0.xml</c>, <c>filename1.xml</c>, <c>...</c>)
+            </param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromDirectory(System.String)">
+            <summary>
+            Read image data from .png and .xnb files contained in a directory into an Atlas.
+            </summary>
+            <param name="path">The directory where the files are contained.</param>
+            <returns></returns>
+        </member>
+        <member name="P:Monocle.Atlas.Item(System.String)">
+            <summary>
+            Retrieve a texture contained in the atlas based on its id.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.Has(System.String)">
+            <summary>
+            Check whether a texture with the specified id exists in this atlas.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetOrDefault(System.String,Monocle.MTexture)">
+            <summary>
+            Retrieve a texture by id, or a default texture if nonexsistent.
+            </summary>
+            <param name="id"></param>
+            <param name="defaultTexture">Returned if the <paramref name="id"/> does not exist.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetAtlasSubtextures(System.String)">
+            <summary>
+            Retrieve multiple textures stored under the same <paramref name="key"/>.<br/>
+            Textures should be named in the following format
+            <code>key0, key1, key2, key3</code>
+            with up to six <c>0</c>s preceeding the index.
+            </summary>
+            <param name="key">The texture name.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetAtlasSubtexturesAt(System.String,System.Int32)">
+            <summary>
+            Retrieve a single texture from a set of textures with the same key.<br/>
+            See also: <seealso cref="M:Monocle.Atlas.GetAtlasSubtextures(System.String)"/>
+            </summary>
+            <param name="key">The texture name.</param>
+            <param name="index">The subtexture index.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetLinkedTexture(System.String)">
+            <summary>
+            Get the texture for the key this <paramref name="key"/> is linked to.
+            </summary>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.Dispose">
+            <summary>
+            De-allocate resources used by this atlas.
+            </summary>
+        </member>
+    </members>
+    </members>
+      
     <members name="Input">
       <members name="VirtualAxis">
         <member name="T:Monocle.VirtualAxis">
@@ -1754,6 +1958,51 @@ How these should be structured is poorly documented, so if having nested members
           <returns></returns>
         </member>
        </members>
+      <members name="Commands">
+        <member name="P:Monocle.Commands.FunctionKeyActions">
+          <summary>
+            Actions that are executed when the corresponding Function Key is pressed.
+          </summary>
+        </member>
+        <member name="M:Monocle.Commands.Log(System.Object,Microsoft.Xna.Framework.Color)">
+          <summary>
+            Logs an object to the debug console.
+          </summary>
+          <param name="obj"></param>
+          <param name="color">Text color</param>
+        </member>
+        <member name="M:Monocle.Commands.Log(System.Object)">
+          <summary>
+            Logs an object to the debug console in White text.
+          </summary>
+          <param name="obj"></param>
+        </member>
+        <members name="Command">
+          <member name="T:Monocle.Command">
+            <summary>
+              Adding this to a static method marks it as a command that can be executed from the debug screen.<br/>
+              The method can accept any number of <see cref="T:System.String"/>, <see cref="T:System.Int32"/>, <see cref="T:System.Single"/>, or <see cref="T:System.Boolean"/> parameters.
+            </summary>
+          </member>
+          <member name="F:Monocle.Command.Name">
+            <summary>
+              The string used to execute the command.
+            </summary>
+          </member>
+          <member name="F:Monocle.Command.Help">
+            <summary>
+              A description of the command.
+            </summary>
+          </member>
+          <member name="M:Monocle.Command.#ctor(System.String,System.String)">
+            <summary>
+              Marks a static method as a debug command.
+            </summary>
+            <param name="name">Used to execute the command.</param>
+            <param name="help">A short description of the command.</param>
+          </member>
+        </members>
+      </members>
       <members name="Draw">
         <member name="P:Monocle.Draw.Renderer">
           <summary>

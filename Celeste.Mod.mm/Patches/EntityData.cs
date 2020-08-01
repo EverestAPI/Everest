@@ -3,8 +3,9 @@
 
 namespace Celeste {
     class patch_EntityData : EntityData {
-
+        /// <origdoc/>
         public extern bool orig_Has(string key);
+        /// <inheritdoc cref="EntityData.Has(string)"/>
         public new bool Has(string key) {
             if (Values == null)
                 return false;

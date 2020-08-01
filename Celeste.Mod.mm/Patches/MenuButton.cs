@@ -26,7 +26,7 @@ namespace Celeste {
         // We thus expose any new members through extensions.
 
         /// <summary>
-        /// Set the button's inner selectted value.
+        /// Set the button's inner selected value.
         /// </summary>
         public static void SetSelected(this MenuButton self, bool value)
             => ((patch_MenuButton) self)._Selected = value;

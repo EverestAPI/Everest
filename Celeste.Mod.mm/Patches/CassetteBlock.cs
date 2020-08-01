@@ -12,7 +12,7 @@ namespace Celeste {
             : base(data, offset, id) {
         }
 
-        // 1.3.0.0 gets rid of the 1-arg ctor.
+        // 1.3.0.0 gets rid of the 2-arg ctor.
         // We're adding a new ctor, thus can't call the constructor without a small workaround.
         [MonoModLinkTo("Celeste.CassetteBlock", "System.Void .ctor(Celeste.EntityData,Microsoft.Xna.Framework.Vector2,Celeste.EntityID)")]
         [MonoModForceCall]

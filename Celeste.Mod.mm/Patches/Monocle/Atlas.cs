@@ -17,6 +17,9 @@ namespace Monocle {
 
         // We're effectively in Atlas, but still need to "expose" private fields to our mod.
         private Dictionary<string, MTexture> textures;
+        /// <summary>
+        /// The internal string-MTexture dictionary.
+        /// </summary>
         public Dictionary<string, MTexture> Textures => textures;
         private Dictionary<string, string> links = new Dictionary<string, string>();
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
@@ -169,9 +172,9 @@ namespace Monocle {
 
                     using (FileStream stream = File.OpenRead(pathFull + ".meta"))
                     using (BinaryReader reader = new BinaryReader(stream)) {
-                        reader.ReadInt32(); // ???
-                        reader.ReadString(); // ???
-                        reader.ReadInt32(); // ???
+                        reader.ReadInt32(); // version
+                        reader.ReadString(); // args
+                        reader.ReadInt32(); // hash
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
@@ -213,9 +216,9 @@ namespace Monocle {
 
                     using (FileStream stream = File.OpenRead(pathFull + ".meta"))
                     using (BinaryReader reader = new BinaryReader(stream)) {
-                        reader.ReadInt32();
-                        reader.ReadString();
-                        reader.ReadInt32();
+                        reader.ReadInt32(); // version
+                        reader.ReadString(); // args
+                        reader.ReadInt32(); // hash
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             string sourcePath = Path.Combine(Path.GetDirectoryName(path), reader.ReadString());
@@ -253,7 +256,9 @@ namespace Monocle {
             }
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromAtlas(string path, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromAtlas(string, AtlasDataFormat)"/>
         public static new Atlas FromAtlas(string path, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromAtlas(path, format);
             atlas.DataMethod = "FromAtlas";
@@ -264,7 +269,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromMultiAtlas(string rootPath, string[] dataPath, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromMultiAtlas(string, string[], AtlasDataFormat)"/>
         public static new Atlas FromMultiAtlas(string rootPath, string[] dataPath, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromMultiAtlas(rootPath, dataPath, format);
             atlas.DataMethod = "FromMultiAtlas";
@@ -276,7 +283,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromMultiAtlas(string rootPath, string filename, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromMultiAtlas(string, string, AtlasDataFormat)"/>
         public static new Atlas FromMultiAtlas(string rootPath, string filename, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromMultiAtlas(rootPath, filename, format);
             atlas.DataMethod = "FromMultiAtlas";
@@ -288,7 +297,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromDirectory(string path);
+        /// <inheritdoc cref="Atlas.FromDirectory(string)"/>
         public static new Atlas FromDirectory(string path) {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
@@ -314,6 +325,9 @@ namespace Monocle {
                 orderedTexturesCache = new Dictionary<string, List<MTexture>>();
         }
 
+        /// <summary>
+        /// Feed the given ModAsset into the atlas.
+        /// </summary>
         public void Ingest(ModAsset asset) {
             if (asset == null)
                 return;

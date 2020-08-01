@@ -18,6 +18,7 @@ namespace Celeste {
         [MonoModIgnore]
         public extern void ctor(Action<Holdable> onCollide, Collider collider = null);
         [MonoModConstructor]
+        [Obsolete("Use HoldableCollider.HoldableCollider(Action<Holdable>, Collider) instead.")]
         public void ctor(Action<TheoCrystal> onCollide, Collider collider = null) {
             ctor(onCollide == null ? null : new Action<Holdable>(h => onCollide(h.Entity as TheoCrystal)), collider);
         }

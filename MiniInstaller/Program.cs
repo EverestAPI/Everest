@@ -325,7 +325,7 @@ namespace MiniInstaller {
         }
 
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
-            LogLine("Combining xmlDocs");
+            LogLine("Combining Documentation");
             XmlDocument from = new XmlDocument();
             from.Load(xmlFrom);
             XmlDocument to = new XmlDocument();
@@ -336,13 +336,11 @@ namespace MiniInstaller {
             // Reverse for loop so that we can remove nodes without breaking everything
             for (int i = members.Count - 1; i >= 0; i--) { 
                 XmlNode node = members[i];
-                XmlAttribute name = node.Attributes["name", node.NamespaceURI];
+                XmlAttribute name = node.Attributes["name"];
                 string noPatch = name.Value.Replace("patch_", "");
                 if (!noPatch.Equals(name.Value)) {
                     // Remove internal inheritdoc members that would otherwise override "vanilla" celeste members.
-                    if (node.ChildNodes.Count == 1 && 
-                        node.FirstChild.Name.Equals("inheritdoc") && 
-                        node.FirstChild.Attributes["cref", node.FirstChild.NamespaceURI].Value.Equals(noPatch)) {
+                    if (node.SelectNodes($"inheritdoc[@cref='{noPatch}']").Count == 1) {
                         node.ParentNode.RemoveChild(node);
                         continue;
                     }
@@ -352,10 +350,28 @@ namespace MiniInstaller {
                 // Fix up any references to patch_ class members.
                 foreach (XmlAttribute cref in node.SelectNodes(".//@cref"))
                     cref.Value = cref.Value.Replace("patch_", "");
+
+                // I couldn't find a way to just do this for all orig_ methods, so an <origdoc/> tag needs to be manually added to them.
+                // And of course there also doesn't seem to be support for adding custom tags to the xmldoc prompts -_-
+                if (node.ChildNodes.Count == 1 && node.FirstChild.LocalName.Equals("origdoc")) {
+                    XmlNode origDoc = from.CreateElement("summary");
+                    CreateOrigDoc(node.FirstChild, ref origDoc);
+                    node.RemoveChild(node.FirstChild);
+                    node.AppendChild(origDoc);
+                }
             }
 
             to.DocumentElement.AppendChild(to.ImportNode(from.DocumentElement.LastChild, true));
             to.Save(xmlTo);
+        }
+
+        static void CreateOrigDoc(XmlNode node, ref XmlNode origDoc) {
+            string cref = node.Attributes["cref"]?.Value;
+            if (cref == null) {
+                cref = node.ParentNode.Attributes["name"].Value.Replace("orig_", "");
+            }
+
+            origDoc.InnerXml = "Vanilla Method. Use <see cref=\"" + cref + "\"/> instead.";
         }
 
     }

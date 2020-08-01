@@ -14,12 +14,6 @@ namespace MonoMod {
     class ProxyFileCallsAttribute : Attribute { }
 
     /// <summary>
-    /// Check for ldstr "Unhandled SDL2 platform!" and pop the throw after that.
-    /// </summary>
-    [MonoModCustomMethodAttribute("PatchUnhandledSDL2Platform")]
-    class PatchUnhandledSDL2PlatformAttribute : Attribute { }
-
-    /// <summary>
     /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
     /// Also manually execute ProxyFileCalls rule.
     /// Also includes a patch for the strawberry tracker.
@@ -465,23 +459,6 @@ namespace MonoMod {
 
                 // Replace the called method with our replacement.
                 instr.Operand = replacement;
-            }
-
-        }
-
-        public static void PatchUnhandledSDL2Platform(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
-            bool pop = false;
-            foreach (Instruction instr in method.Body.Instructions) {
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "Unhandled SDL2 platform!")
-                    pop = true;
-
-                if (pop && instr.OpCode == OpCodes.Throw) {
-                    instr.OpCode = OpCodes.Pop;
-                    pop = false;
-                }
             }
 
         }
