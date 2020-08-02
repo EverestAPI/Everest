@@ -95,7 +95,7 @@ namespace Celeste {
         public extern void orig_BeforeRender(Scene scene);
         public new void BeforeRender(Scene scene) {
             if (vanillaMoonParticles == null) {
-                vanillaMoonParticles = (Engine.Scene as Overworld).Entities.OfType<MoonParticle3D>().First();
+                vanillaMoonParticles = (Engine.Scene as Overworld)?.Entities.OfType<MoonParticle3D>().First();
             }
 
             string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
