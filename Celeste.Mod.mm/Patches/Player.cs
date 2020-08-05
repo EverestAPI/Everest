@@ -190,6 +190,7 @@ namespace Celeste {
             orig_SceneEnd(scene);
             triggersInside?.Clear();
             temp?.Clear();
+            level = null;
         }
     }
     public static class PlayerExt {

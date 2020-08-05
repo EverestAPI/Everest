@@ -381,6 +381,17 @@ namespace Celeste {
 
             return orig_GetFullCameraTargetAt(player, at);
         }
+
+        public extern void orig_End();
+        public override void End() {
+            orig_End();
+
+            // break all links between this level and its entities.
+            foreach (Entity entity in Entities) {
+                ((patch_Entity) entity).DissociateFromScene();
+            }
+            ((patch_EntityList) (object) Entities).ClearEntities();
+        }
     }
     public static class LevelExt {
 
