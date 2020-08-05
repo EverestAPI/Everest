@@ -67,7 +67,7 @@ namespace Celeste.Mod.UI {
                                     }
 
                                     // wrap that in a " ({list} not found)" message
-                                    missingDepsString = $" ({missingDepsString} {Dialog.Clean("modoptions_coremodule_notloaded_notfound")})";
+                                    missingDepsString = $" ({string.Format(Dialog.Get("modoptions_coremodule_notloaded_notfound"), missingDepsString)})";
                                 }
                             }
 
