@@ -77,8 +77,7 @@ namespace Celeste {
             string path;
             try {
                 path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
-            }
-            catch (ArgumentException) {
+            } catch (ArgumentException) {
                 path = "Maps";
             }
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
