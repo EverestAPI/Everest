@@ -107,8 +107,7 @@ namespace Celeste {
             string path;
             try {
                 path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
-            }
-            catch (ArgumentException) {
+            } catch (ArgumentException) {
                 path = "Maps";
             }
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
