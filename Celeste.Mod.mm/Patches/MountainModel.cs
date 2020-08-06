@@ -126,8 +126,7 @@ namespace Celeste {
                 string oldPath;
                 try {
                     path = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
-                }
-                catch (ArgumentException) {
+                } catch (ArgumentException) {
                     path = "Maps";
                 }
                 if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1)) {
