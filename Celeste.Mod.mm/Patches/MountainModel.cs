@@ -271,6 +271,7 @@ namespace Celeste {
                     Draw.SpriteBatch.End();
 
                     // Initialize new custom fog and star belt when we switch between maps
+                    if (!(SIDToUse).Equals(PreviousSID)) {
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customStarsky = new Ring(18f, -18f, 20f, 0f, 24, Color.White, Color.Transparent, resources.MountainSpaceTexture ?? MTN.MountainStarSky);
