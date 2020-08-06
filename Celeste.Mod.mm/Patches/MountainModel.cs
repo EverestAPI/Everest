@@ -74,7 +74,12 @@ namespace Celeste {
         public extern void orig_Update();
         public new void Update() {
             orig_Update();
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
@@ -98,7 +103,12 @@ namespace Celeste {
                 vanillaMoonParticles = (Engine.Scene as Overworld)?.Entities.OfType<MoonParticle3D>().First();
             }
 
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
             bool fadingIn = true;
             // Check if we're changing any mountain parameter
@@ -112,7 +122,12 @@ namespace Celeste {
                         newMountain = meta.Mountain;
                     }
                 }
-                string oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                string oldPath;
+                try {
+                    oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                } catch (ArgumentException) {
+                    oldPath = "Maps";
+                }
                 if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1)) {
                     MapMeta meta;
                     if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
