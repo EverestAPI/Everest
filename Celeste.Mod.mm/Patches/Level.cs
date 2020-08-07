@@ -386,13 +386,17 @@ namespace Celeste {
         public override void End() {
             orig_End();
 
-            // break all links between this level and its entities.
-            foreach (Entity entity in Entities) {
-                ((patch_Entity) entity).DissociateFromScene();
+            // if we are not entering PICO-8...
+            if (Entities.OfType<PicoConsole>().All(console => !new DynData<PicoConsole>(console).Get<bool>("talking"))) {
+                // break all links between this level and its entities.
+                foreach (Entity entity in Entities) {
+                    ((patch_Entity) entity).DissociateFromScene();
+                }
+                ((patch_EntityList) (object) Entities).ClearEntities();
             }
-            ((patch_EntityList) (object) Entities).ClearEntities();
         }
     }
+
     public static class LevelExt {
 
         // Mods can't access patch_ classes directly.

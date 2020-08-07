@@ -7,8 +7,10 @@ using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Celeste {
@@ -186,11 +188,15 @@ namespace Celeste {
 
         public extern void orig_SceneEnd(Scene scene);
         public override void SceneEnd(Scene scene) {
-            // make sure references to the previous level don't leak if hot reloading inside of a trigger.
             orig_SceneEnd(scene);
-            triggersInside?.Clear();
-            temp?.Clear();
-            level = null;
+
+            // if we are not entering PICO-8...
+            if (Scene.Entities.OfType<PicoConsole>().All(console => !new DynData<PicoConsole>(console).Get<bool>("talking"))) {
+                // make sure references to the previous level don't leak if hot reloading inside of a trigger.
+                triggersInside?.Clear();
+                temp?.Clear();
+                level = null;
+            }
         }
     }
     public static class PlayerExt {
