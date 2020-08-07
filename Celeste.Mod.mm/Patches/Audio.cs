@@ -95,6 +95,9 @@ namespace Celeste {
             ready = false;
         }
 
+        /// <summary>
+        /// Loads an FMOD Bank from the given asset.
+        /// </summary>
         public static Bank IngestBank(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathVirtual);
             ingestedModBankPaths.Add(asset.PathVirtual);
@@ -135,6 +138,9 @@ namespace Celeste {
             return bank;
         }
 
+        /// <summary>
+        /// Loads an FMOD GUID table from the given asset.
+        /// </summary>
         public static void IngestGUIDs(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
@@ -334,15 +340,11 @@ namespace Celeste {
         public static void CheckFMOD(this RESULT result)
             => patch_Audio.CheckFmod(result);
 
-        /// <summary>
-        /// Loads an FMOD Bank from the given asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_Audio.IngestBank(ModAsset)"/>
         public static Bank IngestBank(ModAsset asset)
             => patch_Audio.IngestBank(asset);
 
-        /// <summary>
-        /// Loads an FMOD GUID table from the given asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_Audio.IngestGUIDs(ModAsset)"/>
         public static void IngestGUIDs(ModAsset asset)
             => patch_Audio.IngestGUIDs(asset);
 

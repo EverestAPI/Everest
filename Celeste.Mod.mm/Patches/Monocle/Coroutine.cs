@@ -7,6 +7,9 @@ namespace Monocle {
         // We're effectively in Coroutine, but still need to "expose" private fields to our mod.
         private float waitTimer;
 
+        /// <summary>
+        /// Forcibly set the timer to 0 to jump to the next "step."
+        /// </summary>
         public void Jump() {
             waitTimer = 0;
         }
@@ -17,9 +20,7 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Forcibly set the timer to 0 to jump to the next "step."
-        /// </summary>
+        /// <inheritdoc cref="patch_Coroutine.Jump"/>
         public static void Jump(this Coroutine self)
             => ((patch_Coroutine) self).Jump();
 

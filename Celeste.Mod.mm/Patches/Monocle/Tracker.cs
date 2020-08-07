@@ -7,11 +7,16 @@ using System.Collections.Generic;
 
 namespace Monocle {
     /// <summary>
-    /// When applied on an entity, this attribute makes the entity tracked the same way as another entity.
+    /// When applied on an entity or component, this attribute makes the entity tracked the same way as another entity or component.
     /// </summary>
     public class TrackedAsAttribute : Attribute {
         public Type TrackedAsType;
 
+        /// <summary>
+        /// Makes this entity/component tracked the same way as another entity/component.<br/>
+        /// It can then be accessed through <see cref="Tracker.GetEntities{T}"/> or <see cref="Tracker.GetComponents{T}"/> with the generic param of <paramref name="trackedAsType"/>.
+        /// </summary>
+        /// <param name="trackedAsType">Type to track this entity/component as.</param>
         public TrackedAsAttribute(Type trackedAsType) {
             TrackedAsType = trackedAsType;
         }

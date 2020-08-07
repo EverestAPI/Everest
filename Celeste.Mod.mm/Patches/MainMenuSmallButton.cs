@@ -16,7 +16,15 @@ namespace Celeste {
         public float Ease => ease;
         public Wiggler Wiggler => wiggler;
 
+        /// <summary>
+        /// The original label name dialog key.<br/>
+        /// Useful when inserting your own button between others.
+        /// </summary>
         public string LabelName;
+        /// <summary>
+        /// The original GUI atlas icon path.<br/>
+        /// Useful when inserting your own button between others.
+        /// </summary>
         public string IconName;
 
         public patch_MainMenuSmallButton(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm)

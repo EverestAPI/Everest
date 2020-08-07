@@ -146,15 +146,11 @@ namespace Celeste {
         public static List<TextMenu.Item> GetItems(this TextMenu self)
             => ((patch_TextMenu) self).Items;
 
-        /// <summary>
-        /// Insert the given menu item at the given index.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Insert(int, TextMenu.Item)"/>
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
 
-        /// <summary>
-        /// Remove the given menu item from the menu.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Remove(TextMenu.Item)"/>
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
 

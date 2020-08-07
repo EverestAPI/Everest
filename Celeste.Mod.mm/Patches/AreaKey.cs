@@ -21,6 +21,9 @@ namespace Celeste {
         [XmlIgnore]
         [NonSerialized]
         public int SIDID; // Last ID when the SID was set. SID is always set last.
+        /// <summary>
+        /// The SID (string ID) of the area.
+        /// </summary>
         [XmlAttribute]
         public string SID {
             get {

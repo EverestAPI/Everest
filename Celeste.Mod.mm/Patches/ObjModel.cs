@@ -7,6 +7,10 @@ using System.IO;
 
 namespace Celeste {
     class patch_ObjModel : ObjModel {
+        /// <summary>
+        /// Create a new ObjModel from a stream
+        /// The filename is mainly just to check if it's a .export
+        /// </summary>
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             ObjModel objModel = new ObjModel();
             List<VertexPositionTexture> list = new List<VertexPositionTexture>();
@@ -108,10 +112,7 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Create a new ObjModel from a stream
-        /// The filename is mainly just to check if it's a .export
-        /// </summary>
+        /// <inheritdoc cref="patch_ObjModel.CreateFromStream(Stream, string)"/>
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             return patch_ObjModel.CreateFromStream(stream, fname);
         }

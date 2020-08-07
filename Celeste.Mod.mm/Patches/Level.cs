@@ -34,6 +34,10 @@ namespace Celeste {
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
 
+        /// <summary>
+        /// If in vanilla levels, gets the spawnpoint closest to the bottom left of the level.<br/>
+        /// Otherwise, get the first spawnpoint defined in the level data.
+        /// </summary>
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
             get {
@@ -76,7 +80,16 @@ namespace Celeste {
             }
         }
 
+        /// <origdoc/>
         public extern void orig_DoScreenWipe(bool wipeIn, Action onComplete = null, bool hiresSnow = false);
+        /// <summary>
+        /// Activate the area-specific <see cref="ScreenWipe"/>.<br/>
+        /// <seealso cref="AreaData.Wipe">See Also.</seealso><br/>
+        /// If <see cref="SkipScreenWipes"/> is greater than zero, do nothing.
+        /// </summary>
+        /// <param name="wipeIn">Wipe direction.</param>
+        /// <param name="onComplete"></param>
+        /// <param name="hiresSnow"></param>
         public new void DoScreenWipe(bool wipeIn, Action onComplete = null, bool hiresSnow = false) {
             if (onComplete == null && !hiresSnow && SkipScreenWipes > 0) {
                 SkipScreenWipes--;
@@ -87,10 +100,12 @@ namespace Celeste {
         }
 
         // Needed for older mods.
+        /// <inheritdoc cref="Level.NextColorGrade(string, float)"/>
         public void NextColorGrade(string next) {
             NextColorGrade(next, 1f);
         }
 
+        /// <inheritdoc cref="Level.CompleteArea(bool, bool, bool)"/>
         public ScreenWipe CompleteArea(bool spotlightWipe = true, bool skipScreenWipe = false) {
             return CompleteArea(spotlightWipe, skipScreenWipe, false);
         }
@@ -210,6 +225,14 @@ namespace Celeste {
             return new Player(position, spriteMode);
         }
 
+        /// <summary>
+        /// Search for a custom entity that matches the <see cref="EntityData.Name"/>.<br/>
+        /// To register a custom entity, use <see cref="CustomEntityAttribute"/> or <see cref="Everest.Events.Level.OnLoadEntity"/>.<br/>
+        /// <seealso href="https://github.com/EverestAPI/Resources/wiki/Custom-Entities-and-Triggers">Read More</seealso>.
+        /// </summary>
+        /// <param name="entityData"></param>
+        /// <param name="level">The level to add the entity to.</param>
+        /// <returns></returns>
         public static bool LoadCustomEntity(EntityData entityData, Level level) {
             LevelData levelData = level.Session.LevelData;
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);

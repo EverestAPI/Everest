@@ -16,6 +16,300 @@ How these should be structured is poorly documented, so if having nested members
   Celeste Docs to be categorized as seen fit.
   -->
   <members name="Celeste">
+    <members name="Scenes">
+      <members name="Level">
+        <member name="P:Celeste.Level.LevelOffset">
+            <summary>
+            Offset of the world coordinates.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.Transitioning">
+            <summary>
+            Whether the level is currently moving to or from another level.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.FrozenOrPaused">
+            <summary>
+            Whether the level is Frozen or Paused.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.CanPause">
+            <summary>
+            Whether the level is able to be paused.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.LoadLevel(Celeste.Player.IntroTypes,System.Boolean)">
+            <summary>
+            Loads the level from the current <see cref="T:Celeste.Session"/>.
+            </summary>
+            <param name="playerIntro"></param>
+            <param name="isFromLoader">Whether this level was loaded from a <see cref="T:Celeste.LevelLoader"/>.</param>
+        </member>
+        <member name="M:Celeste.Level.UnloadLevel">
+            <summary>
+            Remove all non-global entities in the level.<br/>
+            Global entities are those marked with <see cref="F:Celeste.Tags.Global"/>
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.Reload">
+            <summary>
+            Safely unload, then reload the level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.TransitionTo(Celeste.LevelData,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Transition to an adjacent level.
+            </summary>
+            <param name="next"></param>
+            <param name="direction"></param>
+        </member>
+        <member name="M:Celeste.Level.UnloadEntities(System.Collections.Generic.List{Monocle.Entity})">
+            <summary>
+            Remove entities from the level.
+            </summary>
+            <param name="entities">Entities to remove.</param>
+        </member>
+        <member name="P:Celeste.Level.DefaultSpawnPoint">
+            <summary>
+            Get the spawn point closest to the bottom left of the level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.GetSpawnPoint(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get the closest spawn point to a point.
+            </summary>
+            <param name="from"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.GetFullCameraTargetAt(Celeste.Player,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get the camera target if the player were at a specified point.
+            </summary>
+            <param name="player"></param>
+            <param name="at"></param>
+            <returns></returns>
+        </member>
+        <member name="P:Celeste.Level.Bounds">
+            <summary>
+            The bounds of the level.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.PreviousBounds">
+            <summary>
+            The bounds of the previous level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.TeleportTo(Celeste.Player,System.String,Celeste.Player.IntroTypes,System.Nullable{Microsoft.Xna.Framework.Vector2})">
+            <summary>
+            Teleport a player to a level.
+            </summary>
+            <param name="player"></param>
+            <param name="nextLevel">The name of a level in the current map.</param>
+            <param name="introType"></param>
+            <param name="nearestSpawn">If set, the spawnpoint nearest to this point will be used.</param>
+        </member>
+        <member name="M:Celeste.Level.AutoSave">
+            <summary>
+            Save the game.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.IsAutoSaving">
+            <summary>
+            Whether the game is currently saving.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.Pause(System.Int32,System.Boolean,System.Boolean)">
+            <summary>
+            Open the pause menu.
+            </summary>
+            <param name="startIndex">The menu item index to select.</param>
+            <param name="minimal">Whether to show only some options.</param>
+            <param name="quickReset">Wether to open the quick reset menu.</param>
+        </member>
+        <member name="M:Celeste.Level.SnapColorGrade(System.String)">
+            <summary>
+            Set the color grade.<br/>
+            See: <seealso cref="F:Celeste.GFX.ColorGrades"/>
+            </summary>
+            <param name="next">The name of the colorgrade.</param>
+        </member>
+        <member name="M:Celeste.Level.NextColorGrade(System.String,System.Single)">
+            <summary>
+            Gradually change the color grade.<br/>
+            See: <seealso cref="F:Celeste.GFX.ColorGrades"/>
+            </summary>
+            <param name="next">The name of the colorgrade.</param>
+            <param name="speed">How quickly to fade.</param>
+        </member>
+        <member name="M:Celeste.Level.Shake(System.Single)">
+            <summary>
+            Shake the screen.
+            </summary>
+            <param name="time">Shake duration.</param>
+        </member>
+        <member name="M:Celeste.Level.StopShake">
+            <summary>
+            Stop the screen shake.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.DirectionalShake(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Shake the screen in a specific direction.
+            </summary>
+            <param name="dir">Direction to shake the screen towards.</param>
+            <param name="time">Shake duration.</param>
+        </member>
+        <member name="M:Celeste.Level.Flash(Microsoft.Xna.Framework.Color,System.Boolean)">
+            <summary>
+            Flash the screen a solid color.
+            </summary>
+            <param name="color"></param>
+            <param name="drawPlayerOver">Whether the player should render over the flash.</param>
+        </member>
+        <member name="M:Celeste.Level.ZoomSnap(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Set the zoom multiplier and focus point.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+        </member>
+        <member name="M:Celeste.Level.ZoomTo(Microsoft.Xna.Framework.Vector2,System.Single,System.Single)">
+            <summary>
+            Zoom to a point on screen over time.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ZoomAcross(Microsoft.Xna.Framework.Vector2,System.Single,System.Single)">
+            <summary>
+            Zoom from the current focus point to another point on screen over time.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ZoomBack(System.Single)">
+            <summary>
+            Gradually reset the camera zoom.
+            </summary>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ResetZoom">
+            <summary>
+            Reset the camera zoom.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.DoScreenWipe(System.Boolean,System.Action,System.Boolean)">
+            <summary>
+            Activate the area-specific <see cref="T:Celeste.ScreenWipe"/>.<br/>
+            <seealso cref="F:Celeste.AreaData.Wipe">See Also.</seealso>
+            </summary>
+            <param name="wipeIn">Wipe direction.</param>
+            <param name="onComplete"></param>
+            <param name="hiresSnow"></param>
+        </member>
+        <member name="P:Celeste.Level.CoreMode">
+            <summary>
+            When changed, updates any <see cref="T:Celeste.CoreModeListener"/> components.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.InsideCamera(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the camera view.
+            </summary>
+            <param name="position"></param>
+            <param name="expand">Padding beyond the camera bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.EnforceBounds(Celeste.Player)">
+            <summary>
+            Enforce the bounds of the level on the player, transitioning to the next level if possible.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Monocle.Entity)">
+            <summary>
+            Check whether an entity is fully contained within the level's bounds.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <param name="pad">Padding beyond the level bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <param name="dirPad">Padding beyond the level bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInCamera(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the camera view.
+            </summary>
+            <param name="position"></param>
+            <param name="pad">Padding beyond the camera bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.StartCutscene(System.Action{Celeste.Level},System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Mark the level as being in a cutscene.
+            </summary>
+            <param name="onSkip">Action to perform if the cutscene is skipped.</param>
+            <param name="fadeInOnSkip">Whether to play a <see cref="T:Celeste.FadeWipe"/> if the cutscene is skipped.</param>
+            <param name="endingChapterAfterCutscene">Whether to end the chapter after the cutscene ends.</param>
+            <param name="resetZoomOnSkip">Whether the zoom value should be reset if skipped.</param>
+        </member>
+        <member name="M:Celeste.Level.CancelCutscene">
+            <summary>
+            End the current cutscene without skipping.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.SkipCutscene">
+            <summary>
+            Skip the current cutscene, cleaning up as necessary.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.EndCutscene">
+            <summary>
+            End the current cutscene if it is not already being skipped.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.RegisterAreaComplete">
+            <summary>
+            Register the current area as complete and collect all strawberries.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.CompleteArea(System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Complete the current area and return to the menu.
+            </summary>
+            <param name="spotlightWipe">Whether to use a <see cref="T:Celeste.SpotlightWipe"/> instead of a <see cref="T:Celeste.FadeWipe"/>.</param>
+            <param name="skipScreenWipe">Whether to forego the screenwipe altogether.</param>
+            <param name="skipCompleteScreen">Whether to not show the chapter complete screen.</param>
+            <returns></returns>
+        </member>
+    </members>
+    </members>
     <members name="Entities">
       <members name="EntityData">
         <member name="T:Celeste.EntityData">

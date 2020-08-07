@@ -66,6 +66,9 @@ namespace Celeste {
             }
         }
 
+        /// <summary>
+        /// Get the current player hair texture for the given hair segment.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public MTexture GetHairTexture(int index) {
             if (index == 0)
@@ -73,10 +76,16 @@ namespace Celeste {
             return GFX.Game["characters/player/hair00"];
         }
 
+        /// <summary>
+        /// Get the current player hair scale for the given hair segment.
+        /// </summary>
         [MonoModIgnore]
         private extern Vector2 GetHairScale(int index);
         public Vector2 PublicGetHairScale(int index) => GetHairScale(index);
 
+        /// <summary>
+        /// Get the current player hair color for the given hair segment.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetHairColor(int index) {
             return Color * Alpha;
@@ -88,21 +97,15 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Get the current player hair texture for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairTexture(int)"/>
         public static MTexture GetHairTexture(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairTexture(index);
 
-        /// <summary>
-        /// Get the current player hair scale for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairScale(int)"/>
         public static Vector2 GetHairScale(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
-        /// <summary>
-        /// Get the current player hair color for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairColor(int)"/>
         public static Color GetHairColor(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairColor(index);
 

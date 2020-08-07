@@ -327,9 +327,17 @@ namespace MiniInstaller {
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
             LogLine("Combining Documentation");
             XmlDocument from = new XmlDocument();
-            from.Load(xmlFrom);
             XmlDocument to = new XmlDocument();
-            to.Load(xmlTo);
+
+            // Not worth crashing over.
+            try {
+                from.Load(xmlFrom);
+                to.Load(xmlTo);
+            } catch (FileNotFoundException e) {
+                LogLine(e.Message);
+                LogLine("Documentation combining aborted.");
+                return;
+            }
 
             XmlNodeList members = from.DocumentElement.LastChild.ChildNodes;
 

@@ -33,6 +33,9 @@ namespace Celeste {
             }
         }
 
+        /// <summary>
+        /// The SID (string ID) of the area.
+        /// </summary>
         [XmlAttribute]
         public string SID;
 

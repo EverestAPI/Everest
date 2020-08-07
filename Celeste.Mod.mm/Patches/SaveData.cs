@@ -493,6 +493,9 @@ namespace Celeste {
             }
         }
 
+        /// <summary>
+        /// Get the statistics for a given level set.
+        /// </summary>
         public LevelSetStats GetLevelSetStatsFor(string name)
             => LevelSets.Find(set => set.Name == name);
 
@@ -855,9 +858,7 @@ namespace Celeste {
         public static LevelSetStats GetLevelSetStats(this SaveData self)
             => ((patch_SaveData) self).LevelSetStats;
 
-        /// <summary>
-        /// Get the statistics for a given level set.
-        /// </summary>
+        /// <inheritdoc cref="patch_SaveData.GetLevelSetStatsFor(string)"/>
         public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
             => ((patch_SaveData) self).GetLevelSetStatsFor(name);
 

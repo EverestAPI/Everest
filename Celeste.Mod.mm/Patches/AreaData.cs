@@ -59,6 +59,9 @@ namespace Celeste {
             name = rawName;
         }
 
+        /// <summary>
+        /// The SID (string ID) of the area.
+        /// </summary>
         public string SID;
 
         private string _LevelSet;

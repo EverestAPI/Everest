@@ -12,6 +12,9 @@ namespace Monocle {
 
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
+        /// <summary>
+        /// The list of all managed VirtualAssets.
+        /// </summary>
         public static List<VirtualAsset> Assets => assets;
         private static bool reloading;
 
@@ -39,6 +42,9 @@ namespace Monocle {
             return vt;
         }
 
+        /// <summary>
+        /// Create a new VirtualTexture based on the passed mod asset.
+        /// </summary>
         public static VirtualTexture CreateTexture(ModAsset metadata) {
             VirtualTexture virtualTexture = (VirtualTexture) (object) new patch_VirtualTexture(metadata);
             assets.Add(virtualTexture);
@@ -55,11 +61,17 @@ namespace Monocle {
         public static void _Unload()
             => Unload();
 
+        /// <summary>
+        /// Forcibly unload and reload all content.
+        /// </summary>
         public static void ForceReload() {
             reloading = true;
             Reload();
         }
 
+        /// <summary>
+        /// Unload all overworld-related content.
+        /// </summary>
         public static void UnloadOverworld() {
             foreach (VirtualAsset asset in assets) {
                 string path = asset.Name.Replace('\\', '/');
@@ -78,14 +90,10 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// The list of all managed VirtualAssets.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.Assets"/>
         public static List<VirtualAsset> Assets => patch_VirtualContent.Assets;
 
-        /// <summary>
-        /// Create a new VirtualTexture based on the passed mod asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.CreateTexture(ModAsset)"/>
         public static VirtualTexture CreateTexture(ModAsset metadata)
             => patch_VirtualContent.CreateTexture(metadata);
 
@@ -101,15 +109,11 @@ namespace Monocle {
         public static void Unload()
             => patch_VirtualContent._Unload();
 
-        /// <summary>
-        /// Forcibly unload and reload all content.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.ForceReload"/>
         public static void ForceReload()
             => patch_VirtualContent.ForceReload();
 
-        /// <summary>
-        /// Unload all overworld-related content.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.UnloadOverworld"/>
         public static void UnloadOverworld()
             => patch_VirtualContent.UnloadOverworld();
 

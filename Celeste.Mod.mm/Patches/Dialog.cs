@@ -235,10 +235,7 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Same as Dialog.Clean, but for level set names.
-        /// Tries to find a value under both "LEVELSET_NAME" and "NAME", otherwise returns name.SpacedPascalCase()
-        /// </summary>
+        /// <inheritdoc cref="patch_Dialog.CleanLevelSet(string)"/>
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
 
