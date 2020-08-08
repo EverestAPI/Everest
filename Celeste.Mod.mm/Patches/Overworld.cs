@@ -61,9 +61,12 @@ namespace Celeste {
         public extern void orig_End();
         public override void End() {
             orig_End();
-            Remove(Snow);
-            RendererList.UpdateLists();
-            Snow = null;
+
+            if (!EnteringPico8) {
+                Remove(Snow);
+                RendererList.UpdateLists();
+                Snow = null;
+            }
         }
 
         private void restoreNormalMusicIfCustomized() {
