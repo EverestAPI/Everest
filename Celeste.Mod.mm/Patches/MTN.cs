@@ -44,11 +44,15 @@ namespace Celeste {
 
         public ObjModel MountainBird;
 
+        public List<ObjModel> MountainExtraModels = new List<ObjModel>();
+
         public VirtualTexture[] MountainTerrainTextures;
 
         public VirtualTexture[] MountainBuildingTextures;
 
         public VirtualTexture[] MountainSkyboxTextures;
+
+        public List<VirtualTexture[]> MountainExtraModelTextures = new List<VirtualTexture[]>();
 
         public VirtualTexture MountainMoonTexture;
 
@@ -111,6 +115,21 @@ namespace Celeste {
 
                             if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "moon"), out ModAsset moon)) {
                                 resources.MountainMoon = ObjModelExt.CreateFromStream(moon.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "moon.obj"));
+                            }
+
+                            while (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "extra" + resources.MountainExtraModels.Count), out ModAsset extra)) {
+                                // load the extra model.
+                                int extraIndex = resources.MountainExtraModels.Count;
+                                resources.MountainExtraModels.Add(ObjModelExt.CreateFromStream(extra.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "extra" + extraIndex + ".obj")));
+
+                                // load the textures associated with the extra model.
+                                VirtualTexture[] textures = new VirtualTexture[3];
+                                for (int i = 0; i < 3; i++) {
+                                    if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/'))) {
+                                        textures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/')].Texture;
+                                    }
+                                }
+                                resources.MountainExtraModelTextures.Add(textures);
                             }
                         }
                     }
