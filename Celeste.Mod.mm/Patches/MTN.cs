@@ -123,8 +123,8 @@ namespace Celeste {
                                 resources.MountainExtraModels.Add(ObjModelExt.CreateFromStream(extra.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "extra" + extraIndex + ".obj")));
 
                                 // load the textures associated with the extra model.
-                                VirtualTexture[] textures = new VirtualTexture[3];
-                                for (int i = 0; i < 3; i++) {
+                                VirtualTexture[] textures = new VirtualTexture[4];
+                                for (int i = 0; i < 4; i++) {
                                     if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/'))) {
                                         textures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/')].Texture;
                                     }
