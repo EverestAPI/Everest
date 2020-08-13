@@ -207,6 +207,8 @@ namespace Celeste {
                         (resources.MountainTerrain ?? MTN.MountainTerrain).Draw(GFX.FxMountain);
                         GFX.FxMountain.Parameters["WorldViewProj"].SetValue(Matrix.CreateTranslation(CoreWallPosition) * matrix3);
                         (resources.MountainCoreWall ?? MTN.MountainCoreWall).Draw(GFX.FxMountain);
+
+                        GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
                         for (int i = 0; i < resources.MountainExtraModels.Count; i++) {
                             Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainExtraModelTextures[i][currState] ?? mountainStates[currState].TerrainTexture).Texture;
                             Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
