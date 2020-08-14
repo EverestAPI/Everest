@@ -7,10 +7,8 @@ using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace Celeste {
@@ -190,8 +188,8 @@ namespace Celeste {
         public override void SceneEnd(Scene scene) {
             orig_SceneEnd(scene);
 
-            // if we are not entering PICO-8...
-            if (Scene.Entities.OfType<PicoConsole>().All(console => !new DynData<PicoConsole>(console).Get<bool>("talking"))) {
+            // if we are not entering PICO-8 or the Reflection Fall cutscene...
+            if (!(patch_Engine.NextScene is Pico8.Emulator) && !(patch_Engine.NextScene is OverworldReflectionsFall)) {
                 // make sure references to the previous level don't leak if hot reloading inside of a trigger.
                 triggersInside?.Clear();
                 temp?.Clear();
