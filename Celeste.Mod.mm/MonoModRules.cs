@@ -301,6 +301,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
     class PatchIntroCrusherSequenceAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches the unselected color in TextMenu.Option to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTextMenuOptionColor")]
+    class PatchTextMenuOptionColorAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2381,6 +2387,24 @@ namespace MonoMod {
                         instr.OpCode = OpCodes.Ldfld;
                         instr.Operand = f_keepGoingDialog;
                     }
+                }
+            }
+        }
+
+        public static void PatchTextMenuOptionColor(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_UnselectedColor = method.DeclaringType.FindField("UnselectedColor");
+            if (f_UnselectedColor == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.FullName == "Microsoft.Xna.Framework.Color Microsoft.Xna.Framework.Color::get_White()") {
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_UnselectedColor;
                 }
             }
         }
