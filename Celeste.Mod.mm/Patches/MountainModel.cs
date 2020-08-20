@@ -185,7 +185,7 @@ namespace Celeste {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
                         } else {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
-                            (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White * easeState);
+                            (resources.MountainStates?[nextState] ?? mountainStates[nextState]).Skybox.Draw(matrix4, Color.White * easeState);
                         }
                         if (currState != nextState) {
                             GFX.FxMountain.Parameters["ease"].SetValue(easeState);
