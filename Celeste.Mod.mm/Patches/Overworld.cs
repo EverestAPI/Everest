@@ -16,7 +16,9 @@ namespace Celeste {
     class patch_Overworld : Overworld {
         private bool customizedChapterSelectMusic = false;
 
+#pragma warning disable CS0649 // variable defined in vanilla
         private Snow3D Snow3D;
+#pragma warning restore CS0649
 
         public patch_Overworld(OverworldLoader loader)
             : base(loader) {

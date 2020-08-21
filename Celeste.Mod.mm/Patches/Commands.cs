@@ -14,6 +14,7 @@ using System.IO;
 using FMOD.Studio;
 using Monocle;
 using Celeste.Mod.Meta;
+using System.Globalization;
 
 namespace Celeste {
     static class patch_Commands {
@@ -124,6 +125,102 @@ namespace Celeste {
                 // go on with the vanilla load/hard/rmx2 function.
                 vanillaLoadFunction(areaData.ID, room);
             }
+        }
+
+        private class MeshData {
+            public string Name;
+            public List<Vector3> Vertices = new List<Vector3>();
+            public List<Vector2> TextureCoordinates = new List<Vector2>();
+            public List<Point> FaceData = new List<Point>();
+
+            public void WriteTo(BinaryWriter writer) {
+                writer.Write(Name);
+                writer.Write(Vertices.Count);
+                foreach (Vector3 vertex in Vertices) {
+                    writer.Write(vertex.X);
+                    writer.Write(vertex.Y);
+                    writer.Write(vertex.Z);
+                }
+                writer.Write(TextureCoordinates.Count);
+                foreach (Vector2 textureCoordinate in TextureCoordinates) {
+                    writer.Write(textureCoordinate.X);
+                    writer.Write(textureCoordinate.Y);
+                }
+                writer.Write(FaceData.Count);
+                foreach (Point faceData in FaceData) {
+                    writer.Write(faceData.X);
+                    writer.Write(faceData.Y);
+                }
+            }
+        }
+
+        [Command("export_obj", "Converts an .obj model file to .obj.export")]
+        private static void CmdExportObj(string objPath, string objExportPath = null) {
+            if (!File.Exists(objPath)) {
+                Engine.Commands.Log($"File {objPath} does not exist!");
+            } else {
+                if (objExportPath == null) {
+                    objExportPath = objPath + ".export";
+                }
+
+                using (BinaryWriter exportWriter = new BinaryWriter(File.OpenWrite(objExportPath)))
+                using (StreamReader objReader = new StreamReader(File.OpenRead(objPath))) {
+
+                    List<MeshData> meshData = new List<MeshData>();
+                    MeshData currentMeshData = null;
+
+                    // read through the obj file first to collect info about all meshes.
+                    string currentLine;
+                    while ((currentLine = objReader.ReadLine()) != null) {
+                        string[] splittedLine = currentLine.Split(' ');
+                        if (splittedLine.Length == 0) {
+                            continue;
+                        }
+                        switch (splittedLine[0]) {
+                            case "o":
+                                // new mesh
+                                currentMeshData = new MeshData();
+                                currentMeshData.Name = splittedLine[1];
+                                meshData.Add(currentMeshData);
+                                break;
+                            case "v":
+                                // new vertex
+                                Vector3 vertex = new Vector3(Float(splittedLine[1]), Float(splittedLine[2]), Float(splittedLine[3]));
+                                currentMeshData.Vertices.Add(vertex);
+                                break;
+                            case "vt":
+                                // new texture coordinate
+                                Vector2 textureCoordinate = new Vector2(Float(splittedLine[1]), Float(splittedLine[2]));
+                                currentMeshData.TextureCoordinates.Add(textureCoordinate);
+                                break;
+                            case "f":
+                                // new polygonal face
+                                for (int i = 1; i < Math.Min(4, splittedLine.Length); i++) {
+                                    Point currentFaceData = new Point();
+                                    string[] faceDataSplit = splittedLine[i].Split('/');
+                                    if (faceDataSplit[0].Length > 0) {
+                                        currentFaceData.X = int.Parse(faceDataSplit[0]);
+                                    }
+                                    if (faceDataSplit[1].Length > 0) {
+                                        currentFaceData.Y = int.Parse(faceDataSplit[1]);
+                                    }
+                                    currentMeshData.FaceData.Add(currentFaceData);
+                                }
+                                break;
+                        }
+                    }
+
+                    // we now read through the obj file! time to export it.
+                    exportWriter.Write(meshData.Count);
+                    foreach (MeshData data in meshData) {
+                        data.WriteTo(exportWriter);
+                    }
+                }
+            }
+        }
+
+        private static float Float(string data) {
+            return float.Parse(data, CultureInfo.InvariantCulture);
         }
     }
 }

@@ -33,6 +33,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
+    public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
     public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
@@ -628,6 +629,10 @@ namespace Celeste.Mod {
                 } else if (file.EndsWith(".obj")) {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
+
+                } else if (file.EndsWith(".obj.export")) {
+                    type = typeof(AssetTypeObjModelExport);
+                    file = file.Substring(0, file.Length - 7);
 
                 } else if (
                     file == "metadata.yaml" ||
