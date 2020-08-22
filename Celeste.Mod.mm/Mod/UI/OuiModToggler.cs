@@ -322,14 +322,6 @@ namespace Celeste.Mod.UI {
                     }
 
                     updateHighlightedMods();
-
-                    if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
-                        restartMessage1.TextColor = Color.Gray;
-                        restartMessage2.TextColor = Color.Gray;
-                    } else {
-                        restartMessage1.TextColor = Color.OrangeRed;
-                        restartMessage2.TextColor = Color.OrangeRed;
-                    }
                 }));
 
             allMods.Add(file);
@@ -344,6 +336,15 @@ namespace Celeste.Mod.UI {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
                 ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
+            }
+
+            // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
+            if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
+                restartMessage1.TextColor = Color.Gray;
+                restartMessage2.TextColor = Color.Gray;
+            } else {
+                restartMessage1.TextColor = Color.OrangeRed;
+                restartMessage2.TextColor = Color.OrangeRed;
             }
         }
 
