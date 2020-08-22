@@ -36,38 +36,59 @@ namespace Celeste.Mod.UI {
 
             Dictionary<string, EverestModuleMetadata[]> allModYamls = new Dictionary<string, EverestModuleMetadata[]>();
 
+            // we also are getting the loaded modules' metadata, to avoid reading them from disk again.
+            IEnumerable<EverestModuleMetadata> alreadyLoadedModMetadata = Everest.Modules.Select(module => module.Metadata);
+
+            // load zips
             string[] files = Directory.GetFiles(Everest.Loader.PathMods);
             for (int i = 0; i < files.Length; i++) {
+                // update progress
                 progressCallback((float) processedFileCount / totalFileCount);
                 processedFileCount++;
 
+                // check the file is a zip
                 string file = Path.GetFileName(files[i]);
                 if (!file.EndsWith(".zip"))
                     continue;
 
-                EverestModuleMetadata[] metadatas = loadZip(Path.Combine(Everest.Loader.PathMods, file));
+                // check if we didn't already load it, if not do it now
+                EverestModuleMetadata[] metadatas = alreadyLoadedModMetadata.Where(meta => meta.PathArchive == files[i]).ToArray();
+                if (metadatas.Length == 0) {
+                    metadatas = loadZip(Path.Combine(Everest.Loader.PathMods, file));
+                }
+
+                // add it to the yaml list
                 if (metadatas != null) {
                     allModYamls[file] = metadatas;
                 }
             }
 
+            // load directories
             files = Directory.GetDirectories(Everest.Loader.PathMods);
             for (int i = 0; i < files.Length; i++) {
+                // update progress
                 progressCallback((float) processedFileCount / totalFileCount);
                 processedFileCount++;
 
+                // ignore the Cache folder
                 string file = Path.GetFileName(files[i]);
                 if (file == "Cache")
                     continue;
 
-                EverestModuleMetadata[] metadatas = loadDir(Path.Combine(Everest.Loader.PathMods, file));
+                // check if we didn't already load it, if not do it now
+                EverestModuleMetadata[] metadatas = alreadyLoadedModMetadata.Where(meta => meta.PathDirectory == files[i]).ToArray();
+                if (metadatas.Length == 0) {
+                    metadatas = loadDir(Path.Combine(Everest.Loader.PathMods, file));
+                }
+
+                // add it to the yaml list
                 if (metadatas != null) {
                     allModYamls[file] = metadatas;
                 }
             }
 
+            // our list is complete!
             stopwatch.Stop();
-
             Logger.Log("OuiModToggler", $"Found {allModYamls.Count} mod(s) with yaml files, took {stopwatch.ElapsedMilliseconds} ms");
             return allModYamls;
         }
