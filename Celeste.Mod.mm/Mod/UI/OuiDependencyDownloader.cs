@@ -53,6 +53,20 @@ namespace Celeste.Mod.UI {
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
+                // load information on all installed mods, so that we can spot blacklisted ones easily.
+                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
+                Dictionary<string, EverestModuleMetadata[]> allModsInformationFlipped =
+                    OuiModToggler.LoadAllModYamls(progress => Lines[Lines.Count - 1] = $"{Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS")} ({(int) (progress * 100)}%)");
+
+                // but flip around the mapping for convenience.
+                Dictionary<EverestModuleMetadata, string> allModsInformation = new Dictionary<EverestModuleMetadata, string>();
+                foreach (KeyValuePair<string, EverestModuleMetadata[]> mods in allModsInformationFlipped) {
+                    foreach (EverestModuleMetadata mod in mods.Value) {
+                        allModsInformation[mod] = mods.Key;
+                    }
+                }
+                Lines[Lines.Count - 1] = $"{Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS")} {Dialog.Clean("DEPENDENCYDOWNLOADER_DONE")}";
+
                 Logger.Log("OuiDependencyDownloader", "Computing dependencies to download...");
 
                 // these mods are not installed currently, we will install them
@@ -71,8 +85,8 @@ namespace Celeste.Mod.UI {
                 // these mods have multiple downloads, and as such, should be installed manually
                 HashSet<string> modsNotInstallableAutomatically = new HashSet<string>();
 
-                // these mods are blacklisted, and should be removed from the blacklist instead of being re-installed
-                HashSet<string> modsBlacklisted = new HashSet<string>();
+                // these mods should be unblacklisted.
+                HashSet<string> modFilenamesToUnblacklist = new HashSet<string>();
 
                 // these mods are in the database, but the version found in there won't satisfy the dependency
                 Dictionary<string, HashSet<Version>> modsWithIncompatibleVersionInDatabase = new Dictionary<string, HashSet<Version>>();
@@ -97,12 +111,8 @@ namespace Celeste.Mod.UI {
                                 shouldUpdateEverestManually = true;
                             }
                         }
-
-                        // TODO: maybe check more precisely for blacklisted mods? We're only basing ourselves on the name here.
-                    } else if (Everest.Loader.Blacklist.Contains($"{dependency.Name}.zip")) {
+                    } else if (tryUnblacklist(dependency, allModsInformation, modFilenamesToUnblacklist)) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
-                        modsBlacklisted.Add(dependency.Name);
-                        shouldAutoExit = false;
 
                     } else if (!availableDownloads.ContainsKey(dependency.Name)) {
                         Logger.Log("OuiDependencyDownloader", $"{dependency.Name} was not found in the database");
@@ -154,6 +164,15 @@ namespace Celeste.Mod.UI {
                 foreach (ModUpdateInfo modToUpdate in modsToUpdate.Values)
                     downloadDependency(modToUpdate, modsToUpdateCurrentVersions[modToUpdate.Name]);
 
+                // unblacklist mods if this is needed
+                if (modFilenamesToUnblacklist.Count > 0) {
+                    if (!unblacklistMods(modFilenamesToUnblacklist)) {
+                        // something bad happened
+                        shouldAutoExit = false;
+                    }
+                    shouldRestart = true; // TODO ideally we would want to load them on runtime instead? but this will do for now
+                }
+
                 // display all mods that couldn't be accounted for
                 if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
@@ -163,9 +182,6 @@ namespace Celeste.Mod.UI {
 
                 foreach (string mod in modsNotInstallableAutomatically)
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE"), mod));
-
-                foreach (string mod in modsBlacklisted)
-                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_BLACKLISTED"), mod));
 
                 foreach (string mod in modsWithIncompatibleVersionInDatabase.Keys)
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION"), mod,
@@ -200,6 +216,83 @@ namespace Celeste.Mod.UI {
 
             } else {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK"));
+            }
+        }
+
+        private static bool tryUnblacklist(EverestModuleMetadata dependency, Dictionary<EverestModuleMetadata, string> allModsInformation, HashSet<string> modsToUnblacklist) {
+            KeyValuePair<EverestModuleMetadata, string> match = default;
+
+            // let's find the most recent installed mod that has the required name and a version that satisfies the dependency.
+            foreach (KeyValuePair<EverestModuleMetadata, string> candidate in allModsInformation) {
+                if (dependency.Name == candidate.Key.Name && Everest.Loader.VersionSatisfiesDependency(dependency.Version, candidate.Key.Version)
+                    && (match.Key == null || match.Key.Version < candidate.Key.Version)) {
+
+                    match = candidate;
+                }
+            }
+
+            if (match.Key == null || !Everest.Loader.Blacklist.Contains(match.Value)) {
+                // no result for this dependency (it isn't actually installed) or the mod isn't blacklisted (so it failed loading for some other reason).
+                return false;
+            }
+
+            if (modsToUnblacklist.Contains(match.Value)) {
+                // STOP RIGHT HERE! we already are planning to unblacklist this dependency. No need to go further!
+                return true;
+            }
+
+            // this dependency will have to be unblacklisted.
+            modsToUnblacklist.Add(match.Value);
+
+            // unblacklist all dependencies for this dependency. if one of them isn't unblacklistable, that doesn't matter: it will fail to load
+            // after restarting the game and it will be handled then (this case should be extremely rare anyway).
+            foreach (EverestModuleMetadata dependencyDependency in match.Key.Dependencies) {
+                if (!Everest.Loader.DependencyLoaded(dependencyDependency)) {
+                    tryUnblacklist(dependencyDependency, allModsInformation, modsToUnblacklist);
+                }
+            }
+
+            // and we are done!
+            return true;
+        }
+
+        private bool unblacklistMods(HashSet<string> modFilenamesToUnblacklist) {
+            try {
+                // read the current blacklist file, changing nothing except for trimming lines.
+                List<string> currentBlacklist = File.ReadAllLines(Everest.Loader.PathBlacklist).Select(l => l.Trim()).ToList();
+
+                // start writing the new version.
+                HashSet<string> modsLeftToUnblacklist = new HashSet<string>(modFilenamesToUnblacklist);
+                using (StreamWriter blacklistTxt = File.CreateText(Everest.Loader.PathBlacklist)) {
+                    foreach (string line in currentBlacklist) {
+                        if (modFilenamesToUnblacklist.Contains(line)) {
+                            // comment this line to unblacklist this mod.
+                            blacklistTxt.WriteLine("# " + line);
+                            modsLeftToUnblacklist.Remove(line);
+                            LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), line));
+                        } else {
+                            // copy the line as is.
+                            blacklistTxt.WriteLine(line);
+                        }
+                    }
+                }
+
+                if (modsLeftToUnblacklist.Count > 0) {
+                    // some mods we are supposed to unblacklist aren't in the blacklist.txt file...?
+                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
+                    foreach (string mod in modsLeftToUnblacklist) {
+                        Logger.Log("OuiDependencyDownloader", "This mod could not be found in blacklist.txt: " + mod);
+                    }
+                    return false;
+                }
+
+                // everything went fine!
+                return true;
+            } catch (Exception e) {
+                // something unexpected happened (a bug, or an I/O exception)
+                LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
+                Logger.LogDetailed(e);
+                return false;
             }
         }
 

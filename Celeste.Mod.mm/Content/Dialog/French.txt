@@ -152,12 +152,13 @@
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALLATION DES DÉPENDANCES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Téléchargement de la base de données de mods...
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Chargement des informations sur les mods installés...
+	DEPENDENCYDOWNLOADER_DONE=						terminé.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Certains de vos mods demandent une version plus récente d'Everest. Installez-la depuis le menu "Changer de version d'Everest".
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest va être mis à jour vers la version {0} pour que certains mods puissent fonctionner. Appuyez sur Confirmer pour continuer.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERREUR: {0} possède plusieurs versions et ne peut pas être installé automatiquement. Merci de l'installer manuellement.
-	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ATTENTION: {0}.zip est dans votre blacklist. Retirez-le de la blacklist pour pouvoir l'utiliser comme une dépendance.
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERREUR: La version {1} de {0} est nécessaire, mais seule la version {2} est disponible. Merci d'installer ce mod manuellement.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Redémarrage en cours
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Redémarrage dans {0}
@@ -169,6 +170,8 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installation de la mise à jour de {0} ({1} -> {2}) vers {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installation du mod {0} v.{1} vers {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERREUR: L'installation de {0} a échoué. Vérifiez votre log.txt pour plus d'informations.
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Suppression du mod {0} de la blacklist...
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		La suppression de certains mods de la blacklist a échoué. Vérifiez votre log.txt pour plus d'informations.
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		Bienvenue dans Everest !

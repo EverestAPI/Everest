@@ -170,12 +170,13 @@
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Loading information on installed mods...
+	DEPENDENCYDOWNLOADER_DONE=						done.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest will be updated to {0} to make some mods work. Press Confirm to continue.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
-	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			WARNING: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is available. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Restarting
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Restarting in {0}
@@ -187,6 +188,8 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installing update for {0} ({1} -> {2}) to {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installing mod {0} v.{1} to {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Removing mod {0} from the blacklist...
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatically unblacklisting some mods failed. Check log.txt for more info.
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		Welcome to Everest!
