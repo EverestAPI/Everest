@@ -28,13 +28,19 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
 
-        internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls() {
+        internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
+
+            int processedFileCount = 0;
+            int totalFileCount = Directory.GetFiles(Everest.Loader.PathMods).Length + Directory.GetDirectories(Everest.Loader.PathMods).Length;
 
             Dictionary<string, EverestModuleMetadata[]> allModYamls = new Dictionary<string, EverestModuleMetadata[]>();
 
             string[] files = Directory.GetFiles(Everest.Loader.PathMods);
             for (int i = 0; i < files.Length; i++) {
+                progressCallback((float) processedFileCount / totalFileCount);
+                processedFileCount++;
+
                 string file = Path.GetFileName(files[i]);
                 if (!file.EndsWith(".zip"))
                     continue;
@@ -47,6 +53,9 @@ namespace Celeste.Mod.UI {
 
             files = Directory.GetDirectories(Everest.Loader.PathMods);
             for (int i = 0; i < files.Length; i++) {
+                progressCallback((float) processedFileCount / totalFileCount);
+                processedFileCount++;
+
                 string file = Path.GetFileName(files[i]);
                 if (file == "Cache")
                     continue;
@@ -145,8 +154,15 @@ namespace Celeste.Mod.UI {
             menu.Add(loading);
 
             modLoadingTask = new Task(() => {
-                // load all the mod yamls (that can take some time)
-                modYamls = LoadAllModYamls();
+                // load all the mod yamls (that can take some time), update the progress every 500ms so that the text doesn't go crazy since it is centered.
+                Stopwatch updateTimer = Stopwatch.StartNew();
+                modYamls = LoadAllModYamls(progress => {
+                    if (updateTimer.ElapsedMilliseconds > 500) {
+                        updateTimer.Restart();
+                        loading.Label = $"{Dialog.Clean("MODOPTIONS_MODTOGGLE_LOADING")} ({(int) (progress * 100)}%)";
+                    }
+                });
+                updateTimer.Stop();
 
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
