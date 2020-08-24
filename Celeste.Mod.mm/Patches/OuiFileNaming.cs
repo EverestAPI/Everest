@@ -18,8 +18,10 @@ namespace Celeste {
         private int index;
 
         public void OnTextInput(char c) {
-            if (MInput.GamePads[Input.Gamepad].Attached)
+            var settings = Mod.Core.CoreModule.Instance._Settings as Mod.Core.CoreModuleSettings;
+            if (!settings?.UseKeyboardForTextInput ?? false) {
                 return;
+            }
 
             if (c == (char) 13) {
                 // Enter - confirm.

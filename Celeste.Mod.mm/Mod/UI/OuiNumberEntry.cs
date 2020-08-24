@@ -202,9 +202,10 @@ namespace Celeste.Mod.UI {
         }
 
         public void OnKeyboardInput(char c) {
-            // Only accept direct keyboard input when no controller is attached.
-            if (MInput.GamePads[Input.Gamepad].Attached)
+            var settings = Core.CoreModule.Instance._Settings as Core.CoreModuleSettings;
+            if (!settings?.UseKeyboardForTextInput ?? false) {
                 return;
+            }
 
             OnTextInput(c);
         }

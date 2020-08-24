@@ -201,6 +201,9 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingInGame(false)]
+        public bool UseKeyboardForTextInput { get; set; } = true;
+
+        [SettingInGame(false)]
         public bool AutoUpdateModsOnStartup { get; set; } = false;
 
         [SettingIgnore]
