@@ -312,6 +312,9 @@ namespace Celeste.Mod.UI {
 
         private Everest.Updater.Entry findEverestVersionToInstall(int requestedBuild) {
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
+                if (source?.Entries == null)
+                    continue;
+
                 foreach (Everest.Updater.Entry entry in source.Entries) {
                     if (entry.Build >= requestedBuild) {
                         // we found a suitable build! return it.
