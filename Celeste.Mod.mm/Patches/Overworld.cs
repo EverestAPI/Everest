@@ -50,7 +50,9 @@ namespace Celeste {
                     return;
                 }
 
-                if (SaveData.Instance != null && (IsCurrent<OuiChapterSelect>() || IsCurrent<OuiChapterPanel>() || IsCurrent<OuiMapList>() || IsCurrent<OuiMapSearch>())) {
+                if (SaveData.Instance != null && (IsCurrent<OuiChapterSelect>() || IsCurrent<OuiChapterPanel>()
+                    || IsCurrent<OuiMapList>() || IsCurrent<OuiMapSearch>() || IsCurrent<OuiJournal>())) {
+
                     string backgroundMusic = mountainMetadata?.BackgroundMusic;
                     if (backgroundMusic != null) {
                         // current map has custom background music
