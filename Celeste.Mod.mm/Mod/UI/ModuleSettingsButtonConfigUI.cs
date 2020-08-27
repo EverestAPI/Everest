@@ -17,6 +17,11 @@ namespace Celeste.Mod {
         protected List<ButtonBindingEntry> Bindings = new List<ButtonBindingEntry>();
 
         public ModuleSettingsButtonConfigUI(EverestModule module) {
+            All.Add(Buttons.Back);
+            All.Add(Buttons.BigButton);
+            All.Add(Buttons.RightStick);
+            All.Add(Buttons.LeftShoulder);
+
             Module = module;
             // Base already reloads too early before the module has been set.
             Reload();
