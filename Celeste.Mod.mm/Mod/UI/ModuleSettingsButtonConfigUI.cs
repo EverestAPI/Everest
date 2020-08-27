@@ -20,7 +20,7 @@ namespace Celeste.Mod {
             All.Add(Buttons.Back);
             All.Add(Buttons.BigButton);
             All.Add(Buttons.RightStick);
-            All.Add(Buttons.LeftShoulder);
+            All.Add(Buttons.LeftStick);
 
             Module = module;
             // Base already reloads too early before the module has been set.
