@@ -197,13 +197,8 @@ namespace Celeste.Mod.UI {
                 Finish();
 
             } else if (c == (char) 8) {
-                // Backspace - trim.
-                if (Value.Length > 0) {
-                    Value = Value.Substring(0, Value.Length - 1);
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                }
+                // Backspace is always bound to MenuCancel
+                //Backspace();
 
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.

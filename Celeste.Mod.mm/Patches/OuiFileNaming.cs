@@ -28,13 +28,13 @@ namespace Celeste {
                 Finish();
 
             } else if (c == (char) 8) {
-                // Backspace - trim.
-                if (Name.Length > 0) {
+                // Backspace is always bound to MenuCancel
+                /*if (Name.Length > 0) {
                     Name = Name.Substring(0, Name.Length - 1);
                     Audio.Play(SFX.ui_main_rename_entry_backspace);
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
-                }
+                }*/
 
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.

@@ -216,7 +216,8 @@ namespace Celeste.Mod.UI {
                 Finish();
 
             } else if (c == (char) 8) {
-                Backspace();
+                // backspace is always bound to MenuCancel
+                //Backspace();
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.
 
