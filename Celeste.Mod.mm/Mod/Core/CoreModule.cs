@@ -17,6 +17,7 @@ using MonoMod.Utils;
 using Microsoft.Xna.Framework.Input;
 using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
+using System.Text.RegularExpressions;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -75,6 +76,10 @@ namespace Celeste.Mod.Core {
             if (Everest.Flags.IsMobile) {
                 // It shouldn't look that bad on mobile screens...
                 Environment.SetEnvironmentVariable("FNA_OPENGL_BACKBUFFER_SCALE_NEAREST", "1");
+            }
+
+            foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
+                Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
             }
         }
 
