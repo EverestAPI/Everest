@@ -55,8 +55,15 @@ namespace Celeste.Mod.UI {
             } else {
                 // load information on all installed mods, so that we can spot blacklisted ones easily.
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
+
+                Progress = 0;
+                ProgressMax = 100;
                 Dictionary<string, EverestModuleMetadata[]> allModsInformationFlipped =
-                    OuiModToggler.LoadAllModYamls(progress => Lines[Lines.Count - 1] = $"{Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS")} ({(int) (progress * 100)}%)");
+                    OuiModToggler.LoadAllModYamls(progress => {
+                        Lines[Lines.Count - 1] = $"{Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS")} ({(int) (progress * 100)}%)";
+                        Progress = (int) (progress * 100);
+                    });
+                ProgressMax = 0;
 
                 // but flip around the mapping for convenience.
                 Dictionary<EverestModuleMetadata, string> allModsInformation = new Dictionary<EverestModuleMetadata, string>();
@@ -166,11 +173,28 @@ namespace Celeste.Mod.UI {
 
                 // unblacklist mods if this is needed
                 if (modFilenamesToUnblacklist.Count > 0) {
+                    // remove the mods from blacklist.txt
                     if (!unblacklistMods(modFilenamesToUnblacklist)) {
                         // something bad happened
                         shouldAutoExit = false;
+                        shouldRestart = true;
                     }
-                    shouldRestart = true; // TODO ideally we would want to load them on runtime instead? but this will do for now
+
+                    foreach (string modFilename in modFilenamesToUnblacklist) {
+                        LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
+
+                        // remove the mod from the loaded blacklist
+                        while (Everest.Loader._Blacklist.Contains(modFilename)) {
+                            Everest.Loader._Blacklist.Remove(modFilename);
+                        }
+
+                        // hot load the mod
+                        if (modFilename.EndsWith(".zip")) {
+                            Everest.Loader.LoadZip(modFilename);
+                        } else {
+                            Everest.Loader.LoadDir(modFilename);
+                        }
+                    }
                 }
 
                 // display all mods that couldn't be accounted for
@@ -222,11 +246,9 @@ namespace Celeste.Mod.UI {
         private static bool tryUnblacklist(EverestModuleMetadata dependency, Dictionary<EverestModuleMetadata, string> allModsInformation, HashSet<string> modsToUnblacklist) {
             KeyValuePair<EverestModuleMetadata, string> match = default;
 
-            // let's find the most recent installed mod that has the required name and a version that satisfies the dependency.
+            // let's find the most recent installed mod that has the required name.
             foreach (KeyValuePair<EverestModuleMetadata, string> candidate in allModsInformation) {
-                if (dependency.Name == candidate.Key.Name && Everest.Loader.VersionSatisfiesDependency(dependency.Version, candidate.Key.Version)
-                    && (match.Key == null || match.Key.Version < candidate.Key.Version)) {
-
+                if (dependency.Name == candidate.Key.Name && (match.Key == null || match.Key.Version < candidate.Key.Version)) {
                     match = candidate;
                 }
             }
@@ -269,7 +291,7 @@ namespace Celeste.Mod.UI {
                             // comment this line to unblacklist this mod.
                             blacklistTxt.WriteLine("# " + line);
                             modsLeftToUnblacklist.Remove(line);
-                            LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), line));
+                            Logger.Log("OuiDependencyDownloader", "Commented out line from blacklist.txt: " + line);
                         } else {
                             // copy the line as is.
                             blacklistTxt.WriteLine(line);
