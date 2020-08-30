@@ -55,6 +55,7 @@
 	MODOPTIONS_COREMODULE_LQATLAS=							Préférer LQ atlases
 	MODOPTIONS_COREMODULE_NONTHREADEDGL=					GL non-traité
 	MODOPTIONS_COREMODULE_MODUPDATES= 						Mises à jour des mods
+	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Utiliser le clavier pour saisir du texte
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Recharger aspects~
 
