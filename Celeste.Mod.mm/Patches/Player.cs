@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Celeste {
@@ -14,6 +15,8 @@ namespace Celeste {
 
         // We're effectively in Player, but still need to "expose" private fields to our mod.
         private bool wasDashB;
+        private HashSet<Trigger> triggersInside;
+        private List<Entity> temp;
 
         private static int diedInGBJ = 0;
         private int framesAlive;
@@ -180,6 +183,19 @@ namespace Celeste {
             }
 
             return orig_Pickup(pickup);
+        }
+
+        public extern void orig_SceneEnd(Scene scene);
+        public override void SceneEnd(Scene scene) {
+            orig_SceneEnd(scene);
+
+            // if we are not entering PICO-8 or the Reflection Fall cutscene...
+            if (!(patch_Engine.NextScene is Pico8.Emulator) && !(patch_Engine.NextScene is OverworldReflectionsFall)) {
+                // make sure references to the previous level don't leak if hot reloading inside of a trigger.
+                triggersInside?.Clear();
+                temp?.Clear();
+                level = null;
+            }
         }
     }
     public static class PlayerExt {

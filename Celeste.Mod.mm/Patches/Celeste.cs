@@ -8,6 +8,7 @@ using Monocle;
 using MonoMod;
 using MonoMod.Utils;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Management;
@@ -50,8 +51,8 @@ namespace Celeste {
                     writer.WriteLine("# remove the # from the following line to enable using Direct3D.");
                     writer.WriteLine("#--d3d");
                     writer.WriteLine();
-                    writer.WriteLine("# If you've got an Intel GPU, are using the FNA version on Windows and");
-                    writer.WriteLine("# are 100% sure that you want to use Intel's possibly broken OpenGL drivers,");
+                    writer.WriteLine("# If you've got a GPU that is known to cause issues, are using the FNA version on Windows and");
+                    writer.WriteLine("# are 100% sure that you want to use its possibly broken OpenGL drivers,");
                     writer.WriteLine("# remove the # from the following line to revert to using OpenGL.");
                     writer.WriteLine("#--no-d3d");
                     writer.WriteLine();
@@ -155,7 +156,6 @@ namespace Celeste {
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
 In other words: Celeste has encountered a catastrophic failure.
-Probably by force-installing Everest on top of Everest on top of Everest.
 
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.
@@ -175,11 +175,10 @@ https://discord.gg/6qjaePQ");
 
         [MonoModIfFlag("OS:Windows")]
         private static bool DoesGPUHaveBadOpenGLDrivers() {
-            bool isBad = false;
-            bool checkIntel = true;
+            // The list of GPUs that will have --d3d enabled by default because they are known to cause issues (empty for now).
+            List<string> knownBadGPUs = new List<string> { };
 
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from Win32_VideoController")) {
-
                 // The current machine can have more than one GPU installed.
                 // Let's iterate through all GPUs to catch them all, as we can't
                 // control which GPU will be used to render the game at runtime.
@@ -191,11 +190,11 @@ https://discord.gg/6qjaePQ");
                         if (string.IsNullOrEmpty(key))
                             continue;
 
-                        // At least one of those contains "Intel"
-                        if (key.Equals("AdapterCompatibility", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("Caption", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("Description", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("VideoProcessor", StringComparison.InvariantCultureIgnoreCase)
+                        // Properties we want to check
+                        if (!key.Equals("AdapterCompatibility", StringComparison.InvariantCultureIgnoreCase) &&
+                            !key.Equals("Caption", StringComparison.InvariantCultureIgnoreCase) &&
+                            !key.Equals("Description", StringComparison.InvariantCultureIgnoreCase) &&
+                            !key.Equals("VideoProcessor", StringComparison.InvariantCultureIgnoreCase)
                         )
                             continue;
 
@@ -204,45 +203,15 @@ https://discord.gg/6qjaePQ");
                         if (string.IsNullOrEmpty(value))
                             continue;
 
-                        if (value.IndexOf("Intel", StringComparison.InvariantCultureIgnoreCase) != -1) {
-                            // Good job, this machine has got an Intel GPU and we don't
-                            // know if the installed drivers are good enough or not.
-
-                            // Intel chips can be listed multiple times with some important information only present once.
-                            if (!checkIntel)
-                                break;
-
-                            // Someone reported lag when using ANGLE with an HD Graphics
-                            // 4000 and using the latest drivers (2019).
-                            // Meanwhile, someone else reported graphics issues with an
-                            // HD Graphics 5500 which were fixed by using ANGLE.
-                            // I regret my life decisions.
-                            if (value == "Intel(R) HD Graphics 4000") {
-                                // Don't check this GPU's props any further.
-                                isBad = false;
-                                break;
-                            }
-
-                            // Someone reported the following crash using ANGLE:
-                            // Mobile Intel(R) 4 Series Express Chipset Family
-                            // NoSuitableGraphicsDeviceException: Could not create GLES window surface
-                            // Meanwhile, someone else reported the same crash with a non-mobile variant, yet a missing mountain with OpenGL.
-                            if (value == "Mobile Intel(R) 4 Series Express Chipset Family" ||
-                                value == "Intel(R) 4 Series Express Chipset Family") {
-                                // Don't check this GPU's props any further.
-                                isBad = false;
-                                checkIntel = false;
-                                break;
-                            }
-
+                        if (knownBadGPUs.Contains(value)) {
                             // Gonna use ANGLE by default on this setup...
-                            isBad = true;
+                            return true;
                         }
                     }
                 }
             }
 
-            return isBad;
+            return false;
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]

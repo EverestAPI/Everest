@@ -41,11 +41,15 @@ namespace Celeste {
 
         public ObjModel MountainBird;
 
+        public List<ObjModel> MountainExtraModels = new List<ObjModel>();
+
         public VirtualTexture[] MountainTerrainTextures;
 
         public VirtualTexture[] MountainBuildingTextures;
 
         public VirtualTexture[] MountainSkyboxTextures;
+
+        public List<VirtualTexture[]> MountainExtraModelTextures = new List<VirtualTexture[]>();
 
         public VirtualTexture MountainMoonTexture;
 
@@ -70,6 +74,11 @@ namespace Celeste {
         /// </summary>
         public static Dictionary<string, MountainResources> MountainMappings = new Dictionary<string, MountainResources>();
 
+        /// <summary>
+        /// Stores .obj model files when they are loaded, so that they only get loaded once.
+        /// </summary>
+        public static Dictionary<string, ObjModel> ObjModelCache = new Dictionary<string, ObjModel>();
+
         public static bool ModsLoaded { get; private set; }
         public static bool ModsDataLoaded { get; private set; }
 
@@ -90,24 +99,39 @@ namespace Celeste {
                                 MountainMappings.Add(kvp.Key, resources);
                             }
 
-                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain"), out ModAsset mountain)) {
-                                resources.MountainTerrain = ObjModelExt.CreateFromStream(mountain.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain.obj"));
+                            if (resolveModel(meta, "mountain", out ModAsset mountain, out string mountainPath)) {
+                                resources.MountainTerrain = loadModelFile(mountain, mountainPath);
                             }
 
-                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "buildings"), out ModAsset buildings)) {
-                                resources.MountainBuildings = ObjModelExt.CreateFromStream(buildings.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "buildings.obj"));
+                            if (resolveModel(meta, "buildings", out ModAsset buildings, out string buildingsPath)) {
+                                resources.MountainBuildings = loadModelFile(buildings, buildingsPath);
                             }
 
-                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall"), out ModAsset coreWall)) {
-                                resources.MountainCoreWall = ObjModelExt.CreateFromStream(coreWall.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "mountain_wall.obj"));
+                            if (resolveModel(meta, "mountain_wall", out ModAsset coreWall, out string coreWallPath)) {
+                                resources.MountainCoreWall = loadModelFile(coreWall, coreWallPath);
                             }
 
-                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "bird"), out ModAsset bird)) {
-                                resources.MountainBird = ObjModelExt.CreateFromStream(bird.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "bird.obj"));
+                            if (resolveModel(meta, "bird", out ModAsset bird, out string birdPath)) {
+                                resources.MountainBird = loadModelFile(bird, birdPath);
                             }
 
-                            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, "moon"), out ModAsset moon)) {
-                                resources.MountainMoon = ObjModelExt.CreateFromStream(moon.Stream, Path.Combine(meta.Mountain.MountainModelDirectory, "moon.obj"));
+                            if (resolveModel(meta, "moon", out ModAsset moon, out string moonPath)) {
+                                resources.MountainMoon = loadModelFile(moon, moonPath);
+                            }
+
+                            while (resolveModel(meta, "extra" + resources.MountainExtraModels.Count, out ModAsset extra, out string extraPath)) {
+                                // load the extra model.
+                                int extraIndex = resources.MountainExtraModels.Count;
+                                resources.MountainExtraModels.Add(loadModelFile(extra, extraPath));
+
+                                // load the textures associated with the extra model.
+                                VirtualTexture[] textures = new VirtualTexture[4];
+                                for (int i = 0; i < 4; i++) {
+                                    if (MTN.Mountain.Has(Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/'))) {
+                                        textures[i] = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "extra" + extraIndex + "_" + i).Replace('\\', '/')].Texture;
+                                    }
+                                }
+                                resources.MountainExtraModelTextures.Add(textures);
                             }
                         }
                     }
@@ -117,6 +141,28 @@ namespace Celeste {
 
             ModsDataLoaded = true;
         }
+
+        private static bool resolveModel(MapMeta meta, string modelName, out ModAsset matchingAsset, out string path) {
+            if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj"), out matchingAsset) && matchingAsset.Type == typeof(AssetTypeObjModelExport)) {
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".export");
+                return true;
+            } else if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName), out matchingAsset) && matchingAsset.Type == typeof(ObjModel)) {
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj");
+                return true;
+            }
+            path = null;
+            return false;
+        }
+
+        private static ObjModel loadModelFile(ModAsset asset, string path) {
+            if (ObjModelCache.TryGetValue(path, out ObjModel cached)) {
+                return cached;
+            }
+            ObjModel loaded = ObjModelExt.CreateFromStream(asset.Stream, path);
+            ObjModelCache[path] = loaded;
+            return loaded;
+        }
+
         /// <summary>
         /// Load the custom mountain textures for mods.
         /// </summary>

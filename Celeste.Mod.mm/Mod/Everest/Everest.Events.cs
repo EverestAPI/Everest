@@ -189,6 +189,12 @@ namespace Celeste.Mod {
                     => OnEventTrigger?.InvokeWhileFalse(trigger, player, eventID) ?? false;
             }
 
+            public static class CustomBirdTutorial {
+                public delegate object ParseCommandHandler(string command);
+                public static event ParseCommandHandler OnParseCommand;
+                internal static object ParseCommand(string command)
+                    => OnParseCommand?.InvokeWhileNull<object>(command);
+            }
         }
     }
 }

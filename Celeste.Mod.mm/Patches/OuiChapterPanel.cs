@@ -194,5 +194,29 @@ namespace Celeste {
             LevelEnter.Go(new Session(Area, checkpoint), false);
         }
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchOuiChapterPanelRender] // ... except for manually manipulating the method via MonoModRules
+        public new extern void Render();
+
+        private static string _ModCardTexture(string textureName, patch_OuiChapterPanel self) {
+            // First, check for area (chapter) specific card textures.
+            string area = AreaData.Areas[self.Area.ID].Name;
+            string areaTextureName = textureName.Replace("areaselect/card", $"areaselect/{area}_card");
+            if (GFX.Gui.Has(areaTextureName)) {
+                textureName = areaTextureName;
+                return textureName;
+            }
+
+            // If none are found, fall back to levelset card textures.
+            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            string levelSetTextureName = textureName.Replace("areaselect/", $"areaselect/{levelSet}/");
+            if (GFX.Gui.Has(levelSetTextureName)) {
+                textureName = levelSetTextureName;
+                return textureName;
+            }
+
+            // If that doesn't exist either, return without changing anything.
+            return textureName;
+        }
     }
 }

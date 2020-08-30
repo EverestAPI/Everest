@@ -74,7 +74,12 @@ namespace Celeste {
         public extern void orig_Update();
         public new void Update() {
             orig_Update();
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
@@ -95,10 +100,15 @@ namespace Celeste {
         public extern void orig_BeforeRender(Scene scene);
         public new void BeforeRender(Scene scene) {
             if (vanillaMoonParticles == null) {
-                vanillaMoonParticles = (Engine.Scene as Overworld).Entities.OfType<MoonParticle3D>().First();
+                vanillaMoonParticles = (Engine.Scene as Overworld)?.Entities.OfType<MoonParticle3D>().First();
             }
 
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
             bool fadingIn = true;
             // Check if we're changing any mountain parameter
@@ -112,7 +122,12 @@ namespace Celeste {
                         newMountain = meta.Mountain;
                     }
                 }
-                string oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                string oldPath;
+                try {
+                    oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                } catch (ArgumentException) {
+                    oldPath = "Maps";
+                }
                 if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1)) {
                     MapMeta meta;
                     if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
@@ -170,7 +185,7 @@ namespace Celeste {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
                         } else {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
-                            (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White * easeState);
+                            (resources.MountainStates?[nextState] ?? mountainStates[nextState]).Skybox.Draw(matrix4, Color.White * easeState);
                         }
                         if (currState != nextState) {
                             GFX.FxMountain.Parameters["ease"].SetValue(easeState);
@@ -192,6 +207,17 @@ namespace Celeste {
                         (resources.MountainTerrain ?? MTN.MountainTerrain).Draw(GFX.FxMountain);
                         GFX.FxMountain.Parameters["WorldViewProj"].SetValue(Matrix.CreateTranslation(CoreWallPosition) * matrix3);
                         (resources.MountainCoreWall ?? MTN.MountainCoreWall).Draw(GFX.FxMountain);
+
+                        GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
+                        for (int i = 0; i < resources.MountainExtraModels.Count; i++) {
+                            Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainExtraModelTextures[i][currState] ?? mountainStates[currState].TerrainTexture).Texture;
+                            Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+                            if (currState != nextState) {
+                                Engine.Graphics.GraphicsDevice.Textures[1] = (resources.MountainExtraModelTextures[i][nextState] ?? mountainStates[nextState].TerrainTexture).Texture;
+                                Engine.Graphics.GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
+                            }
+                            resources.MountainExtraModels[i].Draw(GFX.FxMountain);
+                        }
                         GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
                         Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainStates?[currState] ?? mountainStates[currState]).BuildingsTexture.Texture;
                         Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;

@@ -52,7 +52,16 @@ namespace Celeste.Mod {
                 public Task<Source> Request() {
                     if (_RequestTask != null)
                         return _RequestTask;
-                    _RequestTask = new Task<Source>(() => _RequestStart());
+                    _RequestTask = new Task<Source>(() => {
+                        try {
+                            return _RequestStart();
+                        } catch (Exception e) {
+                            ErrorDialog = "updater_versions_err_download";
+                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading Everest version list");
+                            Logger.LogDetailed(e);
+                            return this;
+                        }
+                    });
                     _RequestTask.Start();
                     return _RequestTask;
                 }

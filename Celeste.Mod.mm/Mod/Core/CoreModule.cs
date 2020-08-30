@@ -67,6 +67,10 @@ namespace Celeste.Mod.Core {
                 // It shouldn't look that bad on mobile screens...
                 Environment.SetEnvironmentVariable("FNA_OPENGL_BACKBUFFER_SCALE_NEAREST", "1");
             }
+
+            foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
+                Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
+            }
         }
 
         public override void Initialize() {

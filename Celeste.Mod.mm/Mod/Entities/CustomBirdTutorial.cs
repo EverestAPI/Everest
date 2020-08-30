@@ -55,7 +55,16 @@ namespace Celeste.Mod.Entities {
             for (int i = 0; i < controls.Length; i++) {
                 string controlString = controlsStrings[i];
 
-                if (GFX.Gui.Has(controlString)) {
+                object modCommand = Everest.Events.CustomBirdTutorial.ParseCommand(controlString);
+                if (modCommand is ButtonBinding binding) {
+                    // convert ButtonBinding to VirtualButton for convenience.
+                    modCommand = binding.Button;
+                }
+
+                if (modCommand != null) {
+                    // this is a command a mod registered.
+                    controls[i] = modCommand;
+                } else if (GFX.Gui.Has(controlString)) {
                     // this is a texture.
                     controls[i] = GFX.Gui[controlString];
                 } else if (directions.ContainsKey(controlString)) {
@@ -67,15 +76,6 @@ namespace Celeste.Mod.Entities {
                         // this is a button.
                         controls[i] = matchingInput.GetValue(null);
                     } else {
-                        // when BirdTutorialGui renders text, it is offset by 1px on the right.
-                        // width computation doesn't take this 1px into account, so we should add it back in.
-                        extraAdvance++;
-                        if (i == 0) {
-                            // as the text is rendered 1px to the right, if the first thing is a string, there will be 1px more padding on the left.
-                            // we should add that extra px on the right as well.
-                            extraAdvance++;
-                        }
-
                         if (controlString.StartsWith("dialog:")) {
                             // treat that as a dialog key.
                             controls[i] = Dialog.Clean(controlString.Substring("dialog:".Length));
@@ -83,6 +83,17 @@ namespace Celeste.Mod.Entities {
                             // treat that as a plain string.
                             controls[i] = controlString;
                         }
+                    }
+                }
+
+                if (controls[i] is string) {
+                    // when BirdTutorialGui renders text, it is offset by 1px on the right.
+                    // width computation doesn't take this 1px into account, so we should add it back in.
+                    extraAdvance++;
+                    if (i == 0) {
+                        // as the text is rendered 1px to the right, if the first thing is a string, there will be 1px more padding on the left.
+                        // we should add that extra px on the right as well.
+                        extraAdvance++;
                     }
                 }
             }

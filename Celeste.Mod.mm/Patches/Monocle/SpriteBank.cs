@@ -45,7 +45,7 @@ namespace Monocle {
             if (patch_Calc.orig_ContentXMLExists(filename)) {
                 spriteBankXml = patch_Calc.orig_LoadContentXML(filename);
             } else {
-                //For any mods that load their own SpriteBanks
+                // For any mods that load their own SpriteBanks
                 return Calc.LoadContentXML(filename);
             }
 
@@ -53,12 +53,14 @@ namespace Monocle {
 
             string modAssetPath = filename.Substring(0, filename.Length - 4).Replace('\\', '/');
 
-            //Find all mod files that match this one
-            List<ModAsset> modAssets;
+            // Find all mod files that match this one, EXCEPT for the "shadow structure" asset - the unique "Graphics/Sprites" asset.
+            IEnumerable<ModAsset> modAssets;
             lock (Everest.Content.Map)
-                modAssets = Everest.Content.Map.Values
-                    .Where(a => a.Type == typeof(AssetTypeSpriteBank) && a.PathVirtual.Equals(modAssetPath))
-                    .ToList();
+                modAssets = Everest.Content.Map
+                    .Where((a) => a.Value.Type == typeof(AssetTypeSpriteBank) &&
+                        a.Value.PathVirtual.Equals(modAssetPath) &&
+                        !a.Value.PathVirtual.Equals(a.Key)) // Filter out the unique asset
+                    .Select(kvp => kvp.Value);
 
             foreach (ModAsset modAsset in modAssets) {
                 string modPath = modAsset.Source.Mod.PathDirectory;
@@ -77,7 +79,7 @@ namespace Monocle {
 
                         XmlNode existingNode = sprites.SelectSingleNode(node.Name);
                         if (existingNode != null) {
-                            //Unfortuately we don't know what spritebank added the element that's being replaced
+                            // Unfortuately we don't know what spritebank added the element that's being replaced
                             Logger.Log(LogLevel.Warn, "Content", $"CONFLICT in {modPath}{Path.DirectorySeparatorChar}{filename}: Overriding element {node.Name}.");
                             sprites.ReplaceChild(importedNode, existingNode);
                         } else

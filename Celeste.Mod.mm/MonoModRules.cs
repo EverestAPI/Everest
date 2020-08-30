@@ -293,6 +293,18 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
     class PatchIntroCrusherSequenceAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches the unselected color in TextMenu.Option to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchTextMenuOptionColor")]
+    class PatchTextMenuOptionColorAttribute : Attribute { };
+
+    /// <summary>
+    /// Patches chapter panel rendering to allow for custom chapter cards.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
+    class PatchOuiChapterPanelRenderAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2346,6 +2358,24 @@ namespace MonoMod {
             }
         }
 
+        public static void PatchTextMenuOptionColor(MethodDefinition method, CustomAttribute attrib) {
+            FieldReference f_UnselectedColor = method.DeclaringType.FindField("UnselectedColor");
+            if (f_UnselectedColor == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.FullName == "Microsoft.Xna.Framework.Color Microsoft.Xna.Framework.Color::get_White()") {
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instr.OpCode = OpCodes.Ldfld;
+                    instr.Operand = f_UnselectedColor;
+                }
+            }
+        }
+
         public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
             FieldReference f_triggered = method.DeclaringType.FindField("triggered");
             FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
@@ -2435,6 +2465,32 @@ namespace MonoMod {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                     instr.OpCode = OpCodes.Ldfld;
                     instr.Operand = f_speed;
+                }
+            }
+        }
+
+        public static void PatchOuiChapterPanelRender(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_ModCardTexture = method.DeclaringType.FindMethod("System.String _ModCardTexture(System.String,Celeste.OuiChapterPanel)");
+            if (m_ModCardTexture == null)
+                return;
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldstr && ((string) instr.Operand).StartsWith("areaselect/card")) {
+                    // Move to after the string is loaded.
+                    instri++;
+                    // Push this.
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instri++;
+                    // Insert method call to modify the string.
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_ModCardTexture));
+                    instri++;
                 }
             }
         }

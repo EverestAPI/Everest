@@ -8,11 +8,16 @@ namespace Monocle {
 
         // We're effectively in EntityList, but still need to "expose" private fields to our mod.
         private List<Entity> toAdd;
+        private List<Entity> entities;
+
         /// <summary>
         /// The list of entities which are about to get added.
         /// </summary>
         public List<Entity> ToAdd => toAdd;
 
+        internal void ClearEntities() {
+            entities.Clear();
+        }
     }
     public static class EntityListExt {
 

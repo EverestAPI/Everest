@@ -211,6 +211,7 @@ namespace Celeste {
                 Audio.SetMusic(null);
                 Audio.SetAmbience(null);
                 Overworld.ShowInputUI = false;
+                Focused = false;
                 new FadeWipe(Scene, false, () => LevelEnter.Go(SaveData.Instance.CurrentSession, true));
                 return;
             }
