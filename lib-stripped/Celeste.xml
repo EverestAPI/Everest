@@ -1832,6 +1832,216 @@ How these should be structured is poorly documented, so if having nested members
             <inheritdoc cref="M:Monocle.Entity.HandleGraphicsCreate"/>
         </member>
     </members>
+	  <members name="Graphics">
+		  <members name="Sprite">
+			  <member name="T:Monocle.Sprite">
+				  <summary>
+					  A component that can display animations made of <see cref="T:Monocle.MTexture"/>s.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.#ctor(Monocle.Atlas,System.String)">
+				  <summary>
+					  Create a new Sprite from a texture <see cref="T:Monocle.Atlas"/> and a root <paramref name="path"/>.
+				  </summary>
+				  <param name="atlas">The atlas to draw textures from.</param>
+				  <param name="path">The root path for this sprite's animation textures.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Reset(Monocle.Atlas,System.String)">
+				  <summary>
+					  Reset this Sprite from a texture <see cref="T:Monocle.Atlas"/> and a root <paramref name="path"/>.
+				  </summary>
+				  <param name="atlas">The atlas to draw textures from.</param>
+				  <param name="path">The root path for this sprite's animation textures.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.GetFrame(System.String,System.Int32)">
+				  <summary>
+					  Retrieve the <see cref="T:Monocle.MTexture"/> associated with a specific frame of an animation.
+				  </summary>
+				  <param name="animation">The name of the animation.</param>
+				  <param name="frame">The frame index.</param>
+				  <returns></returns>
+			  </member>
+			  <member name="P:Monocle.Sprite.Center">
+				  <summary>
+					  The relative center of the sprite.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.SetAnimationFrame(System.Int32)">
+				  <summary>
+					  Set the current animation to the specified <paramref name="frame"/>.
+				  </summary>
+				  <param name="frame"></param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)">
+				  <summary>
+					  Add a repeating animation to the sprite that can then be referenced using <paramref name="id"/>.
+				  </summary>
+				  <param name="id">The Animation id.</param>
+				  <param name="path">
+					  Path relative to <see cref="F:Monocle.Sprite.Path"/> to draw textures from.
+				  </param>
+				  <param name="delay">Delay between each frame.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)"/>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.Single,Monocle.MTexture[])">
+				  <inheritdoc cref="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)"/>
+				  <param name="frames">The textures to use as frames for this animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String)">
+				  <summary>
+					  Add an animation to the sprite that can then be referenced using <paramref name="id"/>.
+				  </summary>
+				  <param name="id">The Animation id.</param>
+				  <param name="path">
+					  Path relative to <see cref="F:Monocle.Sprite.Path"/> to draw textures from.
+				  </param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single)">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String)"/>
+				  <param name="delay">Delay between each frame.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="into">The animation to play once this one ends.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String})">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="into">Determines the animation to play once this one ends.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)"></inheritdoc>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.Single,System.String,Monocle.MTexture[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)"></inheritdoc>
+				  <param name="frames">The textures to use as frames for this animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String},System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String})"></inheritdoc>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.ClearAnimations">
+				  <summary>
+					  Remove all animation data from the sprite.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.Play(System.String,System.Boolean,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+				  <param name="randomizeFrame">Whether to randomize the starting frame and animation timer.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.PlayOffset(System.String,System.Single,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="offset">The amount to add to the animation timer.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.PlayRoutine(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation, returning an IEnumerator that will return <c>null</c> until the the sprite stops animating.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+				  <returns></returns>
+			  </member>
+			  <member name="M:Monocle.Sprite.ReverseRoutine(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite, setting <see cref="F:Monocle.Sprite.Rate"/> to negative.<br/>
+					  Returns an IEnumerator that will return <c>null</c> until the the sprite stops animating.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Reverse(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite, setting <see cref="F:Monocle.Sprite.Rate"/> to negative.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Has(System.String)">
+				  <summary>
+					  Whether this sprite has an animation matching <paramref name="id"/>.
+				  </summary>
+				  <param name="id"></param>
+				  <returns></returns>
+			  </member>
+			  <member name="M:Monocle.Sprite.Stop">
+				  <summary>
+					  Stop the currently playing animation.
+				  </summary>
+			  </member>
+			  <member name="P:Monocle.Sprite.Animating">
+				  <summary>
+					  Whether this sprite is currently playing an animation.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.DrawSubrect(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Rectangle)">
+				  <summary>
+					  Draw a rectangle from the current frame.
+				  </summary>
+				  <param name="offset">Relative offset to draw at.</param>
+				  <param name="rectangle">Rectangle to draw.</param>
+			  </member>
+			  <member name="F:Monocle.Sprite.Rate">
+				  <summary>
+					  The animation speed modifier.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.UseRawDeltaTime">
+				  <summary>
+					  Whether to update animations based on <see cref="P:Monocle.Engine.RawDeltaTime"/>.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnFinish">
+				  <summary>
+					  Invoked when this sprite stops animating.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnLoop">
+				  <summary>
+					  Invoked when current the animation loops.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnFrameChange">
+				  <summary>
+					  Invoked when when the current frame changes.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnLastFrame">
+				  <summary>
+					  Invoked when the animation is about to end, loop, or change.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnChange">
+				  <summary>
+					  Invoked when the current animation changes.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.Path">
+				  <summary>
+					  The root directory of this sprite's animations.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.Animation.Goto">
+				  <summary>
+					  Used to determine the animation to play once this one ends.
+				  </summary>
+			  </member>
+		  </members>
+	  </members>
     </members>
     
     <members name="Graphics">

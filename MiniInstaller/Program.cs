@@ -369,6 +369,20 @@ namespace MiniInstaller {
                 }
             }
 
+            // Remove any pre-existing Everest docs
+            members = to.DocumentElement.ChildNodes;
+            for (int i = members.Count - 1; i >= 0; i--) {
+                XmlNode node = members[i];
+                if (node.Attributes?["name"] != null && node.Attributes["name"].Value == "Everest") {
+                    to.DocumentElement.RemoveChild(node);
+                }
+            }
+
+            // Add an Everest tag onto the docs to be added
+            XmlAttribute attrib = from.CreateAttribute("name");
+            attrib.Value = "Everest";
+            from.DocumentElement.LastChild.Attributes.Append(attrib);
+
             to.DocumentElement.AppendChild(to.ImportNode(from.DocumentElement.LastChild, true));
             to.Save(xmlTo);
         }
