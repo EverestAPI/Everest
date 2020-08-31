@@ -136,7 +136,10 @@ namespace Celeste.Mod {
                             break;
                         }
                     }
-                    branchFirsts[CoreModule.Settings.CurrentBranch] = int.MaxValue - 2;
+
+                    if (CoreModule.Settings.CurrentBranch != null) {
+                        branchFirsts[CoreModule.Settings.CurrentBranch] = int.MaxValue - 2;
+                    }
 
                     for (int i = 0; i < entries.Count; i++) {
                         Entry entry = entries[i];
