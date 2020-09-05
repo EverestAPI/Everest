@@ -3,6 +3,7 @@ using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Monocle {
     /// <summary>
@@ -50,6 +51,7 @@ namespace Monocle {
                                 TrackedEntityTypes.Add(type, new List<Type>());
                             }
                             TrackedEntityTypes[type].AddRange(TrackedEntityTypes.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
+                            TrackedEntityTypes[type] = TrackedEntityTypes[type].Distinct().ToList();
                         }
                         if (inherited) {
                             // do the same for subclasses
@@ -58,6 +60,7 @@ namespace Monocle {
                                     if (!TrackedEntityTypes.ContainsKey(subclass))
                                         TrackedEntityTypes.Add(subclass, new List<Type>());
                                     TrackedEntityTypes[subclass].AddRange(TrackedEntityTypes.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
+                                    TrackedEntityTypes[subclass] = TrackedEntityTypes[type].Distinct().ToList();
                                 }
                             }
                         }
@@ -68,6 +71,7 @@ namespace Monocle {
                                 TrackedComponentTypes.Add(type, new List<Type>());
                             }
                             TrackedComponentTypes[type].AddRange(TrackedComponentTypes.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
+                            TrackedComponentTypes[type] = TrackedComponentTypes[type].Distinct().ToList();
                         }
                         if (inherited) {
                             // do the same for subclasses
@@ -76,6 +80,7 @@ namespace Monocle {
                                     if (!TrackedComponentTypes.ContainsKey(subclass))
                                         TrackedComponentTypes.Add(subclass, new List<Type>());
                                     TrackedComponentTypes[subclass].AddRange(TrackedComponentTypes.TryGetValue(trackedAsType, out List<Type> list) ? list : new List<Type>());
+                                    TrackedComponentTypes[subclass] = TrackedComponentTypes[type].Distinct().ToList();
                                 }
                             }
                         }
