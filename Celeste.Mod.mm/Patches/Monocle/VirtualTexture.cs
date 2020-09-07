@@ -33,8 +33,9 @@ namespace Monocle {
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
-                if (_Texture_Reloading || !CoreModule.Settings.LazyLoading)
+                if (_Texture_Reloading || ShouldNotBeLazilyLoaded()) {
                     return Texture_Unsafe;
+                }
 
                 // If we're accessing the texture from outside (render), load lazily if required.
                 if (Texture_Unsafe?.IsDisposed ?? true)
@@ -45,6 +46,16 @@ namespace Monocle {
             set {
                 Texture_Unsafe = value;
             }
+        }
+
+        internal bool ShouldNotBeLazilyLoaded() {
+            return !CoreModule.Settings.LazyLoading &&
+                (!CoreModule.Settings.NonGameplayLazyLoading
+                    || Name.EndsWith(".data") // vanilla assets
+                    || Name.StartsWith("Graphics/Atlases/Gameplay/") // gameplay assets
+                    || Name.StartsWith("Graphics/Atlases/Misc/") // some of those are used as stylegrounds or by entities
+                    || Name.StartsWith("Graphics/Atlases/Mountain/") // mountain textures: they cause a too big freeze if hot loaded
+                    || Name.StartsWith("Graphics/ColorGrading/") || Name.StartsWith("Graphics\\ColorGrading\\")); // color grades 
         }
 
         public ModAsset Metadata;
@@ -129,7 +140,7 @@ namespace Monocle {
         }
 
         private void Preload() {
-            if (!CoreModule.Settings.LazyLoading) {
+            if (ShouldNotBeLazilyLoaded()) {
                 Reload();
                 return;
             }

@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
+using Celeste;
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -76,6 +77,20 @@ namespace Monocle {
                     path = path.Substring(17);
                     if (path.StartsWith("Opening") || path.StartsWith("Overworld") || path.StartsWith("Mountain") || path.StartsWith("Journal")) {
                         asset.Unload();
+                    }
+                }
+            }
+        }
+
+        public static void UnloadLazyLoadedNonGameplayElements() {
+            foreach (VirtualAsset asset in assets) {
+                if (asset is VirtualTexture tex) {
+                    // unload everything that should be lazily loaded, except map icons because that causes a slight freeze when going back to the overworld.
+                    if (!((patch_VirtualTexture) (object) tex).ShouldNotBeLazilyLoaded()
+                        && (!tex.Name.StartsWith("Graphics/Atlases/Gui/") || AreaData.Areas == null
+                        || !AreaData.Areas.Any(area => tex.Name.Substring(21).Equals(area.Icon, StringComparison.InvariantCultureIgnoreCase)))) {
+
+                        tex.Unload();
                     }
                 }
             }

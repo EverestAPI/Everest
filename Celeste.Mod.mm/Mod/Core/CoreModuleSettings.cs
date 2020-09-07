@@ -155,6 +155,9 @@ namespace Celeste.Mod.Core {
             set => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs = value;
         }
 
+        [SettingIgnore]
+        public bool NonGameplayLazyLoading { get; set; } = true;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.

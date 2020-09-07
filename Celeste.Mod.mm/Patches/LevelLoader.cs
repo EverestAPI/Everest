@@ -37,6 +37,8 @@ namespace Celeste {
 
             if (CoreModule.Settings.LazyLoading) {
                 MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+            } else if (CoreModule.Settings.NonGameplayLazyLoading) {
+                MainThreadHelper.Do(() => patch_VirtualContent.UnloadLazyLoadedNonGameplayElements());
             }
 
             // Vanilla TileToIndex mappings.
