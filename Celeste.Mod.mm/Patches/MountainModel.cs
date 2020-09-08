@@ -51,7 +51,7 @@ namespace Celeste {
         private MoonParticle3D customMoonParticles;
 
         // Used to check when we transition from a different area
-        protected string PreviousSID;
+        internal string PreviousSID;
         // How opaque the bg is when transitioning between models
         protected float fade = 0f;
         protected float fadeHoldCountdown = 0;
@@ -138,6 +138,7 @@ namespace Celeste {
                 if (oldMountain?.MountainModelDirectory != newMountain?.MountainModelDirectory
                     || oldMountain?.MountainTextureDirectory != newMountain?.MountainTextureDirectory
                     || oldMountain?.StarFogColor != newMountain?.StarFogColor
+                    || (oldMountain?.ShowSnow ?? true) != (newMountain?.ShowSnow ?? true)
                     || !arrayEqual(oldMountain?.StarStreamColors, newMountain?.StarStreamColors)
                     || !arrayEqual(oldMountain?.StarBeltColors1, newMountain?.StarBeltColors1)
                     || !arrayEqual(oldMountain?.StarBeltColors2, newMountain?.StarBeltColors2)) {
