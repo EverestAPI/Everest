@@ -45,8 +45,10 @@ namespace Celeste {
                 AreaData currentAreaData = null;
                 string currentlyDisplayedSID = (Mountain?.Model as patch_MountainModel)?.PreviousSID;
                 if (currentlyDisplayedSID != null) {
+                    // use the settings of the currently displayed mountain
                     currentAreaData = patch_AreaData.Get(currentlyDisplayedSID);
                 } else if (SaveData.Instance != null) {
+                    // use the settings of the currently selected map
                     currentAreaData = AreaData.Get(SaveData.Instance.LastArea);
                 }
                 MapMetaMountain mountainMetadata = currentAreaData?.GetMeta()?.Mountain;

@@ -113,7 +113,7 @@ namespace Celeste {
             bool fadingIn = true;
             // Check if we're changing any mountain parameter
             // If so, we want to fade out and then back in
-            if (!(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
+            if (PreviousSID != null && !(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
                 MapMetaMountain oldMountain = null;
                 MapMetaMountain newMountain = null;
                 if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset1)) {
