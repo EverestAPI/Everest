@@ -195,6 +195,7 @@ namespace Celeste {
 
             yield return fileSelect.Leave(null);
 
+            overworld.Mountain.Model.EaseState(area.MountainState);
             yield return overworld.Mountain.EaseCamera(0, area.MountainIdle);
             yield return 0.3f;
 
