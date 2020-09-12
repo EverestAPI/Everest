@@ -85,6 +85,16 @@ namespace Celeste {
         public static bool ModsLoaded { get; private set; }
         public static bool ModsDataLoaded { get; private set; }
 
+        internal static void ReloadModData() {
+            ModsDataLoaded = false;
+            LoadModData();
+        }
+
+        internal static void ReloadMod() {
+            ModsLoaded = false;
+            LoadMod();
+        }
+
         /// <summary>
         /// Load the custom mountain models for mods.
         /// </summary>
@@ -122,6 +132,9 @@ namespace Celeste {
                                 resources.MountainMoon = loadModelFile(moon, moonPath);
                             }
 
+                            resources.MountainExtraModels.Clear();
+                            resources.MountainExtraModelTextures.Clear();
+
                             while (resolveModel(meta, "extra" + resources.MountainExtraModels.Count, out ModAsset extra, out string extraPath)) {
                                 // load the extra model.
                                 int extraIndex = resources.MountainExtraModels.Count;
@@ -147,10 +160,10 @@ namespace Celeste {
 
         private static bool resolveModel(MapMeta meta, string modelName, out ModAsset matchingAsset, out string path) {
             if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj"), out matchingAsset) && matchingAsset.Type == typeof(AssetTypeObjModelExport)) {
-                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".export");
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".export").Replace("\\", "/");
                 return true;
             } else if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName), out matchingAsset) && matchingAsset.Type == typeof(ObjModel)) {
-                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj");
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj").Replace("\\", "/");
                 return true;
             }
             path = null;

@@ -203,6 +203,9 @@ namespace Celeste.Mod {
                     saveData.BeforeSave();
                     saveData.AfterInitialize();
                 }
+
+                MTNExt.ReloadMod();
+                MainThreadHelper.Do(() => MTNExt.ReloadModData());
             }
 
             if (Engine.Scene is Overworld overworld) {
