@@ -172,7 +172,7 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadZip(file);
+                    LoadZip(Path.Combine(PathMods, file));
                 }
 
                 files = Directory.GetDirectories(PathMods);
@@ -182,7 +182,7 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadDir(file);
+                    LoadDir(Path.Combine(PathMods, file));
                 }
 
                 watch.Stop();

@@ -190,9 +190,9 @@ namespace Celeste.Mod.UI {
 
                         // hot load the mod
                         if (modFilename.EndsWith(".zip")) {
-                            Everest.Loader.LoadZip(modFilename);
+                            Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
                         } else {
-                            Everest.Loader.LoadDir(modFilename);
+                            Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
                         }
                     }
                 }
