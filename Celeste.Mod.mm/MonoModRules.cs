@@ -313,6 +313,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
+    /// <summary>
+    /// Don't remove TalkComponent even watchtower collide solid, so that watchtower can be hidden behind Solid.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
+    class PatchLookoutUpdateAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -598,7 +604,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                /* 
+                /*
                    we found
 
                    IL_08BA: ldloc.s   V_14
@@ -849,7 +855,7 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 /* We expect something similar enough to the following:
-                brfalse.s    338 (0441) ldarg.0 
+                brfalse.s    338 (0441) ldarg.0
                 ldarg.0
                 ldfld    class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
                 ldarg.0
@@ -2568,6 +2574,46 @@ namespace MonoMod {
                     instri++;
                 }
             }
+        }
+
+        public static void PatchLookoutUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (method?.Body == null)
+                return;
+
+            const string lookoutTalkFieldName = "Celeste.TalkComponent Celeste.Lookout::talk";
+            const string entityCollideCheckMethodID = "System.Boolean Monocle.Entity::CollideCheck<Celeste.Solid>()";
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+
+            // if (this.talk == null || !CollideCheck<Solid>())  <-- indexTarget is here
+            //     return;
+            // this.Remove((Component) this.talk);
+            // this.talk = (TalkComponent) null;
+
+            int indexTarget = -1;
+            for (int instri = 0; instri < instrs.Count - 5; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference)?.FullName == lookoutTalkFieldName
+                    && instrs[instri + 2].OpCode == OpCodes.Brfalse_S
+                    && instrs[instri + 3].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 4].OpCode == OpCodes.Call && (instrs[instri + 4].Operand as MethodReference)?.GetID() == entityCollideCheckMethodID
+                    && (instrs[instri + 5].OpCode == OpCodes.Brfalse_S || instrs[instri + 5].OpCode == OpCodes.Br_S)
+                ) {
+                    indexTarget = instri;
+                    break;
+                }
+            }
+
+            if (indexTarget < 0)
+                return;
+
+            // if (true || !CollideCheck<Solid>())  <-- after patch
+            //     return;
+            // this.Remove((Component) this.talk);
+            // this.talk = (TalkComponent) null;
+            ILProcessor il = method.Body.GetILProcessor();
+            instrs[indexTarget].OpCode = OpCodes.Nop;
+            instrs[indexTarget + 1] = il.Create(OpCodes.Ldc_I4_0);
         }
 
         public static void PostProcessor(MonoModder modder) {
