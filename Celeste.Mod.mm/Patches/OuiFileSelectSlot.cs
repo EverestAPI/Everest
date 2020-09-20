@@ -144,7 +144,10 @@ namespace Celeste {
 
             if (!Exists) {
                 if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
-                    buttons.Add(newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this));
+                    if (newGameLevelSetPicker == null) {
+                        newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this);
+                    }
+                    buttons.Add(newGameLevelSetPicker);
                 }
             }
 
@@ -209,6 +212,14 @@ namespace Celeste {
             yield return 0.5f;
 
             LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
+        }
+
+        public extern void orig_Unselect();
+        public new void Unselect() {
+            orig_Unselect();
+
+            // reset the level set picker when we exit out of the file select slot.
+            newGameLevelSetPicker = null;
         }
 
         // Required because Button is private. Also make it public.
