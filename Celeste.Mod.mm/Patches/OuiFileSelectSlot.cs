@@ -6,6 +6,7 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -176,6 +177,13 @@ namespace Celeste {
 
                 // currently highlighted option is the level set picker, call its Update() method to handle Left and Right presses.
                 newGameLevelSetPicker.Update(buttons[buttonIndex] == newGameLevelSetPicker);
+
+                if (MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
+                    // Ctrl+S: change the default starting level set to the currently selected one.
+                    CoreModule.Settings.DefaultStartingLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+                    CoreModule.Instance.SaveSettings();
+                    Audio.Play("event:/new_content/ui/rename_entry_accept_locked");
+                }
             }
         }
 
