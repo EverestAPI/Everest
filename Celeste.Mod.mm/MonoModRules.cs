@@ -313,6 +313,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches GoldenBlocks to disable static movers if the block is disabled.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchGoldenBlockStaticMovers")]
+    class PatchGoldenBlockStaticMoversAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2530,6 +2536,30 @@ namespace MonoMod {
                     // Insert method call to modify the string.
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_ModCardTexture));
                     instri++;
+                }
+            }
+        }
+
+        public static void PatchGoldenBlockStaticMovers(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod($"System.Void DisableStaticMovers()");
+            MethodDefinition m_Platform_DestroyStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod($"System.Void DestroyStaticMovers()");
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Awake") {
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(++instri, il.Create(OpCodes.Call, m_Platform_DisableStaticMovers));
+                }
+
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "RemoveSelf") {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_Platform_DestroyStaticMovers));
                 }
             }
         }
