@@ -23,23 +23,18 @@ namespace Celeste {
         private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             if (xml.HasAttr("scanWidth")) {
                 int scanWidth = xml.AttrInt("scanWidth");
+                if (scanWidth <= 0 || scanWidth % 2 == 0)
+                    throw new Exception("Tileset scan width must be a positive, odd integer.");
 
-                if (scanWidth < 0)
-                    throw new Exception("Tileset scan width cannot be negative.");
-                if (scanWidth % 2 == 0)
-                    throw new Exception("Tileset scan width cannot be an even number.");
-
-                data.ScanHeight = scanWidth;
+                data.ScanWidth = scanWidth;
             } else
                 data.ScanWidth = 3;
 
             if (xml.HasAttr("scanHeight")) {
                 int scanHeight = xml.AttrInt("scanHeight");
 
-                if (scanHeight < 0)
-                    throw new Exception("Tileset scan height cannot be negative.");
-                if (scanHeight % 2 == 0)
-                    throw new Exception("Tileset scan height cannot be an even number.");
+                if (scanHeight <= 0 || scanHeight % 2 == 0)
+                    throw new Exception("Tileset scan height must be a positive, odd integer.");
 
                 data.ScanHeight = scanHeight;
             } else
@@ -55,8 +50,10 @@ namespace Celeste {
 
             if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
                 orig_ReadInto(data, tileset, xml);
-            else
+            else {
+                Logger.Log(LogLevel.Debug, "Autotiler", $"Reading Tileset width scan height {data.ScanHeight} and scan width {data.ScanWidth}.");
                 ReadIntoCustomTemplate(data, tileset, xml);
+            }
 
             if (xml.HasAttr("sound"))
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
@@ -121,7 +118,7 @@ namespace Celeste {
                                     }
                                 }
                             } catch (IndexOutOfRangeException e) {
-                                throw new IndexOutOfRangeException("Mask size is greater than the size specified by scanWidth and scanHeight (defaults to 3x3).", e);
+                                throw new IndexOutOfRangeException($"Mask size in tileset with id '{data.ID}' is greater than the size specified by scanWidth and scanHeight (defaults to 3x3).", e);
                             }
                             data.Masked.Add(masked);
                         }
@@ -131,7 +128,11 @@ namespace Celeste {
                             int x = int.Parse(subtexture[0]);
                             int y = int.Parse(subtexture[1]);
 
-                            tiles.Textures.Add(tileset[x, y]);
+                            try {
+                                tiles.Textures.Add(tileset[x, y]);
+                            } catch (IndexOutOfRangeException e) {
+                                throw new IndexOutOfRangeException($"Tileset with id '{data.ID}' missing tile at ({x}, {y}).", e);
+                            }
                         }
 
                         if (node.HasAttr("sprites")) {
@@ -200,7 +201,7 @@ namespace Celeste {
             else if (char.IsUpper(c))
                 // Take the letter, convert it into a number from 37 to 63
                 return (byte) ((c - 'A') + 37);
-            throw new Exception("Parameter c must be an uppercase or lowercase letter.");
+            throw new ArgumentException("Parameter 'c' must be an uppercase or lowercase letter.");
         }
 
         [MonoModIgnore]
@@ -224,7 +225,7 @@ namespace Celeste {
             try { // Satisfies error handling for the orig_ method too.
                 terrainType = lookup[tile];
             } catch (KeyNotFoundException e) {
-                throw new KeyNotFoundException("Level contains a tileset that is not defined.");
+                throw new KeyNotFoundException($"Level contains a tileset with an id of '{tile}' that is not defined.", e);
             }
 
             int width = terrainType.ScanWidth;
@@ -364,6 +365,7 @@ namespace Celeste {
 
         // Required because TerrainType is private.
         private class patch_TerrainType {
+            public char ID;
             public List<patch_Masked> Masked;
             public patch_Tiles Center;
             public patch_Tiles Padded;
