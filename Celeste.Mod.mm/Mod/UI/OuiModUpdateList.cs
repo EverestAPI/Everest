@@ -61,6 +61,10 @@ namespace Celeste.Mod.UI {
 
             Scene.Add(menu);
 
+            currentCheckForUpdates = new CheckForUpdates();
+            task = new Task(() => currentCheckForUpdates.Fetch());
+            task.Start();
+
             menu.Visible = Visible = true;
             menu.Focused = false;
 
@@ -72,10 +76,6 @@ namespace Celeste.Mod.UI {
 
             menu.Focused = true;
             menuOnScreen = true;
-
-            currentCheckForUpdates = new CheckForUpdates();
-            task = new Task(() => currentCheckForUpdates.Fetch());
-            task.Start();
         }
 
         public override IEnumerator Leave(Oui next) {
@@ -190,7 +190,7 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            if (Input.MenuCancel.Pressed) {
+            if (menuOnScreen && Input.MenuCancel.Pressed) {
                 // cancel any ongoing download (this has no effect if no download is ongoing anyway).
                 ongoingUpdateCancelled = true;
 

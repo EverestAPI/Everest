@@ -16,10 +16,18 @@ namespace Celeste {
     class patch_OuiFileNaming : OuiFileNaming {
 
         private int index;
+        
+        public bool UseKeyboardInput {
+            get {
+                var settings = Mod.Core.CoreModule.Instance._Settings as Mod.Core.CoreModuleSettings;
+                return settings?.UseKeyboardForTextInput ?? false;
+            }
+        }
 
         public void OnTextInput(char c) {
-            if (MInput.GamePads[Input.Gamepad].Attached)
+            if (!UseKeyboardInput) {
                 return;
+            }
 
             if (c == (char) 13) {
                 // Enter - confirm.
@@ -80,8 +88,8 @@ namespace Celeste {
         public override void Update() {
             bool wasFocused = Focused;
             if (!Everest.Flags.IsDisabled) {
-                // Only "focus" if the input method is a gamepad, not a keyboard.
-                Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+                // Only "focus" if we're not using the keyboard for input
+                Focused = wasFocused && !UseKeyboardInput;
 
                 // If we aren't focused to kill controller input, still allow the player to Ctrl+S to choose a new name.
                 if (Selected && wasFocused && !Focused
@@ -111,8 +119,8 @@ namespace Celeste {
         public extern void orig_Render();
         public override void Render() {
             int prevIndex = index;
-            // Only "focus" if the input method is a gamepad, not a keyboard.
-            if (!Everest.Flags.IsDisabled && !MInput.GamePads[Input.Gamepad].Attached)
+            // Only "focus" if we're not using the keyboard for input
+            if (!Everest.Flags.IsDisabled && UseKeyboardInput)
                 index = -1;
 
             orig_Render();
@@ -122,8 +130,8 @@ namespace Celeste {
 
         private extern void orig_DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false);
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
-            // Only draw "interactively" if the input method is a gamepad, not a keyboard.
-            if (!Everest.Flags.IsDisabled && !MInput.GamePads[Input.Gamepad].Attached) {
+            // Only draw "interactively" if not using the keyboard for input
+            if (!Everest.Flags.IsDisabled && UseKeyboardInput) {
                 selected = false;
                 disabled = true;
             }
@@ -131,7 +139,7 @@ namespace Celeste {
         }
 
         private bool _shouldDisplaySwitchAlphabetPrompt() {
-            return Japanese && MInput.GamePads[Input.Gamepad].Attached;
+            return Japanese && !UseKeyboardInput;
         }
     }
 }

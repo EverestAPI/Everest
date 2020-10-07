@@ -18,7 +18,6 @@ using Celeste.Mod.Meta;
 using MonoMod.Utils;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Reflection;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -381,7 +380,22 @@ namespace Celeste {
 
             return orig_GetFullCameraTargetAt(player, at);
         }
+
+        public extern void orig_End();
+        public override void End() {
+            orig_End();
+
+            // if we are not entering PICO-8 or the Reflection Fall cutscene...
+            if (!(patch_Engine.NextScene is Pico8.Emulator) && !(patch_Engine.NextScene is OverworldReflectionsFall)) {
+                // break all links between this level and its entities.
+                foreach (Entity entity in Entities) {
+                    ((patch_Entity) entity).DissociateFromScene();
+                }
+                ((patch_EntityList) (object) Entities).ClearEntities();
+            }
+        }
     }
+
     public static class LevelExt {
 
         // Mods can't access patch_ classes directly.

@@ -155,7 +155,7 @@ namespace Celeste.Mod {
                 } else {
                     using (StreamWriter writer = File.CreateText(PathUpdaterBlacklist)) {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
-                        writer.WriteLine("# Put the name of a mod zip here to prevent it from being auto-updated and to show update notifications on the title screen.");
+                        writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
                     }
                 }
@@ -172,7 +172,7 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadZip(file);
+                    LoadZip(Path.Combine(PathMods, file));
                 }
 
                 files = Directory.GetDirectories(PathMods);
@@ -182,7 +182,7 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadDir(file);
+                    LoadDir(Path.Combine(PathMods, file));
                 }
 
                 watch.Stop();
@@ -409,8 +409,8 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (DependencyLoaded(meta)) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} already loaded!");
+                if (Modules.Any(module => module.Metadata.Name == meta.Name)) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
 

@@ -10,6 +10,7 @@ using MonoMod;
 using Celeste.Mod;
 using Celeste.Mod.Meta;
 using System.IO;
+using System.Linq;
 
 namespace Celeste {
     class patch_MountainModel : MountainModel {
@@ -46,8 +47,11 @@ namespace Celeste {
         private Ring customStarstream1;
         private Ring customStarstream2;
 
+        private MoonParticle3D vanillaMoonParticles;
+        private MoonParticle3D customMoonParticles;
+
         // Used to check when we transition from a different area
-        protected string PreviousSID;
+        internal string PreviousSID;
         // How opaque the bg is when transitioning between models
         protected float fade = 0f;
         protected float fadeHoldCountdown = 0;
@@ -70,10 +74,15 @@ namespace Celeste {
         public extern void orig_Update();
         public new void Update() {
             orig_Update();
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
-                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))) {
+                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
                     MountainResources resources = MTNExt.MountainMappings[path];
                     customFog.Rotate((0f - Engine.DeltaTime) * 0.01f);
                     customFog.TopColor = (customFog.BotColor = Color.Lerp((resources.MountainStates?[currState] ?? mountainStates[currState]).FogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
@@ -90,30 +99,50 @@ namespace Celeste {
 
         public extern void orig_BeforeRender(Scene scene);
         public new void BeforeRender(Scene scene) {
-            string path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            if (vanillaMoonParticles == null) {
+                vanillaMoonParticles = (Engine.Scene as Overworld)?.Entities.OfType<MoonParticle3D>().First();
+            }
+
+            string path;
+            try {
+                path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
+            } catch (ArgumentException) {
+                path = "Maps";
+            }
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
             bool fadingIn = true;
-            // Check if we're changing mountain models or textures
+            // Check if we're changing any mountain parameter
             // If so, we want to fade out and then back in
-            if (!(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
-                string oldModelDir = "", oldTextureDir = "", newModelDir = "", newTextureDir = "";
+            if (PreviousSID != null && !(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
+                MapMetaMountain oldMountain = null;
+                MapMetaMountain newMountain = null;
                 if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset1)) {
                     MapMeta meta;
                     if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
-                        newModelDir = meta.Mountain.MountainModelDirectory ?? "";
-                        newTextureDir = meta.Mountain.MountainTextureDirectory ?? "";
+                        newMountain = meta.Mountain;
                     }
                 }
-                string oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                string oldPath;
+                try {
+                    oldPath = Path.Combine("Maps", PreviousSID ?? "").Replace('\\', '/');
+                } catch (ArgumentException) {
+                    oldPath = "Maps";
+                }
                 if (SaveData.Instance != null && Everest.Content.TryGet(oldPath, out asset1)) {
                     MapMeta meta;
                     if (asset1 != null && (meta = asset1.GetMeta<MapMeta>()) != null && meta.Mountain != null) {
-                        oldModelDir = meta.Mountain.MountainModelDirectory ?? "";
-                        oldTextureDir = meta.Mountain.MountainTextureDirectory ?? "";
+                        oldMountain = meta.Mountain;
                     }
                 }
 
-                if (!oldModelDir.Equals(newModelDir) || !oldTextureDir.Equals(newTextureDir)) {
+                if (oldMountain?.MountainModelDirectory != newMountain?.MountainModelDirectory
+                    || oldMountain?.MountainTextureDirectory != newMountain?.MountainTextureDirectory
+                    || oldMountain?.StarFogColor != newMountain?.StarFogColor
+                    || (oldMountain?.ShowSnow ?? true) != (newMountain?.ShowSnow ?? true)
+                    || !arrayEqual(oldMountain?.StarStreamColors, newMountain?.StarStreamColors)
+                    || !arrayEqual(oldMountain?.StarBeltColors1, newMountain?.StarBeltColors1)
+                    || !arrayEqual(oldMountain?.StarBeltColors2, newMountain?.StarBeltColors2)) {
+
                     if (fade != 1f) {
                         SIDToUse = PreviousSID;
                         path = oldPath;
@@ -136,7 +165,7 @@ namespace Celeste {
 
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
-                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && !(string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) && string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory))) {
+                if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
                     MountainResources resources = MTNExt.MountainMappings[path];
 
                     ResetRenderTargets();
@@ -157,7 +186,7 @@ namespace Celeste {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
                         } else {
                             (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White);
-                            (resources.MountainStates?[currState] ?? mountainStates[currState]).Skybox.Draw(matrix4, Color.White * easeState);
+                            (resources.MountainStates?[nextState] ?? mountainStates[nextState]).Skybox.Draw(matrix4, Color.White * easeState);
                         }
                         if (currState != nextState) {
                             GFX.FxMountain.Parameters["ease"].SetValue(easeState);
@@ -179,6 +208,17 @@ namespace Celeste {
                         (resources.MountainTerrain ?? MTN.MountainTerrain).Draw(GFX.FxMountain);
                         GFX.FxMountain.Parameters["WorldViewProj"].SetValue(Matrix.CreateTranslation(CoreWallPosition) * matrix3);
                         (resources.MountainCoreWall ?? MTN.MountainCoreWall).Draw(GFX.FxMountain);
+
+                        GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
+                        for (int i = 0; i < resources.MountainExtraModels.Count; i++) {
+                            Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainExtraModelTextures[i][currState] ?? mountainStates[currState].TerrainTexture).Texture;
+                            Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
+                            if (currState != nextState) {
+                                Engine.Graphics.GraphicsDevice.Textures[1] = (resources.MountainExtraModelTextures[i][nextState] ?? mountainStates[nextState].TerrainTexture).Texture;
+                                Engine.Graphics.GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
+                            }
+                            resources.MountainExtraModels[i].Draw(GFX.FxMountain);
+                        }
                         GFX.FxMountain.Parameters["WorldViewProj"].SetValue(matrix3);
                         Engine.Graphics.GraphicsDevice.Textures[0] = (resources.MountainStates?[currState] ?? mountainStates[currState]).BuildingsTexture.Texture;
                         Engine.Graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
@@ -242,7 +282,7 @@ namespace Celeste {
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
                     Draw.SpriteBatch.End();
 
-                    // Initialize new custom fog when we switch between maps
+                    // Initialize new custom fog and star belt when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID)) {
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
@@ -252,10 +292,30 @@ namespace Celeste {
                         customStarstream0 = new Ring(5f, -8f, 18.5f, 0.2f, 80, resources.StarStreamColors?[0] ?? Color.Black, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream1 = new Ring(4f, -6f, 18f, 1f, 80, resources.StarStreamColors?[1] ?? Calc.HexToColor("9228e2") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream2 = new Ring(3f, -4f, 17.9f, 1.4f, 80, resources.StarStreamColors?[2] ?? Calc.HexToColor("30ffff") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
+
+                        if (Engine.Scene is Overworld thisOverworld) {
+                            thisOverworld.Remove(customMoonParticles);
+                            if (resources.StarBeltColors1 != null && resources.StarBeltColors2 != null) {
+                                // there are custom moon particle colors. build the new particles and add them to the scene
+                                thisOverworld.Remove(vanillaMoonParticles);
+                                thisOverworld.Add(customMoonParticles = new patch_MoonParticle3D(this, new Vector3(0f, 31f, 0f), resources.StarBeltColors1, resources.StarBeltColors2));
+                            } else {
+                                // there are no more moon particle colors. restore the vanilla particles
+                                customMoonParticles = null;
+                                thisOverworld.Add(vanillaMoonParticles);
+                            }
+                        }
                     }
                     PreviousSID = SIDToUse;
                     return;
                 }
+            }
+
+            if (customMoonParticles != null && Engine.Scene is Overworld overworld) {
+                // revert back the moon particles to vanilla.
+                overworld.Remove(customMoonParticles);
+                customMoonParticles = null;
+                overworld.Add(vanillaMoonParticles);
             }
 
             orig_BeforeRender(scene);
@@ -267,5 +327,17 @@ namespace Celeste {
             PreviousSID = SIDToUse;
         }
 
+        private static bool hasCustomSettings(MapMeta meta) {
+            return !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) || !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)
+                || !string.IsNullOrEmpty(meta.Mountain.StarFogColor) || meta.Mountain.StarStreamColors != null
+                || (meta.Mountain.StarBeltColors1 != null && meta.Mountain.StarBeltColors2 != null);
+        }
+
+        private bool arrayEqual(string[] array1, string[] array2) {
+            if (array1 == null || array2 == null) {
+                return array1 == array2;
+            }
+            return Enumerable.SequenceEqual(array1, array2);
+        }
     }
 }

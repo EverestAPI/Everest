@@ -701,9 +701,9 @@ namespace Celeste.Mod {
 
                             Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
 
-                            if (Loader.DependencyLoaded(entry.Item1)) {
+                            if (Everest.Modules.Any(mod => mod.Metadata.Name == entry.Item1.Name)) {
                                 // a duplicate of the mod was loaded while it was sitting in the delayed list.
-                                Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1} already loaded!");
+                                Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1.Name} already loaded!");
                             } else {
                                 entry.Item2?.Invoke();
                                 Loader.LoadMod(entry.Item1);

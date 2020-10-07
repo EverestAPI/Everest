@@ -449,8 +449,12 @@ namespace Celeste.Mod.Meta {
     public class MapMetaMountain {
         public string MountainModelDirectory { get; set; } = null;
         public string MountainTextureDirectory { get; set; } = null;
+        public string BackgroundMusic { get; set; } = null;
+        public Dictionary<string, float> BackgroundMusicParams { get; set; } = null;
         public string StarFogColor { get; set; } = null;
         public string[] StarStreamColors { get; set; } = null;
+        public string[] StarBeltColors1 { get; set; } = null;
+        public string[] StarBeltColors2 { get; set; } = null;
         public MapMetaMountainCamera Idle { get; set; } = null;
         public MapMetaMountainCamera Select { get; set; } = null;
         public MapMetaMountainCamera Zoom { get; set; } = null;
@@ -458,6 +462,7 @@ namespace Celeste.Mod.Meta {
         public int State { get; set; } = 0;
         public bool Rotate { get; set; } = false;
         public bool ShowCore { get; set; } = false;
+        public bool ShowSnow { get; set; } = true;
 
     }
     public class MapMetaMountainCamera {

@@ -1,5 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
 using System;
+using System.Linq;
 
 namespace Celeste.Mod.UI {
     class OuiFileSelectSlotLevelSetPicker : patch_OuiFileSelectSlot.Button {
@@ -11,6 +13,11 @@ namespace Celeste.Mod.UI {
 
         public OuiFileSelectSlotLevelSetPicker(OuiFileSelectSlot selectSlot) {
             this.selectSlot = selectSlot;
+
+            // if the default starting level set still exists, set it by default.
+            if (AreaData.Areas.Any(area => area.GetLevelSet() == CoreModule.Settings.DefaultStartingLevelSet)) {
+                NewGameLevelSet = CoreModule.Settings.DefaultStartingLevelSet;
+            }
 
             Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
             Scale = 0.5f;

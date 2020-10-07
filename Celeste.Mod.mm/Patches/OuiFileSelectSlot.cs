@@ -6,6 +6,7 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -144,7 +145,10 @@ namespace Celeste {
 
             if (!Exists) {
                 if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
-                    buttons.Add(newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this));
+                    if (newGameLevelSetPicker == null) {
+                        newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this);
+                    }
+                    buttons.Add(newGameLevelSetPicker);
                 }
             }
 
@@ -173,6 +177,13 @@ namespace Celeste {
 
                 // currently highlighted option is the level set picker, call its Update() method to handle Left and Right presses.
                 newGameLevelSetPicker.Update(buttons[buttonIndex] == newGameLevelSetPicker);
+
+                if (MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
+                    // Ctrl+S: change the default starting level set to the currently selected one.
+                    CoreModule.Settings.DefaultStartingLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+                    CoreModule.Instance.SaveSettings();
+                    Audio.Play("event:/new_content/ui/rename_entry_accept_locked");
+                }
             }
         }
 
@@ -195,6 +206,7 @@ namespace Celeste {
 
             yield return fileSelect.Leave(null);
 
+            overworld.Mountain.Model.EaseState(area.MountainState);
             yield return overworld.Mountain.EaseCamera(0, area.MountainIdle);
             yield return 0.3f;
 
@@ -208,6 +220,14 @@ namespace Celeste {
             yield return 0.5f;
 
             LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
+        }
+
+        public extern void orig_Unselect();
+        public new void Unselect() {
+            orig_Unselect();
+
+            // reset the level set picker when we exit out of the file select slot.
+            newGameLevelSetPicker = null;
         }
 
         // Required because Button is private. Also make it public.

@@ -33,6 +33,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
+    public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
     public sealed class AssetTypeMap { private AssetTypeMap() { } }
     public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
@@ -629,6 +630,10 @@ namespace Celeste.Mod {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
+                } else if (file.EndsWith(".obj.export")) {
+                    type = typeof(AssetTypeObjModelExport);
+                    file = file.Substring(0, file.Length - 7);
+
                 } else if (
                     file == "metadata.yaml" ||
                     file == "multimetadata.yaml" ||
@@ -813,6 +818,13 @@ namespace Celeste.Mod {
                             Dialog.LoadLanguage(Path.Combine(PathContentOrig, languageFilePath));
                             patch_Dialog.RefreshLanguages();
                         });
+                    } else if (next.Type == typeof(ObjModel) || next.Type == typeof(AssetTypeObjModelExport)) {
+                        if (next.Type == typeof(ObjModel)) {
+                            MTNExt.ObjModelCache.Remove(next.PathVirtual + ".obj");
+                        } else {
+                            MTNExt.ObjModelCache.Remove(next.PathVirtual + ".export");
+                        }
+                        MainThreadHelper.Do(() => MTNExt.ReloadModData());
                     }
 
                     // Loaded assets can be folders, which means that we need to check the updated assets' entire path.
@@ -913,9 +925,9 @@ namespace Celeste.Mod {
                 if (asset is Atlas atlas) {
                     string reloadingText = Dialog.Language == null ? "" : Dialog.Clean(mapping.Children.Count == 0 ? "ASSETRELOADHELPER_RELOADINGTEXTURE" : "ASSETRELOADHELPER_RELOADINGTEXTURES");
                     AssetReloadHelper.Do(load, $"{reloadingText} {Path.GetFileName(mapping.PathVirtual)}", () => {
-                            atlas.ResetCaches();
-                            (atlas as patch_Atlas).Ingest(mapping);
-                        });
+                        atlas.ResetCaches();
+                        (atlas as patch_Atlas).Ingest(mapping);
+                    });
 
                     // if the atlas is (or contains) an emoji, register it.
                     if (Emoji.IsInitialized()) {
@@ -925,6 +937,13 @@ namespace Celeste.Mod {
                                 Fonts.Reload();
                             });
                         }
+                    }
+
+                    if ((MTNExt.ModsLoaded || MTNExt.ModsDataLoaded) && potentiallyContainsMountainTextures(mapping)) {
+                        AssetReloadHelper.Do(load, Dialog.Clean("ASSETRELOADHELPER_RELOADINGMOUNTAIN"), () => {
+                            MTNExt.ReloadMod();
+                            MainThreadHelper.Do(() => MTNExt.ReloadModData());
+                        });
                     }
                 }
 
@@ -950,6 +969,20 @@ namespace Celeste.Mod {
                     return true;
                 }
                 return false;
+            }
+
+            private static bool potentiallyContainsMountainTextures(ModAsset mapping) {
+                if (mapping.Type == typeof(AssetTypeDirectory)) {
+                    lock (mapping.Children) {
+                        foreach (ModAsset child in mapping.Children) {
+                            if (potentiallyContainsMountainTextures(child)) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                }
+                return mapping.PathVirtual.StartsWith("Graphics/Atlases/Mountain/");
             }
 
             /// <summary>

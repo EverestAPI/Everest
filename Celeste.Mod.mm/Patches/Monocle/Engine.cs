@@ -1,7 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
-using Celeste.Mod;
-using Celeste.Mod.Core;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
@@ -17,6 +15,15 @@ namespace Monocle {
 
         public static new Viewport Viewport { get; private set; }
         public static void SetViewport(Viewport value) => Viewport = value;
+
+#pragma warning disable CS0649 // variable defined in vanilla
+        private Scene nextScene;
+#pragma warning restore CS0649
+
+        /// <summary>
+        /// Allows to check which scene is next in methods like Entity.SceneEnd() or Scene.End().
+        /// </summary>
+        public static Scene NextScene => ((patch_Engine) Instance).nextScene;
 
         public patch_Engine(int width, int height, int windowWidth, int windowHeight, string windowTitle, bool fullscreen)
             : base(width, height, windowWidth, windowHeight, windowTitle, fullscreen) {

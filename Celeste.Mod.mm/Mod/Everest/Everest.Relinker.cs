@@ -144,8 +144,6 @@ namespace Celeste.Mod {
                         }
                     };
 
-                    ((DefaultAssemblyResolver) _Modder.AssemblyResolver).ResolveFailure += OnRelinkerResolveFailure;
-
                     return _Modder;
                 }
                 set {
@@ -232,6 +230,14 @@ namespace Celeste.Mod {
                 if (depResolver == null)
                     depResolver = GenerateModDependencyResolver(meta);
 
+                AssemblyResolveEventHandler resolver = (s, r) => {
+                    ModuleDefinition dep = depResolver(Modder, Modder.Module, r.Name, r.FullName);
+                    if (dep != null)
+                        return dep.Assembly;
+
+                    return OnRelinkerResolveFailure(s, r);
+                };
+
                 bool temporaryASM = false;
 
                 try {
@@ -240,6 +246,8 @@ namespace Celeste.Mod {
                     modder.Input = stream;
                     modder.OutputPath = cachedPath;
                     modder.MissingDependencyResolver = depResolver;
+
+                    ((DefaultAssemblyResolver) modder.AssemblyResolver).ResolveFailure += resolver;
 
                     string symbolPath;
                     modder.ReaderParameters.SymbolStream = OpenStream(meta, out symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
@@ -324,10 +332,11 @@ namespace Celeste.Mod {
                     e.LogDetailed();
                     return null;
                 } finally {
+                    ((DefaultAssemblyResolver) Modder.AssemblyResolver).ResolveFailure -= resolver;
                     Modder.ReaderParameters.SymbolStream?.Dispose();
                     if (SharedModder) {
                         Modder.ClearCaches(moduleSpecific: true);
-                        Modder.Module.Dispose();
+                        Modder.Module?.Dispose();
                         Modder.Module = null;
 
                     } else {

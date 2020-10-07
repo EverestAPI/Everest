@@ -163,7 +163,6 @@ namespace Celeste {
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
 In other words: Celeste has encountered a catastrophic failure.
-Probably by force-installing Everest on top of Everest on top of Everest.
 
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.

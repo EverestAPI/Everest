@@ -126,6 +126,30 @@ namespace Celeste {
                 );
             }
         }
+
+        public class patch_Option<T> : Option<T> {
+            /// <summary>
+            /// The color the text takes when the option is active, but unselected (defaults to white).
+            /// </summary>
+            public Color UnselectedColor;
+
+            public patch_Option(string label) : base(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModConstructor]
+            public extern void orig_ctor(string label);
+
+            [MonoModConstructor]
+            public void ctor(string label) {
+                UnselectedColor = Color.White;
+                orig_ctor(label);
+            }
+
+            [MonoModIgnore]
+            [PatchTextMenuOptionColor]
+            public extern new void Render(Vector2 position, bool highlighted);
+        }
     }
 
     public static partial class TextMenuExt {

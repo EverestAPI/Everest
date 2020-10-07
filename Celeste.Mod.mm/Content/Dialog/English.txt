@@ -73,6 +73,7 @@
 	MODOPTIONS_COREMODULE_LQATLAS=							Prefer LQ atlases
 	MODOPTIONS_COREMODULE_NONTHREADEDGL=					Non-threaded GL
 	MODOPTIONS_COREMODULE_MODUPDATES= 						Check for Mod Updates
+	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Use Keyboard for Text Input
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Reload Assets~
 
@@ -82,7 +83,7 @@
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
-	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				not found
+	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} not found
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
@@ -170,12 +171,13 @@
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						INSTALL DEPENDENCIES
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Downloading mod database...
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Loading information on installed mods...
+	DEPENDENCYDOWNLOADER_DONE=						done.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest will be updated to {0} to make some mods work. Press Confirm to continue.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERROR: {0} is available in multiple versions and cannot be installed automatically. Please install this mod manually.
-	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			WARNING: {0}.zip is present in your blacklist. Please unblacklist it to be able to use it as a dependency.
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERROR: Version(s) {1} of {0} are required, but only version {2} is available. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Restarting
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Restarting in {0}
@@ -187,6 +189,8 @@
 	DEPENDENCYDOWNLOADER_UPDATING=					Installing update for {0} ({1} -> {2}) to {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Installing mod {0} v.{1} to {2}...
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Removing mod {0} from the blacklist...
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatically unblacklisting some mods failed. Check log.txt for more info.
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		Welcome to Everest!
@@ -205,8 +209,13 @@
 
 # Mod Toggle Menu
 	MODOPTIONS_MODTOGGLE=				TOGGLE MODS
+	MODOPTIONS_MODTOGGLE_LOADING=		Loading mod information...
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Toggle Dependencies Automatically
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	When you enable a mod, all its dependencies will be enabled.
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	When you disable a mod, all mods that depend on it will be disabled.
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you enable or disable mods, your blacklist.txt will be replaced,
 	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes.
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Highlighted mods are used by other enabled mods as a dependency.
 	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Disable your whitelist for these settings to be applied properly.
 	MODOPTIONS_MODTOGGLE_ENABLEALL=		Enable All
 	MODOPTIONS_MODTOGGLE_DISABLEALL=	Disable All
@@ -226,3 +235,4 @@
 	ASSETRELOADHELPER_RELOADINGTEXTURES=	Reloading textures:
 	ASSETRELOADHELPER_LOADINGNEWMOD=		Loading new mod:
 	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Reloading mod assembly:
+	ASSETRELOADHELPER_RELOADINGMOUNTAIN=	Reloading mountain

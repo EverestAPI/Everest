@@ -155,6 +155,9 @@ namespace Celeste.Mod.Core {
             set => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs = value;
         }
 
+        [SettingIgnore]
+        public string DefaultStartingLevelSet { get; set; } = "Celeste";
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
@@ -201,6 +204,9 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingInGame(false)]
+        public bool UseKeyboardForTextInput { get; set; } = true;
+
+        [SettingInGame(false)]
         public bool AutoUpdateModsOnStartup { get; set; } = false;
 
         [SettingIgnore]
@@ -239,6 +245,9 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public string CurrentBranch { get; set; }
+
+        [SettingIgnore]
+        public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
 
         /*
         [SettingRange(0, 10)]
