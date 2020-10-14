@@ -2591,6 +2591,7 @@ namespace MonoMod {
             // this.talk = (TalkComponent) null;
 
             int indexTarget = -1;
+            MethodReference collideCheckMethodReference = null;
             for (int instri = 0; instri < instrs.Count - 5; instri++) {
                 if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference)?.FullName == lookoutTalkFieldName
@@ -2600,6 +2601,7 @@ namespace MonoMod {
                     && (instrs[instri + 5].OpCode == OpCodes.Brfalse_S || instrs[instri + 5].OpCode == OpCodes.Br_S)
                 ) {
                     indexTarget = instri;
+                    collideCheckMethodReference = instrs[instri + 4].Operand as MethodReference;
                     break;
                 }
             }
@@ -2614,6 +2616,27 @@ namespace MonoMod {
             ILProcessor il = method.Body.GetILProcessor();
             instrs[indexTarget].OpCode = OpCodes.Nop;
             instrs[indexTarget + 1] = il.Create(OpCodes.Ldc_I4_0);
+
+            // insert at begin
+            // if (talk.UI != null) {
+            //     talk.UI.Visible = !CollideCheck<Solid>();
+            // }
+            int indexInsert = 0;
+            Instruction startIns = instrs[0];
+
+            instrs.Insert(indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Brfalse_S, startIns));
+
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Call, collideCheckMethodReference));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldc_I4_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ceq));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Stfld, method.Module.GetType("Monocle.Entity").FindField("Visible")));
         }
 
         public static void PostProcessor(MonoModder modder) {
