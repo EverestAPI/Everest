@@ -104,6 +104,14 @@ namespace Celeste.Mod.UI {
             Visible = false;
         }
 
+        public override void SceneEnd(Scene scene) {
+            base.SceneEnd(scene);
+
+            // handle leaving the scene in non-conventional ways while in sound test (like debug commands).
+            if (playing != null)
+                Audio.Stop(playing);
+        }
+
         public override void Update() {
             if (!(Selected && Focused)) {
                 goto End;
