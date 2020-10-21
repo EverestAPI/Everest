@@ -375,6 +375,7 @@ namespace Monocle {
             mtex.SetAtlas(this);
             mtex.SetOverride(asset);
             this[path] = mtex;
+            Sources.Add(vtex);
         }
 
         // log missing subtextures when getting an animation (for example, decals)
