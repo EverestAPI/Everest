@@ -209,6 +209,21 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         public bool AutoUpdateModsOnStartup { get; set; } = false;
 
+
+        private bool _WarnOnEverestYamlErrors = false;
+        [SettingSubText("MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC")]
+        [SettingInGame(false)]
+        public bool WarnOnEverestYamlErrors {
+            get => _WarnOnEverestYamlErrors;
+            set {
+                _WarnOnEverestYamlErrors = value;
+
+                // rebuild the main menu to make sure we show/hide the yaml error notice.
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            }
+        }
+
+
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
 

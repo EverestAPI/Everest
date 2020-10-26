@@ -13,6 +13,7 @@
 	
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
+	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		Erreurs de chargement de everest.yaml
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Une mise à jour d'Everest est disponible
 	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Mise à jour disponible pour 1 mod
 	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
@@ -56,16 +57,19 @@
 	MODOPTIONS_COREMODULE_NONTHREADEDGL=					GL non-traité
 	MODOPTIONS_COREMODULE_MODUPDATES= 						Mises à jour des mods
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Utiliser le clavier pour saisir du texte
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Avertir en cas d'erreur sur everest.yaml
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Utile pour les créateurs de mods
 	
 	MODOPTIONS_COREMODULE_RECRAWL= 							~Recharger aspects~
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
 	MODOPTIONS_COREMODULE_TOGGLEMODS= 						Activer ou désactiver des mods
-
+	
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND=				{0} non trouvé(s)
+	MODOPTIONS_COREMODULE_YAMLERRORS= 						Certains fichiers everest.yaml n'ont pas pu être chargés.
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						DÉSACTIVÉ
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
