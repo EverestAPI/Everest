@@ -73,7 +73,8 @@
 
 # Sound Test
 	SOUNDTEST_TITLE=	TEST SONS
-	SOUNDTEST_AUDIOPARAMS_OPEN=	Appuyer sur Journal pour éditer les paramètres audio
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Appuyer sur
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	pour éditer les paramètres audio
 	SOUNDTEST_AUDIOPARAMS=	Paramètres audio
 
 # Maplist

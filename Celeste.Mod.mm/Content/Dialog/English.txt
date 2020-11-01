@@ -91,7 +91,8 @@
 
 # Sound Test
 	SOUNDTEST_TITLE=	SOUND TEST
-	SOUNDTEST_AUDIOPARAMS_OPEN=	Press Journal to edit Audio Params
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Press
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	to edit Audio Params
 	SOUNDTEST_AUDIOPARAMS=	Audio Params
 
 # Maplist

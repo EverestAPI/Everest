@@ -340,8 +340,18 @@ namespace Celeste.Mod.UI {
             ActiveFont.DrawOutline(selectedBankPath ?? "", pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.LightSlateGray * ease, 2f, Color.Black * ease * ease * ease);
 
             if (musicParamMenu.GetItems().Count > 0) {
+                // Press...
                 pos = posInput + new Vector2(0f, spacingY * 2f + wigglerBankPath.Value * 2f);
-                ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
+                ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
+
+                // ... [button image] ...
+                pos.X += ActiveFont.Measure(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1")).X * 0.75f + 10f;
+                MTexture button = Input.GuiButton(Input.MenuJournal);
+                button.DrawJustified(pos, new Vector2(0f, 0.5f), Color.White, 0.75f);
+                pos.X += button.Width * 0.75f + 10f;
+
+                // ... to edit Audio Params
+                ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_2"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
             }
 
             ActiveFont.DrawEdgeOutline(Dialog.Clean("soundtest_title"), Position + new Vector2(960f, 256f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
