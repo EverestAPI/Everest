@@ -58,6 +58,8 @@ namespace Celeste.Mod {
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
 
+            internal static HashSet<string> FilesWithMetadataLoadFailures = new HashSet<string>();
+
             internal static readonly Version _VersionInvalid = new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
             internal static readonly Version _VersionMax = new Version(int.MaxValue, int.MaxValue);
 
@@ -244,6 +246,7 @@ namespace Celeste.Mod {
                                     meta.PostParse();
                                 } catch (Exception e) {
                                     Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
+                                    FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
                             continue;
@@ -262,7 +265,8 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {archive}: {e}");
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {archive}: {e}");
+                                    FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
                             continue;
@@ -334,6 +338,7 @@ namespace Celeste.Mod {
                             meta.PostParse();
                         } catch (Exception e) {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
+                            FilesWithMetadataLoadFailures.Add(dir);
                         }
                     }
 
@@ -354,6 +359,7 @@ namespace Celeste.Mod {
                             }
                         } catch (Exception e) {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {dir}: {e}");
+                            FilesWithMetadataLoadFailures.Add(dir);
                         }
                     }
 

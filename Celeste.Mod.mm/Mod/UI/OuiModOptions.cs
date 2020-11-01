@@ -8,6 +8,7 @@ using System.Linq;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod.UI {
     public class OuiModOptions : Oui {
@@ -75,6 +76,13 @@ namespace Celeste.Mod.UI {
                                 HeightExtra = 0f,
                                 TextColor = Color.PaleVioletRed
                             });
+                        }
+                    } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_yamlerrors")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                        foreach (string fileName in Everest.Loader.FilesWithMetadataLoadFailures) {
+                            menu.Add(new TextMenuExt.SubHeaderExt(Path.GetFileName(fileName)) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
                         }
                     }
                 }

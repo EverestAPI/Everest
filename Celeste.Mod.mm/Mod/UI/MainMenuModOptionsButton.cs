@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -36,6 +37,8 @@ namespace Celeste.Mod.UI {
                 subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE"), modUpdatesAvailable);
             } else if (modUpdatesAvailable == 1) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE");
+            } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
+                subText = Dialog.Clean("MENU_MODOPTIONS_EVEREST_YAML_ERRORS");
             } else {
                 subText = null;
             }
