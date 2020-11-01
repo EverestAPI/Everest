@@ -158,6 +158,9 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string DefaultStartingLevelSet { get; set; } = "Celeste";
 
+        [SettingIgnore]
+        public int LogHistoryCountToKeep { get; set; } = 3;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
