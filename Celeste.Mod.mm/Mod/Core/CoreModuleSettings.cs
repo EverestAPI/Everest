@@ -230,6 +230,9 @@ namespace Celeste.Mod.Core {
         public bool ShowManualTextOnDebugMap { get; set; } = true;
 
         [SettingIgnore]
+        public bool RestartIntoVanillaWarningShown { get; set; } = false;
+
+        [SettingIgnore]
         public bool CodeReload_WIP { get; set; } = false;
 
         // TODO: Once CodeReload is no longer WIP, remove this and rename ^ to non-WIP.

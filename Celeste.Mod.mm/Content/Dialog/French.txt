@@ -18,7 +18,15 @@
 	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
 	
 # Title Screen
-	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
+	MENU_TITLESCREEN_RESTART_VANILLA=	Lancement de orig/Celeste.exe
+	MENU_TITLESCREEN_WARNING=			Attention !
+	MENU_TITLESCREEN_WARNING_TEXT=
+		Si tu ouvres une sauvegarde dans le jeu de base,
+		ta progression dans les maps moddées sera supprimée sur cette sauvegarde.
+	MENU_TITLESCREEN_WARNING_TEXT2=
+		Si tu as besoin de plus de sauvegardes, télécharge "Infinite Saves" sur GameBanana.
+	MENU_TITLESCREEN_OK=				Redémarrer
+	MENU_TITLESCREEN_CANCEL=			Annuler
 
 # Extra Key Mapping
 	KEY_CONFIG_ADDING= APPUYEZ SUR LA TOUCHE SUPPLÉMENTAIRE POUR
