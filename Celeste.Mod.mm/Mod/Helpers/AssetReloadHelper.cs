@@ -26,6 +26,7 @@ namespace Celeste.Mod {
         private static Thread Worker;
 
         private bool init;
+        private bool initRender;
         private bool done;
 
         private static Scene _ReturnToSceneOrig;
@@ -265,8 +266,6 @@ namespace Celeste.Mod {
         public override void Begin() {
             base.Begin();
 
-            InitRender();
-
             Worker = new Thread(WorkerLoop);
             Worker.Name = "Everest Reload Worker";
             Worker.IsBackground = true;
@@ -362,6 +361,11 @@ namespace Celeste.Mod {
                     // Let's hope that it's not critical.
                 }
                 return;
+            }
+
+            if (!initRender) {
+                initRender = true;
+                InitRender();
             }
 
             base.BeforeRender();
