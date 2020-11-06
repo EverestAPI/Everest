@@ -239,19 +239,13 @@ namespace Celeste.Mod {
 
             // This shouldn't be done, yet here we are.
 
-            try {
-                Scene scene = _ReturnToScene;
-                scene?.BeforeRender();
-                gd.SetRenderTarget(null);
-                gd.Viewport = Engine.Viewport;
-                gd.Clear(Engine.ClearColor);
-                scene?.Render();
-                scene?.AfterRender();
-            } catch (Exception e) {
-                // Rendering the scene we come from failed. Log it, but continue (this isn't a fatal error; we will just get a black reloading screen.)
-                Logger.Log(LogLevel.Warn, "AssetReloadHelper", "Rendering the background scene for AssetReloadHelper failed");
-                Logger.LogDetailed(e);
-            }
+            Scene scene = _ReturnToScene;
+            scene?.BeforeRender();
+            gd.SetRenderTarget(null);
+            gd.Viewport = Engine.Viewport;
+            gd.Clear(Engine.ClearColor);
+            scene?.Render();
+            scene?.AfterRender();
 
             gd.SetRenderTarget(null);
 
