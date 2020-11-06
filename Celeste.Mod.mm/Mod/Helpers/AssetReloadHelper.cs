@@ -300,6 +300,11 @@ namespace Celeste.Mod {
         }
 
         public override void Update() {
+            if (!initRender) {
+                // the reload should begin after the screen is rendered for the reload screen, to prevent concurrency issues.
+                return;
+            }
+
             if (!init) {
                 init = true;
                 Begin();
@@ -354,6 +359,11 @@ namespace Celeste.Mod {
         }
 
         public override void BeforeRender() {
+            if (!initRender) {
+                initRender = true;
+                InitRender();
+            }
+
             if (!init) {
                 try {
                     ReturnToScene.BeforeRender();
@@ -363,10 +373,6 @@ namespace Celeste.Mod {
                 return;
             }
 
-            if (!initRender) {
-                initRender = true;
-                InitRender();
-            }
 
             base.BeforeRender();
 
