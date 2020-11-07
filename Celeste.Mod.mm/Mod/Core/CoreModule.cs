@@ -18,6 +18,10 @@ using Microsoft.Xna.Framework.Input;
 using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Text.RegularExpressions;
+using MonoMod.RuntimeDetour;
+using NLua;
+using MonoMod.Cil;
+using Mono.Cecil.Cil;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -36,6 +40,8 @@ namespace Celeste.Mod.Core {
 
         public override Type SessionType => typeof(CoreModuleSession);
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
+
+        private static ILHook nluaAssemblyGetTypesHook;
 
         public CoreModule() {
             Instance = this;
@@ -72,6 +78,7 @@ namespace Celeste.Mod.Core {
         public override void Load() {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+            nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
 
             if (Everest.Flags.IsMobile) {
                 // It shouldn't look that bad on mobile screens...
@@ -178,10 +185,21 @@ namespace Celeste.Mod.Core {
             GFX.Gui["fileselect/cheatmode"] = GFX.Game["util/pixel"];
         }
 
+        private void patchNLuaAssemblyGetTypes(ILContext il) {
+            ILCursor cursor = new ILCursor(il);
+
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
+                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
+            }
+        }
+
         public override void Unload() {
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
-
+            nluaAssemblyGetTypesHook?.Dispose();
+            nluaAssemblyGetTypesHook = null;
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
