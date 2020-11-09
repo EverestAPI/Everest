@@ -148,6 +148,14 @@ namespace Celeste.Mod.Core {
             };
         }
 
+        public override void OnInputInitialize() {
+            base.OnInputInitialize();
+
+            // Set up repeating on the "menu page up" and "menu page down" buttons like "menu up" and "menu down".
+            Settings.MenuPageUp.Button.SetRepeat(0.4f, 0.1f);
+            Settings.MenuPageDown.Button.SetRepeat(0.4f, 0.1f);
+        }
+
         public override void LoadContent(bool firstLoad) {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
@@ -289,27 +297,35 @@ namespace Celeste.Mod.Core {
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
             LoadSettings();
+            OnInputInitialize();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
+                List<TextMenu.Item> items = menu.GetItems();
+
+                // change the "key config" labels
+                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
+                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
+
+                // insert extra options before the "key config" options
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiOOBE>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModToggler>();
                 }));
             }

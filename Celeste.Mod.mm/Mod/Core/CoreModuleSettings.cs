@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using MonoMod.Utils;
 using MonoMod;
+using Microsoft.Xna.Framework.Input;
 
 namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
@@ -269,6 +270,9 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+
+        public ButtonBinding MenuPageUp { get; set; }
+        public ButtonBinding MenuPageDown { get; set; }
 
         /*
         [SettingRange(0, 10)]
