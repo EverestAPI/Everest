@@ -689,6 +689,10 @@ namespace Celeste.Mod {
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
 
+            CheckDependenciesOfDelayedMods();
+        }
+
+        internal static void CheckDependenciesOfDelayedMods() {
             // Attempt to load mods after their dependencies have been loaded.
             // Only load and lock the delayed list if we're not already loading delayed mods.
             if (Interlocked.CompareExchange(ref Loader.DelayedLock, 1, 0) == 0) {
