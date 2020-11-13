@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -70,6 +71,33 @@ namespace Celeste {
             }
 
             return num - targetItem.Height() * 0.5f - ItemSpacing;
+        }
+
+        public extern void orig_Update();
+        public override void Update() {
+            orig_Update();
+
+            if (Focused && Items.Any(item => item.Hoverable)) {
+                if (CoreModule.Settings.MenuPageDown.Pressed && Selection != LastPossibleSelection) {
+                    // move down
+                    Current.OnLeave?.Invoke();
+                    float startY = GetYOffsetOf(Current);
+                    while (GetYOffsetOf(Current) < startY + 1080f && Selection < LastPossibleSelection) {
+                        MoveSelection(1);
+                    }
+                    Audio.Play("event:/ui/main/rollover_down");
+                    Current.OnEnter?.Invoke();
+                } else if (CoreModule.Settings.MenuPageUp.Pressed && Selection != FirstPossibleSelection) {
+                    // move up
+                    Current.OnLeave?.Invoke();
+                    float startY = GetYOffsetOf(Current);
+                    while (GetYOffsetOf(Current) > startY - 1080f && Selection > FirstPossibleSelection) {
+                        MoveSelection(-1);
+                    }
+                    Audio.Play("event:/ui/main/rollover_up");
+                    Current.OnEnter?.Invoke();
+                }
+            }
         }
 
         [MonoModReplace]
