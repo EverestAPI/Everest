@@ -56,6 +56,12 @@ namespace Celeste.Mod.UI {
                                 // check for missing dependencies
                                 List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
                                     .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+                                if (mod.Item1.OptionalDependencies != null) {
+                                    // find optional dependencies with mismatching versions
+                                    List<EverestModuleMetadata> optionalDependenciesWithVersionMismatches = mod.Item1.OptionalDependencies
+                                        .FindAll(dep => !Everest.Loader.DependencyLoaded(dep) && Everest.Modules.Any(module => module.Metadata?.Name == dep.Name));
+                                    missingDependenciesForMod.AddRange(optionalDependenciesWithVersionMismatches);
+                                }
                                 missingDependencies.AddRange(missingDependenciesForMod);
 
                                 if (missingDependenciesForMod.Count != 0) {

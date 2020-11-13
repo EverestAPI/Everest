@@ -58,6 +58,8 @@ namespace Celeste.Mod {
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
 
+            private static bool enforceOptionalDependencies;
+
             internal static HashSet<string> FilesWithMetadataLoadFailures = new HashSet<string>();
 
             internal static readonly Version _VersionInvalid = new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
@@ -167,6 +169,8 @@ namespace Celeste.Mod {
 
                 Stopwatch watch = Stopwatch.StartNew();
 
+                enforceOptionalDependencies = true;
+
                 string[] files = Directory.GetFiles(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
@@ -186,6 +190,10 @@ namespace Celeste.Mod {
                         continue;
                     LoadDir(Path.Combine(PathMods, file));
                 }
+
+                enforceOptionalDependencies = false;
+                Logger.Log(LogLevel.Info, "loader", "Loading mods with unsatisfied optional dependencies (if any)");
+                Everest.CheckDependenciesOfDelayedMods();
 
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
@@ -443,6 +451,16 @@ namespace Celeste.Mod {
                         return;
                     }
 
+                foreach (EverestModuleMetadata dep in meta.OptionalDependencies) {
+                    if (!DependencyLoaded(dep) && (enforceOptionalDependencies || Everest.Modules.Any(module => module.Metadata?.Name == dep.Name))) {
+                        Logger.Log(LogLevel.Info, "loader", $"Optional dependency {dep} of mod {meta} not loaded! Delaying.");
+                        lock (Delayed) {
+                            Delayed.Add(Tuple.Create(meta, callback));
+                        }
+                        return;
+                    }
+                }
+
                 callback?.Invoke();
 
                 LoadMod(meta);
@@ -616,9 +634,18 @@ namespace Celeste.Mod {
                     return false;
                 }
 
+                // enforce dependencies.
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep))
                         return false;
+
+                // enforce optional dependencies: an optional dependency is satisfied if either of these 2 applies:
+                // - it is loaded (obviously)
+                // - enforceOptionalDependencies = false and no version of the mod is loaded (if one is, it might be incompatible and cause issues)
+                foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
+                    if (!DependencyLoaded(dep) && (enforceOptionalDependencies || Everest.Modules.Any(mod => mod.Metadata?.Name == dep.Name)))
+                        return false;
+
                 return true;
             }
 
