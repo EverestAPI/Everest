@@ -1,4 +1,5 @@
-﻿using FMOD.Studio;
+﻿using FMOD;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -15,6 +16,7 @@ namespace Celeste.Mod.UI {
         private const float offScreenX = 2880f;
 
         private EventInstance playing;
+        private string playingPath;
 
         private string audioPrevMusic;
         private string audioPrevAmbience;
@@ -37,6 +39,10 @@ namespace Celeste.Mod.UI {
         private Color selectColorA = Calc.HexToColor("84FF54");
         private Color selectColorB = Calc.HexToColor("FCFF59");
 
+        private TextMenu musicParamMenu;
+        private float musicParamMenuEase = 0f;
+        private Dictionary<string, float> musicParams = new Dictionary<string, float>();
+
         public OuiSoundTest() {
             wigglerDigits = new Wiggler[digits.Length];
             for (int i = 0; i < digits.Length; i++)
@@ -54,6 +60,10 @@ namespace Celeste.Mod.UI {
             Audio.SetAmbience(null);
 
             Visible = true;
+
+            musicParamMenu = new TextMenu();
+            musicParamMenu.Focused = false;
+            musicParamMenu.MinWidth = 500f;
 
             for (int i = 0; i < digits.Length; i++)
                 digits[i] = 0;
@@ -102,6 +112,9 @@ namespace Celeste.Mod.UI {
             }
 
             Visible = false;
+
+            musicParamMenu = null;
+            playingPath = null;
         }
 
         public override void SceneEnd(Scene scene) {
@@ -113,36 +126,53 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            musicParamMenuEase = Calc.Approach(musicParamMenuEase, musicParamMenu?.Focused ?? false ? 1 : 0, Engine.DeltaTime * 2f);
+
             if (!(Selected && Focused)) {
                 goto End;
             }
 
-            if (Input.MenuRight.Pressed && selectedDigit < (digits.Length - 1)) {
+            if (musicParamMenu.Focused) {
+                musicParamMenu.Update();
+            }
+
+            if (Focused && musicParamMenu != null && Input.MenuJournal.Pressed && musicParamMenu.GetItems().Count != 0) {
+                musicParamMenu.Selection = musicParamMenu.FirstPossibleSelection;
+                musicParamMenu.Focused = !musicParamMenu.Focused;
+            }
+
+            if (Input.MenuRight.Pressed && selectedDigit < (digits.Length - 1) && !musicParamMenu.Focused) {
                 selectedDigit = Math.Min(selectedDigit + 1, (digits.Length - 1));
                 wigglerDigits[selectedDigit].Start();
                 Audio.Play(SFX.ui_main_roll_down);
 
-            } else if (Input.MenuLeft.Pressed && selectedDigit > 0) {
+            } else if (Input.MenuLeft.Pressed && selectedDigit > 0 && !musicParamMenu.Focused) {
                 selectedDigit = Math.Max(selectedDigit - 1, 0);
                 wigglerDigits[selectedDigit].Start();
                 Audio.Play(SFX.ui_main_roll_up);
 
-            } else if (Input.MenuDown.Pressed) {
+            } else if (Input.MenuDown.Pressed && !musicParamMenu.Focused) {
                 UpdateDigits(selectedDigit, -1);
 
-            } else if (Input.MenuUp.Pressed) {
+            } else if (Input.MenuUp.Pressed && !musicParamMenu.Focused) {
                 UpdateDigits(selectedDigit, +1);
 
             } else if (Input.MenuConfirm.Pressed) {
                 if (playing != null)
                     Audio.Stop(playing);
-                if (!string.IsNullOrEmpty(selectedPath))
-                    playing = Audio.Play(selectedPath);
+                if (!string.IsNullOrEmpty(selectedPath)) {
+                    playing = playWithMusicParams(selectedPath, musicParams);
+                    playingPath = selectedPath;
+                }
 
             } else if (Input.MenuCancel.Pressed || Input.Pause.Pressed || Input.ESC.Pressed) {
-                Focused = false;
-                Audio.Play(SFX.ui_main_button_back);
-                Overworld.Goto<OuiModOptions>();
+                if (musicParamMenu.Focused) {
+                    musicParamMenu.Focused = false;
+                } else {
+                    Focused = false;
+                    Audio.Play(SFX.ui_main_button_back);
+                    Overworld.Goto<OuiModOptions>();
+                }
             }
 
             End:
@@ -153,6 +183,19 @@ namespace Celeste.Mod.UI {
             wigglerPath.Update();
             wigglerBankPath.Update();
         }
+
+        private static EventInstance playWithMusicParams(string path, Dictionary<string, float> musicParams) {
+            EventInstance eventInstance = Audio.CreateInstance(path);
+            if (eventInstance != null) {
+                foreach (KeyValuePair<string, float> musicParam in musicParams) {
+                    eventInstance.setParameterValue(musicParam.Key, musicParam.Value);
+                }
+                eventInstance.start();
+                eventInstance.release();
+            }
+            return eventInstance;
+        }
+
 
         private void UpdateDigits(int index, int dir) {
             int value = 0;
@@ -188,6 +231,8 @@ namespace Celeste.Mod.UI {
         private void UpdateSelectedPath() {
             selectedBankPath = "";
             selectedPath = "";
+            musicParamMenu.Clear();
+            musicParams.Clear();
 
             patch_Audio.System.getBankList(out Bank[] banks);
             int bankI = 0;
@@ -212,6 +257,60 @@ namespace Celeste.Mod.UI {
                 return;
 
             selectedPath = paths[eventI];
+
+            EventDescription eventDescription = Audio.GetEventDescription(selectedPath);
+            if (eventDescription != null) {
+                eventDescription.getParameterCount(out int parameterCount);
+                List<string> paramNames = new List<string>();
+                for (int i = 0; i < parameterCount; i++) {
+                    eventDescription.getParameterByIndex(i, out PARAMETER_DESCRIPTION param);
+                    paramNames.Add(param.name);
+                }
+                paramNames.Sort();
+
+                foreach (string paramName in paramNames) {
+                    eventDescription.getParameter(paramName, out PARAMETER_DESCRIPTION param);
+
+                    if (param.maximum == param.minimum) {
+                        continue;
+                    }
+
+                    if (musicParamMenu.GetItems().Count == 0) {
+                        musicParamMenu.Add(new TextMenu.SubHeader(Dialog.Clean("SOUNDTEST_AUDIOPARAMS")));
+                    }
+
+                    if (param.maximum - param.minimum < 3) {
+                        // have a 0.1 step
+                        musicParamMenu.Add(new TextMenu.Slider(param.name, index => (index / 10f).ToString(), (int) (param.minimum * 10), (int) (param.maximum * 10), (int) (getParamValueOrDefault(param) * 10))
+                            .Change(value => {
+                                float newValue = value / 10f;
+                                musicParams[param.name] = newValue;
+
+                                if (playingPath == selectedPath) {
+                                    playing.setParameterValue(param.name, newValue);
+                                }
+                            }));
+                    } else {
+                        // have a 1 step and use an IntSlider.
+                        musicParamMenu.Add(new TextMenuExt.IntSlider(param.name, (int) param.minimum, (int) param.maximum, (int) getParamValueOrDefault(param))
+                            .Change(value => {
+                                musicParams[param.name] = value;
+
+                                if (playingPath == selectedPath) {
+                                    playing.setParameterValue(param.name, value);
+                                }
+                            }));
+                    }
+                }
+            }
+        }
+
+        private float getParamValueOrDefault(PARAMETER_DESCRIPTION param) {
+            if (playingPath == selectedPath) {
+                playing.getParameterValue(param.name, out _, out float result);
+                return result;
+            }
+            return param.defaultvalue;
         }
 
         public override void Render() {
@@ -229,7 +328,7 @@ namespace Celeste.Mod.UI {
             Vector2 posInput = Position + new Vector2(384f, 1080f / 2f);
             pos = posInput;
             for (int i = 0; i < digits.Length; i++) {
-                DrawOptionText(digits[i].ToString("X1"), pos + new Vector2(0f, wigglerDigits[i].Value * 8f), new Vector2(0f, 0.5f), Vector2.One, selectedDigit == i, i <= 1);
+                DrawOptionText(digits[i].ToString("X1"), pos + new Vector2(0f, wigglerDigits[i].Value * 8f), new Vector2(0f, 0.5f), Vector2.One, selectedDigit == i && !musicParamMenu.Focused, i <= 1);
                 pos.X += spacingX;
             }
 
@@ -240,7 +339,28 @@ namespace Celeste.Mod.UI {
             pos = posInput + new Vector2(0f, spacingY * -0.8f + wigglerBankPath.Value * 2f);
             ActiveFont.DrawOutline(selectedBankPath ?? "", pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.LightSlateGray * ease, 2f, Color.Black * ease * ease * ease);
 
+            if (musicParamMenu.GetItems().Count > 0) {
+                // Press...
+                pos = posInput + new Vector2(0f, spacingY * 2f + wigglerBankPath.Value * 2f);
+                ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
+
+                // ... [button image] ...
+                pos.X += ActiveFont.Measure(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1")).X * 0.75f + 10f;
+                MTexture button = Input.GuiButton(Input.MenuJournal);
+                button.DrawJustified(pos, new Vector2(0f, 0.5f), Color.White, 0.75f);
+                pos.X += button.Width * 0.75f + 10f;
+
+                // ... to edit Audio Params
+                ActiveFont.DrawOutline(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_2"), pos, new Vector2(0f, 0.5f), Vector2.One * 0.75f, Color.White * ease, 2f, Color.Black * ease * ease * ease);
+            }
+
             ActiveFont.DrawEdgeOutline(Dialog.Clean("soundtest_title"), Position + new Vector2(960f, 256f), new Vector2(0.5f, 0.5f), Vector2.One * 2f, Color.Gray, 4f, Color.DarkSlateBlue, 2f, Color.Black);
+
+            if (musicParamMenuEase > 0f) {
+                Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.95f * Ease.CubeInOut(musicParamMenuEase));
+                musicParamMenu.Alpha = Ease.CubeInOut(musicParamMenuEase);
+                musicParamMenu.Render();
+            }
         }
 
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool special = false) {

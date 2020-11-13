@@ -85,6 +85,9 @@
 
 # Sound Test
 	SOUNDTEST_TITLE=	TEST SONS
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Appuyer sur
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	pour éditer les paramètres audio
+	SOUNDTEST_AUDIOPARAMS=	Paramètres audio
 
 # Maplist
 	MAPLIST_TITLE= 			LISTE DES MAPS
