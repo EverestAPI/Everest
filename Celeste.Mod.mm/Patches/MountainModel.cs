@@ -57,6 +57,7 @@ namespace Celeste {
         protected float fadeHoldCountdown = 0;
         // previous fog color when switching between 2 states
         private Color previousFogColor = Color.White;
+        private float fogFade = 1f;
 
         public extern void orig_ctor();
         [MonoModConstructor]
@@ -87,7 +88,8 @@ namespace Celeste {
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
                     if (PreviousSID == (SaveData.Instance?.LastArea.GetSID() ?? "")) {
                         MountainResources resources = MTNExt.MountainMappings[path];
-                        customFog.TopColor = (customFog.BotColor = Color.Lerp(previousFogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
+                        customFog.TopColor = (customFog.BotColor = Color.Lerp(previousFogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, fogFade));
+                        fogFade = Calc.Approach(fogFade, 1f, Engine.DeltaTime);
                     }
                     customFog.Rotate((0f - Engine.DeltaTime) * 0.01f);
                     customFog2.Rotate((0f - Engine.DeltaTime) * 0.01f);
@@ -289,6 +291,12 @@ namespace Celeste {
                     // Initialize new custom fog and star belt when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID)) {
                         previousFogColor = customFog?.TopColor ?? Color.White;
+                        fogFade = 0f;
+
+                        float previousSpin = 0f;
+                        if (customFog?.Verts.Length > 1) {
+                            previousSpin = customFog.Verts[1].TextureCoordinate.X;
+                        }
 
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
@@ -298,6 +306,9 @@ namespace Celeste {
                         customStarstream0 = new Ring(5f, -8f, 18.5f, 0.2f, 80, resources.StarStreamColors?[0] ?? Color.Black, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream1 = new Ring(4f, -6f, 18f, 1f, 80, resources.StarStreamColors?[1] ?? Calc.HexToColor("9228e2") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream2 = new Ring(3f, -4f, 17.9f, 1.4f, 80, resources.StarStreamColors?[2] ?? Calc.HexToColor("30ffff") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
+
+                        customFog.Rotate(previousSpin);
+                        customFog2.Rotate(previousSpin);
 
                         if (Engine.Scene is Overworld thisOverworld) {
                             thisOverworld.Remove(customMoonParticles);
