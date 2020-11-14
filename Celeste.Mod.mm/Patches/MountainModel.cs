@@ -293,7 +293,7 @@ namespace Celeste {
                     if (!(SIDToUse).Equals(PreviousSID)) {
                         float previousSpin = 0f;
 
-                        if (fade != 1f) {
+                        if (fade != 1f && PreviousSID != null) {
                             // fade between current fog color and target color.
                             previousFogColor = customFog?.TopColor ?? Color.White;
                             fogFade = 0f;
