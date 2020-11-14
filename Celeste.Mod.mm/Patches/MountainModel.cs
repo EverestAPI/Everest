@@ -55,6 +55,8 @@ namespace Celeste {
         // How opaque the bg is when transitioning between models
         protected float fade = 0f;
         protected float fadeHoldCountdown = 0;
+        // previous fog color when switching between 2 states
+        private Color previousFogColor = Color.White;
 
         public extern void orig_ctor();
         [MonoModConstructor]
@@ -83,9 +85,11 @@ namespace Celeste {
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
-                    MountainResources resources = MTNExt.MountainMappings[path];
+                    if (PreviousSID == (SaveData.Instance?.LastArea.GetSID() ?? "")) {
+                        MountainResources resources = MTNExt.MountainMappings[path];
+                        customFog.TopColor = (customFog.BotColor = Color.Lerp(previousFogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
+                    }
                     customFog.Rotate((0f - Engine.DeltaTime) * 0.01f);
-                    customFog.TopColor = (customFog.BotColor = Color.Lerp((resources.MountainStates?[currState] ?? mountainStates[currState]).FogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
                     customFog2.Rotate((0f - Engine.DeltaTime) * 0.01f);
                     customFog2.TopColor = (customFog2.BotColor = Color.White * 0.3f * NearFogAlpha);
                     customStarstream1.Rotate(Engine.DeltaTime * 0.01f);
@@ -284,6 +288,8 @@ namespace Celeste {
 
                     // Initialize new custom fog and star belt when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID)) {
+                        previousFogColor = customFog?.TopColor ?? Color.White;
+
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customStarsky = new Ring(18f, -18f, 20f, 0f, 24, Color.White, Color.Transparent, resources.MountainSpaceTexture ?? MTN.MountainStarSky);
@@ -329,7 +335,7 @@ namespace Celeste {
 
         private static bool hasCustomSettings(MapMeta meta) {
             return !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) || !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)
-                || !string.IsNullOrEmpty(meta.Mountain.StarFogColor) || meta.Mountain.StarStreamColors != null
+                || !string.IsNullOrEmpty(meta.Mountain.FogColor) || !string.IsNullOrEmpty(meta.Mountain.StarFogColor) || meta.Mountain.StarStreamColors != null
                 || (meta.Mountain.StarBeltColors1 != null && meta.Mountain.StarBeltColors2 != null);
         }
 
