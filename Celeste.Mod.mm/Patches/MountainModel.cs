@@ -143,6 +143,7 @@ namespace Celeste {
 
                 if (oldMountain?.MountainModelDirectory != newMountain?.MountainModelDirectory
                     || oldMountain?.MountainTextureDirectory != newMountain?.MountainTextureDirectory
+                    || (oldMountain?.FogColor == null) != (newMountain?.FogColor == null) // only fade to black if one end has a custom fog color and the other doesn't.
                     || oldMountain?.StarFogColor != newMountain?.StarFogColor
                     || (oldMountain?.ShowSnow ?? true) != (newMountain?.ShowSnow ?? true)
                     || !arrayEqual(oldMountain?.StarStreamColors, newMountain?.StarStreamColors)
@@ -290,12 +291,19 @@ namespace Celeste {
 
                     // Initialize new custom fog and star belt when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID)) {
-                        previousFogColor = customFog?.TopColor ?? Color.White;
-                        fogFade = 0f;
-
                         float previousSpin = 0f;
-                        if (customFog?.Verts.Length > 1) {
-                            previousSpin = customFog.Verts[1].TextureCoordinate.X;
+
+                        if (fade != 1f) {
+                            // fade between current fog color and target color.
+                            previousFogColor = customFog?.TopColor ?? Color.White;
+                            fogFade = 0f;
+
+                            if (customFog?.Verts.Length > 1) {
+                                previousSpin = customFog.Verts[1].TextureCoordinate.X;
+                            }
+                        } else {
+                            // we made a fade to black: snap to the new color.
+                            fogFade = 1f;
                         }
 
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
