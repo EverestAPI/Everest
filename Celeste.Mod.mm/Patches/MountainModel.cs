@@ -96,18 +96,15 @@ namespace Celeste {
                         // we aren't fading out, so we can update the fog color.
                         MountainResources resources = MTNExt.MountainMappings[path];
                         Color fogColor = (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor;
-                        if (fogColor != targetFogColor) {
-                            // the fog color changed! we should fade to the new color.
-                            if (fade == 1f) {
-                                // we faded to black, so we can snap to the new color.
-                                targetFogColor = fogColor;
-                                fogFade = 1f;
-                            } else {
-                                // start fading from the current fog color to the new color.
-                                previousFogColor = customFog.TopColor;
-                                targetFogColor = fogColor;
-                                fogFade = 0f;
-                            }
+                        if (fade == 1f) {
+                            // we faded to black, so we can snap the fog color.
+                            targetFogColor = fogColor;
+                            fogFade = 1f;
+                        } else if (fogColor != targetFogColor) {
+                            // the fog color changed! start fading from the current fog color to the new color.
+                            previousFogColor = customFog.TopColor;
+                            targetFogColor = fogColor;
+                            fogFade = 0f;
                         }
 
                         // fade between previousFogColor and targetFogColor.
