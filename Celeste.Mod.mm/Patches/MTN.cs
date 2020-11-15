@@ -246,10 +246,10 @@ namespace Celeste {
                             resources.MountainStates[2] = new MountainState(resources.MountainTerrainTextures[2] ?? MTN.MountainTerrainTextures[2], resources.MountainBuildingTextures[2] ?? MTN.MountainBuildingTextures[2], resources.MountainSkyboxTextures[2] ?? MTN.MountainSkyboxTextures[2], Calc.HexToColor("281A35"));
                             resources.MountainStates[3] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
 
-                            if (meta.Mountain.FogColor != null) {
+                            if (meta.Mountain.FogColors != null) {
                                 // replace the fog color of all states... only one of them will end up being used anyway.
-                                for (int i = 0; i < resources.MountainStates.Length; i++) {
-                                    resources.MountainStates[i].FogColor = Calc.HexToColor(meta.Mountain.FogColor);
+                                for (int i = 0; i < resources.MountainStates.Length && i < meta.Mountain.FogColors.Length; i++) {
+                                    resources.MountainStates[i].FogColor = Calc.HexToColor(meta.Mountain.FogColors[i]);
                                 }
                             }
                         }
