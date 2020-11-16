@@ -59,7 +59,7 @@ namespace Celeste {
 
         // fog colors used when switching between 2 states
         private Color previousFogColor = Color.White;
-        private Color targetFogColor = Color.White;
+        private Color? targetFogColor = null;
         private float fogFade = 1f;
 
         public extern void orig_ctor();
@@ -92,12 +92,12 @@ namespace Celeste {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
                     // the mountain is custom!
-                    if (PreviousSID == (SaveData.Instance?.LastArea.GetSID() ?? "")) {
+                    if (targetFogColor == null || PreviousSID == (SaveData.Instance?.LastArea.GetSID() ?? "")) {
                         // we aren't fading out, so we can update the fog color.
                         MountainResources resources = MTNExt.MountainMappings[path];
                         Color fogColor = (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor;
-                        if (fade == 1f) {
-                            // we faded to black, so we can snap the fog color.
+                        if (targetFogColor == null || fade == 1f) {
+                            // we faded to black, or just came back from a map with a custom mountain: snap the fog color.
                             targetFogColor = fogColor;
                             fogFade = 1f;
                         } else if (fogColor != targetFogColor) {
@@ -108,7 +108,7 @@ namespace Celeste {
                         }
 
                         // fade between previousFogColor and targetFogColor.
-                        customFog.TopColor = customFog.BotColor = Color.Lerp(previousFogColor, targetFogColor, fogFade);
+                        customFog.TopColor = customFog.BotColor = Color.Lerp(previousFogColor, fogColor, fogFade);
                         fogFade = Calc.Approach(fogFade, 1f, Engine.DeltaTime);
                     }
 
