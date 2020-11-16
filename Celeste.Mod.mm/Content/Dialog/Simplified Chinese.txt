@@ -8,7 +8,7 @@
 	FONT=Noto Sans CJK SC Medium,64
 	BEGIN=true
 
-# chinese.fnt 添加的字符为：…列刷吼库排未校横毕版秒类装详输送额启缩夹官匹贴
+# chinese.fnt 添加的字符为：…列刷吼库排未校横毕版秒类装详输送额启缩夹官匹贴台邀链传卡卸脉
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}谢谢你((player))！{/big}{n}不过我们的 {#ff1144}((sid)){#} 在另一座山。
