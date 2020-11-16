@@ -296,8 +296,7 @@ namespace Celeste.Mod.Core {
 
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
-            LoadSettings();
-            OnInputInitialize();
+            // LoadSettings();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
