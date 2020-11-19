@@ -18,6 +18,10 @@ using Microsoft.Xna.Framework.Input;
 using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Text.RegularExpressions;
+using MonoMod.RuntimeDetour;
+using NLua;
+using MonoMod.Cil;
+using Mono.Cecil.Cil;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -36,6 +40,8 @@ namespace Celeste.Mod.Core {
 
         public override Type SessionType => typeof(CoreModuleSession);
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
+
+        private static ILHook nluaAssemblyGetTypesHook;
 
         public CoreModule() {
             Instance = this;
@@ -72,6 +78,7 @@ namespace Celeste.Mod.Core {
         public override void Load() {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+            nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
 
             if (Everest.Flags.IsMobile) {
                 // It shouldn't look that bad on mobile screens...
@@ -80,6 +87,18 @@ namespace Celeste.Mod.Core {
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
                 Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
+            }
+
+            if (Directory.Exists("LogHistory")) {
+                int historyToKeep = Math.Max(Settings.LogHistoryCountToKeep, 0); // just in case someone tries to set the value to -42
+                while (Directory.GetFiles("LogHistory", "log_*.txt").Length > historyToKeep) {
+                    // we have to delete 1 more file: the first in alphabetical order, which should be the oldest.
+                    List<string> files = Directory.GetFiles("LogHistory", "log_*.txt").ToList();
+                    files.Sort();
+
+                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {files[0]}");
+                    File.Delete(files[0]);
+                }
             }
         }
 
@@ -129,6 +148,14 @@ namespace Celeste.Mod.Core {
             };
         }
 
+        public override void OnInputInitialize() {
+            base.OnInputInitialize();
+
+            // Set up repeating on the "menu page up" and "menu page down" buttons like "menu up" and "menu down".
+            Settings.MenuPageUp.Button.SetRepeat(0.4f, 0.1f);
+            Settings.MenuPageDown.Button.SetRepeat(0.4f, 0.1f);
+        }
+
         public override void LoadContent(bool firstLoad) {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
@@ -166,10 +193,21 @@ namespace Celeste.Mod.Core {
             GFX.Gui["fileselect/cheatmode"] = GFX.Game["util/pixel"];
         }
 
+        private void patchNLuaAssemblyGetTypes(ILContext il) {
+            ILCursor cursor = new ILCursor(il);
+
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
+                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
+            }
+        }
+
         public override void Unload() {
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
-
+            nluaAssemblyGetTypesHook?.Dispose();
+            nluaAssemblyGetTypesHook = null;
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
@@ -258,28 +296,35 @@ namespace Celeste.Mod.Core {
 
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
-            LoadSettings();
+            // LoadSettings();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
+                List<TextMenu.Item> items = menu.GetItems();
+
+                // change the "key config" labels
+                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
+                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
+
+                // insert extra options before the "key config" options
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiOOBE>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();
                 }));
 
-                menu.Add(new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModToggler>();
                 }));
             }

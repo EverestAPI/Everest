@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -72,6 +73,33 @@ namespace Celeste {
             return num - targetItem.Height() * 0.5f - ItemSpacing;
         }
 
+        public extern void orig_Update();
+        public override void Update() {
+            orig_Update();
+
+            if (Focused && Items.Any(item => item.Hoverable)) {
+                if (CoreModule.Settings.MenuPageDown.Pressed && Selection != LastPossibleSelection) {
+                    // move down
+                    Current.OnLeave?.Invoke();
+                    float startY = GetYOffsetOf(Current);
+                    while (GetYOffsetOf(Current) < startY + 1080f && Selection < LastPossibleSelection) {
+                        MoveSelection(1);
+                    }
+                    Audio.Play("event:/ui/main/rollover_down");
+                    Current.OnEnter?.Invoke();
+                } else if (CoreModule.Settings.MenuPageUp.Pressed && Selection != FirstPossibleSelection) {
+                    // move up
+                    Current.OnLeave?.Invoke();
+                    float startY = GetYOffsetOf(Current);
+                    while (GetYOffsetOf(Current) > startY - 1080f && Selection > FirstPossibleSelection) {
+                        MoveSelection(-1);
+                    }
+                    Audio.Play("event:/ui/main/rollover_up");
+                    Current.OnEnter?.Invoke();
+                }
+            }
+        }
+
         [MonoModReplace]
         public override void Render() {
             // this is heavily based on the vanilla method, adding a check to skip rendering off-screen options.
@@ -128,6 +156,9 @@ namespace Celeste {
         }
 
         public class patch_Option<T> : Option<T> {
+            private float cachedRightWidth;
+            private List<string> cachedRightWidthContent;
+
             /// <summary>
             /// The color the text takes when the option is active, but unselected (defaults to white).
             /// </summary>
@@ -142,6 +173,8 @@ namespace Celeste {
 
             [MonoModConstructor]
             public void ctor(string label) {
+                cachedRightWidth = 0f;
+                cachedRightWidthContent = new List<string>();
                 UnselectedColor = Color.White;
                 orig_ctor(label);
             }
@@ -149,6 +182,19 @@ namespace Celeste {
             [MonoModIgnore]
             [PatchTextMenuOptionColor]
             public extern new void Render(Vector2 position, bool highlighted);
+
+            public extern float orig_RightWidth();
+            public override float RightWidth() {
+                // the vanilla method measures each option, which can be resource-heavy.
+                // caching it allows to remove some lag in big menus, like Mod Options with a lot of mods installed.
+                List<string> currentContent = Values.Select(val => val.Item1).ToList();
+                if (!cachedRightWidthContent.SequenceEqual(currentContent)) {
+                    // contents changed, or the width wasn't computed yet.
+                    cachedRightWidth = orig_RightWidth();
+                    cachedRightWidthContent = currentContent;
+                }
+                return cachedRightWidth;
+            }
         }
     }
 

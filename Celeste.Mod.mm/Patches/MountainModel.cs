@@ -37,6 +37,7 @@ namespace Celeste {
         private Vector3 starCenter;
         private float birdTimer;
 
+        // custom copies of the mountain objects, rendered instead of vanilla ones when the mountain has custom settings.
         protected Ring customFog;
         protected Ring customFog2;
 
@@ -56,10 +57,16 @@ namespace Celeste {
         protected float fade = 0f;
         protected float fadeHoldCountdown = 0;
 
+        // fog colors used when switching between 2 states
+        private Color previousFogColor = Color.White;
+        private Color? targetFogColor = null;
+        private float fogFade = 1f;
+
         public extern void orig_ctor();
         [MonoModConstructor]
         public void ctor() {
             orig_ctor();
+
             customFog = fog;
             customFog2 = fog2;
 
@@ -74,6 +81,7 @@ namespace Celeste {
         public extern void orig_Update();
         public new void Update() {
             orig_Update();
+
             string path;
             try {
                 path = Path.Combine("Maps", SaveData.Instance?.LastArea.GetSID() ?? "").Replace('\\', '/');
@@ -83,9 +91,29 @@ namespace Celeste {
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
-                    MountainResources resources = MTNExt.MountainMappings[path];
+                    // the mountain is custom!
+                    if (targetFogColor == null || PreviousSID == (SaveData.Instance?.LastArea.GetSID() ?? "")) {
+                        // we aren't fading out, so we can update the fog color.
+                        MountainResources resources = MTNExt.MountainMappings[path];
+                        Color fogColor = (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor;
+                        if (targetFogColor == null || fade == 1f) {
+                            // we faded to black, or just came back from a map with a custom mountain: snap the fog color.
+                            targetFogColor = fogColor;
+                            fogFade = 1f;
+                        } else if (fogColor != targetFogColor) {
+                            // the fog color changed! start fading from the current fog color to the new color.
+                            previousFogColor = customFog.TopColor;
+                            targetFogColor = fogColor;
+                            fogFade = 0f;
+                        }
+
+                        // fade between previousFogColor and targetFogColor.
+                        customFog.TopColor = customFog.BotColor = Color.Lerp(previousFogColor, fogColor, fogFade);
+                        fogFade = Calc.Approach(fogFade, 1f, Engine.DeltaTime);
+                    }
+
+                    // refresh custom mountain objets (rotate the fog, etc)
                     customFog.Rotate((0f - Engine.DeltaTime) * 0.01f);
-                    customFog.TopColor = (customFog.BotColor = Color.Lerp((resources.MountainStates?[currState] ?? mountainStates[currState]).FogColor, (resources.MountainStates?[nextState] ?? mountainStates[nextState]).FogColor, easeState));
                     customFog2.Rotate((0f - Engine.DeltaTime) * 0.01f);
                     customFog2.TopColor = (customFog2.BotColor = Color.White * 0.3f * NearFogAlpha);
                     customStarstream1.Rotate(Engine.DeltaTime * 0.01f);
@@ -100,6 +128,7 @@ namespace Celeste {
         public extern void orig_BeforeRender(Scene scene);
         public new void BeforeRender(Scene scene) {
             if (vanillaMoonParticles == null) {
+                // back up the vanilla particles.
                 vanillaMoonParticles = (Engine.Scene as Overworld)?.Entities.OfType<MoonParticle3D>().First();
             }
 
@@ -109,8 +138,10 @@ namespace Celeste {
             } catch (ArgumentException) {
                 path = "Maps";
             }
+
             string SIDToUse = SaveData.Instance?.LastArea.GetSID() ?? "";
             bool fadingIn = true;
+
             // Check if we're changing any mountain parameter
             // If so, we want to fade out and then back in
             if (PreviousSID != null && !(SaveData.Instance?.LastArea.GetSID() ?? "").Equals(PreviousSID)) {
@@ -137,6 +168,7 @@ namespace Celeste {
 
                 if (oldMountain?.MountainModelDirectory != newMountain?.MountainModelDirectory
                     || oldMountain?.MountainTextureDirectory != newMountain?.MountainTextureDirectory
+                    || (oldMountain?.FogColors == null) != (newMountain?.FogColors == null) // only fade to black if one end has custom fog colors and the other doesn't.
                     || oldMountain?.StarFogColor != newMountain?.StarFogColor
                     || (oldMountain?.ShowSnow ?? true) != (newMountain?.ShowSnow ?? true)
                     || !arrayEqual(oldMountain?.StarStreamColors, newMountain?.StarStreamColors)
@@ -144,12 +176,13 @@ namespace Celeste {
                     || !arrayEqual(oldMountain?.StarBeltColors2, newMountain?.StarBeltColors2)) {
 
                     if (fade != 1f) {
+                        // fade out, and continue using the old mountain during the fadeout.
                         SIDToUse = PreviousSID;
                         path = oldPath;
                         fade = Calc.Approach(fade, 1f, Engine.DeltaTime * 4f);
                         fadingIn = false;
                     } else {
-                        // How long we want it to stay opaque before fading back in
+                        // start holding the black screen
                         fadeHoldCountdown = .3f;
                     }
                 }
@@ -157,8 +190,10 @@ namespace Celeste {
 
             if (fadingIn && fade != 0f) {
                 if (fadeHoldCountdown <= 0) {
+                    // fade in
                     fade = Calc.Approach(fade, 0f, Engine.DeltaTime * 4f);
                 } else {
+                    // hold the black screen
                     fadeHoldCountdown -= Engine.DeltaTime;
                 }
             }
@@ -166,6 +201,7 @@ namespace Celeste {
             if (SaveData.Instance != null && Everest.Content.TryGet(path, out ModAsset asset)) {
                 MapMeta meta;
                 if (asset != null && (meta = asset.GetMeta<MapMeta>()) != null && meta.Mountain != null && hasCustomSettings(meta)) {
+                    // there is a custom mountain! render it, similarly to vanilla.
                     MountainResources resources = MTNExt.MountainMappings[path];
 
                     ResetRenderTargets();
@@ -278,12 +314,18 @@ namespace Celeste {
                     }
                     GaussianBlur.Blur((RenderTarget2D) buffer, blurA, blurB, 0.75f, clear: true, samples: GaussianBlur.Samples.Five);
 
+                    // render the fade to black.
                     Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null);
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
                     Draw.SpriteBatch.End();
 
                     // Initialize new custom fog and star belt when we switch between maps
                     if (!(SIDToUse).Equals(PreviousSID)) {
+                        // save values to make transition smoother.
+                        Color fogColorBeforeReload = customFog?.TopColor ?? Color.White;
+                        float spinBeforeReload = customFog.Verts[1].TextureCoordinate.X;
+
+                        // build new objects with custom textures.
                         customFog = new Ring(6f, -1f, 20f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customFog2 = new Ring(6f, -4f, 10f, 0f, 24, Color.White, resources.MountainFogTexture ?? MTN.MountainFogTexture);
                         customStarsky = new Ring(18f, -18f, 20f, 0f, 24, Color.White, Color.Transparent, resources.MountainSpaceTexture ?? MTN.MountainStarSky);
@@ -292,6 +334,11 @@ namespace Celeste {
                         customStarstream0 = new Ring(5f, -8f, 18.5f, 0.2f, 80, resources.StarStreamColors?[0] ?? Color.Black, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream1 = new Ring(4f, -6f, 18f, 1f, 80, resources.StarStreamColors?[1] ?? Calc.HexToColor("9228e2") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
                         customStarstream2 = new Ring(3f, -4f, 17.9f, 1.4f, 80, resources.StarStreamColors?[2] ?? Calc.HexToColor("30ffff") * 0.5f, resources.MountainStarStreamTexture ?? MTN.MountainStarStream);
+
+                        // restore values saved earlier.
+                        customFog.TopColor = customFog.BotColor = fogColorBeforeReload;
+                        customFog.Rotate(spinBeforeReload);
+                        customFog2.Rotate(spinBeforeReload);
 
                         if (Engine.Scene is Overworld thisOverworld) {
                             thisOverworld.Remove(customMoonParticles);
@@ -306,10 +353,13 @@ namespace Celeste {
                             }
                         }
                     }
+
                     PreviousSID = SIDToUse;
                     return;
                 }
             }
+
+            // if we are here, it means we don't have a custom mountain.
 
             if (customMoonParticles != null && Engine.Scene is Overworld overworld) {
                 // revert back the moon particles to vanilla.
@@ -318,8 +368,10 @@ namespace Celeste {
                 overworld.Add(vanillaMoonParticles);
             }
 
+            // run vanilla code.
             orig_BeforeRender(scene);
 
+            // render the fade to black.
             Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null);
             Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * fade);
             Draw.SpriteBatch.End();
@@ -329,7 +381,7 @@ namespace Celeste {
 
         private static bool hasCustomSettings(MapMeta meta) {
             return !string.IsNullOrEmpty(meta.Mountain.MountainModelDirectory) || !string.IsNullOrEmpty(meta.Mountain.MountainTextureDirectory)
-                || !string.IsNullOrEmpty(meta.Mountain.StarFogColor) || meta.Mountain.StarStreamColors != null
+                || meta.Mountain.FogColors != null || !string.IsNullOrEmpty(meta.Mountain.StarFogColor) || meta.Mountain.StarStreamColors != null
                 || (meta.Mountain.StarBeltColors1 != null && meta.Mountain.StarBeltColors2 != null);
         }
 
