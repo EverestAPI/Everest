@@ -2544,8 +2544,8 @@ namespace MonoMod {
             if (!method.HasBody)
                 return;
 
-            MethodDefinition m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod($"System.Void DisableStaticMovers()");
-            MethodDefinition m_Platform_DestroyStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod($"System.Void DestroyStaticMovers()");
+            MethodDefinition m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+            MethodDefinition m_Platform_DestroyStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DestroyStaticMovers()");
 
             ILProcessor il = method.Body.GetILProcessor();
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
