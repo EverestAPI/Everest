@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
@@ -15,11 +16,13 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    class patch_SaveData : SaveData {
+    public class patch_SaveData : SaveData {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
+
+        public bool Modded = false;
 
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
@@ -295,6 +298,18 @@ namespace Celeste {
             if (LevelSets == null)
                 LevelSets = new List<LevelSetStats>();
 
+            if (!Modded) {
+                // the save file is "not modded" (just created, overwritten by vanilla, or Everest just updated).
+                // we want to carry mod save data that was backed up in CoreModule save data, if any.
+                LoadModSaveData(FileSlot);
+                if (CoreModule.SaveData.Modded) {
+                    CoreModule.SaveData.CopyToCelesteSaveData(this);
+                    Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                }
+            }
+
+            Modded = true;
+
             if (LevelSetRecycleBin == null)
                 LevelSetRecycleBin = new List<LevelSetStats>();
 
@@ -491,6 +506,7 @@ namespace Celeste {
 
             orig_BeforeSave();
 
+            CoreModule.SaveData.CopyFromCelesteSaveData(this);
             foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
                 mod.SaveSession(FileSlot);
