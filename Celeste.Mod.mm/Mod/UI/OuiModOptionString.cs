@@ -229,6 +229,11 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        public override void SceneEnd(Scene scene) {
+            Overworld.ShowInputUI = true;
+            Engine.Commands.Enabled = true;
+        }
+
         public override void Update() {
             bool wasFocused = Focused;
 
