@@ -35,7 +35,7 @@ steps:
 
 # Create and "publish" main artifact.
 - task: CopyFiles@2
-  displayName: 'Pack artifact'
+  displayName: 'Pack main artifact'
   continueOnError: true
   inputs:
     sourceFolder: '$(Agent.BuildDirectory)'
@@ -45,21 +45,36 @@ steps:
     overWrite: true
     flattenFolders: true
 - task: PublishBuildArtifacts@1
-  displayName: 'Publish artifact'
+  displayName: 'Publish main artifact'
   continueOnError: true
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)'
     artifactName: 'main'
     publishLocation: 'Container'
 
-# Post-build steps (obsolete).
+# Post-build steps.
 - task: PowerShell@2
-# condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-  condition: not(always())
+condition: succeeded()
   displayName: 'Run azure-pipelines-postbuild.ps1'
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
     arguments: '$(S3KEY) $(S3SECRET)'
+
+# Create and "publish" Olympus artifacts.
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish olympus-meta artifact'
+  continueOnError: true
+  inputs:
+    pathtoPublish: '$(Agent.BuildDirectory)/tmp-olympus/meta/'
+    artifactName: 'olympus-meta'
+    publishLocation: 'Container'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish olympus-build artifact'
+  continueOnError: true
+  inputs:
+    pathtoPublish: '$(Agent.BuildDirectory)/tmp-olympus/build/'
+    artifactName: 'olympus-build'
+    publishLocation: 'Container'
 
 # Announce new stable versions on Discord (#modding_updates).
 - script: |
