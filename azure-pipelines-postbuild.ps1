@@ -15,7 +15,9 @@ New-Item -ItemType "directory" -Path $OLYMPUS/meta
 New-Item -ItemType "directory" -Path $OLYMPUS/build
 
 Write-Output "Building Olympus build artifact"
-[EverestPS]::Zip($env:Build_ArtifactStagingDirectory, $ZIP)
+# Azure Pipelines apparently hates to write to the artifact staging dir directly.
+[EverestPS]::Zip($env:Build_ArtifactStagingDirectory, "olympus-build.zip")
+Move-Item -Path "olympus-build.zip" -Destination $ZIP
 
 Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
