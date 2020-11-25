@@ -5,7 +5,7 @@ $OLYMPUS="./tmp-olympus/"
 $ZIP="$OLYMPUS/build/build.zip"
 
 Write-Output "Creating Olympus artifact directories"
-Remove-Item -Recurse -Force -Path $OLYMPUS
+Remove-Item -ErrorAction Ignore -Recurse -Force -Path $OLYMPUS
 New-Item -ItemType "directory" -Path $OLYMPUS
 New-Item -ItemType "directory" -Path $OLYMPUS/meta
 New-Item -ItemType "directory" -Path $OLYMPUS/build
