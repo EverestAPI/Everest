@@ -40,7 +40,7 @@ steps:
   inputs:
     sourceFolder: '$(Agent.BuildDirectory)'
     contents: '**/bin/**/*'
-    targetFolder: '$(Build.ArtifactStagingDirectory)'
+    targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
     cleanTargetFolder: true
     overWrite: true
     flattenFolders: true
@@ -48,7 +48,7 @@ steps:
   displayName: 'Publish main artifact'
   continueOnError: true
   inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/main/'
     artifactName: 'main'
     publishLocation: 'Container'
 
@@ -61,17 +61,19 @@ steps:
 
 # Create and "publish" Olympus artifacts.
 - task: PublishBuildArtifacts@1
+  condition: succeeded()
   displayName: 'Publish olympus-meta artifact'
   continueOnError: true
   inputs:
-    pathtoPublish: '$(Agent.BuildDirectory)/tmp-olympus/meta/'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/olympus/meta/'
     artifactName: 'olympus-meta'
     publishLocation: 'Container'
 - task: PublishBuildArtifacts@1
+  condition: succeeded()
   displayName: 'Publish olympus-build artifact'
   continueOnError: true
   inputs:
-    pathtoPublish: '$(Agent.BuildDirectory)/tmp-olympus/build/'
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/olympus/build/'
     artifactName: 'olympus-build'
     publishLocation: 'Container'
 

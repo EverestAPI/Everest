@@ -1,7 +1,11 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 Add-Type -Path "azure-pipelines-ext.cs" -ReferencedAssemblies "System.IO.Compression.FileSystem"
 
-$OLYMPUS="./tmp-olympus/"
+$OLYMPUS="$env:Build_ArtifactStagingDirectory/olympus/"
+if ($OLYMPUS -eq "/olympus/") {
+	$OLYMPUS = "./tmp-olympus/"
+}
+
 $ZIP="$OLYMPUS/build/build.zip"
 
 Write-Output "Creating Olympus artifact directories"
