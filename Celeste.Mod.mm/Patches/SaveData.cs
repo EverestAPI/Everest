@@ -3,7 +3,6 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
-using Celeste.Mod.Core;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
@@ -21,8 +20,6 @@ namespace Celeste {
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
-
-        public bool Modded = false;
 
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
@@ -252,6 +249,8 @@ namespace Celeste {
                 mod.DeleteSession(slot);
             }
 
+            UserIO.Delete(GetFilename(slot) + "-modsavedata");
+
             LoadedModSaveDataIndex = int.MinValue;
 
             return true;
@@ -298,20 +297,18 @@ namespace Celeste {
             if (LevelSets == null)
                 LevelSets = new List<LevelSetStats>();
 
-            if (!Modded) {
-                // the save file is "not modded" (just created, overwritten by vanilla, or Everest just updated).
-                // we want to carry mod save data that was backed up in CoreModule save data, if any.
-                LoadModSaveData(FileSlot);
-                if (CoreModule.SaveData.Modded) {
-                    CoreModule.SaveData.CopyToCelesteSaveData(this);
+            if (LevelSetRecycleBin == null)
+                LevelSetRecycleBin = new List<LevelSetStats>();
+
+            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0) {
+                // the save file doesn't have any mod save data (just created, overwritten by vanilla, Everest just updated, or just no map installed).
+                // we want to carry mod save data that was backed up in the mod save file, if any.
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                if (modSaveData != null) {
+                    modSaveData.CopyToCelesteSaveData(this);
                     Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
                 }
             }
-
-            Modded = true;
-
-            if (LevelSetRecycleBin == null)
-                LevelSetRecycleBin = new List<LevelSetStats>();
 
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
@@ -506,7 +503,7 @@ namespace Celeste {
 
             orig_BeforeSave();
 
-            CoreModule.SaveData.CopyFromCelesteSaveData(this);
+            UserIO.Save<ModSaveData>(GetFilename(FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(this)));
             foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
                 mod.SaveSession(FileSlot);
