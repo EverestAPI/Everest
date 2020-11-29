@@ -1975,8 +1975,12 @@ namespace MonoMod {
                 return;
 
             // The routine is stored in a compiler-generated method.
+            string methodName = method.Name;
+            if (methodName.StartsWith("orig_")) {
+                methodName = methodName.Substring(5);
+            }
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                if (!nest.Name.StartsWith("<" + methodName + ">d__"))
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
                 break;
