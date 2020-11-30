@@ -305,6 +305,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
+    /// <summary>
+    /// Don't remove TalkComponent even watchtower collide solid, so that watchtower can be hidden behind Solid.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
+    class PatchLookoutUpdateAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -572,7 +578,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                /* 
+                /*
                    we found
 
                    IL_08BA: ldloc.s   V_14
@@ -822,7 +828,7 @@ namespace MonoMod {
                 Instruction instr = instrs[instri];
 
                 /* We expect something similar enough to the following:
-                brfalse.s    338 (0441) ldarg.0 
+                brfalse.s    338 (0441) ldarg.0
                 ldarg.0
                 ldfld    class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
                 ldarg.0
@@ -1669,7 +1675,7 @@ namespace MonoMod {
 
         public static void PatchInterface(MethodDefinition method, CustomAttribute attrib) {
             MethodAttributes flags = MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot;
-            method.Attributes = method.Attributes | flags;
+            method.Attributes |= flags;
         }
 
         public static void PatchFileSelectSlotRender(MethodDefinition method, CustomAttribute attrib) {
@@ -2529,6 +2535,69 @@ namespace MonoMod {
                     instri++;
                 }
             }
+        }
+
+        public static void PatchLookoutUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (method?.Body == null)
+                return;
+
+            const string lookoutTalkFieldName = "Celeste.TalkComponent Celeste.Lookout::talk";
+            const string entityCollideCheckMethodID = "System.Boolean Monocle.Entity::CollideCheck<Celeste.Solid>()";
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+
+            // if (this.talk == null || !CollideCheck<Solid>())  <-- indexTarget is here
+            //     return;
+            // this.Remove((Component) this.talk);
+            // this.talk = (TalkComponent) null;
+
+            int indexTarget = -1;
+            MethodReference collideCheckMethodReference = null;
+            for (int instri = 0; instri < instrs.Count - 5; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference)?.FullName == lookoutTalkFieldName
+                    && instrs[instri + 2].OpCode == OpCodes.Brfalse_S
+                    && instrs[instri + 3].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 4].OpCode == OpCodes.Call && (instrs[instri + 4].Operand as MethodReference)?.GetID() == entityCollideCheckMethodID
+                    && (instrs[instri + 5].OpCode == OpCodes.Brfalse_S || instrs[instri + 5].OpCode == OpCodes.Br_S)
+                ) {
+                    indexTarget = instri;
+                    collideCheckMethodReference = instrs[instri + 4].Operand as MethodReference;
+                    break;
+                }
+            }
+
+            if (indexTarget < 0)
+                return;
+
+            // if (true || !CollideCheck<Solid>())  <-- after patch
+            //     return;
+            // this.Remove((Component) this.talk);
+            // this.talk = (TalkComponent) null;
+            ILProcessor il = method.Body.GetILProcessor();
+            instrs[indexTarget].OpCode = OpCodes.Nop;
+            instrs[indexTarget + 1] = il.Create(OpCodes.Ldc_I4_0);
+
+            // insert at begin
+            // if (talk.UI != null) {
+            //     talk.UI.Visible = !CollideCheck<Solid>();
+            // }
+            int indexInsert = 0;
+            Instruction startIns = instrs[0];
+
+            instrs.Insert(indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Brfalse_S, startIns));
+
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Call, collideCheckMethodReference));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldc_I4_0));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Ceq));
+            instrs.Insert(++indexInsert, il.Create(OpCodes.Stfld, method.Module.GetType("Monocle.Entity").FindField("Visible")));
         }
 
         public static void PostProcessor(MonoModder modder) {

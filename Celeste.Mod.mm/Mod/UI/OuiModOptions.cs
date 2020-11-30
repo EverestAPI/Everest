@@ -1,4 +1,5 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Mod.Core;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -53,6 +54,12 @@ namespace Celeste.Mod.UI {
                                 // check for missing dependencies
                                 List<EverestModuleMetadata> missingDependenciesForMod = mod.Item1.Dependencies
                                     .FindAll(dep => !Everest.Loader.DependencyLoaded(dep));
+                                if (mod.Item1.OptionalDependencies != null) {
+                                    // find optional dependencies with mismatching versions
+                                    List<EverestModuleMetadata> optionalDependenciesWithVersionMismatches = mod.Item1.OptionalDependencies
+                                        .FindAll(dep => !Everest.Loader.DependencyLoaded(dep) && Everest.Modules.Any(module => module.Metadata?.Name == dep.Name));
+                                    missingDependenciesForMod.AddRange(optionalDependenciesWithVersionMismatches);
+                                }
                                 missingDependencies.AddRange(missingDependenciesForMod);
 
                                 if (missingDependenciesForMod.Count != 0) {
@@ -73,6 +80,13 @@ namespace Celeste.Mod.UI {
                                 HeightExtra = 0f,
                                 TextColor = Color.PaleVioletRed
                             });
+                        }
+                    } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_yamlerrors")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+                        menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                        foreach (string fileName in Everest.Loader.FilesWithMetadataLoadFailures) {
+                            menu.Add(new TextMenuExt.SubHeaderExt(Path.GetFileName(fileName)) { HeightExtra = 0f, TextColor = Color.PaleVioletRed });
                         }
                     }
                 }

@@ -147,6 +147,12 @@ namespace Celeste.Mod.Core {
             set => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs = value;
         }
 
+        [SettingIgnore]
+        public string DefaultStartingLevelSet { get; set; } = "Celeste";
+
+        [SettingIgnore]
+        public int LogHistoryCountToKeep { get; set; } = 3;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
@@ -193,7 +199,25 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingInGame(false)]
+        public bool UseKeyboardForTextInput { get; set; } = true;
+
+        [SettingInGame(false)]
         public bool AutoUpdateModsOnStartup { get; set; } = false;
+
+
+        private bool _WarnOnEverestYamlErrors = false;
+        [SettingSubText("MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC")]
+        [SettingInGame(false)]
+        public bool WarnOnEverestYamlErrors {
+            get => _WarnOnEverestYamlErrors;
+            set {
+                _WarnOnEverestYamlErrors = value;
+
+                // rebuild the main menu to make sure we show/hide the yaml error notice.
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            }
+        }
+
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
@@ -216,6 +240,9 @@ namespace Celeste.Mod.Core {
         public bool ShowManualTextOnDebugMap { get; set; } = true;
 
         [SettingIgnore]
+        public bool RestartIntoVanillaWarningShown { get; set; } = false;
+
+        [SettingIgnore]
         public bool CodeReload_WIP { get; set; } = false;
 
         // TODO: Once CodeReload is no longer WIP, remove this and rename ^ to non-WIP.
@@ -234,6 +261,9 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+
+        public ButtonBinding MenuPageUp { get; set; }
+        public ButtonBinding MenuPageDown { get; set; }
 
         /*
         [SettingRange(0, 10)]

@@ -82,6 +82,16 @@ namespace Celeste {
         public static bool ModsLoaded { get; private set; }
         public static bool ModsDataLoaded { get; private set; }
 
+        internal static void ReloadModData() {
+            ModsDataLoaded = false;
+            LoadModData();
+        }
+
+        internal static void ReloadMod() {
+            ModsLoaded = false;
+            LoadMod();
+        }
+
         /// <summary>
         /// Load the custom mountain models for mods.
         /// </summary>
@@ -119,6 +129,9 @@ namespace Celeste {
                                 resources.MountainMoon = loadModelFile(moon, moonPath);
                             }
 
+                            resources.MountainExtraModels.Clear();
+                            resources.MountainExtraModelTextures.Clear();
+
                             while (resolveModel(meta, "extra" + resources.MountainExtraModels.Count, out ModAsset extra, out string extraPath)) {
                                 // load the extra model.
                                 int extraIndex = resources.MountainExtraModels.Count;
@@ -144,10 +157,10 @@ namespace Celeste {
 
         private static bool resolveModel(MapMeta meta, string modelName, out ModAsset matchingAsset, out string path) {
             if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj"), out matchingAsset) && matchingAsset.Type == typeof(AssetTypeObjModelExport)) {
-                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".export");
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".export").Replace("\\", "/");
                 return true;
             } else if (Everest.Content.TryGet(Path.Combine(meta.Mountain.MountainModelDirectory, modelName), out matchingAsset) && matchingAsset.Type == typeof(ObjModel)) {
-                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj");
+                path = Path.Combine(meta.Mountain.MountainModelDirectory, modelName + ".obj").Replace("\\", "/");
                 return true;
             }
             path = null;
@@ -211,7 +224,6 @@ namespace Celeste {
                                     resources.MountainStarStreamTexture = MTN.Mountain[Path.Combine(meta.Mountain.MountainTextureDirectory, "starstream").Replace('\\', '/')].Texture;
                                 }
                             }
-
                             if (meta.Mountain.StarFogColor != null) {
                                 resources.StarFogColor = Calc.HexToColor(meta.Mountain.StarFogColor);
                             }
@@ -230,6 +242,13 @@ namespace Celeste {
                             resources.MountainStates[1] = new MountainState(resources.MountainTerrainTextures[1] ?? MTN.MountainTerrainTextures[1], resources.MountainBuildingTextures[1] ?? MTN.MountainBuildingTextures[1], resources.MountainSkyboxTextures[1] ?? MTN.MountainSkyboxTextures[1], Calc.HexToColor("13203E"));
                             resources.MountainStates[2] = new MountainState(resources.MountainTerrainTextures[2] ?? MTN.MountainTerrainTextures[2], resources.MountainBuildingTextures[2] ?? MTN.MountainBuildingTextures[2], resources.MountainSkyboxTextures[2] ?? MTN.MountainSkyboxTextures[2], Calc.HexToColor("281A35"));
                             resources.MountainStates[3] = new MountainState(resources.MountainTerrainTextures[0] ?? MTN.MountainTerrainTextures[0], resources.MountainBuildingTextures[0] ?? MTN.MountainBuildingTextures[0], resources.MountainSkyboxTextures[0] ?? MTN.MountainSkyboxTextures[0], Calc.HexToColor("010817"));
+
+                            if (meta.Mountain.FogColors != null) {
+                                // replace the fog color of all states... only one of them will end up being used anyway.
+                                for (int i = 0; i < resources.MountainStates.Length && i < meta.Mountain.FogColors.Length; i++) {
+                                    resources.MountainStates[i].FogColor = Calc.HexToColor(meta.Mountain.FogColors[i]);
+                                }
+                            }
                         }
                     }
                 }

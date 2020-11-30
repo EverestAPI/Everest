@@ -1,5 +1,5 @@
-﻿using System;
-using Monocle;
+﻿using Monocle;
+using System;
 
 namespace Celeste.Mod.Entities {
     /// <summary>

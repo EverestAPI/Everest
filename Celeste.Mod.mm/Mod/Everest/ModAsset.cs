@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Celeste.Mod {
     public abstract class ModAsset {
@@ -149,7 +150,12 @@ namespace Celeste.Mod {
             string path = Path.Combine(Everest.Loader.PathCache, mod.Name, PathVirtual.Replace('/', Path.DirectorySeparatorChar));
             string pathSum = path + ".sum";
 
-            string sum = mod.Hash.ToHexadecimalString();
+            byte[] hash = mod.Hash;
+            if (hash == null) {
+                // the mod we are looking at is not loaded - this must mean another one in the multimeta is, find it and take its hash.
+                hash = mod.Multimeta.First(meta => meta.Hash != null).Hash;
+            }
+            string sum = hash.ToHexadecimalString();
 
             if (File.Exists(path)) {
                 if (File.Exists(pathSum) && File.ReadAllText(pathSum) == sum)

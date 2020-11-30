@@ -20,11 +20,15 @@ namespace Celeste {
         private Image logo;
         private MTexture title;
         private List<MTexture> reflections;
+#pragma warning disable CS0414 // "unused" field actually used in vanilla code
         private bool hideConfirmButton;
+#pragma warning restore CS0414
 
         private float switchingToVanilla;
         private float switchingToVanillaBack;
         private const float switchingToVanillaDuration = 2f;
+        private TextMenu warningMessageMenu;
+        private float warningEase;
 
         private MTexture updateTex;
         private float updateAlpha;
@@ -114,16 +118,51 @@ namespace Celeste {
                 Add(tween);
             }
 
-            if (alpha >= 1f && Selected && Input.MenuRight && arrowToVanilla != null) {
+            if (alpha >= 1f && Selected && Input.MenuRight && arrowToVanilla != null && warningMessageMenu == null) {
                 switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 8f);
                 switchingToVanilla += Engine.DeltaTime;
 
                 if (switchingToVanilla >= switchingToVanillaDuration && !Everest.RestartVanilla) {
-                    Everest.RestartVanilla = true;
-                    new FadeWipe(Scene, false, () => {
-                        Engine.Scene = new Scene();
-                        Engine.Instance.Exit();
-                    });
+                    if (CoreModule.Settings.RestartIntoVanillaWarningShown) {
+                        restartIntoVanilla();
+                    } else {
+                        warningMessageMenu = new TextMenu();
+                        Action onCancel = () => {
+                            // remove the menu
+                            Scene.Remove(warningMessageMenu);
+                            warningMessageMenu.Visible = false;
+                            warningMessageMenu = null;
+                            hideConfirmButton = false;
+
+                            // revert the "switch to vanilla" animation
+                            switchingToVanilla = 0f;
+                            switchingToVanillaBack = 0f;
+
+                            // fade the vanilla title screen back in
+                            alpha = 0f;
+                            Tween tween = Tween.Create(Tween.TweenMode.Oneshot, Ease.CubeInOut, 0.6f, start: true);
+                            tween.OnUpdate = t => {
+                                alpha = t.Percent;
+                                textY = MathHelper.Lerp(1200f, 1000f, t.Eased);
+                            };
+                            Add(tween);
+                        };
+                        warningMessageMenu.OnESC = warningMessageMenu.OnCancel = () => {
+                            Audio.Play(SFX.ui_main_button_back);
+                            onCancel();
+                        };
+                        warningMessageMenu.Add(new TextMenu.Button(Dialog.Clean("MENU_TITLESCREEN_OK")).Pressed(() => {
+                            if (!CoreModule.Settings.RestartIntoVanillaWarningShown) {
+                                CoreModule.Settings.RestartIntoVanillaWarningShown = true;
+                                CoreModule.Instance.SaveSettings();
+                            }
+                            warningMessageMenu.Focused = false;
+                            restartIntoVanilla();
+                        }));
+                        warningMessageMenu.Add(new TextMenu.Button(Dialog.Clean("MENU_TITLESCREEN_CANCEL")).Pressed(onCancel));
+                        Scene.Add(warningMessageMenu);
+                        hideConfirmButton = true;
+                    }
                 }
 
             } else if (switchingToVanilla < switchingToVanillaDuration) {
@@ -132,6 +171,16 @@ namespace Celeste {
                 switchingToVanillaBack = Math.Max(0f, switchingToVanillaBack - Engine.DeltaTime * 4f);
                 switchingToVanilla = 0f;
             }
+
+            warningEase = Calc.Approach(warningEase, warningMessageMenu != null ? 1f : 0f, Engine.DeltaTime);
+        }
+
+        private void restartIntoVanilla() {
+            Everest.RestartVanilla = true;
+            new FadeWipe(Scene, false, () => {
+                Engine.Scene = new Scene();
+                Engine.Instance.Exit();
+            });
         }
 
         public extern void orig_Render();
@@ -168,12 +217,33 @@ namespace Celeste {
             textY = textYPrev;
 
             if (switchAlpha > 0f) {
+                if (warningMessageMenu != null) {
+                    // the restarting message should ease out as the warning message eases in.
+                    switchAlpha -= Ease.CubeOut(warningEase);
+                }
+
                 Draw.Rect(0f, 0f, 1920f, 1080f, Color.Black * switchAlpha);
                 float offs = 40f * (1f - switchAlpha);
+
+                if (warningMessageMenu != null) {
+                    // the restarting message should leave the opposite way it came from.
+                    offs *= -1f;
+                }
+
                 ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA"), new Vector2(960f + offs, 540f - 4f), new Vector2(0.5f, 1f), Vector2.One, Color.White * switchAlpha);
                 Draw.Rect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.Black * switchAlpha * switchAlpha);
                 Draw.HollowRect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.DarkSlateGray * switchAlpha);
                 Draw.Rect(960f - 200f + offs, 540f + 4f, 400f * Calc.Clamp(Math.Max(switchingToVanilla, switchingToVanillaBack) / switchingToVanillaDuration, 0f, 1f), 4f, Color.White * switchAlpha);
+            }
+
+            if (warningMessageMenu != null) {
+                float warningAlpha = Ease.CubeOut(warningEase);
+                float offs = 40f * (1f - warningAlpha);
+                warningMessageMenu.Position = new Vector2(960f + offs, 735f);
+                warningMessageMenu.Alpha = warningAlpha;
+                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_WARNING"), new Vector2(960f + offs, 285f), new Vector2(0.5f, 0f), Vector2.One * 1.2f, Color.OrangeRed * warningAlpha);
+                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_WARNING_TEXT"), new Vector2(960f + offs, 385f), new Vector2(0.5f, 0f), Vector2.One * 0.8f, Color.White * warningAlpha);
+                ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_WARNING_TEXT2"), new Vector2(960f + offs, 510f), new Vector2(0.5f, 0f), Vector2.One * 0.8f, Color.White * warningAlpha);
             }
         }
 

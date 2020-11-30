@@ -35,7 +35,17 @@ namespace Celeste {
             lock (AssetReloadHelper.AreaReloadLock) {
                 orig_Update();
 
-                MapMetaMountain mountainMetadata = SaveData.Instance == null ? null : AreaData.Get(SaveData.Instance.LastArea)?.GetMeta()?.Mountain;
+                // if the mountain model is currently fading, use the one currently displayed, not the one currently selected, which is different if the fade isn't done yet.
+                AreaData currentAreaData = null;
+                string currentlyDisplayedSID = (Mountain?.Model as patch_MountainModel)?.PreviousSID;
+                if (currentlyDisplayedSID != null) {
+                    // use the settings of the currently displayed mountain
+                    currentAreaData = patch_AreaData.Get(currentlyDisplayedSID);
+                } else if (SaveData.Instance != null) {
+                    // use the settings of the currently selected map
+                    currentAreaData = AreaData.Get(SaveData.Instance.LastArea);
+                }
+                MapMetaMountain mountainMetadata = currentAreaData?.GetMeta()?.Mountain;
 
                 Snow3D.Visible = mountainMetadata?.ShowSnow ?? true;
 

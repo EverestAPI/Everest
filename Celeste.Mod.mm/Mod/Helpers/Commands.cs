@@ -15,5 +15,9 @@ namespace Celeste.Mod.Helpers {
                 SaveData.InitializeDebugMode(true);
         }
 
+        [Command("logdetours", "log all detours / hooks to output")]
+        public static void LogDetours() {
+            Everest.LogDetours();
+        }
     }
 }

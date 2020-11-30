@@ -68,6 +68,13 @@ namespace Celeste.Mod.UI {
                         ).Change(
                             value => CoreModule.Settings.ShowEverestTitleScreen = value
                         ),
+                        
+                        new OnOff(
+                            Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                            CoreModule.Settings.UseKeyboardForTextInput
+                        ).Change(
+                            value => CoreModule.Settings.UseKeyboardForTextInput = value
+                        ),
 
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
                         new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
@@ -111,6 +118,13 @@ namespace Celeste.Mod.UI {
                             CoreModule.Settings.ShowEverestTitleScreen
                         ).Change(
                             value => CoreModule.Settings.ShowEverestTitleScreen = value
+                        ),
+                        
+                        new OnOff(
+                            Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                            CoreModule.Settings.UseKeyboardForTextInput
+                        ).Change(
+                            value => CoreModule.Settings.UseKeyboardForTextInput = value
                         ),
 
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
@@ -159,6 +173,13 @@ namespace Celeste.Mod.UI {
                                 CoreModule.Settings.ShowEverestTitleScreen
                             ).Change(
                                 value => CoreModule.Settings.ShowEverestTitleScreen = value
+                            ),
+                        
+                            new OnOff(
+                                Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                                CoreModule.Settings.UseKeyboardForTextInput
+                            ).Change(
+                                value => CoreModule.Settings.UseKeyboardForTextInput = value
                             ),
 
                             new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),

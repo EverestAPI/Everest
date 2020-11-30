@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod.Utils;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/lavaBlockerTrigger", "cavern/lavablockertrigger")]

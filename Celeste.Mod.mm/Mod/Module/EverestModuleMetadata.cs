@@ -64,6 +64,11 @@ namespace Celeste.Mod {
         public List<EverestModuleMetadata> Dependencies { get; set; } = new List<EverestModuleMetadata>();
 
         /// <summary>
+        /// The optional dependencies of the mod. This mod will load after the mods listed here if they are installed; if they aren't, the mod will load anyway.
+        /// </summary>
+        public List<EverestModuleMetadata> OptionalDependencies { get; set; } = new List<EverestModuleMetadata>();
+
+        /// <summary>
         /// The runtime mod hash. Might not be determined by all mod content.
         /// </summary>
         public byte[] Hash { get; set; }
