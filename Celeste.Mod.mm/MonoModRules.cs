@@ -319,6 +319,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
     class PatchLookoutUpdateAttribute : Attribute { };
 
+    /// <summary>
+    /// Un-hardcode the range of the "Scared" decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchDecalUpdate")]
+    class PatchDecalUpdate : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2637,6 +2643,32 @@ namespace MonoMod {
             instrs.Insert(++indexInsert, il.Create(OpCodes.Ldc_I4_0));
             instrs.Insert(++indexInsert, il.Create(OpCodes.Ceq));
             instrs.Insert(++indexInsert, il.Create(OpCodes.Stfld, method.Module.GetType("Monocle.Entity").FindField("Visible")));
+        }
+
+        public static void PatchDecalUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            FieldDefinition f_hideRange = method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = method.DeclaringType.FindField("showRange");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 32f) {
+                    instrs.RemoveAt(instri);
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_hideRange));
+                }
+
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 48f) {
+                    instrs.RemoveAt(instri);
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_showRange));
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {
