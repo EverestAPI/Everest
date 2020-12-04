@@ -713,7 +713,23 @@ namespace Celeste {
             get {
                 int offset = AreaOffset;
 
-                if (TotalHeartGems >= MaxHeartGemsExcludingCSides) {
+                bool completedAllBSides = true;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaData areaData = AreaData.Areas[offset + i];
+                    if (!areaData.HasMode(AreaMode.BSide)) {
+                        continue;
+                    }
+                    AreaModeStats modeStats = AreasIncludingCeleste[i].Modes[(int) AreaMode.BSide];
+                    bool interlude = areaData.Interlude;
+                    bool mapHasHeartGem = areaData.Mode[(int) AreaMode.BSide].MapData.DetectedHeartGem;
+                    bool heartGemCollected = modeStats.HeartGem;
+                    bool completed = modeStats.Completed;
+                    if (!interlude && !(mapHasHeartGem ? heartGemCollected : completed)) {
+                        completedAllBSides = false;
+                    }
+                }
+
+                if (completedAllBSides) {
                     return 3;
                 }
 
