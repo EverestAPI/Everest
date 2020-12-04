@@ -15,7 +15,7 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    class patch_SaveData : SaveData {
+    public class patch_SaveData : SaveData {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
@@ -249,6 +249,8 @@ namespace Celeste {
                 mod.DeleteSession(slot);
             }
 
+            UserIO.Delete(GetFilename(slot) + "-modsavedata");
+
             LoadedModSaveDataIndex = int.MinValue;
 
             return true;
@@ -297,6 +299,16 @@ namespace Celeste {
 
             if (LevelSetRecycleBin == null)
                 LevelSetRecycleBin = new List<LevelSetStats>();
+
+            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0) {
+                // the save file doesn't have any mod save data (just created, overwritten by vanilla, Everest just updated, or just no map installed).
+                // we want to carry mod save data that was backed up in the mod save file, if any.
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                if (modSaveData != null) {
+                    modSaveData.CopyToCelesteSaveData(this);
+                    Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                }
+            }
 
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
@@ -491,6 +503,7 @@ namespace Celeste {
 
             orig_BeforeSave();
 
+            UserIO.Save<ModSaveData>(GetFilename(FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(this)));
             foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
                 mod.SaveSession(FileSlot);
