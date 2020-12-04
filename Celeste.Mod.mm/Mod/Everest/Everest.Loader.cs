@@ -102,6 +102,8 @@ namespace Celeste.Mod {
                 { "Elemental Chaos", new Version(1, 0, 0, 0) },
                 { "BGswitch", new Version(0, 1, 0, 0) },
 
+                // Infinite Saves 1.0.0 does not work well with the "extra save slots" feature of Everest
+                { "InfiniteSaves", new Version(1, 0, 1) }
             };
 
             /// <summary>
