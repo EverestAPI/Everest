@@ -66,7 +66,7 @@ namespace Celeste {
             T result = orig_Load<T>(path, backup);
 
             // if we are loading a SaveData, fill out the FileSlot right away.
-            if (typeof(T) == typeof(SaveData)) {
+            if (typeof(T) == typeof(SaveData) && result != null) {
                 if (path == "debug") {
                     (result as SaveData).FileSlot = -1;
                 } else if (int.TryParse(path, out int slot)) {
