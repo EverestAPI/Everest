@@ -164,7 +164,7 @@ namespace Celeste {
                 previousVersion = new Version(0, 0, 0);
             }
 
-            if (previousVersion < new Version(1, 2104, 0)) {
+            if (previousVersion < new Version(1, 2109, 0)) {
                 // user just upgraded: create mod save data backups.
                 // (this is very similar to OverworldLoader.CheckVariantsPostcardAtLaunch)
                 Logger.Log("core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
@@ -174,8 +174,8 @@ namespace Celeste {
                         continue;
                     }
                     SaveData saveData = UserIO.Load<SaveData>(SaveData.GetFilename(i), backup: false);
-                    saveData.AfterInitialize();
                     if (saveData != null) {
+                        saveData.AfterInitialize();
                         UserIO.Save<ModSaveData>(SaveData.GetFilename(saveData.FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(saveData as patch_SaveData)));
                     }
                 }
