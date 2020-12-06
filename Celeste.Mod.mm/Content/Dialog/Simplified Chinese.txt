@@ -30,14 +30,6 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA=	重启打开原版 Celeste
-	MENU_TITLESCREEN_WARNING=			警告！
-	MENU_TITLESCREEN_WARNING_TEXT=
-		如果你在原版 Celeste 中打开存档，
-		这个存档中所有 Mod 图的进度将会丢失。
-	MENU_TITLESCREEN_WARNING_TEXT2=
-		如果你需要更多的存档，请到 GameBanana 上下载 "Infinite Saves"。
-	MENU_TITLESCREEN_OK=				重启
-	MENU_TITLESCREEN_CANCEL=			取消
 
 # Extra Key Mapping
 	KEY_CONFIG_ADDING=			按新建设置以下动作

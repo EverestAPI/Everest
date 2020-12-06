@@ -38,15 +38,7 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
-	MENU_TITLESCREEN_WARNING=			Warning!
-	MENU_TITLESCREEN_WARNING_TEXT=
-		If you open a save in vanilla Celeste,
-		all your progress in custom maps will be lost in this save.
-	MENU_TITLESCREEN_WARNING_TEXT2=
-		If you need more save files, download "Infinite Saves" on GameBanana.
-	MENU_TITLESCREEN_OK=				Restart
-	MENU_TITLESCREEN_CANCEL=			Cancel
-	
+    
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR
     KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add additional keys
