@@ -329,7 +329,13 @@ namespace MonoMod {
     /// Un-hardcode the range of the "Scared" decals.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchDecalUpdate")]
-    class PatchDecalUpdate : Attribute { };
+    class PatchDecalUpdateAttribute : Attribute { };
+
+    /// <summary>
+    /// Patches LevelExit.Begin to make the endscreen music customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchAreaCompleteMusic")]
+    class PatchAreaCompleteMusicAttribute : Attribute { };
 
     static class MonoModRules {
 
@@ -2701,6 +2707,35 @@ namespace MonoMod {
                     instrs.RemoveAt(instri);
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_showRange));
+                }
+            }
+        }
+
+        public static void PatchAreaCompleteMusic(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_playCustomCompleteScreenMusic = method.DeclaringType.FindMethod("System.Boolean playCustomCompleteScreenMusic()");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            int injectionPoint = -1;
+            for (int instri = 0; instri < instrs.Count - 2; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).DeclaringType.Name == "RunThread") {
+                    injectionPoint = instri + 1;
+                }
+
+                if (injectionPoint != -1
+                    && instrs[instri].OpCode == OpCodes.Ldnull
+                    && instrs[instri + 1].OpCode == OpCodes.Ldc_I4_1
+                    && instrs[instri + 2].OpCode == OpCodes.Call && (instrs[instri + 2].Operand as MethodReference).Name == "SetAmbience") {
+
+                    // we want to inject code just after RunThread.Start (which position was saved earlier) that calls playCustomCompleteScreenMusic(),
+                    // and sends execution to Audio.SetAmbience(null) if it returned true (skipping over the vanilla code playing endscreen music).
+
+                    Instruction target = instrs[instri];
+
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Call, m_playCustomCompleteScreenMusic));
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Brtrue_S, target));
+                    break;
                 }
             }
         }
