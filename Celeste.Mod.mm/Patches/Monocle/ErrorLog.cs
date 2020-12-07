@@ -11,8 +11,8 @@ namespace Monocle {
 
         public static extern void orig_Write(Exception e);
         public static void Write(Exception e) {
-            Everest.LogDetours();
             e.LogDetailed();
+            Everest.LogDetours();
             orig_Write(e);
         }
 

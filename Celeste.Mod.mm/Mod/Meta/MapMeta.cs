@@ -482,6 +482,8 @@ namespace Celeste.Mod.Meta {
         [YamlIgnore] public Vector2 Offset => OffsetArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Offset")] public float[] OffsetArray { get; set; }
         public MapMetaCompleteScreenLayer[] Layers { get; set; }
+
+        public string[] MusicBySide { get; set; }
     }
     public class MapMetaCompleteScreenLayer {
         public string Type { get; set; }

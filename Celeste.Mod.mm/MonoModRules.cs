@@ -314,10 +314,28 @@ namespace MonoMod {
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
     /// <summary>
+    /// Patches GoldenBlocks to disable static movers if the block is disabled.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchGoldenBlockStaticMovers")]
+    class PatchGoldenBlockStaticMoversAttribute : Attribute { };
+
+    /// <summary>
     /// Don't remove TalkComponent even watchtower collide solid, so that watchtower can be hidden behind Solid.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
     class PatchLookoutUpdateAttribute : Attribute { };
+
+    /// <summary>
+    /// Un-hardcode the range of the "Scared" decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchDecalUpdate")]
+    class PatchDecalUpdateAttribute : Attribute { };
+
+    /// <summary>
+    /// Patches LevelExit.Begin to make the endscreen music customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchAreaCompleteMusic")]
+    class PatchAreaCompleteMusicAttribute : Attribute { };
 
     static class MonoModRules {
 
@@ -1975,8 +1993,12 @@ namespace MonoMod {
                 return;
 
             // The routine is stored in a compiler-generated method.
+            string methodName = method.Name;
+            if (methodName.StartsWith("orig_")) {
+                methodName = methodName.Substring(5);
+            }
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                if (!nest.Name.StartsWith("<" + methodName + ">d__"))
                     continue;
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
                 break;
@@ -2540,6 +2562,30 @@ namespace MonoMod {
             }
         }
 
+        public static void PatchGoldenBlockStaticMovers(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            MethodDefinition m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+            MethodDefinition m_Platform_DestroyStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DestroyStaticMovers()");
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 1; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Awake") {
+                    instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(++instri, il.Create(OpCodes.Call, m_Platform_DisableStaticMovers));
+                }
+
+                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "RemoveSelf") {
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_Platform_DestroyStaticMovers));
+                }
+            }
+        }
+
         public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
             if (method?.Body == null)
                 return;
@@ -2637,6 +2683,61 @@ namespace MonoMod {
             instrs.Insert(++indexInsert, il.Create(OpCodes.Ldc_I4_0));
             instrs.Insert(++indexInsert, il.Create(OpCodes.Ceq));
             instrs.Insert(++indexInsert, il.Create(OpCodes.Stfld, method.Module.GetType("Monocle.Entity").FindField("Visible")));
+        }
+
+        public static void PatchDecalUpdate(MethodDefinition method, CustomAttribute attrib) {
+            if (!method.HasBody)
+                return;
+
+            FieldDefinition f_hideRange = method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = method.DeclaringType.FindField("showRange");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 32f) {
+                    instrs.RemoveAt(instri);
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_hideRange));
+                }
+
+                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 48f) {
+                    instrs.RemoveAt(instri);
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_showRange));
+                }
+            }
+        }
+
+        public static void PatchAreaCompleteMusic(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_playCustomCompleteScreenMusic = method.DeclaringType.FindMethod("System.Boolean playCustomCompleteScreenMusic()");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            int injectionPoint = -1;
+            for (int instri = 0; instri < instrs.Count - 2; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).DeclaringType.Name == "RunThread") {
+                    injectionPoint = instri + 1;
+                }
+
+                if (injectionPoint != -1
+                    && instrs[instri].OpCode == OpCodes.Ldnull
+                    && instrs[instri + 1].OpCode == OpCodes.Ldc_I4_1
+                    && instrs[instri + 2].OpCode == OpCodes.Call && (instrs[instri + 2].Operand as MethodReference).Name == "SetAmbience") {
+
+                    // we want to inject code just after RunThread.Start (which position was saved earlier) that calls playCustomCompleteScreenMusic(),
+                    // and sends execution to Audio.SetAmbience(null) if it returned true (skipping over the vanilla code playing endscreen music).
+
+                    Instruction target = instrs[instri];
+
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Call, m_playCustomCompleteScreenMusic));
+                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Brtrue_S, target));
+                    break;
+                }
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

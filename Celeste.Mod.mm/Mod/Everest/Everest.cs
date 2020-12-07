@@ -698,30 +698,80 @@ namespace Celeste.Mod {
             if (Interlocked.CompareExchange(ref Loader.DelayedLock, 1, 0) == 0) {
                 try {
                     lock (Loader.Delayed) {
+                        bool enforceTransitiveOptionalDependencies = true;
+                        bool didDelayOptionalDependencies = false;
+
                         for (int i = 0; i < Loader.Delayed.Count; i++) {
                             Tuple<EverestModuleMetadata, Action> entry = Loader.Delayed[i];
-                            if (!Loader.DependenciesLoaded(entry.Item1))
-                                continue; // dependencies are still missing!
 
-                            Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
+                            if (Loader.DependenciesLoaded(entry.Item1)) {
+                                if (enforceTransitiveOptionalDependencies
+                                    && checkIfOneOfDependenciesIsDelayedAndCanBeLoaded(entry.Item1.OptionalDependencies, new HashSet<EverestModuleMetadata>() { entry.Item1 })) {
 
-                            if (Everest.Modules.Any(mod => mod.Metadata.Name == entry.Item1.Name)) {
-                                // a duplicate of the mod was loaded while it was sitting in the delayed list.
-                                Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1.Name} already loaded!");
-                            } else {
-                                entry.Item2?.Invoke();
-                                Loader.LoadMod(entry.Item1);
+                                    // the mod has all its dependencies loaded, but one of its optional dependencies is not loaded and can be loaded as well.
+                                    // so we should wait for it to be loaded first.
+                                    didDelayOptionalDependencies = true;
+                                } else {
+                                    // all dependencies are loaded, all optional dependencies are either loaded or won't load => we're good to go!
+                                    Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
+
+                                    if (Everest.Modules.Any(mod => mod.Metadata.Name == entry.Item1.Name)) {
+                                        // a duplicate of the mod was loaded while it was sitting in the delayed list.
+                                        Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1.Name} already loaded!");
+                                    } else {
+                                        // actually load the mod.
+                                        entry.Item2?.Invoke();
+                                        Loader.LoadMod(entry.Item1);
+                                    }
+                                    Loader.Delayed.RemoveAt(i);
+
+                                    // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
+                                    i = -1;
+                                    didDelayOptionalDependencies = false;
+                                }
                             }
-                            Loader.Delayed.RemoveAt(i);
 
-                            // we now loaded an extra mod, consider all delayed mods again to deal with transitive dependencies.
-                            i = -1;
+                            if (i == Loader.Delayed.Count - 1 && didDelayOptionalDependencies) {
+                                // we considered all mods, but we delayed some of them because they had an optional dependency that "could be loaded"... yet nothing got loaded.
+                                // that's probably a circular optional dependency case, so we should just reconsider everything again ignoring optional dependencies.
+                                Logger.Log(LogLevel.Warn, "core", $"Mods with unsatisfied optional dependencies were delayed but never loaded (probably due to circular optional dependencies), forcing them to load!");
+                                enforceTransitiveOptionalDependencies = false;
+
+                                i = -1;
+                                didDelayOptionalDependencies = false;
+                            }
                         }
                     }
                 } finally {
                     Interlocked.Decrement(ref Loader.DelayedLock);
                 }
             }
+        }
+
+        // This method checks if one of the dependencies given is in Loader.Delayed and has its own dependencies satisfied (so it can be loaded).
+        // If not, it also checks if those dependencies are themselves in Loader.Delayed and can be loaded (using alreadyChecked to prevent infinite loops in case of circular dependencies).
+        private static bool checkIfOneOfDependenciesIsDelayedAndCanBeLoaded(List<EverestModuleMetadata> dependencies, HashSet<EverestModuleMetadata> alreadyChecked) {
+            foreach (EverestModuleMetadata dependency in dependencies) {
+                // only consider dependencies we didn't consider yet, and ones that aren't loaded yet.
+                if (!Loader.DependencyLoaded(dependency) && !alreadyChecked.Contains(dependency)) {
+                    EverestModuleMetadata delayed = Loader.Delayed.FirstOrDefault(item => item.Item1.Name == dependency.Name)?.Item1;
+                    if (delayed != null && !alreadyChecked.Contains(delayed)) {
+                        if (Loader.DependenciesLoaded(delayed)) {
+                            // this dependency is going to be loaded later!
+                            return true;
+                        } else {
+                            alreadyChecked.Add(delayed);
+                            if (checkIfOneOfDependenciesIsDelayedAndCanBeLoaded(delayed.Dependencies, alreadyChecked)
+                                || checkIfOneOfDependenciesIsDelayedAndCanBeLoaded(delayed.OptionalDependencies, alreadyChecked)) {
+
+                                // one of the transitive dependencies can be loaded: delay just in case.
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
         }
 
         /// <summary>

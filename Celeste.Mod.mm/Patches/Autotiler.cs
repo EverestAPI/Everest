@@ -19,6 +19,20 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        public extern Generated orig_GenerateOverlay(char id, int x, int y, int tilesX, int tilesY, VirtualMap<char> mapData);
+        public new Generated GenerateOverlay(char id, int x, int y, int tilesX, int tilesY, VirtualMap<char> mapData) {
+            // be sure our overlay doesn't cross null segments, because they might just not get rendered there.
+            for (int i = x; i < x + tilesX; i = (i / 50 + 1) * 50) {
+                for (int j = y; j < y + tilesY; j = (j / 50 + 1) * 50) {
+                    if (!mapData.AnyInSegmentAtTile(i, j)) {
+                        mapData[i, j] = mapData.EmptyValue;
+                    }
+                }
+            }
+
+            return orig_GenerateOverlay(id, x, y, tilesX, tilesY, mapData);
+        }
+
         private extern void orig_ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml);
         private void ReadInto(patch_TerrainType data, Tileset tileset, XmlElement xml) {
             if (xml.HasAttr("scanWidth")) {
@@ -293,7 +307,7 @@ namespace Celeste {
                         }
 
                     }
-                    
+
                     if (terrainType.whitelists.Count > 0) {
                         if (terrainType.whitelists.ContainsKey(item.Mask[i]) && !terrainType.whitelists[item.Mask[i]].Contains(adjacent[i].ToString())) {
                             matched = false;

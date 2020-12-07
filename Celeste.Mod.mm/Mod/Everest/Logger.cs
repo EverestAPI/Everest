@@ -4,8 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Logger {
@@ -23,14 +21,19 @@ namespace Celeste.Mod {
         /// <param name="tagPrefix">The prefix of the log tags to affect with this log level</param>
         /// <param name="minimumLevel">The minimum level of logs to print out in the logs</param>
         public static void SetLogLevel(string tagPrefix, LogLevel minimumLevel) {
-            minimumLevels[tagPrefix] = minimumLevel;
-            minimumLevelsCache.Clear();
+            lock (minimumLevels)
+                minimumLevels[tagPrefix] = minimumLevel;
+
+            lock (minimumLevelsCache)
+                minimumLevelsCache.Clear();
         }
 
         // same as above, but for internal Everest use
         internal static void SetLogLevelFromYaml(string tagPrefix, LogLevel minimumLevel) {
             minimumLevelsFromEverestSettings[tagPrefix] = minimumLevel;
-            minimumLevelsCache.Clear();
+
+            lock (minimumLevelsCache)
+                minimumLevelsCache.Clear();
         }
 
         /// <summary>
@@ -39,19 +42,22 @@ namespace Celeste.Mod {
         /// <param name="tag">The tag to get the minimum log level for</param>
         /// <returns>The minimum log level for this tag</returns>
         public static LogLevel GetLogLevel(string tag) {
-            if (minimumLevelsCache.TryGetValue(tag, out LogLevel cachedLevel)) {
-                return cachedLevel;
-            }
+            lock (minimumLevelsCache) {
+                if (minimumLevelsCache.TryGetValue(tag, out LogLevel cachedLevel)) {
+                    return cachedLevel;
+                }
 
-            // look for the wanted log level in mod settings first, in rules set through code next.
-            LogLevel? wantedLogLevel = findMatchingLogLevel(minimumLevelsFromEverestSettings, tag);
-            if (!wantedLogLevel.HasValue) {
-                wantedLogLevel = findMatchingLogLevel(minimumLevels, tag);
-            }
+                // look for the wanted log level in mod settings first, in rules set through code next.
+                LogLevel? wantedLogLevel = findMatchingLogLevel(minimumLevelsFromEverestSettings, tag);
+                if (!wantedLogLevel.HasValue) {
+                    lock (minimumLevels)
+                        wantedLogLevel = findMatchingLogLevel(minimumLevels, tag);
+                }
 
-            // cache and return it.
-            minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Verbose;
-            return wantedLogLevel ?? LogLevel.Verbose;
+                // cache and return it.
+                minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Verbose;
+                return wantedLogLevel ?? LogLevel.Verbose;
+            }
         }
 
         private static LogLevel? findMatchingLogLevel(Dictionary<string, LogLevel> rules, string tag) {

@@ -60,5 +60,18 @@ namespace Celeste {
         [PatchLevelExitRoutine] // ... except for slapping an additional parameter to / updating newobj AreaComplete
         private extern IEnumerator Routine();
 
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchAreaCompleteMusic] // ... except for manipulating the method via MonoModRules
+        private extern new void Begin();
+
+        // returns true if there is custom music, false otherwise.
+        private bool playCustomCompleteScreenMusic() {
+            string[] completeScreenMusic = AreaData.Get(session.Area)?.GetMeta()?.CompleteScreen?.MusicBySide;
+            if (completeScreenMusic != null && completeScreenMusic.Length > (int) session.Area.Mode) {
+                Audio.SetMusic(completeScreenMusic[(int) session.Area.Mode]);
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -8,7 +8,7 @@
 
 [**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
 
-Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding utility.
+Using [MonoMod](https://github.com/MonoMod/MonoMod), an open-source C# modding utility.
 
 **We're in the game modding category on the "Mt. Celeste Climbing Association" Discord server:**
 
