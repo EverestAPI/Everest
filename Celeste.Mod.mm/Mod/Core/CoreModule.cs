@@ -94,7 +94,7 @@ namespace Celeste.Mod.Core {
                 while (Directory.GetFiles("LogHistory", "log_*.txt").Length > historyToKeep) {
                     // we have to delete 1 more file: the first in alphabetical order, which should be the oldest.
                     List<string> files = Directory.GetFiles("LogHistory", "log_*.txt").ToList();
-                    files.Sort();
+                    files.Sort(new LogRotationHelper.OldestFirst());
 
                     Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {files[0]}");
                     File.Delete(files[0]);
