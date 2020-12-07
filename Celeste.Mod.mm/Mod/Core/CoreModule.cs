@@ -91,13 +91,12 @@ namespace Celeste.Mod.Core {
 
             if (Directory.Exists("LogHistory")) {
                 int historyToKeep = Math.Max(Settings.LogHistoryCountToKeep, 0); // just in case someone tries to set the value to -42
-                while (Directory.GetFiles("LogHistory", "log_*.txt").Length > historyToKeep) {
-                    // we have to delete 1 more file: the first in alphabetical order, which should be the oldest.
-                    List<string> files = Directory.GetFiles("LogHistory", "log_*.txt").ToList();
-                    files.Sort(new LogRotationHelper.OldestFirst());
-
-                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {files[0]}");
-                    File.Delete(files[0]);
+                List<string> files = Directory.GetFiles("LogHistory", "log_*.txt").ToList();
+                files.Sort(new LogRotationHelper.OldestFirst());
+                int historyToDelete = files.Count - historyToKeep;
+                foreach (string file in files.Take(historyToDelete)) {
+                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
+                    File.Delete(file);
                 }
             }
         }
