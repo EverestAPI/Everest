@@ -21,6 +21,8 @@ namespace Celeste {
 
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
 
+        public bool HasModdedSaveData = false;
+
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
 
@@ -300,8 +302,8 @@ namespace Celeste {
             if (LevelSetRecycleBin == null)
                 LevelSetRecycleBin = new List<LevelSetStats>();
 
-            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0) {
-                // the save file doesn't have any mod save data (just created, overwritten by vanilla, Everest just updated, or just no map installed).
+            if (!HasModdedSaveData) {
+                // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
                 // we want to carry mod save data that was backed up in the mod save file, if any.
                 ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
                 if (modSaveData != null) {
@@ -309,6 +311,8 @@ namespace Celeste {
                     Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
                 }
             }
+
+            HasModdedSaveData = true;
 
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
