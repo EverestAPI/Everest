@@ -365,7 +365,7 @@ namespace Celeste.Mod.UI {
 
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool special = false) {
             Color color =
-                selected ? (Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB) :
+                selected ? (Settings.Instance.DisableFlashes || Calc.BetweenInterval(timer, 0.1f) ? selectColorA : selectColorB) :
                 special ? unselectSpecialColor :
                 unselectColor;
             ActiveFont.DrawOutline(text, at, justify, scale, color * ease, 2f, Color.Black * ease * ease * ease);
