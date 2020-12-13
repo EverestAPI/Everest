@@ -302,7 +302,7 @@ namespace Celeste {
             if (LevelSetRecycleBin == null)
                 LevelSetRecycleBin = new List<LevelSetStats>();
 
-            if (!HasModdedSaveData) {
+            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0 && !HasModdedSaveData) {
                 // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
                 // we want to carry mod save data that was backed up in the mod save file, if any.
                 ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
