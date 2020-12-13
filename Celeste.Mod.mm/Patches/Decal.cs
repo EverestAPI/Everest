@@ -23,7 +23,9 @@ namespace Celeste {
             set => scale = value;
         }
 
+#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
         private List<MTexture> textures;
+#pragma warning restore CS0649
         private bool scaredAnimal;
 
         private float hideRange;

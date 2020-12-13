@@ -64,9 +64,11 @@ namespace Celeste {
                     || IsCurrent<OuiMapList>() || IsCurrent<OuiMapSearch>() || IsCurrent<OuiJournal>())) {
 
                     string backgroundMusic = mountainMetadata?.BackgroundMusic;
-                    if (backgroundMusic != null) {
+                    string backgroundAmbience = mountainMetadata?.BackgroundAmbience;
+                    if (backgroundMusic != null || backgroundAmbience != null) {
                         // current map has custom background music
-                        Audio.SetMusic(backgroundMusic);
+                        Audio.SetMusic(backgroundMusic ?? "event:/music/menu/level_select");
+                        Audio.SetAmbience(backgroundAmbience ?? "event:/env/amb/worldmap");
                         customizedChapterSelectMusic = true;
                     } else {
                         // current map has no custom background music

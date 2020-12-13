@@ -450,6 +450,7 @@ namespace Celeste.Mod.Meta {
         public string MountainModelDirectory { get; set; } = null;
         public string MountainTextureDirectory { get; set; } = null;
         public string BackgroundMusic { get; set; } = null;
+        public string BackgroundAmbience { get; set; } = null;
         public Dictionary<string, float> BackgroundMusicParams { get; set; } = null;
         public string[] FogColors { get; set; } = null;
         public string StarFogColor { get; set; } = null;

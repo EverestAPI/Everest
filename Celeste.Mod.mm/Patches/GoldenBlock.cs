@@ -7,7 +7,9 @@ using MonoMod;
 namespace Celeste {
     class patch_GoldenBlock : GoldenBlock {
 
+#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
         private float renderLerp;
+#pragma warning restore CS0649
 
         public patch_GoldenBlock(EntityData data, Vector2 offset) : base(data, offset) {
             // no-op.
