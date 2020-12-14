@@ -442,9 +442,6 @@ namespace Celeste.Mod {
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
 
-                if (_DumpAll)
-                    DumpAll();
-
                 if (Flags.IsDisabled)
                     return;
 

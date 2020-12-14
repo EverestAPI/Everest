@@ -431,6 +431,9 @@ namespace Celeste.Mod {
         internal static bool _Initialized;
         internal static void Initialize() {
             // Initialize misc stuff.
+            if (Content._DumpAll)
+                    Content.DumpAll();
+
             TextInput.Initialize(Celeste.Instance);
             if (!Flags.IsDisabled) {
                 Discord.Initialize();
