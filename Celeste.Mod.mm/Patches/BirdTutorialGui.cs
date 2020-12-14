@@ -33,10 +33,18 @@ namespace Celeste {
         }
 
         public static extern VirtualButton orig_ButtonPromptToVirtualButton(ButtonPrompt prompt);
-        public static new VirtualButton ButtonPromptToVirtualButton(ButtonPrompt prompt) {
+        public static VirtualButton ButtonPromptToVirtualButton(ButtonPrompt prompt) {
             if (controlsIDToButton.TryGetValue(prompt, out VirtualButton btn))
                 return btn;
             return orig_ButtonPromptToVirtualButton(prompt);
+        }
+
+        [MonoModIfFlag("Fill:BirdTutorialGuiButtonPrompt")]
+        public new enum ButtonPrompt {
+            Dash,
+            Jump,
+            Grab,
+            Talk
         }
 
     }

@@ -462,6 +462,8 @@ namespace MonoMod {
             MonoModRule.Flag.Set("OS:Windows", isWindows);
             MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
 
+            MonoModRule.Flag.Set("Fill:BirdTutorialGuiButtonPrompt", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() == null);
+
             TypeDefinition t_Input = MonoModRule.Modder.FindType("Celeste.Input").Resolve();
             MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");
             MonoModRule.Flag.Set("V1:GuiInputController", m_GuiInputController.Parameters.Count == 0);
