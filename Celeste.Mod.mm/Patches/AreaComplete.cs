@@ -83,7 +83,7 @@ namespace Celeste {
             orig_RenderUI();
 
             if (buttonTimerEase > 0f && Settings.Instance.SpeedrunClock == SpeedrunType.Off) {
-                MTexture button = Input.GuiButton(Input.MenuConfirm);
+                MTexture button = patch_Input.GuiButton(Input.MenuConfirm);
 
                 Vector2 pos = new Vector2(1860f - button.Width, 1020f - button.Height);
                 float alpha = buttonTimerEase * buttonTimerEase;

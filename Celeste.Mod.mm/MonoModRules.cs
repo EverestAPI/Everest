@@ -461,6 +461,8 @@ namespace MonoMod {
             bool isWindows = PlatformHelper.Is(Platform.Windows);
             MonoModRule.Flag.Set("OS:Windows", isWindows);
             MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
+
+            MonoModRule.Flag.Set("Version:1330AndLater", version >= new Version(1, 3, 3, 0));
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

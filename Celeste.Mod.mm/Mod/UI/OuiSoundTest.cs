@@ -346,7 +346,7 @@ namespace Celeste.Mod.UI {
 
                 // ... [button image] ...
                 pos.X += ActiveFont.Measure(Dialog.Clean("SOUNDTEST_AUDIOPARAMS_OPEN_1")).X * 0.75f + 10f;
-                MTexture button = Input.GuiButton(Input.MenuJournal);
+                MTexture button = patch_Input.GuiButton(Input.MenuJournal);
                 button.DrawJustified(pos, new Vector2(0f, 0.5f), Color.White, 0.75f);
                 pos.X += button.Width * 0.75f + 10f;
 

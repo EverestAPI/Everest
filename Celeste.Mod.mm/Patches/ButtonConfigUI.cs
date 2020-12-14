@@ -160,7 +160,7 @@ namespace Celeste {
 
         [MonoModReplace]
         private void Remap(int mapping) {
-            if (Input.GuiInputController()) {
+            if (patch_Input.GuiInputController()) {
                 remapping = true;
                 currentlyRemapping = mapping;
                 timeout = 5f;
@@ -309,7 +309,7 @@ namespace Celeste {
         public override void Render() {
             Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * Ease.CubeOut(Alpha));
             Vector2 center = new Vector2(1920f, 1080f) * 0.5f;
-            if (Input.GuiInputController()) {
+            if (patch_Input.GuiInputController()) {
                 RenderTextMenu();
                 if (remappingEase > 0f) {
                     Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * 0.95f * Ease.CubeInOut(remappingEase));

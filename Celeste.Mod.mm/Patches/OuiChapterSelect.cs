@@ -276,7 +276,7 @@ namespace Celeste {
                 if (journalEnabled)
                     pos.Y -= 128f;
                 GFX.Gui["menu/maplist"].DrawCentered(pos, Color.White * Ease.CubeOut(maplistEase));
-                (Input.GuiInputController() ? Input.GuiButton(Input.Pause) : Input.GuiButton(Input.ESC)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
+                (patch_Input.GuiInputController() ? patch_Input.GuiButton(Input.Pause) : patch_Input.GuiButton(Input.ESC)).Draw(pos, Vector2.Zero, Color.White * Ease.CubeOut(maplistEase));
             }
 
             if (searchEase > 0f) {
