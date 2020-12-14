@@ -35,5 +35,12 @@ namespace Celeste {
         public void ctor(Vector2 position, float width, float height, Vector2? node, bool ridgeImage = true) {
             ctor(position, width, height, node, ridgeImage ? "objects/ridgeGate" : "objects/farewellGate");
         }
+
+        // backwards compatibility with 1.3.1.2
+        [MonoModConstructor]
+        [MonoModReplace]
+        public void ctor(Vector2 position, float width, float height, Vector2? node) {
+            ctor(position, width, height, node, "objects/ridgeGate");
+        }
     }
 }
