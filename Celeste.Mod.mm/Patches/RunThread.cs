@@ -22,6 +22,7 @@ namespace Celeste {
     static class patch_RunThread {
 
         private static List<Thread> threads = new List<Thread>();
+        private static List<DateTime> threadTimes = new List<DateTime>();
 
         [ThreadStatic]
         public static WeakReference<Thread> Current;
@@ -33,8 +34,10 @@ namespace Celeste {
                 IsBackground = true,
                 Priority = highPriority ? ThreadPriority.Highest : ThreadPriority.Normal
             };
-            lock (threads)
+            lock (threads) {
                 threads.Add(thread);
+                threadTimes.Add(DateTime.UtcNow);
+            }
             Current = new WeakReference<Thread>(thread);
             thread.Start();
         }
@@ -55,7 +58,43 @@ namespace Celeste {
 
             } finally {
                 lock (threads) {
-                    threads.Remove(Thread.CurrentThread);
+                    int index = threads.IndexOf(Thread.CurrentThread);
+                    if (index != -1) {
+                        threads.RemoveAt(index);
+                        threadTimes.RemoveAt(index);
+                    }
+                }
+            }
+        }
+
+        [MonoModReplace]
+        public static void WaitAll() {
+            while (threads.Count > 0) {
+                Thread thread;
+                DateTime start;
+                DateTime? timeout = null;
+                lock (threads) {
+                    thread = threads[0];
+                    start = threadTimes[0];
+                }
+
+                while (thread.IsAlive) {
+                    // Some mods (mis)use RunThread.Start for long-living background threads
+                    // which prevent the game from shutting down.
+                    if ((DateTime.UtcNow - start).TotalSeconds >= 90) {
+                        // Even if a background thread lives on for way too long, give it some
+                        // time to recognize that the game is shutting down before discarding it.
+                        if (timeout == null)
+                            timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+                        if ((DateTime.UtcNow - timeout.Value).Ticks >= 0) {
+                            lock (threads) {
+                                threads.RemoveAt(0);
+                                threadTimes.RemoveAt(0);
+                            }
+                        }
+                    }
+
+                    Engine.Instance.GraphicsDevice.Present();
                 }
             }
         }
