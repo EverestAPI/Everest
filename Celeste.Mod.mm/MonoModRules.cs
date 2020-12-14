@@ -461,6 +461,11 @@ namespace MonoMod {
             bool isWindows = PlatformHelper.Is(Platform.Windows);
             MonoModRule.Flag.Set("OS:Windows", isWindows);
             MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
+
+            TypeDefinition t_Input = MonoModRule.Modder.FindType("Celeste.Input").Resolve();
+            MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");
+            MonoModRule.Flag.Set("V1:GuiInputController", m_GuiInputController.Parameters.Count == 0);
+            MonoModRule.Flag.Set("V2:GuiInputController", m_GuiInputController.Parameters.Count == 1);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
