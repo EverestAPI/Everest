@@ -45,11 +45,17 @@ namespace Celeste {
 
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
         public extern IEnumerator orig_Leave(Oui next);
-        public new IEnumerator Leave(Oui from) {
+        public new IEnumerator Leave(Oui next) {
             int slotIndex = 0;
-            IEnumerator orig = orig_Leave(from);
+            IEnumerator orig = orig_Leave(next);
             while (orig.MoveNext()) {
                 if (orig.Current is float f && f == 0.02f) {
+                    if (next is OuiFileNaming && SlotIndex == slotIndex) {
+                        // vanilla moves the file slot at the Y slot 0 is supposed to be.
+                        // ... this doesn't work in our case, since slot 0 might be offscreen.
+                        Slots[slotIndex].MoveTo(Slots[slotIndex].IdlePosition.X, 230f);
+                    }
+
                     // only apply the delay if the slot is on-screen (less than 2 slots away from the selected one).
                     if (Math.Abs(SlotIndex - slotIndex) <= 2) {
                         yield return orig.Current;
