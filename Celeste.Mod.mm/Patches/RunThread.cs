@@ -11,6 +11,7 @@ using MonoMod;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,7 @@ namespace Celeste {
 
         private static List<Thread> threads = new List<Thread>();
         private static List<DateTime> threadTimes = new List<DateTime>();
+        private static List<string> threadInfos = new List<string>();
 
         [ThreadStatic]
         public static WeakReference<Thread> Current;
@@ -37,6 +39,7 @@ namespace Celeste {
             lock (threads) {
                 threads.Add(thread);
                 threadTimes.Add(DateTime.UtcNow);
+                threadInfos.Add($"Name: {name}\nAction: {method?.Method?.ToString() ?? method.ToString()}\nStarter:\n{new StackTrace(1)}");
             }
             Current = new WeakReference<Thread>(thread);
             thread.Start();
@@ -62,6 +65,7 @@ namespace Celeste {
                     if (index != -1) {
                         threads.RemoveAt(index);
                         threadTimes.RemoveAt(index);
+                        threadInfos.RemoveAt(0);
                     }
                 }
             }
@@ -88,8 +92,11 @@ namespace Celeste {
                             timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
                         if ((DateTime.UtcNow - timeout.Value).Ticks >= 0) {
                             lock (threads) {
+                                Logger.Log("RunThread.WaitAll", $"Backgound thread taking too long, discarding it.\n{threadInfos[0]}");
                                 threads.RemoveAt(0);
                                 threadTimes.RemoveAt(0);
+                                threadInfos.RemoveAt(0);
+                                break;
                             }
                         }
                     }
