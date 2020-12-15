@@ -75,7 +75,7 @@ namespace Celeste {
 
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
-            Engine.Commands.Enabled = true;
+            Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
             if (!Everest.Flags.IsDisabled)
                 TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);

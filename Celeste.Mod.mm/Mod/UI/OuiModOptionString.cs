@@ -173,7 +173,7 @@ namespace Celeste.Mod.UI {
             Overworld.ShowInputUI = true;
             Focused = false;
 
-            Engine.Commands.Enabled = true;
+            Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
 
             Vector2 posFrom = Position;
             Vector2 posTo = new Vector2(0f, 1080f);
@@ -231,7 +231,7 @@ namespace Celeste.Mod.UI {
 
         public override void SceneEnd(Scene scene) {
             Overworld.ShowInputUI = true;
-            Engine.Commands.Enabled = true;
+            Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
         }
 
         public override void Update() {
