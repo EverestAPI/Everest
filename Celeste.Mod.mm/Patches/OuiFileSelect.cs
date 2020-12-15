@@ -51,7 +51,7 @@ namespace Celeste {
             while (orig.MoveNext()) {
                 if (orig.Current is float f && f == 0.02f) {
                     if (next is OuiFileNaming && SlotIndex == slotIndex) {
-                        // vanilla moves the file slot at the Y slot 0 is supposed to be.
+                        // vanilla moves the file slot at the Y position slot 0 is supposed to be.
                         // ... this doesn't work in our case, since slot 0 might be offscreen.
                         Slots[slotIndex].MoveTo(Slots[slotIndex].IdlePosition.X, 230f);
                     }
