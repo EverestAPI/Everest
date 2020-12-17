@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MonoMod.Cil;
 
 namespace MonoMod {
     /// <summary>
@@ -1565,6 +1566,48 @@ namespace MonoMod {
                 instri++;
             }
 
+            ILCursor cursor = new ILCursor(new ILContext(method));
+            MethodDefinition m_GetCustomCompleteScreenTitle = method.DeclaringType.FindMethod("System.String GetCustomCompleteScreenTitle()");
+
+            int textVariableIndex = 0;
+
+            /*
+             * // string text = Dialog.Clean("areacomplete_" + session.Area.Mode + (session.FullClear ? "_fullclear" : ""), null);
+             * IL_005D: ldstr     "areacomplete_"
+             * IL_0062: ldarg.1
+             * IL_0063: ldflda    valuetype Celeste.AreaKey Celeste.Session::Area
+             * ...
+             * IL_008B: ldnull
+             * IL_008C: call      string Celeste.Dialog::Clean(string, class Celeste.Language)
+             * IL_0091: stloc.1
+             *
+             * // Vector2 origin = new Vector2(960f, 200f);
+             * IL_0092: ldloca.s  V_2
+             * IL_0094: ldc.r4    960
+             * ...
+             */
+
+            // move the cursor to IL_0092 and find the variable index of "text"
+            if (cursor.TryGotoNext(MoveType.After,
+                instr => (instr.Operand as MethodReference)?.FullName == "System.String Celeste.Dialog::Clean(System.String,Celeste.Language)",
+                instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String")) {
+
+                // mark for later use
+                ILLabel target = cursor.MarkLabel();
+                // go back to IL_005D
+                if (cursor.TryGotoPrev(MoveType.Before,
+                    instr => instr.MatchLdstr("areacomplete_"))) {
+
+                    // equivalent to "text = this.GetCustomCompleteScreenTitle()"
+                    cursor.Emit(OpCodes.Ldarg_0);
+                    cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
+                    cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
+
+                    // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
+                    cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
+                    cursor.Emit(OpCodes.Brtrue_S, target.Target);
+                }
+            }
         }
 
 

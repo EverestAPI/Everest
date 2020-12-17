@@ -485,6 +485,8 @@ namespace Celeste.Mod.Meta {
         public MapMetaCompleteScreenLayer[] Layers { get; set; }
 
         public string[] MusicBySide { get; set; }
+
+        public MapMetaCompleteScreenTitle Title { get; set; }
     }
     public class MapMetaCompleteScreenLayer {
         public string Type { get; set; }
@@ -497,6 +499,13 @@ namespace Celeste.Mod.Meta {
         public float Alpha { get; set; } = 1f;
         [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
+    }
+
+    public class MapMetaCompleteScreenTitle {
+        public string ASide { get; set; }
+        public string BSide { get; set; }
+        public string CSide { get; set; }
+        public string FullClear { get; set; }
     }
 
     public class MapMetaTextVignette {
