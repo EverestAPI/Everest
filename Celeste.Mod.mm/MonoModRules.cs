@@ -2765,6 +2765,7 @@ namespace MonoMod {
         private static void PostProcessType(MonoModder modder, TypeDefinition type) {
             foreach (MethodDefinition method in type.Methods) {
                 PostProcessMethod(modder, method);
+                method.FixShortLongOps();
             }
 
             foreach (TypeDefinition nested in type.NestedTypes)
