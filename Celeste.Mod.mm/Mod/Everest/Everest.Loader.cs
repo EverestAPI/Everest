@@ -200,15 +200,22 @@ namespace Celeste.Mod {
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
 
-                Watcher = new FileSystemWatcher {
-                    Path = PathMods,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
-                };
+                try {
+                    Watcher = new FileSystemWatcher {
+                        Path = PathMods,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                    };
 
-                Watcher.Created += LoadAutoUpdated;
+                    Watcher.Created += LoadAutoUpdated;
 
-                Watcher.EnableRaisingEvents = true;
-                AutoLoadNewMods = true;
+                    Watcher.EnableRaisingEvents = true;
+                    AutoLoadNewMods = true;
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {PathMods}");
+                    e.LogDetailed();
+                    Watcher?.Dispose();
+                    Watcher = null;
+                }
             }
 
             private static void LoadAutoUpdated(object source, FileSystemEventArgs e) {
@@ -539,18 +546,26 @@ namespace Celeste.Mod {
                 }
 
                 if (string.IsNullOrEmpty(meta.PathArchive) && File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
-                    FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
-                        Path = Path.GetDirectoryName(meta.DLL),
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
-                    };
+                    try {
+                        FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
+                            Path = Path.GetDirectoryName(meta.DLL),
+                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+                        };
 
-                    watcher.Changed += (s, e) => {
-                        if (e.FullPath != meta.DLL)
-                            return;
-                        ReloadModAssembly(s, e);
-                    };
+                        watcher.Changed += (s, e) => {
+                            if (e.FullPath != meta.DLL)
+                                return;
+                            ReloadModAssembly(s, e);
+                            // FIXME: Should we dispose the old .dll watcher?
+                        };
 
-                    watcher.EnableRaisingEvents = true;
+                        watcher.EnableRaisingEvents = true;
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
+                        e.LogDetailed();
+                        meta.DevWatcher?.Dispose();
+                        meta.DevWatcher = null;
+                    }
                 }
 
                 ApplyModHackfixes(meta, asm);
