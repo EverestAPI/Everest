@@ -205,6 +205,9 @@ namespace Celeste.Mod {
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 game.StartInfo.FileName = Path.Combine(path, "Celeste");
+                // 1.3.3.0 splits Celeste into two, so to speak.
+                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(path) == "Resources")
+                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(path), "MacOS", "Celeste");
             } else {
                 game.StartInfo.FileName = Path.Combine(path, "Celeste.exe");
             }
