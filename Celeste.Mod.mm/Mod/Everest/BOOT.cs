@@ -55,6 +55,12 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                string vanillaDummy = Path.Combine(Path.GetDirectoryName(everestPath), "nextLaunchIsVanilla.txt");
+                if (File.Exists(vanillaDummy)) {
+                    File.Delete(vanillaDummy);
+                    goto StartVanilla;
+                }
+
                 if (args.FirstOrDefault() == "--vanilla")
                     goto StartVanilla;
 
