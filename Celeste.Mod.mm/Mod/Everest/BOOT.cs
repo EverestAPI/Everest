@@ -8,6 +8,7 @@ using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using SDL2;
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -32,6 +33,13 @@ namespace Celeste.Mod {
         private static void Main(string[] args) {
             try {
                 string everestPath = typeof(Celeste).Assembly.Location;
+
+                try {
+                    if (RestartViaSteam())
+                        return;
+                } catch {
+                }
+                
 
                 if (args.FirstOrDefault() == "--no-appdomain") {
                     Console.WriteLine("Loading Everest, no AppDomain");
@@ -198,6 +206,11 @@ namespace Celeste.Mod {
                 ErrorLog.Write(e.ToString());
                 ErrorLog.Open();
             } catch { }
+        }
+
+        public static bool RestartViaSteam() {
+            // This is a separate method so that the JIT won't die on the main method if Steamworks.NET is missing.
+            return SteamAPI.RestartAppIfNecessary(new AppId_t(504230));
         }
 
         // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
