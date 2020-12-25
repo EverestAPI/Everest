@@ -208,15 +208,21 @@ namespace Celeste.Mod {
             } catch { }
         }
 
-        private static bool RestartViaLauncher() {
-            return false;
-        }
+        [MonoModIgnore]
+        private static extern bool RestartViaLauncher();
 
         [MonoModIfFlag("Steamworks")]
         [MonoModPatch("RestartViaLauncher")]
         [MonoModReplace]
         private static bool RestartViaSteam() {
             return SteamAPI.RestartAppIfNecessary(new AppId_t(504230));
+        }
+
+        [MonoModIfFlag("NoLauncher")]
+        [MonoModPatch("RestartViaLauncher")]
+        [MonoModReplace]
+        private static bool RestartViaNoLauncher() {
+            return false;
         }
 
         // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.

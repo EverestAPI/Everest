@@ -381,6 +381,7 @@ namespace MonoMod {
             MonoModRule.Flag.Set("FNA", isFNA);
             MonoModRule.Flag.Set("XNA", !isFNA);
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
+            MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
