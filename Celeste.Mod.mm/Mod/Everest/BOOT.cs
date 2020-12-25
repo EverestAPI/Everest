@@ -35,7 +35,7 @@ namespace Celeste.Mod {
                 string everestPath = typeof(Celeste).Assembly.Location;
 
                 try {
-                    if (RestartViaSteam())
+                    if (RestartViaLauncher())
                         return;
                 } catch {
                 }
@@ -208,8 +208,14 @@ namespace Celeste.Mod {
             } catch { }
         }
 
-        public static bool RestartViaSteam() {
-            // This is a separate method so that the JIT won't die on the main method if Steamworks.NET is missing.
+        private static bool RestartViaLauncher() {
+            return false;
+        }
+
+        [MonoModIfFlag("Steamworks")]
+        [MonoModPatch("RestartViaLauncher")]
+        [MonoModReplace]
+        private static bool RestartViaSteam() {
             return SteamAPI.RestartAppIfNecessary(new AppId_t(504230));
         }
 

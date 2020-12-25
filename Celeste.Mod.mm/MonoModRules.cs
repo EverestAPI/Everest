@@ -371,11 +371,16 @@ namespace MonoMod {
             MonoModRule.Flag.Set("FMODStub", FMODStub);
 
             bool isFNA = false;
-            foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences)
-                if (isFNA = name.Name.Contains("FNA"))
-                    break;
+            bool isSteamworks = false;
+            foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences) {
+                if (name.Name.Contains("FNA"))
+                    isFNA = true;
+                else if (name.Name.Contains("Steamworks"))
+                    isSteamworks = true;
+            }
             MonoModRule.Flag.Set("FNA", isFNA);
             MonoModRule.Flag.Set("XNA", !isFNA);
+            MonoModRule.Flag.Set("Steamworks", isSteamworks);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
