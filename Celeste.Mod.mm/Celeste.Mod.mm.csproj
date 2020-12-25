@@ -48,10 +48,10 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.Utils" Version="20.11.26.2" />
+    <PackageReference Include="MonoMod" Version="20.12.25.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.12.25.1" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.12.25.1" />
+    <PackageReference Include="MonoMod.Utils" Version="20.12.25.1" />
     <PackageReference Include="DotNetZip" Version="1.13.8" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
