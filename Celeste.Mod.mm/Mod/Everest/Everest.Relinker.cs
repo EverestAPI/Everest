@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Celeste.Mod.Helpers;
 using Mono.Cecil.Pdb;
+using Mono.Cecil.Cil;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -308,12 +309,16 @@ namespace Celeste.Mod {
 
                     modder.AutoPatch();
 
+                    ISymbolWriterProvider symbolWriterProvider = modder.WriterParameters.SymbolWriterProvider;
+
                     RetryWrite:
                     try {
+                        modder.WriterParameters.SymbolWriterProvider = symbolWriterProvider;
                         modder.WriterParameters.WriteSymbols = true;
                         modder.Write();
                     } catch {
                         try {
+                            modder.WriterParameters.SymbolWriterProvider = null;
                             modder.WriterParameters.WriteSymbols = false;
                             modder.Write();
                         } catch when (!temporaryASM) {
@@ -326,6 +331,8 @@ namespace Celeste.Mod {
                             modder.WriterParameters.WriteSymbols = true;
                             goto RetryWrite;
                         }
+                    } finally {
+                        modder.WriterParameters.SymbolWriterProvider = symbolWriterProvider;
                     }
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
