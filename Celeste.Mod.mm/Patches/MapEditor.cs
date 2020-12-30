@@ -130,13 +130,17 @@ namespace Celeste.Editor {
             }
 
             // speed up camera when zoom out
-            if (Camera != null && Camera.Zoom < 6f) {
-                Camera.Position += new Vector2(Input.MoveX.Value, Input.MoveY.Value) * 300f * Engine.DeltaTime *
-                                   ((float) Math.Pow(1.3, 6 - Camera.Zoom) - 1);
-            }
+            if (Camera != null) {
+                bool? mirrorMod = SaveData.Instance?.Assists.MirrorMode;
+                Vector2 origScrollPosition = new Vector2(Input.MoveX.Value, Input.MoveY.Value) * 300f * Engine.DeltaTime;
+                Camera.Position -= origScrollPosition;
 
-            if (Camera != null && SaveData.Instance?.Assists.MirrorMode == true) {
-                Camera.Position -= new Vector2(Input.MoveX.Value, 0) * 300f * Engine.DeltaTime * (float) Math.Pow(1.3, 6 - Camera.Zoom) * 2;
+                Vector2 mirrorScrollPosition = new Vector2(origScrollPosition.X * (mirrorMod == true ? -1 : 1), origScrollPosition.Y);
+                if (Camera.Zoom < 6f) {
+                    Camera.Position += mirrorScrollPosition * (float) Math.Pow(1.3, 6 - Camera.Zoom);
+                } else {
+                    Camera.Position += mirrorScrollPosition;
+                }
             }
 
             // controller right stick zoom the map
