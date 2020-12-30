@@ -135,6 +135,10 @@ namespace Celeste.Editor {
                                    ((float) Math.Pow(1.3, 6 - Camera.Zoom) - 1);
             }
 
+            if (Camera != null && SaveData.Instance?.Assists.MirrorMode == true) {
+                Camera.Position -= new Vector2(Input.MoveX.Value, 0) * 300f * Engine.DeltaTime * (float) Math.Pow(1.3, 6 - Camera.Zoom) * 2;
+            }
+
             // controller right stick zoom the map
             GamePadState currentState = MInput.GamePads[Input.Gamepad].CurrentState;
             if (zoomWaitFrames <= 0 && Camera != null) {
