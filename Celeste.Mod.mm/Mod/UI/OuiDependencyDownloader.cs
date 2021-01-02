@@ -181,18 +181,27 @@ namespace Celeste.Mod.UI {
                     }
 
                     foreach (string modFilename in modFilenamesToUnblacklist) {
-                        LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
+                        try {
+                            LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
 
-                        // remove the mod from the loaded blacklist
-                        while (Everest.Loader._Blacklist.Contains(modFilename)) {
-                            Everest.Loader._Blacklist.Remove(modFilename);
-                        }
+                            // remove the mod from the loaded blacklist
+                            while (Everest.Loader._Blacklist.Contains(modFilename)) {
+                                Everest.Loader._Blacklist.Remove(modFilename);
+                            }
 
-                        // hot load the mod
-                        if (modFilename.EndsWith(".zip")) {
-                            Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
-                        } else {
-                            Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            // hot load the mod
+                            if (modFilename.EndsWith(".zip")) {
+                                Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            } else {
+                                Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            }
+                        } catch (Exception e) {
+                            // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
+                            LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
+                            Logger.LogDetailed(e);
+                            shouldAutoExit = false;
+                            shouldRestart = true;
+                            break;
                         }
                     }
                 }
