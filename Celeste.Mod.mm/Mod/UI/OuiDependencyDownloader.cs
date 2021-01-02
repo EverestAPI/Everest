@@ -20,6 +20,7 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
+            Everest.Loader.OnCrawlMod += logCrawlMod;
 
             Title = Dialog.Clean("DEPENDENCYDOWNLOADER_TITLE");
             task = new Task(downloadAllDependencies);
@@ -36,8 +37,17 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Leave(Oui next) {
             Everest.Loader.AutoLoadNewMods = true;
+            Everest.Loader.OnCrawlMod -= logCrawlMod;
 
             return base.Leave(next);
+        }
+
+        private void logCrawlMod(string filePath, EverestModuleMetadata meta) {
+            if (meta != null) {
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_LOADING_MOD"), meta.ToString(), filePath));
+            } else {
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA"), filePath));
+            }
         }
 
         private void downloadAllDependencies() {

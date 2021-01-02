@@ -119,6 +119,8 @@ namespace Celeste.Mod {
 
             internal static FileSystemWatcher Watcher;
 
+            internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
+
             public static bool AutoLoadNewMods { get; internal set; }
 
             internal static void LoadAuto() {
@@ -301,6 +303,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(archive, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -390,6 +393,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(dir, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
