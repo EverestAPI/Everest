@@ -446,7 +446,7 @@ namespace Celeste.Mod.UI {
         public void Exit() {
             task = null;
             Lines.Clear();
-            ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
             Audio.Play(SFX.ui_main_button_back);
             Overworld.Goto<OuiModOptions>();
         }
