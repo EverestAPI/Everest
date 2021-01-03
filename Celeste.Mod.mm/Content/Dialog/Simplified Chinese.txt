@@ -32,8 +32,8 @@
 	MENU_TITLESCREEN_RESTART_VANILLA=	重启打开原版 Celeste
 
 # Extra Key Mapping
-	KEY_CONFIG_ADDING=			按新建设置以下动作
-	KEY_CONFIG_ADDITION_HINT=	按下 Shift + 确认设置额外的按键
+	KEY_CONFIG_ADDING=			额外的按建用于以下动作
+	KEY_CONFIG_ADDITION_HINT=	按下 Shift + 确认键添加或移除额外的按键
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST

@@ -41,7 +41,7 @@
     
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR
-    KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add additional keys
+    KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add or remove additional keys
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
