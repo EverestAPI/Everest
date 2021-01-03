@@ -152,5 +152,33 @@ namespace Celeste {
             }
         }
 
+        private string GetCustomCompleteScreenTitle() {
+            MapMetaCompleteScreenTitle completeScreenTitle = AreaData.Get(Session.Area)?.GetMeta()?.CompleteScreen?.Title;
+            if (completeScreenTitle == null) {
+                return null;
+            }
+            string text = null;
+            switch (Session.Area.Mode) {
+                case AreaMode.Normal:
+                    if (Session.FullClear) {
+                        text = completeScreenTitle.FullClear;
+                    } else {
+                        text = completeScreenTitle.ASide;
+                    }
+                    break;
+                case AreaMode.BSide:
+                    text = completeScreenTitle.BSide;
+                    break;
+                case AreaMode.CSide:
+                    text = completeScreenTitle.CSide;
+                    break;
+                default:
+                    break;
+            }
+            if (text == null) {
+                return null;
+            }
+            return Dialog.Clean(text);
+        }
     }
 }
