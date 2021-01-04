@@ -191,6 +191,8 @@
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			错误：安装 {0} 失败，请查看你的 log.txt 文件获知更详细的信息。
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			从黑名单中移除 Mod {0} 中…
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		自动从黑名单中移除 Mod 失败。请查看你的 log.txt 文件获知更详细的信息。
+	DEPENDENCYDOWNLOADER_LOADING_MOD=				正在加载来自 {1} 的 {0}
+	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		正在加载来自 {0} 的 Mod
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		欢迎来到 Everest！
