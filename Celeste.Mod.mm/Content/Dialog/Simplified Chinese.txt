@@ -8,8 +8,6 @@
 	FONT=Noto Sans CJK SC Medium,64
 	BEGIN=true
 
-# chinese.fnt 添加的字符为：…列刷吼库排未校横毕版秒类装详输送额启缩夹官匹贴台邀链传卡卸脉
-
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}谢谢你((player))！{/big}{n}不过我们的 {#ff1144}((sid)){#} 在另一座山。
 	POSTCARD_LEVELLOADFAILED= 	{big}不好意思!{/big}{n}{#ff1144}((sid)){#} 加载失败了。{n}请把你的 {#44adf7}log.txt{#}{n} 文件发送给作者。
@@ -89,7 +87,10 @@
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						开
 
 # Sound Test
-	SOUNDTEST_TITLE=	试听音效
+	SOUNDTEST_TITLE=	            试听音效
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	按下
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	编辑音频参数
+	SOUNDTEST_AUDIOPARAMS=	        音频参数
 
 # Maplist
 	MAPLIST_TITLE= 				地图列表
