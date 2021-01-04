@@ -244,7 +244,7 @@ namespace Monocle {
         }
 
         private bool ContainCantDrawChar(string text) {
-            return text.ToCharArray().Any(c => !Draw.DefaultFont.Characters.Contains(c));
+            return text.ToCharArray().Any(c => !Draw.DefaultFont.Characters.Contains(c) && !char.IsControl(c));
         }
 
         // Only required to be defined so that we can access it.
