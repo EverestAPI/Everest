@@ -49,10 +49,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.Utils" Version="21.01.10.04" />
+    <PackageReference Include="MonoMod" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.Utils" Version="21.01.11.01" />
     <PackageReference Include="DotNetZip" Version="1.13.8" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
