@@ -28,8 +28,8 @@ namespace Celeste {
         [PatchFakeHeartColor] // adds a call to _getCustomColor to override the random color
         public extern override void Awake(Scene scene);
 
-        private static AreaMode _getCustomColor(AreaMode vanillaColor, patch_FakeHeart self) {
-            return self.color != (AreaMode) (-1) ? self.color : vanillaColor;
+        private AreaMode _GetCustomColor(AreaMode vanillaColor) {
+            return color != (AreaMode) (-1) ? color : vanillaColor;
         }
     }
 }

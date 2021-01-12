@@ -37,8 +37,6 @@ namespace Celeste {
         [PatchBadelineBossOnPlayer] // ... except for manually manipulating the method via MonoModRules
         public new extern void OnPlayer(Player player);
 
-        private static bool _CanChangeMusic(bool value, FinalBoss self)
-            => (self as patch_FinalBoss).CanChangeMusic(value);
         public bool CanChangeMusic(bool value) {
             Level level = Scene as Level;
             if (level.Session.Area.GetLevelSet() == "Celeste")
