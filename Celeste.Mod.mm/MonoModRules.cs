@@ -338,6 +338,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchAreaCompleteMusic")]
     class PatchAreaCompleteMusicAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches AreaComplete.VersionNumberAndVariants to offset the version number when necessary.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchAreaCompleteVersionNumberAndVariants")]
+    class PatchAreaCompleteVersionNumberAndVariantsAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2795,6 +2801,13 @@ namespace MonoMod {
                     break;
                 }
             }
+        }
+
+        public static void PatchAreaCompleteVersionNumberAndVariants(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, instr => instr.MatchLdcR4(1020f));
+            c.Emit(OpCodes.Ldsfld, il.Method.DeclaringType.FindField("versionOffset"));
+            c.Emit(OpCodes.Add);
         }
 
         public static void PostProcessor(MonoModder modder) {
