@@ -69,7 +69,9 @@ namespace Celeste.Mod {
                             YamlHelper.DeserializerUsing(_Settings).Deserialize(reader, SettingsType);
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Load settings failed!");
+                Logger.LogDetailed(e);
             }
 
             if (_Settings == null)
@@ -99,7 +101,9 @@ namespace Celeste.Mod {
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Save settings failed!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -138,7 +142,9 @@ namespace Celeste.Mod {
                     }
                 }
                 _SaveData.Index = index;
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Load save data failed!");
+                Logger.LogDetailed(e);
             }
 
         }
@@ -166,7 +172,9 @@ namespace Celeste.Mod {
                             YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Save save data failed!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -222,7 +230,9 @@ namespace Celeste.Mod {
                     }
                 }
                 _Session.Index = index;
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Load session failed!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -249,7 +259,9 @@ namespace Celeste.Mod {
                             YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log("EverestModule", "Save session failed!");
+                Logger.LogDetailed(e);
             }
         }
 
