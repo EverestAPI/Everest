@@ -70,7 +70,7 @@ namespace Celeste.Mod {
                     }
                 }
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Load settings failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the settings of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
 
@@ -102,7 +102,7 @@ namespace Celeste.Mod {
                     }
                 }
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Save settings failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the settings of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
@@ -143,7 +143,7 @@ namespace Celeste.Mod {
                 }
                 _SaveData.Index = index;
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Load save data failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the save data of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
 
@@ -173,7 +173,7 @@ namespace Celeste.Mod {
                     }
                 }
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Save save data failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the save data of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
@@ -231,7 +231,7 @@ namespace Celeste.Mod {
                 }
                 _Session.Index = index;
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Load session failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
@@ -260,7 +260,7 @@ namespace Celeste.Mod {
                     }
                 }
             } catch (Exception e) {
-                Logger.Log("EverestModule", "Save session failed!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
