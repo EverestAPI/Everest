@@ -1,4 +1,5 @@
-﻿using MonoMod;
+﻿using Celeste.Mod.Core;
+using MonoMod;
 using System;
 using System.Collections;
 using System.IO;
@@ -11,21 +12,30 @@ namespace Celeste {
         public extern IEnumerator orig_Enter(Oui from);
         public new IEnumerator Enter(Oui from) {
             if (!Loaded) {
-                // first load: we want to check how many slots there are by checking which files exist in the Saves folder.
-                int maxSaveFile = 1; // we're adding 2 later, so there will be at least 3 slots.
-                string saveFilePath = patch_UserIO.GetSaveFilePath();
-                if (Directory.Exists(saveFilePath)) {
-                    foreach (string filePath in Directory.GetFiles(saveFilePath)) {
-                        string fileName = Path.GetFileName(filePath);
-                        // is the file named [number].celeste?
-                        if (fileName.EndsWith(".celeste") && int.TryParse(fileName.Substring(0, fileName.Length - 8), out int fileIndex)) {
-                            maxSaveFile = Math.Max(maxSaveFile, fileIndex);
+                int maxSaveFile;
+
+                if (CoreModule.Settings.MaxSaveSlots != null) {
+                    maxSaveFile = Math.Max(3, CoreModule.Settings.MaxSaveSlots.Value);
+
+                } else {
+                    // first load: we want to check how many slots there are by checking which files exist in the Saves folder.
+                    maxSaveFile = 1; // we're adding 2 later, so there will be at least 3 slots.
+                    string saveFilePath = patch_UserIO.GetSaveFilePath();
+                    if (Directory.Exists(saveFilePath)) {
+                        foreach (string filePath in Directory.GetFiles(saveFilePath)) {
+                            string fileName = Path.GetFileName(filePath);
+                            // is the file named [number].celeste?
+                            if (fileName.EndsWith(".celeste") && int.TryParse(fileName.Substring(0, fileName.Length - 8), out int fileIndex)) {
+                                maxSaveFile = Math.Max(maxSaveFile, fileIndex);
+                            }
                         }
                     }
+
+                    // if 2.celeste exists, slot 3 is the last slot filled, therefore we want 4 slots (2 + 2) to always have the latest one empty.
+                    maxSaveFile += 2;
                 }
 
-                // if 2.celeste exists, slot 3 is the last slot filled, therefore we want 4 slots (2 + 2) to always have the latest one empty.
-                Slots = new OuiFileSelectSlot[maxSaveFile + 2];
+                Slots = new OuiFileSelectSlot[maxSaveFile];
             }
 
             int slotIndex = 0;

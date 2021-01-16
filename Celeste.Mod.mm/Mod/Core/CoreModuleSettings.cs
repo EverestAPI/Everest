@@ -192,6 +192,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool RestartAppDomain_WIP { get; set; } = false;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public int? MaxSaveSlots { get; set; } = null;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
