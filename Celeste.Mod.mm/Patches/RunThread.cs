@@ -101,7 +101,11 @@ namespace Celeste {
                         }
                     }
 
-                    Engine.Instance.GraphicsDevice.Present();
+                    try {
+                        Engine.Instance.GraphicsDevice.Present();
+                    } catch {
+                        // Celeste 1.3.3.x does this but is this really needed?
+                    }
                 }
             }
         }
