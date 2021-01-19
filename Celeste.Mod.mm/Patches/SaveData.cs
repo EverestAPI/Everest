@@ -11,11 +11,13 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    class patch_SaveData : SaveData {
+    public class patch_SaveData : SaveData {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
+
+        public bool HasModdedSaveData = false;
 
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
@@ -245,6 +247,8 @@ namespace Celeste {
                 mod.DeleteSession(slot);
             }
 
+            UserIO.Delete(GetFilename(slot) + "-modsavedata");
+
             LoadedModSaveDataIndex = int.MinValue;
 
             return true;
@@ -293,6 +297,18 @@ namespace Celeste {
 
             if (LevelSetRecycleBin == null)
                 LevelSetRecycleBin = new List<LevelSetStats>();
+
+            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0 && !HasModdedSaveData) {
+                // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
+                // we want to carry mod save data that was backed up in the mod save file, if any.
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                if (modSaveData != null) {
+                    modSaveData.CopyToCelesteSaveData(this);
+                    Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                }
+            }
+
+            HasModdedSaveData = true;
 
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
@@ -487,6 +503,7 @@ namespace Celeste {
 
             orig_BeforeSave();
 
+            UserIO.Save<ModSaveData>(GetFilename(FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(this)));
             foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
                 mod.SaveSession(FileSlot);
@@ -699,7 +716,23 @@ namespace Celeste {
             get {
                 int offset = AreaOffset;
 
-                if (TotalHeartGems >= MaxHeartGemsExcludingCSides) {
+                bool completedAllBSides = true;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaData areaData = AreaData.Areas[offset + i];
+                    if (!areaData.HasMode(AreaMode.BSide)) {
+                        continue;
+                    }
+                    AreaModeStats modeStats = AreasIncludingCeleste[i].Modes[(int) AreaMode.BSide];
+                    bool interlude = areaData.Interlude;
+                    bool mapHasHeartGem = areaData.Mode[(int) AreaMode.BSide].MapData.DetectedHeartGem;
+                    bool heartGemCollected = modeStats.HeartGem;
+                    bool completed = modeStats.Completed;
+                    if (!interlude && !(mapHasHeartGem ? heartGemCollected : completed)) {
+                        completedAllBSides = false;
+                    }
+                }
+
+                if (completedAllBSides) {
                     return 3;
                 }
 

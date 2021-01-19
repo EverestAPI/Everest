@@ -9,12 +9,14 @@ using Monocle;
 using MonoMod;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Xml;
 
 namespace Celeste {
     class patch_AreaComplete : AreaComplete {
 
         private static string versionFull;
+        private static float versionOffset;
         private static Texture2D identicon;
         private static float everestTime;
         private static bool isPieScreen; // on the pie screen, we should display the jdenticon on the left side of the screen, instead of the middle.
@@ -36,19 +38,34 @@ namespace Celeste {
         public override void Begin() {
             base.Begin();
 
-            InitAreaCompleteInfoForEverest(pieScreen: false);
+            InitAreaCompleteInfoForEverest2(false, Session);
 
             buttonTimerDelay = 2.2f;
             buttonTimerEase = 0f;
         }
 
+        // Backwards compatibility with Spring Collab 2020 and possibly other mods.
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitAreaCompleteInfoForEverest(bool pieScreen) {
+            InitAreaCompleteInfoForEverest2(pieScreen, null);
+        }
+
+        public static void InitAreaCompleteInfoForEverest2(bool pieScreen, Session session) {
+            versionOffset = 0;
             if (Everest.Flags.IsDisabled)
                 return;
 
             if (Settings.Instance.SpeedrunClock > SpeedrunType.Off) {
                 versionFull = $"{Celeste.Instance.Version}\n{Everest.Build}";
 
+                if (session != null &&
+                    Everest.Content.TryGet($"Maps/{AreaData.Get(session).Mode[(int) session.Area.Mode].Path}", out ModAsset asset) &&
+                    asset.Source.Mod?.Multimeta?.Length >= 1) {
+                    versionFull = $"{versionFull}\n{asset.Source.Mod.Multimeta[0].Version}";
+                    versionOffset -= 32;
+                }
+
+                identicon?.Dispose();
                 using (Stream stream = Identicon.FromHash(Everest.InstallationHash, 100).SaveAsPng())
                     identicon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
             }
@@ -112,8 +129,8 @@ namespace Celeste {
             identicon = null;
         }
 
+        [PatchAreaCompleteVersionNumberAndVariants]
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
-        [MonoModNoNew]
         public static new void VersionNumberAndVariants(string version, float ease, float alpha) {
             if (Everest.Flags.IsDisabled) {
                 orig_VersionNumberAndVariants(version, ease, alpha);
@@ -147,5 +164,33 @@ namespace Celeste {
             }
         }
 
+        private string GetCustomCompleteScreenTitle() {
+            MapMetaCompleteScreenTitle completeScreenTitle = AreaData.Get(Session.Area)?.GetMeta()?.CompleteScreen?.Title;
+            if (completeScreenTitle == null) {
+                return null;
+            }
+            string text = null;
+            switch (Session.Area.Mode) {
+                case AreaMode.Normal:
+                    if (Session.FullClear) {
+                        text = completeScreenTitle.FullClear;
+                    } else {
+                        text = completeScreenTitle.ASide;
+                    }
+                    break;
+                case AreaMode.BSide:
+                    text = completeScreenTitle.BSide;
+                    break;
+                case AreaMode.CSide:
+                    text = completeScreenTitle.CSide;
+                    break;
+                default:
+                    break;
+            }
+            if (text == null) {
+                return null;
+            }
+            return Dialog.Clean(text);
+        }
     }
 }

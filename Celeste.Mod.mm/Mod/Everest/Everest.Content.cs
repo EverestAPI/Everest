@@ -3,6 +3,7 @@ using Celeste.Mod.Meta;
 using Ionic.Zip;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -150,23 +151,30 @@ namespace Celeste.Mod {
         public FileSystemModContent(string path) {
             Path = path;
 
-            watcher = new FileSystemWatcher {
-                Path = path,
-                NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
-                IncludeSubdirectories = true
-            };
+            try {
+                watcher = new FileSystemWatcher {
+                    Path = path,
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite,
+                    IncludeSubdirectories = true
+                };
 
-            watcher.Changed += FileUpdated;
-            watcher.Created += FileUpdated;
-            watcher.Deleted += FileUpdated;
-            watcher.Renamed += FileRenamed;
+                watcher.Changed += FileUpdated;
+                watcher.Created += FileUpdated;
+                watcher.Deleted += FileUpdated;
+                watcher.Renamed += FileRenamed;
 
-            watcher.EnableRaisingEvents = true;
+                watcher.EnableRaisingEvents = true;
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "content", $"Failed watching folder: {path}");
+                e.LogDetailed();
+                watcher?.Dispose();
+                watcher = null;
+            }
         }
 
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
-            watcher.Dispose();
+            watcher?.Dispose();
         }
 
         protected override void Crawl() => Crawl(null, Path, false);
@@ -430,9 +438,6 @@ namespace Celeste.Mod {
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
-
-                if (_DumpAll)
-                    DumpAll();
 
                 if (Flags.IsDisabled)
                     return;

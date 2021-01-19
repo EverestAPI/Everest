@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\Celeste.Mod.mm\Mod\Helpers\LogWriter.cs">
       <Link>LogWriter.cs</Link>
     </Compile>

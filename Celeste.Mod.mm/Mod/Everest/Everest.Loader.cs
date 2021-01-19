@@ -90,6 +90,8 @@ namespace Celeste.Mod {
                 { "Elemental Chaos", new Version(1, 0, 0, 0) },
                 { "BGswitch", new Version(0, 1, 0, 0) },
 
+                // Infinite Saves 1.0.0 does not work well with the "extra save slots" feature of Everest
+                { "InfiniteSaves", new Version(1, 0, 1) }
             };
 
             /// <summary>
@@ -104,6 +106,8 @@ namespace Celeste.Mod {
             };
 
             internal static FileSystemWatcher Watcher;
+
+            internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
 
             public static bool AutoLoadNewMods { get; internal set; }
 
@@ -186,15 +190,22 @@ namespace Celeste.Mod {
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
 
-                Watcher = new FileSystemWatcher {
-                    Path = PathMods,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
-                };
+                try {
+                    Watcher = new FileSystemWatcher {
+                        Path = PathMods,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                    };
 
-                Watcher.Created += LoadAutoUpdated;
+                    Watcher.Created += LoadAutoUpdated;
 
-                Watcher.EnableRaisingEvents = true;
-                AutoLoadNewMods = true;
+                    Watcher.EnableRaisingEvents = true;
+                    AutoLoadNewMods = true;
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {PathMods}");
+                    e.LogDetailed();
+                    Watcher?.Dispose();
+                    Watcher = null;
+                }
             }
 
             private static void LoadAutoUpdated(object source, FileSystemEventArgs e) {
@@ -280,6 +291,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(archive, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -369,6 +381,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(dir, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -525,18 +538,26 @@ namespace Celeste.Mod {
                 }
 
                 if (string.IsNullOrEmpty(meta.PathArchive) && File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
-                    FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
-                        Path = Path.GetDirectoryName(meta.DLL),
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
-                    };
+                    try {
+                        FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
+                            Path = Path.GetDirectoryName(meta.DLL),
+                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+                        };
 
-                    watcher.Changed += (s, e) => {
-                        if (e.FullPath != meta.DLL)
-                            return;
-                        ReloadModAssembly(s, e);
-                    };
+                        watcher.Changed += (s, e) => {
+                            if (e.FullPath != meta.DLL)
+                                return;
+                            ReloadModAssembly(s, e);
+                            // FIXME: Should we dispose the old .dll watcher?
+                        };
 
-                    watcher.EnableRaisingEvents = true;
+                        watcher.EnableRaisingEvents = true;
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
+                        e.LogDetailed();
+                        meta.DevWatcher?.Dispose();
+                        meta.DevWatcher = null;
+                    }
                 }
 
                 ApplyModHackfixes(meta, asm);

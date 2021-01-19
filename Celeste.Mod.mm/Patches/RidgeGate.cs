@@ -26,10 +26,17 @@ namespace Celeste {
         [MonoModConstructor]
         [MonoModReplace]
         public void ctor(EntityData data, Vector2 offset) {
-            ctor(data.Position + offset, data.Width, data.Height, data.FirstNodeNullable(offset), data.Attr("texture", "objects/ridgeGate"));
+            ctor(data.Position + offset, data.Width, data.Height, data.FirstNodeNullable(offset), data.Attr("texture", data.Bool("ridge", true) ? "objects/ridgeGate" : "objects/farewellGate"));
         }
 
         // wire the existing "all settings" constructor to the new constructor with the extra "texture" parameter
+        [MonoModConstructor]
+        [MonoModReplace]
+        public void ctor(Vector2 position, float width, float height, Vector2? node, bool ridgeImage = true) {
+            ctor(position, width, height, node, ridgeImage ? "objects/ridgeGate" : "objects/farewellGate");
+        }
+
+        // backwards compatibility with 1.3.1.2
         [MonoModConstructor]
         [MonoModReplace]
         public void ctor(Vector2 position, float width, float height, Vector2? node) {

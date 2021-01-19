@@ -175,8 +175,11 @@ namespace Celeste {
             if (keyList != null) {
                 if (!additiveRemap)
                     keyList.Clear();
-                if (!keyList.Contains(key))
+                if (!keyList.Contains(key)) {
                     keyList.Add(key);
+                } else if (keyList.Count >= 2) {
+                    keyList.Remove(key);
+                }
             }
             Input.Initialize();
             Reload(Selection);

@@ -81,6 +81,55 @@ namespace Celeste.Mod {
                 bool onlyIfWindy = attrs["onlyIfWindy"] != null ? bool.Parse(attrs["onlyIfWindy"].Value): false;
                 ((patch_Decal)decal).MakeBanner(speed, amplitude, sliceSize, sliceSinIncrement, easeDown, offset, onlyIfWindy);
             }},
+            { "solid", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float x = 0;
+                if (attrs["x"] != null)
+                    x = float.Parse(attrs["x"].Value);
+                float y = 0;
+                if (attrs["y"] != null)
+                    y = float.Parse(attrs["y"].Value);
+                float width = 16;
+                if (attrs["width"] != null)
+                    width = float.Parse(attrs["width"].Value);
+                float height = 16;
+                if (attrs["height"] != null)
+                    height = float.Parse(attrs["height"].Value);
+                int index = SurfaceIndex.ResortRoof;
+                if (attrs["index"] != null)
+                    index = int.Parse(attrs["index"].Value);
+                bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
+                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls);
+            }},
+            { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
+                int x = 0;
+                if (attrs["x"] != null)
+                    x = int.Parse(attrs["x"].Value);
+                int y = 0;
+                if (attrs["y"] != null)
+                    y = int.Parse(attrs["y"].Value);
+                int width = 16;
+                if (attrs["width"] != null)
+                    width = int.Parse(attrs["width"].Value);
+                int height = 16;
+                if (attrs["height"] != null)
+                    height = int.Parse(attrs["height"].Value);
+                ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
+            }},
+            { "scared", delegate(Decal decal, XmlAttributeCollection attrs) {
+                int hideRange = 32;
+                int showRange = 48;
+                if (attrs["range"] != null)
+                    hideRange = showRange = int.Parse(attrs["range"].Value);
+                if (attrs["hideRange"] != null)
+                    hideRange = int.Parse(attrs["hideRange"].Value);
+                if (attrs["showRange"] != null)
+                    showRange = int.Parse(attrs["showRange"].Value);
+                int[] hideFrames = Calc.ReadCSVIntWithTricks(attrs["hideFrames"]?.Value ?? "0");
+                int[] showFrames = Calc.ReadCSVIntWithTricks(attrs["showFrames"]?.Value ?? "0");
+                int[] idleFrames = Calc.ReadCSVIntWithTricks(attrs["idleFrames"]?.Value ?? "0");
+                int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
+                ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
+            }},
         };
 
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();

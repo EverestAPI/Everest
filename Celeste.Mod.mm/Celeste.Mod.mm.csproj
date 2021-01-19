@@ -51,11 +51,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="20.11.26.2" />
-    <PackageReference Include="MonoMod.Utils" Version="20.11.26.2" />
+    <PackageReference Include="MonoMod" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.01.11.01" />
+    <PackageReference Include="MonoMod.Utils" Version="21.01.11.01" />
     <PackageReference Include="DotNetZip" Version="1.13.8" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
@@ -194,8 +195,12 @@
       <Link>libmono-btls-shared.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.dylib.dSYM\Contents\Resources\DWARF\libMonoPosixHelper.dylib">
+    <Content Include="..\lib-mono\libMonoPosixHelper.dylib">
       <Link>libMonoPosixHelper.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\lib-mono\libmono-btls-shared.dylib">
+      <Link>libmono-btls-shared.dylib</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">

@@ -23,8 +23,8 @@ namespace Monocle {
         /// </summary>
         public static Scene NextScene => ((patch_Engine) Instance).nextScene;
 
-        public patch_Engine(int width, int height, int windowWidth, int windowHeight, string windowTitle, bool fullscreen)
-            : base(width, height, windowWidth, windowHeight, windowTitle, fullscreen) {
+        public patch_Engine(int width, int height, int windowWidth, int windowHeight, string windowTitle, bool fullscreen, bool vsync)
+            : base(width, height, windowWidth, windowHeight, windowTitle, fullscreen, vsync) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 

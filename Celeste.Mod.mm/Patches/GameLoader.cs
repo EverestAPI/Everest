@@ -121,6 +121,8 @@ namespace Celeste {
         public extern new IEnumerator IntroRoutine();
 
         private static Scene _GetNextScene(Overworld.StartMode startMode, HiresSnow snow) {
+            checkModSaveDataBackups();
+
             bool transitionToModUpdater = false;
 
             if (CoreModule.Settings.AutoUpdateModsOnStartup) {
@@ -142,6 +144,38 @@ namespace Celeste {
                 return new AutoModUpdater(snow);
             } else {
                 return new OverworldLoader(startMode, snow);
+            }
+        }
+
+        /// <summary>
+        /// Initializes mod save data backups if required (if Everest was just updated past 2104).
+        /// </summary>
+        private static void checkModSaveDataBackups() {
+            Version previousVersion;
+            try {
+                previousVersion = new Version(CoreModule.Settings.CurrentVersion);
+            } catch {
+                // oops, version is null or can't be parsed for any reason.
+                previousVersion = new Version(0, 0, 0);
+            }
+
+            if (previousVersion < new Version(1, 2109, 0)) {
+                // user just upgraded: create mod save data backups.
+                // (this is very similar to OverworldLoader.CheckVariantsPostcardAtLaunch)
+                Logger.Log("core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
+
+                for (int i = 0; i < 3; i++) { // only the first 3 saves really matter.
+                    if (!UserIO.Exists(SaveData.GetFilename(i))) {
+                        continue;
+                    }
+                    SaveData saveData = UserIO.Load<SaveData>(SaveData.GetFilename(i), backup: false);
+                    if (saveData != null) {
+                        saveData.AfterInitialize();
+                        UserIO.Save<ModSaveData>(SaveData.GetFilename(saveData.FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(saveData as patch_SaveData)));
+                    }
+                }
+                UserIO.Close();
+                SaveData.Instance = null;
             }
         }
     }

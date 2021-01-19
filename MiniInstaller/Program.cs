@@ -286,6 +286,9 @@ namespace MiniInstaller {
                 game.StartInfo.FileName = PathEverestExe.Substring(0, PathEverestExe.Length - 4);
                 if (!File.Exists(game.StartInfo.FileName))
                     game.StartInfo.FileName = PathCelesteExe.Substring(0, PathCelesteExe.Length - 4);
+                // 1.3.3.0 splits Celeste into two, so to speak.
+                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(PathCelesteExe) == "Celeste.exe" && Path.GetFileName(Path.GetDirectoryName(PathCelesteExe)) == "Resources")
+                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(PathCelesteExe)), "MacOS", "Celeste");
             } else {
                 game.StartInfo.FileName = PathEverestExe;
             }

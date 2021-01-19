@@ -5,6 +5,7 @@ using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using SDL2;
+using Steamworks;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,6 +27,13 @@ namespace Celeste.Mod {
             try {
                 string everestPath = typeof(Celeste).Assembly.Location;
 
+                try {
+                    if (RestartViaLauncher())
+                        return;
+                } catch {
+                }
+                
+
                 if (args.FirstOrDefault() == "--no-appdomain") {
                     Console.WriteLine("Loading Everest, no AppDomain");
                     patch_Celeste.Main(args);
@@ -46,6 +54,12 @@ namespace Celeste.Mod {
                     }
                     AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
                     return;
+                }
+
+                string vanillaDummy = Path.Combine(Path.GetDirectoryName(everestPath), "nextLaunchIsVanilla.txt");
+                if (File.Exists(vanillaDummy)) {
+                    File.Delete(vanillaDummy);
+                    goto StartVanilla;
                 }
 
                 if (args.FirstOrDefault() == "--vanilla")
@@ -187,6 +201,23 @@ namespace Celeste.Mod {
             } catch { }
         }
 
+        [MonoModIgnore]
+        private static extern bool RestartViaLauncher();
+
+        [MonoModIfFlag("Steamworks")]
+        [MonoModPatch("RestartViaLauncher")]
+        [MonoModReplace]
+        private static bool RestartViaSteam() {
+            return SteamAPI.RestartAppIfNecessary(new AppId_t(504230));
+        }
+
+        [MonoModIfFlag("NoLauncher")]
+        [MonoModPatch("RestartViaLauncher")]
+        [MonoModReplace]
+        private static bool RestartViaNoLauncher() {
+            return false;
+        }
+
         // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
         // This is also used by Everest.SlowFullRestart
         public static void StartCelesteProcess() {
@@ -198,6 +229,9 @@ namespace Celeste.Mod {
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 game.StartInfo.FileName = Path.Combine(path, "Celeste");
+                // 1.3.3.0 splits Celeste into two, so to speak.
+                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(path) == "Resources")
+                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(path), "MacOS", "Celeste");
             } else {
                 game.StartInfo.FileName = Path.Combine(path, "Celeste.exe");
             }

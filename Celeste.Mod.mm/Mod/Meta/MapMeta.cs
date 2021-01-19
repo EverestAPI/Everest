@@ -448,6 +448,7 @@ namespace Celeste.Mod.Meta {
         public string MountainModelDirectory { get; set; } = null;
         public string MountainTextureDirectory { get; set; } = null;
         public string BackgroundMusic { get; set; } = null;
+        public string BackgroundAmbience { get; set; } = null;
         public Dictionary<string, float> BackgroundMusicParams { get; set; } = null;
         public string[] FogColors { get; set; } = null;
         public string StarFogColor { get; set; } = null;
@@ -480,6 +481,10 @@ namespace Celeste.Mod.Meta {
         [YamlIgnore] public Vector2 Offset => OffsetArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Offset")] public float[] OffsetArray { get; set; }
         public MapMetaCompleteScreenLayer[] Layers { get; set; }
+
+        public string[] MusicBySide { get; set; }
+
+        public MapMetaCompleteScreenTitle Title { get; set; }
     }
     public class MapMetaCompleteScreenLayer {
         public string Type { get; set; }
@@ -492,6 +497,14 @@ namespace Celeste.Mod.Meta {
         public float Alpha { get; set; } = 1f;
         [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
+        public float Scale { get; set; } = 1f;
+    }
+
+    public class MapMetaCompleteScreenTitle {
+        public string ASide { get; set; }
+        public string BSide { get; set; }
+        public string CSide { get; set; }
+        public string FullClear { get; set; }
     }
 
     public class MapMetaTextVignette {

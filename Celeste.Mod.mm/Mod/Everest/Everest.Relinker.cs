@@ -1,5 +1,6 @@
 ﻿using Ionic.Zip;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
 using System;
@@ -299,12 +300,16 @@ namespace Celeste.Mod {
 
                     modder.AutoPatch();
 
+                    ISymbolWriterProvider symbolWriterProvider = modder.WriterParameters.SymbolWriterProvider;
+
                     RetryWrite:
                     try {
+                        modder.WriterParameters.SymbolWriterProvider = symbolWriterProvider;
                         modder.WriterParameters.WriteSymbols = true;
                         modder.Write();
                     } catch {
                         try {
+                            modder.WriterParameters.SymbolWriterProvider = null;
                             modder.WriterParameters.WriteSymbols = false;
                             modder.Write();
                         } catch when (!temporaryASM) {
@@ -317,6 +322,8 @@ namespace Celeste.Mod {
                             modder.WriterParameters.WriteSymbols = true;
                             goto RetryWrite;
                         }
+                    } finally {
+                        modder.WriterParameters.SymbolWriterProvider = symbolWriterProvider;
                     }
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");

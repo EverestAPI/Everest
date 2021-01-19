@@ -38,18 +38,10 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
-	MENU_TITLESCREEN_WARNING=			Warning!
-	MENU_TITLESCREEN_WARNING_TEXT=
-		If you open a save in vanilla Celeste,
-		all your progress in custom maps will be lost in this save.
-	MENU_TITLESCREEN_WARNING_TEXT2=
-		If you need more save files, download "Infinite Saves" on GameBanana.
-	MENU_TITLESCREEN_OK=				Restart
-	MENU_TITLESCREEN_CANCEL=			Cancel
-	
+    
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR
-    KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add additional keys
+    KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add or remove additional keys
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
@@ -209,6 +201,8 @@
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERROR: Installing {0} failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Removing mod {0} from the blacklist...
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatically unblacklisting some mods failed. Check log.txt for more info.
+	DEPENDENCYDOWNLOADER_LOADING_MOD=				Loading {0} from {1}...
+	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		Loading mod from {0}...
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		Welcome to Everest!

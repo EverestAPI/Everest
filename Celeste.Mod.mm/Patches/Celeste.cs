@@ -104,7 +104,7 @@ namespace Celeste {
                     if (!Directory.Exists("LogHistory")) {
                         Directory.CreateDirectory("LogHistory");
                     }
-                    File.Move("log.txt", Path.Combine("LogHistory", "log_" + File.GetLastAccessTime("log.txt").ToString("yyyyMMdd_HHmmss") + ".txt"));
+                    File.Move("log.txt", Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime("log.txt"))));
                 } else {
                     // log is empty! (this actually happens more often than you'd think, because of Steam re-opening Celeste)
                     // just delete it.

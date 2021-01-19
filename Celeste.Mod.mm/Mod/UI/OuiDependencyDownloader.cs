@@ -20,6 +20,7 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
+            Everest.Loader.OnCrawlMod += logCrawlMod;
 
             Title = Dialog.Clean("DEPENDENCYDOWNLOADER_TITLE");
             task = new Task(downloadAllDependencies);
@@ -36,8 +37,17 @@ namespace Celeste.Mod.UI {
 
         public override IEnumerator Leave(Oui next) {
             Everest.Loader.AutoLoadNewMods = true;
+            Everest.Loader.OnCrawlMod -= logCrawlMod;
 
             return base.Leave(next);
+        }
+
+        private void logCrawlMod(string filePath, EverestModuleMetadata meta) {
+            if (meta != null) {
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_LOADING_MOD"), meta.ToString(), filePath));
+            } else {
+                LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA"), filePath));
+            }
         }
 
         private void downloadAllDependencies() {
@@ -181,18 +191,27 @@ namespace Celeste.Mod.UI {
                     }
 
                     foreach (string modFilename in modFilenamesToUnblacklist) {
-                        LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
+                        try {
+                            LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
 
-                        // remove the mod from the loaded blacklist
-                        while (Everest.Loader._Blacklist.Contains(modFilename)) {
-                            Everest.Loader._Blacklist.Remove(modFilename);
-                        }
+                            // remove the mod from the loaded blacklist
+                            while (Everest.Loader._Blacklist.Contains(modFilename)) {
+                                Everest.Loader._Blacklist.Remove(modFilename);
+                            }
 
-                        // hot load the mod
-                        if (modFilename.EndsWith(".zip")) {
-                            Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
-                        } else {
-                            Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            // hot load the mod
+                            if (modFilename.EndsWith(".zip")) {
+                                Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            } else {
+                                Everest.Loader.LoadDir(Path.Combine(Everest.Loader.PathMods, modFilename));
+                            }
+                        } catch (Exception e) {
+                            // something bad happened during the mod hot loading, log it and prompt to restart the game to load the mod.
+                            LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
+                            Logger.LogDetailed(e);
+                            shouldAutoExit = false;
+                            shouldRestart = true;
+                            break;
                         }
                     }
                 }
@@ -427,7 +446,7 @@ namespace Celeste.Mod.UI {
         public void Exit() {
             task = null;
             Lines.Clear();
-            ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
             Audio.Play(SFX.ui_main_button_back);
             Overworld.Goto<OuiModOptions>();
         }
