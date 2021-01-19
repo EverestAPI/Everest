@@ -22,7 +22,8 @@ namespace Celeste {
             Dash,
             Grab,
             Talk,
-            QuickRestart
+            QuickRestart,
+            DemoDash
         }
 
         private List<Buttons> all;
@@ -143,6 +144,8 @@ namespace Celeste {
             AddButtonConfigLine(Mappings.Talk, Settings.Instance.BtnTalk);
             AddButtonConfigLine(Mappings.QuickRestart, Settings.Instance.BtnAltQuickRestart);
 
+            AddDemoDashLine();
+
             Add(new SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
@@ -155,6 +158,26 @@ namespace Celeste {
             });
             if (index >= 0) {
                 Selection = index;
+            }
+        }
+
+        // Celeste 1.3.3.11 exposes a DemoDash mapping.
+        [MonoModIgnore]
+        private extern void AddDemoDashLine();
+
+        [MonoModIfFlag("Lacks:RevealDemoConfig")]
+        [MonoModPatch("AddDemoDashLine")]
+        [MonoModReplace]
+        private void AddDemoDashLineStub() {
+        }
+
+        [MonoModIfFlag("Has:RevealDemoConfig")]
+        [MonoModPatch("AddDemoDashLine")]
+        [MonoModReplace]
+        private void AddDemoDashLineImpl() {
+            if (Settings.Instance.RevealDemoConfig) {
+                Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+                AddButtonConfigLine(Mappings.DemoDash, Settings.Instance.BtnDemoDash);
             }
         }
 

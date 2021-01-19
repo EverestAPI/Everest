@@ -18,17 +18,43 @@ namespace Celeste {
         [MonoModReplace]
         public new void UnlockEverything(Level level) {
             patch_SaveData data = (patch_SaveData) SaveData.Instance;
-            foreach (LevelSetStats set in data.LevelSets) {
-                set.UnlockedAreas = SaveData.Instance.MaxArea;
-            }
-            data.CheatMode = true;
 
-            Settings.Instance.Pico8OnMainMenu = true;
-            Settings.Instance.VariantsUnlocked = true;
+
+            if (data.LevelSet == "Celeste") {
+                foreach (LevelSetStats set in data.LevelSets)
+                    set.UnlockedAreas = set.MaxArea;
+
+                SaveData.Instance.RevealedChapter9 = true;
+                Settings.Instance.VariantsUnlocked = true;
+                Settings.Instance.Pico8OnMainMenu = true;
+                UnlockDemoConfig();
+
+            } else {
+                data.LevelSetStats.UnlockedAreas = data.LevelSetStats.MaxArea;
+            }
+
+            data.CheatMode = true;
 
             level.Session.InArea = false;
 
             Engine.Scene = new LevelExit(LevelExit.Mode.GiveUp, level.Session);
+        }
+
+        // Celeste 1.3.3.11 exposes a DemoDash mapping.
+        [MonoModIgnore]
+        private extern void UnlockDemoConfig();
+
+        [MonoModIfFlag("Lacks:RevealDemoConfig")]
+        [MonoModPatch("UnlockDemoConfig")]
+        [MonoModReplace]
+        private void UnlockDemoConfigNop() {
+        }
+
+        [MonoModIfFlag("Has:RevealDemoConfig")]
+        [MonoModPatch("UnlockDemoConfig")]
+        [MonoModReplace]
+        private void UnlockDemoConfigImpl() {
+            Settings.Instance.RevealDemoConfig = true;
         }
 
     }

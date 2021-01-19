@@ -30,7 +30,8 @@ namespace Celeste {
             Cancel,
             Pause,
             Journal,
-            QuickRestart
+            QuickRestart,
+            DemoDash
         }
 
         private bool remapping;
@@ -131,8 +132,10 @@ namespace Celeste {
             AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, Settings.Instance.Pause));
             AddKeyConfigLine(Mappings.Journal, Settings.Instance.Journal);
             AddKeyConfigLine(Mappings.QuickRestart, Settings.Instance.QuickRestart);
-            Add(new SubHeader(""));
 
+            AddDemoDashLine();
+
+            Add(new SubHeader(""));
             Button button = new Button(Dialog.Clean("KEY_CONFIG_RESET"));
             button.IncludeWidthInMeasurement = false;
             button.AlwaysCenter = true;
@@ -144,6 +147,26 @@ namespace Celeste {
             Add(button);
             if (index >= 0) {
                 Selection = index;
+            }
+        }
+
+        // Celeste 1.3.3.11 exposes a DemoDash mapping.
+        [MonoModIgnore]
+        private extern void AddDemoDashLine();
+
+        [MonoModIfFlag("Lacks:RevealDemoConfig")]
+        [MonoModPatch("AddDemoDashLine")]
+        [MonoModReplace]
+        private void AddDemoDashLineStub() {
+        }
+
+        [MonoModIfFlag("Has:RevealDemoConfig")]
+        [MonoModPatch("AddDemoDashLine")]
+        [MonoModReplace]
+        private void AddDemoDashLineImpl() {
+            if (Settings.Instance.RevealDemoConfig) {
+                Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+                AddKeyConfigLine(Mappings.DemoDash, Settings.Instance.DemoDash);
             }
         }
 
