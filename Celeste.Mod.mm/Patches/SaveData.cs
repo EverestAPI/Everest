@@ -15,9 +15,13 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    class patch_SaveData : SaveData {
+    public class patch_SaveData : SaveData {
 
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
+
+        public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
+
+        public bool HasModdedSaveData = false;
 
         [XmlIgnore]
         public string LevelSet => LevelSetStats.Name;
@@ -247,6 +251,8 @@ namespace Celeste {
                 mod.DeleteSession(slot);
             }
 
+            UserIO.Delete(GetFilename(slot) + "-modsavedata");
+
             LoadedModSaveDataIndex = int.MinValue;
 
             return true;
@@ -293,6 +299,21 @@ namespace Celeste {
             if (LevelSets == null)
                 LevelSets = new List<LevelSetStats>();
 
+            if (LevelSetRecycleBin == null)
+                LevelSetRecycleBin = new List<LevelSetStats>();
+
+            if (LevelSets.Count <= 1 && LevelSetRecycleBin.Count == 0 && !HasModdedSaveData) {
+                // the save file doesn't have any mod save data (just created, overwritten by vanilla, or Everest just updated).
+                // we want to carry mod save data that was backed up in the mod save file, if any.
+                ModSaveData modSaveData = UserIO.Load<ModSaveData>(GetFilename(FileSlot) + "-modsavedata");
+                if (modSaveData != null) {
+                    modSaveData.CopyToCelesteSaveData(this);
+                    Logger.Log(LogLevel.Warn, "SaveData", $"{LevelSets.Count} level set(s) were restored from mod backup for save slot {FileSlot}");
+                }
+            }
+
+            HasModdedSaveData = true;
+
             if (Areas_Unsafe == null)
                 Areas_Unsafe = new List<AreaStats>();
 
@@ -300,10 +321,18 @@ namespace Celeste {
             foreach (AreaData area in AreaData.Areas) {
                 string set = area.GetLevelSet();
                 if (!LevelSets.Exists(other => other.Name == set)) {
-                    LevelSets.Add(new LevelSetStats {
-                        Name = set,
-                        UnlockedAreas = set == "Celeste" ? UnlockedAreas_Unsafe : 0
-                    });
+                    LevelSetStats recycleBinLevelSet = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set);
+                    if (recycleBinLevelSet != null) {
+                        // the level set is actually in the recycle bin - restore it.
+                        LevelSets.Add(recycleBinLevelSet);
+                        LevelSetRecycleBin.Remove(recycleBinLevelSet);
+                    } else {
+                        // create a new LevelSetStats entry.
+                        LevelSets.Add(new LevelSetStats {
+                            Name = set,
+                            UnlockedAreas = set == "Celeste" ? UnlockedAreas_Unsafe : 0
+                        });
+                    }
                 }
             }
 
@@ -317,8 +346,15 @@ namespace Celeste {
 
                 int offset = set.AreaOffset;
                 if (offset == -1) {
-                    // LevelSet gone - let's remove it to prevent any unwanted accesses.
-                    // We previously kept the LevelSetStats around in case the levelset resurfaces later on, but as it turns out, this breaks some stuff.
+                    // LevelSet gone - let's move it to the recycle bin.
+                    LevelSetStats levelSetAlreadyInRecycleBin = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set.Name);
+                    if (levelSetAlreadyInRecycleBin != null) {
+                        // a level set with the same name already exists in the recycle bin - replace it.
+                        LevelSetRecycleBin.Remove(levelSetAlreadyInRecycleBin);
+                    }
+                    LevelSetRecycleBin.Add(set);
+
+                    // now, remove it to prevent any unwanted access.
                     LevelSets.RemoveAt(lsi);
                     lsi--;
                     continue;
@@ -388,6 +424,11 @@ namespace Celeste {
                 foreach (AreaStats area in areas) {
                     area.CleanCheckpoints();
                 }
+            }
+
+            // Assign SaveData for the level sets in the recycle bin to prevent crashes.
+            foreach (LevelSetStats set in LevelSetRecycleBin) {
+                set.SaveData = this;
             }
 
             // Order the levelsets to appear just as their areas appear in AreaData.Areas
@@ -466,6 +507,7 @@ namespace Celeste {
 
             orig_BeforeSave();
 
+            UserIO.Save<ModSaveData>(GetFilename(FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(this)));
             foreach (EverestModule mod in Everest._Modules) {
                 mod.SaveSaveData(FileSlot);
                 mod.SaveSession(FileSlot);
@@ -675,7 +717,23 @@ namespace Celeste {
             get {
                 int offset = AreaOffset;
 
-                if (TotalHeartGems >= MaxHeartGemsExcludingCSides) {
+                bool completedAllBSides = true;
+                for (int i = 0; i <= MaxArea; i++) {
+                    AreaData areaData = AreaData.Areas[offset + i];
+                    if (!areaData.HasMode(AreaMode.BSide)) {
+                        continue;
+                    }
+                    AreaModeStats modeStats = AreasIncludingCeleste[i].Modes[(int) AreaMode.BSide];
+                    bool interlude = areaData.Interlude;
+                    bool mapHasHeartGem = areaData.Mode[(int) AreaMode.BSide].MapData.DetectedHeartGem;
+                    bool heartGemCollected = modeStats.HeartGem;
+                    bool completed = modeStats.Completed;
+                    if (!interlude && !(mapHasHeartGem ? heartGemCollected : completed)) {
+                        completedAllBSides = false;
+                    }
+                }
+
+                if (completedAllBSides) {
                     return 3;
                 }
 

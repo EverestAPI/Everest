@@ -1,0 +1,60 @@
+# AngelCode Bitmap Font Generator configuration file
+fileVersion=1
+
+# font settings
+fontName=Noto Sans CJK SC Medium
+fontFile=
+charSet=0
+fontSize=64
+aa=4
+scaleH=100
+useSmoothing=1
+isBold=0
+isItalic=0
+useUnicode=1
+disableBoxChars=1
+outputInvalidCharGlyph=0
+dontIncludeKerningPairs=0
+useHinting=1
+renderFromOutline=0
+useClearType=1
+autoFitNumPages=0
+autoFitFontSizeMin=0
+autoFitFontSizeMax=0
+
+# character alignment
+paddingDown=0
+paddingUp=0
+paddingRight=0
+paddingLeft=0
+spacingHoriz=1
+spacingVert=1
+useFixedHeight=0
+forceZero=0
+widthPaddingFactor=0.00
+
+# output file
+outWidth=1024
+outHeight=128
+outBitDepth=32
+fontDescFormat=1
+fourChnlPacked=0
+textureFormat=png
+textureCompression=0
+alphaChnl=0
+redChnl=4
+greenChnl=4
+blueChnl=4
+invA=0
+invR=0
+invG=0
+invB=0
+
+# outline
+outlineThickness=0
+
+# selected chars
+chars=8230,20256,21015,21047,21305,21345,21368,21488,21551,21564,22841,23448,24211,25490,26410,26657,27178
+chars=27605,29256,31186,31867,32553,33033,35013,35814,36148,36753,36755,36865,36992,38142,39069
+
+# imported icon images

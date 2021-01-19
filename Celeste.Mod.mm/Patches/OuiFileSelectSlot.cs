@@ -6,6 +6,7 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -29,6 +30,7 @@ namespace Celeste {
         private bool deleting;
         private int buttonIndex;
         private float selectedEase;
+        private float newgameFade;
         private Wiggler wiggler;
 
         [MonoModIgnore]
@@ -52,6 +54,14 @@ namespace Celeste {
         private int totalCassettes;
 
         private bool Golden => !Corrupted && Exists && SaveData.TotalStrawberries >= maxStrawberryCountIncludingUntracked;
+
+        // vanilla: new Vector2(960f, 540 + 310 * (FileSlot - 1)); => slot 1 is centered at all times
+        // if there are 6 slots (0-based): slot 1 should be centered if slot 0 is selected; slot 4 should be centered if slot 5 is selected; the selected slot should be centered otherwise.
+        // this formula doesn't change the behavior with 3 slots, since the slot index will be clamped between 1 and 1.
+        public new Vector2 IdlePosition {
+            [MonoModReplace]
+            get => new Vector2(960f, 540 + 310 * (FileSlot - Calc.Clamp(fileSelect.SlotIndex, 1, fileSelect.Slots.Length - 2)));
+        }
 
         public patch_OuiFileSelectSlot(int index, OuiFileSelect fileSelect, SaveData data)
             : base(index, fileSelect, data) {
@@ -144,7 +154,10 @@ namespace Celeste {
 
             if (!Exists) {
                 if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
-                    buttons.Add(newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this));
+                    if (newGameLevelSetPicker == null) {
+                        newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this);
+                    }
+                    buttons.Add(newGameLevelSetPicker);
                 }
             }
 
@@ -173,6 +186,13 @@ namespace Celeste {
 
                 // currently highlighted option is the level set picker, call its Update() method to handle Left and Right presses.
                 newGameLevelSetPicker.Update(buttons[buttonIndex] == newGameLevelSetPicker);
+
+                if (MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
+                    // Ctrl+S: change the default starting level set to the currently selected one.
+                    CoreModule.Settings.DefaultStartingLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+                    CoreModule.Instance.SaveSettings();
+                    Audio.Play("event:/new_content/ui/rename_entry_accept_locked");
+                }
             }
         }
 
@@ -195,6 +215,7 @@ namespace Celeste {
 
             yield return fileSelect.Leave(null);
 
+            overworld.Mountain.Model.EaseState(area.MountainState);
             yield return overworld.Mountain.EaseCamera(0, area.MountainIdle);
             yield return 0.3f;
 
@@ -208,6 +229,14 @@ namespace Celeste {
             yield return 0.5f;
 
             LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
+        }
+
+        public extern void orig_Unselect();
+        public new void Unselect() {
+            orig_Unselect();
+
+            // reset the level set picker when we exit out of the file select slot.
+            newGameLevelSetPicker = null;
         }
 
         // Required because Button is private. Also make it public.
@@ -237,6 +266,26 @@ namespace Celeste {
                     position.Y += lineHeight * button.Scale + 15f;
                 }
             }
+        }
+
+        // very similar to MoveTo, except the easing is different if the slot was already moving.
+        // used for scrolling, since using MoveTo can look weird if holding up or down in file select.
+        internal void ScrollTo(float x, float y) {
+            Vector2 from = Position;
+            Vector2 to = new Vector2(x, y);
+
+            bool tweenWasPresent = false;
+            if (tween != null && tween.Entity == this) {
+                tweenWasPresent = true;
+                tween.RemoveSelf();
+
+                // snap the "unselect" animation.
+                newgameFade = selectedEase = 0f;
+            }
+            Add(tween = Tween.Create(Tween.TweenMode.Oneshot, tweenWasPresent ? Ease.CubeOut : Ease.CubeInOut, 0.25f));
+            tween.OnUpdate = t => Position = Vector2.Lerp(from, to, t.Eased);
+            tween.OnComplete = t => tween = null;
+            tween.Start();
         }
     }
 }

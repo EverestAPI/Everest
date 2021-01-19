@@ -5,14 +5,12 @@
 using Celeste;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 
 namespace Monocle {
     class patch_Commands : Commands {
@@ -222,6 +220,31 @@ namespace Monocle {
             if (!string.IsNullOrWhiteSpace(currentText.Replace(",", ""))) {
                 orig_EnterCommand();
             }
+        }
+
+        [MonoModIgnore]
+        private extern void LogStackTrace(string stackTrace);
+
+        // If exception message contains characters can't be displayed tell user check log.txt for full exception message.
+        [MonoModReplace]
+        private void InvokeMethod(MethodInfo method, object[] param = null) {
+            try {
+                method.Invoke(null, param);
+            } catch (Exception ex) {
+                Exception innerException = ex.InnerException;
+
+                Engine.Commands.Log(innerException.Message, Color.Yellow);
+                LogStackTrace(innerException.StackTrace);
+
+                if (ContainCantDrawChar(innerException.Message + innerException.StackTrace)) {
+                    Engine.Commands.Log("Please check log.txt for full exception log, because it contains characters can't be displayed.", Color.Yellow);
+                    Logger.Log("Commands", innerException.ToString());
+                }
+            }
+        }
+
+        private bool ContainCantDrawChar(string text) {
+            return text.ToCharArray().Any(c => !Draw.DefaultFont.Characters.Contains(c) && !char.IsControl(c));
         }
 
         // Only required to be defined so that we can access it.

@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
@@ -6,6 +7,8 @@ using System;
 namespace Celeste.Mod.UI {
     class MainMenuModOptionsButton : MainMenuSmallButton {
         private string subText;
+
+        public bool SmallSubTextSpacing = false;
 
         public override float ButtonHeight {
             get {
@@ -34,6 +37,8 @@ namespace Celeste.Mod.UI {
                 subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE"), modUpdatesAvailable);
             } else if (modUpdatesAvailable == 1) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE");
+            } else if (CoreModule.Settings.WarnOnEverestYamlErrors && Everest.Loader.FilesWithMetadataLoadFailures.Count > 0) {
+                subText = Dialog.Clean("MENU_MODOPTIONS_EVEREST_YAML_ERRORS");
             } else {
                 subText = null;
             }
@@ -44,7 +49,8 @@ namespace Celeste.Mod.UI {
 
             if (subText != null) {
                 Vector2 offset = new Vector2(Ease.CubeInOut(this.GetEase()) * 32f, this.GetWiggler().Value * 8f);
-                ActiveFont.DrawOutline(subText, Position + offset + new Vector2(84f, 84f), new Vector2(0f, 0.5f), Vector2.One * 0.6f, Color.OrangeRed, 2f, Color.Black);
+                ActiveFont.DrawOutline(subText, Position + offset + new Vector2(84f, SmallSubTextSpacing ? 70f : 84f),
+                    new Vector2(0f, 0.5f), Vector2.One * 0.6f, Color.OrangeRed, 2f, Color.Black);
             }
         }
     }

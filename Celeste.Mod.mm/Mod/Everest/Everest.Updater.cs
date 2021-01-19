@@ -22,6 +22,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -62,7 +63,16 @@ namespace Celeste.Mod {
                 public Task<Source> Request() {
                     if (_RequestTask != null)
                         return _RequestTask;
-                    _RequestTask = new Task<Source>(() => _RequestStart());
+                    _RequestTask = new Task<Source>(() => {
+                        try {
+                            return _RequestStart();
+                        } catch (Exception e) {
+                            ErrorDialog = "updater_versions_err_download";
+                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading Everest version list");
+                            Logger.LogDetailed(e);
+                            return this;
+                        }
+                    });
                     _RequestTask.Start();
                     return _RequestTask;
                 }
@@ -112,18 +122,23 @@ namespace Celeste.Mod {
                     // - Order by first occurence of branch
                     // - Order by version inside branch
                     Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
-                    // Force stable, then master branches to appear first.
+                    // Force stable, then beta, then dev branches to appear first.
                     branchFirsts["stable"] = int.MaxValue;
-                    branchFirsts["master"] = int.MaxValue - 2;
+                    branchFirsts["beta"] = int.MaxValue - 3;
+                    branchFirsts["dev"] = int.MaxValue - 4;
 
-                    // Make sure that the branch we're on appears between stable and master.
+                    // Make sure that the branch we're on appears between stable and beta.
                     // This ensures that people don't miss out on important stability updates,
-                    // but don't get dragged onto the master branch by accident.
+                    // but don't get dragged onto another branch by accident.
                     foreach (Entry entry in entries) {
                         if (entry.Build == Build) {
-                            branchFirsts[entry.Branch] = int.MaxValue - 1;
+                            CoreModule.Settings.CurrentBranch = entry.Branch;
                             break;
                         }
+                    }
+
+                    if (CoreModule.Settings.CurrentBranch != null) {
+                        branchFirsts[CoreModule.Settings.CurrentBranch] = int.MaxValue - 2;
                     }
 
                     for (int i = 0; i < entries.Count; i++) {
@@ -214,7 +229,7 @@ namespace Celeste.Mod {
                         throw new Exception("URL (first column) must end in filename (second column)!");
 
                     string name = split[1];
-                    string branch = "master";
+                    string branch = "dev";
 
                     if (name.EndsWith(".zip"))
                         name = name.Substring(0, name.Length - 4);

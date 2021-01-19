@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Input;
@@ -21,6 +22,14 @@ namespace Celeste {
             get => scale;
             set => scale = value;
         }
+
+#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
+        private List<MTexture> textures;
+#pragma warning restore CS0649
+        private bool scaredAnimal;
+
+        private float hideRange;
+        private float showRange;
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
@@ -48,6 +57,8 @@ namespace Celeste {
                 // Cruor temporarily broke decal paths in Maple / Ahorn.
                 texture += ".png";
             }
+            hideRange = 32f;
+            showRange = 48f;
 
             orig_ctor(texture, position, scale, depth);
         }
@@ -73,11 +84,40 @@ namespace Celeste {
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
         [MonoModIgnore]
-        private Component image;
+        [MakeMethodPublic]
+        public extern void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true);
 
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
         }
+
+        public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
+            StaticMover sm = new StaticMover {
+                SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
+                OnMove = v => { X += v.X; Y += v.Y; },
+            };
+            if (jumpThrus)
+                sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
+            Add(sm);
+        }
+
+        public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
+            Sprite sprite = (Sprite) (image = new Sprite(null, null));
+            sprite.AddLoop("hidden", 0.1f, hiddenFrames.Select(i => textures[i]).ToArray());
+            sprite.Add("return", 0.1f, "idle", showFrames.Select(i => textures[i]).ToArray());
+            sprite.AddLoop("idle", 0.1f, idleFrames.Select(i => textures[i]).ToArray());
+            sprite.Add("hide", 0.1f, "hidden", hideFrames.Select(i => textures[i]).ToArray());
+            sprite.Play("idle", restart: true);
+            sprite.Scale = scale;
+            sprite.CenterOrigin();
+            Add(sprite);
+            this.hideRange = hideRange;
+            this.showRange = showRange;
+            scaredAnimal = true;
+        }
+
+        [MonoModIgnore]
+        private Component image;
 
         public Component Image { get { return image; } set { image = value; } }
 
@@ -110,6 +150,10 @@ namespace Celeste {
 
             }
         }
+
+        [MonoModIgnore]
+        [PatchDecalUpdate]
+        public extern override void Update();
     }
     public static class DecalExt {
 

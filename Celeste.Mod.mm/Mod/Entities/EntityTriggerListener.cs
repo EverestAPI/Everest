@@ -6,7 +6,7 @@ namespace Celeste.Mod.Entities {
     /// Allows an Entity to be triggered using an EntityTrigger.
     /// </summary>
     [Tracked]
-    class EntityTriggerListener : Component {
+    public class EntityTriggerListener : Component {
 
         public Action OnTrigger;
         public Action OnStartTriggered;

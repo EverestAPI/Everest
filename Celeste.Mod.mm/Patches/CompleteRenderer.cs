@@ -1,4 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+
 
 using Celeste.Mod;
 using Celeste.Mod.Meta;
@@ -12,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste {
     class patch_CompleteRenderer : CompleteRenderer {
@@ -101,6 +104,15 @@ namespace Celeste {
 
         }
 
+        [MonoModIfFlag("Fill:CompleteRendererImageLayerScale")]
+        public class patch_ImageLayer : ImageLayer {
+            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml) : base(offset, atlas, xml) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public new float Scale;
+        }
+
         public class ImageLayerNoXML : ImageLayer {
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
@@ -120,8 +132,36 @@ namespace Celeste {
                 FrameRate = meta.FrameRate;
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
+                Scale = meta.Scale;
             }
 
+            // copy-pasted from Celeste v1.3.3.x to back-compat support scaling in v1.3.1.2
+            [MonoModIfFlag("Fill:CompleteRendererImageLayerScale")]
+            public override void Render(Vector2 scroll) {
+                Vector2 vector = GetScrollPosition(scroll).Floor();
+                MTexture mtexture = Images[(int) (Frame % Images.Count)];
+                if (mtexture != null) {
+                    bool mirrorMode = SaveData.Instance != null && SaveData.Instance.Assists.MirrorMode;
+                    if (mirrorMode) {
+                        vector.X = 1920f - vector.X - mtexture.DrawOffset.X * Scale - mtexture.Texture.Texture.Width * Scale;
+                        vector.Y += mtexture.DrawOffset.Y * Scale;
+                    } else {
+                        vector += mtexture.DrawOffset * Scale;
+                    }
+                    Rectangle clipRect = mtexture.ClipRect;
+                    bool hasOffset = Offset.X != 0f || Offset.Y != 0f;
+                    if (hasOffset) {
+                        clipRect = new Rectangle((int) (-Offset.X / Scale) + 1, (int) (-Offset.Y / Scale) + 1, mtexture.ClipRect.Width - 2, mtexture.ClipRect.Height - 2);
+                        EndRender();
+                        BeginRender(BlendState.AlphaBlend, SamplerState.LinearWrap);
+                    }
+                    Draw.SpriteBatch.Draw(mtexture.Texture.Texture, vector, clipRect, Color.White * Alpha, 0f, Vector2.Zero, Scale, mirrorMode ? SpriteEffects.FlipHorizontally : SpriteEffects.None, 0f);
+                    if (hasOffset) {
+                        EndRender();
+                        BeginRender(BlendState.AlphaBlend, SamplerState.LinearClamp);
+                    }
+                }
+            }
         }
 
     }

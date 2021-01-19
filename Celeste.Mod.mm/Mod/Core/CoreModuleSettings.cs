@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using MonoMod.Utils;
 using MonoMod;
+using Microsoft.Xna.Framework.Input;
 
 namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
@@ -155,6 +156,12 @@ namespace Celeste.Mod.Core {
             set => LazyLoading_Yes_I_Know_This_Can_Cause_Bugs = value;
         }
 
+        [SettingIgnore]
+        public string DefaultStartingLevelSet { get; set; } = "Celeste";
+
+        [SettingIgnore]
+        public int LogHistoryCountToKeep { get; set; } = 3;
+
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
@@ -185,6 +192,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool RestartAppDomain_WIP { get; set; } = false;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public int? MaxSaveSlots { get; set; } = null;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
@@ -201,7 +212,25 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingInGame(false)]
+        public bool UseKeyboardForTextInput { get; set; } = true;
+
+        [SettingInGame(false)]
         public bool AutoUpdateModsOnStartup { get; set; } = false;
+
+
+        private bool _WarnOnEverestYamlErrors = false;
+        [SettingSubText("MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC")]
+        [SettingInGame(false)]
+        public bool WarnOnEverestYamlErrors {
+            get => _WarnOnEverestYamlErrors;
+            set {
+                _WarnOnEverestYamlErrors = value;
+
+                // rebuild the main menu to make sure we show/hide the yaml error notice.
+                ((patch_OuiMainMenu) (Engine.Scene as Overworld)?.GetUI<OuiMainMenu>())?.RebuildMainAndTitle();
+            }
+        }
+
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
@@ -236,6 +265,15 @@ namespace Celeste.Mod.Core {
 
         [SettingIgnore]
         public string CurrentVersion { get; set; }
+
+        [SettingIgnore]
+        public string CurrentBranch { get; set; }
+
+        [SettingIgnore]
+        public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+
+        public ButtonBinding MenuPageUp { get; set; }
+        public ButtonBinding MenuPageDown { get; set; }
 
         /*
         [SettingRange(0, 10)]

@@ -4,11 +4,11 @@
 
 ----
 
-[![Build Status](https://dev.azure.com/EverestAPI/Everest/_apis/build/status/EverestAPI.Everest?branchName=master)](https://dev.azure.com/EverestAPI/Everest/_build?definitionId=3)
+[![Build Status](https://dev.azure.com/EverestAPI/Everest/_apis/build/status/EverestAPI.Everest?branchName=dev)](https://dev.azure.com/EverestAPI/Everest/_build?definitionId=3)
 
 [**Check the website for installation / usage instructions.**](https://everestapi.github.io/)
 
-Using [MonoMod](https://github.com/0x0ade/MonoMod), an open-source C# modding utility.
+Using [MonoMod](https://github.com/MonoMod/MonoMod), an open-source C# modding utility.
 
 **We're in the game modding category on the "Mt. Celeste Climbing Association" Discord server:**
 

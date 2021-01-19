@@ -104,8 +104,21 @@ namespace Celeste {
                 return;
             }
 
-            if (File.Exists("log.txt"))
-                File.Delete("log.txt");
+            if (File.Exists("log.txt")) {
+                if (new FileInfo("log.txt").Length > 0) {
+                    // move the old log.txt to the LogHistory folder.
+                    // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
+                    // so we don't know how many files we should keep.
+                    if (!Directory.Exists("LogHistory")) {
+                        Directory.CreateDirectory("LogHistory");
+                    }
+                    File.Move("log.txt", Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime("log.txt"))));
+                } else {
+                    // log is empty! (this actually happens more often than you'd think, because of Steam re-opening Celeste)
+                    // just delete it.
+                    File.Delete("log.txt");
+                }
+            }
 
             using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
@@ -163,7 +176,6 @@ namespace Celeste {
 @"Yo, I heard you like Everest so I put Everest in your Everest so you can Ever Rest while you Ever Rest.
 
 In other words: Celeste has encountered a catastrophic failure.
-Probably by force-installing Everest on top of Everest on top of Everest.
 
 IF YOU WANT TO HELP US FIX THIS:
 Please join the Celeste Discord server and drag and drop your log.txt into #modding_help.

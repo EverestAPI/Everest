@@ -58,6 +58,10 @@ namespace Celeste.Mod {
             internal static List<Tuple<EverestModuleMetadata, Action>> Delayed = new List<Tuple<EverestModuleMetadata, Action>>();
             internal static int DelayedLock;
 
+            private static bool enforceOptionalDependencies;
+
+            internal static HashSet<string> FilesWithMetadataLoadFailures = new HashSet<string>();
+
             internal static readonly Version _VersionInvalid = new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
             internal static readonly Version _VersionMax = new Version(int.MaxValue, int.MaxValue);
 
@@ -70,6 +74,16 @@ namespace Celeste.Mod {
             /// The currently loaded mod mod options order.
             /// </summary>
             public static ReadOnlyCollection<string> ModOptionsOrder => _ModOptionsOrder?.AsReadOnly();
+
+            /// <summary>
+            /// The path to the Everest /Mods/updaterblacklist.txt file.
+            /// </summary>
+            public static string PathUpdaterBlacklist { get; internal set; }
+            internal static List<string> _UpdaterBlacklist = new List<string>();
+            /// <summary>
+            /// The currently loaded mod updater blacklist.
+            /// </summary>
+            public static ReadOnlyCollection<string> UpdaterBlacklist => _UpdaterBlacklist?.AsReadOnly();
 
             /// <summary>
             /// All mods on this list with a version lower than the specified version will never load.
@@ -88,6 +102,8 @@ namespace Celeste.Mod {
                 { "Elemental Chaos", new Version(1, 0, 0, 0) },
                 { "BGswitch", new Version(0, 1, 0, 0) },
 
+                // Infinite Saves 1.0.0 does not work well with the "extra save slots" feature of Everest
+                { "InfiniteSaves", new Version(1, 0, 1) }
             };
 
             /// <summary>
@@ -102,6 +118,8 @@ namespace Celeste.Mod {
             };
 
             internal static FileSystemWatcher Watcher;
+
+            internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
 
             public static bool AutoLoadNewMods { get; internal set; }
 
@@ -139,10 +157,23 @@ namespace Celeste.Mod {
                     }
                 }
 
+                PathUpdaterBlacklist = Path.Combine(PathMods, "updaterblacklist.txt");
+                if (File.Exists(PathUpdaterBlacklist)) {
+                    _UpdaterBlacklist = File.ReadAllLines(PathUpdaterBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathUpdaterBlacklist)) {
+                        writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
+                        writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
+                        writer.WriteLine("SomeMod.zip");
+                    }
+                }
+
                 if (Flags.IsDisabled)
                     return;
 
                 Stopwatch watch = Stopwatch.StartNew();
+
+                enforceOptionalDependencies = true;
 
                 string[] files = Directory.GetFiles(PathMods);
                 for (int i = 0; i < files.Length; i++) {
@@ -151,7 +182,7 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadZip(file);
+                    LoadZip(Path.Combine(PathMods, file));
                 }
 
                 files = Directory.GetDirectories(PathMods);
@@ -161,21 +192,32 @@ namespace Celeste.Mod {
                         continue;
                     if (_Whitelist != null && !_Whitelist.Contains(file))
                         continue;
-                    LoadDir(file);
+                    LoadDir(Path.Combine(PathMods, file));
                 }
+
+                enforceOptionalDependencies = false;
+                Logger.Log(LogLevel.Info, "loader", "Loading mods with unsatisfied optional dependencies (if any)");
+                Everest.CheckDependenciesOfDelayedMods();
 
                 watch.Stop();
                 Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
 
-                Watcher = new FileSystemWatcher {
-                    Path = PathMods,
-                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
-                };
+                try {
+                    Watcher = new FileSystemWatcher {
+                        Path = PathMods,
+                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite
+                    };
 
-                Watcher.Created += LoadAutoUpdated;
+                    Watcher.Created += LoadAutoUpdated;
 
-                Watcher.EnableRaisingEvents = true;
-                AutoLoadNewMods = true;
+                    Watcher.EnableRaisingEvents = true;
+                    AutoLoadNewMods = true;
+                } catch (Exception e) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {PathMods}");
+                    e.LogDetailed();
+                    Watcher?.Dispose();
+                    Watcher = null;
+                }
             }
 
             private static void LoadAutoUpdated(object source, FileSystemEventArgs e) {
@@ -223,6 +265,7 @@ namespace Celeste.Mod {
                                     meta.PostParse();
                                 } catch (Exception e) {
                                     Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
+                                    FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
                             continue;
@@ -241,7 +284,8 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing multimetadata.yaml in {archive}: {e}");
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {archive}: {e}");
+                                    FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
                             continue;
@@ -259,6 +303,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(archive, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -313,6 +358,7 @@ namespace Celeste.Mod {
                             meta.PostParse();
                         } catch (Exception e) {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
+                            FilesWithMetadataLoadFailures.Add(dir);
                         }
                     }
 
@@ -333,6 +379,7 @@ namespace Celeste.Mod {
                             }
                         } catch (Exception e) {
                             Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {dir}: {e}");
+                            FilesWithMetadataLoadFailures.Add(dir);
                         }
                     }
 
@@ -346,6 +393,7 @@ namespace Celeste.Mod {
                         contentMeta.Mod = contentMetaParent;
                         contentMeta.Name = contentMetaParent.Name;
                     }
+                    OnCrawlMod?.Invoke(dir, contentMetaParent);
                     Content.Crawl(contentMeta);
                     contentMeta = null;
                 };
@@ -388,8 +436,8 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (DependencyLoaded(meta)) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} already loaded!");
+                if (Modules.Any(module => module.Metadata.Name == meta.Name)) {
+                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
 
@@ -415,6 +463,16 @@ namespace Celeste.Mod {
                         }
                         return;
                     }
+
+                foreach (EverestModuleMetadata dep in meta.OptionalDependencies) {
+                    if (!DependencyLoaded(dep) && (enforceOptionalDependencies || Everest.Modules.Any(module => module.Metadata?.Name == dep.Name))) {
+                        Logger.Log(LogLevel.Info, "loader", $"Optional dependency {dep} of mod {meta} not loaded! Delaying.");
+                        lock (Delayed) {
+                            Delayed.Add(Tuple.Create(meta, callback));
+                        }
+                        return;
+                    }
+                }
 
                 callback?.Invoke();
 
@@ -492,18 +550,26 @@ namespace Celeste.Mod {
                 }
 
                 if (string.IsNullOrEmpty(meta.PathArchive) && File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
-                    FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
-                        Path = Path.GetDirectoryName(meta.DLL),
-                        NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
-                    };
+                    try {
+                        FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
+                            Path = Path.GetDirectoryName(meta.DLL),
+                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+                        };
 
-                    watcher.Changed += (s, e) => {
-                        if (e.FullPath != meta.DLL)
-                            return;
-                        ReloadModAssembly(s, e);
-                    };
+                        watcher.Changed += (s, e) => {
+                            if (e.FullPath != meta.DLL)
+                                return;
+                            ReloadModAssembly(s, e);
+                            // FIXME: Should we dispose the old .dll watcher?
+                        };
 
-                    watcher.EnableRaisingEvents = true;
+                        watcher.EnableRaisingEvents = true;
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
+                        e.LogDetailed();
+                        meta.DevWatcher?.Dispose();
+                        meta.DevWatcher = null;
+                    }
                 }
 
                 ApplyModHackfixes(meta, asm);
@@ -515,7 +581,7 @@ namespace Celeste.Mod {
 
                 Type[] types;
                 try {
-                    types = asm.GetTypes();
+                    types = asm.GetTypesSafe();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
                     e.LogDetailed();
@@ -589,9 +655,18 @@ namespace Celeste.Mod {
                     return false;
                 }
 
+                // enforce dependencies.
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep))
                         return false;
+
+                // enforce optional dependencies: an optional dependency is satisfied if either of these 2 applies:
+                // - it is loaded (obviously)
+                // - enforceOptionalDependencies = false and no version of the mod is loaded (if one is, it might be incompatible and cause issues)
+                foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
+                    if (!DependencyLoaded(dep) && (enforceOptionalDependencies || Everest.Modules.Any(mod => mod.Metadata?.Name == dep.Name)))
+                        return false;
+
                 return true;
             }
 

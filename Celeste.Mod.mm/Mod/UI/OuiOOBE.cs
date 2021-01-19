@@ -73,6 +73,13 @@ namespace Celeste.Mod.UI {
                             value => CoreModule.Settings.ShowEverestTitleScreen = value
                         ),
 
+                        new OnOff(
+                            Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                            CoreModule.Settings.UseKeyboardForTextInput
+                        ).Change(
+                            value => CoreModule.Settings.UseKeyboardForTextInput = value
+                        ),
+
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
                         new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                     };
@@ -115,6 +122,13 @@ namespace Celeste.Mod.UI {
                             CoreModule.Settings.ShowEverestTitleScreen
                         ).Change(
                             value => CoreModule.Settings.ShowEverestTitleScreen = value
+                        ),
+
+                        new OnOff(
+                            Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                            CoreModule.Settings.UseKeyboardForTextInput
+                        ).Change(
+                            value => CoreModule.Settings.UseKeyboardForTextInput = value
                         ),
 
                         new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
@@ -163,6 +177,13 @@ namespace Celeste.Mod.UI {
                                 CoreModule.Settings.ShowEverestTitleScreen
                             ).Change(
                                 value => CoreModule.Settings.ShowEverestTitleScreen = value
+                            ),
+
+                            new OnOff(
+                                Dialog.Clean("MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT"),
+                                CoreModule.Settings.UseKeyboardForTextInput
+                            ).Change(
+                                value => CoreModule.Settings.UseKeyboardForTextInput = value
                             ),
 
                             new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
@@ -306,8 +327,12 @@ namespace Celeste.Mod.UI {
         }
 
         public override bool IsStart(Overworld overworld, Overworld.StartMode start) {
-            if (start != Overworld.StartMode.Titlescreen || CoreModule.Settings.CurrentVersion != null)
+            if (start != Overworld.StartMode.Titlescreen)
                 return false;
+            if (CoreModule.Settings.CurrentVersion != null) {
+                CoreModule.Instance.SaveSettings(); // be sure CurrentVersion is updated on startup.
+                return false;
+            }
             Add(new Coroutine(Enter(null)));
             return true;
         }

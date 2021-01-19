@@ -2,20 +2,10 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using Microsoft.Xna.Framework;
-using System.IO;
+using Celeste.Mod.Meta;
 using FMOD.Studio;
 using Monocle;
-using Celeste.Mod.Meta;
+using MonoMod;
 
 namespace Celeste {
     class patch_CassetteBlockManager : CassetteBlockManager {
@@ -97,12 +87,12 @@ namespace Celeste {
                 if (leadBeats == 0) {
                     beatIndex = 0;
                     if (!isLevelMusic)
-                        sfx.start();
+                        sfx?.start();
                 }
             }
 
             if (leadBeats <= 0) {
-                sfx.setParameterValue("sixteenth_note", GetSixteenthNote());
+                sfx?.setParameterValue("sixteenth_note", GetSixteenthNote());
             }
         }
 

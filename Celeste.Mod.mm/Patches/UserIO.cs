@@ -61,6 +61,22 @@ namespace Celeste {
             return (T) new XmlSerializer(typeof(T)).Deserialize(stream);
         }
 
+        public static extern T orig_Load<T>(string path, bool backup = false);
+        public static T Load<T>(string path, bool backup = false) {
+            T result = orig_Load<T>(path, backup);
+
+            // if we are loading a SaveData, fill out the FileSlot right away.
+            if (typeof(T) == typeof(SaveData) && result != null) {
+                if (path == "debug") {
+                    (result as SaveData).FileSlot = -1;
+                } else if (int.TryParse(path, out int slot)) {
+                    (result as SaveData).FileSlot = slot;
+                }
+            }
+
+            return result;
+        }
+
         private static IEnumerator SaveNonHandler() {
             yield break;
         }

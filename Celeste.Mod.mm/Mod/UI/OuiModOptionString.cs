@@ -173,7 +173,7 @@ namespace Celeste.Mod.UI {
             Overworld.ShowInputUI = true;
             Focused = false;
 
-            Engine.Commands.Enabled = true;
+            Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
 
             Vector2 posFrom = Position;
             Vector2 posTo = new Vector2(0f, 1080f);
@@ -186,9 +186,17 @@ namespace Celeste.Mod.UI {
             Visible = false;
         }
 
+        public bool UseKeyboardInput {
+            get {
+                var settings = Core.CoreModule.Instance._Settings as Core.CoreModuleSettings;
+                return settings?.UseKeyboardForTextInput ?? false;
+            }
+        }
+
         public void OnTextInput(char c) {
-            if (MInput.GamePads[Input.Gamepad].Attached)
+            if (!UseKeyboardInput) {
                 return;
+            }
 
             if (c == (char) 13) {
                 // Enter - confirm.
@@ -196,12 +204,7 @@ namespace Celeste.Mod.UI {
 
             } else if (c == (char) 8) {
                 // Backspace - trim.
-                if (Value.Length > 0) {
-                    Value = Value.Substring(0, Value.Length - 1);
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                }
+                Backspace();
 
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.
@@ -226,11 +229,16 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        public override void SceneEnd(Scene scene) {
+            Overworld.ShowInputUI = true;
+            Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
+        }
+
         public override void Update() {
             bool wasFocused = Focused;
 
-            // Only "focus" if the input method is a gamepad, not a keyboard.
-            Focused = wasFocused && MInput.GamePads[Input.Gamepad].Attached;
+            // Only "focus" if we're not using the keyboard for input
+            Focused = wasFocused && !UseKeyboardInput;
 
             base.Update();
 
@@ -406,8 +414,8 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             int prevIndex = index;
-            // Only "focus" if the input method is a gamepad, not a keyboard.
-            if (!MInput.GamePads[Input.Gamepad].Attached)
+            // Only "focus" if we're not using the keyboard for input
+            if (UseKeyboardInput)
                 index = -1;
 
             // TODO: Rewrite or study and document the following code.
@@ -455,8 +463,8 @@ namespace Celeste.Mod.UI {
         }
 
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
-            // Only draw "interactively" if the input method is a gamepad, not a keyboard.
-            if (!MInput.GamePads[Input.Gamepad].Attached) {
+            // Only draw "interactively" if not using the keyboard for input
+            if (UseKeyboardInput) {
                 selected = false;
                 disabled = true;
             }

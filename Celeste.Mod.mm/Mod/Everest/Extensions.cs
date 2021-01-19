@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -335,6 +336,14 @@ namespace Celeste.Mod {
         /// </summary>
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
+
+        public static Type[] GetTypesSafe(this Assembly asm) {
+            try {
+                return asm.GetTypes();
+            } catch (ReflectionTypeLoadException e) {
+                return e.Types.Where(t => t != null).ToArray();
+            }
+        }
 
         public static BinaryPacker.Element SetAttr(this BinaryPacker.Element el, string name, object value) {
             if (el.Attributes == null)
