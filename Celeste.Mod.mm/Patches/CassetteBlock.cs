@@ -1,21 +1,5 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
-
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
 using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
-using Monocle;
-using Celeste.Mod.Meta;
 
 namespace Celeste {
     class patch_CassetteBlock : CassetteBlock {
@@ -24,7 +8,7 @@ namespace Celeste {
             : base(data, offset, id) {
         }
 
-        // 1.3.0.0 gets rid of the 1-arg ctor.
+        // 1.3.0.0 gets rid of the 2-arg ctor.
         // We're adding a new ctor, thus can't call the constructor without a small workaround.
         [MonoModLinkTo("Celeste.CassetteBlock", "System.Void .ctor(Celeste.EntityData,Microsoft.Xna.Framework.Vector2,Celeste.EntityID)")]
         [MonoModForceCall]

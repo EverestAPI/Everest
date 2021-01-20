@@ -1,16 +1,16 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 
 namespace Celeste {
     class patch_ObjModel : ObjModel {
+        /// <summary>
+        /// Create a new ObjModel from a stream
+        /// The filename is mainly just to check if it's a .export
+        /// </summary>
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             ObjModel objModel = new ObjModel();
             List<VertexPositionTexture> list = new List<VertexPositionTexture>();
@@ -75,7 +75,7 @@ namespace Celeste {
                                 list3.Add(item2);
                             } else if (a == "f") {
                                 for (int m = 1; m < Math.Min(4, array.Length); m++) {
-                                    VertexPositionTexture item3 = default(VertexPositionTexture);
+                                    VertexPositionTexture item3 = default;
                                     string[] array2 = array[m].Split('/');
                                     if (array2[0].Length > 0) {
                                         item3.Position = list2[int.Parse(array2[0]) - 1];
@@ -112,10 +112,7 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Create a new ObjModel from a stream
-        /// The filename is mainly just to check if it's a .export
-        /// </summary>
+        /// <inheritdoc cref="patch_ObjModel.CreateFromStream(Stream, string)"/>
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             return patch_ObjModel.CreateFromStream(stream, fname);
         }

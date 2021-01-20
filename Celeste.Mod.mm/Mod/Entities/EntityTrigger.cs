@@ -6,7 +6,7 @@ using System.Collections.Generic;
 namespace Celeste.Mod.Entities {
     [Tracked]
     [CustomEntity("everest/entityTrigger")]
-    class EntityTrigger : Trigger {
+    public class EntityTrigger : Trigger {
         private bool manualTrigger;
         private bool persistent;
         private EntityID id;
@@ -62,6 +62,10 @@ namespace Celeste.Mod.Entities {
             Invoke();
         }
 
+        /// <summary>
+        /// Trigger all <see cref="EntityTrigger"/>s that have <paramref name="point"/> within their range.
+        /// </summary>
+        /// <param name="point"></param>
         public static void ManuallyTrigger(Vector2 point) {
             foreach (EntityTrigger trigger in Engine.Scene.Tracker.GetEntities<EntityTrigger>()) {
                 if (trigger.manualTrigger && point.X >= trigger.left && point.X <= trigger.right && point.Y >= trigger.top && point.Y <= trigger.bottom)

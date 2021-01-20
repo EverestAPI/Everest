@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using System;
 
@@ -8,10 +9,8 @@ namespace Celeste {
         // expose this private struct and field to our mod.
         private struct Tile { }
 
-#pragma warning disable CS0649 // field is never initialized
         private static Tile[,] tiles;
         private static bool initialized;
-#pragma warning restore CS0649 // field is never initialized
 
         public static extern void orig_Init(Level lvl);
         public static void Init(Level lvl) {

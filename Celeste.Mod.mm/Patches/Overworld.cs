@@ -3,14 +3,8 @@
 using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Celeste.Mod.UI;
-using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Overworld : Overworld {

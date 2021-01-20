@@ -1,25 +1,13 @@
-﻿using Microsoft.Xna.Framework.Graphics;
-using MonoMod.InlineRT;
+﻿using Celeste.Mod.Core;
+using Ionic.Zip;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
-using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using MonoMod.Utils;
-using System.Runtime.CompilerServices;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod;
-using MCC = Mono.Cecil.Cil;
-using MonoMod.Cil;
-using Microsoft.Xna.Framework;
-using Monocle;
-using System.Diagnostics;
-using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     public static partial class Everest {

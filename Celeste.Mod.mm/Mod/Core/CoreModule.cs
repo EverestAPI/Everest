@@ -1,27 +1,19 @@
 ﻿using Celeste.Editor;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
-using Monocle;
-using Celeste;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using System.IO;
-using Celeste.Mod.Helpers;
-using MonoMod.Utils;
 using Microsoft.Xna.Framework.Input;
-using System.Threading;
-using Stopwatch = System.Diagnostics.Stopwatch;
-using System.Text.RegularExpressions;
+using Mono.Cecil.Cil;
+using Monocle;
+using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using NLua;
-using MonoMod.Cil;
-using Mono.Cecil.Cil;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -116,8 +108,7 @@ namespace Celeste.Mod.Core {
                     return;
                 }
 
-                Level level = Engine.Scene as Level;
-                if (level == null)
+                if (!(Engine.Scene is Level level))
                     return;
 
                 AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
@@ -128,8 +119,7 @@ namespace Celeste.Mod.Core {
 
             // F6: Open map editor for current level.
             Engine.Commands.FunctionKeyActions[5] = () => {
-                Level level = Engine.Scene as Level;
-                if (level == null)
+                if (!(Engine.Scene is Level level))
                     return;
                 Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;

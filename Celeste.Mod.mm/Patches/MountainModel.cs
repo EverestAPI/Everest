@@ -1,14 +1,14 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Monocle;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using MonoMod;
 using Celeste.Mod;
 using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
+using Monocle;
+using MonoMod;
+using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 

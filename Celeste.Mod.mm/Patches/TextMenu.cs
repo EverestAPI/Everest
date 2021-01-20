@@ -1,28 +1,30 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_TextMenu : TextMenu {
 
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
+
+        /// <summary>
+        /// The items contained in this menu.
+        /// </summary>
         public List<Item> Items => items;
 
         // Basically the same as Add(), but with an index parameter.
+        /// <summary>
+        /// Insert a <see cref="TextMenu.Item"/> at position <paramref name="index"/> in the menu.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public TextMenu Insert(int index, Item item) {
             items.Insert(index, item);
             item.Container = this;
@@ -41,6 +43,11 @@ namespace Celeste {
         }
 
         // The reverse of Add()
+        /// <summary>
+        /// Remove a <see cref="TextMenu.Item"/> from the menu.
+        /// </summary>
+        /// <param name="item">A <see cref="TextMenu.Item"/> contained in this menu.</param>
+        /// <returns></returns>
         public TextMenu Remove(Item item) {
             int index = items.IndexOf(item);
             if (index == -1)
@@ -55,6 +62,7 @@ namespace Celeste {
             return this;
         }
 
+        /// <inheritdoc cref="TextMenu.GetYOffsetOf(Item)"/>
         [MonoModReplace]
         public new float GetYOffsetOf(Item targetItem) {
             // this is a small fix of the vanilla method to better support invisible menu items.
@@ -209,15 +217,11 @@ namespace Celeste {
         public static List<TextMenu.Item> GetItems(this TextMenu self)
             => ((patch_TextMenu) self).Items;
 
-        /// <summary>
-        /// Insert the given menu item at the given index.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Insert(int, TextMenu.Item)"/>
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
 
-        /// <summary>
-        /// Remove the given menu item from the menu.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Remove(TextMenu.Item)"/>
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
 

@@ -1,13 +1,7 @@
-﻿using Celeste.Mod.UI;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework.Input;
 using Monocle;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
     public class ModuleSettingsButtonConfigUI : patch_ButtonConfigUI {

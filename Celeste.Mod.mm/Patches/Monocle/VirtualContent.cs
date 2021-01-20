@@ -1,25 +1,20 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Monocle {
     static class patch_VirtualContent {
 
         // We're effectively in VirtualContent, but still need to "expose" private fields to our mod.
         private static List<VirtualAsset> assets;
+        /// <summary>
+        /// The list of all managed VirtualAssets.
+        /// </summary>
         public static List<VirtualAsset> Assets => assets;
         private static bool reloading;
 
@@ -37,8 +32,7 @@ namespace Monocle {
             // We use / instead of \ in mod content paths.
             pathMod = pathMod.Replace('\\', '/');
 
-            ModAsset asset;
-            if (Everest.Content.TryGet<Texture2D>(pathMod, out asset)) {
+            if (Everest.Content.TryGet<Texture2D>(pathMod, out ModAsset asset)) {
                 vt = (VirtualTexture) (object) new patch_VirtualTexture(asset);
             } else {
                 vt = (VirtualTexture) (object) new patch_VirtualTexture(path);
@@ -48,6 +42,9 @@ namespace Monocle {
             return vt;
         }
 
+        /// <summary>
+        /// Create a new VirtualTexture based on the passed mod asset.
+        /// </summary>
         public static VirtualTexture CreateTexture(ModAsset metadata) {
             VirtualTexture virtualTexture = (VirtualTexture) (object) new patch_VirtualTexture(metadata);
             assets.Add(virtualTexture);
@@ -64,11 +61,17 @@ namespace Monocle {
         public static void _Unload()
             => Unload();
 
+        /// <summary>
+        /// Forcibly unload and reload all content.
+        /// </summary>
         public static void ForceReload() {
             reloading = true;
             Reload();
         }
 
+        /// <summary>
+        /// Unload all overworld-related content.
+        /// </summary>
         public static void UnloadOverworld() {
             foreach (VirtualAsset asset in assets) {
                 string path = asset.Name.Replace('\\', '/');
@@ -87,14 +90,10 @@ namespace Monocle {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// The list of all managed VirtualAssets.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.Assets"/>
         public static List<VirtualAsset> Assets => patch_VirtualContent.Assets;
 
-        /// <summary>
-        /// Create a new VirtualTexture based on the passed mod asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.CreateTexture(ModAsset)"/>
         public static VirtualTexture CreateTexture(ModAsset metadata)
             => patch_VirtualContent.CreateTexture(metadata);
 
@@ -110,15 +109,11 @@ namespace Monocle {
         public static void Unload()
             => patch_VirtualContent._Unload();
 
-        /// <summary>
-        /// Forcibly unload and reload all content.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.ForceReload"/>
         public static void ForceReload()
             => patch_VirtualContent.ForceReload();
 
-        /// <summary>
-        /// Unload all overworld-related content.
-        /// </summary>
+        /// <inheritdoc cref="patch_VirtualContent.UnloadOverworld"/>
         public static void UnloadOverworld()
             => patch_VirtualContent.UnloadOverworld();
 

@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Celeste.Mod.Core;
-using Celeste.Mod.Meta;
 
 namespace Celeste.Mod {
     public class MapDataFixup {

@@ -1,19 +1,10 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_PlayerHair : PlayerHair {
@@ -75,6 +66,9 @@ namespace Celeste {
             }
         }
 
+        /// <summary>
+        /// Get the current player hair texture for the given hair segment.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public MTexture GetHairTexture(int index) {
             if (index == 0)
@@ -82,10 +76,16 @@ namespace Celeste {
             return GFX.Game["characters/player/hair00"];
         }
 
+        /// <summary>
+        /// Get the current player hair scale for the given hair segment.
+        /// </summary>
         [MonoModIgnore]
         private extern Vector2 GetHairScale(int index);
         public Vector2 PublicGetHairScale(int index) => GetHairScale(index);
 
+        /// <summary>
+        /// Get the current player hair color for the given hair segment.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetHairColor(int index) {
             return Color * Alpha;
@@ -97,21 +97,15 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Get the current player hair texture for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairTexture(int)"/>
         public static MTexture GetHairTexture(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairTexture(index);
 
-        /// <summary>
-        /// Get the current player hair scale for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairScale(int)"/>
         public static Vector2 GetHairScale(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
-        /// <summary>
-        /// Get the current player hair color for the given hair segment.
-        /// </summary>
+        /// <inheritdoc cref="patch_PlayerHair.GetHairColor(int)"/>
         public static Color GetHairColor(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).GetHairColor(index);
 

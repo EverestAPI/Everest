@@ -1,10 +1,7 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -213,7 +210,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap keys during a remap operation.
-        /// This should be the a List<Keys> field in your settings class
+        /// This should be the a List&lt;Keys&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newKey">The new key that the user is attempting to set.</param>

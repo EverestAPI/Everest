@@ -9,6 +9,10 @@
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Reference Include="System.Management" />
   </ItemGroup>
@@ -211,6 +215,15 @@
       <Link>lua53.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../lib-stripped/Celeste.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="../lib-stripped/FNA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
 </Project>

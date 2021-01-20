@@ -1,22 +1,14 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
+﻿using Ionic.Zip;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
-using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
-using Mono.Cecil.Pdb;
-using Mono.Cecil.Cil;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -66,8 +58,7 @@ namespace Celeste.Mod {
                                 string pathRelinked = Path.Combine(Path.GetDirectoryName(path), nameRelinked);
                                 if (!File.Exists(pathRelinked))
                                     continue;
-                                ModuleDefinition relinked;
-                                if (!StaticRelinkModuleCache.TryGetValue(nameRelinkedNeutral, out relinked)) {
+                                if (!StaticRelinkModuleCache.TryGetValue(nameRelinkedNeutral, out ModuleDefinition relinked)) {
                                     relinked = ModuleDefinition.ReadModule(pathRelinked, new ReaderParameters(ReadingMode.Immediate));
                                     StaticRelinkModuleCache[nameRelinkedNeutral] = relinked;
                                 }
@@ -169,7 +160,6 @@ namespace Celeste.Mod {
                 return null;
             }
 
-            [Obsolete("Use the variant with an explicit assembly name instead.")]
             /// <summary>
             /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
             /// </summary>
@@ -179,6 +169,7 @@ namespace Celeste.Mod {
             /// <param name="checksumsExtra">Any optional checksums</param>
             /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
             /// <returns>The loaded, relinked assembly.</returns>
+            [Obsolete("Use the variant with an explicit assembly name instead.")]
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null)
                 => GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream, depResolver, checksumsExtra, prePatch);
@@ -187,6 +178,7 @@ namespace Celeste.Mod {
             /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
             /// </summary>
             /// <param name="meta">The mod metadata, used for caching, among other things.</param>
+            /// <param name="asmname"></param>
             /// <param name="stream">The stream to read the .dll from.</param>
             /// <param name="depResolver">An optional dependency resolver.</param>
             /// <param name="checksumsExtra">Any optional checksums</param>
@@ -250,8 +242,7 @@ namespace Celeste.Mod {
 
                     ((DefaultAssemblyResolver) modder.AssemblyResolver).ResolveFailure += resolver;
 
-                    string symbolPath;
-                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
+                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out string symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
                     modder.ReaderParameters.ReadSymbols = modder.ReaderParameters.SymbolStream != null;
                     if (modder.ReaderParameters.SymbolReaderProvider != null &&
                         modder.ReaderParameters.SymbolReaderProvider is RelinkerSymbolReaderProvider) {
@@ -438,12 +429,12 @@ namespace Celeste.Mod {
                 return null;
             }
 
-            [Obsolete("Use the variant with an explicit assembly name instead.")]
             /// <summary>
             /// Get the cached path of a given mod's relinked .dll
             /// </summary>
             /// <param name="meta">The mod metadata.</param>
             /// <returns>The full path to the cached relinked .dll</returns>
+            [Obsolete("Use the variant with an explicit assembly name instead.")]
             public static string GetCachedPath(EverestModuleMetadata meta)
                 => GetCachedPath(meta, Path.GetFileNameWithoutExtension(meta.DLL));
 
@@ -451,6 +442,7 @@ namespace Celeste.Mod {
             /// Get the cached path of a given mod's relinked .dll
             /// </summary>
             /// <param name="meta">The mod metadata.</param>
+            /// <param name="asmname"></param>
             /// <returns>The full path to the cached relinked .dll</returns>
             public static string GetCachedPath(EverestModuleMetadata meta, string asmname)
                 => Path.Combine(Loader.PathCache, meta.Name + "." + asmname + ".dll");

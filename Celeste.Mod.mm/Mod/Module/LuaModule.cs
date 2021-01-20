@@ -1,18 +1,5 @@
-﻿using Celeste.Mod.UI;
-using FMOD.Studio;
-using Microsoft.Xna.Framework.Graphics;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
+﻿using FMOD.Studio;
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using NLua;
 
 namespace Celeste.Mod {
     public class LuaModule : EverestModule {

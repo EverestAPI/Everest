@@ -1,4 +1,6 @@
-﻿using Celeste.Mod;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste.Mod;
 using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
@@ -7,12 +9,17 @@ using System.Linq;
 
 namespace Monocle {
     /// <summary>
-    /// When applied on an entity, this attribute makes the entity tracked the same way as another entity.
+    /// When applied on an entity or component, this attribute makes the entity tracked the same way as another entity or component.
     /// </summary>
     public class TrackedAsAttribute : Attribute {
         public Type TrackedAsType;
         public bool Inherited;
 
+        /// <summary>
+        /// Makes this entity/component tracked the same way as another entity/component.<br/>
+        /// It can then be accessed through <see cref="Tracker.GetEntities{T}"/> or <see cref="Tracker.GetComponents{T}"/> with the generic param of <paramref name="trackedAsType"/>.
+        /// </summary>
+        /// <param name="trackedAsType">Type to track this entity/component as.</param>
         public TrackedAsAttribute(Type trackedAsType) {
             TrackedAsType = trackedAsType;
         }
@@ -29,10 +36,7 @@ namespace Monocle {
         [MonoModIgnore]
         public static extern List<Type> GetSubclasses(Type type);
 
-#pragma warning disable CS0626 // method, operator or getter is tagged external and has no attribute
         public static extern void orig_Initialize();
-#pragma warning restore CS0626
-
         public new static void Initialize() {
             orig_Initialize();
 

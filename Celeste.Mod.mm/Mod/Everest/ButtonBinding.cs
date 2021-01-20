@@ -1,22 +1,23 @@
-﻿using Celeste.Mod.UI;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
+    /// <summary>
+    /// A wrapper class for a custom <see cref="VirtualButton"/>.
+    /// <br></br>
+    /// Default buttons can be set using <see cref="DefaultButtonBindingAttribute"/>.
+    /// <br></br>
+    /// <see href="https://github.com/EverestAPI/Resources/wiki/Mod-Settings#ButtonBinding">Read More</see>
+    /// </summary>
     public class ButtonBinding {
-
         public List<Buttons> Buttons { get; set; }
         public List<Keys> Keys { get; set; }
 
         #region VirtualButton Members
-
-        public static implicit operator bool(ButtonBinding binding) => binding.Button ?? false;
 
         [YamlIgnore]
         public bool Check => Button?.Check ?? false;
@@ -70,8 +71,10 @@ namespace Celeste.Mod {
 
         #region VirtualButton Members
 
+        /// <inheritdoc cref="VirtualButton.ConsumeBuffer"/>
         public void ConsumeBuffer() => Button?.ConsumeBuffer();
 
+        /// <inheritdoc cref="VirtualButton.ConsumePress"/>
         public void ConsumePress() => Button?.ConsumePress();
 
         public void SetRepeat(float repeatTime) => Button?.SetRepeat(repeatTime);
@@ -80,15 +83,42 @@ namespace Celeste.Mod {
 
         #endregion
 
+        public static implicit operator bool(ButtonBinding binding) => binding.Button ?? false;
+
     }
 
+    /// <summary>
+    /// Sets the default <see cref="Buttons"/> and <see cref="Keys"/> of a <see cref="ButtonBinding"/> setting.
+    /// <br></br>
+    /// <see href="https://github.com/EverestAPI/Resources/wiki/Mod-Settings#DefaultButtonBinding">Read More</see>
+    /// </summary>
     public class DefaultButtonBindingAttribute : Attribute {
 
+        /// <summary>
+        /// The default Button binding.
+        /// </summary>
         public Buttons Button;
+
+        /// <summary>
+        /// The default Key binding.
+        /// </summary>
         public Keys Key;
+
+        /// <summary>
+        /// Whether the default Button should always be bound.
+        /// </summary>
         public bool ForceDefaultButton;
+
+        /// <summary>
+        /// Whether the default Key should always be bound.
+        /// </summary>
         public bool ForceDefaultKey;
 
+        /// <summary>
+        /// Sets the default <see cref="Buttons"/> and <see cref="Keys"/> of a <see cref="ButtonBinding"/> setting.
+        /// </summary>
+        /// <param name="button">The default Button binding.</param>
+        /// <param name="key">The default Key binding.</param>
         public DefaultButtonBindingAttribute(Buttons button, Keys key) {
             Button = button;
             Key = key;

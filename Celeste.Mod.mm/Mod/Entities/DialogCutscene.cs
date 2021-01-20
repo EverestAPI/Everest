@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using Monocle;
+﻿using Monocle;
+using System.Collections;
 
 namespace Celeste.Mod.Entities {
     public class DialogCutscene : CutsceneEntity {

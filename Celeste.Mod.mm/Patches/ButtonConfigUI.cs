@@ -1,17 +1,14 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Celeste {
     public class patch_ButtonConfigUI : ButtonConfigUI {
@@ -295,7 +292,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap buttons during a remap operation.
-        /// This should be the a List<Buttons> field in your settings class
+        /// This should be the a List&lt;Buttons&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newBtn">The new button that the user is attempting to set.</param>

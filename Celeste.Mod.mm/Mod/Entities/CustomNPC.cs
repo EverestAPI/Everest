@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Collections;
-using System.Text.RegularExpressions;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/npc")]
@@ -32,7 +32,8 @@ namespace Celeste.Mod.Entities {
         public event Action<int> OnStart;
         public event Action OnEnd;
 
-        public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
+        public CustomNPC(EntityData data, Vector2 offset, EntityID id) 
+            : base(data.Position + offset) {
             this.id = id;
 
             spritePath = data.Attr("sprite", ""); // Path is from Graphics/Atlases/Gameplay/characters

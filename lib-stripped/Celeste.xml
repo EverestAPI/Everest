@@ -1,0 +1,2625 @@
+<?xml version="1.0"?>
+<!--
+
+This is a file containing Hand-Written(!) documentation for Celeste and Monocle.
+
+Please DO NOT REMOVE THIS and modify it carefully.
+
+How these should be structured is poorly documented, so if having nested members tags doesn't work for someone, let me know.
+
+-->
+<doc>
+  <assembly>
+      <name>Celeste</name>
+  </assembly>
+  <!--
+  Celeste Docs to be categorized as seen fit.
+  -->
+  <members name="Celeste">
+    <members name="Scenes">
+      <members name="Level">
+        <member name="P:Celeste.Level.LevelOffset">
+            <summary>
+            Offset of the world coordinates.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.Transitioning">
+            <summary>
+            Whether the level is currently moving to or from another level.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.FrozenOrPaused">
+            <summary>
+            Whether the level is Frozen or Paused.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.CanPause">
+            <summary>
+            Whether the level is able to be paused.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.LoadLevel(Celeste.Player.IntroTypes,System.Boolean)">
+            <summary>
+            Loads the level from the current <see cref="T:Celeste.Session"/>.
+            </summary>
+            <param name="playerIntro"></param>
+            <param name="isFromLoader">Whether this level was loaded from a <see cref="T:Celeste.LevelLoader"/>.</param>
+        </member>
+        <member name="M:Celeste.Level.UnloadLevel">
+            <summary>
+            Remove all non-global entities in the level.<br/>
+            Global entities are those marked with <see cref="F:Celeste.Tags.Global"/>
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.Reload">
+            <summary>
+            Safely unload, then reload the level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.TransitionTo(Celeste.LevelData,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Transition to an adjacent level.
+            </summary>
+            <param name="next"></param>
+            <param name="direction"></param>
+        </member>
+        <member name="M:Celeste.Level.UnloadEntities(System.Collections.Generic.List{Monocle.Entity})">
+            <summary>
+            Remove entities from the level.
+            </summary>
+            <param name="entities">Entities to remove.</param>
+        </member>
+        <member name="P:Celeste.Level.DefaultSpawnPoint">
+            <summary>
+            Get the spawn point closest to the bottom left of the level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.GetSpawnPoint(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get the closest spawn point to a point.
+            </summary>
+            <param name="from"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.GetFullCameraTargetAt(Celeste.Player,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get the camera target if the player were at a specified point.
+            </summary>
+            <param name="player"></param>
+            <param name="at"></param>
+            <returns></returns>
+        </member>
+        <member name="P:Celeste.Level.Bounds">
+            <summary>
+            The bounds of the level.
+            </summary>
+        </member>
+        <member name="P:Celeste.Level.PreviousBounds">
+            <summary>
+            The bounds of the previous level.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.TeleportTo(Celeste.Player,System.String,Celeste.Player.IntroTypes,System.Nullable{Microsoft.Xna.Framework.Vector2})">
+            <summary>
+            Teleport a player to a level.
+            </summary>
+            <param name="player"></param>
+            <param name="nextLevel">The name of a level in the current map.</param>
+            <param name="introType"></param>
+            <param name="nearestSpawn">If set, the spawnpoint nearest to this point will be used.</param>
+        </member>
+        <member name="M:Celeste.Level.AutoSave">
+            <summary>
+            Save the game.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.IsAutoSaving">
+            <summary>
+            Whether the game is currently saving.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.Pause(System.Int32,System.Boolean,System.Boolean)">
+            <summary>
+            Open the pause menu.
+            </summary>
+            <param name="startIndex">The menu item index to select.</param>
+            <param name="minimal">Whether to show only some options.</param>
+            <param name="quickReset">Wether to open the quick reset menu.</param>
+        </member>
+        <member name="M:Celeste.Level.SnapColorGrade(System.String)">
+            <summary>
+            Set the color grade.<br/>
+            See: <seealso cref="F:Celeste.GFX.ColorGrades"/>
+            </summary>
+            <param name="next">The name of the colorgrade.</param>
+        </member>
+        <member name="M:Celeste.Level.NextColorGrade(System.String,System.Single)">
+            <summary>
+            Gradually change the color grade.<br/>
+            See: <seealso cref="F:Celeste.GFX.ColorGrades"/>
+            </summary>
+            <param name="next">The name of the colorgrade.</param>
+            <param name="speed">How quickly to fade.</param>
+        </member>
+        <member name="M:Celeste.Level.Shake(System.Single)">
+            <summary>
+            Shake the screen.
+            </summary>
+            <param name="time">Shake duration.</param>
+        </member>
+        <member name="M:Celeste.Level.StopShake">
+            <summary>
+            Stop the screen shake.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.DirectionalShake(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Shake the screen in a specific direction.
+            </summary>
+            <param name="dir">Direction to shake the screen towards.</param>
+            <param name="time">Shake duration.</param>
+        </member>
+        <member name="M:Celeste.Level.Flash(Microsoft.Xna.Framework.Color,System.Boolean)">
+            <summary>
+            Flash the screen a solid color.
+            </summary>
+            <param name="color"></param>
+            <param name="drawPlayerOver">Whether the player should render over the flash.</param>
+        </member>
+        <member name="M:Celeste.Level.ZoomSnap(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Set the zoom multiplier and focus point.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+        </member>
+        <member name="M:Celeste.Level.ZoomTo(Microsoft.Xna.Framework.Vector2,System.Single,System.Single)">
+            <summary>
+            Zoom to a point on screen over time.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ZoomAcross(Microsoft.Xna.Framework.Vector2,System.Single,System.Single)">
+            <summary>
+            Zoom from the current focus point to another point on screen over time.
+            </summary>
+            <param name="screenSpaceFocusPoint"></param>
+            <param name="zoom">Zoom multiplier.</param>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ZoomBack(System.Single)">
+            <summary>
+            Gradually reset the camera zoom.
+            </summary>
+            <param name="duration">Zoom duration.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.ResetZoom">
+            <summary>
+            Reset the camera zoom.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.DoScreenWipe(System.Boolean,System.Action,System.Boolean)">
+            <summary>
+            Activate the area-specific <see cref="T:Celeste.ScreenWipe"/>.<br/>
+            <seealso cref="F:Celeste.AreaData.Wipe">See Also.</seealso>
+            </summary>
+            <param name="wipeIn">Wipe direction.</param>
+            <param name="onComplete"></param>
+            <param name="hiresSnow"></param>
+        </member>
+        <member name="P:Celeste.Level.CoreMode">
+            <summary>
+            When changed, updates any <see cref="T:Celeste.CoreModeListener"/> components.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.InsideCamera(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the camera view.
+            </summary>
+            <param name="position"></param>
+            <param name="expand">Padding beyond the camera bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.EnforceBounds(Celeste.Player)">
+            <summary>
+            Enforce the bounds of the level on the player, transitioning to the next level if possible.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Monocle.Entity)">
+            <summary>
+            Check whether an entity is fully contained within the level's bounds.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <param name="pad">Padding beyond the level bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInBounds(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Check whether a point is within the level's bounds.
+            </summary>
+            <param name="position"></param>
+            <param name="dirPad">Padding beyond the level bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.IsInCamera(Microsoft.Xna.Framework.Vector2,System.Single)">
+            <summary>
+            Check whether a point is within the camera view.
+            </summary>
+            <param name="position"></param>
+            <param name="pad">Padding beyond the camera bounds.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Level.StartCutscene(System.Action{Celeste.Level},System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Mark the level as being in a cutscene.
+            </summary>
+            <param name="onSkip">Action to perform if the cutscene is skipped.</param>
+            <param name="fadeInOnSkip">Whether to play a <see cref="T:Celeste.FadeWipe"/> if the cutscene is skipped.</param>
+            <param name="endingChapterAfterCutscene">Whether to end the chapter after the cutscene ends.</param>
+            <param name="resetZoomOnSkip">Whether the zoom value should be reset if skipped.</param>
+        </member>
+        <member name="M:Celeste.Level.CancelCutscene">
+            <summary>
+            End the current cutscene without skipping.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.SkipCutscene">
+            <summary>
+            Skip the current cutscene, cleaning up as necessary.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.EndCutscene">
+            <summary>
+            End the current cutscene if it is not already being skipped.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.RegisterAreaComplete">
+            <summary>
+            Register the current area as complete and collect all strawberries.
+            </summary>
+        </member>
+        <member name="M:Celeste.Level.CompleteArea(System.Boolean,System.Boolean,System.Boolean)">
+            <summary>
+            Complete the current area and return to the menu.
+            </summary>
+            <param name="spotlightWipe">Whether to use a <see cref="T:Celeste.SpotlightWipe"/> instead of a <see cref="T:Celeste.FadeWipe"/>.</param>
+            <param name="skipScreenWipe">Whether to forego the screenwipe altogether.</param>
+            <param name="skipCompleteScreen">Whether to not show the chapter complete screen.</param>
+            <returns></returns>
+        </member>
+    </members>
+    </members>
+    <members name="Entities">
+      <members name="EntityData">
+        <member name="T:Celeste.EntityData">
+            <summary>
+            Holds information about a specific <see cref="T:Monocle.Entity"/>.
+            </summary>
+        </member>
+        <member name="M:Celeste.EntityData.NodesOffset(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get this entity's nodes with an offset.
+            </summary>
+            <param name="offset"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.NodesWithPosition(Microsoft.Xna.Framework.Vector2)">
+            <summary>
+            Get this entity's nodes, beginning with the entity's position, with an offset.
+            </summary>
+            <param name="offset"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Has(System.String)">
+            <summary>
+            Check whether the supplied key exists.
+            </summary>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Attr(System.String,System.String)">
+            <summary>
+            Get the <see cref="T:System.String"/> value associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Float(System.String,System.Single)">
+            <summary>
+            Get the <see cref="T:System.Single"/> value associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Bool(System.String,System.Boolean)">
+            <summary>
+            Get the <see cref="T:System.Boolean"/> value associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Int(System.String,System.Int32)">
+            <summary>
+            Get the <see cref="T:System.Int32"/> value associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Char(System.String,System.Char)">
+            <summary>
+            Get the <see cref="T:System.Char"/> value associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.FirstNodeNullable(System.Nullable{Microsoft.Xna.Framework.Vector2})">
+            <summary>
+            Get the first <see cref="F:Celeste.EntityData.Nodes">Node</see> as a nullable <see cref="T:Microsoft.Xna.Framework.Vector2"/>.
+            </summary>
+            <param name="offset"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.Enum``1(System.String,``0)">
+            <summary>
+            Get the <see cref="T:System.Enum"/> value of type <typeparamref name="T"/> associated with a key.
+            </summary>
+            <typeparam name="T">The <see cref="M:Celeste.EntityData.Enum``1(System.String,``0)"/> type.</typeparam>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.EntityData.HexColor(System.String,Microsoft.Xna.Framework.Color)">
+            <summary>
+            Get the <see cref="T:Microsoft.Xna.Framework.Color"/> from the hexadecimal string associated with a key.
+            </summary>
+            <param name="key"></param>
+            <param name="defaultValue"></param>
+            <returns></returns>
+        </member>
+        <member name="F:Celeste.EntityData.ID">
+            <summary>
+            A semi-unique id for this entity.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Name">
+            <summary>
+            The name associated with this entity.<br/>
+            Usually set by a <see cref="T:Celeste.Mod.Entities.CustomEntityAttribute"/>.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Level">
+            <summary>
+            The level this entity will be added to.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Position">
+            <summary>
+            Position of the entity within the level.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Origin">
+            <summary>
+            <see cref="T:Microsoft.Xna.Framework.Vector2"/> generated from the "<c>originX</c>" and "<c>originY</c>" attributes.<br/>
+            (Unused in vanilla Celeste)
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Width">
+            <summary>
+            Width of the entity.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Height">
+            <summary>
+            Height of the entity.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Nodes">
+            <summary>
+            Node placements for this entity.
+            </summary>
+        </member>
+        <member name="F:Celeste.EntityData.Values">
+            <summary>
+            Attributes for this entity.
+            </summary>
+        </member>
+    </members>
+      <members name="EntityID">
+        <member name="T:Celeste.EntityID">
+            <summary>
+            A semi-unique id consisting of the level name and entity id (<see cref="T:System.Int32"/>).
+            </summary>
+        </member>
+    </members>
+      
+      <members name="CutsceneEntity">
+        <member name="T:Celeste.CutsceneEntity">
+          <summary>
+            An <see cref="T:Monocle.Entity"/> that runs a cutscene when added.<br/>
+            Apply a <see cref="T:Celeste.Mod.Entities.CustomEventAttribute"/> to load this entity using an <see cref="T:Celeste.EventTrigger"/>.<br/>
+            <seealso href="https://github.com/EverestAPI/Resources/wiki/Creating-Custom-Events#CutsceneEntity">Read More.</seealso>
+          </summary>
+        </member>
+        <member name="P:Celeste.CutsceneEntity.Running">
+          <summary>
+            Whether this cutscene is currently active.
+          </summary>
+        </member>
+        <member name="P:Celeste.CutsceneEntity.FadeInOnSkip">
+          <summary>
+            Whether to play a <see cref="T:Celeste.FadeWipe"/> if the cutscene is skipped.
+          </summary>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.#ctor(System.Boolean,System.Boolean)">
+          <summary>
+            Create a new CutsceneEntity.
+          </summary>
+          <param name="fadeInOnSkip">
+            Whether to play a <see cref="T:Celeste.FadeWipe"/> if the cutscene is skipped.
+          </param>
+          <param name="endingChapterAfter">
+            Whether the chapter will be completed after this cutscene.<br/>
+            The CutsceneEntity is still responsible for handling the chapter ending.
+          </param>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.Added(Monocle.Scene)">
+          <inheritdoc/>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.Start">
+          <summary>
+            Start this cutscene.
+          </summary>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.Update">
+          <inheritdoc/>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.EndCutscene(Celeste.Level,System.Boolean)">
+          <summary>
+            Mark the completion of the cutscene.<br/>
+            Should be called at the end of the main <see cref="T:Monocle.Coroutine"/>.
+          </summary>
+          <param name="level">
+            The current <see cref="T:Celeste.Level"/>.
+          </param>
+          <param name="removeSelf">Whether this entity should be removed.</param>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.OnBegin(Celeste.Level)">
+          <summary>
+            Set up the cutscene, usually to add a new <see cref="T:Monocle.Coroutine"/> to execute the cutscene within.
+          </summary>
+          <param name="level">
+            The current <see cref="T:Celeste.Level"/>.
+          </param>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.OnEnd(Celeste.Level)">
+          <summary>
+            Clean up after the coroutine has finished.<br/>
+            If necessary, <see cref="F:Celeste.CutsceneEntity.WasSkipped"/> should be checked in case the cutscene was ended prematurely.
+          </summary>
+          <param name="level">
+            The current <see cref="T:Celeste.Level"/>.
+          </param>
+        </member>
+        <member name="M:Celeste.CutsceneEntity.CameraTo(Microsoft.Xna.Framework.Vector2,System.Single,Monocle.Ease.Easer,System.Single)">
+          <summary>
+            Ease the level's <see cref="T:Monocle.Camera"/> towards a point.
+          </summary>
+          <param name="target">The point to move the camera to.</param>
+          <param name="duration">Duration of the ease.</param>
+          <param name="ease">
+            Type of ease (Default: <see cref="F:Monocle.Ease.CubeInOut"/>)
+          </param>
+          <param name="delay">Delay before beginning the ease.</param>
+          <returns></returns>
+        </member>
+        <member name="F:Celeste.CutsceneEntity.WasSkipped">
+          <summary>
+            Whether the cutscene was ended before completion.
+          </summary>
+        </member>
+        <member name="F:Celeste.CutsceneEntity.RemoveOnSkipped">
+          <summary>
+            Whether this CutsceneEntity should be removed if skipped.
+          </summary>
+        </member>
+        <member name="F:Celeste.CutsceneEntity.EndingChapterAfter">
+          <summary>
+            Whether the chapter will be completed after this cutscene.<br/>
+            The CutsceneEntity is still responsible for handling the chapter ending.
+          </summary>
+        </member>
+        <member name="F:Celeste.CutsceneEntity.Level">
+          <summary>
+            The <see cref="T:Celeste.Level"/> this CutsceneEntity was added to.
+          </summary>
+        </member>
+      </members>
+      <members name="CutsceneNode">
+        <member name="T:Celeste.CutsceneNode">
+          <summary>
+            A named point in a Level.<br/>
+            Can be retrived using <see cref="M:Celeste.CutsceneNode.Find(System.String)"/>.<br/>
+            <seealso href="https://github.com/EverestAPI/Resources/wiki/Creating-Custom-Events#cutscenenode">Read More.</seealso>
+          </summary>
+        </member>
+        <member name="M:Celeste.CutsceneNode.#ctor(Celeste.EntityData,Microsoft.Xna.Framework.Vector2)">
+          <summary>
+            Create a new CutsceneNode entity.<br/>
+            <para>
+              Checks the following <see cref="T:Celeste.EntityData"/> attributes:<br/>
+              - <see cref="T:System.String"/> <c>nodeName</c> (default: "")
+            </para>
+          </summary>
+          <param name="data">
+            Checks the following attributes:<br/>
+            - <see cref="T:System.String"/> <c>nodeName</c> (default: "")
+          </param>
+          <param name="offset"></param>
+        </member>
+        <member name="M:Celeste.CutsceneNode.Find(System.String)">
+          <summary>
+            Find a <see cref="T:Celeste.CutsceneNode"/> in the current <see cref="T:Monocle.Scene"/>.
+          </summary>
+          <param name="name">The name of the node.</param>
+          <returns></returns>
+        </member>
+        <member name="F:Celeste.CutsceneNode.Name">
+          <summary>
+            The name of this node.
+          </summary>
+        </member>
+      </members>
+    </members>
+    <members name="Triggers">
+      <members name="Trigger">
+        <member name="T:Celeste.Trigger">
+            <summary>
+            An invisible entity that performs an action when the player enters or exits.
+            </summary>
+        </member>
+        <member name="P:Celeste.Trigger.PlayerIsInside">
+            <summary>
+            Whether the player is currently inside the trigger bounds.
+            </summary>
+        </member>
+        <member name="M:Celeste.Trigger.OnEnter(Celeste.Player)">
+            <summary>
+            Called when the player first enters the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.OnStay(Celeste.Player)">
+            <summary>
+            Called every frame the player remains in the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.OnLeave(Celeste.Player)">
+            <summary>
+            Called when the player leaves the trigger.
+            </summary>
+            <param name="player"></param>
+        </member>
+        <member name="M:Celeste.Trigger.GetPositionLerp(Celeste.Player,Celeste.Trigger.PositionModes)">
+            <summary>
+            Get the player's position within the trigger as a range from 0-1.
+            </summary>
+            <param name="player"></param>
+            <param name="mode">The mode used to calculate the lerp.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Celeste.Trigger.PositionModes">
+            <summary>
+            How the position lerp should be calculated.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.NoEffect">
+            <summary>
+            Returns 1f.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.HorizontalCenter">
+            <summary>
+            How close the player is to the center of the trigger, on the X axis.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.VerticalCenter">
+            <summary>
+            How close the player is to the center of the trigger, on the Y axis.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.TopToBottom">
+            <summary>
+            Lerp from top to bottom of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.BottomToTop">
+            <summary>
+            Lerp from bottom to top of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.LeftToRight">
+            <summary>
+            Lerp from left to right of the trigger.
+            </summary>
+        </member>
+        <member name="F:Celeste.Trigger.PositionModes.RightToLeft">
+            <summary>
+            Lerp from right to left of the trigger.
+            </summary>
+        </member>
+    </members>
+    </members>
+    <members name="Components">
+      <members name="Listeners">
+        <members name="CoreModeListener">
+          <member name="T:Celeste.CoreModeListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs an action when <see cref="P:Celeste.Level.CoreMode"/> is changed.
+              </summary>
+          </member>
+          <member name="M:Celeste.CoreModeListener.#ctor(System.Action{Celeste.Session.CoreModes})">
+              <summary>
+              Create a new <see cref="T:Celeste.CoreModeListener"/>.
+              </summary>
+              <param name="onChange">Invoked when <see cref="P:Celeste.Level.CoreMode"/> is changed.</param>
+          </member>
+          <member name="F:Celeste.CoreModeListener.OnChange">
+              <summary>
+              Invoked when <see cref="P:Celeste.Level.CoreMode"/> is changed.
+              </summary>
+          </member>
+        </members>
+        <members name="DashListener">
+          <member name="T:Celeste.DashListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs an action when the <see cref="T:Celeste.Player"/> dashes.
+              </summary>
+          </member>
+          <member name="M:Celeste.DashListener.#ctor">
+              <summary>
+              Create a new <see cref="T:Celeste.DashListener"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.DashListener.OnDash">
+              <summary>
+              Invoked when the <see cref="T:Celeste.Player"/> dashes.
+              </summary>
+          </member>
+          <member name="F:Celeste.DashListener.OnSet">
+              <summary>
+              Unused in vanilla Celeste.
+              </summary>
+          </member>
+        </members>
+        <members name="TransitionListener">
+          <member name="T:Celeste.TransitionListener">
+              <summary>
+              A <see cref="T:Monocle.Component"/> that performs actions while transitioning between <see cref="T:Celeste.Level"/>s.
+              </summary>
+          </member>
+          <member name="M:Celeste.TransitionListener.#ctor">
+              <summary>
+              Create a new <see cref="T:Celeste.TransitionListener"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnInBegin">
+              <summary>
+              Invoked at the start of a transition into the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnInEnd">
+              <summary>
+              Invoked at the end of a transition into the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnIn">
+              <summary>
+              Invoked every frame while transitioning into the <see cref="T:Celeste.Level"/> containing this component.<br/>
+              Accepts as parameter the progress of the transition from <c>0-1</c>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnOutBegin">
+              <summary>
+              Invoked at the start of a transition out of the <see cref="T:Celeste.Level"/> containing this component.
+              </summary>
+          </member>
+          <member name="F:Celeste.TransitionListener.OnOut">
+              <summary>
+              Invoked every frame while transitioning out of the <see cref="T:Celeste.Level"/> containing this component.<br/>
+              Accepts as parameter the progress of the transition from <c>0-1</c>.
+              </summary>
+          </member>
+        </members>
+      </members>
+      <members name="WaterInteraction">
+        <member name="T:Celeste.WaterInteraction">
+            <summary>
+            A <see cref="T:Monocle.Component"/> that allows <see cref="T:Celeste.Water"/> to interact visually with an entity.
+            </summary>
+        </member>
+        <member name="M:Celeste.WaterInteraction.#ctor(System.Func{System.Boolean})">
+            <summary>
+            Creates a new <see cref="T:Celeste.WaterInteraction"/>.
+            </summary>
+            <param name="isDashing">Used to determine the force of impact against the <see cref="T:Celeste.Water"/>.</param>
+        </member>
+        <member name="F:Celeste.WaterInteraction.IsDashing">
+            <summary>
+            Determines the force of impact against the <see cref="T:Celeste.Water"/>.
+            </summary>
+        </member>
+        <member name="F:Celeste.WaterInteraction.DrippingOffset">
+            <summary>
+            Vertical offset for drip particles.
+            </summary>
+        </member>
+      </members>
+    </members>
+    <members name="Dialogue">
+      <members name="Dialog">
+        <member name="T:Celeste.Dialog">
+            <summary>
+              Provides static methods for retrieving non-language-secific dialog.
+            </summary>
+        </member>
+        <member name="M:Celeste.Dialog.Has(System.String,Celeste.Language)">
+            <summary>
+              Check whether the supplied ID has an associated value.
+            </summary>
+            <param name="name">The dialog ID</param>
+            <param name="language">The language to check (Defaults to <see cref="F:Celeste.Dialog.Language"/>)</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Dialog.Get(System.String,Celeste.Language)">
+            <summary>
+              Get the dialog associated with the supplied ID.<br/>
+              Includes metadata (<c>[]</c> and <c>{}</c>).
+            </summary>
+            <param name="name">The dialog ID</param>
+            <param name="language">The language to check (Defaults to <see cref="F:Celeste.Dialog.Language"/>)</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Dialog.Clean(System.String,Celeste.Language)">
+            <summary>
+              Get the cleaned dialog associated with the supplied ID.<br/>
+              Does not include metadata (<c>[]</c> and <c>{}</c>).
+            </summary>
+            <param name="name">The dialog ID</param>
+            <param name="language">The language to check (Defaults to <see cref="F:Celeste.Dialog.Language"/>)</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Dialog.Time(System.Int64)">
+            <summary>
+              Parse a time in ticks, and return a formatted time string.
+            </summary>
+            <param name="ticks">Time in ticks.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Dialog.FileTime(System.Int64)">
+            <summary>
+              Parse a time in ticks, and return a formatted time string.<br/>
+              Intended for longer time spans.
+            </summary>
+            <param name="ticks">Time in ticks.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.Dialog.Deaths(System.Int32)">
+            <summary>
+              Returns a formatted string for displaying a death count.
+            </summary>
+            <param name="deaths">Number of deaths.</param>
+            <returns></returns>
+        </member>
+        <member name="F:Celeste.Dialog.Language">
+            <summary>
+              The currently selected language.
+            </summary>
+        </member>
+        <member name="F:Celeste.Dialog.Languages">
+            <summary>
+              All loaded languages, accessed by id.
+            </summary>
+        </member>
+        <member name="F:Celeste.Dialog.OrderedLanguages">
+            <summary>
+              List of all loaded languages, ordered by id.
+            </summary>
+        </member>
+      </members>
+    </members>
+    <members name="UI">
+      <members name="ButtonUI">
+        <member name="T:Celeste.ButtonUI">
+            <summary>
+            Static methods for drawing Button labels.
+            </summary>
+        </member>
+        <member name="M:Celeste.ButtonUI.Width(System.String,Monocle.VirtualButton)">
+            <summary>
+            Get the total rendered width of a label and button icon.
+            </summary>
+            <param name="label">Displayed text.</param>
+            <param name="button">Displayed button.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.ButtonUI.Render(Microsoft.Xna.Framework.Vector2,System.String,Monocle.VirtualButton,System.Single,System.Single,System.Single,System.Single)">
+            <summary>
+            Draw text and a button icon on screen.<br/>
+            Button icon retrieved using <see cref="M:Celeste.Input.GuiButton(Monocle.VirtualButton,System.String)"/>.
+            </summary>
+            <param name="position">Position on screen.</param>
+            <param name="label">Displayed text.</param>
+            <param name="button">Diaplayed button.</param>
+            <param name="scale"></param>
+            <param name="justifyX"></param>
+            <param name="wiggle"></param>
+            <param name="alpha"></param>
+        </member>
+    </members>
+      <members name="Oui">
+        <member name="T:Celeste.Oui">
+          <summary>
+            An entity representing a screen in the <see cref="T:Celeste.Overworld"/>.
+            <br/><br/>
+            Oui components must be added and removed in <see cref="M:Celeste.Oui.Enter(Celeste.Oui)"/> and <see cref="M:Celeste.Oui.Leave(Celeste.Oui)"/>.<br/>
+            A parameter-less constructor is required.
+          </summary>
+        </member>
+        <member name="P:Celeste.Oui.Overworld">
+          <summary>
+            The current Overworld.
+          </summary>
+        </member>
+        <member name="P:Celeste.Oui.Selected">
+          <summary>
+            Whether this is the current Oui.
+          </summary>
+        </member>
+        <member name="M:Celeste.Oui.IsStart(Celeste.Overworld,Celeste.Overworld.StartMode)">
+          <summary>
+            Whether this Oui should be the initial one based on the <see cref="T:Celeste.Overworld.StartMode"/>.
+          </summary>
+          <param name="overworld">The current Overworld.</param>
+          <param name="start">
+            The current <see cref="T:Celeste.Overworld.StartMode"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="M:Celeste.Oui.Enter(Celeste.Oui)">
+          <summary>
+            Called when entering this Oui using <see cref="M:Celeste.Overworld.Goto``1"/>.<br/>
+            Entities and Components should be added to the <see cref="P:Celeste.Oui.Overworld"/> here.
+          </summary>
+          <param name="from">
+            The previous <see cref="T:Celeste.Oui"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="M:Celeste.Oui.Leave(Celeste.Oui)">
+          <summary>
+            Called when leaving this Oui using <see cref="M:Celeste.Overworld.Goto``1"/>.<br/>
+            Entities and Components should be removed from the <see cref="P:Celeste.Oui.Overworld"/> here.
+          </summary>
+          <param name="from">
+            The next <see cref="T:Celeste.Oui"/>.
+          </param>
+          <returns></returns>
+        </member>
+        <member name="F:Celeste.Oui.Focused">
+          <summary>
+            Should be set manually in <see cref="M:Celeste.Oui.Enter(Celeste.Oui)"/> and <see cref="M:Celeste.Oui.Leave(Celeste.Oui)"/>.
+          </summary>
+        </member>
+      </members>
+      <members name="TextMenu">
+        <member name="T:Celeste.TextMenu">
+            <summary>
+            A UI container for a traversable list of <see cref="T:Celeste.TextMenu.Item"/>s.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.Current">
+            <summary>
+            The selected <see cref="T:Celeste.TextMenu.Item"/>.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.Width">
+            <summary>
+            Total width of the menu.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.Height">
+            <summary>
+            Total height of the menu.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.LeftColumnWidth">
+            <summary>
+            Width of the left column of the menu.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.RightColumnWidth">
+            <summary>
+            Width of the right column of the menu.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.FirstPossibleSelection">
+            <summary>
+            Index of the first selectable item in the menu.
+            </summary>
+        </member>
+        <member name="P:Celeste.TextMenu.LastPossibleSelection">
+            <summary>
+            Index of the last selectable item in the menu.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.#ctor">
+            <summary>
+            Create an empty TextMenu.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.Added(Monocle.Scene)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Celeste.TextMenu.Add(Celeste.TextMenu.Item)">
+            <summary>
+            Add an <see cref="T:Celeste.TextMenu.Item"/> to this Menu.
+            </summary>
+            <param name="item"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.TextMenu.Clear">
+            <summary>
+            Remove all <see cref="T:Celeste.TextMenu.Item">Items</see> from the menu.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.IndexOf(Celeste.TextMenu.Item)">
+            <summary>
+            Get the index of an <see cref="T:Celeste.TextMenu.Item"/> in the menu.
+            </summary>
+            <param name="item">An <see cref="T:Celeste.TextMenu.Item"/> contained in this menu.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.TextMenu.FirstSelection">
+            <summary>
+            Set the selection to the first possible <see cref="T:Celeste.TextMenu.Item"/>.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.MoveSelection(System.Int32,System.Boolean)">
+            <summary>
+            Move the selection to the next possible item.
+            </summary>
+            <param name="direction">
+            The direction of movement.<br/>
+            (Down is positive)
+            </param>
+            <param name="wiggle"></param>
+        </member>
+        <member name="M:Celeste.TextMenu.RecalculateSize">
+            <summary>
+            Recalculate the necessary width and height to hold all Items.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.GetYOffsetOf(Celeste.TextMenu.Item)">
+            <summary>
+            Get the Y position of an <see cref="T:Celeste.TextMenu.Item"/> relative to the menu position.
+            </summary>
+            <param name="item">An <see cref="T:Celeste.TextMenu.Item"/> contained in this menu.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.TextMenu.Close">
+            <summary>
+            Close and remove this <see cref="T:Celeste.TextMenu"/>.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.CloseAndRun(System.Collections.IEnumerator,System.Action)">
+            <summary>
+            Run <paramref name="routine"/>, then perform <paramref name="onClose"/>, then close and remove this <see cref="T:Celeste.TextMenu"/>.
+            </summary>
+            <param name="routine">A coroutine to run before closing.</param>
+            <param name="onClose">An action to perform before closing.</param>
+        </member>
+        <member name="M:Celeste.TextMenu.Update">
+            <inheritdoc/>
+        </member>
+        <member name="P:Celeste.TextMenu.ScrollTargetY">
+            <summary>
+            Target Y position for the menu to keep the current item on screen.
+            </summary>
+        </member>
+        <member name="M:Celeste.TextMenu.Render">
+            <inheritdoc/>
+        </member>
+        <member name="F:Celeste.TextMenu.Focused">
+            <summary>
+            Whether the TextMenu is focused, and should accept inputs.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.InnerContent">
+            <summary>
+            Whether the items should be displayed in one or two columns.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.Selection">
+            <summary>
+            The current selection index.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.ItemSpacing">
+            <summary>
+            Spacing between <see cref="T:Celeste.TextMenu.Item"/>s.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.MinWidth">
+            <summary>
+            The minimum width that this menu will occupy.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.Alpha">
+            <summary>
+            Alpha value of the items in this menu.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.HighlightColor">
+            <summary>
+            Current color of the selected <see cref="T:Celeste.TextMenu.Item"/>
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.OnESC">
+            <summary>
+            Invoked when <see cref="F:Celeste.Input.ESC"/> is pressed.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.OnCancel">
+            <summary>
+            Invoked when <see cref="F:Celeste.Input.MenuCancel"/> is pressed.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.OnUpdate">
+            <summary>
+            Invoked when this menu is updated.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.OnPause">
+            <summary>
+            Invoked when <see cref="F:Celeste.Input.Pause"/> is pressed.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.OnClose">
+            <summary>
+            Invoked when this menu is closed.
+            </summary>
+        </member>
+        <member name="F:Celeste.TextMenu.AutoScroll">
+            <summary>
+            Whether the menu should scroll to keep the selected item on screen.
+            </summary>
+        </member>
+        <member name="T:Celeste.TextMenu.InnerContentMode">
+            <summary>
+            How the items in a TextMenu should be displayed.
+            </summary>
+        </member>
+        <members name="Item">
+          <member name="T:Celeste.TextMenu.Item">
+              <summary>
+              Abstract parent class for all TextMenu items.
+              </summary>
+          </member>
+          <member name="P:Celeste.TextMenu.Item.Hoverable">
+              <summary>
+              Whether this item can be selected.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Enter(System.Action)">
+              <summary>
+              Set the action that will be performed when this item is selected.
+              </summary>
+              <param name="onEnter"></param>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Leave(System.Action)">
+              <summary>
+              Set the action that will be performed when this item is unselected.
+              </summary>
+              <param name="onEnter"></param>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Pressed(System.Action)">
+              <summary>
+              Set the action that will be performed when <see cref="F:Celeste.Input.MenuConfirm"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.AltPressed(System.Action)">
+              <summary>
+              Set the action that will be performed when <see cref="F:Celeste.Input.MenuJournal"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="P:Celeste.TextMenu.Item.Width">
+              <summary>
+              The total width of this item.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.ConfirmPressed">
+              <summary>
+              Called when <see cref="F:Celeste.Input.MenuConfirm"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.LeftPressed">
+              <summary>
+              Called when <see cref="F:Celeste.Input.MenuLeft"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.RightPressed">
+              <summary>
+              Called when <see cref="F:Celeste.Input.MenuRight"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Added">
+              <summary>
+              Called when this item is added to a <see cref="T:Celeste.TextMenu"/>.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Update">
+            <summary>
+              Update the item.
+            </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.LeftWidth">
+              <summary>
+              The width of the left portion of this item.
+              </summary>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.RightWidth">
+              <summary>
+              The width of the right portion of this item.
+              </summary>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Height">
+              <summary>
+              The height of this item.
+              </summary>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Item.Render(Microsoft.Xna.Framework.Vector2,System.Boolean)">
+            <summary>
+              Draw the item.
+            </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.Selectable">
+              <summary>
+              Whether this is an item that can be selected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.Visible">
+              <summary>
+              Whether this item should be visible in the menu.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.Disabled">
+              <summary>
+              Whether this item's selection should be disabled.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.IncludeWidthInMeasurement">
+              <summary>
+              Whether the width of this item should be included when calculating the width of its <see cref="T:Celeste.TextMenu"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.Container">
+              <summary>
+              The <see cref="T:Celeste.TextMenu"/> that contains this item.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.SelectWiggler">
+              <summary>
+              Activated when this item is selected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.ValueWiggler">
+              <summary>
+              Should be activated when this item's value is changed
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.OnEnter">
+              <summary>
+              Performed when this item is selected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.OnLeave">
+              <summary>
+              Performed when this item is unselected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.OnPressed">
+              <summary>
+              Performed when <see cref="F:Celeste.Input.MenuConfirm"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.OnAltPressed">
+              <summary>
+              Performed when <see cref="F:Celeste.Input.MenuJournal"/> is pressed with this item selected.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Item.OnUpdate">
+              <summary>
+              Performed when this item is updated.
+              </summary>
+          </member>
+        </members>
+        <members name="Header">
+          <member name="T:Celeste.TextMenu.Header">
+              <summary>
+              A <see cref="T:Celeste.TextMenu.Item"/> that displays a large label.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Header.#ctor(System.String)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.Header"/>.
+              </summary>
+              <param name="title">The <see cref="T:System.String"/> to display.</param>
+          </member>
+          <member name="M:Celeste.TextMenu.Header.LeftWidth">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Header.Height">
+              <inheritdoc/>
+          </member>
+          <member name="F:Celeste.TextMenu.Header.Title">
+              <summary>
+              The displayed text.
+              </summary>
+          </member>
+        </members>
+        <members name="SubHeader">
+          <member name="T:Celeste.TextMenu.SubHeader">
+              <summary>
+              A <see cref="T:Celeste.TextMenu.Item"/> that displays a label with padding above.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.SubHeader.#ctor(System.String)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.SubHeader"/>.
+              </summary>
+              <param name="title">The <see cref="T:System.String"/> to display.</param>
+          </member>
+          <member name="M:Celeste.TextMenu.SubHeader.LeftWidth">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.SubHeader.Height">
+              <inheritdoc/>
+          </member>
+          <member name="F:Celeste.TextMenu.SubHeader.Title">
+              <summary>
+              The displayed text.
+              </summary>
+          </member>
+        </members>
+        <members name="Option{T}">
+          <member name="T:Celeste.TextMenu.Option`1">
+              <summary>
+              A <see cref="T:Celeste.TextMenu.Item"/> that displays a toggleable value.
+              </summary>
+              <typeparam name="T">The underlying type for each option.</typeparam>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.#ctor(System.String)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.Option`1"/>.
+              </summary>
+              <param name="label">The display name for this setting.</param>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.Add(System.String,`0,System.Boolean)">
+              <summary>
+              Add an option.
+              </summary>
+              <param name="label">The display text for this option.</param>
+              <param name="value">The <typeparamref name="T"/> value of this option.</param>
+              <param name="selected">Whether this option should start selected.</param>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.Change(System.Action{`0})">
+              <summary>
+              Set the action that will be invoked when the value changes.
+              </summary>
+              <param name="action"></param>
+              <returns></returns>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.Added">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.LeftPressed">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.RightPressed">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.ConfirmPressed">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.Update">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.LeftWidth">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.RightWidth">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Option`1.Height">
+              <inheritdoc/>
+          </member>
+          <member name="F:Celeste.TextMenu.Option`1.Label">
+              <summary>
+              The displayed name for this setting.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Option`1.Index">
+              <summary>
+              The index of the current selection in <see cref="F:Celeste.TextMenu.Option`1.Values"/>.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Option`1.OnValueChange">
+              <summary>
+              Invoked when the value changes.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Option`1.PreviousIndex">
+              <summary>
+              The previously selected index.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Option`1.Values">
+              <summary>
+              The list of label/value pairs.
+              </summary>
+          </member>
+        </members>
+        <members name="Slider">
+          <member name="T:Celeste.TextMenu.Slider">
+              <summary>
+              A convenience class for creating a <see cref="T:Celeste.TextMenu.Option`1"/> from a <c><see cref="T:System.Int32"/> => <see cref="T:System.String"/></c> function.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Slider.#ctor(System.String,System.Func{System.Int32,System.String},System.Int32,System.Int32,System.Int32)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.Slider"/>.
+              </summary>
+              <param name="label">The display name for this setting.</param>
+              <param name="values">A function for getting the display <see cref="T:System.String"/> for an <see cref="T:System.Int32"/> value.</param>
+              <param name="min">The minimum possible value.</param>
+              <param name="max">The maximum possible value.</param>
+              <param name="value">The initial value.</param>
+          </member>
+        </members>
+        <members name="OnOff">
+          <member name="T:Celeste.TextMenu.OnOff">
+              <summary>
+              A convenience class for creating a <see cref="T:Celeste.TextMenu.Option`1"/> of type <see cref="T:System.Boolean"/>.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.OnOff.#ctor(System.String,System.Boolean)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.OnOff"/>.
+              </summary>
+              <param name="label">The display name for this setting.</param>
+              <param name="on">Whether this option should start enabled.</param>
+          </member>
+        </members>
+        <members name="Setting">
+          <member name="T:Celeste.TextMenu.Setting">
+              <summary>
+              An Item for configuring Button mappings.
+              </summary>
+          </member>
+        </members>
+        <members name="Button">
+          <member name="T:Celeste.TextMenu.Button">
+              <summary>
+              An item that can perform an action when pressed.
+              </summary>
+          </member>
+          <member name="M:Celeste.TextMenu.Button.#ctor(System.String)">
+              <summary>
+              Create a new <see cref="T:Celeste.TextMenu.Button"/>.
+              </summary>
+              <param name="label">The display name for this item.</param>
+          </member>
+          <member name="M:Celeste.TextMenu.Button.ConfirmPressed">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Button.LeftWidth">
+              <inheritdoc/>
+          </member>
+          <member name="M:Celeste.TextMenu.Button.Height">
+              <inheritdoc/>
+          </member>
+          <member name="F:Celeste.TextMenu.Button.Label">
+              <summary>
+              The display name for this item.
+              </summary>
+          </member>
+          <member name="F:Celeste.TextMenu.Button.AlwaysCenter">
+              <summary>
+              Whether this item should always be rendered in the center of the menu.
+              </summary>
+          </member>
+        </members>
+        <members name="LanguageButton">
+          <member name="T:Celeste.TextMenu.LanguageButton">
+            <summary>
+            An Item for configuring language settings.
+            </summary>
+          </member>
+        </members>
+    </members>
+    </members>
+    <members name="Other">
+      <members name="ScreenWipe">
+        <member name="T:Celeste.ScreenWipe">
+            <summary>
+            A <see cref="T:Monocle.Renderer"/> used to draw a series of <see cref="T:Microsoft.Xna.Framework.Graphics.VertexPositionColor"/> on the screen.
+            </summary>
+        </member>
+        <member name="P:Celeste.ScreenWipe.Right">
+            <summary>
+            The right bound of the wipe.
+            </summary>
+        </member>
+        <member name="P:Celeste.ScreenWipe.Bottom">
+            <summary>
+            The bottom bound of the wipe.
+            </summary>
+        </member>
+        <member name="M:Celeste.ScreenWipe.#ctor(Monocle.Scene,System.Boolean,System.Action)">
+            <summary>
+            
+            </summary>
+            <param name="scene">The scene to add this <see cref="T:Celeste.ScreenWipe"/> to.</param>
+            <param name="wipeIn">Whether to wipe inwards or outwards.</param>
+            <param name="onComplete">An action to perform after the wipe has ended.</param>
+        </member>
+        <member name="M:Celeste.ScreenWipe.Wait">
+            <summary>
+            Get an <see cref="T:System.Collections.IEnumerator"/> that waits until the wipe completes.<br/>
+            Should be used when using a <see cref="T:Celeste.ScreenWipe"/> in a <see cref="T:Monocle.Coroutine"/>.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Celeste.ScreenWipe.Cancel">
+            <summary>
+            Cancel and remove this ScreenWipe.
+            </summary>
+        </member>
+        <member name="M:Celeste.ScreenWipe.DrawPrimitives(Microsoft.Xna.Framework.Graphics.VertexPositionColor[])">
+            <summary>
+            Draw a shape to the screen using a set of vertices.
+            </summary>
+            <param name="vertices"></param>
+        </member>
+        <member name="F:Celeste.ScreenWipe.WipeColor">
+            <summary>
+            The color of the wipe.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Scene">
+            <summary>
+            The scene this wipe was added to.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.WipeIn">
+            <summary>
+            Whether to wipe inwards or outwards.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Percent">
+            <summary>
+            How much of the screenwipe has been completed.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.OnComplete">
+            <summary>
+            An action to perform after the wipe has ended.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Completed">
+            <summary>
+            Whether the wipe has completed.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Duration">
+            <summary>
+            How long this wipe animation will take.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.EndTimer">
+            <summary>
+            How long the wipe will be on screen.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Left">
+            <summary>
+            The left bound of the wipe.
+            </summary>
+        </member>
+        <member name="F:Celeste.ScreenWipe.Top">
+            <summary>
+            The top bound of the wipe.
+            </summary>
+        </member>
+    </members>
+    </members>
+  </members>
+  
+  <!--
+  Monocle Docs to be structured in the same way as the source code.
+  https://bitbucket.org/MattThorson/monocle-engine/src/default/Monocle/
+  -->
+  <members name="Monocle">
+    <members name="Engine">
+      <member name="M:Monocle.Engine.RenderCore">
+        <summary>
+          Override if you want to change the core rendering functionality of Monocle Engine.<br/>
+          By default, this simply sets the render target to null, clears the screen, and renders the current Scene.
+        </summary>
+      </member>
+      <member name="M:Monocle.Engine.OnSceneTransition">
+        <summary>
+          Called after a Scene ends, before the next Scene begins.
+        </summary>
+      </member>
+      <member name="P:Monocle.Engine.Scene">
+        <summary>
+          The currently active Scene. Note that if set, the Scene will not actually change until the end of the Update.
+        </summary>
+      </member>
+     </members>
+    <members name="Entity">
+      <member name="M:Monocle.Entity.SceneBegin">
+        <summary>
+          Called when the containing Scene Begins.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.SceneEnd">
+        <summary>
+          Called when the containing Scene Ends.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Awake">
+        <summary>
+          Called before the frame starts, after Entities are added and removed, on the frame that the Entity was added.<br/>
+          Useful if you added two Entities in the same frame, and need them to detect each other before they start Updating.
+        </summary>
+        <param name="scene"></param>
+      </member>
+      <member name="M:Monocle.Entity.Added">
+        <summary>
+          Called when this Entity is added to a Scene, which only occurs immediately before each Update.<br/>
+          Keep in mind, other Entities to be added this frame may be added after this Entity.<br/>
+          See <see cref="M:Monocle.Entity.Awake"/> for after all Entities are added, but still before the frame Updates.
+        </summary>
+        <param name="scene"></param>
+      </member>
+      <member name="M:Monocle.Entity.Removed">
+        <summary>
+          Called when the Entity is removed from a Scene.
+        </summary>
+        <param name="scene"></param>
+      </member>
+      <member name="M:Monocle.Entity.Update">
+        <summary>
+          Do game logic here, but do not render here. Not called if the Entity is not Active.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Render">
+        <summary>
+          Draw the Entity here. Not called if the Entity is not Visible.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.DebugRender">
+        <summary>
+          Draw any debug visuals here. Only called if the console is open, but still called even if the Entity is not Visible.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.HandleGraphicsReset">
+        <summary>
+          Called when the graphics device resets. When this happens, any RenderTargets or other contents of VRAM will be wiped and need to be regenerated.
+        </summary>
+      </member>
+      <member name="M:Monocle.Entity.Add(Monocle.Component)">
+        <summary>
+          Shortcut function for adding a Component to the Entity's Components list.
+        </summary>
+        <param name="component">The Component to add.</param>
+      </member>
+      <member name="M:Monocle.Entity.Remove(Monocle.Component)">
+        <summary>
+          Shortcut function for removing an Component from the Entity's Components list.
+        </summary>
+        <param name="component">The Component to remove.</param>
+      </member>
+      <member name="M:Monocle.Entity.Add(Monocle.Component[])">
+        <summary>
+          Shortcut function for adding a set of Components from the Entity's Components list.
+        </summary>
+        <param name="components">The Components to add.</param>
+      </member>
+      <member name="M:Monocle.Entity.Remove(Monocle.Component[])">
+        <summary>
+          Shortcut function for removing a set of Components from the Entity's Components list.
+        </summary>
+        <param name="components">The Components to remove.</param>
+      </member>
+      <member name="M:Monocle.Entity.GetEnumerator">
+        <summary>
+          Allows you to iterate through all Components in the Entity.
+        </summary>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Entity.System#Collections#IEnumerable#GetEnumerator">
+        <summary>
+          Allows you to iterate through all Components in the Entity.
+        </summary>
+        <returns></returns>
+      </member>
+    </members>
+    <members name="Scene">
+      <member name="M:Monocle.Scene.OnInterval(System.Float32)">
+        <summary>
+          Returns whether the Scene timer has passed the given time interval since the last frame. <br/>
+          Ex: given 2.0f, this will return true once every 2 seconds.
+        </summary>
+        <param name="interval">The time interval to check for</param>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.OnInterval(System.Float32,System.Float32)">
+        <summary>
+          Returns whether the Scene timer has passed the given time interval since the last frame.
+          Ex: given 2.0f, this will return true once every 2 seconds
+        </summary>
+        <param name="interval">The time interval to check for</param>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.CreateAndAdd``1">
+        <summary>
+          Shortcut to call Engine.Pooler.Create, add the Entity to this Scene, and return it. Entity type must be marked as Pooled.
+        </summary>
+        <typeparam name="T">Pooled Entity type to create</typeparam>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.Item(Monocle.BitTag)">
+        <summary>
+          Quick access to entire tag lists of Entities. Result will never be null.
+        </summary>
+        <param name="tag">The tag list to fetch</param>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.Add(Monocle.Entity)">
+        <summary>
+          Shortcut function for adding an Entity to the Scene's Entities list.
+        </summary>
+        <param name="entity">The Entity to add</param>
+      </member>
+      <member name="M:Monocle.Scene.Remove(Monocle.Entity)">
+        <summary>
+          Shortcut function for removing an Entity from the Scene's Entities list.
+        </summary>
+        <param name="entity">The Entity to remove</param>
+      </member>
+      <member name="M:Monocle.Scene.Add(System.Collections.Generic.IEnumerable{Monocle.Entity})">
+        <summary>
+          Shortcut function for adding a set of Entities from the Scene's Entities list
+        </summary>
+        <param name="entities">The Entities to add</param>
+      </member>
+      <member name="M:Monocle.Scene.Remove(System.Collections.Generic.IEnumerable{Monocle.Entity})">
+        <summary>
+          Shortcut function for removing a set of Entities from the Scene's Entities list
+        </summary>
+        <param name="entities">The Entities to remove</param>
+      </member>
+      <member name="M:Monocle.Scene.Add(Monocle.Entity[])">
+        <summary>
+          Shortcut function for adding a set of Entities from the Scene's Entities list
+        </summary>
+        <param name="entities">The Entities to add</param>
+      </member>
+      <member name="M:Monocle.Scene.Remove(Monocle.Entity[])">
+        <summary>
+          Shortcut function for removing a set of Entities from the Scene's Entities list
+        </summary>
+        <param name="entities">The Entities to remove</param>
+      </member>
+      <member name="M:Monocle.Scene.GetEnumerator">
+        <summary>
+          Allows you to iterate through all Entities in the Scene
+        </summary>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.System#Collections#IEnumerable#GetEnumerator">
+        <summary>
+          Allows you to iterate through all Entities in the Scene
+        </summary>
+        <returns></returns>
+      </member>
+      <member name="M:Monocle.Scene.Add(Monocle.Renderer)">
+        <summary>
+          Shortcut function to add a Renderer to the Renderer list
+        </summary>
+        <param name="renderer">The Renderer to add</param>
+      </member>
+      <member name="M:Monocle.Scene.Remove(Monocle.Renderer)">
+        <summary>
+          Shortcut function to remove a Renderer from the Renderer list
+        </summary>
+        <param name="renderer">The Renderer to remove</param>
+      </member>
+    </members>
+    
+    <members name="Components">
+      <members name="Component">
+        <member name="M:Monocle.Component.Added(Monocle.Entity)">
+            <summary>
+            Called when this Component is added to an Entity.
+            </summary>
+            <param name="entity"></param>
+        </member>
+        <member name="M:Monocle.Component.Removed(Monocle.Entity)">
+            <summary>
+            Called when this Component is removed from an Entity.
+            </summary>
+            <param name="entity"></param>
+        </member>
+        <member name="M:Monocle.Component.EntityAdded(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.Added(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.EntityRemoved(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.Removed(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.SceneEnd(Monocle.Scene)">
+            <inheritdoc cref="M:Monocle.Entity.SceneEnd(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.EntityAwake">
+            <inheritdoc cref="M:Monocle.Entity.Awake(Monocle.Scene)"/>
+        </member>
+        <member name="M:Monocle.Component.Update">
+            <summary>
+            Do game logic here, but do not render here. Not called if the Component is not Active.
+            </summary>
+        </member>
+        <member name="M:Monocle.Component.Render">
+            <summary>
+            Draw the Component here. Not called if the Component is not Visible.
+            </summary>
+        </member>
+        <member name="M:Monocle.Component.DebugRender(Monocle.Camera)">
+            <summary>
+            Draw any debug visuals here. Only called if the console is open, but still called even if the Component is not Visible.
+            </summary>
+            <param name="camera"></param>
+        </member>
+        <member name="M:Monocle.Component.HandleGraphicsReset">
+            <inheritdoc cref="M:Monocle.Entity.HandleGraphicsReset"/>
+        </member>
+        <member name="M:Monocle.Component.HandleGraphicsCreate">
+            <inheritdoc cref="M:Monocle.Entity.HandleGraphicsCreate"/>
+        </member>
+    </members>
+	  <members name="Graphics">
+		  <members name="Sprite">
+			  <member name="T:Monocle.Sprite">
+				  <summary>
+					  A component that can display animations made of <see cref="T:Monocle.MTexture"/>s.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.#ctor(Monocle.Atlas,System.String)">
+				  <summary>
+					  Create a new Sprite from a texture <see cref="T:Monocle.Atlas"/> and a root <paramref name="path"/>.
+				  </summary>
+				  <param name="atlas">The atlas to draw textures from.</param>
+				  <param name="path">The root path for this sprite's animation textures.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Reset(Monocle.Atlas,System.String)">
+				  <summary>
+					  Reset this Sprite from a texture <see cref="T:Monocle.Atlas"/> and a root <paramref name="path"/>.
+				  </summary>
+				  <param name="atlas">The atlas to draw textures from.</param>
+				  <param name="path">The root path for this sprite's animation textures.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.GetFrame(System.String,System.Int32)">
+				  <summary>
+					  Retrieve the <see cref="T:Monocle.MTexture"/> associated with a specific frame of an animation.
+				  </summary>
+				  <param name="animation">The name of the animation.</param>
+				  <param name="frame">The frame index.</param>
+				  <returns></returns>
+			  </member>
+			  <member name="P:Monocle.Sprite.Center">
+				  <summary>
+					  The relative center of the sprite.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.SetAnimationFrame(System.Int32)">
+				  <summary>
+					  Set the current animation to the specified <paramref name="frame"/>.
+				  </summary>
+				  <param name="frame"></param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)">
+				  <summary>
+					  Add a repeating animation to the sprite that can then be referenced using <paramref name="id"/>.
+				  </summary>
+				  <param name="id">The Animation id.</param>
+				  <param name="path">
+					  Path relative to <see cref="F:Monocle.Sprite.Path"/> to draw textures from.
+				  </param>
+				  <param name="delay">Delay between each frame.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)"/>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.AddLoop(System.String,System.Single,Monocle.MTexture[])">
+				  <inheritdoc cref="M:Monocle.Sprite.AddLoop(System.String,System.String,System.Single)"/>
+				  <param name="frames">The textures to use as frames for this animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String)">
+				  <summary>
+					  Add an animation to the sprite that can then be referenced using <paramref name="id"/>.
+				  </summary>
+				  <param name="id">The Animation id.</param>
+				  <param name="path">
+					  Path relative to <see cref="F:Monocle.Sprite.Path"/> to draw textures from.
+				  </param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single)">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String)"/>
+				  <param name="delay">Delay between each frame.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="into">The animation to play once this one ends.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String})">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single)"/>
+				  <param name="into">Determines the animation to play once this one ends.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String,System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)"></inheritdoc>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.Single,System.String,Monocle.MTexture[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,System.String)"></inheritdoc>
+				  <param name="frames">The textures to use as frames for this animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String},System.Int32[])">
+				  <inheritdoc cref="M:Monocle.Sprite.Add(System.String,System.String,System.Single,Monocle.Chooser{System.String})"></inheritdoc>
+				  <param name="frames">The frame indices to use in the animation.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.ClearAnimations">
+				  <summary>
+					  Remove all animation data from the sprite.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.Play(System.String,System.Boolean,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+				  <param name="randomizeFrame">Whether to randomize the starting frame and animation timer.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.PlayOffset(System.String,System.Single,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="offset">The amount to add to the animation timer.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.PlayRoutine(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation, returning an IEnumerator that will return <c>null</c> until the the sprite stops animating.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+				  <returns></returns>
+			  </member>
+			  <member name="M:Monocle.Sprite.ReverseRoutine(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite, setting <see cref="F:Monocle.Sprite.Rate"/> to negative.<br/>
+					  Returns an IEnumerator that will return <c>null</c> until the the sprite stops animating.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Reverse(System.String,System.Boolean)">
+				  <summary>
+					  Play an animation stored in this sprite, setting <see cref="F:Monocle.Sprite.Rate"/> to negative.
+				  </summary>
+				  <param name="id">The animation to play.</param>
+				  <param name="restart">Whether to restart the animation if it is already playing.</param>
+			  </member>
+			  <member name="M:Monocle.Sprite.Has(System.String)">
+				  <summary>
+					  Whether this sprite has an animation matching <paramref name="id"/>.
+				  </summary>
+				  <param name="id"></param>
+				  <returns></returns>
+			  </member>
+			  <member name="M:Monocle.Sprite.Stop">
+				  <summary>
+					  Stop the currently playing animation.
+				  </summary>
+			  </member>
+			  <member name="P:Monocle.Sprite.Animating">
+				  <summary>
+					  Whether this sprite is currently playing an animation.
+				  </summary>
+			  </member>
+			  <member name="M:Monocle.Sprite.DrawSubrect(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Rectangle)">
+				  <summary>
+					  Draw a rectangle from the current frame.
+				  </summary>
+				  <param name="offset">Relative offset to draw at.</param>
+				  <param name="rectangle">Rectangle to draw.</param>
+			  </member>
+			  <member name="F:Monocle.Sprite.Rate">
+				  <summary>
+					  The animation speed modifier.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.UseRawDeltaTime">
+				  <summary>
+					  Whether to update animations based on <see cref="P:Monocle.Engine.RawDeltaTime"/>.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnFinish">
+				  <summary>
+					  Invoked when this sprite stops animating.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnLoop">
+				  <summary>
+					  Invoked when current the animation loops.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnFrameChange">
+				  <summary>
+					  Invoked when when the current frame changes.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnLastFrame">
+				  <summary>
+					  Invoked when the animation is about to end, loop, or change.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.OnChange">
+				  <summary>
+					  Invoked when the current animation changes.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.Path">
+				  <summary>
+					  The root directory of this sprite's animations.
+				  </summary>
+			  </member>
+			  <member name="F:Monocle.Sprite.Animation.Goto">
+				  <summary>
+					  Used to determine the animation to play once this one ends.
+				  </summary>
+			  </member>
+		  </members>
+	  </members>
+    </members>
+    
+    <members name="Graphics">
+      <members name="Atlas">
+        <member name="T:Monocle.Atlas">
+            <summary>
+            Used for storing and retrieving <see cref="T:Monocle.MTexture"/>s from images and packed textures.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.Sources">
+            <summary>
+            The list of textures used by this Atlas.
+            </summary>
+        </member>
+        <member name="T:Monocle.Atlas.AtlasDataFormat">
+            <summary>
+            Used to determine how data should be read.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.TexturePacker_Sparrow">
+            <summary>
+            Presumeably for use with <see href="https://www.codeandweb.com/texturepacker/starling">this</see>.<br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchXml">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchBinary">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchXmlOrBinary">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.CrunchBinaryNoAtlas">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/><br/>
+            (Unused)
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.Packer">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/>. Reads .meta files.
+            </summary>
+        </member>
+        <member name="F:Monocle.Atlas.AtlasDataFormat.PackerNoAtlas">
+            <summary>
+            <see href="https://github.com/ChevyRay/crunch"/>. Reads .meta files with associated .data files.
+            </summary>
+        </member>
+        <member name="M:Monocle.Atlas.FromAtlas(System.String,Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from a packed texture file into an Atlas.
+            </summary>
+            <param name="path"></param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromMultiAtlas(System.String,System.String[],Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from multiple packed texture files into an Atlas.
+            </summary>
+            <param name="rootPath">The common root of all paths in <paramref name="dataPath"/>.</param>
+            <param name="dataPath">An array of filepaths contained within <paramref name="rootPath"/>.</param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromMultiAtlas(System.String,System.String,Monocle.Atlas.AtlasDataFormat)">
+            <summary>
+            Read image data from multiple XML atlas data files into an Atlas.
+            </summary>
+            <param name="rootPath">The directory where the files are contained.</param>
+            <param name="filename">
+            The base filename of the xml files.<br/>
+            (<c>filename0.xml</c>, <c>filename1.xml</c>, <c>...</c>)
+            </param>
+            <param name="format"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.FromDirectory(System.String)">
+            <summary>
+            Read image data from .png and .xnb files contained in a directory into an Atlas.
+            </summary>
+            <param name="path">The directory where the files are contained.</param>
+            <returns></returns>
+        </member>
+        <member name="P:Monocle.Atlas.Item(System.String)">
+            <summary>
+            Retrieve a texture contained in the atlas based on its id.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.Has(System.String)">
+            <summary>
+            Check whether a texture with the specified id exists in this atlas.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetOrDefault(System.String,Monocle.MTexture)">
+            <summary>
+            Retrieve a texture by id, or a default texture if nonexsistent.
+            </summary>
+            <param name="id"></param>
+            <param name="defaultTexture">Returned if the <paramref name="id"/> does not exist.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetAtlasSubtextures(System.String)">
+            <summary>
+            Retrieve multiple textures stored under the same <paramref name="key"/>.<br/>
+            Textures should be named in the following format
+            <code>key0, key1, key2, key3</code>
+            with up to six <c>0</c>s preceeding the index.
+            </summary>
+            <param name="key">The texture name.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetAtlasSubtexturesAt(System.String,System.Int32)">
+            <summary>
+            Retrieve a single texture from a set of textures with the same key.<br/>
+            See also: <seealso cref="M:Monocle.Atlas.GetAtlasSubtextures(System.String)"/>
+            </summary>
+            <param name="key">The texture name.</param>
+            <param name="index">The subtexture index.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.GetLinkedTexture(System.String)">
+            <summary>
+            Get the texture for the key this <paramref name="key"/> is linked to.
+            </summary>
+            <param name="key"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Monocle.Atlas.Dispose">
+            <summary>
+            De-allocate resources used by this atlas.
+            </summary>
+        </member>
+    </members>
+    </members>
+      
+    <members name="Input">
+      <members name="VirtualAxis">
+        <member name="T:Monocle.VirtualAxis">
+          <summary>
+            A virtual input represented as a float between -1 and 1
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualButton">
+        <member name="T:Monocle.VirtualButton">
+          <summary>
+            A virtual input that is represented as a boolean. As well as simply checking the current button state, you can ask whether it was just pressed or released this frame. You can also keep the button press stored in a buffer for a limited time, or until it is consumed by calling ConsumeBuffer()
+          </summary>
+        </member>
+        <member name="M:Monocle.VirtualButton.ConsumeBuffer">
+          <summary>
+            Ends the Press buffer for this button
+          </summary>
+        </member>
+        <member name="M:Monocle.VirtualButton.ConsumePress">
+          <summary>
+            This button will not register a Press for the rest of the current frame, but otherwise continues to function normally. If the player continues to hold the button, next frame will not count as a Press. Also ends the Press buffer for this button
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualInput">
+        <member name="T:Monocle.VirtualInput">
+          <summary>
+            Represents a virtual button, axis or joystick whose state is determined by the state of its VirtualInputNodes
+          </summary>
+        </member>
+        <member name="T:Monocle.VirtualInputNode">
+          <summary>
+            Add these to your VirtualInput to define how it determines its current input state.
+            For example, if you want to check whether a keyboard key is pressed, create a VirtualButton and add to it a VirtualButton.KeyboardKey
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualIntegerAxis">
+        <member name="T:Monocle.VirtualIntegerAxis">
+          <summary>
+            A virtual input that is represented as a int that is either -1, 0, or 1
+          </summary>
+        </member>
+      </members>
+      <members name="VirtualJoystick">
+        <member name="T:Monocle.VirtualJoystick">
+          <summary>
+            A virtual input that is represented as a Vector2, with both X and Y as values between -1 and 1
+          </summary>
+        </member>
+      </members>
+    </members>
+  
+    <members name="Particles">
+      <members name="ParticleType">
+        <member name="T:Monocle.ParticleType">
+            <summary>
+            A template from which <see cref="T:Monocle.Particle"/>s can be created.
+            </summary>
+        </member>
+        <member name="M:Monocle.ParticleType.#ctor">
+            <summary>
+            Create a new ParticleType with default-initialized fields.
+            </summary>
+        </member>
+        <member name="M:Monocle.ParticleType.#ctor(Monocle.ParticleType)">
+            <summary>
+            Create a copy of another ParticleType.
+            </summary>
+            <param name="copyFrom">The ParticleType to copy.</param>
+        </member>
+        <member name="F:Monocle.ParticleType.Source">
+            <summary>
+            If set, the particle will use this texture.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.SourceChooser">
+            <summary>
+            If set, the particle will use a texture from its choices.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.Size">
+            <summary>
+            The scale of the texture.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.SpinFlippedChance">
+            <summary>
+            If true, the spin direction has a 50% chance of being flipped.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ScaleOut">
+            <summary>
+            Whether the particle size will cube out over its lifetime.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.UseActualDeltaTime">
+            <summary>
+            Whether to update based on <see cref="P:Monocle.Engine.RawDeltaTime"/> instead of <see cref="P:Monocle.Engine.DeltaTime"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Static">
+            <summary>
+            Particle color will be set to <see cref="F:Monocle.ParticleType.Color"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Choose">
+            <summary>
+            Particle color will be randomly chosen from <see cref="F:Monocle.ParticleType.Color"/> and <see cref="F:Monocle.ParticleType.Color2"/>.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Blink">
+            <summary>
+            Particle color will be swap between <see cref="F:Monocle.ParticleType.Color"/> and <see cref="F:Monocle.ParticleType.Color2"/> every second. 
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.ColorModes.Fade">
+            <summary>
+            Particle color will fade from <see cref="F:Monocle.ParticleType.Color"/> to <see cref="F:Monocle.ParticleType.Color2"/> from start to end of life. 
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.None">
+            <summary>
+            Particle will not fade.  
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.Linear">
+            <summary>
+            Particle will fade linearly from start to end of life.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.Late">
+            <summary>
+            Particle will fade linearly starting when the particle has 1/4 life remaining.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.FadeModes.InAndOut">
+            <summary>
+            Particle will fade in for first quarter, and fade out for last quarter of life.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.None">
+            <summary>
+            Particle will start with the default orientation.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.Random">
+            <summary>
+            Particle will start rotated at a random angle.
+            </summary>
+        </member>
+        <member name="F:Monocle.ParticleType.RotationModes.SameAsDirection">
+            <summary>
+            Particle will always be rotated towards its direction of travel.
+            </summary>
+        </member>
+    </members>
+    </members>
+      
+    <members name="Util">
+      <members name="Calc">
+        <member name="M:Monocle.Calc.Range(System.Random,System.Int32,System.Int32)">
+          <summary>
+            Returns a random integer between min (inclusive) and max (exclusive)
+          </summary>
+          <param name="random"></param>
+          <param name="min"></param>
+          <param name="max"></param>
+          <returns></returns>
+        </member>
+        <member name="M:Monocle.Calc.Range(System.Random,System.Single,System.Single)">
+          <summary>
+            Returns a random float between min (inclusive) and max (exclusive)
+          </summary>
+          <param name="random"></param>
+          <param name="min"></param>
+          <param name="max"></param>
+          <returns></returns>
+        </member>
+        <member name="M:Monocle.Calc.Range(System.Random,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)">
+          <summary>
+            Returns a random Vector2, and x- and y-values of which are between min (inclusive) and max (exclusive)
+          </summary>
+          <param name="random"></param>
+          <param name="min"></param>
+          <param name="max"></param>
+          <returns></returns>
+        </member>
+        <member name="M:Monocle.Calc.ReadCSVIntWithTricks(System.String)">
+          <summary>
+            Read positive-integer CSV with some added tricks.
+            Use - to add inclusive range. Ex: 3-6 = 3,4,5,6
+            Use * to add multiple values. Ex: 4*3 = 4,4,4
+          </summary>
+          <param name="csv"></param>
+          <returns></returns>
+        </member>
+      </members>
+      <members name="ChoiceSet">
+        <member name="M:Monocle.ChoiceSet`1.Set(`0,System.Int32)">
+          <summary>
+            Sets the weight of a choice
+          </summary>
+          <param name="choice"></param>
+          <param name="weight"></param>
+        </member>
+        <member name="P:Monocle.ChoiceSet`1.Item(`0)">
+          <summary>
+            Sets the weight of a choice, or gets its weight
+          </summary>
+          <param name="choice"></param>
+          <returns></returns>
+        </member>
+        <member name="M:Monocle.ChoiceSet`1.Set(`0,System.Single)">
+          <summary>
+            Sets the chance of a choice. The chance is calculated based on the current state of ChoiceSet, so if
+            other choices are changed later the chance will not be guaranteed to remain the same
+          </summary>
+          <param name="choice"></param>
+          <param name="chance">A chance between 0 and 1.0f</param>
+        </member>
+        <member name="M:Monocle.ChoiceSet`1.SetMany(System.Single,`0[])">
+          <summary>
+            Sets the chance of many choices. Takes the chance of any of the given choices being picked, not the chance of
+            any individual choice. The chances are calculated based on the current state of ChoiceSet, so if
+            other choices are changed later the chances will not be guaranteed to remain the same
+          </summary>
+          <param name="totalChance"></param>
+          <param name="choices">A chance between 0 and 1.0f</param>
+        </member>
+        <member name="M:Monocle.ChoiceSet`1.Get(System.Random)">
+          <summary>
+            Chooses a random choice in the set
+          </summary>
+          <param name="random"></param>
+          <returns></returns>
+        </member>
+        <member name="M:Monocle.ChoiceSet`1.Get">
+          <summary>
+            Chooses a random choice in the set, using Calc.Random to choose
+          </summary>
+          <returns></returns>
+        </member>
+       </members>
+      <members name="Chooser">
+        <member name="T:Monocle.Chooser`1">
+          <summary>
+            Utility class for making weighted random choices from a set.
+          </summary>
+        </member>
+        <member name="M:Monocle.Chooser`1.#ctor(`0,System.Single)">
+          <summary>
+            Initialize with a single choice with the given weight.
+          </summary>
+        </member>
+        <member name="M:Monocle.Chooser`1.#ctor(`0[])">
+          <summary>
+            Initialize with a list of choices, all with a weight of 1.
+          </summary>
+        </member>
+        <member name="M:Monocle.Chooser`1.FromString``1(System.String)">
+          <summary>
+            Parses a chooser from a string.
+          </summary>
+          <param name="data">Choices to parse. Format: "choice0:weight,choice1:weight,..."</param>
+          <returns></returns>
+        </member>
+       </members>
+      <members name="Commands">
+        <member name="P:Monocle.Commands.FunctionKeyActions">
+          <summary>
+            Actions that are executed when the corresponding Function Key is pressed.
+          </summary>
+        </member>
+        <member name="M:Monocle.Commands.Log(System.Object,Microsoft.Xna.Framework.Color)">
+          <summary>
+            Logs an object to the debug console.
+          </summary>
+          <param name="obj"></param>
+          <param name="color">Text color</param>
+        </member>
+        <member name="M:Monocle.Commands.Log(System.Object)">
+          <summary>
+            Logs an object to the debug console in White text.
+          </summary>
+          <param name="obj"></param>
+        </member>
+        <members name="Command">
+          <member name="T:Monocle.Command">
+            <summary>
+              Adding this to a static method marks it as a command that can be executed from the debug screen.<br/>
+              The method can accept any number of <see cref="T:System.String"/>, <see cref="T:System.Int32"/>, <see cref="T:System.Single"/>, or <see cref="T:System.Boolean"/> parameters.
+            </summary>
+          </member>
+          <member name="F:Monocle.Command.Name">
+            <summary>
+              The string used to execute the command.
+            </summary>
+          </member>
+          <member name="F:Monocle.Command.Help">
+            <summary>
+              A description of the command.
+            </summary>
+          </member>
+          <member name="M:Monocle.Command.#ctor(System.String,System.String)">
+            <summary>
+              Marks a static method as a debug command.
+            </summary>
+            <param name="name">Used to execute the command.</param>
+            <param name="help">A short description of the command.</param>
+          </member>
+        </members>
+      </members>
+      <members name="Draw">
+        <member name="P:Monocle.Draw.Renderer">
+          <summary>
+            The currently-rendering Renderer
+          </summary>
+        </member>
+        <member name="P:Monocle.Draw.SpriteBatch">
+          <summary>
+            All 2D rendering is done through this SpriteBatch instance
+          </summary>
+        </member>
+        <member name="P:Monocle.Draw.DefaultFont">
+          <summary>
+            The default Monocle font (Consolas 12). Loaded automatically by Monocle at startup
+          </summary>
+        </member>
+        <member name="F:Monocle.Draw.Particle">
+          <summary>
+            A subtexture used to draw particle systems.
+            Will be generated at startup, but you can replace this with a subtexture from your Atlas to reduce texture swaps.
+            Should be a 2x2 white pixel
+          </summary>
+        </member>
+        <member name="F:Monocle.Draw.Pixel">
+          <summary>
+            A subtexture used to draw rectangles and lines.
+            Will be generated at startup, but you can replace this with a subtexture from your Atlas to reduce texture swaps.
+            Use the top left pixel of your Particle Subtexture if you replace it!
+            Should be a 1x1 white pixel
+          </summary>
+        </member>
+       </members>
+      <members name="SaveLoad">
+        <member name="M:Monocle.SaveLoad.SerializeToFile``1(``0,System.String,Monocle.SaveLoad.SerializeModes)">
+          <summary>
+            Save an object to a file so you can load it later
+          </summary>
+        </member>
+        <member name="M:Monocle.SaveLoad.SafeSerializeToFile``1(``0,System.String,Monocle.SaveLoad.SerializeModes)">
+          <summary>
+            Save an object to a file so you can load it later.
+            Will not crash if the save fails
+          </summary>
+          <returns>Whether the save succeeded</returns>
+        </member>
+        <member name="M:Monocle.SaveLoad.DeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes)">
+          <summary>
+            Load an object that was previously serialized to a file
+          </summary>
+        </member>
+        <member name="M:Monocle.SaveLoad.SafeDeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes,System.Boolean)">
+          <summary>
+            Load an object that was previously serialized to a file
+            If the load fails or the file does not exist, default(T) will be returned
+          </summary>
+        </member>
+        <member name="M:Monocle.SaveLoad.SafeDeserializeFromFile``1(System.String,Monocle.SaveLoad.SerializeModes,System.Boolean@,System.Boolean)">
+          <summary>
+            Load an object that was previously serialized to a file
+            If the load fails or the file does not exist, default(T) will be returned
+          </summary>
+          <param name="loadError">True if the load fails despite the requested file existing (for example due to corrupted data)</param>
+        </member>
+       </members>
+      <members name="Tracker">
+        <members name="Tracked">
+            <member name="T:Monocle.Tracked">
+                <summary>
+                Marks an entity or component to be added to the Tracker.
+                </summary>
+            </member>
+            <member name="M:Monocle.Tracked.#ctor(System.Boolean)">
+                <summary>
+                Marks an entity or component to be added to the Tracker.
+                </summary>
+                <param name="inherited">Whether all child classes should also be tracked.</param>
+            </member>
+            <member name="F:Monocle.Tracked.Inherited">
+                <summary>
+                Whether all child classes should also be tracked.
+                </summary>
+            </member>
+        </members>
+      </members>
+    </members>
+  </members>
+  
+  <!--
+  From https://github.com/WardBenjamin/SimplexNoise/blob/master/SimplexNoise/Noise.cs
+  -->
+  <members name="SimplexNoise">
+    <members name="Noise">
+        <member name="T:SimplexNoise.Noise">
+            <summary>
+            Implementation of the Perlin simplex noise, an improved Perlin noise algorithm.
+            Based loosely on SimplexNoise1234 by Stefan Gustavson: http://staffwww.itn.liu.se/~stegu/aqsis/aqsis-newnoise/
+            </summary>
+        </member>
+        <member name="M:SimplexNoise.Noise.Generate(System.Single)">
+            <summary>
+            1D simplex noise
+            </summary>
+            <param name="x"></param>
+            <returns></returns>
+        </member>
+        <member name="M:SimplexNoise.Noise.Generate(System.Single,System.Single)">
+            <summary>
+            2D simplex noise
+            </summary>
+            <param name="x"></param>
+            <param name="y"></param>
+            <returns></returns>
+        </member>
+    </members>
+  </members>
+</doc>

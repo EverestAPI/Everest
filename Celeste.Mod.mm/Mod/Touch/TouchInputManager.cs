@@ -1,23 +1,6 @@
-﻿using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input.Touch;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public class TouchInputManager : DrawableGameComponent {
@@ -80,7 +63,7 @@ namespace Celeste.Mod {
                     touchInside = touch;
                 }
 
-                bool consumed = region.Update(state, touchInside ?? default(TouchLocation));
+                bool consumed = region.Update(state, touchInside ?? default);
                 if (consumed && touchInside != null)
                     consumedIds.Add(touchInside.Value.Id);
             }

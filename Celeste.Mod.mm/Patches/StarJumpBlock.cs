@@ -1,18 +1,10 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
-using Celeste.Mod;
 using Celeste.Mod.Entities;
-using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 namespace Celeste {
     // : Solid because base.Awake
@@ -187,7 +179,7 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-            if (this.SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
+            if (SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
                 orig_Render();
                 return;
             }
@@ -196,10 +188,10 @@ namespace Celeste {
             // which is color-customizable and doesn't include forced music.
             // Prioritizes the Everest controller if found, though you shouldn't be using both at once.
 
-            StarJumpController vanillaController = this.Scene.Tracker.GetEntity<StarJumpController>();
-            StarClimbGraphicsController everestController = this.Scene.Tracker.GetEntity<StarClimbGraphicsController>();
+            StarJumpController vanillaController = Scene.Tracker.GetEntity<StarJumpController>();
+            StarClimbGraphicsController everestController = Scene.Tracker.GetEntity<StarClimbGraphicsController>();
 
-            Vector2 cameraPos = this.level.Camera.Position.Floor();
+            Vector2 cameraPos = level.Camera.Position.Floor();
             VirtualRenderTarget blockFill = null;
 
             if (everestController != null)
@@ -210,8 +202,8 @@ namespace Celeste {
             if (blockFill != null) {
                 Draw.SpriteBatch.Draw(
                     blockFill,
-                    this.Position,
-                    new Rectangle?(new Rectangle((int) (this.X - cameraPos.X), (int) (this.Y - cameraPos.Y), (int) this.Width, (int) this.Height)),
+                    Position,
+                    new Rectangle?(new Rectangle((int) (X - cameraPos.X), (int) (Y - cameraPos.Y), (int) Width, (int) Height)),
                     Color.White
                 );
             }

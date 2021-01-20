@@ -1,227 +1,249 @@
-﻿using System;
-using System.Collections;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
+using System;
+using System.Collections;
 
 namespace Celeste.Mod.Entities {
     [Tracked(false)]
     public class GenericStrawberrySeed : Entity {
+
+        private const float LoseDelay = 0.25f;
+        private const float LoseGraceTime = 0.15f;
+
+        public static ParticleType P_Burst;
+
         public bool Collected {
             get {
-                return this.follower.HasLeader || this.finished;
+                return follower.HasLeader || finished;
             }
         }
+        
+        private int index;
+        private Vector2 start;
+        
+        private float canLoseTimer;
+        private float loseTimer;
+        private bool finished;
+        private bool losing;
+        
+        private Sprite sprite;
+        private bool ghost;
 
-        public GenericStrawberrySeed(IStrawberrySeeded strawberry, Vector2 position, int index, bool ghost) : base(position) {
-            this.Strawberry = strawberry;
-            base.Depth = -100;
-            this.start = this.Position;
-            base.Collider = new Hitbox(12f, 12f, -6f, -6f);
+        public IStrawberrySeeded Strawberry;
+
+        private Player player;
+        private Follower follower;
+        private Platform attached;
+        private Level level;
+
+        private Wiggler wiggler;
+        private SineWave sine;
+        private Tween lightTween;
+        private VertexLight light;
+        private BloomPoint bloom;
+        private Shaker shaker;
+
+        public GenericStrawberrySeed(IStrawberrySeeded strawberry, Vector2 position, int index, bool ghost) 
+            : base(position) {
+            Strawberry = strawberry;
+            Depth = Depths.Pickups;
+            start = Position;
+            Collider = new Hitbox(12f, 12f, -6f, -6f);
             this.index = index;
             this.ghost = ghost;
-            base.Add(this.follower = new Follower(new Action(this.OnGainLeader), new Action(this.OnLoseLeader)));
-            this.follower.FollowDelay = 0.2f;
-            this.follower.PersistentFollow = false;
-            base.Add(new StaticMover {
-                SolidChecker = ((Solid s) => s.CollideCheck(this)),
-                OnAttach = delegate (Platform p) {
-                    base.Depth = -1000000;
-                    base.Collider = new Hitbox(24f, 24f, -12f, -12f);
-                    this.attached = p;
-                    this.start = this.Position - p.Position;
+
+            Add(follower = new Follower(OnGainLeader, OnLoseLeader));
+            follower.FollowDelay = 0.2f;
+            follower.PersistentFollow = false;
+
+            Add(new StaticMover {
+                SolidChecker = solid => solid.CollideCheck(this),
+                OnAttach = platform => {
+                    Depth = Depths.Top;
+                    Collider = new Hitbox(24f, 24f, -12f, -12f);
+                    attached = platform;
+                    start = Position - platform.Position;
                 }
             });
-            base.Add(new PlayerCollider(new Action<Player>(this.OnPlayer), null, null));
-            base.Add(this.wiggler = Wiggler.Create(0.5f, 4f, delegate (float v) {
-                this.sprite.Scale = Vector2.One * (1f + 0.2f * v);
+            Add(new PlayerCollider(OnPlayer));
+
+            Add(wiggler = Wiggler.Create(0.5f, 4f, v => {
+                sprite.Scale = Vector2.One * (1f + 0.2f * v);
             }, false, false));
-            base.Add(this.sine = new SineWave(0.5f, 0f).Randomize());
-            base.Add(this.shaker = new Shaker(false, null));
-            base.Add(this.bloom = new BloomPoint(1f, 12f));
-            base.Add(this.light = new VertexLight(Color.White, 1f, 16, 24));
-            base.Add(this.lightTween = this.light.CreatePulseTween());
+            Add(sine = new SineWave(0.5f, 0f).Randomize());
+            Add(shaker = new Shaker(false, null));
+            Add(bloom = new BloomPoint(1f, 12f));
+            Add(light = new VertexLight(Color.White, 1f, 16, 24));
+            Add(lightTween = light.CreatePulseTween());
 
             if (P_Burst == null)
                 P_Burst = StrawberrySeed.P_Burst;
         }
 
         public override void Awake(Scene scene) {
-            this.level = (scene as Level);
             base.Awake(scene);
-            this.sprite = GFX.SpriteBank.Create(this.ghost ? "ghostberrySeed" : ((this.level.Session.Area.Mode == AreaMode.CSide) ? "goldberrySeed" : "strawberrySeed"));
-            this.sprite.Position = new Vector2(this.sine.Value * 2f, this.sine.ValueOverTwo * 1f);
-            base.Add(this.sprite);
-            if (this.ghost)
-                this.sprite.Color = Color.White * 0.8f;
 
-            int num = base.Scene.Tracker.CountEntities<GenericStrawberrySeed>();
-            float num2 = 1f - (float) this.index / ((float) num + 1f);
-            num2 = 0.25f + num2 * 0.75f;
-            this.sprite.PlayOffset("idle", num2, false);
-            this.sprite.OnFrameChange = delegate (string s) {
-                if (this.Visible && this.sprite.CurrentAnimationID == "idle" && this.sprite.CurrentAnimationFrame == 19) {
-                    Audio.Play("event:/game/general/seed_pulse", this.Position, "count", (float) this.index);
-                    this.lightTween.Start();
-                    this.level.Displacement.AddBurst(this.Position, 0.6f, 8f, 20f, 0.2f, null, null);
+            level = scene as Level;
+
+            sprite = GFX.SpriteBank.Create(ghost ? "ghostberrySeed" : ((level.Session.Area.Mode == AreaMode.CSide) ? "goldberrySeed" : "strawberrySeed"));
+            sprite.Position = new Vector2(sine.Value * 2f, sine.ValueOverTwo * 1f);
+            Add(sprite);
+            if (ghost)
+                sprite.Color = Color.White * 0.8f;
+
+            int seedCount = Scene.Tracker.CountEntities<GenericStrawberrySeed>();
+            float offset = 1f - index / (seedCount + 1f);
+            offset = 0.25f + offset * 0.75f;
+            sprite.PlayOffset("idle", offset, false);
+            sprite.OnFrameChange = s => {
+                if (Visible && sprite.CurrentAnimationID == "idle" && sprite.CurrentAnimationFrame == 19) {
+                    Audio.Play(SFX.game_gen_seed_pulse, Position, "count", index);
+                    lightTween.Start();
+                    level.Displacement.AddBurst(Position, 0.6f, 8f, 20f, 0.2f, null, null);
                 }
             };
-            GenericStrawberrySeed.P_Burst.Color = this.sprite.Color;
+
+            P_Burst.Color = sprite.Color;
         }
 
         public override void Update() {
             base.Update();
 
-            if (!this.finished) {
-                if (this.canLoseTimer > 0f)
-                    this.canLoseTimer -= Engine.DeltaTime;
+            if (!finished) {
+                if (canLoseTimer > 0f)
+                    canLoseTimer -= Engine.DeltaTime;
                 else
-                if (this.follower.HasLeader && this.player.LoseShards)
-                    this.losing = true;
+                if (follower.HasLeader && player.LoseShards)
+                    losing = true;
 
-                if (this.losing) {
-                    if (this.loseTimer <= 0f || this.player.Speed.Y < 0f) {
-                        this.player.Leader.LoseFollower(this.follower);
-                        this.losing = false;
+                if (losing) {
+                    if (loseTimer <= 0f || player.Speed.Y < 0f) {
+                        player.Leader.LoseFollower(follower);
+                        losing = false;
                     } else
-                    if (this.player.LoseShards)
-                        this.loseTimer -= Engine.DeltaTime;
+                    if (player.LoseShards)
+                        loseTimer -= Engine.DeltaTime;
                     else {
-                        this.loseTimer = 0.15f;
-                        this.losing = false;
+                        loseTimer = LoseGraceTime;
+                        losing = false;
                     }
                 }
 
-                this.sprite.Position = new Vector2(this.sine.Value * 2f, this.sine.ValueOverTwo * 1f) + this.shaker.Value;
+                sprite.Position = new Vector2(sine.Value * 2f, sine.ValueOverTwo * 1f) + shaker.Value;
             } else
-                this.light.Alpha = Calc.Approach(this.light.Alpha, 0f, Engine.DeltaTime * 4f);
+                light.Alpha = Calc.Approach(light.Alpha, 0f, Engine.DeltaTime * 4f);
         }
 
         private void OnPlayer(Player player) {
-            Audio.Play("event:/game/general/seed_touch", this.Position, "count", (float) this.index);
+            Audio.Play(SFX.game_gen_seed_touch, Position, "count", index);
             this.player = player;
-            player.Leader.GainFollower(this.follower);
-            this.Collidable = false;
-            base.Depth = -1000000;
+            player.Leader.GainFollower(follower);
+
+            Collidable = false;
+            Depth = Depths.Top;
+
             bool haveAllSeeds = true;
-            foreach (GenericStrawberrySeed strawberrySeed in this.Strawberry.Seeds)
+            foreach (GenericStrawberrySeed strawberrySeed in Strawberry.Seeds)
                 if (!strawberrySeed.follower.HasLeader) {
                     haveAllSeeds = false;
                     break;
                 }
 
             if (haveAllSeeds)
-                base.Scene.Add(new CSGEN_GenericStrawberrySeeds(this.Strawberry));
+                Scene.Add(new CSGEN_GenericStrawberrySeeds(Strawberry));
         }
 
         private void OnGainLeader() {
-            this.wiggler.Start();
-            this.canLoseTimer = 0.25f;
-            this.loseTimer = 0.15f;
+            wiggler.Start();
+            canLoseTimer = LoseDelay;
+            loseTimer = LoseGraceTime;
         }
 
         private void OnLoseLeader() {
-            if (!this.finished)
-                base.Add(new Coroutine(this.ReturnRoutine(), true));
+            if (!finished)
+                Add(new Coroutine(ReturnRoutine(), true));
         }
 
         private IEnumerator ReturnRoutine() {
-            Audio.Play("event:/game/general/seed_poof", this.Position);
-            this.Collidable = false;
-            this.sprite.Scale = Vector2.One * 2f;
+            Audio.Play(SFX.game_gen_seed_poof, Position);
+            Collidable = false;
+            sprite.Scale = Vector2.One * 2f;
             yield return 0.05f;
+
+
             Input.Rumble(RumbleStrength.Medium, RumbleLength.Medium);
 
             for (int i = 0; i < 6; i++) {
-                float dir = Calc.Random.NextFloat(6.2831855f);
-                this.level.ParticlesFG.Emit(GenericStrawberrySeed.P_Burst, 1, this.Position + Calc.AngleToVector(dir, 4f), Vector2.Zero, dir);
+                float dir = Calc.Random.NextFloat((float) Math.PI * 2);
+                level.ParticlesFG.Emit(P_Burst, 1, Position + Calc.AngleToVector(dir, 4f), Vector2.Zero, dir);
             }
 
-            this.Visible = false;
-            yield return 0.3f + (float) this.index * 0.1f;
+            Visible = false;
+            yield return 0.3f + index * 0.1f;
 
 
-            Audio.Play("event:/game/general/seed_reappear", this.Position, "count", (float) this.index);
-            this.Position = this.start;
-            if (this.attached != null)
-                this.Position += this.attached.Position;
+            Audio.Play(SFX.game_gen_seed_reappear, Position, "count", index);
+            Position = start;
+            if (attached != null)
+                Position += attached.Position;
 
-            this.shaker.ShakeFor(0.4f, false);
-            this.sprite.Scale = Vector2.One;
-            this.Visible = true;
-            this.Collidable = true;
-            this.level.Displacement.AddBurst(this.Position, 0.2f, 8f, 28f, 0.2f, null, null);
+            shaker.ShakeFor(0.4f, false);
+            sprite.Scale = Vector2.One;
+            Visible = true;
+            Collidable = true;
+            level.Displacement.AddBurst(Position, 0.2f, 8f, 28f, 0.2f);
             yield break;
         }
 
         public void OnAllCollected() {
-            this.finished = true;
-            this.follower.Leader.LoseFollower(this.follower);
-            base.Depth = -2000002;
-            base.Tag = Tags.FrozenUpdate;
-            this.wiggler.Start();
+            finished = true;
+            follower.Leader.LoseFollower(follower);
+            Depth = -2000002;
+            Tag = Tags.FrozenUpdate;
+            wiggler.Start();
         }
 
         public void StartSpinAnimation(Vector2 averagePos, Vector2 centerPos, float angleOffset, float time) {
             float spinLerp = 0f;
-            Vector2 start = this.Position;
-            this.sprite.Play("noFlash", false, false);
+            Vector2 start = Position;
+            sprite.Play("noFlash", false, false);
+
             Tween tween = Tween.Create(Tween.TweenMode.Oneshot, Ease.CubeIn, time / 2f, true);
-            tween.OnUpdate = delegate (Tween t) {
+            tween.OnUpdate = t => {
                 spinLerp = t.Eased;
             };
-            base.Add(tween);
+            Add(tween);
+
             tween = Tween.Create(Tween.TweenMode.Oneshot, Ease.CubeInOut, time, true);
-            tween.OnUpdate = delegate (Tween t) {
-                float angleRadians = 1.5707964f + angleOffset - MathHelper.Lerp(0f, 32.201324f, t.Eased);
+            tween.OnUpdate = t => {
+                float angleRadians = (float) Math.PI / 2f + angleOffset - MathHelper.Lerp(0f, 32.201324f, t.Eased);
                 Vector2 value = Vector2.Lerp(averagePos, centerPos, spinLerp);
                 Vector2 value2 = value + Calc.AngleToVector(angleRadians, 25f);
-                this.Position = Vector2.Lerp(start, value2, spinLerp);
+                Position = Vector2.Lerp(start, value2, spinLerp);
             };
-            base.Add(tween);
+            Add(tween);
         }
 
         public void StartCombineAnimation(Vector2 centerPos, float time, ParticleSystem particleSystem) {
-            Vector2 position = this.Position;
+            Vector2 position = Position;
             float startAngle = Calc.Angle(centerPos, position);
+
             Tween tween = Tween.Create(Tween.TweenMode.Oneshot, Ease.BigBackIn, time, true);
-            tween.OnUpdate = delegate (Tween t) {
-                float angleRadians = MathHelper.Lerp(startAngle, startAngle - 6.2831855f, Ease.CubeIn(t.Percent));
+            tween.OnUpdate = t => {
+                float angleRadians = MathHelper.Lerp(startAngle, startAngle - (float) Math.PI * 2, Ease.CubeIn(t.Percent));
                 float length = MathHelper.Lerp(25f, 0f, t.Eased);
-                this.Position = centerPos + Calc.AngleToVector(angleRadians, length);
+                Position = centerPos + Calc.AngleToVector(angleRadians, length);
             };
-            tween.OnComplete = delegate (Tween t) {
-                this.Visible = false;
+            tween.OnComplete = t => {
+                Visible = false;
                 for (int i = 0; i < 6; i++) {
-                    float num = Calc.Random.NextFloat(6.2831855f);
-                    particleSystem.Emit(GenericStrawberrySeed.P_Burst, 1, this.Position + Calc.AngleToVector(num, 4f), Vector2.Zero, num);
+                    float dir = Calc.Random.NextFloat((float) Math.PI * 2);
+                    particleSystem.Emit(P_Burst, 1, Position + Calc.AngleToVector(dir, 4f), Vector2.Zero, dir);
                 }
-                this.RemoveSelf();
+                RemoveSelf();
             };
-            base.Add(tween);
+            Add(tween);
         }
 
-        public static ParticleType P_Burst;
-        public IStrawberrySeeded Strawberry;
-
-        private const float LoseDelay = 0.25f;
-        private const float LoseGraceTime = 0.15f;
-        private Sprite sprite;
-        private Follower follower;
-        private Wiggler wiggler;
-        private Platform attached;
-        private SineWave sine;
-        private Tween lightTween;
-        private VertexLight light;
-        private BloomPoint bloom;
-        private Shaker shaker;
-        private int index;
-        private Vector2 start;
-        private Player player;
-        private Level level;
-        private float canLoseTimer;
-        private float loseTimer;
-        private bool finished;
-        private bool losing;
-        private bool ghost;
     }
 }

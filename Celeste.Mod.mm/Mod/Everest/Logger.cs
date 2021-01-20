@@ -141,8 +141,7 @@ namespace Celeste.Mod {
             for (Exception e_ = e; e_ != null; e_ = e_.InnerException) {
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine(e_.GetType().FullName + ": " + e_.Message + "\n" + e_.StackTrace);
-                if (e_ is ReflectionTypeLoadException) {
-                    ReflectionTypeLoadException rtle = (ReflectionTypeLoadException) e_;
+                if (e_ is ReflectionTypeLoadException rtle) {
                     for (int i = 0; i < rtle.Types.Length; i++) {
                         Console.WriteLine("ReflectionTypeLoadException.Types[" + i + "]: " + rtle.Types[i]);
                     }

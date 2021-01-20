@@ -1,7 +1,4 @@
-﻿using Celeste.Mod.Helpers;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Monocle;
 using MonoMod;
@@ -16,12 +13,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace Celeste.Mod {
     /// <summary>

@@ -1,16 +1,5 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Monocle;
-using MonoMod.RuntimeDetour;
-using MonoMod.Utils;
+﻿using Monocle;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
     public class SceneWrappingEntity : Entity {

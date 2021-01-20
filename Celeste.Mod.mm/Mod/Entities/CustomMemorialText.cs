@@ -1,12 +1,7 @@
-﻿using FMOD.Studio;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
@@ -34,8 +29,7 @@ namespace Celeste.Mod.Entities {
 
         public CustomMemorialText(CustomMemorial memorial, bool dreamy, string text, float spacing)
             : base() {
-            AddTag(Tags.HUD);
-            AddTag(Tags.PauseUpdate);
+            Tag = Tags.HUD | Tags.PauseUpdate;
             Add(textSfx = new SoundSource());
 
             Dreamy = dreamy;
@@ -80,7 +74,7 @@ namespace Celeste.Mod.Entities {
             if (Show && alpha >= 1f && index < Message.Length) {
                 if (!textSfxPlaying) {
                     textSfxPlaying = true;
-                    textSfx.Play(Dreamy ? SFX.ui_game_memorialdream_text_loop : SFX.ui_game_memorial_text_loop, null, 0f);
+                    textSfx.Play(Dreamy ? SFX.ui_game_memorialdream_text_loop : SFX.ui_game_memorial_text_loop);
                     textSfx.Param("end", 0f);
                 }
 

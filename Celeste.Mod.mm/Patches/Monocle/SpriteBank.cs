@@ -10,6 +10,9 @@ using System.Xml;
 namespace Monocle {
     class patch_SpriteBank : SpriteBank {
 
+        /// <summary>
+        /// The path to the file from which the SpriteBank was loaded.
+        /// </summary>
         public string XMLPath;
 
         public patch_SpriteBank(Atlas atlas, XmlDocument xml)

@@ -1,19 +1,11 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {

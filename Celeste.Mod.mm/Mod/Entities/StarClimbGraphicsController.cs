@@ -10,20 +10,24 @@ namespace Celeste.Mod.Entities {
     [Tracked]
     [CustomEntity("everest/starClimbGraphicsController")]
     public class StarClimbGraphicsController : Entity {
-        private VertexPositionColor[] vertices = new VertexPositionColor[600];
-        private int vertexCount = 0;
-        private Color rayColor;
-        private Color wipeColor;
-        private static Ray[] rays = new Ray[100];
-        private Level level;
-        private static Random random;
-        public static VirtualRenderTarget BlockFill;
         private const int RayCount = 100;
 
+        public static VirtualRenderTarget BlockFill;
+
+        private static Ray[] rays = new Ray[RayCount];
+
+        private VertexPositionColor[] vertices = new VertexPositionColor[600];
+        private int vertexCount = 0;
+        
+        private Color rayColor;
+        private Color wipeColor;
+        
+        private Level level;
+
         public StarClimbGraphicsController(EntityData data, Vector2 offset) {
-            this.Tag = (Tags.TransitionUpdate | Tags.FrozenUpdate);
-            this.rayColor = Calc.HexToColor(data.Attr("fgColor", "a3ffff")) * 0.25f;
-            this.wipeColor = Calc.HexToColor(data.Attr("bgColor", "293E4B"));
+            Tag = Tags.TransitionUpdate | Tags.FrozenUpdate;
+            rayColor = Calc.HexToColor(data.Attr("fgColor", "a3ffff")) * 0.25f;
+            wipeColor = Calc.HexToColor(data.Attr("bgColor", "293E4B"));
         }
 
         public override void Added(Scene scene) {
@@ -31,23 +35,21 @@ namespace Celeste.Mod.Entities {
             level = scene as Level;
 
             if (!DetectOtherController()) {
-                this.InitBlockFill();
-                random = new Random(666);
+                InitBlockFill();
             }
-            this.Add(new BeforeRenderHook(new Action(this.BeforeRender)));
+            Add(new BeforeRenderHook(new Action(BeforeRender)));
         }
 
         public override void Update() {
             base.Update();
-            this.UpdateBlockFill();
+            UpdateBlockFill();
         }
 
         private bool DetectOtherController() {
             List<Entity> controllers = level.Tracker.GetEntities<StarClimbGraphicsController>();
 
             foreach (Entity control in controllers) {
-                StarClimbGraphicsController other = control as StarClimbGraphicsController;
-                if (other == null || other == this)
+                if (!(control is StarClimbGraphicsController other) || other == this)
                     continue;
                 else
                     return true;
@@ -69,54 +71,54 @@ namespace Celeste.Mod.Entities {
 
             for (int index1 = 0; index1 < rays.Length; ++index1) {
                 // Ray lifetime and expiry
-                if ((double) rays[index1].Percent >= 1.0)
+                if (rays[index1].Percent >= 1.0)
                     rays[index1].Reset();
 
                 rays[index1].Percent += Engine.DeltaTime / rays[index1].Duration;
                 rays[index1].Y += 8f * Engine.DeltaTime;
 
                 Vector2 rayPosition = new Vector2(
-                    mod(rays[index1].X - this.level.Camera.X * 0.9f, 320f + 160f) - 80f,
-                    mod(rays[index1].Y - this.level.Camera.Y * 0.7f, 580f) - 200f
+                    mod(rays[index1].X - level.Camera.X * 0.9f, 320f + 160f) - 80f,
+                    mod(rays[index1].Y - level.Camera.Y * 0.7f, 580f) - 200f
                 );
 
                 // Construct the ray
                 float width = rays[index1].Width;
                 float length = rays[index1].Length;
-                Color rayLifeColor = this.rayColor * Ease.CubeInOut(Calc.YoYo(rays[index1].Percent));
+                Color rayLifeColor = rayColor * Ease.CubeInOut(Calc.YoYo(rays[index1].Percent));
                 VertexPositionColor vert1 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width + rayAngle * length, 0.0f), rayLifeColor);
                 VertexPositionColor vert2 = new VertexPositionColor(new Vector3(rayPosition - rayAngleCompl * width, 0.0f), rayLifeColor);
                 VertexPositionColor vert3 = new VertexPositionColor(new Vector3(rayPosition + rayAngleCompl * width, 0.0f), rayLifeColor);
                 VertexPositionColor vert4 = new VertexPositionColor(new Vector3(rayPosition - rayAngleCompl * width - rayAngle * length, 0.0f), rayLifeColor);
 
                 // Add ray tris
-                this.vertices[verticeCount++] = vert1;
-                this.vertices[verticeCount++] = vert2;
-                this.vertices[verticeCount++] = vert3;
-                this.vertices[verticeCount++] = vert2;
-                this.vertices[verticeCount++] = vert3;
-                this.vertices[verticeCount++] = vert4;
+                vertices[verticeCount++] = vert1;
+                vertices[verticeCount++] = vert2;
+                vertices[verticeCount++] = vert3;
+                vertices[verticeCount++] = vert2;
+                vertices[verticeCount++] = vert3;
+                vertices[verticeCount++] = vert4;
             }
-            this.vertexCount = verticeCount;
+            vertexCount = verticeCount;
         }
 
         private void BeforeRender() {
             if (BlockFill == null)
                 BlockFill = VirtualContent.CreateRenderTarget("block-fill", 320, 180, false, true, 0);
-            if (this.vertexCount <= 0)
+            if (vertexCount <= 0)
                 return;
-            Engine.Graphics.GraphicsDevice.SetRenderTarget((RenderTarget2D) BlockFill);
+            Engine.Graphics.GraphicsDevice.SetRenderTarget(BlockFill);
             Engine.Graphics.GraphicsDevice.Clear(wipeColor);
-            GFX.DrawVertices<VertexPositionColor>(Matrix.Identity, this.vertices, this.vertexCount, (Effect) null, (BlendState) null);
+            GFX.DrawVertices(Matrix.Identity, vertices, vertexCount, null, null);
         }
 
         public override void Removed(Scene scene) {
-            this.Dispose();
+            Dispose();
             base.Removed(scene);
         }
 
         public override void SceneEnd(Scene scene) {
-            this.Dispose();
+            Dispose();
             base.SceneEnd(scene);
         }
 
@@ -141,12 +143,12 @@ namespace Celeste.Mod.Entities {
             public float Length;
 
             public void Reset() {
-                this.Percent = 0.0f;
-                this.X = Calc.Random.NextFloat(320f + 160f);
-                this.Y = Calc.Random.NextFloat(580f);
-                this.Duration = 4.0f + Calc.Random.NextFloat() * 8.0f;
-                this.Width = (float) Calc.Random.Next(8, 80);
-                this.Length = (float) Calc.Random.Next(20, 200);
+                Percent = 0.0f;
+                X = Calc.Random.NextFloat(320f + 160f);
+                Y = Calc.Random.NextFloat(580f);
+                Duration = 4.0f + Calc.Random.NextFloat() * 8.0f;
+                Width = Calc.Random.Next(8, 80);
+                Length = Calc.Random.Next(20, 200);
             }
         }
     }

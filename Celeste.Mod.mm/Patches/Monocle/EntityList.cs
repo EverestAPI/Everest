@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using System.Collections.Generic;
 
@@ -11,6 +9,10 @@ namespace Monocle {
         // We're effectively in EntityList, but still need to "expose" private fields to our mod.
         private List<Entity> toAdd;
         private List<Entity> entities;
+
+        /// <summary>
+        /// The list of entities which are about to get added.
+        /// </summary>
         public List<Entity> ToAdd => toAdd;
 
         internal void ClearEntities() {

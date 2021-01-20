@@ -1,7 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using MonoMod.Utils;
 using System;

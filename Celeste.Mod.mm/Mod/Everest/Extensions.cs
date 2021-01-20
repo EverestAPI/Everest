@@ -9,9 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Extensions {
@@ -353,8 +351,7 @@ namespace Celeste.Mod {
         }
 
         public static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
-            object obj;
-            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out obj))
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
                 return defaultValue;
             if (obj is int)
                 return (int) obj;

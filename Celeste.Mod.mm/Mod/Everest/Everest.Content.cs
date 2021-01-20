@@ -1,26 +1,16 @@
-﻿using Celeste.Mod.Meta;
-using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Helpers;
+using Celeste.Mod.Meta;
+using Ionic.Zip;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
 using Monocle;
-using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
-using Ionic.Zip;
 using System.Linq;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
-using Celeste.Mod.Core;
 using System.Threading;
-using System.Diagnostics;
-using Celeste.Mod.UI;
 
 namespace Celeste.Mod {
     // Special meta types.
