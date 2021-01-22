@@ -2,7 +2,7 @@
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using Node = Monocle.patch_VirtualAxis_InputV2.Node;
+using Node = Monocle.VirtualAxis.Node;
 
 namespace Monocle {
     [MonoModIfFlag("V2:Input")]

@@ -26,8 +26,8 @@ namespace Monocle {
         public new bool Repeating { get; private set; }
 #pragma warning restore CS0649
 
-        [MonoModReplace]
         public new bool Check {
+            [MonoModReplace]
             get {
                 if (MInput.Disabled)
                     return false;
@@ -43,8 +43,8 @@ namespace Monocle {
             }
         }
 
-        [MonoModReplace]
         public new bool Pressed {
+            [MonoModReplace]
             get {
                 if (DebugOverridePressed.HasValue && MInput.Keyboard.Check(DebugOverridePressed.Value))
                     return true;
@@ -69,8 +69,8 @@ namespace Monocle {
             }
         }
 
-        [MonoModReplace]
         public new bool Released {
+            [MonoModReplace]
             get {
                 if (MInput.Disabled)
                     return false;
@@ -489,7 +489,7 @@ namespace Monocle {
 
             public float Threshold;
 
-            private patch_VirtualAxis_InputV2 axis;
+            private VirtualAxis axis;
 
             public override bool Check {
                 get {
@@ -527,7 +527,7 @@ namespace Monocle {
                 }
             }
 
-            public VirtualAxisTrigger(patch_VirtualAxis_InputV2 axis, ThresholdModes mode, float threshold) {
+            public VirtualAxisTrigger(VirtualAxis axis, ThresholdModes mode, float threshold) {
                 this.axis = axis;
                 Mode = mode;
                 Threshold = threshold;

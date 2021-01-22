@@ -427,19 +427,29 @@ namespace Celeste.Mod {
         private void CreateDefaultModMenuSectionKeyBindingsV1(TextMenu menu) {
             menu.Add(new TextMenu.Button(Dialog.Clean("options_keyconfig")).Pressed(() => {
                 menu.Focused = false;
-                Engine.Scene.Add(new ModuleSettingsKeyboardConfigUI(this) {
-                    OnClose = () => menu.Focused = true
-                });
+                Engine.Scene.Add(CreateDefaultModMenuSectionKeyBindingsV1_CreateKeyboardConfigUI(menu));
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
 
             menu.Add(new TextMenu.Button(Dialog.Clean("options_btnconfig")).Pressed(() => {
                 menu.Focused = false;
-                Engine.Scene.Add(new ModuleSettingsButtonConfigUI(this) {
-                    OnClose = () => menu.Focused = true
-                });
+                Engine.Scene.Add(CreateDefaultModMenuSectionKeyBindingsV1_CreateButtonConfigUI(menu));
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
+        }
+
+        [MonoModIfFlag("V1:Input")]
+        private Entity CreateDefaultModMenuSectionKeyBindingsV1_CreateKeyboardConfigUI(TextMenu menu) {
+            return new ModuleSettingsKeyboardConfigUI(this) {
+                OnClose = () => menu.Focused = true
+            };
+        }
+
+        [MonoModIfFlag("V1:Input")]
+        private Entity CreateDefaultModMenuSectionKeyBindingsV1_CreateButtonConfigUI(TextMenu menu) {
+            return new ModuleSettingsButtonConfigUI(this) {
+                OnClose = () => menu.Focused = true
+            };
         }
 
         [MonoModIfFlag("V2:Input")]

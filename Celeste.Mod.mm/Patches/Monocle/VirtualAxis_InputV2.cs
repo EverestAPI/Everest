@@ -6,8 +6,8 @@ namespace Monocle {
     // Copied from Celeste 1.3.3.11
     // FIXME!!! Update this to use Binding + Nodes instead!
     [MonoModIfFlag("V2:Input")]
-    [MonoModPatch("VirtualAxis")]
-    public class patch_VirtualAxis_InputV2 : VirtualInput {
+    // Original name because this type is missing from 1.3.3.14+, thus MonoModPatch isn't properly respected.
+    public class VirtualAxis : VirtualInput {
 
         public List<Node> Nodes;
 
@@ -15,11 +15,11 @@ namespace Monocle {
 
         public float PreviousValue { get; private set; }
 
-        public patch_VirtualAxis_InputV2() {
+        public VirtualAxis() {
             Nodes = new List<Node>();
         }
 
-        public patch_VirtualAxis_InputV2(params Node[] nodes) {
+        public VirtualAxis(params Node[] nodes) {
             Nodes = new List<Node>(nodes);
         }
 
@@ -41,7 +41,7 @@ namespace Monocle {
             }
         }
 
-        public static implicit operator float(patch_VirtualAxis_InputV2 axis) => axis.Value;
+        public static implicit operator float(VirtualAxis axis) => axis.Value;
 
 
 
