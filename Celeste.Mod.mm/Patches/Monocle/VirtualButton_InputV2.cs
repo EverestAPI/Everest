@@ -112,6 +112,7 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor() {
             orig_ctor();
+            Binding = Binding ?? new Binding();
             Nodes = new List<Node>();
         }
 

@@ -29,6 +29,8 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor() {
             orig_ctor();
+            Negative = Negative ?? new Binding();
+            Positive = Positive ?? new Binding();
             Nodes = new List<Node>();
         }
 
