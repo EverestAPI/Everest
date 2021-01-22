@@ -29,7 +29,7 @@ namespace Celeste.Mod {
         public bool Repeating => Button?.Repeating ?? false;
 
         [YamlIgnore]
-        public List<VirtualButton.Node> Nodes {
+        public List<patch_VirtualButton_InputV2.Node> Nodes {
             get => Button?.Nodes;
             set {
                 //No null-coalescing assignment operator in C#7.3
@@ -58,7 +58,7 @@ namespace Celeste.Mod {
         #endregion
 
         [YamlIgnore]
-        public VirtualButton Button;
+        public patch_VirtualButton_InputV2 Button;
 
         public ButtonBinding()
             : this(0) {

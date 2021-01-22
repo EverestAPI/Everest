@@ -1,10 +1,12 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using Monocle;
+using MonoMod;
 using System.Collections.Generic;
 using System.Reflection;
 
 namespace Celeste.Mod {
-    public class ModuleSettingsButtonConfigUI : patch_ButtonConfigUI {
+    [MonoModIfFlag("V1:Input")] // FIXME!!!
+    public class ModuleSettingsButtonConfigUI : patch_ButtonConfigUI_InputV1 {
 
         public EverestModule Module;
 

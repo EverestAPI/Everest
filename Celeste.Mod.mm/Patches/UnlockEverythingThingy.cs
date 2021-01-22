@@ -43,7 +43,7 @@ namespace Celeste {
         [MonoModPatch("UnlockDemoConfig")]
         [MonoModReplace]
         private void UnlockDemoConfigImpl() {
-            Settings.Instance.RevealDemoConfig = true;
+            patch_Settings_InputV1.Instance.RevealDemoConfig = true;
         }
 
     }

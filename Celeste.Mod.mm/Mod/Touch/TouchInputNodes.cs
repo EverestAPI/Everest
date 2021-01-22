@@ -3,7 +3,7 @@
 namespace Celeste.Mod {
     public static class TouchInputNodes {
 
-        public class Button : VirtualButton.Node {
+        public class Button : patch_VirtualButton_InputV2.Node {
             public readonly ATouchRegion Region;
             public Button(ATouchRegion region) {
                 Region = region;

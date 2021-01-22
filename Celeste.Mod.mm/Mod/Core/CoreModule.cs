@@ -133,7 +133,7 @@ namespace Celeste.Mod.Core {
                     ((Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false) ||
                     (Engine.Scene is GameLoader)
                 ,
-                Button = Input.MenuConfirm
+                Button = (patch_VirtualButton_InputV2) Input.MenuConfirm
             };
         }
 

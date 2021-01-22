@@ -51,7 +51,7 @@ namespace Celeste.Mod {
         public delegate bool TouchRegionCondition(TouchRegion region);
         public TouchRegionCondition Condition;
 
-        public VirtualButton Button {
+        public patch_VirtualButton_InputV2 Button {
             set {
                 value.Nodes.Add(new TouchInputNodes.Button(this));
             }

@@ -476,6 +476,9 @@ namespace MonoMod {
             MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");
             MonoModRule.Flag.Set("V1:GuiInputController", m_GuiInputController.Parameters.Count == 0);
             MonoModRule.Flag.Set("V2:GuiInputController", m_GuiInputController.Parameters.Count == 1);
+
+            MonoModRule.Flag.Set("V1:Input", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("BtnJump") != null);
+            MonoModRule.Flag.Set("V2:Input", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("BtnJump") == null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

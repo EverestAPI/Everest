@@ -2,6 +2,7 @@
 
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System.Collections.Generic;
@@ -204,6 +205,64 @@ namespace Celeste {
                 return cachedRightWidth;
             }
         }
+
+        public new class Setting : TextMenu.Setting {
+
+            public Setting(string label, string value = "")
+                : base(label, value) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public Setting(string label, Keys key)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public Setting(string label, List<Keys> keys)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public Setting(string label, Buttons btn)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public Setting(string label, List<Buttons> buttons)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModLinkTo("Celeste.TextMenu/Setting", "System.Void .ctor(System.String,System.String)")]
+            [MonoModIgnore]
+            public extern void ctor(string label, string value = "");
+
+            [MonoModConstructor]
+            public void ctor(string label, Keys key) {
+                ctor(label);
+                Set(new List<Keys>() { key });
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, List<Keys> keys) {
+                ctor(label);
+                Set(keys);
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, Buttons btn) {
+                ctor(label);
+                Set(new List<Buttons>() { btn });
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, List<Buttons> buttons) {
+                ctor(label);
+                Set(buttons);
+            }
+
+        }
+
     }
 
     public static partial class TextMenuExt {

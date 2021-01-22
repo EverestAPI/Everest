@@ -11,7 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
-    public class patch_KeyboardConfigUI : KeyboardConfigUI {
+    [MonoModIfFlag("V1:Input")]
+    [MonoModPatch("KeyboardConfigUI")]
+    public class patch_KeyboardConfigUI_InputV1 : KeyboardConfigUI {
 
         [MonoModIgnore]
         private enum Mappings {
@@ -64,7 +66,7 @@ namespace Celeste {
         /// <param name="key">The mapping index</param>
         /// <param name="list">The list of keys currently mapped to it</param>
         protected void AddKeyConfigLine(int key, List<Keys> list) {
-            Add(new Setting(GetLabel(key), list).Pressed(() => Remap(key)));
+            Add(new patch_TextMenu.Setting(GetLabel(key), list).Pressed(() => Remap(key)));
         }
 
         /// <summary>
@@ -112,23 +114,23 @@ namespace Celeste {
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
-            AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, Settings.Instance.Left));
-            AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, Settings.Instance.Right));
-            AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, Settings.Instance.Up));
-            AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, Settings.Instance.Down));
+            AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, patch_Settings_InputV1.Instance.Left));
+            AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, patch_Settings_InputV1.Instance.Right));
+            AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, patch_Settings_InputV1.Instance.Up));
+            AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, patch_Settings_InputV1.Instance.Down));
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
-            AddKeyConfigLine(Mappings.Jump, Settings.Instance.Jump);
-            AddKeyConfigLine(Mappings.Dash, Settings.Instance.Dash);
-            AddKeyConfigLine(Mappings.Grab, Settings.Instance.Grab);
-            AddKeyConfigLine(Mappings.Talk, Settings.Instance.Talk);
+            AddKeyConfigLine(Mappings.Jump, patch_Settings_InputV1.Instance.Jump);
+            AddKeyConfigLine(Mappings.Dash, patch_Settings_InputV1.Instance.Dash);
+            AddKeyConfigLine(Mappings.Grab, patch_Settings_InputV1.Instance.Grab);
+            AddKeyConfigLine(Mappings.Talk, patch_Settings_InputV1.Instance.Talk);
 
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
-            AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, Settings.Instance.Confirm));
-            AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, Settings.Instance.Cancel));
-            AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, Settings.Instance.Pause));
-            AddKeyConfigLine(Mappings.Journal, Settings.Instance.Journal);
-            AddKeyConfigLine(Mappings.QuickRestart, Settings.Instance.QuickRestart);
+            AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, patch_Settings_InputV1.Instance.Confirm));
+            AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, patch_Settings_InputV1.Instance.Cancel));
+            AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, patch_Settings_InputV1.Instance.Pause));
+            AddKeyConfigLine(Mappings.Journal, patch_Settings_InputV1.Instance.Journal);
+            AddKeyConfigLine(Mappings.QuickRestart, patch_Settings_InputV1.Instance.QuickRestart);
 
             AddDemoDashLine();
 
@@ -137,7 +139,7 @@ namespace Celeste {
             button.IncludeWidthInMeasurement = false;
             button.AlwaysCenter = true;
             button.OnPressed = delegate {
-                Settings.Instance.SetDefaultKeyboardControls(reset: true);
+                patch_Settings_InputV1.Instance.SetDefaultKeyboardControls(reset: true);
                 Input.Initialize();
                 Reload(Selection);
             };
@@ -161,9 +163,9 @@ namespace Celeste {
         [MonoModPatch("AddDemoDashLine")]
         [MonoModReplace]
         private void AddDemoDashLineImpl() {
-            if (Settings.Instance.RevealDemoConfig) {
+            if (patch_Settings_InputV1.Instance.RevealDemoConfig) {
                 Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
-                AddKeyConfigLine(Mappings.DemoDash, Settings.Instance.DemoDash);
+                AddKeyConfigLine(Mappings.DemoDash, patch_Settings_InputV1.Instance.DemoDash);
             }
         }
 
@@ -229,60 +231,60 @@ namespace Celeste {
 
             switch (mappedKey) {
                 case Mappings.Left:
-                    Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Right:
-                    Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Up:
-                    Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Down:
-                    Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Jump:
-                    return Settings.Instance.Jump;
+                    return patch_Settings_InputV1.Instance.Jump;
 
                 case Mappings.Dash:
-                    return Settings.Instance.Dash;
+                    return patch_Settings_InputV1.Instance.Dash;
 
                 case Mappings.Grab:
-                    return Settings.Instance.Grab;
+                    return patch_Settings_InputV1.Instance.Grab;
 
                 case Mappings.Talk:
-                    return Settings.Instance.Talk;
+                    return patch_Settings_InputV1.Instance.Talk;
 
                 case Mappings.Confirm:
-                    if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                    if (!patch_Settings_InputV1.Instance.Cancel.Contains(newKey) && !patch_Settings_InputV1.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Enter) {
-                            return Settings.Instance.Confirm;
+                            return patch_Settings_InputV1.Instance.Confirm;
                         }
                     }
                     return null;
 
                 case Mappings.Cancel:
-                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                    if (!patch_Settings_InputV1.Instance.Confirm.Contains(newKey) && !patch_Settings_InputV1.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Back) {
-                            return Settings.Instance.Cancel;
+                            return patch_Settings_InputV1.Instance.Cancel;
                         }
                     }
                     return null;
 
                 case Mappings.Pause:
-                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
-                        return Settings.Instance.Pause;
+                    if (!patch_Settings_InputV1.Instance.Confirm.Contains(newKey) && !patch_Settings_InputV1.Instance.Cancel.Contains(newKey)) {
+                        return patch_Settings_InputV1.Instance.Pause;
                     }
                     return null;
 
                 case Mappings.Journal:
-                    return Settings.Instance.Journal;
+                    return patch_Settings_InputV1.Instance.Journal;
 
                 case Mappings.QuickRestart:
-                    return Settings.Instance.QuickRestart;
+                    return patch_Settings_InputV1.Instance.QuickRestart;
 
                 default:
                     return null;

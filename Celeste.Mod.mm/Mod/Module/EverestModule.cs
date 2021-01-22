@@ -2,6 +2,7 @@
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
+using MonoMod;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -346,22 +347,22 @@ namespace Celeste.Mod {
                         prop.SetValue(settings, binding);
                     }
 
-                    VirtualButton vbutton = new VirtualButton();
+                    patch_VirtualButton_InputV2 vbutton = new patch_VirtualButton_InputV2();
                     foreach (Keys key in binding.Keys)
-                        vbutton.Nodes.Add(new VirtualButton.KeyboardKey(key));
+                        vbutton.Nodes.Add(new patch_VirtualButton_InputV2.KeyboardKey(key));
 
                     foreach (Buttons button_ in binding.Buttons) {
                         Buttons button = button_;
                         if ((button & Buttons.LeftTrigger) == Buttons.LeftTrigger) {
-                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                            vbutton.Nodes.Add(new patch_VirtualButton_InputV2.PadLeftTrigger(Input.Gamepad, 0.25f));
                             button &= ~Buttons.LeftTrigger;
                         }
                         if ((button & Buttons.RightTrigger) == Buttons.RightTrigger) {
-                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                            vbutton.Nodes.Add(new patch_VirtualButton_InputV2.PadLeftTrigger(Input.Gamepad, 0.25f));
                             button &= ~Buttons.RightTrigger;
                         }
                         if (button != 0) {
-                            vbutton.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, button));
+                            vbutton.Nodes.Add(new patch_VirtualButton_InputV2.PadButton(Input.Gamepad, button));
                         }
                     }
 
@@ -413,6 +414,17 @@ namespace Celeste.Mod {
         }
 
         protected virtual void CreateModMenuSectionKeyBindings(TextMenu menu, bool inGame, EventInstance snapshot) {
+            CreateDefaultModMenuSectionKeyBindings(menu);
+        }
+
+        // FIXME!!! Remove this split once ModuleSettings*ConfigUI is impl'd for 1.3.3.14+
+        [MonoModIgnore]
+        private extern void CreateDefaultModMenuSectionKeyBindings(TextMenu menu);
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("CreateDefaultModMenuSectionKeyBindings")]
+        [MonoModReplace]
+        private void CreateDefaultModMenuSectionKeyBindingsV1(TextMenu menu) {
             menu.Add(new TextMenu.Button(Dialog.Clean("options_keyconfig")).Pressed(() => {
                 menu.Focused = false;
                 Engine.Scene.Add(new ModuleSettingsKeyboardConfigUI(this) {
@@ -428,6 +440,12 @@ namespace Celeste.Mod {
                 });
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("CreateDefaultModMenuSectionKeyBindings")]
+        [MonoModReplace]
+        private void CreateDefaultModMenuSectionKeyBindingsV2(TextMenu menu) {
         }
 
         private Type _PrevSettingsType;
