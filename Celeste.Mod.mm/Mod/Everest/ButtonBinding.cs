@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using Monocle;
+using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,8 +15,54 @@ namespace Celeste.Mod {
     /// <see href="https://github.com/EverestAPI/Resources/wiki/Mod-Settings#ButtonBinding">Read More</see>
     /// </summary>
     public class ButtonBinding {
-        public List<Buttons> Buttons { get; set; }
-        public List<Keys> Keys { get; set; }
+
+        [MonoModIfFlag("V1:Input")]
+        public List<Buttons> Buttons {
+            [MonoModIfFlag("V1:Input")]
+            get;
+            [MonoModIfFlag("V1:Input")]
+            set;
+        }
+        [MonoModIfFlag("V1:Input")]
+        public List<Keys> Keys {
+            [MonoModIfFlag("V1:Input")]
+            get;
+            [MonoModIfFlag("V1:Input")]
+            set;
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("Buttons")]
+        public List<Buttons> Buttons_V1 {
+            [MonoModIfFlag("V2:Input")]
+            [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Mod.ButtonBinding::get_Buttons()")]
+            get => Binding.Controller;
+            [MonoModIfFlag("V2:Input")]
+            [MonoModLinkFrom("System.Void Celeste.Mod.ButtonBinding::set_Buttons(System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons>)")]
+            set => Binding.Controller = value;
+        }
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("Keys")]
+        public List<Keys> Keys_V1 {
+            [MonoModIfFlag("V2:Input")]
+            [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Mod.ButtonBinding::get_Keys()")]
+            get => Binding.Keyboard;
+            [MonoModIfFlag("V2:Input")]
+            [MonoModLinkFrom("System.Void Celeste.Mod.ButtonBinding::set_Keys(System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys>)")]
+            set => Binding.Keyboard = value;
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        private Binding _Binding;
+
+        [MonoModIfFlag("V2:Input")]
+        [YamlIgnore] // Binding uses XmlIgnores and migrating old mappings is hard.
+        public Binding Binding {
+            [MonoModIfFlag("V2:Input")]
+            get => _Binding;
+            [MonoModIfFlag("V2:Input")]
+            private set => _Binding = Binding;
+        }
 
         #region VirtualButton Members
 
@@ -29,7 +76,8 @@ namespace Celeste.Mod {
         public bool Repeating => Button?.Repeating ?? false;
 
         [YamlIgnore]
-        public List<patch_VirtualButton_InputV2.Node> Nodes {
+        [Obsolete("Please move to Binding ASAP (ideally after the new Celeste input system gets out of beta).")]
+        public List<patch_VirtualButton_InputV1.Node> Nodes {
             get => Button?.Nodes;
             set {
                 //No null-coalescing assignment operator in C#7.3
@@ -58,16 +106,38 @@ namespace Celeste.Mod {
         #endregion
 
         [YamlIgnore]
-        public patch_VirtualButton_InputV2 Button;
+        public patch_VirtualButton_InputV1 Button;
 
         public ButtonBinding()
             : this(0) {
         }
 
         public ButtonBinding(Buttons buttons, params Keys[] keys) {
+            Init(buttons, keys);
+        }
+
+        [MonoModIgnore]
+        private extern void Init(Buttons buttons, params Keys[] keys);
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("Init")]
+        [MonoModReplace]
+        [Obsolete]
+        private void InitV1(Buttons buttons, params Keys[] keys) {
             Buttons = Enum.GetValues(typeof(Buttons)).Cast<Buttons>().Where(b => (buttons & b) == b).ToList();
             Keys = new List<Keys>(keys);
         }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("Init")]
+        [MonoModReplace]
+        private void InitV2(Buttons buttons, params Keys[] keys) {
+            Binding = new Binding() {
+                Controller = Enum.GetValues(typeof(Buttons)).Cast<Buttons>().Where(b => (buttons & b) == b).ToList(),
+                Keyboard = new List<Keys>(keys)
+            };
+        }
+
 
         #region VirtualButton Members
 
@@ -107,11 +177,13 @@ namespace Celeste.Mod {
         /// <summary>
         /// Whether the default Button should always be bound.
         /// </summary>
+        // FIXME!!! Currently unused in V2 menu!
         public bool ForceDefaultButton;
 
         /// <summary>
         /// Whether the default Key should always be bound.
         /// </summary>
+        // FIXME!!! Currently unused in V2 menu!
         public bool ForceDefaultKey;
 
         /// <summary>

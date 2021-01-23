@@ -212,7 +212,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap keys during a remap operation.
-        /// This should be the a List&lt;Keys&gt; field in your settings class
+        /// This should be a List&lt;Keys&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newKey">The new key that the user is attempting to set.</param>

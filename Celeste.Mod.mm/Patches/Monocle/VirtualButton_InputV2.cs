@@ -26,6 +26,8 @@ namespace Monocle {
         public new bool Repeating { get; private set; }
 #pragma warning restore CS0649
 
+        public bool AutoConsumeBuffer;
+
         public new bool Check {
             [MonoModReplace]
             get {
@@ -55,15 +57,25 @@ namespace Monocle {
                 if (consumed)
                     return false;
 
-                if (bufferCounter > 0f || Repeating)
+                if (bufferCounter > 0f || Repeating) {
+                    if (AutoConsumeBuffer)
+                        bufferCounter = 0f;
                     return true;
+                }
 
-                if (Binding.Pressed(GamepadIndex, Threshold))
+                if (Binding.Pressed(GamepadIndex, Threshold)) {
+                    if (AutoConsumeBuffer)
+                        bufferCounter = 0f;
                     return true;
+                }
 
-                foreach (Node node in Nodes)
-                    if (node.Pressed)
+                foreach (Node node in Nodes) {
+                    if (node.Pressed) {
+                        if (AutoConsumeBuffer)
+                            bufferCounter = 0f;
                         return true;
+                    }
+                }
 
                 return false;
             }
@@ -156,7 +168,9 @@ namespace Monocle {
             foreach (Node node in Nodes) {
                 node.Update();
                 if (node.Pressed) {
-                    bufferCounter = BufferTime;
+                    if (node.Bufferable) {
+                        bufferCounter = BufferTime;
+                    }
                     down = true;
                 } else if (node.Check) {
                     down = true;
@@ -197,6 +211,9 @@ namespace Monocle {
             public abstract bool Check { get; }
             public abstract bool Pressed { get; }
             public abstract bool Released { get; }
+
+            // ... except for this.
+            public virtual bool Bufferable { get; set; }
         }
 
         [MonoModIfFlag("V2:Input")]

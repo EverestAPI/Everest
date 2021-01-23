@@ -15,42 +15,32 @@ namespace Celeste {
         public static new patch_Settings_InputV2 Instance;
 #pragma warning restore CS0649
 
-        private static List<Keys> _EnumToList(Keys all)
-            => Enum.GetValues(typeof(Keys)).Cast<Keys>().Where(v => (all & v) == v).ToList();
-
-        private static Keys _ListToEnum(List<Keys> list) {
-            Keys all = default;
-            foreach (Keys v in list)
-                all |= v;
-            return all;
-        }
-
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Left")]
         [XmlIgnore]
         public Keys Left_V1 {
-            get => _ListToEnum(Left.Keyboard);
-            set => Left.Keyboard = _EnumToList(value);
+            get => Left.Keyboard.FirstOrDefault();
+            set => Left.Keyboard = new List<Keys> { value };
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Right")]
         [XmlIgnore]
         public Keys Right_V1 {
-            get => _ListToEnum(Right.Keyboard);
-            set => Right.Keyboard = _EnumToList(value);
+            get => Right.Keyboard.FirstOrDefault();
+            set => Right.Keyboard = new List<Keys> { value };
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Down")]
         [XmlIgnore]
         public Keys Down_V1 {
-            get => _ListToEnum(Down.Keyboard);
-            set => Down.Keyboard = _EnumToList(value);
+            get => Down.Keyboard.FirstOrDefault();
+            set => Down.Keyboard = new List<Keys> { value };
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Up")]
         [XmlIgnore]
         public Keys Up_V1 {
-            get => _ListToEnum(Up.Keyboard);
-            set => Up.Keyboard = _EnumToList(value);
+            get => Up.Keyboard.FirstOrDefault();
+            set => Up.Keyboard = new List<Keys> { value };
         }
 
         [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Grab")]
