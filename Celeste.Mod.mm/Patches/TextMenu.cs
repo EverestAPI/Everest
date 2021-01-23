@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -113,18 +114,35 @@ namespace Celeste {
         public override void Render() {
             // this is heavily based on the vanilla method, adding a check to skip rendering off-screen options.
             RecalculateSize();
+
+            // render non-AboveAll items, then AboveAll items.
+            if (renderItems(aboveAll: false)) {
+                renderItems(aboveAll: true);
+            }
+        }
+
+        // Renders AboveAll or non-AboveAll items depending on the passed parameter, and returns true if items were skipped.
+        private bool renderItems(bool aboveAll) {
+            bool skippedItems = false;
+
             Vector2 currentPosition = Position - Justify * new Vector2(Width, Height);
             foreach (Item item in items) {
                 if (item.Visible) {
                     float itemHeight = item.Height();
-                    Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
-                    // skip rendering the option if it is off-screen.
-                    if (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height) {
-                        item.Render(drawPosition, Focused && Current == item);
+                    if (aboveAll == item.AboveAll) {
+                        Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
+                        // skip rendering the option if it is off-screen.
+                        if (((patch_Item) item).AlwaysRender || (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height)) {
+                            item.Render(drawPosition, Focused && Current == item);
+                        }
+                    } else {
+                        skippedItems = true;
                     }
                     currentPosition.Y += itemHeight + ItemSpacing;
                 }
             }
+
+            return skippedItems;
         }
 
         public class patch_LanguageButton : LanguageButton {
@@ -204,6 +222,19 @@ namespace Celeste {
                 }
                 return cachedRightWidth;
             }
+        }
+
+        public class patch_Item : Item {
+            /// <summary>
+            /// Set this property to true to force the Item to render even when off-screen.
+            /// </summary>
+            public virtual bool AlwaysRender { get; } = false;
+
+            /// <summary>
+            /// Items that have AboveAll set to true will render above those that have it set to false.
+            /// </summary>
+            [MonoModIfFlag("V1:Input")]
+            public new bool AboveAll = false;
         }
 
         public new class Setting : TextMenu.Setting {
