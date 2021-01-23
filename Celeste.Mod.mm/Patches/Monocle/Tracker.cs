@@ -25,6 +25,7 @@ namespace Monocle {
         }
 
         /// <inheritdoc cref="TrackedAsAttribute(Type)"/>
+        /// <param name="trackedAsType">Type to track this entity/component as.</param>
         /// <param name="inherited">Whether all child classes should also be tracked as <paramref name="trackedAsType"/>.</param>
         public TrackedAsAttribute(Type trackedAsType, bool inherited = false) {
             TrackedAsType = trackedAsType;

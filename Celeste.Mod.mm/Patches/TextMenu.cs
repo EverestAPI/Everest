@@ -83,7 +83,10 @@ namespace Celeste {
             return num - targetItem.Height() * 0.5f - ItemSpacing;
         }
 
+#pragma warning disable CS0626 // extern method with no attribute
         public extern void orig_Update();
+#pragma warning restore CS0626 // extern method with no attribute
+
         public override void Update() {
             orig_Update();
 
@@ -210,7 +213,10 @@ namespace Celeste {
             [PatchTextMenuOptionColor]
             public extern new void Render(Vector2 position, bool highlighted);
 
+#pragma warning disable CS0626 // extern method with no attribute
             public extern float orig_RightWidth();
+#pragma warning restore CS0626 // extern method with no attribute
+
             public override float RightWidth() {
                 // the vanilla method measures each option, which can be resource-heavy.
                 // caching it allows to remove some lag in big menus, like Mod Options with a lot of mods installed.
