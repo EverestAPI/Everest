@@ -61,7 +61,7 @@ namespace Celeste.Mod {
             [MonoModIfFlag("V2:Input")]
             get => _Binding;
             [MonoModIfFlag("V2:Input")]
-            private set => _Binding = Binding;
+            private set => _Binding = value;
         }
 
         #region VirtualButton Members
