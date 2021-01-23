@@ -123,31 +123,37 @@ namespace Celeste {
             set => DemoDash.Keyboard = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnGrab {
             get => Grab.Controller;
             set => Grab.Controller = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnJump {
             get => Jump.Controller;
             set => Jump.Controller = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnDash {
             get => Dash.Controller;
             set => Dash.Controller = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnTalk {
             get => Talk.Controller;
             set => Talk.Controller = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnAltQuickRestart {
             get => QuickRestart.Controller;
             set => QuickRestart.Controller = value;
         }
 
+        [XmlIgnore]
         public List<Buttons> BtnDemoDash {
             get => DemoDash.Controller;
             set => DemoDash.Controller = value;
