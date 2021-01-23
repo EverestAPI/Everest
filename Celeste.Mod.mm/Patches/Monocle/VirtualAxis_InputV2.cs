@@ -45,10 +45,12 @@ namespace Monocle {
 
 
 
+        [MonoModIfFlag("V2:Input")]
         public abstract class Node : VirtualInputNode {
             public abstract float Value { get; }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickX : Node {
             public int GamepadIndex;
 
@@ -62,6 +64,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickY : Node {
             public int GamepadIndex;
 
@@ -75,6 +78,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadRightStickX : Node {
             public int GamepadIndex;
 
@@ -88,6 +92,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadRightStickY : Node {
             public int GamepadIndex;
 
@@ -101,6 +106,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadDpadLeftRight : Node {
             public int GamepadIndex;
 
@@ -121,6 +127,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadDpadUpDown : Node {
             public int GamepadIndex;
 
@@ -141,6 +148,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class KeyboardKeys : Node {
             public OverlapBehaviors OverlapBehavior;
 

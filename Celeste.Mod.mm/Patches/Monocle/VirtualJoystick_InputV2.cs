@@ -87,10 +87,12 @@ namespace Monocle {
 
         // Copied from Celeste 1.3.3.11
 
+        [MonoModIfFlag("V2:Input")]
         public abstract class Node : VirtualInputNode {
             public abstract Vector2 Value { get; }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadLeftStick : Node {
             public int GamepadIndex;
 
@@ -104,6 +106,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadRightStick : Node {
             public int GamepadIndex;
 
@@ -117,6 +120,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class PadDpad : Node {
             public int GamepadIndex;
 
@@ -143,6 +147,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("V2:Input")]
         public class KeyboardKeys : Node {
             public OverlapBehaviors OverlapBehavior;
 

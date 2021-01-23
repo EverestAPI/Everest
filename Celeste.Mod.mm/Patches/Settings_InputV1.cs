@@ -6,6 +6,7 @@ using System.Linq;
 
 namespace Celeste {
     [MonoModIgnore]
+    [MonoModPatch("Settings")]
     class patch_Settings_InputV1 : Settings {
 
 #pragma warning disable CS0649 // field staying default
