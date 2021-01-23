@@ -3,6 +3,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 
 namespace Celeste {
     [MonoModIfFlag("V2:Input")]
@@ -25,84 +26,98 @@ namespace Celeste {
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Left")]
+        [XmlIgnore]
         public Keys Left_V1 {
             get => _ListToEnum(Left.Keyboard);
             set => Left.Keyboard = _EnumToList(value);
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Right")]
+        [XmlIgnore]
         public Keys Right_V1 {
             get => _ListToEnum(Right.Keyboard);
             set => Right.Keyboard = _EnumToList(value);
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Down")]
+        [XmlIgnore]
         public Keys Down_V1 {
             get => _ListToEnum(Down.Keyboard);
             set => Down.Keyboard = _EnumToList(value);
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Up")]
+        [XmlIgnore]
         public Keys Up_V1 {
             get => _ListToEnum(Up.Keyboard);
             set => Up.Keyboard = _EnumToList(value);
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Grab")]
+        [XmlIgnore]
         public List<Keys> Grab_V1 {
             get => Grab.Keyboard;
             set => Grab.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Jump")]
+        [XmlIgnore]
         public List<Keys> Jump_V1 {
             get => Jump.Keyboard;
             set => Jump.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Dash")]
+        [XmlIgnore]
         public List<Keys> Dash_V1 {
             get => Dash.Keyboard;
             set => Dash.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Talk")]
+        [XmlIgnore]
         public List<Keys> Talk_V1 {
             get => Talk.Keyboard;
             set => Talk.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Pause")]
+        [XmlIgnore]
         public List<Keys> Pause_V1 {
             get => Pause.Keyboard;
             set => Pause.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Confirm")]
+        [XmlIgnore]
         public List<Keys> Confirm_V1 {
             get => Confirm.Keyboard;
             set => Confirm.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Cancel")]
+        [XmlIgnore]
         public List<Keys> Cancel_V1 {
             get => Cancel.Keyboard;
             set => Cancel.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Journal")]
+        [XmlIgnore]
         public List<Keys> Journal_V1 {
             get => Journal.Keyboard;
             set => Journal.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::QuickRestart")]
+        [XmlIgnore]
         public List<Keys> QuickRestart_V1 {
             get => QuickRestart.Keyboard;
             set => QuickRestart.Keyboard = value;
         }
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::DemoDash")]
+        [XmlIgnore]
         public List<Keys> DemoDash_V1 {
             get => DemoDash.Keyboard;
             set => DemoDash.Keyboard = value;
