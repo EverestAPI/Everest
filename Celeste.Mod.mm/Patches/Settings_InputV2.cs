@@ -53,106 +53,112 @@ namespace Celeste {
             set => Up.Keyboard = _EnumToList(value);
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Grab")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Grab")]
         [XmlIgnore]
         public List<Keys> Grab_V1 {
             get => Grab.Keyboard;
             set => Grab.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Jump")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Jump")]
         [XmlIgnore]
         public List<Keys> Jump_V1 {
             get => Jump.Keyboard;
             set => Jump.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Dash")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Dash")]
         [XmlIgnore]
         public List<Keys> Dash_V1 {
             get => Dash.Keyboard;
             set => Dash.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Talk")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Talk")]
         [XmlIgnore]
         public List<Keys> Talk_V1 {
             get => Talk.Keyboard;
             set => Talk.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Pause")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Pause")]
         [XmlIgnore]
         public List<Keys> Pause_V1 {
             get => Pause.Keyboard;
             set => Pause.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Confirm")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Confirm")]
         [XmlIgnore]
         public List<Keys> Confirm_V1 {
             get => Confirm.Keyboard;
             set => Confirm.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Cancel")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Cancel")]
         [XmlIgnore]
         public List<Keys> Cancel_V1 {
             get => Cancel.Keyboard;
             set => Cancel.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Journal")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::Journal")]
         [XmlIgnore]
         public List<Keys> Journal_V1 {
             get => Journal.Keyboard;
             set => Journal.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::QuickRestart")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::QuickRestart")]
         [XmlIgnore]
         public List<Keys> QuickRestart_V1 {
             get => QuickRestart.Keyboard;
             set => QuickRestart.Keyboard = value;
         }
 
-        [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::DemoDash")]
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::DemoDash")]
         [XmlIgnore]
         public List<Keys> DemoDash_V1 {
             get => DemoDash.Keyboard;
             set => DemoDash.Keyboard = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnGrab")]
         [XmlIgnore]
         public List<Buttons> BtnGrab {
             get => Grab.Controller;
             set => Grab.Controller = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnJump")]
         [XmlIgnore]
         public List<Buttons> BtnJump {
             get => Jump.Controller;
             set => Jump.Controller = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnDash")]
         [XmlIgnore]
         public List<Buttons> BtnDash {
             get => Dash.Controller;
             set => Dash.Controller = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnTalk")]
         [XmlIgnore]
         public List<Buttons> BtnTalk {
             get => Talk.Controller;
             set => Talk.Controller = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnAltQuickRestart")]
         [XmlIgnore]
         public List<Buttons> BtnAltQuickRestart {
             get => QuickRestart.Controller;
             set => QuickRestart.Controller = value;
         }
 
+        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnDemoDash")]
         [XmlIgnore]
         public List<Buttons> BtnDemoDash {
             get => DemoDash.Controller;
