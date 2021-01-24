@@ -454,29 +454,11 @@ namespace Celeste.Mod {
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
 
-            CreateDefaultModMenuSectionKeyBindings(menu);
-        }
-
-        // FIXME!!! Keep the Create*ConfigUI split but at least clean up the section split after impl'ing the V2 buttons config menu.
-        [MonoModIgnore]
-        private extern void CreateDefaultModMenuSectionKeyBindings(TextMenu menu);
-
-        [MonoModIfFlag("V1:Input")]
-        [MonoModPatch("CreateDefaultModMenuSectionKeyBindings")]
-        [MonoModReplace]
-        [Obsolete]
-        private void CreateDefaultModMenuSectionKeyBindingsV1(TextMenu menu) {
             menu.Add(new TextMenu.Button(Dialog.Clean("options_btnconfig")).Pressed(() => {
                 menu.Focused = false;
                 Engine.Scene.Add(CreateButtonConfigUI(menu));
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
-        }
-
-        [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("CreateDefaultModMenuSectionKeyBindings")]
-        [MonoModReplace]
-        private void CreateDefaultModMenuSectionKeyBindingsV2(TextMenu menu) {
         }
 
         [MonoModIgnore]
@@ -518,7 +500,9 @@ namespace Celeste.Mod {
         [MonoModPatch("CreateButtonConfigUI")]
         [MonoModReplace]
         private Entity CreateButtonConfigUIV2(TextMenu menu) {
-            throw new NotImplementedException();
+            return new ModuleSettingsButtonConfigUIV2(this) {
+                OnClose = () => menu.Focused = true
+            };
         }
 
         private Type _PrevSettingsType;

@@ -6,15 +6,15 @@ using System.Collections.Generic;
 using System.Reflection;
 
 namespace Celeste.Mod {
-    // This MUST keep its old name. If V1 support gets dropped, rename V2 to this and use MonoModLinkFrom V2 -> this.
-    [Obsolete]
-    public class ModuleSettingsButtonConfigUI : patch_ButtonConfigUI_InputV1 {
+    // This MUST be named differently as long as V1 is supported. If V1 support gets dropped, rename V2 to this and use MonoModLinkFrom V2 -> this.
+    [MonoModIfFlag("V2:Input")]
+    public class ModuleSettingsButtonConfigUIV2 : patch_ButtonConfigUI_InputV2 {
 
         public EverestModule Module;
 
         protected List<ButtonBindingEntry> Bindings = new List<ButtonBindingEntry>();
 
-        public ModuleSettingsButtonConfigUI(EverestModule module) {
+        public ModuleSettingsButtonConfigUIV2(EverestModule module) {
             All.Add(Buttons.Back);
             All.Add(Buttons.BigButton);
             All.Add(Buttons.RightStick);
@@ -25,24 +25,13 @@ namespace Celeste.Mod {
             Reload();
         }
 
-        protected override string GetLabel(int mapping) {
-            return Bindings[mapping].Name;
-        }
-
-        protected override List<Buttons> GetRemapList(int remapping, Buttons newBtn) {
-            return Bindings[remapping].Binding.Buttons;
-        }
-
-        protected override void ForceRemapAll() {
-        }
-
         public override void Reload(int index = -1) {
             if (Module == null)
                 return;
 
             Clear();
             Add(new Header(Dialog.Clean("BTN_CONFIG_TITLE")));
-            // Add(new Info()); // V2 replaced this with InputMappingInfo and if you're still using V1 you should feel bad.
+            Add(new InputMappingInfo(true));
 
             Bindings.Clear();
 
@@ -78,8 +67,8 @@ namespace Celeste.Mod {
 
                     DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
 
-                    Bindings.Add(new ButtonBindingEntry(name, binding, defaults));
-                    AddButtonConfigLine(mapping, defaults != null && defaults.Button != 0 && defaults.ForceDefaultButton ? ForceDefaultButton(defaults.Button, binding.Buttons) : binding.Buttons);
+                    Bindings.Add(new ButtonBindingEntry(binding, defaults));
+                    AddMapForceLabel(name, binding.Binding);
                 }
             }
 
@@ -88,7 +77,11 @@ namespace Celeste.Mod {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
-                    Settings.Instance.SetDefaultButtonControls(reset: true);
+                    foreach (ButtonBindingEntry entry in Bindings) {
+                        entry.Binding.Binding.Controller.Clear();
+                        if (entry.Defaults != null && entry.Defaults.Button != 0)
+                            entry.Binding.Binding.Controller.Add(entry.Defaults.Button);
+                    }
                     Input.Initialize();
                     Reload(Selection);
                 }
@@ -100,12 +93,10 @@ namespace Celeste.Mod {
 
         protected class ButtonBindingEntry {
 
-            public string Name;
             public ButtonBinding Binding;
             public DefaultButtonBindingAttribute Defaults;
 
-            public ButtonBindingEntry(string name, ButtonBinding binding, DefaultButtonBindingAttribute defaults) {
-                Name = name;
+            public ButtonBindingEntry(ButtonBinding binding, DefaultButtonBindingAttribute defaults) {
                 Binding = binding;
                 Defaults = defaults;
             }

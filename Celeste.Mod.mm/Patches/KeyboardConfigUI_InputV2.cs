@@ -18,23 +18,11 @@ namespace Celeste {
         [MonoModIgnore]
         private bool remapping;
         [MonoModIgnore]
-        private float remappingEase;
-        [MonoModIgnore]
         private Binding remappingBinding;
         [MonoModIgnore]
         private string remappingText;
         [MonoModIgnore]
-        private float inputDelay;
-        [MonoModIgnore]
         private float timeout;
-        [MonoModIgnore]
-        private bool closing;
-        [MonoModIgnore]
-        private float closingDelay;
-        [MonoModIgnore]
-        private bool resetting;
-
-        private int currentlyRemapping;
 
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
@@ -186,7 +174,6 @@ namespace Celeste {
                 throw new Exception($"{GetType().FullName} is using the old input system (before Celeste 1.3.3.12) and Everest can't bridge the gap for this mod.");
 
             remapping = true;
-            currentlyRemapping = mapping;
             remappingBinding = new Binding() {
                 Keyboard = keys
             };
