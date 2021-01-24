@@ -113,6 +113,7 @@ namespace Celeste {
             AddMap("TALK", Settings.Instance.Talk);
 
             Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENU_NOTICE"), false));
             AddMap("LEFT", Settings.Instance.MenuLeft);
             AddMap("RIGHT", Settings.Instance.MenuRight);
             AddMap("UP", Settings.Instance.MenuUp);
@@ -121,9 +122,9 @@ namespace Celeste {
             AddMap("CANCEL", Settings.Instance.Cancel);
             AddMap("JOURNAL", Settings.Instance.Journal);
             AddMap("PAUSE", Settings.Instance.Pause);
-            AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
 
             Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+            AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
             AddMap("DEMODASH", Settings.Instance.DemoDash);
 
             Add(new patch_TextMenu.patch_SubHeader(""));
@@ -159,7 +160,7 @@ namespace Celeste {
 
         // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
         private void Remap(object binding) => Remap((Binding) binding);
-        private void ClearRemap(object binding) => ClearRemap((Binding) binding);
+        private void ClearRemap(object binding) => Clear((Binding) binding);
 
         [MonoModIgnore]
         [MakeMethodPublic]
@@ -167,7 +168,8 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MakeMethodPublic]
-        public extern void ClearRemap(Binding binding);
+        [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
+        public extern void Clear(Binding binding);
 
         [MonoModIgnore]
         [MakeMethodPublic]
