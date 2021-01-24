@@ -159,13 +159,19 @@ namespace Celeste {
         public extern void AddMap(string label, Binding binding);
 
         public void AddMapForceLabel(string label, Binding binding) {
+            // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
+            object _binding = binding;
             Add(new Setting(label, binding, true).Pressed(() => {
                 remappingText = label;
-                Remap(binding);
+                Remap(_binding);
             }).AltPressed(() => {
-                ClearRemap(binding);
+                ClearRemap(_binding);
             }));
         }
+
+        // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
+        private void Remap(object binding) => Remap((Binding) binding);
+        private void ClearRemap(object binding) => ClearRemap((Binding) binding);
 
         [MonoModIgnore]
         [MakeMethodPublic]

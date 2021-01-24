@@ -47,6 +47,9 @@ namespace Celeste {
 
         private bool additiveRemap;
 
+        // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
+        private string remappingText;
+
         [MonoModIgnore]
         private extern string Label(Mappings mapping);
 
@@ -66,8 +69,18 @@ namespace Celeste {
         /// <param name="key">The mapping index</param>
         /// <param name="list">The list of keys currently mapped to it</param>
         protected void AddKeyConfigLine(int key, List<Keys> list) {
-            Add(new patch_TextMenu.Setting(GetLabel(key), list).Pressed(() => Remap(key)));
+            // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
+            string label = key.ToString();
+            object _binding = key;
+            Add(new patch_TextMenu.Setting(GetLabel(key), list).Pressed(() => {
+                remappingText = label;
+                Remap(_binding);
+            }));
         }
+
+        // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
+        private void Remap(object binding) => Remap((int) binding);
+        private void ClearRemap(object binding) => ClearRemap((int) binding);
 
         /// <summary>
         /// Adds a key mapping to the keyboard config screen.
