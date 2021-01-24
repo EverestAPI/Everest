@@ -225,13 +225,13 @@ namespace Celeste.Mod {
         /// <summary>
         /// Whether the default Button should always be bound.
         /// </summary>
-        // FIXME!!! Currently unused in V2 menu!
+        [Obsolete("This is no longer respected by the new input system.")]
         public bool ForceDefaultButton;
 
         /// <summary>
         /// Whether the default Key should always be bound.
         /// </summary>
-        // FIXME!!! Currently unused in V2 menu!
+        [Obsolete("This is no longer respected by the new input system.")]
         public bool ForceDefaultKey;
 
         /// <summary>

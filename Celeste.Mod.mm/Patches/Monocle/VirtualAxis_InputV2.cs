@@ -4,7 +4,6 @@ using System.Collections.Generic;
 
 namespace Monocle {
     // Copied from Celeste 1.3.3.11
-    // FIXME!!! Update this to use Binding + Nodes instead!
     [MonoModIfFlag("V2:Input")]
     // Original name because this type is missing from 1.3.3.14+, thus MonoModPatch isn't properly respected.
     public class VirtualAxis : VirtualInput {
