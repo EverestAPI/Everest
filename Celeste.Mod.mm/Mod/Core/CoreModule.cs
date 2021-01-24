@@ -293,34 +293,28 @@ namespace Celeste.Mod.Core {
                 List<TextMenu.Item> items = menu.GetItems();
 
                 // change the "key config" labels
-                // FIXME!!! Modded key config menus don't exist for the time being on Celeste 1.3.3.12+
 
-                int offs = 0;
-
-                if (Celeste.Instance.Version < new Version(1, 3, 3, 12)) {
-                    (items[items.Count - 2 - offs] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
-                    (items[items.Count - 1 - offs] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
-                    offs = 2;
-                }
+                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
+                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
 
                 // insert extra options before the "key config" options
-                menu.Insert(items.Count - offs, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiOOBE>();
                 }));
 
-                menu.Insert(items.Count - offs, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_soundtest")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiSoundTest>();
                 }));
 
-                menu.Insert(items.Count - offs, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
 
-                menu.Insert(items.Count - offs, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();
                 }));
 
-                menu.Insert(items.Count - offs, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
+                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_togglemods")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModToggler>();
                 }));
             }
