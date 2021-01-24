@@ -17,7 +17,7 @@ namespace Celeste.Mod {
         public ModuleSettingsKeyboardConfigUIV2(EverestModule module) {
             Module = module;
             // Base already reloads too early before the module has been set.
-            Reload();
+            Reload(2);
         }
 
         public override void Reload(int index = -1) {
