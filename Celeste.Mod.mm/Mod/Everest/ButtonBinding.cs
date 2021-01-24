@@ -40,7 +40,6 @@ namespace Celeste.Mod {
         [MonoModIfFlag("V1:Input")]
         [MonoModPatch("SetButtons")]
         [MonoModReplace]
-        [Obsolete]
         private void SetButtonsV1(List<Buttons> value) {
             _Buttons = value;
         }
@@ -55,7 +54,6 @@ namespace Celeste.Mod {
         [MonoModIfFlag("V2:Input")]
         [MonoModPatch("SetButtons")]
         [MonoModReplace]
-        [Obsolete]
         private void SetButtonsV2(List<Buttons> value) {
             Binding.Controller = value;
         }
@@ -84,7 +82,6 @@ namespace Celeste.Mod {
         [MonoModIfFlag("V1:Input")]
         [MonoModPatch("SetKeys")]
         [MonoModReplace]
-        [Obsolete]
         private void SetKeysV1(List<Keys> value) {
             _Keys = value;
         }
@@ -99,7 +96,6 @@ namespace Celeste.Mod {
         [MonoModIfFlag("V2:Input")]
         [MonoModPatch("SetKeys")]
         [MonoModReplace]
-        [Obsolete]
         private void SetKeysV2(List<Keys> value) {
             Binding.Keyboard = value;
         }
