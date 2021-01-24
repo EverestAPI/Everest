@@ -16,40 +16,92 @@ namespace Celeste.Mod {
     /// </summary>
     public class ButtonBinding {
 
-        [MonoModIfFlag("V1:Input")]
         public List<Buttons> Buttons {
-            [MonoModIfFlag("V1:Input")]
-            get;
-            [MonoModIfFlag("V1:Input")]
-            set;
+            get => GetButtons();
+            set => SetButtons(value);
         }
+
+        [MonoModIgnore]
+        private extern List<Buttons> GetButtons();
+
+        [MonoModIgnore]
+        private extern void SetButtons(List<Buttons> value);
+
         [MonoModIfFlag("V1:Input")]
-        public List<Keys> Keys {
-            [MonoModIfFlag("V1:Input")]
-            get;
-            [MonoModIfFlag("V1:Input")]
-            set;
+        private List<Buttons> _Buttons;
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("GetButtons")]
+        [MonoModReplace]
+        private List<Buttons> GetButtonsV1() {
+            return _Buttons;
+        }
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("SetButtons")]
+        [MonoModReplace]
+        [Obsolete]
+        private void SetButtonsV1(List<Buttons> value) {
+            _Buttons = value;
         }
 
         [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("Buttons")]
-        public List<Buttons> Buttons_V1 {
-            [MonoModIfFlag("V2:Input")]
-            [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Mod.ButtonBinding::get_Buttons()")]
-            get => Binding.Controller;
-            [MonoModIfFlag("V2:Input")]
-            [MonoModLinkFrom("System.Void Celeste.Mod.ButtonBinding::set_Buttons(System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons>)")]
-            set => Binding.Controller = value;
+        [MonoModPatch("GetButtons")]
+        [MonoModReplace]
+        private List<Buttons> GetButtonsV2() {
+            return Binding.Controller;
         }
+
         [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("Keys")]
-        public List<Keys> Keys_V1 {
-            [MonoModIfFlag("V2:Input")]
-            [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Mod.ButtonBinding::get_Keys()")]
-            get => Binding.Keyboard;
-            [MonoModIfFlag("V2:Input")]
-            [MonoModLinkFrom("System.Void Celeste.Mod.ButtonBinding::set_Keys(System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys>)")]
-            set => Binding.Keyboard = value;
+        [MonoModPatch("SetButtons")]
+        [MonoModReplace]
+        [Obsolete]
+        private void SetButtonsV2(List<Buttons> value) {
+            Binding.Controller = value;
+        }
+
+        public List<Keys> Keys {
+            get => GetKeys();
+            set => SetKeys(value);
+        }
+
+        [MonoModIgnore]
+        private extern List<Keys> GetKeys();
+
+        [MonoModIgnore]
+        private extern void SetKeys(List<Keys> value);
+
+        [MonoModIfFlag("V1:Input")]
+        private List<Keys> _Keys;
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("GetKeys")]
+        [MonoModReplace]
+        private List<Keys> GetKeysV1() {
+            return _Keys;
+        }
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("SetKeys")]
+        [MonoModReplace]
+        [Obsolete]
+        private void SetKeysV1(List<Keys> value) {
+            _Keys = value;
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("GetKeys")]
+        [MonoModReplace]
+        private List<Keys> GetKeysV2() {
+            return Binding.Keyboard;
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("SetKeys")]
+        [MonoModReplace]
+        [Obsolete]
+        private void SetKeysV2(List<Keys> value) {
+            Binding.Keyboard = value;
         }
 
         [MonoModIfFlag("V2:Input")]
