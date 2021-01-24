@@ -125,7 +125,7 @@ namespace Celeste {
 
             Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
             AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
-            AddMap("DEMODASH", Settings.Instance.DemoDash);
+            AddMap("DEMO", Settings.Instance.DemoDash);
 
             Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
