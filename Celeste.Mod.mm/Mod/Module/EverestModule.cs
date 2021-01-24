@@ -444,7 +444,7 @@ namespace Celeste.Mod {
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
             name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
-            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+            menu.Add(new patch_TextMenu.patch_SubHeader(name + " | v." + Metadata.VersionString));
         }
 
         protected virtual void CreateModMenuSectionKeyBindings(TextMenu menu, bool inGame, EventInstance snapshot) {

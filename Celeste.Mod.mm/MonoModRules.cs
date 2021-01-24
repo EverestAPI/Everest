@@ -479,6 +479,9 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("V1:Input", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("BtnJump") != null);
             MonoModRule.Flag.Set("V2:Input", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("BtnJump") == null);
+
+            MonoModRule.Flag.Set("V1:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String)") != null);
+            MonoModRule.Flag.Set("V2:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String,System.Boolean)") != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

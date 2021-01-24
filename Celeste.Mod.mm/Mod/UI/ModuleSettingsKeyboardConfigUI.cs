@@ -38,7 +38,7 @@ namespace Celeste.Mod {
 
             Clear();
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
             Bindings.Clear();
 
@@ -79,7 +79,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Button reset = new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,

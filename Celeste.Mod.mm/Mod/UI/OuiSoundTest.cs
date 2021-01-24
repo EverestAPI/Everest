@@ -273,7 +273,7 @@ namespace Celeste.Mod.UI {
                     }
 
                     if (musicParamMenu.GetItems().Count == 0) {
-                        musicParamMenu.Add(new TextMenu.SubHeader(Dialog.Clean("SOUNDTEST_AUDIOPARAMS")));
+                        musicParamMenu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("SOUNDTEST_AUDIOPARAMS")));
                     }
 
                     if (param.maximum - param.minimum < 3) {

@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
                 case 0:
                     return new TextMenu() {
                         new Header(Dialog.Clean("OOBE_WELCOME_HEADER")),
-                        new SubHeader(Dialog.Clean("OOBE_WELCOME_SUBHEADER")),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_WELCOME_SUBHEADER")),
                         new Button(Dialog.Clean("OOBE_WELCOME_PLAY")).Pressed(Goto(1)),
                         new Button(Dialog.Clean("OOBE_WELCOME_SPEEDRUN")).Pressed(Goto(2)),
                         new Button(Dialog.Clean("OOBE_WELCOME_CREATE")).Pressed(Goto(3)),
@@ -40,10 +40,10 @@ namespace Celeste.Mod.UI {
                 // Players
                 case 1:
                     return new TextMenu() {
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_PLAY")),
-                        new SubHeader(""),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_PLAY")),
+                        new patch_TextMenu.patch_SubHeader(""),
 
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
 
                         new OnOff(
                             Dialog.Clean("MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP"),
@@ -76,7 +76,7 @@ namespace Celeste.Mod.UI {
                             value => CoreModule.Settings.UseKeyboardForTextInput = value
                         ),
 
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
                         new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                     };
 
@@ -84,10 +84,10 @@ namespace Celeste.Mod.UI {
                 // Speedrunners
                 case 2:
                     return new TextMenu() {
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_SPEEDRUN")),
-                        new SubHeader(""),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_SPEEDRUN")),
+                        new patch_TextMenu.patch_SubHeader(""),
 
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
 
                         new OnOff(
                             Dialog.Clean("MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO"),
@@ -127,7 +127,7 @@ namespace Celeste.Mod.UI {
                             value => CoreModule.Settings.UseKeyboardForTextInput = value
                         ),
 
-                        new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
+                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
                         new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                     };
 
@@ -136,10 +136,10 @@ namespace Celeste.Mod.UI {
                 case 3: {
                         Item fmod;
                         TextMenu menu = new TextMenu() {
-                            new SubHeader(Dialog.Clean("OOBE_SETTINGS_CREATE")),
-                            new SubHeader(""),
+                            new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_CREATE")),
+                            new patch_TextMenu.patch_SubHeader(""),
 
-                            new SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
+                            new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_SUBHEADER")),
 
                             new TextMenu.Slider(
                                 Dialog.Clean("MODOPTIONS_COREMODULE_DEBUGMODE"),
@@ -182,7 +182,7 @@ namespace Celeste.Mod.UI {
                                 value => CoreModule.Settings.UseKeyboardForTextInput = value
                             ),
 
-                            new SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
+                            new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
                             new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
                         };
 

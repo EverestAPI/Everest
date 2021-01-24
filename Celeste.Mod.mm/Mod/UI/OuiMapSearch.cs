@@ -225,7 +225,7 @@ namespace Celeste.Mod.UI {
 
             menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
 
-            menu.rightMenu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount)));
+            menu.rightMenu.Add(resultHeader = new patch_TextMenu.patch_SubHeader(string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount)));
 
             ReloadItems();
 

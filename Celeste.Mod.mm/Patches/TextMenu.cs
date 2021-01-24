@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
-    class patch_TextMenu : TextMenu {
+    public class patch_TextMenu : TextMenu {
 
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
@@ -243,29 +243,48 @@ namespace Celeste {
             public new bool AboveAll = false;
         }
 
-        public new class Setting : TextMenu.Setting {
+        public class patch_SubHeader : SubHeader {
 
-            public Setting(string label, string value = "")
+            public patch_SubHeader(string title)
+                : base(title, true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModLinkTo("Celeste.TextMenu/SubHeader", "System.Void .ctor(System.String,System.Boolean)")]
+            [MonoModIgnore]
+            public extern void ctor(string label, bool topPadding = true);
+
+            [MonoModIfFlag("V2:SubHeader")]
+            [MonoModConstructor]
+            public void ctor(string label) {
+                ctor(label, true);
+            }
+
+        }
+
+        public class patch_Setting : Setting {
+
+            public patch_Setting(string label, string value = "")
                 : base(label, value) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public Setting(string label, Keys key)
+            public patch_Setting(string label, Keys key)
                 : this(label) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public Setting(string label, List<Keys> keys)
+            public patch_Setting(string label, List<Keys> keys)
                 : this(label) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public Setting(string label, Buttons btn)
+            public patch_Setting(string label, Buttons btn)
                 : this(label) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public Setting(string label, List<Buttons> buttons)
+            public patch_Setting(string label, List<Buttons> buttons)
                 : this(label) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }

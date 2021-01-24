@@ -72,7 +72,7 @@ namespace Celeste {
             // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
             string label = key.ToString();
             object _binding = key;
-            Add(new patch_TextMenu.Setting(GetLabel(key), list).Pressed(() => {
+            Add(new patch_TextMenu.patch_Setting(GetLabel(key), list).Pressed(() => {
                 remappingText = label;
                 Remap(_binding);
             }));
@@ -124,21 +124,21 @@ namespace Celeste {
         public virtual void Reload(int index = -1) {
             Clear();
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
             AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, patch_Settings_InputV1.Instance.Left));
             AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, patch_Settings_InputV1.Instance.Right));
             AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, patch_Settings_InputV1.Instance.Up));
             AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, patch_Settings_InputV1.Instance.Down));
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddKeyConfigLine(Mappings.Jump, patch_Settings_InputV1.Instance.Jump);
             AddKeyConfigLine(Mappings.Dash, patch_Settings_InputV1.Instance.Dash);
             AddKeyConfigLine(Mappings.Grab, patch_Settings_InputV1.Instance.Grab);
             AddKeyConfigLine(Mappings.Talk, patch_Settings_InputV1.Instance.Talk);
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
             AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, patch_Settings_InputV1.Instance.Confirm));
             AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, patch_Settings_InputV1.Instance.Cancel));
             AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, patch_Settings_InputV1.Instance.Pause));
@@ -147,7 +147,7 @@ namespace Celeste {
 
             AddDemoDashLine();
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Button button = new Button(Dialog.Clean("KEY_CONFIG_RESET"));
             button.IncludeWidthInMeasurement = false;
             button.AlwaysCenter = true;
@@ -177,7 +177,7 @@ namespace Celeste {
         [MonoModReplace]
         private void AddDemoDashLineImpl() {
             if (patch_Settings_InputV1.Instance.RevealDemoConfig) {
-                Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+                Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
                 AddKeyConfigLine(Mappings.DemoDash, patch_Settings_InputV1.Instance.DemoDash);
             }
         }

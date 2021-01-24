@@ -85,7 +85,7 @@ namespace Celeste {
 
         }
 
-        public class SubHeaderExt : TextMenu.SubHeader, IItemExt {
+        public class SubHeaderExt : patch_TextMenu.patch_SubHeader, IItemExt {
 
             public Color TextColor { get; set; } = Color.Gray;
 

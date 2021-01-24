@@ -100,7 +100,7 @@ namespace Celeste {
             // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
             string label = btn.ToString();
             object _binding = btn;
-            Add(new patch_TextMenu.Setting(GetLabel(btn), list).Pressed(() => {
+            Add(new patch_TextMenu.patch_Setting(GetLabel(btn), list).Pressed(() => {
                 remappingText = label;
                 Remap(_binding);
             }).AltPressed(() => {
@@ -164,7 +164,7 @@ namespace Celeste {
 
             AddDemoDashLine();
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
@@ -194,7 +194,7 @@ namespace Celeste {
         [MonoModReplace]
         private void AddDemoDashLineImpl() {
             if (patch_Settings_InputV1.Instance.RevealDemoConfig) {
-                Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+                Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
                 AddButtonConfigLine(Mappings.DemoDash, patch_Settings_InputV1.Instance.BtnDemoDash);
             }
         }

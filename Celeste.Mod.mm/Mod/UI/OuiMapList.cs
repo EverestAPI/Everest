@@ -34,7 +34,7 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
 
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_filters")));
+            menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("maplist_filters")));
 
             sets.Clear();
             foreach (AreaData area in AreaData.Areas) {
@@ -70,7 +70,7 @@ namespace Celeste.Mod.UI {
                 Overworld.Goto<OuiMapSearch>();
             }));
 
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("maplist_list")));
+            menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("maplist_list")));
 
             ReloadItems();
 

@@ -51,7 +51,7 @@ namespace Celeste {
         /// <param name="list">The list of keys currently mapped to it</param>
         [Obsolete("This method exists so that older mods can still be loaded but should no longer be used.")]
         protected void AddKeyConfigLine(int key, List<Keys> list) {
-            Add(new patch_TextMenu.Setting(GetLabel(key), list).Pressed(() => Remap(key)));
+            Add(new patch_TextMenu.patch_Setting(GetLabel(key), list).Pressed(() => Remap(key)));
         }
 
         /// <summary>
@@ -100,19 +100,19 @@ namespace Celeste {
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
             Add(new InputMappingInfo(false));
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
             AddMap("LEFT", Settings.Instance.Left);
             AddMap("RIGHT", Settings.Instance.Right);
             AddMap("UP", Settings.Instance.Up);
             AddMap("DOWN", Settings.Instance.Down);
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddMap("JUMP", Settings.Instance.Jump);
             AddMap("DASH", Settings.Instance.Dash);
             AddMap("GRAB", Settings.Instance.Grab);
             AddMap("TALK", Settings.Instance.Talk);
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
             AddMap("LEFT", Settings.Instance.MenuLeft);
             AddMap("RIGHT", Settings.Instance.MenuRight);
             AddMap("UP", Settings.Instance.MenuUp);
@@ -123,10 +123,10 @@ namespace Celeste {
             AddMap("PAUSE", Settings.Instance.Pause);
             AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
             AddMap("DEMODASH", Settings.Instance.DemoDash);
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
