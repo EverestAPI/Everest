@@ -125,6 +125,7 @@ namespace MiniInstaller {
 
         public static bool SetupPaths() {
             PathGame = Directory.GetCurrentDirectory();
+            Console.WriteLine(PathGame);
 
             if (Path.GetFileName(PathGame) == "everest-update" &&
                 File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
