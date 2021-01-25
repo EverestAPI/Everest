@@ -251,7 +251,7 @@ namespace Celeste.Mod.UI {
                         string file = Path.GetFileName(files[i]);
                         if (file != "Cache") {
                             if (!headerInserted) {
-                                menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_DIRECTORIES")));
+                                menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_DIRECTORIES")));
                                 headerInserted = true;
                             }
                             addFileToMenu(menu, file);
@@ -265,7 +265,7 @@ namespace Celeste.Mod.UI {
                         string file = Path.GetFileName(files[i]);
                         if (file.EndsWith(".zip")) {
                             if (!headerInserted) {
-                                menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
+                                menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_ZIPS")));
                                 headerInserted = true;
                             }
                             addFileToMenu(menu, file);
@@ -279,7 +279,7 @@ namespace Celeste.Mod.UI {
                         string file = Path.GetFileName(files[i]);
                         if (file.EndsWith(".bin")) {
                             if (!headerInserted) {
-                                menu.Add(new TextMenu.SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_BINS")));
+                                menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("MODOPTIONS_MODTOGGLE_BINS")));
                                 headerInserted = true;
                             }
                             addFileToMenu(menu, file);
