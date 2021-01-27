@@ -26,6 +26,8 @@ namespace Celeste {
         public extern void orig_ctor(Session session, Vector2? startPosition = default);
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default) {
+            Logger.Log(LogLevel.Info, "LevelLoader", "Loading level " + session?.Area.GetSID());
+
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
                 (lastThread?.IsAlive ?? false)) {
@@ -98,7 +100,7 @@ namespace Celeste {
             path = meta?.Sprites;
             if (!string.IsNullOrEmpty(path)) {
                 SpriteBank bankOrig = GFX.SpriteBank;
-                SpriteBank bankMod = new SpriteBank(GFX.Game, path);
+                SpriteBank bankMod = new SpriteBank(GFX.Game, getModdedSpritesXml(path));
 
                 foreach (KeyValuePair<string, SpriteData> kvpBank in bankMod.SpriteData) {
                     string key = kvpBank.Key;
@@ -145,6 +147,12 @@ namespace Celeste {
             foreach (Queue<Entity> entities in ((patch_Pooler) Engine.Pooler).Pools.Values) {
                 entities.Clear();
             }
+        }
+
+        private XmlDocument getModdedSpritesXml(string path) {
+            XmlDocument vanillaSpritesXml = patch_Calc.orig_LoadContentXML(Path.Combine("Graphics", "Sprites.xml"));
+            XmlDocument modSpritesXml = Calc.LoadContentXML(path);
+            return patch_SpriteBank.GetSpriteBankExcludingVanillaCopyPastes(vanillaSpritesXml, modSpritesXml, path);
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...
