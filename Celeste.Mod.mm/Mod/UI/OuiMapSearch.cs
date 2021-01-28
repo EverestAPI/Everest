@@ -158,6 +158,8 @@ namespace Celeste.Mod.UI {
                     }
                 };
 
+                goto ValidButton;
+
             } else if (c == (char) 8) {
                 // Backspace - trim.
                 if (search.Length > 0) {
