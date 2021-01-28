@@ -32,6 +32,11 @@ namespace Celeste.Mod.UI {
         /// </summary>
         protected Action<Overworld> backToParentMenu;
 
+        /// <summary>
+        /// Whether the player can go back to the parent menu.
+        /// </summary>
+        protected bool canGoBack = true;
+
         private float alpha = 0f;
 
         /// <summary>
@@ -81,7 +86,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
-            if (menu != null && menu.Focused && Selected && Input.MenuCancel.Pressed) {
+            if (menu != null && menu.Focused && Selected && canGoBack && Input.MenuCancel.Pressed) {
                 // Back was pressed
                 Audio.Play(SFX.ui_main_button_back);
                 backToParentMenu(Overworld);

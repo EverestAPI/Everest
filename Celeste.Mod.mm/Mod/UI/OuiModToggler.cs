@@ -348,6 +348,11 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        public override void Update() {
+            canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
+            base.Update();
+        }
+
         private void addToBlacklist(string file) {
             if (blacklistedMods.Contains(file)) {
                 // already blacklisted
