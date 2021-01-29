@@ -867,6 +867,8 @@ namespace Celeste.Mod {
         }
 
         private static IEnumerator _SlowFullRestart(bool fromOverworld) {
+            yield return 0.1f; // make sure the screen is blacked out.
+
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
