@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod.RuntimeDetour;
@@ -426,7 +427,7 @@ namespace Celeste.Mod {
         internal static void Initialize() {
             // Initialize misc stuff.
             if (Content._DumpAll)
-                    Content.DumpAll();
+                Content.DumpAll();
 
             TextInput.Initialize(Celeste.Instance);
             if (!Flags.IsDisabled) {
@@ -861,14 +862,12 @@ namespace Celeste.Mod {
         }
 
         public static void SlowFullRestart() {
-            Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_SlowFullRestart(Engine.Scene is Overworld)));
+            BlackScreen scene = new BlackScreen();
+            scene.HelperEntity.Add(new Coroutine(_SlowFullRestart(Engine.Scene is Overworld, scene)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _SlowFullRestart(bool fromOverworld) {
-            yield return 0.1f; // make sure the screen is blacked out.
-
+        private static IEnumerator _SlowFullRestart(bool fromOverworld, BlackScreen scene) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
@@ -880,7 +879,7 @@ namespace Celeste.Mod {
             }
 
             Events.Celeste.OnShutdown += BOOT.StartCelesteProcess;
-            Engine.Instance.Exit();
+            scene.RunAfterRender = () => Engine.Instance.Exit();
             yield break;
         }
 
