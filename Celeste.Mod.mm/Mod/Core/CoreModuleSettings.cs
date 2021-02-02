@@ -223,9 +223,9 @@ namespace Celeste.Mod.Core {
         }
 
         public bool DisableDiscordRichPresence {
-            get => Everest.Discord.Initialized;
+            get => !Everest.Discord.Initialized;
             set {
-                if (value == Everest.Discord.Initialized)
+                if (value != Everest.Discord.Initialized)
                     return;
                 if (value) {
                     Everest.Discord.Disable();
