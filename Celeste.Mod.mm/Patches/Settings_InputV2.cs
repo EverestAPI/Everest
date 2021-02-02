@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,15 @@ namespace Celeste {
         [MonoModIgnore]
         public static new patch_Settings_InputV2 Instance;
 #pragma warning restore CS0649
+
+        public Binding RightMoveOnly;
+        public Binding LeftMoveOnly;
+        public Binding UpMoveOnly;
+        public Binding DownMoveOnly;
+        public Binding RightDashOnly;
+        public Binding LeftDashOnly;
+        public Binding UpDashOnly;
+        public Binding DownDashOnly;
 
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Left")]
         [XmlIgnore]

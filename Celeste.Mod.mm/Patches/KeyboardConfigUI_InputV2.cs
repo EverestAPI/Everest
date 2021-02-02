@@ -24,6 +24,10 @@ namespace Celeste {
         [MonoModIgnore]
         private float timeout;
 
+        private bool resetHeld;
+		private float resetTime;
+		private float resetDelay;
+
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
 #pragma warning restore CS0626
@@ -100,13 +104,12 @@ namespace Celeste {
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
             Add(new InputMappingInfo(false));
 
-            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddMap("LEFT", Settings.Instance.Left);
             AddMap("RIGHT", Settings.Instance.Right);
             AddMap("UP", Settings.Instance.Up);
             AddMap("DOWN", Settings.Instance.Down);
 
-            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddMap("JUMP", Settings.Instance.Jump);
             AddMap("DASH", Settings.Instance.Dash);
             AddMap("GRAB", Settings.Instance.Grab);
@@ -132,11 +135,26 @@ namespace Celeste {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
-                    Settings.Instance.SetDefaultKeyboardControls(reset: true);
-                    Input.Initialize();
-                    Reload(Selection);
-                }
+                    resetHeld = true;
+                    resetTime = 0f;
+                    resetDelay = 0f;
+                },
+                ConfirmSfx = SFX.ui_main_button_lowkey
             });
+
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+            AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
+            AddMap("DEMO", Settings.Instance.DemoDash);
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVE_ONLY")));
+            AddMap("LEFT", patch_Settings_InputV2.Instance.LeftMoveOnly);
+            AddMap("RIGHT", patch_Settings_InputV2.Instance.RightMoveOnly);
+            AddMap("UP", patch_Settings_InputV2.Instance.UpMoveOnly);
+            AddMap("DOWN", patch_Settings_InputV2.Instance.DownMoveOnly);
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_DASH_ONLY")));
+            AddMap("LEFT", patch_Settings_InputV2.Instance.LeftDashOnly);
+            AddMap("RIGHT", patch_Settings_InputV2.Instance.RightDashOnly);
+            AddMap("UP", patch_Settings_InputV2.Instance.UpDashOnly);
+            AddMap("DOWN", patch_Settings_InputV2.Instance.DownDashOnly);
 
             if (index >= 0) {
                 Selection = index;
