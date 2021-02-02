@@ -155,15 +155,15 @@ namespace Celeste {
             AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
             AddMap("DEMO", Settings.Instance.DemoDash);
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVE_ONLY")));
-            AddMap("LEFT", patch_Settings_InputV2.Instance.LeftMoveOnly);
-            AddMap("RIGHT", patch_Settings_InputV2.Instance.RightMoveOnly);
-            AddMap("UP", patch_Settings_InputV2.Instance.UpMoveOnly);
-            AddMap("DOWN", patch_Settings_InputV2.Instance.DownMoveOnly);
+            AddMap("LEFT", Settings.Instance.LeftMoveOnly);
+            AddMap("RIGHT", Settings.Instance.RightMoveOnly);
+            AddMap("UP", Settings.Instance.UpMoveOnly);
+            AddMap("DOWN", Settings.Instance.DownMoveOnly);
             Add(new SubHeader(Dialog.Clean("KEY_CONFIG_DASH_ONLY")));
-            AddMap("LEFT", patch_Settings_InputV2.Instance.LeftDashOnly);
-            AddMap("RIGHT", patch_Settings_InputV2.Instance.RightDashOnly);
-            AddMap("UP", patch_Settings_InputV2.Instance.UpDashOnly);
-            AddMap("DOWN", patch_Settings_InputV2.Instance.DownDashOnly);
+            AddMap("LEFT", Settings.Instance.LeftDashOnly);
+            AddMap("RIGHT", Settings.Instance.RightDashOnly);
+            AddMap("UP", Settings.Instance.UpDashOnly);
+            AddMap("DOWN", Settings.Instance.DownDashOnly);
 
             if (index >= 0) {
                 Selection = index;

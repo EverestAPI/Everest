@@ -68,6 +68,11 @@ namespace Monocle {
             }
         }
 
+        public void CheckBinds(out bool pos, out bool neg) {
+            pos = Positive.Axis(GamepadIndex, Threshold) > 0f;
+            neg = Negative.Axis(GamepadIndex, Threshold) > 0f;
+        }
+
         public static implicit operator int(patch_VirtualIntegerAxis_InputV2 axis) => axis.Value;
 
     }

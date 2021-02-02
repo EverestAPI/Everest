@@ -16,15 +16,6 @@ namespace Celeste {
         public static new patch_Settings_InputV2 Instance;
 #pragma warning restore CS0649
 
-        public Binding RightMoveOnly;
-        public Binding LeftMoveOnly;
-        public Binding UpMoveOnly;
-        public Binding DownMoveOnly;
-        public Binding RightDashOnly;
-        public Binding LeftDashOnly;
-        public Binding UpDashOnly;
-        public Binding DownDashOnly;
-
         [MonoModLinkFrom("Microsoft.Xna.Framework.Input.Keys Celeste.Settings::Left")]
         [XmlIgnore]
         public Keys Left_V1 {
