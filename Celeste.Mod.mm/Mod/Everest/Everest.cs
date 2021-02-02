@@ -429,7 +429,8 @@ namespace Celeste.Mod {
 
             TextInput.Initialize(Celeste.Instance);
 
-            Discord.Initialize();
+            if (!CoreModule.Settings.DisableDiscordRichPresence)
+                Discord.Initialize();
 
             // Add the previously created managers.
             if (TouchInputManager.Instance != null)

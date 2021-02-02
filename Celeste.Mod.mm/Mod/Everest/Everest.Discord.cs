@@ -33,6 +33,15 @@ namespace Celeste.Mod {
                 Events.Level.OnExit += OnLevelExit;
             }
 
+            public static void Disable() {
+                OnGameExit();
+
+                Events.Celeste.OnExiting -= OnGameExit;
+                Events.MainMenu.OnCreateButtons -= OnMainMenu;
+                Events.Level.OnLoadLevel -= OnLoadLevel;
+                Events.Level.OnExit -= OnLevelExit;
+            }
+
             private static void WorkerLoop() {
                 string lib = null;
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordLib))
@@ -184,7 +193,6 @@ namespace Celeste.Mod {
                     DiscordRpc.UpdatePresence(DiscordPresence);
                 }
             };
-
         }
     }
 }
