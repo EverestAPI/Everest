@@ -76,19 +76,21 @@ namespace Celeste.Mod {
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
-                OnPressed = () => {
-                    foreach (ButtonBindingEntry entry in Bindings) {
-                        entry.Binding.Binding.Controller.Clear();
-                        if (entry.Defaults != null && entry.Defaults.Button != 0)
-                            entry.Binding.Binding.Controller.Add(entry.Defaults.Button);
-                    }
-                    Input.Initialize();
-                    Reload(Selection);
-                }
+                OnPressed = () => ResetPressed()
             });
 
             if (index >= 0)
                 Selection = index;
+        }
+
+        public override void Reset() {
+            foreach (ButtonBindingEntry entry in Bindings) {
+                entry.Binding.Binding.Controller.Clear();
+                if (entry.Defaults != null && entry.Defaults.Button != 0)
+                    entry.Binding.Binding.Controller.Add(entry.Defaults.Button);
+            }
+            Input.Initialize();
+            Reload(Selection);
         }
 
         protected class ButtonBindingEntry {

@@ -88,7 +88,11 @@ namespace Celeste.Mod {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
-                    Settings.Instance.SetDefaultButtonControls(reset: true);
+                    foreach (ButtonBindingEntry entry in Bindings) {
+                        entry.Binding.Buttons.Clear();
+                        if (entry.Defaults != null && entry.Defaults.Button != 0)
+                            entry.Binding.Buttons.Add(entry.Defaults.Button);
+                    }
                     Input.Initialize();
                     Reload(Selection);
                 }

@@ -336,6 +336,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchAreaCompleteVersionNumberAndVariants")]
     class PatchAreaCompleteVersionNumberAndVariantsAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchInputConfigReset")]
+    class PatchInputConfigResetAttribute : Attribute { };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2777,6 +2783,22 @@ namespace MonoMod {
             c.GotoNext(MoveType.After, instr => instr.MatchLdcR4(1020f));
             c.Emit(OpCodes.Ldsfld, il.Method.DeclaringType.FindField("versionOffset"));
             c.Emit(OpCodes.Add);
+        }
+
+        public static void PatchInputConfigReset(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(MoveType.AfterLabel, i =>
+                i.MatchCallOrCallvirt("Celeste.Settings", "SetDefaultButtonControls") ||
+                i.MatchCallOrCallvirt("Celeste.Settings", "SetDefaultKeyboardControls")
+            );
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldarg_0);
+            c.Next.Operand = il.Method.DeclaringType.FindMethod("System.Void Reset()");
+
+            c.GotoNext(i => i.MatchCall("Celeste.Input", "Initialize"));
+            c.Remove();
         }
 
         public static void PostProcessor(MonoModder modder) {

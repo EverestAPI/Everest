@@ -85,13 +85,10 @@ namespace Celeste.Mod {
                 AlwaysCenter = true,
                 OnPressed = () => {
                     foreach (ButtonBindingEntry entry in Bindings) {
-                        if (entry.Defaults == null)
-                            continue;
                         entry.Binding.Keys.Clear();
-                        if (entry.Defaults.Key != 0)
+                        if (entry.Defaults != null && entry.Defaults.Key != 0)
                             entry.Binding.Keys.Add(entry.Defaults.Key);
                     }
-
                     Input.Initialize();
                     Reload(Selection);
                 }

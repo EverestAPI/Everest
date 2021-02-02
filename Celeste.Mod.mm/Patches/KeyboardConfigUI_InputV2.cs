@@ -38,6 +38,10 @@ namespace Celeste {
             Reload();
         }
 
+        [MonoModIgnore]
+        [PatchInputConfigReset]
+        public new extern void Update();
+
         /// <summary>
         /// Gets the label to display on-screen for a mapping.
         /// </summary>
@@ -155,6 +159,17 @@ namespace Celeste {
             if (index >= 0) {
                 Selection = index;
             }
+        }
+
+        public virtual void ResetPressed() {
+            resetHeld = true;
+            resetTime = 0f;
+            resetDelay = 0f;
+        }
+
+        public virtual void Reset() {
+            Settings.Instance.SetDefaultKeyboardControls(true);
+            Input.Initialize();
         }
 
         [MonoModIgnore]

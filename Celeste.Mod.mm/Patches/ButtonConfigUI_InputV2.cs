@@ -38,6 +38,10 @@ namespace Celeste {
             Reload();
         }
 
+        [MonoModIgnore]
+        [PatchInputConfigReset]
+        public new extern void Update();
+
         /// <summary>
         /// ForceRemap all important mappings which are fully unassigned and require mappings when leaving the menu.
         /// </summary>
@@ -143,11 +147,7 @@ namespace Celeste {
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
-                OnPressed = () => {
-                    resetHeld = true;
-                    resetTime = 0f;
-                    resetDelay = 0f;
-                },
+                OnPressed = () => ResetPressed(),
                 ConfirmSfx = SFX.ui_main_button_lowkey
             });
 
@@ -168,6 +168,17 @@ namespace Celeste {
             if (index >= 0) {
                 Selection = index;
             }
+        }
+
+        public virtual void ResetPressed() {
+            resetHeld = true;
+            resetTime = 0f;
+            resetDelay = 0f;
+        }
+
+        public virtual void Reset() {
+            Settings.Instance.SetDefaultButtonControls(true);
+            Input.Initialize();
         }
 
         [MonoModIgnore]
