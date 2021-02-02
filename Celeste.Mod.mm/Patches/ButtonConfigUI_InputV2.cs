@@ -27,6 +27,10 @@ namespace Celeste {
         [MonoModIgnore]
         private float timeout;
 
+        private bool resetHeld;
+        private float resetTime;
+        private float resetDelay;
+
         public extern void orig_ctor();
         [MonoModConstructor]
         public void ctor() {
@@ -112,13 +116,12 @@ namespace Celeste {
             Add(new Header(Dialog.Clean("BTN_CONFIG_TITLE")));
             Add(new InputMappingInfo(true));
 
-            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddMap("LEFT", Settings.Instance.Left);
             AddMap("RIGHT", Settings.Instance.Right);
             AddMap("UP", Settings.Instance.Up);
             AddMap("DOWN", Settings.Instance.Down);
 
-            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
             AddMap("JUMP", Settings.Instance.Jump);
             AddMap("DASH", Settings.Instance.Dash);
             AddMap("GRAB", Settings.Instance.Grab);
@@ -135,20 +138,32 @@ namespace Celeste {
             AddMap("JOURNAL", Settings.Instance.Journal);
             AddMap("PAUSE", Settings.Instance.Pause);
 
-            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
-            AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
-            AddMap("DEMO", Settings.Instance.DemoDash);
 
             Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
-                    patch_Settings_InputV1.Instance.SetDefaultButtonControls(reset: true);
-                    Input.Initialize();
-                    Reload(Selection);
-                }
+                    resetHeld = true;
+                    resetTime = 0f;
+                    resetDelay = 0f;
+                },
+                ConfirmSfx = SFX.ui_main_button_lowkey
             });
+
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
+            AddMap("QUICKRESTART", Settings.Instance.QuickRestart);
+            AddMap("DEMO", Settings.Instance.DemoDash);
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVE_ONLY")));
+            AddMap("LEFT", Settings.Instance.LeftMoveOnly);
+            AddMap("RIGHT", Settings.Instance.RightMoveOnly);
+            AddMap("UP", Settings.Instance.UpMoveOnly);
+            AddMap("DOWN", Settings.Instance.DownMoveOnly);
+            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_DASH_ONLY")));
+            AddMap("LEFT", Settings.Instance.LeftDashOnly);
+            AddMap("RIGHT", Settings.Instance.RightDashOnly);
+            AddMap("UP", Settings.Instance.UpDashOnly);
+            AddMap("DOWN", Settings.Instance.DownDashOnly);
 
             if (index >= 0) {
                 Selection = index;

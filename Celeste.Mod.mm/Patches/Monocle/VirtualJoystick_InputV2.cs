@@ -83,6 +83,13 @@ namespace Monocle {
             }
         }
 
+        public void CheckBinds(out float right, out float left, out float down, out float up) {
+            right = Right.Axis(GamepadIndex, 0.05f);
+            left = Left.Axis(GamepadIndex, 0.05f);
+            down = Down.Axis(GamepadIndex, 0.05f);
+            up = Up.Axis(GamepadIndex, 0.05f);
+        }
+
 
 
         // Copied from Celeste 1.3.3.11
