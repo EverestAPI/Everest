@@ -46,9 +46,6 @@ namespace Celeste {
 
         private float closingDelay;
 
-        // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
-        private string remappingText;
-
         public extern void orig_ctor();
         [MonoModConstructor]
         public void ctor() {
@@ -97,20 +94,12 @@ namespace Celeste {
         /// <param name="btn">The mapping index</param>
         /// <param name="list">The list of buttons currently mapped to it</param>
         protected void AddButtonConfigLine(int btn, List<Buttons> list) {
-            // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
-            string label = btn.ToString();
-            object _binding = btn;
             Add(new patch_TextMenu.patch_Setting(GetLabel(btn), list).Pressed(() => {
-                remappingText = label;
-                Remap(_binding);
+                Remap(btn);
             }).AltPressed(() => {
-                ClearRemap(_binding);
+                ClearRemap(btn);
             }));
         }
-
-        // FIXME!!! MonoMod likes to patch nested hidden compiler generated delegate class even if this parent class isn't.
-        private void Remap(object binding) => Remap((int) binding);
-        private void ClearRemap(object binding) => ClearRemap((int) binding);
 
         /// <summary>
         /// Adds a button mapping to the button config screen.
