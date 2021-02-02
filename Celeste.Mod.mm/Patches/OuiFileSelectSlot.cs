@@ -148,7 +148,7 @@ namespace Celeste {
         public new void CreateButtons() {
             orig_CreateButtons();
 
-            if (Everest.Flags.IsDisabled || !CoreModule.Settings.ShowModOptionsInGame)
+            if (!CoreModule.Settings.ShowModOptionsInGame)
                 return;
 
             if (!Exists) {

@@ -312,7 +312,7 @@ namespace Celeste.Mod {
                 PathEverest = PathGame;
             } else {
                 XDGPaths = true;
-                var dataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string dataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 Directory.CreateDirectory(PathEverest = Path.Combine(dataDir, "Everest"));
                 Directory.CreateDirectory(Path.Combine(dataDir, "Everest", "Mods")); // Make sure it exists before content gets initialized
             }
@@ -362,12 +362,10 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            if (!Flags.IsDisabled && !Flags.IsDisabled) {
-                // 0.1 parses into 1 in regions using ,
-                // This also somehow sets the exception message language to English.
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-            }
+            // 0.1 parses into 1 in regions using ,
+            // This also somehow sets the exception message language to English.
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
@@ -401,7 +399,7 @@ namespace Celeste.Mod {
 
             Loader.LoadAuto();
 
-            if (!Flags.IsHeadless && !Flags.IsDisabled) {
+            if (!Flags.IsHeadless) {
                 // Load stray .bins afterwards.
                 Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
@@ -430,9 +428,8 @@ namespace Celeste.Mod {
                 Content.DumpAll();
 
             TextInput.Initialize(Celeste.Instance);
-            if (!Flags.IsDisabled) {
-                Discord.Initialize();
-            }
+
+            Discord.Initialize();
 
             // Add the previously created managers.
             if (TouchInputManager.Instance != null)

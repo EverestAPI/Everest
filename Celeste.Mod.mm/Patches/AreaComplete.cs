@@ -52,8 +52,6 @@ namespace Celeste {
 
         public static void InitAreaCompleteInfoForEverest2(bool pieScreen, Session session) {
             versionOffset = 0;
-            if (Everest.Flags.IsDisabled)
-                return;
 
             if (Settings.Instance.SpeedrunClock > SpeedrunType.Off) {
                 versionFull = $"{Celeste.Instance.Version}\n{Everest.Build}";
@@ -122,8 +120,6 @@ namespace Celeste {
         }
 
         public static void DisposeAreaCompleteInfoForEverest() {
-            if (Everest.Flags.IsDisabled)
-                return;
 
             identicon?.Dispose();
             identicon = null;
@@ -132,10 +128,6 @@ namespace Celeste {
         [PatchAreaCompleteVersionNumberAndVariants]
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
         public static new void VersionNumberAndVariants(string version, float ease, float alpha) {
-            if (Everest.Flags.IsDisabled) {
-                orig_VersionNumberAndVariants(version, ease, alpha);
-                return;
-            }
 
             everestTime += Engine.RawDeltaTime;
 
