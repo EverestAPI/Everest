@@ -222,17 +222,16 @@ namespace Celeste.Mod.Core {
             }
         }
 
-        private bool disableDiscordRichPresence = false;
-
         public bool DisableDiscordRichPresence {
-            get => disableDiscordRichPresence;
+            get => Everest.Discord.Initialized;
             set {
+                if (value == Everest.Discord.Initialized)
+                    return;
                 if (value) {
                     Everest.Discord.Disable();
                 } else {
                     Everest.Discord.Initialize();
                 }
-                disableDiscordRichPresence = value;
             }
         }
 

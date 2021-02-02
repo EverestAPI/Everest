@@ -12,6 +12,7 @@ namespace Celeste.Mod {
 
             private static DiscordRpc.EventHandlers DiscordHandlers = new DiscordRpc.EventHandlers();
             public static readonly DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
+            public static bool Initialized = false;
 
             private static Thread Worker;
             private static readonly Queue<Action> Queue = new Queue<Action>();
@@ -23,6 +24,7 @@ namespace Celeste.Mod {
                 Worker.Priority = ThreadPriority.Lowest;
                 Worker.IsBackground = true;
                 Worker.Start();
+                Initialized = true;
 
                 WaitTokenSource = new CancellationTokenSource();
 
@@ -95,8 +97,8 @@ namespace Celeste.Mod {
                     }
                     nextAction?.Invoke();
                 }
-
                 DiscordRpc.Shutdown();
+                Initialized = false;
             }
 
             private static void OnDiscordReady(ref DiscordRpc.DiscordUser user) {
