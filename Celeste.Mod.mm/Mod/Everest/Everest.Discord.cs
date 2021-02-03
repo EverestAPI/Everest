@@ -19,6 +19,8 @@ namespace Celeste.Mod {
             private static CancellationTokenSource WaitTokenSource;
 
             public static void Initialize() {
+                if (Initialized)
+                    return;
                 Worker = new Thread(WorkerLoop);
                 Worker.Name = "Everest Discord Worker";
                 Worker.Priority = ThreadPriority.Lowest;
