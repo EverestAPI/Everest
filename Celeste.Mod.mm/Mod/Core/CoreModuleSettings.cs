@@ -226,6 +226,7 @@ namespace Celeste.Mod.Core {
         public bool DiscordRichPresence {
             get => _DiscordRichPresence;
             set {
+                _DiscordRichPresence = value;
                 if (value) {
                     Everest.Discord.Initialize();
                 } else {
