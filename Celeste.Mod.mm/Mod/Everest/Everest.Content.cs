@@ -439,9 +439,6 @@ namespace Celeste.Mod {
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
                 Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
 
-                if (Flags.IsDisabled)
-                    return;
-
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
                     Name = "Everest",
                     // Mod = CoreModule.Instance.Metadata // Can't actually set Mod this early.

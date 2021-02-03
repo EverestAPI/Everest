@@ -222,6 +222,19 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public bool DisableDiscordRichPresence {
+            get => !Everest.Discord.Initialized;
+            set {
+                if (value != Everest.Discord.Initialized)
+                    return;
+                if (value) {
+                    Everest.Discord.Disable();
+                } else {
+                    Everest.Discord.Initialize();
+                }
+            }
+        }
+
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;

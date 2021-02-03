@@ -174,11 +174,6 @@ namespace Celeste {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
 
-            if (Everest.Flags.IsDisabled) {
-                orig_Update();
-                return;
-            }
-
             KeyboardState keysPrev = _keys;
             KeyboardState keys = Keyboard.GetState();
             _keys = keys;
@@ -262,10 +257,6 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-            if (Everest.Flags.IsDisabled) {
-                orig_Render();
-                return;
-            }
 
             orig_Render();
             if (maplistEase > 0f) {

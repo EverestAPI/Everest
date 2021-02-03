@@ -14,14 +14,12 @@ namespace Celeste {
             if (byHandle.TryGetValue(handle, out string result))
                 return result;
 
-            if (!Everest.Flags.IsDisabled) {
-                /* Vanilla chapter 3 has got an invalid ambience sound
-                 * handle in the reception room (introducing Oshiro).
-                 * It ends up being silent in vanilla Celeste.
-                 */
-                if (handle == "env_amb_03_interior_main")
-                    return EventnameByHandle("env_amb_03_interior");
-            }
+            /* Vanilla chapter 3 has got an invalid ambience sound
+             * handle in the reception room (introducing Oshiro) in the maps .bin file.
+             * It ends up being silent in vanilla Celeste.
+             */
+            if (handle == "env_amb_03_interior_main")
+                return EventnameByHandle("env_amb_03_interior");
 
             return handle;
         }

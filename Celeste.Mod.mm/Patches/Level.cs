@@ -378,7 +378,7 @@ namespace Celeste {
 
         private static object _GCCollectLock = Tuple.Create(new object(), "Level Transition GC.Collect");
         private static void _GCCollect() {
-            if (Everest.Flags.IsDisabled || !(CoreModule.Settings.MultithreadedGC ?? !Everest.Flags.IsMono)) {
+            if (!(CoreModule.Settings.MultithreadedGC ?? !Everest.Flags.IsMono)) {
                 GC.Collect();
                 return;
             }
