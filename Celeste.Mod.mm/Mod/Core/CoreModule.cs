@@ -48,7 +48,11 @@ namespace Celeste.Mod.Core {
         public override void LoadSettings() {
             base.LoadSettings();
 
-            // If we're running in an environment that prefers those flag, forcibly enable them.
+            // The field can be set to true by default without the setter being called by YamlDotNet.
+            if (Settings.DiscordRichPresence)
+                Everest.Discord.Initialize();
+
+            // If we're running in an environment that prefers this flag, forcibly enable them.
             Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
 
             // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.

@@ -222,22 +222,17 @@ namespace Celeste.Mod.Core {
             }
         }
 
-        public bool DisableDiscordRichPresence {
-            get => !Everest.Discord.Initialized;
+        private bool _DiscordRichPresence = true;
+        public bool DiscordRichPresence {
+            get => _DiscordRichPresence;
             set {
-                if (value != Everest.Discord.Initialized)
-                    return;
                 if (value) {
-                    Everest.Discord.Disable();
-                } else {
                     Everest.Discord.Initialize();
+                } else {
+                    Everest.Discord.Disable();
                 }
             }
         }
-
-
-        [SettingIgnore]
-        public int DebugRCPort { get; set; } = 32270;
 
         [SettingIgnore]
         public string DiscordLib { get; set; } = "";
@@ -249,6 +244,9 @@ namespace Celeste.Mod.Core {
         public string DiscordTextInGame { get; set; } = "🗻 ((area)) 📼 ((side))";
         [SettingIgnore]
         public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
+
+        [SettingIgnore]
+        public int DebugRCPort { get; set; } = 32270;
 
         [SettingIgnore]
         public int? QuickRestart { get; set; }
