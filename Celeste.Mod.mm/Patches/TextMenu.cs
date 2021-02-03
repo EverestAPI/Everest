@@ -79,7 +79,9 @@ namespace Celeste {
                 if (listItem == targetItem)
                     break;
             }
-
+            if (targetItem is TextMenuExt.OptionSubMenu optionSubMenuItem && !optionSubMenuItem.Focused) {
+                return num - targetItem.Height() - ItemSpacing + optionSubMenuItem.TitleHeight * 0.5f;
+            }
             return num - targetItem.Height() * 0.5f - ItemSpacing;
         }
 

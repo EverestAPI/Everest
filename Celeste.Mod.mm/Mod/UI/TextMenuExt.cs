@@ -718,7 +718,7 @@ namespace Celeste {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
+                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
             }
 
             public void Exit() {
@@ -1129,7 +1129,7 @@ namespace Celeste {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
+                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
             }
 
             #endregion
