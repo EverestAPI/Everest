@@ -130,6 +130,16 @@ namespace Celeste.Mod {
                 int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
             }},
+            { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
+                Vector2 offset = new Vector2(offx, offy);
+                Color color = attrs["color"] != null ? Calc.HexToColor(attrs["color"].Value) : Color.White;
+                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
+                int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
+                int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
+                decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
+            }},
         };
 
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
@@ -159,14 +169,14 @@ namespace Celeste.Mod {
                         continue;
                     }
                     DecalInfo info = new DecalInfo();
-                    info.CustomProperties = new Dictionary<string, XmlAttributeCollection>();
+                    info.CustomProperties = new List<KeyValuePair<string, XmlAttributeCollection>>();
                     // Read all the properties
                     foreach (XmlNode node2 in decal.ChildNodes) {
                         if (node2 is XmlElement property) {
                             if (property.Attributes == null) {
                                 property.SetAttribute("a", "only here to prevent crashes");
                             }
-                            info.CustomProperties.Add(property.Name, property.Attributes);
+                            info.CustomProperties.Add(new KeyValuePair<string, XmlAttributeCollection>(property.Name, property.Attributes));
                         }
                     }
 
@@ -200,7 +210,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// PropertyName -> AttributeCollection
             /// </summary>
-            public Dictionary<string, XmlAttributeCollection> CustomProperties;
+            public List<KeyValuePair<string, XmlAttributeCollection>> CustomProperties;
         }
     }
 }
