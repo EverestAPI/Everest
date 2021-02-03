@@ -12,7 +12,7 @@ namespace Celeste.Mod {
 
             private static DiscordRpc.EventHandlers DiscordHandlers = new DiscordRpc.EventHandlers();
             public static readonly DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
-            public static bool Initialized = false;
+            public static bool Initialized { get; private set; } = false;
 
             private static Thread Worker;
             private static readonly Queue<Action> Queue = new Queue<Action>();
