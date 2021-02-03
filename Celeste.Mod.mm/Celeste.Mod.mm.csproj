@@ -166,6 +166,9 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
       <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
     </EmbeddedResource>
+	<EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png">
+      <LogicalName>Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png</LogicalName>
+	</EmbeddedResource>
     <EmbeddedResource Include="Content\Lua\boot.lua">
       <LogicalName>Content\Lua\boot.lua</LogicalName>
     </EmbeddedResource>
