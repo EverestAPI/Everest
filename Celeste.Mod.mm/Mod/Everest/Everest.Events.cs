@@ -21,7 +21,7 @@ namespace Celeste.Mod {
                 /// </summary>
                 public static event Action OnExiting;
                 internal static void Exiting()
-                    => OnExiting?.Invoke();
+                    => OnExiting?.Invoke()
 
                 /// <summary>
                 /// Called just before the Main method exits.

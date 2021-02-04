@@ -25,7 +25,7 @@ namespace Celeste.Mod {
             /// <summary>
             /// The current Celeste.exe's checksum.
             /// </summary>
-            public static string GameChecksum { get; internal set; }
+            public static string GameChecksum { get; internal set; 
 
             internal readonly static Dictionary<string, ModuleDefinition> StaticRelinkModuleCache = new Dictionary<string, ModuleDefinition>() {
                 { "MonoMod", ModuleDefinition.ReadModule(typeof(MonoModder).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) },
