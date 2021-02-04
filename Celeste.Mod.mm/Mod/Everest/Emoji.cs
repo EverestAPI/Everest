@@ -149,7 +149,7 @@ namespace Celeste.Mod {
                 foreach (KeyValuePair<string, int> kvp in _IDs)
                     text = text.Replace(":" + kvp.Key + ":", ((char) (Start + kvp.Value)).ToString());
             }
-            return text;
+            return text
         }
 
     }
