@@ -91,6 +91,7 @@ namespace Celeste {
             StaticMover sm = new StaticMover {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnMove = v => { X += v.X; Y += v.Y; },
+                OnShake = v => { X += v.X; Y += v.Y; },
             };
             if (jumpThrus)
                 sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
