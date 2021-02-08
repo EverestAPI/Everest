@@ -2,9 +2,13 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod;
+using Celeste.Mod.Core;
 using MonoMod;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Monocle {
     class patch_Coroutine : Coroutine {
@@ -43,7 +47,21 @@ namespace Monocle {
                 prev = enumerators.Count > 0 ? enumerators.Peek() : null;
                 orig_Update();
                 next = enumerators.Count > 0 ? enumerators.Peek() : null;
-            } while (prev != next && next != null && !(prev?.GetType()?.Assembly == typeof(Engine).Assembly || ForceDelayedSwap));
+            } while (prev != next && next != null && !(ForceDelayedSwap || CheckDelayedSwap(prev, next)));
+        }
+
+        private bool CheckDelayedSwap(IEnumerator prev, IEnumerator next) {
+            // Newer mods and all hooks should NOT be delayed unless ForceDelayedSwap is set.
+            Assembly prevAsm = prev?.GetType()?.Assembly;
+            if ((Everest._Modules.Find(module => module.GetType().Assembly == prevAsm)
+                ?.Metadata?.Dependencies?.Find(dep => dep.Name == CoreModule.Instance.Metadata.Name)
+                ?.Version ?? new Version(0, 0, 0, 0)) >= new Version(1, 2563, 0))
+                return false;
+
+            // TODO: Figure out when prev and next are going to / coming from a hook / orig.
+
+            // Vanilla IEnumerators should always be delayed as that's the vanilla behavior.
+            return prevAsm == typeof(Engine).Assembly;
         }
 
     }
