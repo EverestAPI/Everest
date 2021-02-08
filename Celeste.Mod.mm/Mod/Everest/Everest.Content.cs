@@ -54,9 +54,10 @@ namespace Celeste.Mod {
         internal void _Crawl() => Crawl();
 
         protected virtual void Add(string path, ModAsset asset) {
-            Everest.Content.Add(path, asset);
-            List.Add(asset);
-            Map[asset.PathVirtual] = asset;
+            if (Everest.Content.TryAdd(path, asset)) {
+                List.Add(asset);
+                Map[asset.PathVirtual] = asset;
+            }
         }
 
         protected virtual void Update(string path, ModAsset next) {
@@ -523,13 +524,11 @@ namespace Celeste.Mod {
                 return null;
             }
 
-            /// <summary>
-            /// Adds a new mapping for the given relative content path.
-            /// </summary>
-            /// <param name="path">The relative asset path.</param>
-            /// <param name="metadata">The matching mod asset meta object.</param>
-            public static void Add(string path, ModAsset metadata) {
+            public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
+
+                if (path.StartsWith(".git/") || path.StartsWith("__MACOSX/"))
+                    return false;
 
                 if (metadata != null) {
                     if (metadata.Type == null)
@@ -539,7 +538,7 @@ namespace Celeste.Mod {
                 string prefix = metadata?.Source?.Name;
 
                 if (metadata != null && metadata.Type == typeof(AssetTypeDirectory) && !(metadata is ModAssetBranch))
-                    return;
+                    return false;
 
                 lock (Map) {
                     // We want our new mapping to replace the previous one, but need to replace the previous one in the shadow structure.
@@ -547,7 +546,7 @@ namespace Celeste.Mod {
                         metadataPrev = null;
 
                     if (metadata == null && metadataPrev != null && metadataPrev.Type == typeof(AssetTypeDirectory))
-                        return;
+                        return false;
 
                     if (metadata == null) {
                         Map.Remove(path);
@@ -591,7 +590,17 @@ namespace Celeste.Mod {
                         }
                     }
                 }
+
+                return true;
             }
+
+            /// <summary>
+            /// Adds a new mapping for the given relative content path.
+            /// </summary>
+            /// <param name="path">The relative asset path.</param>
+            /// <param name="metadata">The matching mod asset meta object.</param>
+            public static void Add(string path, ModAsset metadata)
+                => TryAdd(path, metadata);
 
             /// <summary>
             /// Invoked when GuessType can't guess the asset format / type.
@@ -676,13 +685,13 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeTutorial);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".bank")) {
+                } else if (file.StartsWith("Audio/") && file.EndsWith(".bank")) {
                     type = typeof(AssetTypeBank);
                     file = file.Substring(0, file.Length - 5);
-                } else if (file.EndsWith(".guids.txt")) {
+                } else if (file.StartsWith("Audio/") && file.EndsWith(".guids.txt")) {
                     type = typeof(AssetTypeGUIDs);
                     file = file.Substring(0, file.Length - 4);
-                } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                } else if (file.StartsWith("Audio/") && file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
                     type = typeof(AssetTypeGUIDs);
                     file = file.Substring(0, file.Length - 4 - 6);
                     file += ".guids";
@@ -746,8 +755,7 @@ namespace Celeste.Mod {
                 }
 
 
-                if (next != null) {
-                    Add(next.PathVirtual, next);
+                if (next != null && TryAdd(next.PathVirtual, next)) {
                     string path = next.PathVirtual;
                     string name = Path.GetFileName(path);
 
