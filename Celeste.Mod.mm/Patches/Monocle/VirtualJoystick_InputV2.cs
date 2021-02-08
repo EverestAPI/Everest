@@ -84,10 +84,10 @@ namespace Monocle {
         }
 
         public void CheckBinds(out float right, out float left, out float down, out float up) {
-            right = Right.Axis(GamepadIndex, 0.05f);
-            left = Left.Axis(GamepadIndex, 0.05f);
-            down = Down.Axis(GamepadIndex, 0.05f);
-            up = Up.Axis(GamepadIndex, 0.05f);
+            right = Right.Axis(GamepadIndex, 0f);
+            left = Left.Axis(GamepadIndex, 0f);
+            down = Down.Axis(GamepadIndex, 0f);
+            up = Up.Axis(GamepadIndex, 0f);
         }
 
 
