@@ -342,6 +342,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchInputConfigReset")]
     class PatchInputConfigResetAttribute : Attribute { };
 
+    /// <summary>
+    /// Patches AscendManager.Routine to fix gameplay RNG in custom maps.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchAscendManagerRoutine")]
+    class PatchAscendManagerRoutineAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2799,6 +2805,56 @@ namespace MonoMod {
 
             c.GotoNext(i => i.MatchCall("Celeste.Input", "Initialize"));
             c.Remove();
+        }
+
+        public static void PatchAscendManagerRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition routine = method;
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__")) {
+                    continue;
+                }
+                routine = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+
+            MethodDefinition m_ShouldRestorePlayerX = method.DeclaringType.FindMethod("System.Boolean ShouldRestorePlayerX()");
+            MethodDefinition m_Entity_set_X = method.Module.GetType("Monocle.Entity").FindMethod("System.Void set_X(System.Single)").Resolve();
+
+            FieldDefinition f_this = routine.DeclaringType.FindField("<>4__this");
+            FieldDefinition f_player = routine.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<player>5__"));
+            FieldDefinition f_from = routine.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<from>5__"));
+            FieldReference f_Vector2_X = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("X"));
+
+            ILCursor cursor = new ILCursor(new ILContext(routine));
+
+            // move after this.Scene.Add(fader)
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdarg(0),
+                instr => instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name.StartsWith("<fader>5__"),
+                instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
+
+            // target: from = player.Position;
+            Instruction target = cursor.Next;
+
+            // _ = this.ShouldRestorePlayerX();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+            cursor.Emit(OpCodes.Call, m_ShouldRestorePlayerX);
+
+            // if (!_) goto target;
+            cursor.Emit(OpCodes.Brfalse, target);
+
+            // player.X = from.X;
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_player);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldflda, f_from);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+            cursor.Emit(OpCodes.Callvirt, m_Entity_set_X);
         }
 
         public static void PostProcessor(MonoModder modder) {
