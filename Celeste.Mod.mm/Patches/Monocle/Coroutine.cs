@@ -2,9 +2,13 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod;
+using Celeste.Mod.Core;
 using MonoMod;
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Monocle {
     class patch_Coroutine : Coroutine {
@@ -21,13 +25,13 @@ namespace Monocle {
         /// To describe the behavior of this field, imagine the following code replacing all yield returns of IEnumerators:<br></br>
         /// <code>
         /// IEnumerator next = Nested(...);<br></br>
-        /// if (ForceDelayedSwap) yield return null;<br></br>
+        /// if (ForceDelayedSwap ?? vanilla) yield return null;<br></br>
         /// while (next.MoveNext()) yield return next.Current;<br></br>
-        /// if (ForceDelayedSwap) yield return null;<br></br>
+        /// if (ForceDelayedSwap ?? vanilla) yield return null;<br></br>
         /// // Control is returned to your code here.<br></br>
         /// </code>
         /// </summary>
-        public bool ForceDelayedSwap;
+        public bool? ForceDelayedSwap;
 
         /// <summary>
         /// Forcibly set the timer to 0 to jump to the next "step."
@@ -43,7 +47,13 @@ namespace Monocle {
                 prev = enumerators.Count > 0 ? enumerators.Peek() : null;
                 orig_Update();
                 next = enumerators.Count > 0 ? enumerators.Peek() : null;
-            } while (prev != next && next != null && !(prev?.GetType()?.Assembly == typeof(Engine).Assembly || ForceDelayedSwap));
+
+                if (prev == next && next.Current is Action<patch_Coroutine> cb) {
+                    cb(this);
+                    prev = null;
+                }
+
+            } while (prev == null || (prev != next && next != null && !(ForceDelayedSwap ?? prev?.GetType()?.Assembly == typeof(Engine).Assembly)));
         }
 
     }

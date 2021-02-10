@@ -1,7 +1,10 @@
-﻿using Ionic.Zip;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
+using Ionic.Zip;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
+using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -136,11 +139,62 @@ namespace Celeste.Mod {
                         }
                     };
 
+                    Modder.PostProcessors += ApplyModHackfixes;
+
                     return _Modder;
                 }
                 set {
                     _Modder = value;
                 }
+            }
+
+            private static EverestModuleMetadata _Relinking;
+
+            private static void ApplyModHackfixes(MonoModder modder) {
+                // See Coroutine.ForceDelayedSwap for more info.
+                // Older mods are built with this delay in mind, except for hooks.
+                MethodInfo coroutineWrapper =
+                    (_Relinking?.Dependencies?.Find(dep => dep.Name == CoreModule.Instance.Metadata.Name)
+                    ?.Version ?? new Version(0, 0, 0, 0)) < new Version(1, 2563, 0) ?
+                    typeof(CoroutineDelayHackfixHelper).GetMethod("Wrap") : null;
+
+                if (coroutineWrapper == null)
+                    return; // No hackfixes necessary.
+
+                void CrawlMethod(MethodDefinition method) {
+                    if (coroutineWrapper != null && method.HasBody && method.ReturnType.FullName == "System.Collections.IEnumerator") {
+                        using (ILContext ctx = new ILContext(method)) {
+                            ctx.Invoke(ctx => {
+                                ILCursor c = new ILCursor(ctx);
+
+                                ILLabel skip = c.DefineLabel();
+                                c.Emit(OpCodes.Br, skip);
+                                ILLabel ret = c.MarkLabel();
+                                c.Emit(OpCodes.Ldstr, method.GetID());
+                                c.Emit(OpCodes.Call, coroutineWrapper);
+                                c.Emit(OpCodes.Ret);
+                                c.MarkLabel(skip);
+
+                                while (c.TryGotoNext(i => i.MatchRet())) {
+                                    c.Next.OpCode = OpCodes.Br;
+                                    c.Next.Operand = ret;
+                                }
+                            });
+                        }
+                    }
+
+                }
+
+                void CrawlType(TypeDefinition type) {
+                    foreach (MethodDefinition method in type.Methods)
+                        CrawlMethod(method);
+
+                    foreach (TypeDefinition nested in type.NestedTypes)
+                        CrawlType(nested);
+                }
+
+                foreach (TypeDefinition type in modder.Module.Types)
+                    CrawlType(type);
             }
 
             private static AssemblyDefinition OnRelinkerResolveFailure(object sender, AssemblyNameReference reference) {
@@ -234,6 +288,8 @@ namespace Celeste.Mod {
                 bool temporaryASM = false;
 
                 try {
+                    _Relinking = meta;
+
                     MonoModder modder = Modder;
 
                     modder.Input = stream;
