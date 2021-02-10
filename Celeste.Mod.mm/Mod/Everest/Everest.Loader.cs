@@ -740,12 +740,15 @@ namespace Celeste.Mod {
                 };
 
             private static void ApplyModHackfixes(EverestModuleMetadata meta, Assembly asm) {
+                // Feel free to keep this as a reminder on mod hackfixes or whatever. -jade
+                /*
                 if (meta.Name == "Prideline" && meta.Version < new Version(1, 0, 0, 0)) {
                     // Prideline 1.0.0 has got a hardcoded path to /ModSettings/Prideline.flag
                     Type t_PridelineModule = asm.GetType("Celeste.Mod.Prideline.PridelineModule");
                     FieldInfo f_CustomFlagPath = t_PridelineModule.GetField("CustomFlagPath", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
                     f_CustomFlagPath.SetValue(null, Path.Combine(PathSettings, "modsettings-Prideline-Flag.celeste"));
                 }
+                */
 
             }
 
