@@ -48,7 +48,7 @@ namespace Monocle {
                 orig_Update();
                 next = enumerators.Count > 0 ? enumerators.Peek() : null;
 
-                if (prev == next && next.Current is Action<patch_Coroutine> cb) {
+                if (prev == next && next != null && next.Current is Action<patch_Coroutine> cb) {
                     cb(this);
                     prev = null;
                 }
