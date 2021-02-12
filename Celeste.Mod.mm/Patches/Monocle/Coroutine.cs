@@ -53,7 +53,7 @@ namespace Monocle {
                     prev = null;
                 }
 
-            } while (prev == null || (prev != next && next != null && !(ForceDelayedSwap ?? prev?.GetType()?.Assembly == typeof(Engine).Assembly)));
+            } while (prev != next && (prev == null || (next != null && !(ForceDelayedSwap ?? prev?.GetType()?.Assembly == typeof(Engine).Assembly))));
         }
 
     }
