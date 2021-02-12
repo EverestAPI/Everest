@@ -158,6 +158,7 @@ namespace Celeste {
 
         // Technically unrelated from the Input V1 / V2 split but these changes were introduced at the same time...
 
+        [XmlIgnore]
         public bool DisableSceenShake {
             get => ScreenShake == ScreenshakeAmount.Off;
             set => ScreenShake = value ? ScreenshakeAmount.Off : ScreenshakeAmount.On;

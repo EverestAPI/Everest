@@ -84,6 +84,7 @@ namespace Celeste {
         [MonoModIgnore]
         public bool DisableScreenShake;
 
+        [XmlIgnore]
         public ScreenshakeAmount SceenShake {
             get => DisableScreenShake ? ScreenshakeAmount.Off : ScreenshakeAmount.On;
             set => DisableScreenShake = value == ScreenshakeAmount.Off;
