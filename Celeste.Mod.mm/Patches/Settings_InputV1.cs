@@ -85,16 +85,18 @@ namespace Celeste {
         public bool DisableScreenShake;
 
         [XmlIgnore]
-        public new ScreenshakeAmount ScreenShake {
-            get => DisableScreenShake ? ScreenshakeAmount.Off : ScreenshakeAmount.On;
-            set => DisableScreenShake = value == ScreenshakeAmount.Off;
+        public new ScreenshakeAmountShim ScreenShake {
+            [MonoModLinkFrom("Celeste.ScreenshakeAmount Celeste.Settings::get_ScreenShake()")]
+            get => DisableScreenShake ? ScreenshakeAmountShim.Off : ScreenshakeAmountShim.On;
+            [MonoModLinkFrom("System.Void Celeste.Settings::set_ScreenShake(Celeste.ScreenshakeAmount)")]
+            set => DisableScreenShake = value == ScreenshakeAmountShim.Off;
         }
 
     }
 
     [MonoModIfFlag("V1:Input")]
-    [MonoModPatch("ScreenshakeAmount")]
-    enum ScreenshakeAmount_InputV1 {
+    [ForceName("ScreenshakeAmount")]
+    public enum ScreenshakeAmountShim {
         [XmlEnum("false")]
         Off,
         [XmlEnum("true")]

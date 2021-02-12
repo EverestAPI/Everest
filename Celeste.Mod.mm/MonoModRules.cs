@@ -348,6 +348,15 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchAscendManagerRoutine")]
     class PatchAscendManagerRoutineAttribute : Attribute { }
 
+    /// <summary>
+    /// Forcibly changes a given member's name.
+    /// </summary>
+    [MonoModCustomAttribute("ForceName")]
+    class ForceNameAttribute : Attribute {
+        public ForceNameAttribute(string name) {
+        }
+    };
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2858,6 +2867,11 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldflda, f_from);
             cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
             cursor.Emit(OpCodes.Callvirt, m_Entity_set_X);
+        }
+
+        public static void ForceName(ICustomAttributeProvider cap, CustomAttribute attrib) {
+            if (cap is IMemberDefinition member)
+                member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
         public static void PostProcessor(MonoModder modder) {
