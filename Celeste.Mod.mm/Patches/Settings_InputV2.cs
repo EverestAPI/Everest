@@ -156,5 +156,12 @@ namespace Celeste {
             set => DemoDash.Controller = value;
         }
 
+        // Technically unrelated from the Input V1 / V2 split but these changes were introduced at the same time...
+
+        public bool DisableSceenShake {
+            get => ScreenShake == ScreenshakeAmount.Off;
+            set => ScreenShake = value ? ScreenshakeAmount.Off : ScreenshakeAmount.On;
+        }
+
     }
 }
