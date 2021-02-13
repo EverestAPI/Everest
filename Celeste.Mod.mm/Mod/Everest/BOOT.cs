@@ -263,6 +263,7 @@ namespace Celeste.Mod {
             // Win32 requires a separate thread for a separate message queue / pump.
             // Linux might benefit from additional thread local isolation.
             Thread t = new Thread(wrap);
+            t.SetApartmentState(ApartmentState.STA);
             t.Start();
             t.Join();
         }
