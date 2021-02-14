@@ -23,6 +23,8 @@ namespace Monocle {
         private Dictionary<string, string> links = new Dictionary<string, string>();
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
 
+        public MTexture Fallback;
+
         public string DataMethod;
         public string DataPath;
         public string RelativeDataPath;
@@ -390,6 +392,8 @@ namespace Monocle {
             List<MTexture> result = orig_GetAtlasSubtextures(key);
             if (result == null || result.Count == 0) {
                 Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
+                if (Fallback != null || textures.TryGetValue("__fallback", out Fallback))
+                    return new List<MTexture>() { Fallback };
             }
             return result;
         }
@@ -398,10 +402,12 @@ namespace Monocle {
         public new MTexture this[string id] {
             [MonoModReplace]
             get {
-                if (!textures.ContainsKey(id)) {
+                if (!textures.TryGetValue(id, out MTexture result)) {
                     Logger.Log(LogLevel.Warn, "Atlas", $"Requested texture that does not exist: {id}");
+                    if (Fallback != null || textures.TryGetValue("__fallback", out Fallback))
+                        return Fallback;
                 }
-                return textures[id];
+                return result;
             }
 
             // we don't want to modify the setter, but want it to exist in the patch class so that we can call it from within our patches.

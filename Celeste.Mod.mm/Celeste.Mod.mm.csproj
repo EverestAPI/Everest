@@ -85,6 +85,9 @@
     <EmbeddedResource Include="Content\Dialog\Fonts\chinese_everest_0.png">
       <LogicalName>Content\Dialog\Fonts\chinese_everest_0.png</LogicalName>
     </EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gui\__fallback.png">
+        <LogicalName>Content\Graphics\Atlases\Gui\__fallback.png</LogicalName>
+	  </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\logo_everest.png">
       <LogicalName>Content\Graphics\Atlases\Gui\logo_everest.png</LogicalName>
     </EmbeddedResource>
@@ -166,9 +169,12 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
       <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
     </EmbeddedResource>
-	<EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png">
-      <LogicalName>Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png</LogicalName>
-	</EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\__fallback.png">
+        <LogicalName>Content\Graphics\Atlases\Gameplay\__fallback.png</LogicalName>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png">
+        <LogicalName>Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png</LogicalName>
+	  </EmbeddedResource>
     <EmbeddedResource Include="Content\Lua\boot.lua">
       <LogicalName>Content\Lua\boot.lua</LogicalName>
     </EmbeddedResource>
