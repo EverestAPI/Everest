@@ -18,11 +18,15 @@ namespace Monocle {
         private bool canOpen;
         private KeyboardState currentState;
         private bool underscore;
+        private float underscoreCounter;
+        private Keys? repeatKey;
+        private float repeatCounter;
         private string currentText = "";
         private List<patch_Line> drawCommands;
 
         private int mouseScroll;
         private int cursorScale;
+        private int charIndex;
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
@@ -131,20 +135,12 @@ namespace Monocle {
 
             Draw.Rect(10f, viewHeight - 50f, viewWidth - 20f, 40f, Color.Black * 0.8f);
 
+            var drawPoint = new Vector2(20f, viewHeight - 42f);
+            Draw.SpriteBatch.DrawString(Draw.DefaultFont, ">" + currentText, drawPoint, Color.White);
             if (underscore) {
-                Draw.SpriteBatch.DrawString(
-                    Draw.DefaultFont,
-                    ">" + currentText + "_",
-                    new Vector2(20f, viewHeight - 42f),
-                    Color.White
-                );
-            } else {
-                Draw.SpriteBatch.DrawString(
-                    Draw.DefaultFont,
-                    ">" + currentText,
-                    new Vector2(20f, viewHeight - 42f),
-                    Color.White
-                );
+                var size = Draw.DefaultFont.MeasureString(">" + currentText.Substring(0, charIndex));
+                size.X++;
+                Draw.Line(drawPoint + new Vector2(size.X, 0), drawPoint + size, Color.White);
             }
 
             if (drawCommands.Count > 0) {
@@ -168,6 +164,11 @@ namespace Monocle {
 
         private extern void orig_HandleKey(Keys key);
         private void HandleKey(Keys key) {
+            underscore = true;
+            underscoreCounter = 0f;
+            bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
+            bool ctrl = currentState[Keys.LeftControl] == KeyState.Down || currentState[Keys.LeftControl] == KeyState.Down;
+            
             if (key == Keys.Tab && (currentText.StartsWith("load ") || currentText.StartsWith("hard ") || currentText.StartsWith("rmx2 "))) {
                 // handle tab autocomplete for SIDs
 
@@ -178,7 +179,7 @@ namespace Monocle {
                 }
 
                 if (sidTabResults.Length != 0) {
-                    if (currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down) {
+                    if (shift) {
                         // Shift+Tab => backwards
                         sidTabIndex--;
                     } else {
@@ -200,15 +201,89 @@ namespace Monocle {
 
                     // autocomplete
                     currentText = currentText.Substring(0, 5) + sidTabResults[sidTabIndex];
+                    charIndex = currentText.Length;
                 }
+            } else if (key == Keys.Left || key == Keys.Right) {
+                // handle seek forward and backward
+                int dir = key == Keys.Left ? -1 : 1;
+                charIndex = Calc.Clamp(charIndex + dir, 0, currentText.Length);
+                while (ctrl && !IsWordBoundary(charIndex, dir == 1)) {
+                    charIndex += dir;
+                }
+
+                MarkKeyRepeatable(key);
+            } else if (key == Keys.Back) {
+                // handle backspace specially so we can do ctrl-back
+                bool breakSoon;
+                do {
+                    if (charIndex == 0) {
+                        break;
+                    }
+                    breakSoon = IsWordBoundary(charIndex - 1, false);
+                    currentText = currentText.Substring(0, Math.Max(charIndex - 1, 0)) + currentText.Substring(charIndex);
+                    charIndex--;
+                } while (ctrl && !breakSoon);
+
+                MarkKeyRepeatable(key);
+            } else if (key == Keys.Delete) {
+                // new behavior for delete
+                bool breakSoon;
+                do {
+                    if (charIndex == currentText.Length) {
+                        break;
+                    }
+                    breakSoon = IsWordBoundary(charIndex + 1, true);
+                    currentText = currentText.Substring(0, charIndex) + currentText.Substring(charIndex + 1);
+                } while (ctrl && !breakSoon);
+                
+                MarkKeyRepeatable(key);
+            } else if (key == Keys.Home) {
+                charIndex = 0;
+            } else if (key == Keys.End) {
+                charIndex = currentText.Length;
             } else {
                 if (key != Keys.Tab && key != Keys.LeftShift && key != Keys.RightShift && key != Keys.RightAlt && key != Keys.LeftAlt && key != Keys.RightControl && key != Keys.LeftControl) {
                     // reset the tab index: next time we press Tab, autocomplete will search matching SIDs again.
                     sidTabIndex = -1;
                 }
+                if (key == Keys.Enter) {
+                    // If we're entering the line, process all of it please
+                    charIndex = currentText.Length;
+                }
 
-                // proceed to vanilla code
+                // proceed to vanilla code, operating only on the charIndex prefix of the input
+                string suffix = currentText.Substring(charIndex);
+                currentText = currentText.Substring(0, charIndex);
                 orig_HandleKey(key);
+                charIndex = currentText.Length;
+                currentText += suffix;
+            }
+        }
+
+        private bool IsWord(char ch) {
+            // also count _ and - as wordchars. _ is standard and - appears in room names commonly
+            // do not count / since a common usecase could be to edit a segment of a SID
+            return char.IsLetterOrDigit(ch) || ch == '_' || ch == '-';
+        }
+
+        private bool IsWordBoundary(int idx, bool forward) {
+                // for move forward that means t[i-1] is word and t[i] is nonword
+                // for move backward that means t[i] is word and t[i-1] is nonword
+                if (idx <= 0 || idx >= currentText.Length) {
+                    return true;
+                }
+                char chBack = currentText[idx - 1];
+                char chForward = currentText[idx];
+                bool backWord = IsWord(chBack);
+                bool foreWord = IsWord(chForward);
+                // oof
+                return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
+        }
+
+        private void MarkKeyRepeatable(Keys key) {
+            if (repeatKey == null || repeatKey != key) {
+                repeatKey = key;
+                repeatCounter = 0.0f;
             }
         }
 
