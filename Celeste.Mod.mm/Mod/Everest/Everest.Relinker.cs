@@ -167,22 +167,6 @@ namespace Celeste.Mod {
                             ctx.Invoke(ctx => {
                                 ILCursor c = new ILCursor(ctx);
 
-                                // The Mono runtime hates executing this one simple trick.
-                                /*
-                                ILLabel skip = c.DefineLabel();
-                                c.Emit(OpCodes.Br, skip);
-                                ILLabel ret = c.MarkLabel();
-                                c.Emit(OpCodes.Ldstr, method.GetID());
-                                c.Emit(OpCodes.Call, coroutineWrapper);
-                                c.Emit(OpCodes.Ret);
-                                c.MarkLabel(skip);
-
-                                while (c.TryGotoNext(i => i.MatchRet())) {
-                                    c.Next.OpCode = OpCodes.Br;
-                                    c.Next.Operand = ret;
-                                }
-                                */
-
                                 // Why didn't I do this to begin with? -jade
                                 while (c.TryGotoNext(i => i.MatchRet())) {
                                     c.Next.OpCode = OpCodes.Ldstr;

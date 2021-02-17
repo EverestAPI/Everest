@@ -22,8 +22,9 @@ namespace Monocle {
         public Dictionary<string, MTexture> Textures => textures;
         private Dictionary<string, string> links = new Dictionary<string, string>();
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
+        private Stack<MTexture> FallbackStack;
 
-        public MTexture Fallback;
+        public MTexture DefaultFallback;
 
         public string DataMethod;
         public string DataPath;
@@ -326,6 +327,26 @@ namespace Monocle {
                 orderedTexturesCache = new Dictionary<string, List<MTexture>>();
         }
 
+        public MTexture GetFallback() {
+            if (FallbackStack != null && FallbackStack.Count > 0)
+                return FallbackStack?.Peek();
+
+            if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
+                return DefaultFallback;
+
+            return null;
+        }
+
+        public void PushFallback(MTexture fallback) {
+            if (FallbackStack == null)
+                FallbackStack = new Stack<MTexture>();
+            FallbackStack.Push(fallback);
+        }
+
+        public MTexture PopFallback() {
+            return FallbackStack.Pop();
+        }
+
         /// <summary>
         /// Feed the given ModAsset into the atlas.
         /// </summary>
@@ -392,8 +413,9 @@ namespace Monocle {
             List<MTexture> result = orig_GetAtlasSubtextures(key);
             if (result == null || result.Count == 0) {
                 Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
-                if (Fallback != null || textures.TryGetValue("__fallback", out Fallback))
-                    return new List<MTexture>() { Fallback };
+                MTexture fallback = GetFallback();
+                if (fallback != null)
+                    return new List<MTexture>() { fallback };
             }
             return result;
         }
@@ -404,8 +426,7 @@ namespace Monocle {
             get {
                 if (!textures.TryGetValue(id, out MTexture result)) {
                     Logger.Log(LogLevel.Warn, "Atlas", $"Requested texture that does not exist: {id}");
-                    if (Fallback != null || textures.TryGetValue("__fallback", out Fallback))
-                        return Fallback;
+                    return GetFallback();
                 }
                 return result;
             }
