@@ -374,6 +374,10 @@ namespace Monocle {
             return text.ToCharArray().Any(c => !Draw.DefaultFont.Characters.Contains(c) && !char.IsControl(c));
         }
 
+        [MonoModIgnore]
+        [PatchCommandsUpdateOpen]
+        internal extern void UpdateOpen();
+
         // Only required to be defined so that we can access it.
         [MonoModIgnore]
         private struct patch_Line {

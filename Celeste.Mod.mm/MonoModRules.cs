@@ -349,6 +349,12 @@ namespace MonoMod {
     class PatchAscendManagerRoutineAttribute : Attribute { }
 
     /// <summary>
+    /// Patches Commands.UpdateOpen to make key's repeat timer independent with time rate.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchCommandsUpdateOpen")]
+    class PatchCommandsUpdateOpenAttribute : Attribute { }
+
+    /// <summary>
     /// Forcibly changes a given member's name.
     /// </summary>
     [MonoModCustomAttribute("ForceName")]
@@ -2867,6 +2873,17 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldflda, f_from);
             cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
             cursor.Emit(OpCodes.Callvirt, m_Entity_set_X);
+        }
+
+        public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_Engine = MonoModRule.Modder.FindType("Monocle.Engine").Resolve();
+            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("System.Single get_RawDeltaTime()");
+
+            while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall("Monocle.Engine", "get_DeltaTime"))) {
+                cursor.Next.Operand = m_get_RawDeltaTime;
+            }
         }
 
         public static void ForceName(ICustomAttributeProvider cap, CustomAttribute attrib) {
