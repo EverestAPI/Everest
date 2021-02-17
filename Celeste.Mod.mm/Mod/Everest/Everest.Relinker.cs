@@ -1,8 +1,10 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
+using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Monocle;
 using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
@@ -150,6 +152,16 @@ namespace Celeste.Mod {
 
             private static EverestModuleMetadata _Relinking;
 
+            // The following methods depend on the old fallback-less Atlas behavior via try-catches or otherwise.
+            private static HashSet<string> _ModHackfixNoAtlasFallback = new HashSet<string>() {
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMover::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(string)},{typeof(float)},{typeof(string)})",
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMover/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.LinkedZipMover,{typeof(string)})",
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(string)},{typeof(float)},{typeof(string)})",
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn,{typeof(string)})",
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(float)},{typeof(string)})",
+                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn,{typeof(string)})",
+            };
+
             private static void ApplyModHackfixes(MonoModder modder) {
                 // See Coroutine.ForceDelayedSwap for more info.
                 // Older mods are built with this delay in mind, except for hooks.
@@ -162,24 +174,41 @@ namespace Celeste.Mod {
                     return; // No hackfixes necessary.
 
                 void CrawlMethod(MethodDefinition method) {
+                    string methodID = method.GetID();
+
                     if (coroutineWrapper != null && method.HasBody && method.ReturnType.FullName == "System.Collections.IEnumerator") {
                         using (ILContext ctx = new ILContext(method)) {
                             ctx.Invoke(ctx => {
                                 ILCursor c = new ILCursor(ctx);
-
-                                // Why didn't I do this to begin with? -jade
                                 while (c.TryGotoNext(i => i.MatchRet())) {
                                     c.Next.OpCode = OpCodes.Ldstr;
-                                    c.Next.Operand = method.GetID();
+                                    c.Next.Operand = methodID;
                                     c.Index++;
                                     c.Emit(OpCodes.Call, coroutineWrapper);
                                     c.Emit(OpCodes.Ret);
                                 }
-
                             });
                         }
                     }
 
+                    if (_ModHackfixNoAtlasFallback.Contains(methodID)) {
+                        using (ILContext ctx = new ILContext(method)) {
+                            ctx.Invoke(ctx => {
+                                ILCursor c = new ILCursor(ctx);
+
+                                c.Emit(OpCodes.Ldsfld, typeof(GFX).GetField("Game"));
+                                c.Emit(OpCodes.Ldnull);
+                                c.Emit(OpCodes.Callvirt, typeof(patch_Atlas).GetMethod("PushFallback"));
+
+                                while (c.TryGotoNext(MoveType.AfterLabel, i => i.MatchRet())) {
+                                    c.Emit(OpCodes.Ldsfld, typeof(GFX).GetField("Game"));
+                                    c.Emit(OpCodes.Callvirt, typeof(patch_Atlas).GetMethod("PopFallback"));
+                                    c.Emit(OpCodes.Pop);
+                                    c.Index++;
+                                }
+                            });
+                        }
+                    }
                 }
 
                 void CrawlType(TypeDefinition type) {

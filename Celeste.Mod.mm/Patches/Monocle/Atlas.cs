@@ -329,7 +329,7 @@ namespace Monocle {
 
         public MTexture GetFallback() {
             if (FallbackStack != null && FallbackStack.Count > 0)
-                return FallbackStack?.Peek();
+                return FallbackStack.Peek();
 
             if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
                 return DefaultFallback;
