@@ -410,12 +410,35 @@ namespace Monocle {
         // log missing subtextures when getting an animation (for example, decals)
         public extern List<MTexture> orig_GetAtlasSubtextures(string key);
         public new List<MTexture> GetAtlasSubtextures(string key) {
+            PushFallback(null);
             List<MTexture> result = orig_GetAtlasSubtextures(key);
+            PopFallback();
             if (result == null || result.Count == 0) {
                 Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
                 MTexture fallback = GetFallback();
                 if (fallback != null)
                     return new List<MTexture>() { fallback };
+            }
+            return result;
+        }
+
+        [MonoModIgnore]
+        private extern MTexture GetAtlasSubtextureFromAtlasAt(string key, int index);
+
+        [MonoModReplace]
+        public new MTexture GetAtlasSubtexturesAt(string key, int index) {
+            if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
+                if (index < 0 || index >= list.Count) {
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
+                    return GetFallback();
+                }
+                return list[index];
+            }
+
+            MTexture result = GetAtlasSubtextureFromAtlasAt(key, index);
+            if (result == null) {
+                Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
+                return GetFallback();
             }
             return result;
         }
