@@ -414,7 +414,7 @@ namespace Monocle {
             List<MTexture> result = orig_GetAtlasSubtextures(key);
             PopFallback();
             if (result == null || result.Count == 0) {
-                Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
+                Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtextures but none were found: {key}");
                 MTexture fallback = GetFallback();
                 if (fallback != null)
                     return new List<MTexture>() { fallback };
@@ -429,7 +429,7 @@ namespace Monocle {
         public new MTexture GetAtlasSubtexturesAt(string key, int index) {
             if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
                 if (index < 0 || index >= list.Count) {
-                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that falls out of range: {key} {index}");
                     return GetFallback();
                 }
                 return list[index];
@@ -437,8 +437,13 @@ namespace Monocle {
 
             MTexture result = GetAtlasSubtextureFromAtlasAt(key, index);
             if (result == null) {
-                Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
-                return GetFallback();
+                MTexture fallback = GetFallback();
+                if (fallback != null) {
+                    // SpriteData and other places use GetAtlasSubtextureAt to check if textures exist.
+                    // Logging this verbosely when no fallback exists doesn't make sense in those cases.
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
+                    return fallback;
+                }
             }
             return result;
         }
