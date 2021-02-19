@@ -52,6 +52,7 @@ namespace Celeste {
 
             public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1f;
+            public Vector2 Scale { get; set; } = Vector2.One;
 
             public ButtonExt(string label, string icon = null)
                 : base(label) {
@@ -80,7 +81,7 @@ namespace Celeste {
                     ref textPosition
                 );
 
-                ActiveFont.DrawOutline(Label, textPosition, justify, Vector2.One, textColor, 2f, strokeColor);
+                ActiveFont.DrawOutline(Label, textPosition, justify, Scale, textColor, 2f, strokeColor);
             }
 
         }
