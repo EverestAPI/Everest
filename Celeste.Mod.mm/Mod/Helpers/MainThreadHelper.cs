@@ -112,7 +112,9 @@ namespace Celeste.Mod {
                             action = Queue.Dequeue();
                         }
                     }
-                    action?.Invoke();
+                    if (action == null)
+                        break;
+                    action.Invoke();
                 }
                 stopwatch.Stop();
             }

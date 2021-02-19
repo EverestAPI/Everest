@@ -382,6 +382,7 @@ namespace Celeste.Mod {
             }
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
+            STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
 
             // Register our core module and load any other modules.
             new CoreModule().Register();
@@ -438,6 +439,7 @@ namespace Celeste.Mod {
             if (TouchInputManager.Instance != null)
                 Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
+            Celeste.Instance.Components.Add(STAThreadHelper.Instance);
 
             foreach (EverestModule mod in _Modules)
                 mod.Initialize();

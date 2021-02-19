@@ -47,8 +47,10 @@ namespace Celeste.Mod {
 
                 // WinForms offers Clipboard.GetText and SetText
                 Type t_Clipboard = Assembly.Load("System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089").GetType("System.Windows.Forms.Clipboard");
-                _GetClipboardText = t_Clipboard.GetMethod("GetText", new Type[] { } ).CreateDelegate(typeof(Func<string>)) as Func<string>;
-                _SetClipboardText = t_Clipboard.GetMethod("SetText", new Type[] { typeof(string) }).CreateDelegate(typeof(Action<string>)) as Action<string>;
+                Func<string> getClipboardText = t_Clipboard.GetMethod("GetText", new Type[] { } ).CreateDelegate(typeof(Func<string>)) as Func<string>;
+                _GetClipboardText = () => STAThreadHelper.Get(getClipboardText).GetResult();
+                Action<string> setClipboardText = t_Clipboard.GetMethod("SetText", new Type[] { typeof(string) }).CreateDelegate(typeof(Action<string>)) as Action<string>;
+                _SetClipboardText = (value) => STAThreadHelper.Get(() => { setClipboardText(value); return value; }).GetResult();
             }
         }
 
