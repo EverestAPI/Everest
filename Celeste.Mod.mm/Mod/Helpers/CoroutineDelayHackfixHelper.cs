@@ -21,7 +21,9 @@ namespace Celeste.Mod.Helpers {
 
         public static IEnumerator Wrap(IEnumerator inner, string context) {
             yield return new Action<patch_Coroutine>(cb => {
-                cb.ForceDelayedSwap = !Hooks.Contains(context);
+                if (!Hooks.Contains(context)) {
+                    cb.ForceDelayedSwap = true;
+                }
             });
 
             while (inner.MoveNext())
