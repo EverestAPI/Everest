@@ -660,6 +660,7 @@ namespace Celeste.Mod {
 
                 } else if (!inGame && propType == typeof(string)) {
                     int maxValueLength = prop.GetCustomAttribute<SettingMaxLengthAttribute>()?.Max ?? 12;
+                    int minValueLength = prop.GetCustomAttribute<SettingMinLengthAttribute>()?.Min ?? 1;
 
                     item =
                         new TextMenu.Button(name + ": " + value)
@@ -668,7 +669,8 @@ namespace Celeste.Mod {
                             menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
                                 (string) value,
                                 v => prop.SetValue(settings, v),
-                                maxValueLength
+                                maxValueLength,
+                                minValueLength
                             );
                         })
                     ;

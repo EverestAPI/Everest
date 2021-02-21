@@ -14,6 +14,8 @@ namespace Celeste.Mod.UI {
 
         // TODO: OuiModOptionString is a hellscape of decompiled code.
 
+        public static bool Cancelled;
+
         public string StartingValue;
 
         private string _Value;
@@ -28,6 +30,7 @@ namespace Celeste.Mod.UI {
         }
 
         public int MaxValueLength;
+        public int MinValueLength;
 
         public event Action<string> OnValueChange;
 
@@ -80,13 +83,15 @@ namespace Celeste.Mod.UI {
             Visible = false;
         }
 
-        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength = 12) where T : Oui {
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength = 12, int minValueLength = 1) where T : Oui {
             _Value = StartingValue = value;
             OnValueChange = onValueChange;
 
             MaxValueLength = maxValueLength;
+            MinValueLength = minValueLength;
 
             exit = () => Overworld.Goto<T>();
+            Cancelled = false;
 
             return this;
         }
@@ -390,7 +395,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void Finish() {
-            if (Value.Length >= 1) {
+            if (Value.Length >= MinValueLength) {
                 Focused = false;
                 exit?.Invoke();
                 Audio.Play(SFX.ui_main_rename_entry_accept);
@@ -400,6 +405,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void Cancel() {
+            Cancelled = true;
             Value = StartingValue;
             Focused = false;
             exit?.Invoke();
