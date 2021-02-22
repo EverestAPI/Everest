@@ -363,6 +363,18 @@ namespace MonoMod {
         }
     };
 
+    /// <summary>
+    /// Patches OuiFileSelect.Enter to fix file slots missing bug.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiFileSelectEnter")]
+    class PatchOuiFileSelectEnterAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches OuiFileSelect.LoadThread to fix file slots missing bug.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchOuiFileSelectLoadThread")]
+    class PatchOuiFileSelectLoadThreadAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2889,6 +2901,96 @@ namespace MonoMod {
         public static void ForceName(ICustomAttributeProvider cap, CustomAttribute attrib) {
             if (cap is IMemberDefinition member)
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
+        }
+
+        public static void PatchOuiFileSelectEnter(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition routine = method;
+
+            // The routine is stored in a compiler-generated method.
+            string methodName = method.Name;
+            if (methodName.StartsWith("orig_")) {
+                methodName = methodName.Substring(5);
+            }
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + methodName + ">d__")) {
+                    continue;
+                }
+                routine = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            MethodDefinition m_RemoveSlotsFromScene = method.DeclaringType.FindMethod("System.Void RemoveSlotsFromScene()");
+            MethodDefinition m_AddSlotsToScene = method.DeclaringType.FindMethod("System.Void AddSlotsToScene()");
+
+            FieldDefinition f_this = routine.DeclaringType.FindField("<>4__this");
+
+            ILCursor cursor = new ILCursor(new ILContext(routine));
+
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdsfld("Celeste.OuiFileSelect", "Loaded"));
+
+            // Steam FNA is weird
+            bool isSteamFNA = cursor.Next.MatchLdcI4(0);
+
+            // remove slots from scene in main thread before RunThread.Start(this.LoadThread, "FILE_LOADING", false)
+            if (isSteamFNA) {
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdarg(0),
+                    instr => instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "<>4__this",
+                    instr => instr.OpCode == OpCodes.Ldftn && ((MethodReference) instr.Operand).GetID() == "System.Void Celeste.OuiFileSelect::LoadThread()");
+            } else {
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdloc(out int _),
+                    instr => instr.OpCode == OpCodes.Ldftn && ((MethodReference) instr.Operand).GetID() == "System.Void Celeste.OuiFileSelect::LoadThread()");
+            }
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+            cursor.Emit(OpCodes.Call, m_RemoveSlotsFromScene);
+
+            // add slots to scene in main thread after saves are loaded
+            if (isSteamFNA) {
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdarg(0),
+                    instr => instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "<>4__this",
+                    instr => instr.MatchLdfld("Celeste.OuiFileSelect", "loadedSuccess"));
+            } else {
+                cursor.GotoNext(MoveType.Before,
+                    instr => instr.MatchLdloc(out int _),
+                    instr => instr.MatchLdfld("Celeste.OuiFileSelect", "loadedSuccess"));
+            }
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+            cursor.Emit(OpCodes.Call, m_AddSlotsToScene);
+        }
+
+        public static void PatchOuiFileSelectLoadThread(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            // remove removing slots from scene in loading thread
+            cursor.GotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld("Celeste.OuiFileSelect", "Slots"),
+                instr => instr.MatchLdloc(out int _),
+                instr => instr.MatchLdelemRef());
+
+            int startIndex = cursor.Index;
+
+            ILCursor cursorTemp = cursor.Clone();
+            cursorTemp.GotoNext(MoveType.After,
+                instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Remove(Monocle.Entity)");
+
+            cursor.RemoveRange(cursorTemp.Index - startIndex);
+
+            // remove adding slots to scene in loading thread
+            cursor.GotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).GetID() == "Monocle.Scene Monocle.Entity::get_Scene()",
+                instr => instr.MatchLdloc(out int _),
+                instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
+
+            cursor.RemoveRange(4);
         }
 
         public static void PostProcessor(MonoModder modder) {
