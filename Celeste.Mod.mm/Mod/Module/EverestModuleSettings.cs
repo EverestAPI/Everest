@@ -64,6 +64,17 @@ namespace Celeste.Mod {
     }
 
     /// <summary>
+    /// Allows setting the minimum length of a string setting.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingMinLengthAttribute : Attribute {
+        public int Min;
+        public SettingMinLengthAttribute(int min) {
+            Min = min;
+        }
+    }
+
+    /// <summary>
     /// Shows a button that will open a number input screen. Supported on int and float properties.
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
