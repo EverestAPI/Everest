@@ -1,14 +1,17 @@
 ﻿using Celeste.Mod.Core;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
 using System.IO;
+using System.Linq;
 
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
         public float Scroll = 0f;
 
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
+        [PatchOuiFileSelectEnter]
         public extern IEnumerator orig_Enter(Oui from);
         public new IEnumerator Enter(Oui from) {
             if (!Loaded) {
@@ -91,6 +94,18 @@ namespace Celeste {
                     (slot as patch_OuiFileSelectSlot).ScrollTo(slot.IdlePosition.X, slot.IdlePosition.Y);
                 }
             }
+        }
+
+        [PatchOuiFileSelectLoadThread]
+        [MonoModIgnore]
+        private extern void LoadThread();
+
+        private void RemoveSlotsFromScene() {
+            Scene.Remove(Slots.Where(slot => slot != null));
+        }
+
+        private void AddSlotsToScene() {
+            Scene.Add(Slots);
         }
     }
 }
