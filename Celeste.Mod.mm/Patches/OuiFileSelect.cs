@@ -101,10 +101,7 @@ namespace Celeste {
         private extern void LoadThread();
 
         private void RemoveSlotsFromScene() {
-            Scene.Remove(Slots
-                .Where(slot => slot != null)
-                // do not remove this line or the game will crash
-                .Where(_ => true));
+            Scene.Remove(Slots.Where(slot => slot != null));
         }
 
         private void AddSlotsToScene() {
