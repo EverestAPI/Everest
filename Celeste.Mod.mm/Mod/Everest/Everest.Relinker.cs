@@ -170,7 +170,10 @@ namespace Celeste.Mod {
                     ?.Version ?? new Version(0, 0, 0, 0)) < new Version(1, 2563, 0) ?
                     typeof(CoroutineDelayHackfixHelper).GetMethod("Wrap") : null;
 
-                if (coroutineWrapper == null)
+                if (coroutineWrapper == null && _Relinking == null && !(
+                        // Some mods require additional special care.
+                        _Relinking.Name == "AdventureHelper" // Don't check the version for this mod as the hackfix is harmless.
+                    ))
                     return; // No hackfixes necessary.
 
                 void CrawlMethod(MethodDefinition method) {
