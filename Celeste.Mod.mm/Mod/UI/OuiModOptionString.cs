@@ -82,8 +82,16 @@ namespace Celeste.Mod.UI {
             Position = new Vector2(0f, 1080f);
             Visible = false;
         }
+        
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange) where T : Oui {
+            return Init<T>(value, onValueChange, 12, 1);
+        }
 
-        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength = 12, int minValueLength = 1) where T : Oui {
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength) where T : Oui {
+            return Init<T>(value, onValueChange, maxValueLength, 1);
+        }
+
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength, int minValueLength) where T : Oui {
             _Value = StartingValue = value;
             OnValueChange = onValueChange;
 
