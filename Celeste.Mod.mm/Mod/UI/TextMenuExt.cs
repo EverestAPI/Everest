@@ -54,6 +54,8 @@ namespace Celeste {
             public float Alpha { get; set; } = 1f;
             public Vector2 Scale { get; set; } = Vector2.One;
 
+            public override float Height() => base.Height() * this.Scale.Y;
+
             public ButtonExt(string label, string icon = null)
                 : base(label) {
                 Icon = icon;
