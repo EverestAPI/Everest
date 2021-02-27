@@ -367,11 +367,6 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            // 0.1 parses into 1 in regions using ,
-            // This also somehow sets the exception message language to English.
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
