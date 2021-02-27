@@ -178,7 +178,7 @@ namespace Monocle {
             underscore = true;
             underscoreCounter = 0f;
             bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
-            bool ctrl = currentState[Keys.LeftControl] == KeyState.Down || currentState[Keys.LeftControl] == KeyState.Down;
+            bool ctrl = currentState[Keys.LeftControl] == KeyState.Down || currentState[Keys.RightControl] == KeyState.Down;
             bool breakSoon;
 
             // handle tab aborting
