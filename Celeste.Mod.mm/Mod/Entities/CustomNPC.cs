@@ -32,7 +32,7 @@ namespace Celeste.Mod.Entities {
         public event Action<int> OnStart;
         public event Action OnEnd;
 
-        public CustomNPC(EntityData data, Vector2 offset, EntityID id) 
+        public CustomNPC(EntityData data, Vector2 offset, EntityID id)
             : base(data.Position + offset) {
             this.id = id;
 
@@ -52,15 +52,22 @@ namespace Celeste.Mod.Entities {
             if (data.Bool("flipY", false))
                 scale.Y = -1;
 
-            string extension = Path.GetExtension(spritePath);
-            if (!string.IsNullOrEmpty(extension))
-                spritePath = spritePath.Replace(extension, "");
-            spritePath = Path.Combine("characters", spritePath).Replace('\\', '/');
-            name = Regex.Replace(spritePath, "\\d+$", string.Empty);
+            if (!string.IsNullOrEmpty(spritePath)) {
+                string extension = Path.GetExtension(spritePath);
+                if (!string.IsNullOrEmpty(extension))
+                    spritePath = spritePath.Replace(extension, "");
+                spritePath = Path.Combine("characters", spritePath).Replace('\\', '/');
+                name = Regex.Replace(spritePath, "\\d+$", string.Empty);
 
-            textures = GFX.Game.GetAtlasSubtextures(name);
-            if (textures != null && textures.Count > 1)
-                animated = true;
+                textures = GFX.Game.GetAtlasSubtextures(name);
+                if (textures != null && textures.Count > 1)
+                    animated = true;
+            } else {
+                // spritePath is empty: we don't want any sprite.
+                spritePath = null;
+                name = null;
+                textures = null;
+            }
 
             frame = 0;
         }
