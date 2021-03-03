@@ -508,8 +508,6 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("Has:BirdTutorialGuiButtonPromptEnum", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() != null);
             MonoModRule.Flag.Set("Fill:CompleteRendererImageLayerScale", MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer").Resolve().FindField("Scale") == null);
-            MonoModRule.Flag.Set("Has:RevealDemoConfig", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("RevealDemoConfig") != null);
-            MonoModRule.Flag.Set("Lacks:RevealDemoConfig", MonoModRule.Modder.FindType("Celeste.Settings").Resolve().FindField("RevealDemoConfig") == null);
 
             TypeDefinition t_Input = MonoModRule.Modder.FindType("Celeste.Input").Resolve();
             MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");

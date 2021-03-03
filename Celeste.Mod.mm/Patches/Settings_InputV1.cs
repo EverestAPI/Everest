@@ -15,10 +15,6 @@ namespace Celeste {
         [MonoModIgnore]
         public static new patch_Settings_InputV1 Instance;
 
-        // Only present between approx. 1.3.3.10 and 1.3.3.12
-        [MonoModIgnore]
-        public bool RevealDemoConfig;
-
         [MonoModIgnore]
         public new Keys Left;
 
@@ -59,9 +55,6 @@ namespace Celeste {
         public new List<Keys> QuickRestart;
 
         [MonoModIgnore]
-        public new List<Keys> DemoDash;
-
-        [MonoModIgnore]
         public List<Buttons> BtnGrab;
 
         [MonoModIgnore]
@@ -78,6 +71,9 @@ namespace Celeste {
 
         [MonoModIgnore]
         public List<Buttons> BtnDemoDash;
+
+        // Introduced in 1.3.3.19, can be safely ignored in older versions..?
+        public new CrouchDashModesShim CrouchDashMode;
 
         // Technically unrelated from the Input V1 / V2 split but these changes were introduced at the same time...
 
@@ -102,5 +98,12 @@ namespace Celeste {
         [XmlEnum("true")]
         Half,
         On
+    }
+
+    [MonoModIfFlag("V1:Input")]
+    [ForceName("CrouchDashModes")]
+    public enum CrouchDashModesShim {
+        Press,
+        Hold
     }
 }

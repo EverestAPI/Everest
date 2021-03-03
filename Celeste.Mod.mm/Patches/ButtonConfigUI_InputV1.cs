@@ -151,8 +151,6 @@ namespace Celeste {
             AddButtonConfigLine(Mappings.Talk, patch_Settings_InputV1.Instance.BtnTalk);
             AddButtonConfigLine(Mappings.QuickRestart, patch_Settings_InputV1.Instance.BtnAltQuickRestart);
 
-            AddDemoDashLine();
-
             Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
@@ -165,26 +163,6 @@ namespace Celeste {
             });
             if (index >= 0) {
                 Selection = index;
-            }
-        }
-
-        // Celeste 1.3.3.11 exposes a DemoDash mapping.
-        [MonoModIgnore]
-        private extern void AddDemoDashLine();
-
-        [MonoModIfFlag("Lacks:RevealDemoConfig")]
-        [MonoModPatch("AddDemoDashLine")]
-        [MonoModReplace]
-        private void AddDemoDashLineStub() {
-        }
-
-        [MonoModIfFlag("Has:RevealDemoConfig")]
-        [MonoModPatch("AddDemoDashLine")]
-        [MonoModReplace]
-        private void AddDemoDashLineImpl() {
-            if (patch_Settings_InputV1.Instance.RevealDemoConfig) {
-                Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADVANCED")));
-                AddButtonConfigLine(Mappings.DemoDash, patch_Settings_InputV1.Instance.BtnDemoDash);
             }
         }
 
