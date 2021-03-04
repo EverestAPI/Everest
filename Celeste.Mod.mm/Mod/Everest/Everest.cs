@@ -641,6 +641,7 @@ namespace Celeste.Mod {
                 Tracker.Initialize();
                 module.Initialize();
                 Input.Initialize();
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
 
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
@@ -795,6 +796,10 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
+            }
+
+            if (_Initialized) {
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
             }
 
             InvalidateInstallationHash();
