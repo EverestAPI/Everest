@@ -3,6 +3,7 @@
 
 using Celeste;
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
@@ -32,6 +33,8 @@ namespace Monocle {
         private int cursorScale;
         private int charIndex;
         private bool installedListener;
+
+        private int firstLineIndexToDraw;
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
@@ -154,14 +157,15 @@ namespace Monocle {
             }
 
             if (drawCommands.Count > 0) {
-                float height = 10f + 30f * drawCommands.Count;
+                int drawCount = Math.Min((Engine.Instance.Window.ClientBounds.Height - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
+                float height = 10f + 30f * drawCount;
                 Draw.Rect(10f, viewHeight - height - 60f, viewWidth - 20f, height, Color.Black * 0.8f);
-                for (int i = 0; i < drawCommands.Count; i++) {
+                for (int i = 0; i < drawCount && firstLineIndexToDraw + i < drawCommands.Count; i++) {
                     Draw.SpriteBatch.DrawString(
                         Draw.DefaultFont,
-                        drawCommands[i].Text,
+                        drawCommands[firstLineIndexToDraw + i].Text,
                         new Vector2(20f, viewHeight - 92f - 30f * i),
-                        drawCommands[i].Color
+                        drawCommands[firstLineIndexToDraw + i].Color
                     );
                 }
             }
@@ -275,17 +279,29 @@ namespace Monocle {
                     } while (ctrl && !breakSoon);
                     break;
                 case Keys.Home:
-                    charIndex = 0;
+                    if (ctrl) {
+                        firstLineIndexToDraw = drawCommands.Count - 1;
+                    } else {
+                        charIndex = 0;
+                    }
                     break;
                 case Keys.End:
-                    charIndex = currentText.Length;
+                    if (ctrl) {
+                        firstLineIndexToDraw = 0;
+                    } else {
+                        charIndex = currentText.Length;
+                    }
                     break;
                 case Keys.Up:
                 case Keys.Down:
                     int hdir = key == Keys.Up ? 1 : -1;
-                    seekIndex = Calc.Clamp(seekIndex + hdir, -1, commandHistory.Count - 1);
-                    currentText = seekIndex == -1 ? "" : commandHistory[seekIndex];
-                    charIndex = currentText.Length;
+                    if (ctrl) {
+                        firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw + hdir, 0, drawCommands.Count - 1);
+                    } else {
+                        seekIndex = Calc.Clamp(seekIndex + hdir, -1, commandHistory.Count - 1);
+                        currentText = seekIndex == -1 ? "" : commandHistory[seekIndex];
+                        charIndex = currentText.Length;
+                    }
                     break;
                 case Keys.F1:
                 case Keys.F2:
@@ -386,6 +402,39 @@ namespace Monocle {
             commands.Clear();
             sorted.Clear();
             BuildCommandsList();
+        }
+
+        [MonoModReplace]
+        public new void Log(object obj, Color color) {
+            string text = obj.ToString();
+            if (text.Contains("\n")) {
+                foreach (string obj2 in text.Split('\n')) {
+                    Log(obj2, color);
+                }
+                return;
+            }
+            int width = Engine.Instance.Window.ClientBounds.Width - 40;
+            while (Draw.DefaultFont.MeasureString(text).X > width) {
+                int index = -1;
+                for (int i = 0; i < text.Length; i++) {
+                    if (text[i] == ' ') {
+                        if (Draw.DefaultFont.MeasureString(text.Substring(0, i)).X > width) {
+                            break;
+                        }
+                        index = i;
+                    }
+                }
+                if (index == -1) {
+                    break;
+                }
+                drawCommands.Insert(0, new patch_Line(text.Substring(0, index), color));
+                text = text.Substring(index + 1);
+            }
+            drawCommands.Insert(0, new patch_Line(text, color));
+            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            while (drawCommands.Count > maxCommandLines) {
+                drawCommands.RemoveAt(drawCommands.Count - 1);
+            }
         }
 
         // Only required to be defined so that we can access it.
