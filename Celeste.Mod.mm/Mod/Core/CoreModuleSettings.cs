@@ -189,7 +189,7 @@ namespace Celeste.Mod.Core {
 
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public int? MaxCommandLines { get; set; } = null;
+        public int ExtraCommandHistoryLines { get; set; } = 50;
 
         public string InputGui { get; set; } = "";
 

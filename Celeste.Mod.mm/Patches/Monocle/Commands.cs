@@ -422,7 +422,7 @@ namespace Monocle {
                 text = text.Substring(index + 1);
             }
             drawCommands.Insert(0, new patch_Line(text, color));
-            int maxCommandLines = Math.Max(CoreModule.Settings.MaxCommandLines ?? (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
             while (drawCommands.Count > maxCommandLines) {
                 drawCommands.RemoveAt(drawCommands.Count - 1);
             }
