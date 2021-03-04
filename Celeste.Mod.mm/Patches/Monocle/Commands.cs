@@ -395,6 +395,15 @@ namespace Monocle {
         [PatchCommandsUpdateOpen]
         internal extern void UpdateOpen();
 
+        [MonoModIgnore]
+        private extern void BuildCommandsList();
+
+        public void ReloadCommandsList() {
+            commands.Clear();
+            sorted.Clear();
+            BuildCommandsList();
+        }
+
         [MonoModReplace]
         public new void Log(object obj, Color color) {
             string text = obj.ToString();
