@@ -241,17 +241,18 @@ namespace Celeste {
         public static new bool TryDelete(int slot) {
             if (!orig_TryDelete(slot))
                 return false;
+            return TryDeleteModSaveData(slot);
+        }
 
+        public static bool TryDeleteModSaveData(int slot) {
             foreach (EverestModule mod in Everest._Modules) {
                 mod.DeleteSaveData(slot);
                 mod.DeleteSession(slot);
             }
 
-            UserIO.Delete(GetFilename(slot) + "-modsavedata");
-
             LoadedModSaveDataIndex = int.MinValue;
 
-            return true;
+            return UserIO.Delete(GetFilename(slot) + "-modsavedata");
         }
 
         public extern void orig_StartSession(Session session);

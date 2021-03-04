@@ -107,13 +107,6 @@ namespace Celeste {
             set => QuickRestart.Keyboard = value;
         }
 
-        [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Keys> Celeste.Settings::DemoDash")]
-        [XmlIgnore]
-        public List<Keys> DemoDash_V1 {
-            get => DemoDash.Keyboard;
-            set => DemoDash.Keyboard = value;
-        }
-
         [MonoModLinkFrom("System.Collections.Generic.List`1<Microsoft.Xna.Framework.Input.Buttons> Celeste.Settings::BtnGrab")]
         [XmlIgnore]
         public List<Buttons> BtnGrab {

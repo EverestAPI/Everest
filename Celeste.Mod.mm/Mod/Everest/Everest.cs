@@ -367,11 +367,6 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            // 0.1 parses into 1 in regions using ,
-            // This also somehow sets the exception message language to English.
-            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
@@ -641,6 +636,7 @@ namespace Celeste.Mod {
                 Tracker.Initialize();
                 module.Initialize();
                 Input.Initialize();
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
 
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
@@ -795,6 +791,10 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
+            }
+
+            if (_Initialized) {
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
             }
 
             InvalidateInstallationHash();

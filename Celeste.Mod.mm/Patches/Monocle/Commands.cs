@@ -27,6 +27,7 @@ namespace Monocle {
         private List<string> sorted;
         private List<string> commandHistory;
         private int seekIndex;
+        private Dictionary<string, patch_CommandInfo> commands;
 
         private int mouseScroll;
         private int cursorScale;
@@ -440,6 +441,13 @@ namespace Monocle {
                 Text = text;
                 Color = color;
             }
+        }
+
+        [MonoModIgnore]
+        private struct patch_CommandInfo {
+            public Action<string[]> Action;
+            public string Help;
+            public string Usage;
         }
 
     }

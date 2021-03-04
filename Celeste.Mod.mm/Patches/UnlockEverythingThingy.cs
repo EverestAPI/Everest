@@ -16,7 +16,6 @@ namespace Celeste {
                 SaveData.Instance.RevealedChapter9 = true;
                 Settings.Instance.VariantsUnlocked = true;
                 Settings.Instance.Pico8OnMainMenu = true;
-                UnlockDemoConfig();
 
             } else {
                 data.LevelSetStats.UnlockedAreas = data.LevelSetStats.MaxArea;
@@ -27,23 +26,6 @@ namespace Celeste {
             level.Session.InArea = false;
 
             Engine.Scene = new LevelExit(LevelExit.Mode.GiveUp, level.Session);
-        }
-
-        // Celeste 1.3.3.11 exposes a DemoDash mapping.
-        [MonoModIgnore]
-        private extern void UnlockDemoConfig();
-
-        [MonoModIfFlag("Lacks:RevealDemoConfig")]
-        [MonoModPatch("UnlockDemoConfig")]
-        [MonoModReplace]
-        private void UnlockDemoConfigNop() {
-        }
-
-        [MonoModIfFlag("Has:RevealDemoConfig")]
-        [MonoModPatch("UnlockDemoConfig")]
-        [MonoModReplace]
-        private void UnlockDemoConfigImpl() {
-            patch_Settings_InputV1.Instance.RevealDemoConfig = true;
         }
 
     }
