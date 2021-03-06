@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -111,7 +112,7 @@ namespace Celeste.Mod.UI {
                     modUpdatingMessage = $"{progressString} {Dialog.Clean("AUTOUPDATECHECKER_DOWNLOADING")}";
 
                     Logger.Log("AutoModUpdater", $"Downloading {update.URL} to {zipPath}");
-                    Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
+                    Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                         if (skipUpdate) {
                             return false;
                         }
@@ -124,7 +125,15 @@ namespace Celeste.Mod.UI {
                                 $"({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                         }
                         return true;
-                    });
+                    };
+
+                    try {
+                        Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, progressCallback);
+                    } catch (WebException e) {
+                        Logger.Log(LogLevel.Warn, "AutoModUpdater", $"Download failed, trying mirror {update.MirrorURL}");
+                        Logger.LogDetailed(e);
+                        Everest.Updater.DownloadFileWithProgress(update.MirrorURL, zipPath, progressCallback);
+                    }
 
                     // hide the cancel button for downloading, download is done
                     showCancel = false;
