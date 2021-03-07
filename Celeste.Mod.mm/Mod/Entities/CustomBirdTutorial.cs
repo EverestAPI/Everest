@@ -64,6 +64,21 @@ namespace Celeste.Mod.Entities {
                 if (modCommand != null) {
                     // this is a command a mod registered.
                     controls[i] = modCommand;
+                } else if (controlString.StartsWith("mod:")) {
+                    // formatted like `mod:MaxHelpingHand/ShowHints`
+                    string[] autoBinding = controlString.Substring(4).Split('/');
+                    EverestModule module = Everest.Modules.FirstOrDefault(m => m.Metadata.Name == autoBinding[0]);
+                    if (module?.SettingsType != null) {
+                        PropertyInfo matchingInput = module.SettingsType.GetProperty(autoBinding[1]);
+                        ButtonBinding val = matchingInput?.GetGetMethod()?.Invoke(module._Settings, null) as ButtonBinding;
+                        if (val?.Button != null) {
+                            controls[i] = val.Button;
+                        } else {
+                            Logger.Log(LogLevel.Warn, "CustomBird", $"Public ButtonBinding property not found in {module.SettingsType}. ControlString: {controlString}");
+                        }
+                    } else {
+                        Logger.Log(LogLevel.Warn, "CustomBird", "EverestModule or EverestModule.SettingsType not found. ControlString: " + controlString);
+                    }
                 } else if (GFX.Gui.Has(controlString)) {
                     // this is a texture.
                     controls[i] = GFX.Gui[controlString];
