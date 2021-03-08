@@ -4,7 +4,9 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -53,9 +55,17 @@ namespace Monocle {
                     prev = null;
                 }
 
-            } while (prev != next && (prev == null || (next != null && !(ForceDelayedSwap ?? prev?.GetType()?.Assembly == typeof(Engine).Assembly))));
+            } while (prev != next && (prev == null || (next != null && !(ForceDelayedSwap ?? isVanillaSwitch(prev, next)))));
         }
 
+        [PatchCoroutineHackfixHelperStateMachine] // references to CoroutineDelayHackfixHelper actually refer to CoroutineDelayHackfixHelper.<Wrap>d__2 or whatever the compiler generates
+        private static bool isVanillaSwitch(IEnumerator prev, IEnumerator next) {
+            // we are switching between two vanilla coroutines if:
+            // - they are both from Celeste.exe
+            // - they aren't from CoroutineDelayHackfixHelper.Wrap, because that would mean they are actually a wrapped hook from a mod
+            return prev.GetType().Assembly == typeof(Engine).Assembly && prev.GetType() != typeof(CoroutineDelayHackfixHelper)
+                && next.GetType().Assembly == typeof(Engine).Assembly && prev.GetType() != typeof(CoroutineDelayHackfixHelper);
+        }
     }
     public static class CoroutineExt {
 

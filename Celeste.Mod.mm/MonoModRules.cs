@@ -375,6 +375,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute("PatchOuiFileSelectLoadThread")]
     class PatchOuiFileSelectLoadThreadAttribute : Attribute { }
 
+    /// <summary>
+    /// Replaces typeof(CoroutineDelayHackfixHelper) with typeof(compiler-generated method associated to CoroutineDelayHackfixHelper.Wrap).
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchCoroutineHackfixHelperStateMachine")]
+    class PatchCoroutineHackfixHelperStateMachineAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2989,6 +2995,23 @@ namespace MonoMod {
                 instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
 
             cursor.RemoveRange(4);
+        }
+
+        public static void PatchCoroutineHackfixHelperStateMachine(ILContext il, CustomAttribute attrib) {
+            // The CoroutineDelayHackfixHelper Wrap coroutine is stored in a compiler-generated method.
+            TypeDefinition coroutineHackfixWrapCoroutineType = null;
+            foreach (TypeDefinition nest in Celeste.Module.GetType("Celeste.Mod.Helpers.CoroutineDelayHackfixHelper").NestedTypes) {
+                if (!nest.Name.StartsWith("<Wrap>d__")) {
+                    continue;
+                }
+                coroutineHackfixWrapCoroutineType = nest;
+                break;
+            }
+
+            ILCursor cursor = new ILCursor(il);
+            while (cursor.TryGotoNext(instr => instr.MatchLdtoken(Celeste.Module.GetType("Celeste.Mod.Helpers.CoroutineDelayHackfixHelper")))) {
+                cursor.Next.Operand = coroutineHackfixWrapCoroutineType;
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {
