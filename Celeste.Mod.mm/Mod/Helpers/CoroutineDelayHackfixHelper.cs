@@ -11,6 +11,8 @@ namespace Celeste.Mod.Helpers {
 
         public static HashSet<string> Hooks = new HashSet<string>();
 
+        public static readonly Type Type = typeof(CoroutineDelayHackfixHelper).GetMethod("Wrap").GetStateMachineTarget().DeclaringType;
+
         public static void HandleDetour(MethodBase _from, MethodBase _to) {
             if (_from is not MethodInfo from || _to is not MethodInfo to)
                 return;

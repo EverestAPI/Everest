@@ -4,6 +4,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
 using System.Collections;
@@ -53,7 +54,14 @@ namespace Monocle {
                     prev = null;
                 }
 
-            } while (prev != next && (prev == null || (next != null && !(ForceDelayedSwap ?? prev?.GetType()?.Assembly == typeof(Engine).Assembly))));
+            } while (
+                prev != next && (prev == null || (next != null && !(
+                    ForceDelayedSwap ?? (
+                        prev?.GetType()?.Assembly == typeof(Engine).Assembly &&
+                        prev?.GetType() != CoroutineDelayHackfixHelper.Type
+                    )
+                )))
+            );
         }
 
     }
