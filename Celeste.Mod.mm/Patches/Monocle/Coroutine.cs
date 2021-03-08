@@ -6,7 +6,6 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -64,7 +63,7 @@ namespace Monocle {
             // - they are both from Celeste.exe
             // - they aren't from CoroutineDelayHackfixHelper.Wrap, because that would mean they are actually a wrapped hook from a mod
             return prev.GetType().Assembly == typeof(Engine).Assembly && prev.GetType() != typeof(CoroutineDelayHackfixHelper)
-                && next.GetType().Assembly == typeof(Engine).Assembly && prev.GetType() != typeof(CoroutineDelayHackfixHelper);
+                && next.GetType().Assembly == typeof(Engine).Assembly && next.GetType() != typeof(CoroutineDelayHackfixHelper);
         }
     }
     public static class CoroutineExt {
