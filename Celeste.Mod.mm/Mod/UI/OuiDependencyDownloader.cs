@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -375,7 +376,7 @@ namespace Celeste.Mod.UI {
                 LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING"), mod.Name, mod.URL));
                 LogLine("", false);
 
-                Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, (position, length, speed) => {
+                Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                     if (length > 0) {
                         Lines[Lines.Count - 1] = $"{((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                         Progress = position;
@@ -385,7 +386,18 @@ namespace Celeste.Mod.UI {
                         ProgressMax = 0;
                     }
                     return true;
-                });
+                };
+
+                try {
+                    Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, progressCallback);
+                } catch (WebException e) {
+                    Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", $"Download failed, trying mirror {mod.MirrorURL}");
+                    Logger.LogDetailed(e);
+
+                    Lines[Lines.Count - 1] = string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR"), mod.MirrorURL);
+                    LogLine("", false);
+                    Everest.Updater.DownloadFileWithProgress(mod.MirrorURL, downloadDestination, progressCallback);
+                }
 
                 ProgressMax = 0;
                 Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED");
