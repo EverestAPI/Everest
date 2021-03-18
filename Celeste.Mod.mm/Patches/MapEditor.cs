@@ -83,7 +83,7 @@ namespace Celeste.Editor {
             KeyboardState keys = Keyboard.GetState();
 
             Session session = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl) ? null : CurrentSession;
-            session = session ?? new Session(area);
+            session = session ?? new Session(area, level.Name);
             session.FirstLevel = false;
             session.StartedFromBeginning = false;
             session.Level = level.Name;

@@ -58,13 +58,36 @@ namespace Celeste {
             Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
         }
 
-        // vanilla load commands: don't touch their bodies, but remove the [Command] attributes from them. We want to annotate ours instead.
-        [MonoModIgnore]
-        private static extern void CmdLoad(int id = 0, string level = null);
-        [MonoModIgnore]
-        private static extern void CmdHard(int id = 0, string level = null);
-        [MonoModIgnore]
-        private static extern void CmdRMX2(int id = 0, string level = null);
+        // vanilla load commands: remove the [Command] attributes from them. We want to annotate ours instead.
+        [MonoModReplace]
+        private static void CmdLoad(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.Normal, id, level);
+        }
+
+        [MonoModReplace]
+        private static void CmdHard(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.BSide, id, level);
+        }
+
+        [MonoModReplace]
+        private static void CmdRMX2(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.CSide, id, level);
+        }
+
+        // Better support for loading checkpoint room and fix vanilla game crashes when the bside/cside level does not exist
+        private static void LoadIdLevel(AreaMode areaMode, int id = 0, string level = null) {
+            SaveData.InitializeDebugMode();
+            ((patch_SaveData)SaveData.Instance).LastArea_Safe = new AreaKey(id, areaMode);
+            Session session = new Session(new AreaKey(id, areaMode));
+            if (level != null && session.MapData.Get(level) != null) {
+                bool firstLevel = level == session.MapData.StartLevel().Name;
+                session = new Session(new AreaKey(id, areaMode), level) {
+                    FirstLevel = firstLevel,
+                    StartedFromBeginning = firstLevel
+                };
+            }
+            Engine.Scene = new LevelLoader(session);
+        }
 
         [Command("load", "test a level")]
         [RemoveCommandAttributeFromVanillaLoadMethod]
