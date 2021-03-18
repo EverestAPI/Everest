@@ -82,7 +82,7 @@ namespace Celeste {
             Session session = new Session(areaKey);
             if (level != null && session.MapData.Get(level) != null) {
                 if (AreaData.GetCheckpoint(areaKey, level) != null) {
-                    session = new Session(areaKey, level);
+                    session = new Session(areaKey, level) {StartCheckpoint = null};
                 } else {
                     session.Level = level;
                 }
