@@ -77,14 +77,18 @@ namespace Celeste {
         // Better support for loading checkpoint room and fix vanilla game crashes when the bside/cside level does not exist
         private static void LoadIdLevel(AreaMode areaMode, int id = 0, string level = null) {
             SaveData.InitializeDebugMode();
-            ((patch_SaveData)SaveData.Instance).LastArea_Safe = new AreaKey(id, areaMode);
-            Session session = new Session(new AreaKey(id, areaMode));
+            AreaKey areaKey = new AreaKey(id, areaMode);
+            ((patch_SaveData)SaveData.Instance).LastArea_Safe = areaKey;
+            Session session = new Session(areaKey);
             if (level != null && session.MapData.Get(level) != null) {
+                if (AreaData.GetCheckpoint(areaKey, level) != null) {
+                    session = new Session(areaKey, level);
+                } else {
+                    session.Level = level;
+                }
                 bool firstLevel = level == session.MapData.StartLevel().Name;
-                session = new Session(new AreaKey(id, areaMode), level) {
-                    FirstLevel = firstLevel,
-                    StartedFromBeginning = firstLevel
-                };
+                session.FirstLevel = firstLevel;
+                session.StartedFromBeginning = firstLevel;
             }
             Engine.Scene = new LevelLoader(session);
         }
