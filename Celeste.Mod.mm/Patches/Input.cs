@@ -28,6 +28,13 @@ namespace Celeste {
             get => false; // FIXME: Can this be improved for 1.3.1.2?
         }
 
+        // Celeste 1.3.3.X (1.3.3.17?) introduced this property which must be shimmed for 1.3.1.2.
+        [MonoModIfFlag("V1:InputGrabCheck")]
+        public static bool GrabCheck {
+            [MonoModIfFlag("V1:InputGrabCheck")]
+            get => Input.Grab.Check;
+        }
+
         public static extern void orig_Initialize();
         public static void Initialize() {
             orig_Initialize();
@@ -91,6 +98,5 @@ namespace Celeste {
             Latest,
             Attached
         }
-
     }
 }

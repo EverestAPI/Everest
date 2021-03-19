@@ -522,6 +522,9 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("V1:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData)") != null);
             MonoModRule.Flag.Set("V2:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData,System.Int32,System.Int32)") != null);
+
+            MonoModRule.Flag.Set("V1:InputGrabCheck", t_Input.FindProperty("GrabCheck") == null);
+            MonoModRule.Flag.Set("V2:InputGrabCheck", t_Input.FindProperty("GrabCheck") != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
