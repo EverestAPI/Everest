@@ -29,12 +29,15 @@ namespace Celeste.Mod.Entities {
             { "DownRight", new Vector2(1, 1) }
         };
 
-        public CustomBirdTutorial(EntityData data, Vector2 offset) 
+        public CustomBirdTutorial(EntityData data, Vector2 offset)
             : base(data, offset) {
             BirdId = data.Attr("birdId");
             onlyOnce = data.Bool("onlyOnce");
             caw = data.Bool("caw");
             Facing = data.Bool("faceLeft") ? Facings.Left : Facings.Right;
+
+            // apply the facing immediately
+            Sprite.Scale.X = (float) Facing;
 
             object info;
             object[] controls;
