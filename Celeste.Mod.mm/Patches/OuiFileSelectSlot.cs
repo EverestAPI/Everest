@@ -148,9 +148,6 @@ namespace Celeste {
         public new void CreateButtons() {
             orig_CreateButtons();
 
-            if (!CoreModule.Settings.ShowModOptionsInGame)
-                return;
-
             if (!Exists) {
                 if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
                     if (newGameLevelSetPicker == null) {
