@@ -413,10 +413,14 @@ namespace Celeste.Mod {
                 if (File.Exists(destPath))
                     File.Delete(destPath);
 
+                HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                request.Timeout = 10000;
+                request.ReadWriteTimeout = 10000;
+
                 // Manual buffered copy from web input to file output.
                 // Allows us to measure speed and progress.
-                using (WebClient wc = new WebClient())
-                using (Stream input = wc.OpenRead(url))
+                using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
+                using (Stream input = response.GetResponseStream())
                 using (FileStream output = File.OpenWrite(destPath)) {
                     long length;
                     if (input.CanSeek) {
@@ -460,6 +464,8 @@ namespace Celeste.Mod {
                 try {
                     HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
                     request.Method = "HEAD";
+                    request.Timeout = 10000;
+                    request.ReadWriteTimeout = 10000;
                     using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
                         return response.ContentLength;
                 } catch (Exception) {
