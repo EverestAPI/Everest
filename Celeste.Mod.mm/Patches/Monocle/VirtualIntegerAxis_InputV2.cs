@@ -23,6 +23,7 @@ namespace Monocle {
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
         public extern void orig_ctor(Binding negative, Binding positive, int gamepadIndex, float threshold, OverlapBehaviors overlapBehavior = OverlapBehaviors.TakeNewer);
+        public extern void orig_ctor(Binding negative, Binding negativeAlt, Binding positive, Binding positiveAlt, int gamepadIndex, float threshold, OverlapBehaviors overlapBehavior = OverlapBehaviors.TakeNewer);
 #pragma warning restore CS0626
 
 
@@ -37,6 +38,12 @@ namespace Monocle {
         [MonoModConstructor]
         public void ctor(Binding negative, Binding positive, int gamepadIndex, float threshold, OverlapBehaviors overlapBehavior = OverlapBehaviors.TakeNewer) {
             orig_ctor(negative, positive, gamepadIndex, threshold, overlapBehavior);
+            Nodes = new List<Node>();
+        }
+
+        [MonoModConstructor]
+        public void ctor(Binding negative, Binding negativeAlt, Binding positive, Binding positiveAlt, int gamepadIndex, float threshold, OverlapBehaviors overlapBehavior = OverlapBehaviors.TakeNewer) {
+            orig_ctor(negative, negativeAlt, positive, positiveAlt, gamepadIndex, threshold, overlapBehavior);
             Nodes = new List<Node>();
         }
 
