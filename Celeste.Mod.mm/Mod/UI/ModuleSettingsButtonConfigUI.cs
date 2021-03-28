@@ -42,7 +42,7 @@ namespace Celeste.Mod {
 
             Clear();
             Add(new Header(Dialog.Clean("BTN_CONFIG_TITLE")));
-            // Add(new Info()); // V2 replaced this with InputMappingInfo and if you're still using V1 you should feel bad.
+            Add(new Info());
 
             Bindings.Clear();
 
