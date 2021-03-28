@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -112,6 +113,60 @@ namespace Celeste.Mod {
                 Name = name;
                 Binding = binding;
                 Defaults = defaults;
+            }
+
+        }
+
+        // This MUST exist here as it's missing in V2 yet this class gets patched into both V1 and V2 environments and aaaa~
+        [Obsolete]
+        public new class Info : Item {
+
+            private List<object> info = new List<object>();
+
+            public Info() {
+                string[] texts = Dialog.Clean("BTN_CONFIG_INFO", null).Split('|');
+                if (texts.Length == 3) {
+                    info.Add(texts[0]);
+                    info.Add(Input.MenuConfirm);
+                    info.Add(texts[1]);
+                    info.Add(Input.MenuJournal);
+                    info.Add(texts[2]);
+                }
+            }
+
+            public override float LeftWidth()
+                => 100f;
+
+            public override float Height()
+                => ActiveFont.LineHeight * 2f;
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Color textColor = Color.Gray * Ease.CubeOut(Container.Alpha);
+                Color strokeColor = Color.Black * Ease.CubeOut(Container.Alpha);
+                Color btnColor = Color.White * Ease.CubeOut(Container.Alpha);
+
+                float taken = 0f;
+                for (int i = 0; i < info.Count; i++) {
+                    if (info[i] is string text) {
+                        taken += ActiveFont.Measure(text).X * 0.6f;
+
+                    } else if (info[i] is VirtualButton btn) {
+                        taken += Input.GuiButton(btn).Width * 0.6f;
+                    }
+                }
+
+                Vector2 pos = position + new Vector2(Container.Width - taken, 0f) / 2f;
+                for (int i = 0; i < info.Count; i++) {
+                    if (info[i] is string text) {
+                        ActiveFont.DrawOutline(text, pos, new Vector2(0f, 0.5f), Vector2.One * 0.6f, textColor, 2f, strokeColor);
+                        pos.X += ActiveFont.Measure(text).X * 0.6f;
+
+                    } else if (info[i] is VirtualButton btn) {
+                        MTexture tex = Input.GuiButton(btn);
+                        tex.DrawJustified(pos, new Vector2(0f, 0.5f), btnColor, 0.6f);
+                        pos.X += tex.Width * 0.6f;
+                    }
+                }
             }
 
         }
