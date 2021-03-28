@@ -73,15 +73,22 @@ namespace MiniInstaller {
                     }
 
                 } catch (Exception e) {
+                    string msg = e.ToString();
                     LogLine("");
-                    LogLine(e.ToString());
+                    LogLine(msg);
                     LogLine("");
                     LogLine("Installing Everest failed.");
-                    LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
-                    LogLine("");
-                    LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
-                    LogLine("or join the #modding_help channel on Discord (invite in the repo).");
-                    LogLine("Make sure to upload your miniinstaller-log.txt");
+                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework")) {
+                        LogLine("Please run the game at least once to install missing dependencies.");
+                    } else {
+                        if (msg.Contains("--->")) {
+                            LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
+                        }
+                        LogLine("");
+                        LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                        LogLine("or join the #modding_help channel on Discord (invite in the repo).");
+                        LogLine("Make sure to upload your log file.");
+                    }
                     return 1;
                 }
 
