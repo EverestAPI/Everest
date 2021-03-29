@@ -3,6 +3,7 @@
 #pragma warning disable CS0169 // The field is never used
 
 using Microsoft.Xna.Framework.Input;
+using MonoMod;
 using System.Collections.Generic;
 
 namespace Monocle {
@@ -18,6 +19,7 @@ namespace Monocle {
             }
         }
 
+        [MonoModIfFlag("Fix:MenuUpDownRepeat")]
         public class patch_KeyboardData {
             public extern bool orig_Check(Keys key);
 

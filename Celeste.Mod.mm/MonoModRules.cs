@@ -525,6 +525,9 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("V1:InputGrabCheck", t_Input.FindProperty("GrabCheck") == null);
             MonoModRule.Flag.Set("V2:InputGrabCheck", t_Input.FindProperty("GrabCheck") != null);
+
+            MonoModRule.Flag.Set("Fix:MissingFileSlots", version < new Version(1, 4, 0, 0));
+            MonoModRule.Flag.Set("Fix:MenuUpDownRepeat", version < new Version(1, 3, 3, 0));
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
@@ -2905,6 +2908,10 @@ namespace MonoMod {
         }
 
         public static void PatchOuiFileSelectEnter(MethodDefinition method, CustomAttribute attrib) {
+            if (!MonoModRule.Flag.Get("Fix:MissingFileSlots")) {
+                return;
+            }
+
             MethodDefinition routine = method;
 
             // The routine is stored in a compiler-generated method.
@@ -2967,6 +2974,10 @@ namespace MonoMod {
         }
 
         public static void PatchOuiFileSelectLoadThread(ILContext il, CustomAttribute attrib) {
+            if (!MonoModRule.Flag.Get("Fix:MissingFileSlots")) {
+                return;
+            }
+
             ILCursor cursor = new ILCursor(il);
 
             // remove removing slots from scene in loading thread

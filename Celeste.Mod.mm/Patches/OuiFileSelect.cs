@@ -96,14 +96,17 @@ namespace Celeste {
             }
         }
 
+        [MonoModIfFlag("Fix:MissingFileSlots")]
         [PatchOuiFileSelectLoadThread]
         [MonoModIgnore]
         private extern void LoadThread();
 
+        [MonoModIfFlag("Fix:MissingFileSlots")]
         private void RemoveSlotsFromScene() {
             Scene.Remove(Slots.Where(slot => slot != null));
         }
 
+        [MonoModIfFlag("Fix:MissingFileSlots")]
         private void AddSlotsToScene() {
             Scene.Add(Slots);
         }
