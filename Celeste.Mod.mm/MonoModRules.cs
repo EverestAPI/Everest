@@ -381,6 +381,8 @@ namespace MonoMod {
 
         static bool FMODStub = false;
 
+        static Version Version;
+
         static TypeDefinition Celeste;
 
         static TypeDefinition Everest;
@@ -471,26 +473,26 @@ namespace MonoMod {
             }
 
             // Construct the version from our gathered data.
-            Version version = new Version();
+            Version = new Version();
             if (versionString != null) {
-                version = new Version(versionString);
+                Version = new Version(versionString);
             }
             if (versionInts == null || versionInts.Length == 0) {
                 // ???
             } else if (versionInts.Length == 2) {
-                version = new Version(versionInts[0], versionInts[1]);
+                Version = new Version(versionInts[0], versionInts[1]);
             } else if (versionInts.Length == 3) {
-                version = new Version(versionInts[0], versionInts[1], versionInts[2]);
+                Version = new Version(versionInts[0], versionInts[1], versionInts[2]);
             } else if (versionInts.Length == 4) {
-                version = new Version(versionInts[0], versionInts[1], versionInts[2], versionInts[3]);
+                Version = new Version(versionInts[0], versionInts[1], versionInts[2], versionInts[3]);
             }
 
             // Check if Celeste version is supported
             Version versionMin = new Version(1, 3, 1, 2);
-            if (version.Major == 0)
-                version = versionMin;
-            if (version < versionMin)
-                throw new Exception($"Unsupported version of Celeste: {version}");
+            if (Version.Major == 0)
+                Version = versionMin;
+            if (Version < versionMin)
+                throw new Exception($"Unsupported version of Celeste: {Version}");
 
             if (IsCeleste) {
                 // Ensure that Celeste assembly is not already modded
@@ -2905,6 +2907,10 @@ namespace MonoMod {
         }
 
         public static void PatchOuiFileSelectEnter(MethodDefinition method, CustomAttribute attrib) {
+            // There are better ways to check this but eh, whatever.
+            if (Version < new Version(1, 4, 0, 0))
+                return;
+
             MethodDefinition routine = method;
 
             // The routine is stored in a compiler-generated method.
@@ -2967,6 +2973,10 @@ namespace MonoMod {
         }
 
         public static void PatchOuiFileSelectLoadThread(ILContext il, CustomAttribute attrib) {
+            // There are better ways to check this but eh, whatever.
+            if (Version < new Version(1, 4, 0, 0))
+                return;
+
             ILCursor cursor = new ILCursor(il);
 
             // remove removing slots from scene in loading thread
