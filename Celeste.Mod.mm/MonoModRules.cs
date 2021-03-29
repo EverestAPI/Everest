@@ -2908,7 +2908,7 @@ namespace MonoMod {
 
         public static void PatchOuiFileSelectEnter(MethodDefinition method, CustomAttribute attrib) {
             // There are better ways to check this but eh, whatever.
-            if (Version < new Version(1, 4, 0, 0))
+            if (Version >= new Version(1, 4, 0, 0))
                 return;
 
             MethodDefinition routine = method;
@@ -2974,7 +2974,7 @@ namespace MonoMod {
 
         public static void PatchOuiFileSelectLoadThread(ILContext il, CustomAttribute attrib) {
             // There are better ways to check this but eh, whatever.
-            if (Version < new Version(1, 4, 0, 0))
+            if (Version >= new Version(1, 4, 0, 0))
                 return;
 
             ILCursor cursor = new ILCursor(il);
