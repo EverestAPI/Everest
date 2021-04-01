@@ -19,9 +19,13 @@ namespace Monocle {
         private bool canOpen;
         private KeyboardState currentState;
         private bool underscore;
-        private float underscoreCounter;
-        private Keys? repeatKey;
+
+#pragma warning disable CS0414 // assigned but never used
         private float repeatCounter;
+        private float underscoreCounter;
+#pragma warning restore CS0414 // assigned but never used
+
+        private Keys? repeatKey;
         private string currentText = "";
         private List<patch_Line> drawCommands;
         private List<string> sorted;
