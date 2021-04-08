@@ -34,7 +34,7 @@ namespace Celeste.Mod.UI {
 
         public event Action<string> OnValueChange;
 
-        public event Action OnExit;
+        public event Action<bool> OnExit;
 
         private string[] letters;
         private int index = 0;
@@ -92,14 +92,14 @@ namespace Celeste.Mod.UI {
         }
 
         public OuiModOptionString Init<T>(string value, Action<string> onValueChange, int maxValueLength, int minValueLength) where T : Oui {
-            return Init(value, onValueChange, () => Overworld.Goto<T>(), maxValueLength, minValueLength);
+            return Init(value, onValueChange, (confirm) => Overworld.Goto<T>(), maxValueLength, minValueLength);
         }
 
-        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, Action exit, int maxValueLength, int minValueLength) where T : Oui {
-            return Init(value, onValueChange, () => { Overworld.Goto<T>(); exit?.Invoke(); }, maxValueLength, minValueLength);
+        public OuiModOptionString Init<T>(string value, Action<string> onValueChange, Action<bool> onExit, int maxValueLength, int minValueLength) where T : Oui {
+            return Init(value, onValueChange, (confirm) => { Overworld.Goto<T>(); onExit?.Invoke(confirm); }, maxValueLength, minValueLength);
         }
 
-        public OuiModOptionString Init(string value, Action<string> onValueChange, Action exit, int maxValueLength, int minValueLength) {
+        public OuiModOptionString Init(string value, Action<string> onValueChange, Action<bool> exit, int maxValueLength, int minValueLength) {
             _Value = StartingValue = value;
             OnValueChange = onValueChange;
 
@@ -420,7 +420,7 @@ namespace Celeste.Mod.UI {
         private void Finish() {
             if (Value.Length >= MinValueLength) {
                 Focused = false;
-                OnExit?.Invoke();
+                OnExit?.Invoke(true);
                 Audio.Play(SFX.ui_main_rename_entry_accept);
             } else {
                 Audio.Play(SFX.ui_main_button_invalid);
@@ -431,7 +431,7 @@ namespace Celeste.Mod.UI {
             Cancelled = true;
             Value = StartingValue;
             Focused = false;
-            OnExit?.Invoke();
+            OnExit?.Invoke(false);
             Audio.Play(SFX.ui_main_button_back);
         }
 
