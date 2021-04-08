@@ -60,6 +60,22 @@ namespace Celeste {
                     writer.WriteLine("# FNA only: force OpenGL (might be necessary to bypass a load crash on some PCs).");
                     writer.WriteLine("#--graphics OpenGL");
                     writer.WriteLine();
+
+                    if (File.Exists("launch.txt")) {
+                        using (StreamReader reader = File.OpenText("launch.txt")) {
+                            writer.WriteLine();
+                            writer.WriteLine();
+                            writer.WriteLine("# The following options are migrated from the old launch.txt and force-disabled.");
+                            writer.WriteLine("# Some of them might not work anymore or cause unwanted effects.");
+                            writer.WriteLine();
+                            writer.WriteLine();
+                            for (string line; (line = reader.ReadLine()) != null;) {
+                                writer.Write("#");
+                                writer.WriteLine(line);
+                            }
+                        }
+                        File.Delete("launch.txt");
+                    }
                 }
             }
 
