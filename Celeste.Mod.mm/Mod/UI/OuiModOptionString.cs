@@ -221,6 +221,13 @@ namespace Celeste.Mod.UI {
                 // Backspace - trim.
                 Backspace();
 
+            } else if (c == (char) 22) {
+                // Paste.
+                string value = Value + TextInput.GetClipboardText();
+                if (value.Length > MaxValueLength)
+                    value = value.Substring(0, MaxValueLength);
+                Value = value;
+
             } else if (c == (char) 127) {
                 // Delete - currenly not handled.
 
