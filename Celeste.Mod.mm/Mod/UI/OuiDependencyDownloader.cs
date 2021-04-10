@@ -221,8 +221,15 @@ namespace Celeste.Mod.UI {
                 if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
-                foreach (string mod in modsNotFound)
-                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_FOUND"), mod));
+                foreach (string mod in modsNotFound) {
+                    if (mod == "Celeste") {
+                        // "some of your mods require a more recent version of Celeste"
+                        LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UPDATE_CELESTE"));
+                    } else {
+                        // "xx could not be found in the database"
+                        LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_FOUND"), mod));
+                    }
+                }
 
                 foreach (string mod in modsNotInstallableAutomatically)
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE"), mod));
