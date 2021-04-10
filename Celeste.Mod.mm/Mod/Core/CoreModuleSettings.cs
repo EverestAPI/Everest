@@ -279,7 +279,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
 
+        [SettingInGame(false)]
         public ButtonBinding MenuPageUp { get; set; }
+
+        [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
 
         /*
