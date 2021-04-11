@@ -180,25 +180,26 @@ namespace Celeste.Mod {
                     string methodID = method.GetID();
 
                     if (coroutineWrapper != null && method.HasBody && method.ReturnType.FullName == "System.Collections.IEnumerator") {
-                        if (!(
-                                // Scan the nested IEnumerator type if it's already getting rid of the delay itself.
-                                method.GetCustomAttribute("System.Runtime.CompilerServices.IteratorStateMachineAttribute") is CustomAttribute ca_IteratorStateMachine &&
-                                ca_IteratorStateMachine.ConstructorArguments[0].Value is TypeReference iteratorType &&
-                                iteratorType.SafeResolve()?.FindMethod("MoveNext") is MethodDefinition iteratorMethod &&
-                                (iteratorMethod.Body?.Instructions.Any(i => i.Operand is MethodReference callee && callee.Name == "MoveNext") ?? false)
-                            )) {
-                            using (ILContext ctx = new ILContext(method)) {
-                                ctx.Invoke(ctx => {
-                                    ILCursor c = new ILCursor(ctx);
-                                    while (c.TryGotoNext(i => i.MatchRet())) {
-                                        c.Next.OpCode = OpCodes.Ldstr;
-                                        c.Next.Operand = methodID;
-                                        c.Index++;
-                                        c.Emit(OpCodes.Call, coroutineWrapper);
-                                        c.Emit(OpCodes.Ret);
-                                    }
-                                });
-                            }
+                        using (ILContext ctx = new ILContext(method)) {
+                            ctx.Invoke(ctx => {
+                                ILCursor c = new ILCursor(ctx);
+                                while (c.TryGotoNext(i => i.MatchRet())) {
+                                    c.Next.OpCode = OpCodes.Ldstr;
+                                    c.Next.Operand = methodID;
+                                    c.Index++;
+
+                                    // Scan the nested IEnumerator type if it's already getting rid of the delay itself.
+                                    c.Emit(
+                                        method.GetCustomAttribute("System.Runtime.CompilerServices.IteratorStateMachineAttribute") is CustomAttribute ca_IteratorStateMachine &&
+                                        ca_IteratorStateMachine.ConstructorArguments[0].Value is TypeReference iteratorType &&
+                                        iteratorType.SafeResolve()?.FindMethod("MoveNext") is MethodDefinition iteratorMethod &&
+                                        (iteratorMethod.Body?.Instructions.Any(i => i.Operand is MethodReference callee && callee.Name == "MoveNext") ?? false)
+                                        ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+
+                                    c.Emit(OpCodes.Call, coroutineWrapper);
+                                    c.Emit(OpCodes.Ret);
+                                }
+                            });
                         }
                     }
 

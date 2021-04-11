@@ -21,9 +21,9 @@ namespace Celeste.Mod.Helpers {
                 Hooks.Add(to.GetID().Replace('+', '/'));
         }
 
-        public static IEnumerator Wrap(IEnumerator inner, string context) {
+        public static IEnumerator Wrap(IEnumerator inner, string context, bool oldWithMoveNext) {
             yield return new Action<patch_Coroutine>(cb => {
-                if (!Hooks.Contains(context)) {
+                if (oldWithMoveNext || !Hooks.Contains(context)) {
                     cb.ForceDelayedSwap = true;
                 }
             });
