@@ -355,6 +355,12 @@ namespace MonoMod {
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
     /// <summary>
+    /// Patches SettingS.SetDefaultKeyboardControls so that TranslateKeys only gets called when reset = true.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchSettingsDoNotTranslateKeys")]
+    class PatchSettingsDoNotTranslateKeysAttribute : Attribute { }
+
+    /// <summary>
     /// Forcibly changes a given member's name.
     /// </summary>
     [MonoModCustomAttribute("ForceName")]
@@ -3002,6 +3008,31 @@ namespace MonoMod {
                 instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
 
             cursor.RemoveRange(4);
+        }
+
+        public static void PatchSettingsDoNotTranslateKeys(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+
+            // find the instruction after the group of TranslateKeys.
+            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
+            Instruction jumpTarget = c.Next;
+
+            c.Index = 0;
+
+            // go just before the first TranslateKeys call.
+            if (c.TryGotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.OpCode == OpCodes.Ldfld,
+                instr => instr.OpCode == OpCodes.Ldfld,
+                instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) {
+
+                // enclose all TranslateKeys inside a if (reset || !Existed).
+                c.Emit(OpCodes.Ldarg_1);
+                c.Emit(OpCodes.Brtrue, c.Next);
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Existed"));
+                c.Emit(OpCodes.Brtrue, jumpTarget);
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {
