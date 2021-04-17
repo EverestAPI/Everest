@@ -79,6 +79,16 @@ namespace Celeste {
             }
         }
 
+        public extern void orig_ReloadMountainStuff();
+        public new void ReloadMountainStuff() {
+            orig_ReloadMountainStuff();
+
+            // reload all loaded custom mountain models as well.
+            foreach (ObjModel customMountainModel in MTNExt.ObjModelCache.Values) {
+                customMountainModel.ReassignVertices();
+            }
+        }
+
         public extern void orig_End();
         public override void End() {
             orig_End();
