@@ -337,12 +337,10 @@ namespace Celeste.Mod {
             _DetourModManager.OnHook += (owner, from, to, target) => {
                 _DetourOwners.Add(owner);
                 _DetourLog.Add($"new Hook by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}" + (target == null ? "" : $" (target: {target})"));
-                CoroutineDelayHackfixHelper.HandleDetour(from, to);
             };
             _DetourModManager.OnDetour += (owner, from, to) => {
                 _DetourOwners.Add(owner);
                 _DetourLog.Add($"new Detour by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}");
-                CoroutineDelayHackfixHelper.HandleDetour(from, to);
             };
             _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
                 _DetourOwners.Add(owner);
@@ -353,7 +351,6 @@ namespace Celeste.Mod {
                 _DetourOwners.Add(owner);
                 object target = to.Target;
                 _DetourLog.Add($"new On.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
-                CoroutineDelayHackfixHelper.HandleDetour(from, to.Method);
                 return true;
             };
             HookEndpointManager.OnModify += (from, to) => {

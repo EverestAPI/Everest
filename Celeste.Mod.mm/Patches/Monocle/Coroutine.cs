@@ -18,21 +18,7 @@ namespace Monocle {
         private float waitTimer;
         private Stack<IEnumerator> enumerators;
 
-        /// <summary>
-        /// Force this coroutine to mimic vanilla behavior:<br></br>
-        /// When yield returning a new IEnumerator or when a previously IEnumerator finishes,
-        /// the next IEnumerator runs delayed by one frame.<br></br>
-        /// <br></br>
-        /// To describe the behavior of this field, imagine the following code replacing all yield returns of IEnumerators:<br></br>
-        /// <code>
-        /// IEnumerator next = Nested(...);<br></br>
-        /// if (ForceDelayedSwap ?? vanilla) yield return null;<br></br>
-        /// while (next.MoveNext()) yield return next.Current;<br></br>
-        /// if (ForceDelayedSwap ?? vanilla) yield return null;<br></br>
-        /// // Control is returned to your code here.<br></br>
-        /// </code>
-        /// </summary>
-        public bool? ForceDelayedSwap;
+        public IEnumerator Current => enumerators.Count > 0 ? enumerators.Peek() : null;
 
         /// <summary>
         /// Forcibly set the timer to 0 to jump to the next "step."
@@ -43,25 +29,31 @@ namespace Monocle {
 
         public extern void orig_Update();
         public override void Update() {
+            int prevCount, nextCount;
             IEnumerator prev, next;
             do {
-                prev = enumerators.Count > 0 ? enumerators.Peek() : null;
+                prevCount = enumerators.Count;
+                prev = Current;
                 orig_Update();
-                next = enumerators.Count > 0 ? enumerators.Peek() : null;
+                nextCount = enumerators.Count;
+                next = Current;
 
-                if (prev == next && next != null && next.Current is Action<patch_Coroutine> cb) {
-                    cb(this);
-                    prev = null;
+                if (prev != null) {
+                    object current = prev.Current;
+
+                    if (current is Action<patch_Coroutine> cb) {
+                        cb(this);
+                        continue;
+
+                    } else if (current is SwapImmediately swap) {
+                        enumerators.Pop();
+                        enumerators.Push(swap.Inner);
+                        continue;
+                    }
                 }
 
-            } while (
-                prev != next && (prev == null || (next != null && !(
-                    ForceDelayedSwap ?? (
-                        prev?.GetType()?.Assembly == typeof(Engine).Assembly &&
-                        prev?.GetType() != CoroutineDelayHackfixHelper.Type
-                    )
-                )))
-            );
+                break;
+            } while (true);
         }
 
     }
