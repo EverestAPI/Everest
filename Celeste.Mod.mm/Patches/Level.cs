@@ -132,6 +132,13 @@ namespace Celeste {
         private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         [PatchTransitionRoutine]
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
+            Player player = Tracker.GetEntity<Player>();
+            if (player == null) {
+                // Blame Rubydragon for performing a frame-perfect transition death during a speedrun :P -ade
+                Engine.Scene = new LevelLoader(Session, Session.RespawnPoint);
+                yield break;
+            }
+
             IEnumerator orig = orig_TransitionRoutine(next, direction);
 
             // Don't perform any GBJ checks in vanilla maps.
@@ -141,7 +148,7 @@ namespace Celeste {
                 yield break;
             }
 
-            Player player = Tracker.GetEntity<Player>();
+            player = Tracker.GetEntity<Player>();
             // No player? No problem!
             if (player == null) {
                 while (orig.MoveNext())
