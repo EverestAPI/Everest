@@ -284,7 +284,7 @@ namespace Monocle {
                     break;
                 case Keys.Home:
                     if (ctrl) {
-                        firstLineIndexToDraw = drawCommands.Count - 1;
+                        firstLineIndexToDraw = Math.Max(drawCommands.Count - 1, 0);
                     } else {
                         charIndex = 0;
                     }
@@ -300,7 +300,7 @@ namespace Monocle {
                 case Keys.Down:
                     int hdir = key == Keys.Up ? 1 : -1;
                     if (ctrl) {
-                        firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw + hdir, 0, drawCommands.Count - 1);
+                        firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw + hdir, 0, Math.Max(drawCommands.Count - 1, 0));
                     } else {
                         seekIndex = Calc.Clamp(seekIndex + hdir, -1, commandHistory.Count - 1);
                         currentText = seekIndex == -1 ? "" : commandHistory[seekIndex];
