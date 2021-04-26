@@ -32,8 +32,6 @@ namespace Monocle {
             do {
                 orig_Update();
 
-                Logger.Log("Coroutine", "Top of the stack is: " + Current?.GetType());
-
                 // if the coroutine last returned an Action<Coroutine>, run it passing the coroutine.
                 if (Current?.Current is Action<patch_Coroutine> cb) {
                     cb(this);
