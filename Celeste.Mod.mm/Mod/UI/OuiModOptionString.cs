@@ -421,6 +421,7 @@ namespace Celeste.Mod.UI {
             if (Value.Length >= MinValueLength) {
                 Focused = false;
                 OnExit?.Invoke(true);
+                OnExit = null;
                 Audio.Play(SFX.ui_main_rename_entry_accept);
             } else {
                 Audio.Play(SFX.ui_main_button_invalid);
@@ -432,6 +433,7 @@ namespace Celeste.Mod.UI {
             Value = StartingValue;
             Focused = false;
             OnExit?.Invoke(false);
+            OnExit = null;
             Audio.Play(SFX.ui_main_button_back);
         }
 
