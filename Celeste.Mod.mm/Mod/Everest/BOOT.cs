@@ -38,6 +38,10 @@ namespace Celeste.Mod {
 
                 string everestPath = typeof(Celeste).Assembly.Location;
 
+                // Launching Celeste.exe from a shortcut can sometimes set cwd to System32 on Windows.
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    Environment.CurrentDirectory = Path.GetDirectoryName(everestPath);
+
                 try {
                     if (RestartViaLauncher())
                         return;
