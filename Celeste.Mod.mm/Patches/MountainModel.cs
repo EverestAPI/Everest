@@ -121,6 +121,7 @@ namespace Celeste {
                     customFog2.TopColor = (customFog2.BotColor = Color.White * 0.3f * NearFogAlpha);
                     customStarstream1.Rotate(Engine.DeltaTime * 0.01f);
                     customStarstream2.Rotate(Engine.DeltaTime * 0.02f);
+                    customStarfog.Rotate(-Engine.DeltaTime * 0.01f);
                 }
             }
 
