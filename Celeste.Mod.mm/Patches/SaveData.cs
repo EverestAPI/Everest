@@ -252,7 +252,13 @@ namespace Celeste {
 
             LoadedModSaveDataIndex = int.MinValue;
 
-            return UserIO.Delete(GetFilename(slot) + "-modsavedata");
+            // delete the modsavedata file if it exists.
+            string modSaveDataName = GetFilename(slot) + "-modsavedata";
+            if (UserIO.Exists(modSaveDataName)) {
+                return UserIO.Delete(modSaveDataName);
+            } else {
+                return true;
+            }
         }
 
         public extern void orig_StartSession(Session session);
