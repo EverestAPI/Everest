@@ -383,7 +383,7 @@ namespace MonoMod {
     class PatchOuiFileSelectLoadThreadAttribute : Attribute { }
 
     /// <summary>
-    /// Patches OuiFileSelect.LoadThread to fix file slots missing bug.
+    /// Patches UserIO.Save to flush save data to disk after writing it.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchSaveDataFlushSaves")]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
