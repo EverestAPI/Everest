@@ -69,6 +69,21 @@ namespace Celeste {
             return result;
         }
 
+        [MonoModIgnore]
+        [PatchSaveDataFlushSaves]
+        public static extern bool Save<T>(string path, byte[] data);
+
+        private static void _saveAndFlushToFile(byte[] data, string handle) {
+            using (FileStream fileStream = File.Open(handle, FileMode.Create, FileAccess.Write)) {
+                _saveAndFlush(fileStream, data, 0, data.Length);
+            }
+        }
+
+        private static void _saveAndFlush(FileStream stream, byte[] array, int offset, int count) {
+            stream.Write(array, offset, count);
+            stream.Flush(true);
+        }
+
         private static IEnumerator SaveNonHandler() {
             yield break;
         }
