@@ -60,7 +60,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version} [Everest: {BuildString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
         /// The command line arguments passed when launching the game.
