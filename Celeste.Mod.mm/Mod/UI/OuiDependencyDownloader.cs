@@ -421,6 +421,9 @@ namespace Celeste.Mod.UI {
                 } else {
                     string installDestination = Path.Combine(Everest.Loader.PathMods, $"{mod.Name}.zip");
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALLING"), mod.Name, mod.Version, installDestination));
+                    if (File.Exists(installDestination)) {
+                        File.Delete(installDestination);
+                    }
                     File.Move(downloadDestination, installDestination);
                     Everest.Loader.LoadZip(installDestination);
                 }
