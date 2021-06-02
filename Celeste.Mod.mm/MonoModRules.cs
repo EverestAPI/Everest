@@ -2850,6 +2850,12 @@ namespace MonoMod {
 
             c.GotoNext(i => i.MatchCall("Celeste.Input", "Initialize"));
             c.Remove();
+
+            // Add handler for Mouse Buttons on KeyboardConfigUI
+            if (c.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"))) {
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Call, il.Method.DeclaringType.FindMethod("System.Void RemapMouse()"));
+            }
         }
 
         public static void PatchAscendManagerRoutine(MethodDefinition method, CustomAttribute attrib) {

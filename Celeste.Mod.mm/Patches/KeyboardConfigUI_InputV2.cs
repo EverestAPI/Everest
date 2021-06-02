@@ -27,6 +27,7 @@ namespace Celeste {
         private bool resetHeld;
 		private float resetTime;
 		private float resetDelay;
+        private float inputDelay;
 
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
@@ -168,6 +169,7 @@ namespace Celeste {
         }
 
         public virtual void Reset() {
+            ((patch_Settings_InputV2) Settings.Instance).SetDefaultMouseControls(true);
             Settings.Instance.SetDefaultKeyboardControls(true);
             Input.Initialize();
         }
@@ -185,14 +187,36 @@ namespace Celeste {
             }));
         }
 
+        public void RemapMouse() {
+            for (int i = 0; i < 5; i++) {
+                if (patch_MInput.Mouse.Pressed((patch_MInput.patch_MouseData.MouseButtons) i))
+                    AddRemap((patch_MInput.patch_MouseData.MouseButtons) i);
+            }
+        }
+
+        private void AddRemap(patch_MInput.patch_MouseData.MouseButtons button) {
+            while (((patch_Binding) remappingBinding).Mouse.Count >= Input.MaxBindings) {
+                ((patch_Binding) remappingBinding).Mouse.RemoveAt(0);
+            }
+            remapping = false;
+            inputDelay = 0.25f;
+            if (!((patch_Binding) remappingBinding).Add(button)) {
+                Audio.Play(SFX.ui_main_button_invalid);
+            }
+            Input.Initialize();
+        }
+
         [MonoModIgnore]
         [MakeMethodPublic]
         public extern void Remap(Binding binding);
 
-        [MonoModIgnore]
         [MakeMethodPublic]
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
-        public extern void Clear(Binding binding);
+        public void Clear(Binding binding) {
+            ((patch_Binding) binding).ClearMouse();
+            if (!binding.ClearKeyboard())
+                Audio.Play(SFX.ui_main_button_invalid);
+        }
 
         [MonoModIgnore]
         [MakeMethodPublic]

@@ -1,4 +1,8 @@
-﻿using MonoMod;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0108 // Method hides inherited member
+
+using MonoMod;
+using System;
 using System.Collections.Generic;
 
 namespace Monocle {
@@ -25,12 +29,9 @@ namespace Monocle {
                     continue;
                 }
 
-                foreach (patch_Binding item in ExclusiveFrom) {
-                    if (item.Needs(button)) {
-                        Mouse.Add(button);
-                        result = true;
-                        break;
-                    }
+                if (ExclusiveFrom.TrueForAll(item => ((patch_Binding)item).Needs(button))) {
+                    Mouse.Add(button);
+                    result = true;
                 }
             }
             return result;
@@ -38,13 +39,10 @@ namespace Monocle {
 
         public bool Needs(patch_MInput.patch_MouseData.MouseButtons button) {
             if (Mouse.Contains(button)) {
-                if (Mouse.Count <= 1) {
-                    return true;
-                }
-                if (!IsExclusive(button)) {
+                if (!IsExclusive(button))
                     return false;
-                }
-                foreach (patch_MInput.patch_MouseData.MouseButtons item in Controller) {
+
+                foreach (patch_MInput.patch_MouseData.MouseButtons item in Mouse) {
                     if (item != button && IsExclusive(item)) {
                         return false;
                     }
@@ -64,22 +62,7 @@ namespace Monocle {
         }
 
         public bool ClearMouse() {
-            if (ExclusiveFrom.Count > 0) {
-                if (Mouse.Count <= 1) {
-                    return false;
-                }
-                int index = 0;
-                for (int i = 1; i < Mouse.Count; i++) {
-                    if (IsExclusive(Mouse[i])) {
-                        index = i;
-                    }
-                }
-                patch_MInput.patch_MouseData.MouseButtons item = Mouse[index];
-                Mouse.Clear();
-                Mouse.Add(item);
-            } else {
-                Mouse.Clear();
-            }
+            Mouse.Clear();
             return true;
         }
 

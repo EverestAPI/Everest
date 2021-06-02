@@ -158,5 +158,37 @@ namespace Celeste {
             set => ScreenShake = value ? ScreenshakeAmount.Off : ScreenshakeAmount.On;
         }
 
+        public void SetDefaultMouseControls(bool reset) {
+            if (!reset)
+                return;
+
+            ((patch_Binding) Left).Mouse.Clear();
+            ((patch_Binding) Right).Mouse.Clear();
+            ((patch_Binding) Down).Mouse.Clear();
+            ((patch_Binding) Up).Mouse.Clear();
+            ((patch_Binding) MenuLeft).Mouse.Clear();
+            ((patch_Binding) MenuRight).Mouse.Clear();
+            ((patch_Binding) MenuDown).Mouse.Clear();
+            ((patch_Binding) MenuUp).Mouse.Clear();
+            ((patch_Binding) Grab).Mouse.Clear();
+            ((patch_Binding) Jump).Mouse.Clear();
+            ((patch_Binding) Dash).Mouse.Clear();
+            ((patch_Binding) Talk).Mouse.Clear();
+            ((patch_Binding) Pause).Mouse.Clear();
+            ((patch_Binding) Confirm).Mouse.Clear();
+            ((patch_Binding) Cancel).Mouse.Clear();
+            ((patch_Binding) Journal).Mouse.Clear();
+            ((patch_Binding) QuickRestart).Mouse.Clear();
+            ((patch_Binding) DemoDash).Mouse.Clear();
+            ((patch_Binding) LeftMoveOnly).Mouse.Clear();
+            ((patch_Binding) RightMoveOnly).Mouse.Clear();
+            ((patch_Binding) DownMoveOnly).Mouse.Clear();
+            ((patch_Binding) UpMoveOnly).Mouse.Clear();
+            ((patch_Binding) LeftDashOnly).Mouse.Clear();
+            ((patch_Binding) RightDashOnly).Mouse.Clear();
+            ((patch_Binding) DownDashOnly).Mouse.Clear();
+            ((patch_Binding) UpDashOnly).Mouse.Clear();
+        }
+
     }
 }
