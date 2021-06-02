@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 
 namespace Monocle {
-    class patch_MInput {
+    public class patch_MInput {
         // vanilla internal field
         internal static List<VirtualInput> VirtualInputs;
 
@@ -18,8 +18,8 @@ namespace Monocle {
             }
         }
 
-        // Vanilla field
-        public static patch_MouseData Mouse;
+        // Vanilla property
+        public static patch_MouseData Mouse { get; private set; }
 
         public class patch_KeyboardData {
             public extern bool orig_Check(Keys key);
