@@ -86,7 +86,7 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_Settings is EverestModuleBinarySettings) {
                         using (BinaryWriter writer = new BinaryWriter(stream))
                             ((EverestModuleBinarySettings) _Settings).Write(writer);
@@ -94,6 +94,7 @@ namespace Celeste.Mod {
                         using (StreamWriter writer = new StreamWriter(stream))
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
                     }
+                    stream.Flush(true);
                 }
             } catch (Exception e) {
                 Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the settings of {Metadata.Name}!");
@@ -157,7 +158,7 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_SaveData is EverestModuleBinarySaveData) {
                         using (BinaryWriter writer = new BinaryWriter(stream))
                             ((EverestModuleBinarySaveData) _SaveData).Write(writer);
@@ -165,6 +166,7 @@ namespace Celeste.Mod {
                         using (StreamWriter writer = new StreamWriter(stream))
                             YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
                     }
+                    stream.Flush(true);
                 }
             } catch (Exception e) {
                 Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the save data of {Metadata.Name}!");
@@ -244,7 +246,7 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_Session is EverestModuleBinarySession) {
                         using (BinaryWriter writer = new BinaryWriter(stream))
                             ((EverestModuleBinarySession) _Session).Write(writer);
@@ -252,6 +254,7 @@ namespace Celeste.Mod {
                         using (StreamWriter writer = new StreamWriter(stream))
                             YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
                     }
+                    stream.Flush(true);
                 }
             } catch (Exception e) {
                 Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the session of {Metadata.Name}!");
@@ -706,12 +709,12 @@ namespace Celeste.Mod {
 
                 if (!typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType))
                     continue;
-                
+
                 if (!headerCreated) {
                     CreateModMenuSectionHeader(menu, inGame, snapshot);
                     headerCreated = true;
                 }
-                
+
                 CreateModMenuSectionKeyBindings(menu, inGame, snapshot);
                 break;
             }
