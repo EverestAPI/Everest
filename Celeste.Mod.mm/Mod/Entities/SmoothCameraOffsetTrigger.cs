@@ -20,7 +20,8 @@ namespace Celeste.Mod.Entities {
         private bool xOnly;
         private bool yOnly;
 
-        public SmoothCameraOffsetTrigger(EntityData data, Vector2 offset) : base(data, offset) {
+        public SmoothCameraOffsetTrigger(EntityData data, Vector2 offset) 
+            : base(data, offset) {
             // parse the trigger attributes. Multiplying X dimensions by 48 and Y ones by 32 replicates the vanilla offset trigger behavior.
             offsetFrom = new Vector2(data.Float("offsetXFrom") * 48f, data.Float("offsetYFrom") * 32f);
             offsetTo = new Vector2(data.Float("offsetXTo") * 48f, data.Float("offsetYTo") * 32f);

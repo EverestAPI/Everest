@@ -25,8 +25,8 @@ SOFTWARE.
 */
 
 using System;
-using System.Security.Cryptography;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 
 
 namespace YYProject.XXHash {

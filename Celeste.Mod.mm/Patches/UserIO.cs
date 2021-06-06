@@ -1,19 +1,11 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
@@ -75,6 +67,21 @@ namespace Celeste {
             }
 
             return result;
+        }
+
+        [MonoModIgnore]
+        [PatchSaveDataFlushSaves]
+        public static extern bool Save<T>(string path, byte[] data);
+
+        private static void _saveAndFlushToFile(byte[] data, string handle) {
+            using (FileStream fileStream = File.Open(handle, FileMode.Create, FileAccess.Write)) {
+                _saveAndFlush(fileStream, data, 0, data.Length);
+            }
+        }
+
+        private static void _saveAndFlush(FileStream stream, byte[] array, int offset, int count) {
+            stream.Write(array, offset, count);
+            stream.Flush(true);
         }
 
         private static IEnumerator SaveNonHandler() {

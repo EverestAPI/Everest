@@ -3,14 +3,8 @@
 using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Celeste.Mod.UI;
-using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Overworld : Overworld {
@@ -82,6 +76,16 @@ namespace Celeste {
                     // no save is loaded or we are not in chapter select
                     restoreNormalMusicIfCustomized();
                 }
+            }
+        }
+
+        public extern void orig_ReloadMountainStuff();
+        public new void ReloadMountainStuff() {
+            orig_ReloadMountainStuff();
+
+            // reload all loaded custom mountain models as well.
+            foreach (ObjModel customMountainModel in MTNExt.ObjModelCache.Values) {
+                customMountainModel.ReassignVertices();
             }
         }
 

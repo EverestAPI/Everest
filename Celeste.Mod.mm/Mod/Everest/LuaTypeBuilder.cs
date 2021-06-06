@@ -1,17 +1,11 @@
-﻿using MonoMod.InlineRT;
+﻿using NLua;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using NLua;
-using MonoMod.RuntimeDetour;
-using MonoMod.Utils;
 using System.Reflection.Emit;
 using System.Security;
-using System.Collections;
 using static Celeste.Mod.Everest;
 using static Celeste.Mod.Everest.LuaLoader;
 

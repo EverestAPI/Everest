@@ -1,30 +1,27 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
+using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
+using Microsoft.Xna.Framework;
+using Mono.Cecil.Cil;
 using Monocle;
+using MonoMod.Cil;
+using MonoMod.RuntimeDetour;
+using MonoMod.RuntimeDetour.HookGen;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Security;
 using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Xna.Framework;
-using System.Globalization;
 using System.Security.Cryptography;
+using System.Threading;
 using YYProject.XXHash;
-using Celeste.Mod.Entities;
-using Celeste.Mod.Helpers;
-using MonoMod.RuntimeDetour;
-using MonoMod.RuntimeDetour.HookGen;
-using Celeste.Mod.UI;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -63,7 +60,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version} [Everest: {BuildString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
         /// The command line arguments passed when launching the game.
@@ -317,7 +314,7 @@ namespace Celeste.Mod {
                 PathEverest = PathGame;
             } else {
                 XDGPaths = true;
-                var dataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string dataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 Directory.CreateDirectory(PathEverest = Path.Combine(dataDir, "Everest"));
                 Directory.CreateDirectory(Path.Combine(dataDir, "Everest", "Mods")); // Make sure it exists before content gets initialized
             }
@@ -367,13 +364,6 @@ namespace Celeste.Mod {
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
-            if (!Flags.IsDisabled && !Flags.IsDisabled) {
-                // 0.1 parses into 1 in regions using ,
-                // This also somehow sets the exception message language to English.
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-            }
-
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
@@ -384,6 +374,7 @@ namespace Celeste.Mod {
             }
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
+            STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
 
             // Register our core module and load any other modules.
             new CoreModule().Register();
@@ -406,7 +397,7 @@ namespace Celeste.Mod {
 
             Loader.LoadAuto();
 
-            if (!Flags.IsHeadless && !Flags.IsDisabled) {
+            if (!Flags.IsHeadless) {
                 // Load stray .bins afterwards.
                 Content.Crawl(new MapBinsInModsModContent(Path.Combine(PathEverest, "Mods")));
             }
@@ -432,17 +423,15 @@ namespace Celeste.Mod {
         internal static void Initialize() {
             // Initialize misc stuff.
             if (Content._DumpAll)
-                    Content.DumpAll();
+                Content.DumpAll();
 
             TextInput.Initialize(Celeste.Instance);
-            if (!Flags.IsDisabled) {
-                Discord.Initialize();
-            }
 
             // Add the previously created managers.
             if (TouchInputManager.Instance != null)
                 Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
+            Celeste.Instance.Components.Add(STAThreadHelper.Instance);
 
             foreach (EverestModule mod in _Modules)
                 mod.Initialize();
@@ -644,6 +633,7 @@ namespace Celeste.Mod {
                 Tracker.Initialize();
                 module.Initialize();
                 Input.Initialize();
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
 
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
@@ -800,6 +790,10 @@ namespace Celeste.Mod {
                 _Modules.RemoveAt(index);
             }
 
+            if (_Initialized) {
+                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
+            }
+
             InvalidateInstallationHash();
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
@@ -867,12 +861,12 @@ namespace Celeste.Mod {
         }
 
         public static void SlowFullRestart() {
-            Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_SlowFullRestart(Engine.Scene is Overworld)));
+            BlackScreen scene = new BlackScreen();
+            scene.HelperEntity.Add(new Coroutine(_SlowFullRestart(Engine.Scene is Overworld, scene)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _SlowFullRestart(bool fromOverworld) {
+        private static IEnumerator _SlowFullRestart(bool fromOverworld, BlackScreen scene) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
@@ -884,7 +878,7 @@ namespace Celeste.Mod {
             }
 
             Events.Celeste.OnShutdown += BOOT.StartCelesteProcess;
-            Engine.Instance.Exit();
+            scene.RunAfterRender = () => Engine.Instance.Exit();
             yield break;
         }
 

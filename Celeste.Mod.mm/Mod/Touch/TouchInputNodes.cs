@@ -1,28 +1,9 @@
-﻿using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input.Touch;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using Monocle;
 
 namespace Celeste.Mod {
     public static class TouchInputNodes {
 
-        public class Button : VirtualButton.Node {
+        public class Button : patch_VirtualButton_InputV2.Node {
             public readonly ATouchRegion Region;
             public Button(ATouchRegion region) {
                 Region = region;

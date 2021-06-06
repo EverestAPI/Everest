@@ -2,10 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
-using Celeste.Mod.Entities;
 using Celeste.Mod.Meta;
-using Celeste.Mod.UI;
-using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -21,14 +18,16 @@ namespace Celeste {
 
         private static WeakReference<Thread> LastLoadingThread;
 
-        public patch_LevelLoader(Session session, Vector2? startPosition = default(Vector2?))
+        public patch_LevelLoader(Session session, Vector2? startPosition = default)
             : base(session, startPosition) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor(Session session, Vector2? startPosition = default(Vector2?));
+        public extern void orig_ctor(Session session, Vector2? startPosition = default);
         [MonoModConstructor]
-        public void ctor(Session session, Vector2? startPosition = default(Vector2?)) {
+        public void ctor(Session session, Vector2? startPosition = default) {
+            Logger.Log(LogLevel.Info, "LevelLoader", "Loading level " + session?.Area.GetSID());
+
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
                 (lastThread?.IsAlive ?? false)) {
@@ -101,7 +100,7 @@ namespace Celeste {
             path = meta?.Sprites;
             if (!string.IsNullOrEmpty(path)) {
                 SpriteBank bankOrig = GFX.SpriteBank;
-                SpriteBank bankMod = new SpriteBank(GFX.Game, path);
+                SpriteBank bankMod = new SpriteBank(GFX.Game, getModdedSpritesXml(path));
 
                 foreach (KeyValuePair<string, SpriteData> kvpBank in bankMod.SpriteData) {
                     string key = kvpBank.Key;
@@ -148,6 +147,12 @@ namespace Celeste {
             foreach (Queue<Entity> entities in ((patch_Pooler) Engine.Pooler).Pools.Values) {
                 entities.Clear();
             }
+        }
+
+        private XmlDocument getModdedSpritesXml(string path) {
+            XmlDocument vanillaSpritesXml = patch_Calc.orig_LoadContentXML(Path.Combine("Graphics", "Sprites.xml"));
+            XmlDocument modSpritesXml = Calc.LoadContentXML(path);
+            return patch_SpriteBank.GetSpriteBankExcludingVanillaCopyPastes(vanillaSpritesXml, modSpritesXml, path);
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...

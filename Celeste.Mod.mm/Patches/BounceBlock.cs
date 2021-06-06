@@ -8,7 +8,7 @@ namespace Celeste {
     // : Solid because base.Added
     class patch_BounceBlock : Solid {
 
-        // We're effectively in IntroCrusher, but still need to "expose" private fields to our mod.
+        // We're effectively in BounceBlock, but still need to "expose" private fields to our mod.
         private bool iceMode;
         private bool iceModeNext;
 

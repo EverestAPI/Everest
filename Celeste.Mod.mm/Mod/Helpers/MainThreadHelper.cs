@@ -1,24 +1,11 @@
-﻿using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input.Touch;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
+﻿using Microsoft.Xna.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 
 namespace Celeste.Mod {
     public class MainThreadHelper : GameComponent {
@@ -74,12 +61,12 @@ namespace Celeste.Mod {
             }
 
             lock (Queue) {
-                T result = default(T);
+                T result = default;
                 Task<T> proxy = new Task<T>(() => result);
                 MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
 
                 Queue.Enqueue(() => {
-                    result = f != null ? f.Invoke() : default(T);
+                    result = f != null ? f.Invoke() : default;
                     proxy.Start();
                 });
 
@@ -96,13 +83,13 @@ namespace Celeste.Mod {
                 if (!Enqueued.Add(key))
                     return (MaybeAwaitable<T>) EnqueuedWaiting[key];
 
-                T result = default(T);
+                T result = default;
                 Task<T> proxy = new Task<T>(() => result);
                 MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
                 EnqueuedWaiting[key] = awaitable;
 
                 Queue.Enqueue(() => {
-                    result = f != null ? f.Invoke() : default(T);
+                    result = f != null ? f.Invoke() : default;
                     proxy.Start();
                     lock (Queue) {
                         EnqueuedWaiting.Remove(key);
@@ -125,7 +112,9 @@ namespace Celeste.Mod {
                             action = Queue.Dequeue();
                         }
                     }
-                    action?.Invoke();
+                    if (action == null)
+                        break;
+                    action.Invoke();
                 }
                 stopwatch.Stop();
             }
@@ -151,7 +140,7 @@ namespace Celeste.Mod {
         public MaybeAwaitable(TaskAwaiter<T> task) {
             _Awaiter = new MaybeAwaiter();
             _Awaiter._IsImmediate = false;
-            _Awaiter._Result = default(T);
+            _Awaiter._Result = default;
             _Awaiter._Task = task;
         }
 

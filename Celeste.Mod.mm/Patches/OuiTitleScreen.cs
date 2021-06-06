@@ -1,19 +1,14 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections;
-using Celeste.Mod.Core;
-using Celeste.Mod.UI;
 
 namespace Celeste {
     class patch_OuiTitleScreen : OuiTitleScreen {
@@ -60,21 +55,19 @@ namespace Celeste {
             vanillaTitle = title;
             vanillaReflections = reflections;
 
-            if (!Everest.Flags.IsDisabled) {
-                everestLogo = new Image(GFX.Gui["logo_everest"]);
-                everestLogo.CenterOrigin();
-                everestLogo.Position = new Vector2(1920f, 1080f) / 2f;
+            everestLogo = new Image(GFX.Gui["logo_everest"]);
+            everestLogo.CenterOrigin();
+            everestLogo.Position = new Vector2(1920f, 1080f) / 2f;
 
-                everestTitle = GFX.Gui["title_everest"];
+            everestTitle = GFX.Gui["title_everest"];
 
-                everestReflections = new List<MTexture>();
-                for (int i = everestTitle.Height - 4; i > 0; i -= 4)
-                    everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
+            everestReflections = new List<MTexture>();
+            for (int i = everestTitle.Height - 4; i > 0; i -= 4)
+                everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
 
-                arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
+            arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
 
-                version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
-            }
+            version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
 
             // Initialize DebugRC here, as the play mode can change during the intro.
             Everest.DebugRC.Initialize();
@@ -141,10 +134,6 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-            if (Everest.Flags.IsDisabled) {
-                orig_Render();
-                return;
-            }
 
             if (CoreModule.Settings.ShowEverestTitleScreen) {
                 logo = everestLogo;

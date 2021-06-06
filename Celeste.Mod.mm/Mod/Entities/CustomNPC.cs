@@ -1,10 +1,10 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
-using System.Collections;
-using System.Text.RegularExpressions;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/npc")]
@@ -32,7 +32,8 @@ namespace Celeste.Mod.Entities {
         public event Action<int> OnStart;
         public event Action OnEnd;
 
-        public CustomNPC(EntityData data, Vector2 offset, EntityID id) : base(data.Position + offset) {
+        public CustomNPC(EntityData data, Vector2 offset, EntityID id)
+            : base(data.Position + offset) {
             this.id = id;
 
             spritePath = data.Attr("sprite", ""); // Path is from Graphics/Atlases/Gameplay/characters
@@ -51,15 +52,22 @@ namespace Celeste.Mod.Entities {
             if (data.Bool("flipY", false))
                 scale.Y = -1;
 
-            string extension = Path.GetExtension(spritePath);
-            if (!string.IsNullOrEmpty(extension))
-                spritePath = spritePath.Replace(extension, "");
-            spritePath = Path.Combine("characters", spritePath).Replace('\\', '/');
-            name = Regex.Replace(spritePath, "\\d+$", string.Empty);
+            if (!string.IsNullOrEmpty(spritePath)) {
+                string extension = Path.GetExtension(spritePath);
+                if (!string.IsNullOrEmpty(extension))
+                    spritePath = spritePath.Replace(extension, "");
+                spritePath = Path.Combine("characters", spritePath).Replace('\\', '/');
+                name = Regex.Replace(spritePath, "\\d+$", string.Empty);
 
-            textures = GFX.Game.GetAtlasSubtextures(name);
-            if (textures != null && textures.Count > 1)
-                animated = true;
+                textures = GFX.Game.GetAtlasSubtextures(name);
+                if (textures != null && textures.Count > 1)
+                    animated = true;
+            } else {
+                // spritePath is empty: we don't want any sprite.
+                spritePath = null;
+                name = null;
+                textures = null;
+            }
 
             frame = 0;
         }

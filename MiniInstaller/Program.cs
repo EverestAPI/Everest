@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Celeste.Mod;
-using System.Reflection;
+﻿using Celeste.Mod.Helpers;
+using System;
 using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading;
-using Celeste.Mod.Helpers;
+using System.Xml;
 
 namespace MiniInstaller {
     public class Program {
@@ -67,6 +64,8 @@ namespace MiniInstaller {
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
                     MakeLargeAddressAware(PathEverestExe);
+                    CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
+
 
                     // If we're updating, start the game. Otherwise, close the window. 
                     if (PathUpdate != null) {
@@ -74,15 +73,22 @@ namespace MiniInstaller {
                     }
 
                 } catch (Exception e) {
+                    string msg = e.ToString();
                     LogLine("");
-                    LogLine(e.ToString());
+                    LogLine(msg);
                     LogLine("");
                     LogLine("Installing Everest failed.");
-                    LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
-                    LogLine("");
-                    LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
-                    LogLine("or join the #modding_help channel on Discord (invite in the repo).");
-                    LogLine("Make sure to upload your miniinstaller-log.txt");
+                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework")) {
+                        LogLine("Please run the game at least once to install missing dependencies.");
+                    } else {
+                        if (msg.Contains("--->")) {
+                            LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
+                        }
+                        LogLine("");
+                        LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                        LogLine("or join the #modding_help channel on Discord (invite in the repo).");
+                        LogLine("Make sure to upload your log file.");
+                    }
                     return 1;
                 }
 
@@ -126,6 +132,7 @@ namespace MiniInstaller {
 
         public static bool SetupPaths() {
             PathGame = Directory.GetCurrentDirectory();
+            Console.WriteLine(PathGame);
 
             if (Path.GetFileName(PathGame) == "everest-update" &&
                 File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
@@ -326,6 +333,78 @@ namespace MiniInstaller {
                 return e.Name == asm.FullName || e.Name == asm.GetName().Name ? asm : null;
             };
             return asm;
+        }
+
+        static void CombineXMLDoc(string xmlFrom, string xmlTo) {
+            LogLine("Combining Documentation");
+            XmlDocument from = new XmlDocument();
+            XmlDocument to = new XmlDocument();
+
+            // Not worth crashing over.
+            try {
+                from.Load(xmlFrom);
+                to.Load(xmlTo);
+            } catch (FileNotFoundException e) {
+                LogLine(e.Message);
+                LogLine("Documentation combining aborted.");
+                return;
+            }
+
+            XmlNodeList members = from.DocumentElement.LastChild.ChildNodes;
+
+            // Reverse for loop so that we can remove nodes without breaking everything
+            for (int i = members.Count - 1; i >= 0; i--) { 
+                XmlNode node = members[i];
+                XmlAttribute name = node.Attributes["name"];
+                string noPatch = name.Value.Replace("patch_", "");
+                if (!noPatch.Equals(name.Value)) {
+                    // Remove internal inheritdoc members that would otherwise override "vanilla" celeste members.
+                    if (node.SelectNodes($"inheritdoc[@cref='{noPatch}']").Count == 1) {
+                        node.ParentNode.RemoveChild(node);
+                        continue;
+                    }
+                    name.Value = noPatch;
+                }
+
+                // Fix up any references to patch_ class members.
+                foreach (XmlAttribute cref in node.SelectNodes(".//@cref"))
+                    cref.Value = cref.Value.Replace("patch_", "");
+
+                // I couldn't find a way to just do this for all orig_ methods, so an <origdoc/> tag needs to be manually added to them.
+                // And of course there also doesn't seem to be support for adding custom tags to the xmldoc prompts -_-
+                if (node.ChildNodes.Count == 1 && node.FirstChild.LocalName.Equals("origdoc")) {
+                    XmlNode origDoc = from.CreateElement("summary");
+                    CreateOrigDoc(node.FirstChild, ref origDoc);
+                    node.RemoveChild(node.FirstChild);
+                    node.AppendChild(origDoc);
+                }
+            }
+
+            // Remove any pre-existing Everest docs
+            members = to.DocumentElement.ChildNodes;
+            for (int i = members.Count - 1; i >= 0; i--) {
+                XmlNode node = members[i];
+                if (node.Attributes?["name"] != null && node.Attributes["name"].Value == "Everest") {
+                    to.DocumentElement.RemoveChild(node);
+                }
+            }
+
+            // Add an Everest tag onto the docs to be added
+            XmlAttribute attrib = from.CreateAttribute("name");
+            attrib.Value = "Everest";
+            from.DocumentElement.LastChild.Attributes.Append(attrib);
+
+            to.DocumentElement.AppendChild(to.ImportNode(from.DocumentElement.LastChild, true));
+            to.Save(xmlTo);
+        }
+
+        static void CreateOrigDoc(XmlNode node, ref XmlNode origDoc) {
+            string cref = node.Attributes["cref"]?.Value;
+            if (cref == null) {
+                cref = node.ParentNode.Attributes["name"].Value.Replace("orig_", "");
+            }
+
+            origDoc.InnerXml = "Vanilla Method. Use <see cref=\"" + cref + "\"/> instead.";
         }
 
     }

@@ -1,9 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using Monocle;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
 using MonoMod.Utils;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/customBirdTutorial")]
@@ -29,11 +29,15 @@ namespace Celeste.Mod.Entities {
             { "DownRight", new Vector2(1, 1) }
         };
 
-        public CustomBirdTutorial(EntityData data, Vector2 offset) : base(data, offset) {
+        public CustomBirdTutorial(EntityData data, Vector2 offset)
+            : base(data, offset) {
             BirdId = data.Attr("birdId");
             onlyOnce = data.Bool("onlyOnce");
             caw = data.Bool("caw");
             Facing = data.Bool("faceLeft") ? Facings.Left : Facings.Right;
+
+            // apply the facing immediately
+            Sprite.Scale.X = (float) Facing;
 
             object info;
             object[] controls;
@@ -63,6 +67,21 @@ namespace Celeste.Mod.Entities {
                 if (modCommand != null) {
                     // this is a command a mod registered.
                     controls[i] = modCommand;
+                } else if (controlString.StartsWith("mod:")) {
+                    // formatted like `mod:MaxHelpingHand/ShowHints`
+                    string[] autoBinding = controlString.Substring(4).Split('/');
+                    EverestModule module = Everest.Modules.FirstOrDefault(m => m.Metadata.Name == autoBinding[0]);
+                    if (module?.SettingsType != null) {
+                        PropertyInfo matchingInput = module.SettingsType.GetProperty(autoBinding[1]);
+                        ButtonBinding val = matchingInput?.GetGetMethod()?.Invoke(module._Settings, null) as ButtonBinding;
+                        if (val?.Button != null) {
+                            controls[i] = val.Button;
+                        } else {
+                            Logger.Log(LogLevel.Warn, "CustomBird", $"Public ButtonBinding property not found in {module.SettingsType}. ControlString: {controlString}");
+                        }
+                    } else {
+                        Logger.Log(LogLevel.Warn, "CustomBird", "EverestModule or EverestModule.SettingsType not found. ControlString: " + controlString);
+                    }
                 } else if (GFX.Gui.Has(controlString)) {
                     // this is a texture.
                     controls[i] = GFX.Gui[controlString];

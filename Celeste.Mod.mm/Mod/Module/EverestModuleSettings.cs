@@ -1,12 +1,4 @@
-﻿using FMOD.Studio;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
+﻿using System;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -68,6 +60,17 @@ namespace Celeste.Mod {
         public int Max;
         public SettingMaxLengthAttribute(int max) {
             Max = max;
+        }
+    }
+
+    /// <summary>
+    /// Allows setting the minimum length of a string setting.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingMinLengthAttribute : Attribute {
+        public int Min;
+        public SettingMinLengthAttribute(int min) {
+            Min = min;
         }
     }
 

@@ -5,21 +5,18 @@ using Celeste.Mod.Meta;
 using Jdenticon;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Xml;
 
 namespace Celeste {
     class patch_AreaComplete : AreaComplete {
 
         private static string versionFull;
+        private static float versionOffset;
         private static Texture2D identicon;
         private static float everestTime;
         private static bool isPieScreen; // on the pie screen, we should display the jdenticon on the left side of the screen, instead of the middle.
@@ -41,19 +38,32 @@ namespace Celeste {
         public override void Begin() {
             base.Begin();
 
-            InitAreaCompleteInfoForEverest(pieScreen: false);
+            InitAreaCompleteInfoForEverest2(false, Session);
 
             buttonTimerDelay = 2.2f;
             buttonTimerEase = 0f;
         }
 
+        // Backwards compatibility with Spring Collab 2020 and possibly other mods.
+        [MethodImpl(MethodImplOptions.NoInlining)]
         public static void InitAreaCompleteInfoForEverest(bool pieScreen) {
-            if (Everest.Flags.IsDisabled)
-                return;
+            InitAreaCompleteInfoForEverest2(pieScreen, null);
+        }
+
+        public static void InitAreaCompleteInfoForEverest2(bool pieScreen, Session session) {
+            versionOffset = 0;
 
             if (Settings.Instance.SpeedrunClock > SpeedrunType.Off) {
                 versionFull = $"{Celeste.Instance.Version}\n{Everest.Build}";
 
+                if (session != null &&
+                    Everest.Content.TryGet($"Maps/{AreaData.Get(session).Mode[(int) session.Area.Mode].Path}", out ModAsset asset) &&
+                    asset.Source.Mod?.Multimeta?.Length >= 1) {
+                    versionFull = $"{versionFull}\n{asset.Source.Mod.Multimeta[0].Version}";
+                    versionOffset -= 32;
+                }
+
+                identicon?.Dispose();
                 using (Stream stream = Identicon.FromHash(Everest.InstallationHash, 100).SaveAsPng())
                     identicon = Texture2D.FromStream(Celeste.Instance.GraphicsDevice, stream);
             }
@@ -110,20 +120,14 @@ namespace Celeste {
         }
 
         public static void DisposeAreaCompleteInfoForEverest() {
-            if (Everest.Flags.IsDisabled)
-                return;
 
             identicon?.Dispose();
             identicon = null;
         }
 
+        [PatchAreaCompleteVersionNumberAndVariants]
         public static extern void orig_VersionNumberAndVariants(string version, float ease, float alpha);
-        [MonoModNoNew]
         public static new void VersionNumberAndVariants(string version, float ease, float alpha) {
-            if (Everest.Flags.IsDisabled) {
-                orig_VersionNumberAndVariants(version, ease, alpha);
-                return;
-            }
 
             everestTime += Engine.RawDeltaTime;
 

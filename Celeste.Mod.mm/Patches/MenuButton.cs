@@ -1,18 +1,8 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
-using MonoMod;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     abstract class patch_MenuButton : MenuButton {
@@ -56,7 +46,7 @@ namespace Celeste {
         // We thus expose any new members through extensions.
 
         /// <summary>
-        /// Set the button's inner selectted value.
+        /// Set the button's inner selected value.
         /// </summary>
         public static void SetSelected(this MenuButton self, bool value)
             => ((patch_MenuButton) self)._Selected = value;

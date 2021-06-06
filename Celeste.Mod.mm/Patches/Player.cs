@@ -1,6 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
@@ -59,8 +58,7 @@ namespace Celeste {
 
             framesAlive = int.MaxValue;
 
-            Level level = Scene as Level;
-            if (level != null) {
+            if (Scene is Level) {
                 framesAlive = 0;
             }
 
@@ -160,6 +158,9 @@ namespace Celeste {
             orig_WallJump(dir);
         }
 
+        /// <summary>
+        /// Get the current player dash trail color.
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         public Color GetCurrentTrailColor() => GetTrailColor(wasDashB);
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -202,9 +203,7 @@ namespace Celeste {
         // Mods can't access patch_ classes directly.
         // We thus expose any new members through extensions.
 
-        /// <summary>
-        /// Get the current player dash trail color.
-        /// </summary>
+        /// <inheritdoc cref="patch_Player.GetCurrentTrailColor"/>
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
 

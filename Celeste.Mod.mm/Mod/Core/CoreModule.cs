@@ -1,27 +1,19 @@
 ﻿using Celeste.Editor;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
-using Monocle;
-using Celeste;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reflection;
-using System.IO;
-using Celeste.Mod.Helpers;
-using MonoMod.Utils;
 using Microsoft.Xna.Framework.Input;
-using System.Threading;
-using Stopwatch = System.Diagnostics.Stopwatch;
-using System.Text.RegularExpressions;
+using Mono.Cecil.Cil;
+using Monocle;
+using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using NLua;
-using MonoMod.Cil;
-using Mono.Cecil.Cil;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -56,7 +48,11 @@ namespace Celeste.Mod.Core {
         public override void LoadSettings() {
             base.LoadSettings();
 
-            // If we're running in an environment that prefers those flag, forcibly enable them.
+            // The field can be set to true by default without the setter being called by YamlDotNet.
+            if (Settings.DiscordRichPresence)
+                Everest.Discord.Initialize();
+
+            // If we're running in an environment that prefers this flag, forcibly enable them.
             Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
 
             // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
@@ -116,8 +112,7 @@ namespace Celeste.Mod.Core {
                     return;
                 }
 
-                Level level = Engine.Scene as Level;
-                if (level == null)
+                if (!(Engine.Scene is Level level))
                     return;
 
                 AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
@@ -128,8 +123,7 @@ namespace Celeste.Mod.Core {
 
             // F6: Open map editor for current level.
             Engine.Commands.FunctionKeyActions[5] = () => {
-                Level level = Engine.Scene as Level;
-                if (level == null)
+                if (!(Engine.Scene is Level level))
                     return;
                 Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;
@@ -143,7 +137,7 @@ namespace Celeste.Mod.Core {
                     ((Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false) ||
                     (Engine.Scene is GameLoader)
                 ,
-                Button = Input.MenuConfirm
+                Button = (patch_VirtualButton_InputV2) Input.MenuConfirm
             };
         }
 
@@ -210,9 +204,6 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
-            if (Everest.Flags.IsDisabled)
-                return;
-
             int index;
 
             // Find the options button and place our button below it.
@@ -236,7 +227,7 @@ namespace Celeste.Mod.Core {
         }
 
         public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
-            if (Everest.Flags.IsDisabled || !Settings.ShowModOptionsInGame)
+            if (!Settings.ShowModOptionsInGame)
                 return;
 
             List<TextMenu.Item> items = menu.GetItems();
@@ -303,6 +294,7 @@ namespace Celeste.Mod.Core {
                 List<TextMenu.Item> items = menu.GetItems();
 
                 // change the "key config" labels
+
                 (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
                 (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
 

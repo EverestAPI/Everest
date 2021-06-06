@@ -4,15 +4,9 @@ using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Monocle {
     class patch_MTexture : MTexture {
@@ -73,6 +67,9 @@ namespace Monocle {
                 _ScaleFix = 1f;
         }
 
+        /// <summary>
+        /// Override the given MTexutre with the given VirtualTexture and parameters.
+        /// </summary>
         public void SetOverride(VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight) {
             if (!_HasOrig) {
                 _OrigTexture = Texture;
@@ -91,6 +88,9 @@ namespace Monocle {
             SetUtil();
         }
 
+        /// <summary>
+        /// Override the given MTexutre with the given mod asset.
+        /// </summary>
         public void SetOverride(ModAsset asset) {
             if (!_HasOrig && Texture.GetMetadata() == asset) {
                 Metadata = asset;
@@ -128,6 +128,9 @@ namespace Monocle {
             }
         }
 
+        /// <summary>
+        /// Undo the latest override applied to the given MTexture.
+        /// </summary>
         public void UndoOverride() {
             if (_ModAssets != null && _ModAssets.Count > 0) {
                 _ModAssets.RemoveAt(_ModAssets.Count - 1);
@@ -150,6 +153,9 @@ namespace Monocle {
             _HasOrig = false;
         }
 
+        /// <summary>
+        /// Undo the given override applied to the given MTexture.
+        /// </summary>
         public void UndoOverride(ModAsset asset) {
             if (asset == Metadata) {
                 Atlas atlas = Atlas;
@@ -807,27 +813,19 @@ namespace Monocle {
         public static Atlas GetAtlas(this MTexture self)
             => ((patch_MTexture) self).Atlas;
 
-        /// <summary>
-        /// Override the given MTexutre with the given VirtualTexture and parameters.
-        /// </summary>
+        /// <inheritdoc cref="patch_MTexture.SetOverride(VirtualTexture, Vector2, int, int)"/>
         public static void SetOverride(this MTexture self, VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight)
             => ((patch_MTexture) self).SetOverride(texture, drawOffset, frameWidth, frameHeight);
 
-        /// <summary>
-        /// Override the given MTexutre with the given mod asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_MTexture.SetOverride(ModAsset)"/>
         public static void SetOverride(this MTexture self, ModAsset asset)
             => ((patch_MTexture) self).SetOverride(asset);
 
-        /// <summary>
-        /// Undo the latest override applied to the given MTexture.
-        /// </summary>
+        /// <inheritdoc cref="patch_MTexture.UndoOverride()"/>
         public static void UndoOverride(this MTexture self)
             => ((patch_MTexture) self).UndoOverride();
 
-        /// <summary>
-        /// Undo the given override applied to the given MTexture.
-        /// </summary>
+        /// <inheritdoc cref="patch_MTexture.UndoOverride(ModAsset)"/>
         public static void UndoOverride(this MTexture self, ModAsset asset)
             => ((patch_MTexture) self).UndoOverride(asset);
 

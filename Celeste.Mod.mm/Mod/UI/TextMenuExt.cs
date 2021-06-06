@@ -1,13 +1,8 @@
-﻿using FMOD.Studio;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
-using Steamworks;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     public static partial class TextMenuExt {
@@ -57,6 +52,10 @@ namespace Celeste {
 
             public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1f;
+            public Vector2 Scale { get; set; } = Vector2.One;
+
+            public override float Height() => base.Height() * Scale.Y;
+            public override float LeftWidth() => base.LeftWidth() * Scale.X;
 
             public ButtonExt(string label, string icon = null)
                 : base(label) {
@@ -85,12 +84,12 @@ namespace Celeste {
                     ref textPosition
                 );
 
-                ActiveFont.DrawOutline(Label, textPosition, justify, Vector2.One, textColor, 2f, strokeColor);
+                ActiveFont.DrawOutline(Label, textPosition, justify, Scale, textColor, 2f, strokeColor);
             }
 
         }
 
-        public class SubHeaderExt : TextMenu.SubHeader, IItemExt {
+        public class SubHeaderExt : patch_TextMenu.patch_SubHeader, IItemExt {
 
             public Color TextColor { get; set; } = Color.Gray;
 
@@ -241,7 +240,7 @@ namespace Celeste {
         }
 
         /// <summary>
-        /// Convenience class for creating a <see cref="TextMenu.Option{T}"/> from an enum class.<br></br>
+        /// Convenience class for creating a <see cref="TextMenu.Option{T}"/> from an <see cref="Enum"/>.<br></br>
         /// Not to be confused with <see cref="EnumerableSlider{T}"/>
         /// </summary>
         /// <typeparam name="T">Enum Type</typeparam>
@@ -284,7 +283,7 @@ namespace Celeste {
             /// Creates a new <see cref="EnumerableSlider{T}"/>
             /// </summary>
             /// <param name="label">Slider label</param>
-            /// <param name="options">IEnumerable of type <see cref="KeyValuePair{T, string}"/></param>
+            /// <param name="options">IEnumerable containing <typeparamref name="T"/>, <see cref="string"/> pairs.</param>
             /// <param name="startValue">Initial value</param>
             public EnumerableSlider(string label, IEnumerable<KeyValuePair<T, string>> options, T startValue)
                 : base(label) {
@@ -303,6 +302,7 @@ namespace Celeste {
             public int Index;
             public Action<int> OnValueChange;
             public int PreviousIndex;
+
             private float sine;
             private int lastDir;
             private int min;
@@ -323,13 +323,17 @@ namespace Celeste {
                 this.max = max;
                 Index = (value < min) ? min : (value > max) ? max : value;
             }
+
+            /// <inheritdoc cref="TextMenu.Option{T}.Change(Action{T})"/>
             public IntSlider Change(Action<int> action) {
                 OnValueChange = action;
                 return this;
             }
+
             public override void Added() {
                 Container.InnerContent = TextMenu.InnerContentMode.TwoColumn;
             }
+
             public override void LeftPressed() {
                 if (Input.MenuLeft.Repeating)
                     fastMoveTimer += Engine.DeltaTime * 8;
@@ -346,6 +350,7 @@ namespace Celeste {
                     OnValueChange?.Invoke(Index);
                 }
             }
+
             public override void RightPressed() {
                 if (Input.MenuRight.Repeating)
                     fastMoveTimer += Engine.DeltaTime * 8;
@@ -362,6 +367,7 @@ namespace Celeste {
                     OnValueChange?.Invoke(Index);
                 }
             }
+
             public override void ConfirmPressed() {
                 if ((max - min) == 1) {
                     if (Index == min) {
@@ -380,14 +386,17 @@ namespace Celeste {
             public override void Update() {
                 sine += Engine.RawDeltaTime;
             }
+
             public override float LeftWidth() {
                 return ActiveFont.Measure(Label).X + 32f;
             }
+
             public override float RightWidth() {
                 // Measure Index in case it is externally set ouside the bounds
                 float width = Calc.Max(0f, ActiveFont.Measure(max.ToString()).X, ActiveFont.Measure(min.ToString()).X, ActiveFont.Measure(Index.ToString()).X);
                 return width + 120f;
             }
+
             public override float Height() {
                 return ActiveFont.LineHeight;
             }
@@ -414,19 +423,22 @@ namespace Celeste {
 
         /// <summary>
         /// <see cref="TextMenu.Item"/> that acts as a Submenu for other Items.
-        /// <br></br><br></br>
+        /// <br/><br/>
         /// Currently does not support recursive submenus
         /// </summary>
         public class SubMenu : TextMenu.Item {
             public string Label;
             MTexture Icon;
 
+            /// <inheritdoc cref="patch_TextMenu.Items"/>
             public List<TextMenu.Item> Items { get; private set; }
 
             private List<TextMenu.Item> delayedAddItems;
 
+            /// <inheritdoc cref="TextMenu.Selection"/>
             public int Selection;
 
+            /// <inheritdoc cref="TextMenu.Current"/>
             public TextMenu.Item Current {
                 get {
                     if (Items.Count <= 0 || Selection < 0) {
@@ -439,6 +451,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.FirstPossibleSelection"/>
             public int FirstPossibleSelection {
                 get {
                     for (int i = 0; i < Items.Count; i++) {
@@ -450,6 +463,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.LastPossibleSelection"/>
             public int LastPossibleSelection {
                 get {
                     for (int i = Items.Count - 1; i >= 0; i--) {
@@ -461,18 +475,22 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.ScrollTargetY"/>
             public float ScrollTargetY {
                 get {
                     float min = Engine.Height - 150f - Container.Height * Container.Justify.Y;
                     float max = 150f + Container.Height * Container.Justify.Y;
-                    return Calc.Clamp((float) (Engine.Height / 2) + Container.Height * Container.Justify.Y - GetYOffsetOf(Current), min, max);
+                    return Calc.Clamp((Engine.Height / 2) + Container.Height * Container.Justify.Y - GetYOffsetOf(Current), min, max);
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.ItemSpacing"/>
             public float ItemSpacing;
             public float ItemIndent;
+            /// <inheritdoc cref="TextMenu.HighlightColor"/>
             private Color HighlightColor;
             public string ConfirmSfx;
+
             public bool AlwaysCenter;
 
             public float LeftColumnWidth;
@@ -489,7 +507,7 @@ namespace Celeste {
             private bool containerAutoScroll;
 
             /// <summary>
-            /// 
+            /// Create a new SubMenu.
             /// </summary>
             /// <param name="label"></param>
             /// <param name="enterOnSelect">Expand submenu when selected</param>
@@ -593,24 +611,31 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.Clear"/>
             public void Clear() {
                 Items = new List<TextMenu.Item>();
             }
 
+            /// <inheritdoc cref="TextMenu.IndexOf(TextMenu.Item)"/>
             public int IndexOf(TextMenu.Item item) {
                 return Items.IndexOf(item);
             }
 
+            /// <inheritdoc cref="TextMenu.FirstSelection"/>
             public void FirstSelection() {
                 Selection = -1;
                 MoveSelection(1, false);
             }
 
+            /// <summary>
+            /// Set the selection to the last possible <see cref="TextMenu.Item"/>.
+            /// </summary>
             public void LastSelection() {
                 Selection = LastPossibleSelection;
                 MoveSelection(0, false);
             }
 
+            /// <inheritdoc cref="TextMenu.MoveSelection(int, bool)"/>
             public void MoveSelection(int direction, bool wiggle = false) {
                 int selection = Selection;
                 direction = Math.Sign(direction);
@@ -658,6 +683,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.RecalculateSize"/>
             public void RecalculateSize() {
                 TitleHeight = ActiveFont.LineHeight;
                 if (Items.Count < 1)
@@ -682,6 +708,7 @@ namespace Celeste {
                 MenuHeight -= Container.ItemSpacing;
             }
 
+            /// <inheritdoc cref="TextMenu.GetYOffsetOf(TextMenu.Item)"/>
             public float GetYOffsetOf(TextMenu.Item item) {
                 if (item == null) {
                     return 0f;
@@ -695,7 +722,7 @@ namespace Celeste {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
+                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
             }
 
             public void Exit() {
@@ -855,7 +882,7 @@ namespace Celeste {
 
         /// <summary>
 		/// <see cref="TextMenu.Item"/> that acts as a Slider of Submenus for other Items.
-		/// <br></br><br></br>
+		/// <br/><br/>
 		/// Currently does not support recursive submenus
 		/// </summary>
 		public class OptionSubMenu : TextMenu.Item {
@@ -870,17 +897,25 @@ namespace Celeste {
             public int MenuIndex;
 
             private int InitialSelection;
+            ///<inheritdoc cref="TextMenu.Selection"/>
             public int Selection;
 
             private int lastDir;
             private float sine;
 
+            /// <summary>
+            /// Invoked when the selected menu is changed.
+            /// </summary>
             public Action<int> OnValueChange;
 
+            /// <summary>
+            /// The selected set of <see cref="TextMenu.Item"/>s.
+            /// </summary>
             public List<TextMenu.Item> CurrentMenu {
                 get { return (Menus.Count > 0) ? Menus[MenuIndex].Item2 : null; }
             }
 
+            /// <inheritdoc cref="TextMenu.Current"/>
             public TextMenu.Item Current {
                 get {
                     if (CurrentMenu.Count <= 0 || Selection < 0) {
@@ -890,6 +925,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.FirstPossibleSelection"/>
             public int FirstPossibleSelection {
                 get {
                     for (int i = 0; i < CurrentMenu.Count; i++) {
@@ -901,6 +937,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.LastPossibleSelection"/>
             public int LastPossibleSelection {
                 get {
                     for (int i = CurrentMenu.Count - 1; i >= 0; i--) {
@@ -912,6 +949,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.ScrollTargetY"/>
             public float ScrollTargetY {
                 get {
                     float min = Engine.Height - 150 - Container.Height * Container.Justify.Y;
@@ -920,6 +958,7 @@ namespace Celeste {
                 }
             }
 
+            /// <inheritdoc cref="TextMenu.ItemSpacing"/>
             public float ItemSpacing;
             public float ItemIndent;
 
@@ -1009,12 +1048,14 @@ namespace Celeste {
                 Menus = new List<Tuple<string, List<TextMenu.Item>>>();
             }
 
+            /// <inheritdoc cref="TextMenu.FirstSelection"/>
             public void FirstSelection() {
                 Selection = -1;
                 if (CurrentMenu.Count > 0)
                     MoveSelection(1, true);
             }
 
+            /// <inheritdoc cref="TextMenu.MoveSelection(int, bool)"/>
             public void MoveSelection(int direction, bool wiggle = false) {
                 int selection = Selection;
                 direction = Math.Sign(direction);
@@ -1092,13 +1133,16 @@ namespace Celeste {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this);
+                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
             }
 
             #endregion
 
             #region TextMenu.Item
 
+            /// <summary>
+            /// Set the action to be invoked when the selected menu is changed.
+            /// </summary>
             public OptionSubMenu Change(Action<int> onValueChange) {
                 OnValueChange = onValueChange;
                 return this;

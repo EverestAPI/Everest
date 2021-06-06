@@ -1,12 +1,8 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     public class OuiVersionList : Oui, OuiModOptions.ISubmenu {
@@ -31,7 +27,7 @@ namespace Celeste.Mod.UI {
 
             menu.Add(new TextMenu.Header(Dialog.Clean("updater_versions_title")));
 
-            menu.Add(new TextMenu.SubHeader(Dialog.Clean("updater_versions_current").Replace("((version))", Everest.BuildString)));
+            menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("updater_versions_current").Replace("((version))", Everest.BuildString)));
 
             ReloadItems();
 

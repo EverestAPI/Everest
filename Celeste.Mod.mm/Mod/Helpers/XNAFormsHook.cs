@@ -1,25 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
+using static Celeste.Mod.Helpers.Win32;
 
 namespace Celeste.Mod.Helpers {
     internal sealed class XNAFormsHook {
 
         public readonly IntPtr HandleForm;
         public IntPtr HandleHook { get; private set; }
-        private Win32.WndProcDelegate _WndProcHook;
+        private WndProcDelegate _WndProcHook;
 
         public XNAFormsHook(IntPtr handleForm, HookDelegate hook) {
             HandleForm = handleForm;
             Hook = hook;
             _WndProcHook = WndProcHook;
-            HandleHook = Win32.SetWindowsHookEx(
-                Win32.HookType.WH_GETMESSAGE, // Was WH_CALLWNDPROC in ImGuiXNA
+            HandleHook = SetWindowsHookEx(
+                HookType.WH_GETMESSAGE, // Was WH_CALLWNDPROC in ImGuiXNA
                 _WndProcHook,
                 IntPtr.Zero,
-                Win32.GetWindowThreadProcessId(HandleForm, IntPtr.Zero)
+                GetWindowThreadProcessId(HandleForm, IntPtr.Zero)
             );
         }
 
@@ -27,16 +25,16 @@ namespace Celeste.Mod.Helpers {
             Dispose(false);
         }
 
-        private int WndProcHook(int nCode, IntPtr wParam, ref Win32.Message lParam) {
+        private int WndProcHook(int nCode, IntPtr wParam, ref Message lParam) {
             if (nCode >= 0 && ((int) wParam) == 1) {
-                Win32.TranslateMessage(ref lParam);
+                TranslateMessage(ref lParam);
                 Hook?.Invoke(ref lParam);
             }
 
-            return Win32.CallNextHookEx(HandleHook, nCode, wParam, ref lParam);
+            return CallNextHookEx(HandleHook, nCode, wParam, ref lParam);
         }
 
-        internal delegate void HookDelegate(ref Win32.Message msg);
+        internal delegate void HookDelegate(ref Message msg);
         public HookDelegate Hook;
 
         public void Dispose() => Dispose(true);
@@ -44,7 +42,7 @@ namespace Celeste.Mod.Helpers {
             if (HandleHook == IntPtr.Zero)
                 return;
 
-            Win32.UnhookWindowsHookEx(HandleHook);
+            UnhookWindowsHookEx(HandleHook);
             HandleHook = IntPtr.Zero;
         }
 

@@ -1,13 +1,10 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned to, but never used
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using FMOD;
 using FMOD.Studio;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -15,9 +12,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     static class patch_Audio {
@@ -59,8 +53,7 @@ namespace Celeste {
 
             // Prepopulate cachedPaths, as it's being used directly.
             foreach (Bank bank in patch_Banks.Banks.Values) {
-                EventDescription[] descs;
-                bank.getEventList(out descs);
+                bank.getEventList(out EventDescription[] descs);
                 foreach (EventDescription desc in descs) {
                     if (!desc.isValid())
                         continue;
@@ -102,6 +95,9 @@ namespace Celeste {
             ready = false;
         }
 
+        /// <summary>
+        /// Loads an FMOD Bank from the given asset.
+        /// </summary>
         public static Bank IngestBank(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathVirtual);
             ingestedModBankPaths.Add(asset.PathVirtual);
@@ -131,8 +127,7 @@ namespace Celeste {
                 system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
             }
 
-            ModAsset assetGUIDs;
-            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out assetGUIDs)) {
+            if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out ModAsset assetGUIDs)) {
                 IngestGUIDs(assetGUIDs);
             }
 
@@ -143,6 +138,9 @@ namespace Celeste {
             return bank;
         }
 
+        /// <summary>
+        /// Loads an FMOD GUID table from the given asset.
+        /// </summary>
         public static void IngestGUIDs(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
@@ -160,8 +158,7 @@ namespace Celeste {
                         continue;
                     string path = line.Substring(indexOfSpace + 1);
 
-                    EventDescription _event;
-                    if (system.getEventByID(id, out _event) <= RESULT.OK) {
+                    if (system.getEventByID(id, out EventDescription _event) <= RESULT.OK) {
                         _event.unloadSampleData();
                         cachedPaths[id] = path;
                         cachedModEvents[path] = _event;
@@ -343,15 +340,11 @@ namespace Celeste {
         public static void CheckFMOD(this RESULT result)
             => patch_Audio.CheckFmod(result);
 
-        /// <summary>
-        /// Loads an FMOD Bank from the given asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_Audio.IngestBank(ModAsset)"/>
         public static Bank IngestBank(ModAsset asset)
             => patch_Audio.IngestBank(asset);
 
-        /// <summary>
-        /// Loads an FMOD GUID table from the given asset.
-        /// </summary>
+        /// <inheritdoc cref="patch_Audio.IngestGUIDs(ModAsset)"/>
         public static void IngestGUIDs(ModAsset asset)
             => patch_Audio.IngestGUIDs(asset);
 

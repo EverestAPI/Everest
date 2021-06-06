@@ -2,17 +2,13 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
-using System.IO;
 using Monocle;
+using MonoMod;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -95,6 +91,7 @@ namespace Celeste {
             StaticMover sm = new StaticMover {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnMove = v => { X += v.X; Y += v.Y; },
+                OnShake = v => { X += v.X; Y += v.Y; },
             };
             if (jumpThrus)
                 sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));

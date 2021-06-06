@@ -1,14 +1,12 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Mod.Core;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Core;
+using System.Linq;
 
 namespace Celeste.Mod.UI {
     public class OuiModOptions : Oui {

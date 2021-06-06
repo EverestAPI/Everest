@@ -1,20 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using Monocle;
-using MonoMod;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -45,11 +29,6 @@ namespace Celeste.Mod {
             public static bool IsFNADroid { get; private set; }
 
             /// <summary>
-            /// Is Everest itself disabled?
-            /// </summary>
-            public static bool IsDisabled { get; private set; }
-
-            /// <summary>
             /// Should the game avoid creating render targets if possible?
             /// </summary>
             public static bool AvoidRenderTargets { get; private set; }
@@ -73,8 +52,6 @@ namespace Celeste.Mod {
 
             internal static void Initialize() {
                 IsHeadless = Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1";
-
-                IsDisabled = Environment.GetEnvironmentVariable("EVEREST_DISABLED") == "1";
 
                 IsMono = Type.GetType("Mono.Runtime") != null;
 

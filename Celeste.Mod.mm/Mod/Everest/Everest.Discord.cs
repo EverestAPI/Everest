@@ -1,22 +1,9 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Monocle;
-using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
-using Celeste.Mod.Core;
 using System.Threading;
 
 namespace Celeste.Mod {
@@ -25,17 +12,21 @@ namespace Celeste.Mod {
 
             private static DiscordRpc.EventHandlers DiscordHandlers = new DiscordRpc.EventHandlers();
             public static readonly DiscordRpc.RichPresence DiscordPresence = new DiscordRpc.RichPresence();
+            public static bool Initialized { get; private set; } = false;
 
             private static Thread Worker;
             private static readonly Queue<Action> Queue = new Queue<Action>();
             private static CancellationTokenSource WaitTokenSource;
 
             public static void Initialize() {
+                if (Initialized)
+                    return;
                 Worker = new Thread(WorkerLoop);
                 Worker.Name = "Everest Discord Worker";
                 Worker.Priority = ThreadPriority.Lowest;
                 Worker.IsBackground = true;
                 Worker.Start();
+                Initialized = true;
 
                 WaitTokenSource = new CancellationTokenSource();
 
@@ -44,6 +35,15 @@ namespace Celeste.Mod {
                 Events.MainMenu.OnCreateButtons += OnMainMenu;
                 Events.Level.OnLoadLevel += OnLoadLevel;
                 Events.Level.OnExit += OnLevelExit;
+            }
+
+            public static void Disable() {
+                OnGameExit();
+
+                Events.Celeste.OnExiting -= OnGameExit;
+                Events.MainMenu.OnCreateButtons -= OnMainMenu;
+                Events.Level.OnLoadLevel -= OnLoadLevel;
+                Events.Level.OnExit -= OnLevelExit;
             }
 
             private static void WorkerLoop() {
@@ -99,8 +99,8 @@ namespace Celeste.Mod {
                     }
                     nextAction?.Invoke();
                 }
-
                 DiscordRpc.Shutdown();
+                Initialized = false;
             }
 
             private static void OnDiscordReady(ref DiscordRpc.DiscordUser user) {
@@ -197,7 +197,6 @@ namespace Celeste.Mod {
                     DiscordRpc.UpdatePresence(DiscordPresence);
                 }
             };
-
         }
     }
 }

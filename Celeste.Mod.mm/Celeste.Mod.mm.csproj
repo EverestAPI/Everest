@@ -5,10 +5,14 @@
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>9</LangVersion>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Reference Include="System.Management" />
   </ItemGroup>
@@ -49,11 +53,12 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.01.10.04" />
-    <PackageReference Include="MonoMod.Utils" Version="21.01.10.04" />
+    <PackageReference Include="MonoMod" Version="21.04.29.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.04.29.01" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.04.29.01" />
+    <PackageReference Include="MonoMod.Utils" Version="21.04.29.01" />
     <PackageReference Include="DotNetZip" Version="1.13.8" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
@@ -81,6 +86,9 @@
     <EmbeddedResource Include="Content\Dialog\Fonts\chinese_everest_0.png">
       <LogicalName>Content\Dialog\Fonts\chinese_everest_0.png</LogicalName>
     </EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gui\__fallback.png">
+        <LogicalName>Content\Graphics\Atlases\Gui\__fallback.png</LogicalName>
+	  </EmbeddedResource>
     <EmbeddedResource Include="Content\Graphics\Atlases\Gui\logo_everest.png">
       <LogicalName>Content\Graphics\Atlases\Gui\logo_everest.png</LogicalName>
     </EmbeddedResource>
@@ -162,6 +170,12 @@
     <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
       <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
     </EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\__fallback.png">
+        <LogicalName>Content\Graphics\Atlases\Gameplay\__fallback.png</LogicalName>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png">
+        <LogicalName>Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png</LogicalName>
+	  </EmbeddedResource>
     <EmbeddedResource Include="Content\Lua\boot.lua">
       <LogicalName>Content\Lua\boot.lua</LogicalName>
     </EmbeddedResource>
@@ -211,6 +225,15 @@
       <Link>lua53.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../lib-stripped/Celeste.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="../lib-stripped/FNA.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   
 </Project>

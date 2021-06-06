@@ -1,16 +1,14 @@
-﻿using Celeste.Mod.UI;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework.Input;
 using Monocle;
+using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
-    public class ModuleSettingsKeyboardConfigUI : patch_KeyboardConfigUI {
+    // This MUST keep its old name. If V1 support gets dropped, rename V2 to this and use MonoModLinkFrom V2 -> this.
+    [Obsolete]
+    public class ModuleSettingsKeyboardConfigUI : patch_KeyboardConfigUI_InputV1 {
 
         public EverestModule Module;
 
@@ -27,7 +25,7 @@ namespace Celeste.Mod {
         }
 
         protected override bool SupportsMultipleBindings(int mapping) {
-            return Bindings[mapping].SupportsMultipleBindings;
+            return true;
         }
 
         protected override List<Keys> GetRemapList(int remapping, Keys newKey) {
@@ -40,7 +38,7 @@ namespace Celeste.Mod {
 
             Clear();
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
             Bindings.Clear();
 
@@ -76,24 +74,21 @@ namespace Celeste.Mod {
 
                     DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
 
-                    Bindings.Add(new ButtonBindingEntry(name, true, binding, defaults));
+                    Bindings.Add(new ButtonBindingEntry(name, binding, defaults));
                     AddKeyConfigLine(mapping, defaults != null && defaults.Key != 0 && defaults.ForceDefaultKey ? ForceDefaultKey(defaults.Key, binding.Keys) : binding.Keys);
                 }
             }
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Button reset = new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
                     foreach (ButtonBindingEntry entry in Bindings) {
-                        if (entry.Defaults == null)
-                            continue;
                         entry.Binding.Keys.Clear();
-                        if (entry.Defaults.Key != 0)
+                        if (entry.Defaults != null && entry.Defaults.Key != 0)
                             entry.Binding.Keys.Add(entry.Defaults.Key);
                     }
-
                     Input.Initialize();
                     Reload(Selection);
                 }
@@ -107,13 +102,21 @@ namespace Celeste.Mod {
         protected class ButtonBindingEntry {
 
             public string Name;
+            [Obsolete]
             public bool SupportsMultipleBindings;
             public ButtonBinding Binding;
             public DefaultButtonBindingAttribute Defaults;
 
+            public ButtonBindingEntry(string name, ButtonBinding binding, DefaultButtonBindingAttribute defaults) {
+                Name = name;
+                Binding = binding;
+                Defaults = defaults;
+            }
+
+            [Obsolete]
             public ButtonBindingEntry(string name, bool supportsMultipleBindings, ButtonBinding binding, DefaultButtonBindingAttribute defaults) {
                 Name = name;
-                SupportsMultipleBindings = supportsMultipleBindings;
+                SupportsMultipleBindings = true;
                 Binding = binding;
                 Defaults = defaults;
             }

@@ -5,12 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_OuiFileNaming : OuiFileNaming {
@@ -68,16 +63,14 @@ namespace Celeste {
         public extern IEnumerator orig_Enter(Oui from);
         public override IEnumerator Enter(Oui from) {
             Engine.Commands.Enabled = false;
-            if (!Everest.Flags.IsDisabled)
-                TextInput.OnInput += OnTextInput;
+            TextInput.OnInput += OnTextInput;
             return orig_Enter(from);
         }
 
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {
             Engine.Commands.Enabled = (Celeste.PlayMode == Celeste.PlayModes.Debug);
-            if (!Everest.Flags.IsDisabled)
-                TextInput.OnInput -= OnTextInput;
+            TextInput.OnInput -= OnTextInput;
             return orig_Leave(next);
         }
 
@@ -87,21 +80,19 @@ namespace Celeste {
         public extern void orig_Update();
         public override void Update() {
             bool wasFocused = Focused;
-            if (!Everest.Flags.IsDisabled) {
-                // Only "focus" if we're not using the keyboard for input
-                Focused = wasFocused && !UseKeyboardInput;
+            // Only "focus" if we're not using the keyboard for input
+            Focused = wasFocused && !UseKeyboardInput;
 
-                // If we aren't focused to kill controller input, still allow the player to Ctrl+S to choose a new name.
-                if (Selected && wasFocused && !Focused
-                    && !string.IsNullOrWhiteSpace(Name) && MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
+            // If we aren't focused to kill controller input, still allow the player to Ctrl+S to choose a new name.
+            if (Selected && wasFocused && !Focused
+                && !string.IsNullOrWhiteSpace(Name) && MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
 
-                    ResetDefaultName();
-                }
+                ResetDefaultName();
             }
 
             orig_Update();
 
-            if (!Everest.Flags.IsDisabled && wasFocused && !Focused) {
+            if (wasFocused && !Focused) {
                 if (Input.ESC)
                     Cancel();
             }
@@ -120,7 +111,7 @@ namespace Celeste {
         public override void Render() {
             int prevIndex = index;
             // Only "focus" if we're not using the keyboard for input
-            if (!Everest.Flags.IsDisabled && UseKeyboardInput)
+            if (UseKeyboardInput)
                 index = -1;
 
             orig_Render();
@@ -131,7 +122,7 @@ namespace Celeste {
         private extern void orig_DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false);
         private void DrawOptionText(string text, Vector2 at, Vector2 justify, Vector2 scale, bool selected, bool disabled = false) {
             // Only draw "interactively" if not using the keyboard for input
-            if (!Everest.Flags.IsDisabled && UseKeyboardInput) {
+            if (UseKeyboardInput) {
                 selected = false;
                 disabled = true;
             }

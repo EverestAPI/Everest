@@ -1,32 +1,42 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using FMOD.Studio;
+﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 
 namespace Celeste.Mod.Entities {
     public class CSGEN_GenericStrawberrySeeds : CutsceneEntity {
-        public CSGEN_GenericStrawberrySeeds(IStrawberrySeeded strawberry) : base(true, false) {
+
+        private IStrawberrySeeded strawberry;
+
+        private Vector2 cameraStart;
+
+        private ParticleSystem system;
+        private EventInstance snapshot;
+        private EventInstance sfx;
+
+        public CSGEN_GenericStrawberrySeeds(IStrawberrySeeded strawberry) 
+            : base(true, false) {
             this.strawberry = strawberry;
         }
 
         public override void OnBegin(Level level) {
-            this.cameraStart = level.Camera.Position;
-            base.Add(new Coroutine(this.Cutscene(level), true));
+            cameraStart = level.Camera.Position;
+            Add(new Coroutine(Cutscene(level)));
         }
 
         private IEnumerator Cutscene(Level level) {
-            this.sfx = Audio.Play("event:/game/general/seed_complete_main", this.Position);
-            this.snapshot = Audio.CreateSnapshot("snapshot:/music_mains_mute", true);
+            sfx = Audio.Play(SFX.game_gen_seed_complete_main, Position);
+            snapshot = Audio.CreateSnapshot(Snapshots.MAIN_DOWN);
 
-            Player player = base.Scene.Tracker.GetEntity<Player>();
+            Player player = Scene.Tracker.GetEntity<Player>();
             if (player != null)
-                this.cameraStart = player.CameraTarget;
+                cameraStart = player.CameraTarget;
 
             // Shorten code for reading.
             List<GenericStrawberrySeed> seeds = strawberry.Seeds;
-            Entity entity = (Entity) this.strawberry;
+            Entity entity = (Entity) strawberry;
 
             foreach (GenericStrawberrySeed seed in seeds)
                 seed.OnAllCollected();
@@ -37,49 +47,49 @@ namespace Celeste.Mod.Entities {
             yield return 0.35f;
 
 
-            base.Tag = (Tags.FrozenUpdate | Tags.HUD);
+            Tag = Tags.FrozenUpdate | Tags.HUD;
             level.Frozen = true;
             level.FormationBackdrop.Display = true;
             level.FormationBackdrop.Alpha = 0.5f;
             level.Displacement.Clear();
             level.Displacement.Enabled = false;
 
-            Audio.BusPaused("bus:/gameplay_sfx/ambience", new bool?(true));
-            Audio.BusPaused("bus:/gameplay_sfx/char", new bool?(true));
-            Audio.BusPaused("bus:/gameplay_sfx/game/general/yes_pause", new bool?(true));
-            Audio.BusPaused("bus:/gameplay_sfx/game/chapters", new bool?(true));
+            Audio.BusPaused(Buses.AMBIENCE, true);
+            Audio.BusPaused(Buses.CHAR, true);
+            Audio.BusPaused(Buses.YES_PAUSE, true);
+            Audio.BusPaused(Buses.CHAPTERS, true);
 
             yield return 0.1f;
 
 
-            this.system = new ParticleSystem(-2000002, 50);
-            this.system.Tag = Tags.FrozenUpdate;
-            level.Add(this.system);
-            float angleSep = 6.2831855f / (float) seeds.Count;
-            float angle = 1.5707964f;
+            system = new ParticleSystem(-2000002, 50);
+            system.Tag = Tags.FrozenUpdate;
+            level.Add(system);
+            float angleSep = (float) Math.PI * 2 / seeds.Count;
+            float angle = (float) Math.PI / 2;
             Vector2 avg = Vector2.Zero;
             foreach (GenericStrawberrySeed seed in seeds)
                 avg += seed.Position;
 
-            avg /= (float) seeds.Count;
+            avg /= seeds.Count;
             foreach (GenericStrawberrySeed seed in seeds) {
                 seed.StartSpinAnimation(avg, entity.Position, angle, 4f);
                 angle -= angleSep;
             }
 
-            avg = default(Vector2);
+            avg = default;
             Vector2 target = entity.Position - new Vector2(160f, 90f);
-            target = target.Clamp((float) level.Bounds.Left, (float) level.Bounds.Top, (float) (level.Bounds.Right - 320), (float) (level.Bounds.Bottom - 180));
-            base.Add(new Coroutine(CutsceneEntity.CameraTo(target, 3.5f, Ease.CubeInOut, 0f), true));
-            target = default(Vector2);
+            target = target.Clamp(level.Bounds.Left, level.Bounds.Top, level.Bounds.Right - 320, level.Bounds.Bottom - 180);
+            Add(new Coroutine(CameraTo(target, 3.5f, Ease.CubeInOut)));
+            target = default;
             yield return 4f;
 
 
             Input.Rumble(RumbleStrength.Light, RumbleLength.Long);
-            Audio.Play("event:/game/general/seed_complete_berry", entity.Position);
+            Audio.Play(SFX.game_gen_seed_complete_berry, entity.Position);
 
             foreach (GenericStrawberrySeed seed in seeds)
-                seed.StartCombineAnimation(entity.Position, 0.6f, this.system);
+                seed.StartCombineAnimation(entity.Position, 0.6f, system);
 
             yield return 0.6f;
 
@@ -88,69 +98,61 @@ namespace Celeste.Mod.Entities {
             foreach (GenericStrawberrySeed seed in seeds)
                 seed.RemoveSelf();
 
-            this.strawberry.CollectedSeeds();
+            strawberry.CollectedSeeds();
             yield return 0.5f;
 
 
-            float dist = (level.Camera.Position - this.cameraStart).Length();
-            yield return CutsceneEntity.CameraTo(this.cameraStart, dist / 180f, null, 0f);
+            float dist = (level.Camera.Position - cameraStart).Length();
+            yield return CameraTo(cameraStart, dist / 180f);
 
 
             if (dist > 80f)
                 yield return 0.25f;
 
             level.EndCutscene();
-            this.OnEnd(level);
+            OnEnd(level);
             yield break;
         }
 
         public override void OnEnd(Level level) {
-            if (this.WasSkipped)
-                Audio.Stop(this.sfx, true);
+            if (WasSkipped)
+                Audio.Stop(sfx, true);
 
-            level.OnEndOfFrame += delegate () {
-                if (this.WasSkipped) {
-                    foreach (GenericStrawberrySeed strawberrySeed in this.strawberry.Seeds)
+            level.OnEndOfFrame += () => {
+                if (WasSkipped) {
+                    foreach (GenericStrawberrySeed strawberrySeed in strawberry.Seeds)
                         strawberrySeed.RemoveSelf();
 
-                    this.strawberry.CollectedSeeds();
-                    level.Camera.Position = this.cameraStart;
+                    strawberry.CollectedSeeds();
+                    level.Camera.Position = cameraStart;
                 }
-                ((Entity) strawberry).Depth = -100;
+                ((Entity) strawberry).Depth = Depths.Pickups;
                 ((Entity) strawberry).RemoveTag(Tags.FrozenUpdate);
                 level.Frozen = false;
                 level.FormationBackdrop.Display = false;
                 level.Displacement.Enabled = true;
             };
-            base.RemoveSelf();
+
+            RemoveSelf();
         }
 
         private void EndSfx() {
-            Audio.BusPaused("bus:/gameplay_sfx/ambience", new bool?(false));
-            Audio.BusPaused("bus:/gameplay_sfx/char", new bool?(false));
-            Audio.BusPaused("bus:/gameplay_sfx/game/general/yes_pause", new bool?(false));
-            Audio.BusPaused("bus:/gameplay_sfx/game/chapters", new bool?(false));
-            Audio.ReleaseSnapshot(this.snapshot);
+            Audio.BusPaused(Buses.AMBIENCE, false);
+            Audio.BusPaused(Buses.CHAR, false);
+            Audio.BusPaused(Buses.YES_PAUSE, false);
+            Audio.BusPaused(Buses.CHAPTERS, false);
+            Audio.ReleaseSnapshot(snapshot);
         }
 
         public override void Removed(Scene scene) {
-            this.EndSfx();
+            EndSfx();
             base.Removed(scene);
         }
 
         public override void SceneEnd(Scene scene) {
-            this.EndSfx();
+            EndSfx();
             base.SceneEnd(scene);
         }
 
-        private IStrawberrySeeded strawberry;
-
-        private Vector2 cameraStart;
-
-        private ParticleSystem system;
-
-        private EventInstance snapshot;
-
-        private EventInstance sfx;
     }
 }

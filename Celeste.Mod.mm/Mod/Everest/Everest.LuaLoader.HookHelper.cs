@@ -1,14 +1,8 @@
-﻿using MonoMod.InlineRT;
+﻿using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using NLua;
-using MonoMod.RuntimeDetour;
-using MonoMod.Utils;
 
 namespace Celeste.Mod {
     public static partial class Everest {

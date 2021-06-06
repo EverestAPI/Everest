@@ -1,20 +1,14 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Celeste.Mod;
+using Celeste.Mod.Meta;
+using Monocle;
 using MonoMod;
 using System.Collections;
-using Monocle;
 using System.IO;
 using System.Xml;
-using Celeste.Mod.Meta;
 
 namespace Celeste {
     class patch_LevelExit : LevelExit {

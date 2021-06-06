@@ -1,20 +1,12 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
+﻿using Celeste.Mod;
+using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
-using Monocle;
-using Celeste.Mod.Meta;
 using System.Globalization;
+using System.IO;
+using System.Linq;
 
 namespace Celeste {
     static class patch_Commands {
@@ -66,13 +58,40 @@ namespace Celeste {
             Engine.Commands.Log($"Completion percent = {stats.CompletionPercent}");
         }
 
-        // vanilla load commands: don't touch their bodies, but remove the [Command] attributes from them. We want to annotate ours instead.
-        [MonoModIgnore]
-        private static extern void CmdLoad(int id = 0, string level = null);
-        [MonoModIgnore]
-        private static extern void CmdHard(int id = 0, string level = null);
-        [MonoModIgnore]
-        private static extern void CmdRMX2(int id = 0, string level = null);
+        // vanilla load commands: remove the [Command] attributes from them. We want to annotate ours instead.
+        [MonoModReplace]
+        private static void CmdLoad(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.Normal, id, level);
+        }
+
+        [MonoModReplace]
+        private static void CmdHard(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.BSide, id, level);
+        }
+
+        [MonoModReplace]
+        private static void CmdRMX2(int id = 0, string level = null) {
+            LoadIdLevel(AreaMode.CSide, id, level);
+        }
+
+        // Better support for loading checkpoint room and fix vanilla game crashes when the bside/cside level does not exist
+        private static void LoadIdLevel(AreaMode areaMode, int id = 0, string level = null) {
+            SaveData.InitializeDebugMode();
+            AreaKey areaKey = new AreaKey(id, areaMode);
+            ((patch_SaveData)SaveData.Instance).LastArea_Safe = areaKey;
+            Session session = new Session(areaKey);
+            if (level != null && session.MapData.Get(level) != null) {
+                if (AreaData.GetCheckpoint(areaKey, level) != null) {
+                    session = new Session(areaKey, level) {StartCheckpoint = null};
+                } else {
+                    session.Level = level;
+                }
+                bool firstLevel = level == session.MapData.StartLevel().Name;
+                session.FirstLevel = firstLevel;
+                session.StartedFromBeginning = firstLevel;
+            }
+            Engine.Scene = new LevelLoader(session);
+        }
 
         [Command("load", "test a level")]
         [RemoveCommandAttributeFromVanillaLoadMethod]

@@ -1,10 +1,10 @@
 ﻿#pragma warning disable CS0649 // private readonly fields filled via reflection
 
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using MonoMod.Utils;
 
 namespace Celeste.Mod.Helpers {
     // Based on https://github.com/discordapp/discord-rpc/blob/master/examples/button-clicker/Assets/DiscordRpc.cs

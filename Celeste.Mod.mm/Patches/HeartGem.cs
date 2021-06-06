@@ -1,14 +1,13 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Meta;
+using Microsoft.Xna.Framework;
 using MonoMod;
 using System;
-using System.Collections.Generic;
-using Microsoft.Xna.Framework;
 using System.Collections;
-using Celeste.Mod.Meta;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using static Celeste.Mod.StrawberryRegistry;
 
 namespace Celeste {
     class patch_HeartGem : HeartGem {

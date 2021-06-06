@@ -1,28 +1,16 @@
-﻿using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
+﻿using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-using Celeste.Mod.Helpers;
-using Celeste.Mod.Core;
-using System.Net;
-using System.Threading;
 using System.Collections.Specialized;
 using System.Globalization;
+using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
-using YamlDotNet.Serialization;
+using System.Text;
+using System.Threading;
 
 namespace Celeste.Mod {
     public class RCEndPoint {
@@ -366,8 +354,7 @@ header {
                     Name = "Respawn",
                     InfoHTML = "Restart the current screen, respawning the player.",
                     Handle = c => {
-                        Level level = Engine.Scene as Level;
-                        if (level == null) {
+                        if (!(Engine.Scene is Level level)) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, "ERROR: Player not in a level.");
                             return;

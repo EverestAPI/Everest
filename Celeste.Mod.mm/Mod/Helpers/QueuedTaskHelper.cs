@@ -1,24 +1,7 @@
-﻿using Celeste.Mod.Core;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input.Touch;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using System.Runtime.CompilerServices;
 
 namespace Celeste.Mod {
     public static class QueuedTaskHelper {
@@ -93,7 +76,7 @@ namespace Celeste.Mod {
                     }
                     timer.Stop();
 
-                    return f != null ? f.Invoke() : default(T);
+                    return f != null ? f.Invoke() : default;
                 })();
 
                 Map[key] = t;

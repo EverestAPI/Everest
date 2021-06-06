@@ -1,17 +1,8 @@
-﻿using FMOD.Studio;
-using Microsoft.Xna.Framework;
-using Monocle;
-using Celeste;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using MonoMod.Utils;
+﻿using Monocle;
 using MonoMod;
-using Microsoft.Xna.Framework.Input;
+using System;
+using System.Collections.Generic;
+using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Core {
     // Note: If SettingName isn't given, the value defaults to modoptions_[typename without settings]_title
@@ -192,6 +183,14 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool RestartAppDomain_WIP { get; set; } = false;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public int? MaxSaveSlots { get; set; } = null;
+
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public int ExtraCommandHistoryLines { get; set; } = 50;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
@@ -227,9 +226,18 @@ namespace Celeste.Mod.Core {
             }
         }
 
-
-        [SettingIgnore]
-        public int DebugRCPort { get; set; } = 32270;
+        private bool _DiscordRichPresence = true;
+        public bool DiscordRichPresence {
+            get => _DiscordRichPresence;
+            set {
+                _DiscordRichPresence = value;
+                if (value) {
+                    Everest.Discord.Initialize();
+                } else {
+                    Everest.Discord.Disable();
+                }
+            }
+        }
 
         [SettingIgnore]
         public string DiscordLib { get; set; } = "";
@@ -241,6 +249,9 @@ namespace Celeste.Mod.Core {
         public string DiscordTextInGame { get; set; } = "🗻 ((area)) 📼 ((side))";
         [SettingIgnore]
         public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
+
+        [SettingIgnore]
+        public int DebugRCPort { get; set; } = 32270;
 
         [SettingIgnore]
         public int? QuickRestart { get; set; }
@@ -268,7 +279,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
 
+        [SettingInGame(false)]
         public ButtonBinding MenuPageUp { get; set; }
+
+        [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
 
         /*
@@ -286,8 +300,9 @@ namespace Celeste.Mod.Core {
 
         public void CreateInputGuiEntry(TextMenu menu, bool inGame) {
             // Get all Input GUI prefixes and add a slider for switching between them.
-            List<string> inputGuiPrefixes = new List<string>();
-            inputGuiPrefixes.Add(""); // Auto
+            List<string> inputGuiPrefixes = new List<string> {
+                "" // Auto
+            };
             foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
                 string path = kvp.Key;
                 if (!path.StartsWith("controls/"))
