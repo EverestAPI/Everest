@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
@@ -307,7 +308,7 @@ namespace Celeste.Mod.UI {
         private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
             Logger.Log("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
-            Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, (position, length, speed) => {
+            Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                 if (ongoingUpdateCancelled) {
                     return false;
                 }
@@ -318,7 +319,15 @@ namespace Celeste.Mod.UI {
                     button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({((int) Math.Floor(position / 1000D))}KiB @ {speed} KiB/s)";
                 }
                 return true;
-            });
+            };
+
+            try {
+                Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, progressCallback);
+            } catch (WebException e) {
+                Logger.Log(LogLevel.Warn, "OuiModUpdateList", $"Download failed, trying mirror {update.MirrorURL}");
+                Logger.LogDetailed(e);
+                Everest.Updater.DownloadFileWithProgress(update.MirrorURL, zipPath, progressCallback);
+            }
         }
 
         /// <summary>

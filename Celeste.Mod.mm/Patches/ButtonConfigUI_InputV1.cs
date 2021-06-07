@@ -1,20 +1,19 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Celeste {
-    public class patch_ButtonConfigUI : ButtonConfigUI {
+    [MonoModIfFlag("V1:Input")]
+    [MonoModPatch("ButtonConfigUI")]
+    public class patch_ButtonConfigUI_InputV1 : ButtonConfigUI {
 
         [MonoModIgnore]
         private enum Mappings {
@@ -22,7 +21,12 @@ namespace Celeste {
             Dash,
             Grab,
             Talk,
-            QuickRestart
+            QuickRestart,
+            DemoDash
+        }
+
+        [MonoModIgnore]
+        public class Info : Item {
         }
 
         private List<Buttons> all;
@@ -58,16 +62,16 @@ namespace Celeste {
         /// ForceRemap all important mappings which are fully unassigned and require mappings when leaving the menu.
         /// </summary>
         protected virtual void ForceRemapAll() {
-            if (Settings.Instance.BtnJump.Count <= 0)
+            if (patch_Settings_InputV1.Instance.BtnJump.Count <= 0)
                 ForceRemap((int) Mappings.Jump);
 
-            if (Settings.Instance.BtnDash.Count <= 0)
+            if (patch_Settings_InputV1.Instance.BtnDash.Count <= 0)
                 ForceRemap((int) Mappings.Dash);
 
-            if (Settings.Instance.BtnGrab.Count <= 0)
+            if (patch_Settings_InputV1.Instance.BtnGrab.Count <= 0)
                 ForceRemap((int) Mappings.Grab);
 
-            if (Settings.Instance.BtnTalk.Count <= 0)
+            if (patch_Settings_InputV1.Instance.BtnTalk.Count <= 0)
                 ForceRemap((int) Mappings.Talk);
         }
 
@@ -90,7 +94,11 @@ namespace Celeste {
         /// <param name="btn">The mapping index</param>
         /// <param name="list">The list of buttons currently mapped to it</param>
         protected void AddButtonConfigLine(int btn, List<Buttons> list) {
-            Add(new Setting(GetLabel(btn), list).Pressed(() => Remap(btn)).AltPressed(() => ClearRemap(btn)));
+            Add(new patch_TextMenu.patch_Setting(GetLabel(btn), list).Pressed(() => {
+                Remap(btn);
+            }).AltPressed(() => {
+                ClearRemap(btn);
+            }));
         }
 
         /// <summary>
@@ -137,18 +145,18 @@ namespace Celeste {
             Add(new Header(Dialog.Clean("BTN_CONFIG_TITLE")));
             Add(new Info());
 
-            AddButtonConfigLine(Mappings.Jump, Settings.Instance.BtnJump);
-            AddButtonConfigLine(Mappings.Dash, Settings.Instance.BtnDash);
-            AddButtonConfigLine(Mappings.Grab, Settings.Instance.BtnGrab);
-            AddButtonConfigLine(Mappings.Talk, Settings.Instance.BtnTalk);
-            AddButtonConfigLine(Mappings.QuickRestart, Settings.Instance.BtnAltQuickRestart);
+            AddButtonConfigLine(Mappings.Jump, patch_Settings_InputV1.Instance.BtnJump);
+            AddButtonConfigLine(Mappings.Dash, patch_Settings_InputV1.Instance.BtnDash);
+            AddButtonConfigLine(Mappings.Grab, patch_Settings_InputV1.Instance.BtnGrab);
+            AddButtonConfigLine(Mappings.Talk, patch_Settings_InputV1.Instance.BtnTalk);
+            AddButtonConfigLine(Mappings.QuickRestart, patch_Settings_InputV1.Instance.BtnAltQuickRestart);
 
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Add(new Button(Dialog.Clean("KEY_CONFIG_RESET")) {
                 IncludeWidthInMeasurement = false,
                 AlwaysCenter = true,
                 OnPressed = () => {
-                    Settings.Instance.SetDefaultButtonControls(reset: true);
+                    patch_Settings_InputV1.Instance.SetDefaultButtonControls(reset: true);
                     Input.Initialize();
                     Reload(Selection);
                 }
@@ -197,20 +205,20 @@ namespace Celeste {
         /// <param name="list">The list that newBtn has been added to</param>
         /// <param name="btn">The new button that the user is attempting to set.</param>
         protected virtual void RemoveDuplicates(int remapping, List<Buttons> list, Buttons btn) {
-            if (list != Settings.Instance.BtnJump)
-                Settings.Instance.BtnJump.Remove(btn);
+            if (list != patch_Settings_InputV1.Instance.BtnJump)
+                patch_Settings_InputV1.Instance.BtnJump.Remove(btn);
 
-            if (list != Settings.Instance.BtnDash && list != Settings.Instance.BtnTalk)
-                Settings.Instance.BtnDash.Remove(btn);
+            if (list != patch_Settings_InputV1.Instance.BtnDash && list != patch_Settings_InputV1.Instance.BtnTalk)
+                patch_Settings_InputV1.Instance.BtnDash.Remove(btn);
 
-            if (list != Settings.Instance.BtnGrab)
-                Settings.Instance.BtnGrab.Remove(btn);
+            if (list != patch_Settings_InputV1.Instance.BtnGrab)
+                patch_Settings_InputV1.Instance.BtnGrab.Remove(btn);
 
-            if (list != Settings.Instance.BtnTalk && list != Settings.Instance.BtnDash)
-                Settings.Instance.BtnTalk.Remove(btn);
+            if (list != patch_Settings_InputV1.Instance.BtnTalk && list != patch_Settings_InputV1.Instance.BtnDash)
+                patch_Settings_InputV1.Instance.BtnTalk.Remove(btn);
 
-            if (list != Settings.Instance.BtnAltQuickRestart)
-                Settings.Instance.BtnAltQuickRestart.Remove(btn);
+            if (list != patch_Settings_InputV1.Instance.BtnAltQuickRestart)
+                patch_Settings_InputV1.Instance.BtnAltQuickRestart.Remove(btn);
         }
 
         /// <summary>
@@ -220,19 +228,19 @@ namespace Celeste {
         protected virtual void ForceRemap(int mapping) {
             List<Buttons> left = new List<Buttons>(All);
 
-            foreach (Buttons btn in Settings.Instance.BtnJump)
+            foreach (Buttons btn in patch_Settings_InputV1.Instance.BtnJump)
                 left.Remove(btn);
 
-            foreach (Buttons btn in Settings.Instance.BtnDash)
+            foreach (Buttons btn in patch_Settings_InputV1.Instance.BtnDash)
                 left.Remove(btn);
 
-            foreach (Buttons btn in Settings.Instance.BtnGrab)
+            foreach (Buttons btn in patch_Settings_InputV1.Instance.BtnGrab)
                 left.Remove(btn);
 
-            foreach (Buttons btn in Settings.Instance.BtnTalk)
+            foreach (Buttons btn in patch_Settings_InputV1.Instance.BtnTalk)
                 left.Remove(btn);
 
-            foreach (Buttons btn in Settings.Instance.BtnAltQuickRestart)
+            foreach (Buttons btn in patch_Settings_InputV1.Instance.BtnAltQuickRestart)
                 left.Remove(btn);
 
             currentlyRemapping = mapping;
@@ -241,15 +249,15 @@ namespace Celeste {
                 AddRemap(left[0]);
             } else {
                 Buttons button;
-                if (TrySteal(Settings.Instance.BtnJump, out button)) {
+                if (TrySteal(patch_Settings_InputV1.Instance.BtnJump, out button)) {
                     AddRemap(button);
-                } else if (TrySteal(Settings.Instance.BtnDash, out button)) {
+                } else if (TrySteal(patch_Settings_InputV1.Instance.BtnDash, out button)) {
                     AddRemap(button);
-                } else if (TrySteal(Settings.Instance.BtnGrab, out button)) {
+                } else if (TrySteal(patch_Settings_InputV1.Instance.BtnGrab, out button)) {
                     AddRemap(button);
-                } else if (TrySteal(Settings.Instance.BtnTalk, out button)) {
+                } else if (TrySteal(patch_Settings_InputV1.Instance.BtnTalk, out button)) {
                     AddRemap(button);
-                } else if (TrySteal(Settings.Instance.BtnAltQuickRestart, out button)) {
+                } else if (TrySteal(patch_Settings_InputV1.Instance.BtnAltQuickRestart, out button)) {
                     AddRemap(button);
                 }
             }
@@ -272,7 +280,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap buttons during a remap operation.
-        /// This should be the a List<Buttons> field in your settings class
+        /// This should be the a List&lt;Buttons&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newBtn">The new button that the user is attempting to set.</param>
@@ -282,19 +290,19 @@ namespace Celeste {
 
             switch (mappedBtn) {
                 case Mappings.Jump:
-                    return Settings.Instance.BtnJump;
+                    return patch_Settings_InputV1.Instance.BtnJump;
 
                 case Mappings.Dash:
-                    return Settings.Instance.BtnDash;
+                    return patch_Settings_InputV1.Instance.BtnDash;
 
                 case Mappings.Grab:
-                    return Settings.Instance.BtnGrab;
+                    return patch_Settings_InputV1.Instance.BtnGrab;
 
                 case Mappings.Talk:
-                    return Settings.Instance.BtnTalk;
+                    return patch_Settings_InputV1.Instance.BtnTalk;
 
                 case Mappings.QuickRestart:
-                    return Settings.Instance.BtnAltQuickRestart;
+                    return patch_Settings_InputV1.Instance.BtnAltQuickRestart;
 
                 default:
                     return null;

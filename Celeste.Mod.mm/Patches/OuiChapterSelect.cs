@@ -11,9 +11,6 @@ using MonoMod;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_OuiChapterSelect : OuiChapterSelect {
@@ -177,11 +174,6 @@ namespace Celeste {
             // Note: You may instinctually call base.Update();
             // DON'T! The original method is orig_Update
 
-            if (Everest.Flags.IsDisabled) {
-                orig_Update();
-                return;
-            }
-
             KeyboardState keysPrev = _keys;
             KeyboardState keys = Keyboard.GetState();
             _keys = keys;
@@ -265,10 +257,6 @@ namespace Celeste {
 
         public extern void orig_Render();
         public override void Render() {
-            if (Everest.Flags.IsDisabled) {
-                orig_Render();
-                return;
-            }
 
             orig_Render();
             if (maplistEase > 0f) {

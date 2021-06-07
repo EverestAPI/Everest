@@ -3,9 +3,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Linq;
 
 namespace Celeste.Mod.UI {
     class OuiDependencyDownloader : OuiLoggedProgress {
@@ -220,8 +221,15 @@ namespace Celeste.Mod.UI {
                 if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
-                foreach (string mod in modsNotFound)
-                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_FOUND"), mod));
+                foreach (string mod in modsNotFound) {
+                    if (mod == "Celeste") {
+                        // "some of your mods require a more recent version of Celeste"
+                        LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UPDATE_CELESTE"));
+                    } else {
+                        // "xx could not be found in the database"
+                        LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_FOUND"), mod));
+                    }
+                }
 
                 foreach (string mod in modsNotInstallableAutomatically)
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE"), mod));
@@ -375,7 +383,7 @@ namespace Celeste.Mod.UI {
                 LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING"), mod.Name, mod.URL));
                 LogLine("", false);
 
-                Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, (position, length, speed) => {
+                Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                     if (length > 0) {
                         Lines[Lines.Count - 1] = $"{((int) Math.Floor(100D * (position / (double) length)))}% @ {speed} KiB/s";
                         Progress = position;
@@ -385,7 +393,18 @@ namespace Celeste.Mod.UI {
                         ProgressMax = 0;
                     }
                     return true;
-                });
+                };
+
+                try {
+                    Everest.Updater.DownloadFileWithProgress(mod.URL, downloadDestination, progressCallback);
+                } catch (WebException e) {
+                    Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", $"Download failed, trying mirror {mod.MirrorURL}");
+                    Logger.LogDetailed(e);
+
+                    Lines[Lines.Count - 1] = string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR"), mod.MirrorURL);
+                    LogLine("", false);
+                    Everest.Updater.DownloadFileWithProgress(mod.MirrorURL, downloadDestination, progressCallback);
+                }
 
                 ProgressMax = 0;
                 Lines[Lines.Count - 1] = Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED");
@@ -402,6 +421,9 @@ namespace Celeste.Mod.UI {
                 } else {
                     string installDestination = Path.Combine(Everest.Loader.PathMods, $"{mod.Name}.zip");
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_INSTALLING"), mod.Name, mod.Version, installDestination));
+                    if (File.Exists(installDestination)) {
+                        File.Delete(installDestination);
+                    }
                     File.Move(downloadDestination, installDestination);
                     Everest.Loader.LoadZip(installDestination);
                 }

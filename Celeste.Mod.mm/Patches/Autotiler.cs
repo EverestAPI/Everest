@@ -272,7 +272,7 @@ namespace Celeste {
                     int depth = GetDepth(terrainType, mapData, x, y, forceFill, behaviour, 1);
                     return terrainType.CustomFills[depth - 1];
                 } else {
-                    if (!CheckCross(terrainType, mapData, x, y, forceFill, behaviour, 1 + width / 2, 1 + height / 2))
+                    if (CheckCross(terrainType, mapData, x, y, forceFill, behaviour, 1 + width / 2, 1 + height / 2))
                         return terrainType.Center;
 
                     return terrainType.Padded;

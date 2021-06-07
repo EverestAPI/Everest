@@ -1,8 +1,5 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -11,18 +8,25 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
-    class patch_TextMenu : TextMenu {
+    public class patch_TextMenu : TextMenu {
 
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
+
+        /// <summary>
+        /// The items contained in this menu.
+        /// </summary>
         public List<Item> Items => items;
 
         // Basically the same as Add(), but with an index parameter.
+        /// <summary>
+        /// Insert a <see cref="TextMenu.Item"/> at position <paramref name="index"/> in the menu.
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public TextMenu Insert(int index, Item item) {
             items.Insert(index, item);
             item.Container = this;
@@ -41,6 +45,11 @@ namespace Celeste {
         }
 
         // The reverse of Add()
+        /// <summary>
+        /// Remove a <see cref="TextMenu.Item"/> from the menu.
+        /// </summary>
+        /// <param name="item">A <see cref="TextMenu.Item"/> contained in this menu.</param>
+        /// <returns></returns>
         public TextMenu Remove(Item item) {
             int index = items.IndexOf(item);
             if (index == -1)
@@ -55,6 +64,7 @@ namespace Celeste {
             return this;
         }
 
+        /// <inheritdoc cref="TextMenu.GetYOffsetOf(Item)"/>
         [MonoModReplace]
         public new float GetYOffsetOf(Item targetItem) {
             // this is a small fix of the vanilla method to better support invisible menu items.
@@ -69,11 +79,16 @@ namespace Celeste {
                 if (listItem == targetItem)
                     break;
             }
-
+            if (targetItem is TextMenuExt.OptionSubMenu optionSubMenuItem && !optionSubMenuItem.Focused) {
+                return num - targetItem.Height() - ItemSpacing + optionSubMenuItem.TitleHeight * 0.5f;
+            }
             return num - targetItem.Height() * 0.5f - ItemSpacing;
         }
 
+#pragma warning disable CS0626 // extern method with no attribute
         public extern void orig_Update();
+#pragma warning restore CS0626 // extern method with no attribute
+
         public override void Update() {
             orig_Update();
 
@@ -104,18 +119,35 @@ namespace Celeste {
         public override void Render() {
             // this is heavily based on the vanilla method, adding a check to skip rendering off-screen options.
             RecalculateSize();
+
+            // render non-AboveAll items, then AboveAll items.
+            if (renderItems(aboveAll: false)) {
+                renderItems(aboveAll: true);
+            }
+        }
+
+        // Renders AboveAll or non-AboveAll items depending on the passed parameter, and returns true if items were skipped.
+        private bool renderItems(bool aboveAll) {
+            bool skippedItems = false;
+
             Vector2 currentPosition = Position - Justify * new Vector2(Width, Height);
             foreach (Item item in items) {
                 if (item.Visible) {
                     float itemHeight = item.Height();
-                    Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
-                    // skip rendering the option if it is off-screen.
-                    if (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height) {
-                        item.Render(drawPosition, Focused && Current == item);
+                    if (aboveAll == item.AboveAll) {
+                        Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
+                        // skip rendering the option if it is off-screen.
+                        if (((patch_Item) item).AlwaysRender || (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height)) {
+                            item.Render(drawPosition, Focused && Current == item);
+                        }
+                    } else {
+                        skippedItems = true;
                     }
                     currentPosition.Y += itemHeight + ItemSpacing;
                 }
             }
+
+            return skippedItems;
         }
 
         public class patch_LanguageButton : LanguageButton {
@@ -183,7 +215,10 @@ namespace Celeste {
             [PatchTextMenuOptionColor]
             public extern new void Render(Vector2 position, bool highlighted);
 
+#pragma warning disable CS0626 // extern method with no attribute
             public extern float orig_RightWidth();
+#pragma warning restore CS0626 // extern method with no attribute
+
             public override float RightWidth() {
                 // the vanilla method measures each option, which can be resource-heavy.
                 // caching it allows to remove some lag in big menus, like Mod Options with a lot of mods installed.
@@ -196,6 +231,96 @@ namespace Celeste {
                 return cachedRightWidth;
             }
         }
+
+        public class patch_Item : Item {
+            /// <summary>
+            /// Set this property to true to force the Item to render even when off-screen.
+            /// </summary>
+            public virtual bool AlwaysRender { get; } = false;
+
+            /// <summary>
+            /// Items that have AboveAll set to true will render above those that have it set to false.
+            /// </summary>
+            [MonoModIfFlag("V1:Input")]
+            public new bool AboveAll = false;
+        }
+
+        public class patch_SubHeader : SubHeader {
+
+            public patch_SubHeader(string title)
+                : base(title, true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModLinkTo("Celeste.TextMenu/SubHeader", "System.Void .ctor(System.String,System.Boolean)")]
+            [MonoModIgnore]
+            public extern void ctor(string label, bool topPadding = true);
+
+            [MonoModIfFlag("V2:SubHeader")]
+            [MonoModConstructor]
+            public void ctor(string label) {
+                ctor(label, true);
+            }
+
+        }
+
+        public class patch_Setting : Setting {
+
+            public patch_Setting(string label, string value = "")
+                : base(label, value) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public patch_Setting(string label, Keys key)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public patch_Setting(string label, List<Keys> keys)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public patch_Setting(string label, Buttons btn)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public patch_Setting(string label, List<Buttons> buttons)
+                : this(label) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModLinkTo("Celeste.TextMenu/Setting", "System.Void .ctor(System.String,System.String)")]
+            [MonoModIgnore]
+            public extern void ctor(string label, string value = "");
+
+            [MonoModConstructor]
+            public void ctor(string label, Keys key) {
+                ctor(label);
+                Set(new List<Keys>() { key });
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, List<Keys> keys) {
+                ctor(label);
+                Set(keys);
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, Buttons btn) {
+                ctor(label);
+                Set(new List<Buttons>() { btn });
+            }
+
+            [MonoModConstructor]
+            public void ctor(string label, List<Buttons> buttons) {
+                ctor(label);
+                Set(buttons);
+            }
+
+        }
+
     }
 
     public static partial class TextMenuExt {
@@ -209,15 +334,11 @@ namespace Celeste {
         public static List<TextMenu.Item> GetItems(this TextMenu self)
             => ((patch_TextMenu) self).Items;
 
-        /// <summary>
-        /// Insert the given menu item at the given index.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Insert(int, TextMenu.Item)"/>
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
 
-        /// <summary>
-        /// Remove the given menu item from the menu.
-        /// </summary>
+        /// <inheritdoc cref="patch_TextMenu.Remove(TextMenu.Item)"/>
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
 

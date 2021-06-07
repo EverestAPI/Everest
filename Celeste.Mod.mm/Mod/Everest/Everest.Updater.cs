@@ -1,28 +1,17 @@
-﻿using Celeste.Mod.UI;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.UI;
 using Ionic.Zip;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using Monocle;
-using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -181,7 +170,7 @@ namespace Celeste.Mod {
             };
 
             public static Task RequestAll() {
-                if (Flags.IsDisabled || !Flags.SupportUpdatingEverest)
+                if (!Flags.SupportUpdatingEverest)
                     return new Task(() => { });
 
                 Task[] tasks = new Task[Sources.Count];
@@ -424,10 +413,14 @@ namespace Celeste.Mod {
                 if (File.Exists(destPath))
                     File.Delete(destPath);
 
+                HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                request.Timeout = 10000;
+                request.ReadWriteTimeout = 10000;
+
                 // Manual buffered copy from web input to file output.
                 // Allows us to measure speed and progress.
-                using (WebClient wc = new WebClient())
-                using (Stream input = wc.OpenRead(url))
+                using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
+                using (Stream input = response.GetResponseStream())
                 using (FileStream output = File.OpenWrite(destPath)) {
                     long length;
                     if (input.CanSeek) {
@@ -471,6 +464,8 @@ namespace Celeste.Mod {
                 try {
                     HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
                     request.Method = "HEAD";
+                    request.Timeout = 10000;
+                    request.ReadWriteTimeout = 10000;
                     using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
                         return response.ContentLength;
                 } catch (Exception) {

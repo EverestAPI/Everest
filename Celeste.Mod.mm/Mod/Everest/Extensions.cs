@@ -9,9 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static class Extensions {
@@ -309,19 +307,19 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="vbtn">The virtual button to map the buttons to.</param>
         /// <param name="buttons">The buttons to map.</param>
-        public static void AddButtons(this VirtualButton vbtn, List<Buttons> buttons) {
+        public static void AddButtons(this patch_VirtualButton_InputV2 vbtn, List<Buttons> buttons) {
             foreach (Buttons btn in buttons) {
                 if (btn == Buttons.LeftTrigger) {
-                    vbtn.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
+                    vbtn.Nodes.Add(new patch_VirtualButton_InputV2.PadLeftTrigger(Input.Gamepad, 0.25f));
                     continue;
                 }
 
                 if (btn == Buttons.RightTrigger) {
-                    vbtn.Nodes.Add(new VirtualButton.PadRightTrigger(Input.Gamepad, 0.25f));
+                    vbtn.Nodes.Add(new patch_VirtualButton_InputV2.PadRightTrigger(Input.Gamepad, 0.25f));
                     continue;
                 }
 
-                vbtn.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, btn));
+                vbtn.Nodes.Add(new patch_VirtualButton_InputV2.PadButton(Input.Gamepad, btn));
             }
         }
 
@@ -353,8 +351,7 @@ namespace Celeste.Mod {
         }
 
         public static int AttrInt(this BinaryPacker.Element el, string name, int defaultValue = 0) {
-            object obj;
-            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out obj))
+            if (el.Attributes == null || !el.Attributes.TryGetValue(name, out object obj))
                 return defaultValue;
             if (obj is int)
                 return (int) obj;

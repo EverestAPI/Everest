@@ -1,12 +1,7 @@
-﻿using FMOD.Studio;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.Entities {
     /// <summary>
@@ -97,7 +92,7 @@ namespace Celeste.Mod.Entities {
                 JumpThruChecker = IsRiding
             });
 
-            Depth = -50;
+            Depth = Depths.Dust;
         }
 
         public override void Added(Scene scene) {
@@ -177,9 +172,7 @@ namespace Celeste.Mod.Entities {
         }
 
         private void OnCollide(Player player) {
-            int minIndex;
-            int maxIndex;
-            GetPlayerCollideIndex(player, out minIndex, out maxIndex);
+            GetPlayerCollideIndex(player, out int minIndex, out int maxIndex);
             if (maxIndex < 0 || minIndex >= spikes.Length)
                 return;
 
@@ -229,9 +222,7 @@ namespace Celeste.Mod.Entities {
             if (player == null)
                 return false;
 
-            int minIndex;
-            int maxIndex;
-            GetPlayerCollideIndex(player, out minIndex, out maxIndex);
+            GetPlayerCollideIndex(player, out int minIndex, out int maxIndex);
             return minIndex <= spikeIndex + 1 && maxIndex >= spikeIndex - 1;
         }
 
@@ -324,7 +315,7 @@ namespace Celeste.Mod.Entities {
                             if (PlayerCheck()) {
                                 DelayTimer = 0.05f;
                             } else {
-                                Audio.Play("event:/game/03_resort/fluff_tendril_emerge", Parent.Position + Position);
+                                Audio.Play(SFX.game_03_fluff_tendril_emerge, Parent.Position + Position);
                             }
                         }
                     } else {
@@ -345,7 +336,7 @@ namespace Celeste.Mod.Entities {
 
             public bool OnPlayer(Player player, Vector2 outwards) {
                 if (!Triggered) {
-                    Audio.Play("event:/game/03_resort/fluff_tendril_touch", Parent.Position + Position);
+                    Audio.Play(SFX.game_03_fluff_tendril_touch, Parent.Position + Position);
                     Triggered = true;
                     DelayTimer = DelayTime;
                     RetractTimer = RetractTime;

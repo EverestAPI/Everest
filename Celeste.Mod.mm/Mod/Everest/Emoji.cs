@@ -1,21 +1,7 @@
-﻿using Celeste.Mod.Core;
-using Monocle;
-using MonoMod.Utils;
-using MonoMod.InlineRT;
-using System;
+﻿using Monocle;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Security;
-using System.Reflection;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Xml;
 
 namespace Celeste.Mod {
@@ -136,8 +122,7 @@ namespace Celeste.Mod {
         /// <returns>Whether the emoji was registered or not.</returns>
         public static bool TryGet(string name, out char c) {
             c = '\0';
-            int id = 0;
-            if (!_IDs.TryGetValue(name, out id))
+            if (!_IDs.TryGetValue(name, out int id))
                 return false;
             c = (char) (Start + id);
             return true;

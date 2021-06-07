@@ -1,17 +1,11 @@
 ﻿using Monocle;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
-    /**
-     * Wrapper for IEnumerators which perform mission-critical operations and thus
-     * should continue running in the background, even when the entity has been removed.
-     */
+    /// <summary>
+    /// Wrapper class for IEnumerators which perform mission-critical operations and thus
+    /// should continue running in the background, even when the entity has been removed.
+    /// </summary>
     public class SafeRoutine : IEnumerator {
 
         public IEnumerator Inner;

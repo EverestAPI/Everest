@@ -1,21 +1,13 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
-using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 using MonoMod;
-using MonoMod.Utils;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using Logger = Celeste.Mod.Logger;
 
@@ -24,9 +16,15 @@ namespace Monocle {
 
         // We're effectively in Atlas, but still need to "expose" private fields to our mod.
         private Dictionary<string, MTexture> textures;
+        /// <summary>
+        /// The internal string-MTexture dictionary.
+        /// </summary>
         public Dictionary<string, MTexture> Textures => textures;
         private Dictionary<string, string> links = new Dictionary<string, string>();
         private Dictionary<string, List<MTexture>> orderedTexturesCache;
+        private Stack<MTexture> FallbackStack;
+
+        public MTexture DefaultFallback;
 
         public string DataMethod;
         public string DataPath;
@@ -176,9 +174,9 @@ namespace Monocle {
 
                     using (FileStream stream = File.OpenRead(pathFull + ".meta"))
                     using (BinaryReader reader = new BinaryReader(stream)) {
-                        reader.ReadInt32(); // ???
-                        reader.ReadString(); // ???
-                        reader.ReadInt32(); // ???
+                        reader.ReadInt32(); // version
+                        reader.ReadString(); // args
+                        reader.ReadInt32(); // hash
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
@@ -220,9 +218,9 @@ namespace Monocle {
 
                     using (FileStream stream = File.OpenRead(pathFull + ".meta"))
                     using (BinaryReader reader = new BinaryReader(stream)) {
-                        reader.ReadInt32();
-                        reader.ReadString();
-                        reader.ReadInt32();
+                        reader.ReadInt32(); // version
+                        reader.ReadString(); // args
+                        reader.ReadInt32(); // hash
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             string sourcePath = Path.Combine(Path.GetDirectoryName(path), reader.ReadString());
@@ -260,7 +258,9 @@ namespace Monocle {
             }
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromAtlas(string path, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromAtlas(string, AtlasDataFormat)"/>
         public static new Atlas FromAtlas(string path, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromAtlas(path, format);
             atlas.DataMethod = "FromAtlas";
@@ -271,7 +271,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromMultiAtlas(string rootPath, string[] dataPath, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromMultiAtlas(string, string[], AtlasDataFormat)"/>
         public static new Atlas FromMultiAtlas(string rootPath, string[] dataPath, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromMultiAtlas(rootPath, dataPath, format);
             atlas.DataMethod = "FromMultiAtlas";
@@ -283,7 +285,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromMultiAtlas(string rootPath, string filename, AtlasDataFormat format);
+        /// <inheritdoc cref="Atlas.FromMultiAtlas(string, string, AtlasDataFormat)"/>
         public static new Atlas FromMultiAtlas(string rootPath, string filename, AtlasDataFormat format) {
             patch_Atlas atlas = (patch_Atlas) orig_FromMultiAtlas(rootPath, filename, format);
             atlas.DataMethod = "FromMultiAtlas";
@@ -295,7 +299,9 @@ namespace Monocle {
             return atlas;
         }
 
+        /// <origdoc/>
         public static extern Atlas orig_FromDirectory(string path);
+        /// <inheritdoc cref="Atlas.FromDirectory(string)"/>
         public static new Atlas FromDirectory(string path) {
             patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
             atlas.DataMethod = "FromDirectory";
@@ -321,6 +327,29 @@ namespace Monocle {
                 orderedTexturesCache = new Dictionary<string, List<MTexture>>();
         }
 
+        public MTexture GetFallback() {
+            if (FallbackStack != null && FallbackStack.Count > 0)
+                return FallbackStack.Peek();
+
+            if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
+                return DefaultFallback;
+
+            return null;
+        }
+
+        public void PushFallback(MTexture fallback) {
+            if (FallbackStack == null)
+                FallbackStack = new Stack<MTexture>();
+            FallbackStack.Push(fallback);
+        }
+
+        public MTexture PopFallback() {
+            return FallbackStack.Pop();
+        }
+
+        /// <summary>
+        /// Feed the given ModAsset into the atlas.
+        /// </summary>
         public void Ingest(ModAsset asset) {
             if (asset == null)
                 return;
@@ -381,9 +410,40 @@ namespace Monocle {
         // log missing subtextures when getting an animation (for example, decals)
         public extern List<MTexture> orig_GetAtlasSubtextures(string key);
         public new List<MTexture> GetAtlasSubtextures(string key) {
+            PushFallback(null);
             List<MTexture> result = orig_GetAtlasSubtextures(key);
+            PopFallback();
             if (result == null || result.Count == 0) {
-                Logger.Log(LogLevel.Warn, "Atlas.GetAtlasSubtextures", $"Requested atlas subtextures but none were found: {key}");
+                Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtextures but none were found: {key}");
+                MTexture fallback = GetFallback();
+                if (fallback != null)
+                    return new List<MTexture>() { fallback };
+            }
+            return result;
+        }
+
+        [MonoModIgnore]
+        private extern MTexture GetAtlasSubtextureFromAtlasAt(string key, int index);
+
+        [MonoModReplace]
+        public new MTexture GetAtlasSubtexturesAt(string key, int index) {
+            if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
+                if (index < 0 || index >= list.Count) {
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that falls out of range: {key} {index}");
+                    return GetFallback();
+                }
+                return list[index];
+            }
+
+            MTexture result = GetAtlasSubtextureFromAtlasAt(key, index);
+            if (result == null) {
+                MTexture fallback = GetFallback();
+                if (fallback != null) {
+                    // SpriteData and other places use GetAtlasSubtextureAt to check if textures exist.
+                    // Logging this verbosely when no fallback exists doesn't make sense in those cases.
+                    Logger.Log(LogLevel.Warn, "Atlas", $"Requested atlas subtexture that does not exist: {key} {index}");
+                    return fallback;
+                }
             }
             return result;
         }
@@ -392,10 +452,11 @@ namespace Monocle {
         public new MTexture this[string id] {
             [MonoModReplace]
             get {
-                if (!textures.ContainsKey(id)) {
+                if (!textures.TryGetValue(id, out MTexture result)) {
                     Logger.Log(LogLevel.Warn, "Atlas", $"Requested texture that does not exist: {id}");
+                    return GetFallback();
                 }
-                return textures[id];
+                return result;
             }
 
             // we don't want to modify the setter, but want it to exist in the patch class so that we can call it from within our patches.

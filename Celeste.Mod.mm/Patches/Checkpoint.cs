@@ -1,20 +1,9 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
-using MonoMod;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 using Microsoft.Xna.Framework;
-using System.IO;
-using FMOD.Studio;
 using Monocle;
-using Celeste.Mod.Meta;
+using System;
 
 namespace Celeste {
     class patch_Checkpoint : Entity {

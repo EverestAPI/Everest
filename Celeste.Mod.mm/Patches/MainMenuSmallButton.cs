@@ -1,30 +1,30 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Celeste {
     class patch_MainMenuSmallButton : MainMenuSmallButton {
 
-#pragma warning disable CS0649 // field is never assigned: it is in vanilla code
         private float ease;
         private Wiggler wiggler;
-#pragma warning restore CS0649
 
         // expose these fields to extending classes.
         public float Ease => ease;
         public Wiggler Wiggler => wiggler;
 
+        /// <summary>
+        /// The original label name dialog key.<br/>
+        /// Useful when inserting your own button between others.
+        /// </summary>
         public string LabelName;
+        /// <summary>
+        /// The original GUI atlas icon path.<br/>
+        /// Useful when inserting your own button between others.
+        /// </summary>
         public string IconName;
 
         public patch_MainMenuSmallButton(string labelName, string iconName, Oui oui, Vector2 targetPosition, Vector2 tweenFrom, Action onConfirm)

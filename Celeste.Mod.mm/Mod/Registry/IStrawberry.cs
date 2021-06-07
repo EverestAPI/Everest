@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using Celeste.Mod;
-using Celeste.Mod.Entities;
-using Microsoft.Xna.Framework;
-using Monocle;
-using MonoMod;
-
-namespace Celeste.Mod {
+﻿namespace Celeste.Mod {
     /// <summary>
     /// All registered Strawberries must implement the IStrawberry interface.
     /// This enables the Strawberry Registry and its related modifications

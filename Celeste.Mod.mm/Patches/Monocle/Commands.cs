@@ -1,9 +1,9 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
 using Celeste;
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using MonoMod;
@@ -19,11 +19,26 @@ namespace Monocle {
         private bool canOpen;
         private KeyboardState currentState;
         private bool underscore;
+
+#pragma warning disable CS0414 // assigned but never used
+        private float repeatCounter;
+        private float underscoreCounter;
+#pragma warning restore CS0414 // assigned but never used
+
+        private Keys? repeatKey;
         private string currentText = "";
         private List<patch_Line> drawCommands;
+        private List<string> sorted;
+        private List<string> commandHistory;
+        private int seekIndex;
+        private Dictionary<string, patch_CommandInfo> commands;
 
         private int mouseScroll;
         private int cursorScale;
+        private int charIndex;
+        private bool installedListener;
+
+        private int firstLineIndexToDraw;
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
@@ -35,6 +50,11 @@ namespace Monocle {
             } else if (MInput.Keyboard.Pressed(Keys.OemTilde, Keys.Oem8, Keys.OemPeriod)) {
                 Open = true;
                 currentState = Keyboard.GetState();
+                if (!installedListener) {
+                    // this should realistically be done in the constructor. if we ever patch the ctor move it there!
+                    installedListener = true;
+                    TextInput.OnInput += HandleChar;
+                }
             }
 
             // Execute F-key actions.
@@ -132,31 +152,24 @@ namespace Monocle {
 
             Draw.Rect(10f, viewHeight - 50f, viewWidth - 20f, 40f, Color.Black * 0.8f);
 
+            var drawPoint = new Vector2(20f, viewHeight - 42f);
+            Draw.SpriteBatch.DrawString(Draw.DefaultFont, ">" + currentText, drawPoint, Color.White);
             if (underscore) {
-                Draw.SpriteBatch.DrawString(
-                    Draw.DefaultFont,
-                    ">" + currentText + "_",
-                    new Vector2(20f, viewHeight - 42f),
-                    Color.White
-                );
-            } else {
-                Draw.SpriteBatch.DrawString(
-                    Draw.DefaultFont,
-                    ">" + currentText,
-                    new Vector2(20f, viewHeight - 42f),
-                    Color.White
-                );
+                var size = Draw.DefaultFont.MeasureString(">" + currentText.Substring(0, charIndex));
+                size.X++;
+                Draw.Line(drawPoint + new Vector2(size.X, 0), drawPoint + size, Color.White);
             }
 
             if (drawCommands.Count > 0) {
-                float height = 10f + 30f * drawCommands.Count;
+                int drawCount = Math.Min((Engine.Instance.Window.ClientBounds.Height - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
+                float height = 10f + 30f * drawCount;
                 Draw.Rect(10f, viewHeight - height - 60f, viewWidth - 20f, height, Color.Black * 0.8f);
-                for (int i = 0; i < drawCommands.Count; i++) {
+                for (int i = 0; i < drawCount && firstLineIndexToDraw + i < drawCommands.Count; i++) {
                     Draw.SpriteBatch.DrawString(
                         Draw.DefaultFont,
-                        drawCommands[i].Text,
+                        drawCommands[firstLineIndexToDraw + i].Text,
                         new Vector2(20f, viewHeight - 92f - 30f * i),
-                        drawCommands[i].Color
+                        drawCommands[firstLineIndexToDraw + i].Color
                     );
                 }
             }
@@ -164,53 +177,188 @@ namespace Monocle {
             Draw.SpriteBatch.End();
         }
 
-        private string[] sidTabResults = new string[0];
-        private int sidTabIndex = -1;
+        private string[] tabResults = new string[0];
+        private int tabIndex = -1;
+        private string tabPrefix = "";
 
-        private extern void orig_HandleKey(Keys key);
+        [MonoModReplace]  // don't create an orig_ method
         private void HandleKey(Keys key) {
-            if (key == Keys.Tab && (currentText.StartsWith("load ") || currentText.StartsWith("hard ") || currentText.StartsWith("rmx2 "))) {
-                // handle tab autocomplete for SIDs
+            // this method handles all control characters, which go through the XNA Keys API
+            underscore = true;
+            underscoreCounter = 0f;
+            bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
+            bool ctrl = currentState[Keys.LeftControl] == KeyState.Down || currentState[Keys.RightControl] == KeyState.Down;
+            bool breakSoon;
 
-                if (sidTabIndex == -1) {
-                    // search for SIDs that match what we started typing.
-                    string startOfSid = currentText.Substring(5);
-                    sidTabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
-                }
-
-                if (sidTabResults.Length != 0) {
-                    if (currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down) {
-                        // Shift+Tab => backwards
-                        sidTabIndex--;
-                    } else {
-                        // Tab => forwards
-                        sidTabIndex++;
-                    }
-
-                    // if sidTabIndex was -1 and we pressed Shift+Tab, we should display the last result.
-                    // (if we pressed Tab instead, sidTabIndex will be 0, which is what we want.)
-                    if (sidTabIndex == -2) {
-                        sidTabIndex = sidTabResults.Length - 1;
-                    }
-
-                    // wrap around if gone out of bounds
-                    if (sidTabIndex < 0) {
-                        sidTabIndex += sidTabResults.Length;
-                    }
-                    sidTabIndex %= sidTabResults.Length;
-
-                    // autocomplete
-                    currentText = currentText.Substring(0, 5) + sidTabResults[sidTabIndex];
-                }
-            } else {
-                if (key != Keys.Tab && key != Keys.LeftShift && key != Keys.RightShift && key != Keys.RightAlt && key != Keys.LeftAlt && key != Keys.RightControl && key != Keys.LeftControl) {
-                    // reset the tab index: next time we press Tab, autocomplete will search matching SIDs again.
-                    sidTabIndex = -1;
-                }
-
-                // proceed to vanilla code
-                orig_HandleKey(key);
+            // handle tab aborting
+            // nuance: this method is technically called for character keys, not just control keys
+            switch (key) {
+                case Keys.Tab:
+                case Keys.LeftShift:
+                case Keys.RightShift:
+                case Keys.LeftControl:
+                case Keys.RightControl:
+                case Keys.LeftAlt:
+                case Keys.RightAlt:
+                    break;
+                default:
+                    tabIndex = -1;
+                    break;
             }
+            
+            // all keys should be repeatable except for enter (and stuff not handled by this function)
+            if (key != Keys.Enter && (repeatKey == null || repeatKey != key)) {
+                repeatKey = key;
+                repeatCounter = 0.0f;
+            }
+            
+            // handle main functionality
+            switch (key) {
+                case Keys.Enter:
+                    if (currentText.Length > 0)
+                        EnterCommand();
+                    charIndex = currentText.Length;
+                    seekIndex = -1;
+                    break;
+                case Keys.Tab:
+                    if (tabIndex == -1) {
+                        // pressed tab for fresh session - query for tabbable set
+                        if (currentText.StartsWith("load ") || currentText.StartsWith("hard ") || currentText.StartsWith("rmx2 ")) {
+                            // SID matching
+                            tabPrefix = currentText.Substring(0, 5);
+                            string startOfSid = currentText.Substring(5);
+                            tabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                        } else {
+                            // command matching
+                            tabPrefix = "";
+                            tabResults = sorted.Where(cmd => cmd.StartsWith(currentText, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                        }
+
+                        if (tabResults.Length == 0) {
+                            // No matches. abort
+                            break;
+                        }
+
+                        // set initial index
+                        tabIndex = shift ? tabResults.Length - 1 : 0;
+                    } else {
+                        // pressed tab in existing session - scroll through the list
+                        int tdir = shift ? -1 : 1;
+                        tabIndex += tdir;
+                        if (tabIndex < 0) {
+                            tabIndex += tabResults.Length;
+                        }
+                        tabIndex %= tabResults.Length;
+                    }
+                    
+                    // by this point tabIndex should be valid. perform a completion
+                    currentText = tabPrefix + tabResults[tabIndex];
+                    charIndex = currentText.Length;
+                    break;
+                case Keys.Left:
+                case Keys.Right:
+                    int dir = key == Keys.Left ? -1 : 1;
+                    charIndex = Calc.Clamp(charIndex + dir, 0, currentText.Length);
+                    while (ctrl && !IsWordBoundary(charIndex, dir == 1)) {
+                        charIndex += dir;
+                    }
+                    break;
+                case Keys.Back:
+                    do {
+                        if (charIndex == 0) {
+                            break;
+                        }
+                        breakSoon = IsWordBoundary(charIndex - 1, false);
+                        currentText = currentText.Substring(0, Math.Max(charIndex - 1, 0)) + currentText.Substring(charIndex);
+                        charIndex--;
+                    } while (ctrl && !breakSoon);
+                    break;
+                case Keys.Delete:
+                    do {
+                        if (charIndex == currentText.Length) {
+                            break;
+                        }
+                        breakSoon = IsWordBoundary(charIndex + 1, true);
+                        currentText = currentText.Substring(0, charIndex) + currentText.Substring(charIndex + 1);
+                    } while (ctrl && !breakSoon);
+                    break;
+                case Keys.Home:
+                    if (ctrl) {
+                        firstLineIndexToDraw = Math.Max(drawCommands.Count - 1, 0);
+                    } else {
+                        charIndex = 0;
+                    }
+                    break;
+                case Keys.End:
+                    if (ctrl) {
+                        firstLineIndexToDraw = 0;
+                    } else {
+                        charIndex = currentText.Length;
+                    }
+                    break;
+                case Keys.Up:
+                case Keys.Down:
+                    int hdir = key == Keys.Up ? 1 : -1;
+                    if (ctrl) {
+                        firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw + hdir, 0, Math.Max(drawCommands.Count - 1, 0));
+                    } else {
+                        seekIndex = Calc.Clamp(seekIndex + hdir, -1, commandHistory.Count - 1);
+                        currentText = seekIndex == -1 ? "" : commandHistory[seekIndex];
+                        charIndex = currentText.Length;
+                    }
+                    break;
+                case Keys.F1:
+                case Keys.F2:
+                case Keys.F3:
+                case Keys.F4:
+                case Keys.F5:
+                case Keys.F6:
+                case Keys.F7:
+                case Keys.F8:
+                case Keys.F9:
+                case Keys.F10:
+                case Keys.F11:
+                case Keys.F12:
+                    ExecuteFunctionKeyAction(key - Keys.F1);
+                    break;
+            }
+        }
+
+        private void HandleChar(char key) {
+            // this API seemingly handles repeating keys for us
+            if (!Open) {
+                return;
+            }
+            if (key == '~' || key == '`') {
+                Open = canOpen = false;
+                return;
+            }
+            if (char.IsControl(key)) {
+                return;
+            }
+
+            currentText = currentText.Substring(0, charIndex) + key + currentText.Substring(charIndex);
+            charIndex++;
+        }
+
+        private bool IsWord(char ch) {
+            // also count _ and - as wordchars. _ is standard and - appears in room names commonly
+            // do not count / since a common usecase could be to edit a segment of a SID
+            return char.IsLetterOrDigit(ch) || ch == '_' || ch == '-';
+        }
+
+        private bool IsWordBoundary(int idx, bool forward) {
+                // for move forward that means t[i-1] is word and t[i] is nonword
+                // for move backward that means t[i] is word and t[i-1] is nonword
+                if (idx <= 0 || idx >= currentText.Length) {
+                    return true;
+                }
+                char chBack = currentText[idx - 1];
+                char chForward = currentText[idx];
+                bool backWord = IsWord(chBack);
+                bool foreWord = IsWord(chForward);
+                // oof
+                return (forward && backWord && !foreWord) || (!forward && !backWord && foreWord);
         }
 
         // Fix for https://github.com/EverestAPI/Everest/issues/167
@@ -237,7 +385,7 @@ namespace Monocle {
                 LogStackTrace(innerException.StackTrace);
 
                 if (ContainCantDrawChar(innerException.Message + innerException.StackTrace)) {
-                    Engine.Commands.Log("Please check log.txt for full exception log, because it contains characters can't be displayed.", Color.Yellow);
+                    Engine.Commands.Log("Please check log.txt for full exception log, because it contains characters that can't be displayed.", Color.Yellow);
                     Logger.Log("Commands", innerException.ToString());
                 }
             }
@@ -245,6 +393,52 @@ namespace Monocle {
 
         private bool ContainCantDrawChar(string text) {
             return text.ToCharArray().Any(c => !Draw.DefaultFont.Characters.Contains(c) && !char.IsControl(c));
+        }
+
+        [MonoModIgnore]
+        [PatchCommandsUpdateOpen]
+        internal extern void UpdateOpen();
+
+        [MonoModIgnore]
+        private extern void BuildCommandsList();
+
+        public void ReloadCommandsList() {
+            commands.Clear();
+            sorted.Clear();
+            BuildCommandsList();
+        }
+
+        [MonoModReplace]
+        public new void Log(object obj, Color color) {
+            string text = obj.ToString();
+            if (text.Contains("\n")) {
+                foreach (string obj2 in text.Split('\n')) {
+                    Log(obj2, color);
+                }
+                return;
+            }
+            int width = Engine.Instance.Window.ClientBounds.Width - 40;
+            while (Draw.DefaultFont.MeasureString(text).X > width) {
+                int index = -1;
+                for (int i = 0; i < text.Length; i++) {
+                    if (text[i] == ' ') {
+                        if (Draw.DefaultFont.MeasureString(text.Substring(0, i)).X > width) {
+                            break;
+                        }
+                        index = i;
+                    }
+                }
+                if (index == -1) {
+                    break;
+                }
+                drawCommands.Insert(0, new patch_Line(text.Substring(0, index), color));
+                text = text.Substring(index + 1);
+            }
+            drawCommands.Insert(0, new patch_Line(text, color));
+            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            while (drawCommands.Count > maxCommandLines) {
+                drawCommands.RemoveAt(drawCommands.Count - 1);
+            }
         }
 
         // Only required to be defined so that we can access it.
@@ -260,6 +454,13 @@ namespace Monocle {
                 Text = text;
                 Color = color;
             }
+        }
+
+        [MonoModIgnore]
+        private struct patch_CommandInfo {
+            public Action<string[]> Action;
+            public string Help;
+            public string Usage;
         }
 
     }

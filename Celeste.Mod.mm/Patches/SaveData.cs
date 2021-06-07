@@ -1,16 +1,12 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -245,17 +241,24 @@ namespace Celeste {
         public static new bool TryDelete(int slot) {
             if (!orig_TryDelete(slot))
                 return false;
+            return TryDeleteModSaveData(slot);
+        }
 
+        public static bool TryDeleteModSaveData(int slot) {
             foreach (EverestModule mod in Everest._Modules) {
                 mod.DeleteSaveData(slot);
                 mod.DeleteSession(slot);
             }
 
-            UserIO.Delete(GetFilename(slot) + "-modsavedata");
-
             LoadedModSaveDataIndex = int.MinValue;
 
-            return true;
+            // delete the modsavedata file if it exists.
+            string modSaveDataName = GetFilename(slot) + "-modsavedata";
+            if (UserIO.Exists(modSaveDataName)) {
+                return UserIO.Delete(modSaveDataName);
+            } else {
+                return true;
+            }
         }
 
         public extern void orig_StartSession(Session session);
@@ -514,6 +517,9 @@ namespace Celeste {
             }
         }
 
+        /// <summary>
+        /// Get the statistics for a given level set.
+        /// </summary>
         public LevelSetStats GetLevelSetStatsFor(string name)
             => LevelSets.Find(set => set.Name == name);
 
@@ -892,9 +898,7 @@ namespace Celeste {
         public static LevelSetStats GetLevelSetStats(this SaveData self)
             => ((patch_SaveData) self).LevelSetStats;
 
-        /// <summary>
-        /// Get the statistics for a given level set.
-        /// </summary>
+        /// <inheritdoc cref="patch_SaveData.GetLevelSetStatsFor(string)"/>
         public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
             => ((patch_SaveData) self).GetLevelSetStatsFor(name);
 

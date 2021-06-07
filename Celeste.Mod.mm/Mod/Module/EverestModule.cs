@@ -1,19 +1,13 @@
 ﻿using Celeste.Mod.UI;
 using FMOD.Studio;
-using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
+using MonoMod;
 using MonoMod.Utils;
-using MonoMod.InlineRT;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using System.Configuration;
-using Microsoft.Xna.Framework.Input;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -69,7 +63,9 @@ namespace Celeste.Mod {
                             YamlHelper.DeserializerUsing(_Settings).Deserialize(reader, SettingsType);
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the settings of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
 
             if (_Settings == null)
@@ -90,16 +86,22 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_Settings is EverestModuleBinarySettings) {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySettings) _Settings).Write(writer);
+                            stream.Flush(true);
+                        }
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream))
+                        using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
+                            stream.Flush(true);
+                        }
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the settings of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -138,7 +140,9 @@ namespace Celeste.Mod {
                     }
                 }
                 _SaveData.Index = index;
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the save data of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
 
         }
@@ -157,16 +161,22 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_SaveData is EverestModuleBinarySaveData) {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySaveData) _SaveData).Write(writer);
+                            stream.Flush(true);
+                        }
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream))
+                        using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
+                            stream.Flush(true);
+                        }
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the save data of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -222,7 +232,9 @@ namespace Celeste.Mod {
                     }
                 }
                 _Session.Index = index;
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the session of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -240,16 +252,22 @@ namespace Celeste.Mod {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
-                using (Stream stream = File.OpenWrite(path)) {
+                using (FileStream stream = File.OpenWrite(path)) {
                     if (_Session is EverestModuleBinarySession) {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySession) _Session).Write(writer);
+                            stream.Flush(true);
+                        }
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream))
+                        using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
+                            stream.Flush(true);
+                        }
                     }
                 }
-            } catch {
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the session of {Metadata.Name}!");
+                Logger.LogDetailed(e);
             }
         }
 
@@ -327,45 +345,79 @@ namespace Celeste.Mod {
                     continue;
 
                 if (typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType)) {
-                    if (!(prop.GetValue(settings) is ButtonBinding binding)) {
-                        binding = new ButtonBinding();
-
-                        DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
-                        if (defaults != null) {
-                            if (defaults.Button != 0)
-                                binding.Buttons.Add(defaults.Button);
-                            if (defaults.Key != 0)
-                                binding.Keys.Add(defaults.Key);
-                        }
-
-                        prop.SetValue(settings, binding);
-                    }
-
-                    VirtualButton vbutton = new VirtualButton();
-                    foreach (Keys key in binding.Keys)
-                        vbutton.Nodes.Add(new VirtualButton.KeyboardKey(key));
-
-                    foreach (Buttons button_ in binding.Buttons) {
-                        Buttons button = button_;
-                        if ((button & Buttons.LeftTrigger) == Buttons.LeftTrigger) {
-                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
-                            button &= ~Buttons.LeftTrigger;
-                        }
-                        if ((button & Buttons.RightTrigger) == Buttons.RightTrigger) {
-                            vbutton.Nodes.Add(new VirtualButton.PadLeftTrigger(Input.Gamepad, 0.25f));
-                            button &= ~Buttons.RightTrigger;
-                        }
-                        if (button != 0) {
-                            vbutton.Nodes.Add(new VirtualButton.PadButton(Input.Gamepad, button));
-                        }
-                    }
-
-                    binding.Button = vbutton;
+                    InitializeButtonBinding(settings, prop);
 
                 } else if (false) {
                     // TODO: JoystickBindings
                 }
             }
+        }
+
+        [MonoModIgnore]
+        private extern void InitializeButtonBinding(object settings, PropertyInfo prop);
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("InitializeButtonBinding")]
+        [MonoModReplace]
+        [Obsolete]
+        private void InitializeButtonBindingV1(object settings, PropertyInfo prop) {
+            if (!(prop.GetValue(settings) is ButtonBinding binding)) {
+                binding = new ButtonBinding();
+
+                DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
+                if (defaults != null) {
+                    if (defaults.Button != 0)
+                        binding.Buttons.Add(defaults.Button);
+                    if (defaults.Key != 0)
+                        binding.Keys.Add(defaults.Key);
+                }
+
+                prop.SetValue(settings, binding);
+            }
+
+            patch_VirtualButton_InputV1 vbutton = new patch_VirtualButton_InputV1();
+
+            foreach (Keys key in binding.Keys)
+                vbutton.Nodes.Add(new patch_VirtualButton_InputV1.KeyboardKey(key));
+
+            foreach (Buttons button_ in binding.Buttons) {
+                Buttons button = button_;
+                if ((button & Buttons.LeftTrigger) == Buttons.LeftTrigger) {
+                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadLeftTrigger(Input.Gamepad, 0.25f));
+                    button &= ~Buttons.LeftTrigger;
+                }
+                if ((button & Buttons.RightTrigger) == Buttons.RightTrigger) {
+                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadLeftTrigger(Input.Gamepad, 0.25f));
+                    button &= ~Buttons.RightTrigger;
+                }
+                if (button != 0) {
+                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadButton(Input.Gamepad, button));
+                }
+            }
+
+            binding.Button = vbutton;
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("InitializeButtonBinding")]
+        [MonoModReplace]
+        private void InitializeButtonBindingV2(object settings, PropertyInfo prop) {
+            if (!(prop.GetValue(settings) is ButtonBinding binding)) {
+                binding = new ButtonBinding();
+
+                DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
+                if (defaults != null) {
+                    if (defaults.Button != 0)
+                        binding.Binding.Add(defaults.Button);
+                    if (defaults.Key != 0)
+                        binding.Binding.Add(defaults.Key);
+                }
+
+                prop.SetValue(settings, binding);
+            }
+
+            binding.Button = (patch_VirtualButton_InputV1) new VirtualButton(binding.Binding, Input.Gamepad, 0.08f, 0.2f);
+            ((patch_VirtualButton_InputV2) (VirtualButton) binding.Button).AutoConsumeBuffer = true;
         }
 
         public virtual void OnInputDeregister() {
@@ -404,25 +456,65 @@ namespace Celeste.Mod {
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
             name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
 
-            menu.Add(new TextMenu.SubHeader(name + " | v." + Metadata.VersionString));
+            menu.Add(new patch_TextMenu.patch_SubHeader(name + " | v." + Metadata.VersionString));
         }
 
         protected virtual void CreateModMenuSectionKeyBindings(TextMenu menu, bool inGame, EventInstance snapshot) {
             menu.Add(new TextMenu.Button(Dialog.Clean("options_keyconfig")).Pressed(() => {
                 menu.Focused = false;
-                Engine.Scene.Add(new ModuleSettingsKeyboardConfigUI(this) {
-                    OnClose = () => menu.Focused = true
-                });
+                Engine.Scene.Add(CreateKeyboardConfigUI(menu));
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
 
             menu.Add(new TextMenu.Button(Dialog.Clean("options_btnconfig")).Pressed(() => {
                 menu.Focused = false;
-                Engine.Scene.Add(new ModuleSettingsButtonConfigUI(this) {
-                    OnClose = () => menu.Focused = true
-                });
+                Engine.Scene.Add(CreateButtonConfigUI(menu));
                 Engine.Scene.OnEndOfFrame += () => Engine.Scene.Entities.UpdateLists();
             }));
+        }
+
+        [MonoModIgnore]
+        private extern Entity CreateKeyboardConfigUI(TextMenu menu);
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("CreateKeyboardConfigUI")]
+        [MonoModReplace]
+        [Obsolete]
+        private Entity CreateKeyboardConfigUIV1(TextMenu menu) {
+            return new ModuleSettingsKeyboardConfigUI(this) {
+                OnClose = () => menu.Focused = true
+            };
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("CreateKeyboardConfigUI")]
+        [MonoModReplace]
+        private Entity CreateKeyboardConfigUIV2(TextMenu menu) {
+            return new ModuleSettingsKeyboardConfigUIV2(this) {
+                OnClose = () => menu.Focused = true
+            };
+        }
+
+        [MonoModIgnore]
+        private extern Entity CreateButtonConfigUI(TextMenu menu);
+
+        [MonoModIfFlag("V1:Input")]
+        [MonoModPatch("CreateButtonConfigUI")]
+        [MonoModReplace]
+        [Obsolete]
+        private Entity CreateButtonConfigUIV1(TextMenu menu) {
+            return new ModuleSettingsButtonConfigUI(this) {
+                OnClose = () => menu.Focused = true
+            };
+        }
+
+        [MonoModIfFlag("V2:Input")]
+        [MonoModPatch("CreateButtonConfigUI")]
+        [MonoModReplace]
+        private Entity CreateButtonConfigUIV2(TextMenu menu) {
+            return new ModuleSettingsButtonConfigUIV2(this) {
+                OnClose = () => menu.Focused = true
+            };
         }
 
         private Type _PrevSettingsType;
@@ -580,6 +672,7 @@ namespace Celeste.Mod {
 
                 } else if (!inGame && propType == typeof(string)) {
                     int maxValueLength = prop.GetCustomAttribute<SettingMaxLengthAttribute>()?.Max ?? 12;
+                    int minValueLength = prop.GetCustomAttribute<SettingMinLengthAttribute>()?.Min ?? 1;
 
                     item =
                         new TextMenu.Button(name + ": " + value)
@@ -588,7 +681,8 @@ namespace Celeste.Mod {
                             menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
                                 (string) value,
                                 v => prop.SetValue(settings, v),
-                                maxValueLength
+                                maxValueLength,
+                                minValueLength
                             );
                         })
                     ;
@@ -624,12 +718,12 @@ namespace Celeste.Mod {
 
                 if (!typeof(ButtonBinding).IsAssignableFrom(prop.PropertyType))
                     continue;
-                
+
                 if (!headerCreated) {
                     CreateModMenuSectionHeader(menu, inGame, snapshot);
                     headerCreated = true;
                 }
-                
+
                 CreateModMenuSectionKeyBindings(menu, inGame, snapshot);
                 break;
             }

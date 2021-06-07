@@ -1,15 +1,10 @@
-﻿using Mono.Cecil.Cil;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using Mono.Cecil;
+﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Cecil.Mdb;
 using Mono.Cecil.Pdb;
-using System.IO;
 using MonoMod;
+using System.IO;
+using System.Text;
 
 namespace Celeste.Mod {
     public class RelinkerSymbolReaderProvider : ISymbolReaderProvider {

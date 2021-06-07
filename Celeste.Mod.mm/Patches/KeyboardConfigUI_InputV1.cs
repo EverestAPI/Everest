@@ -1,10 +1,7 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
+﻿#pragma warning disable CS0169 // The field is never used
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -14,7 +11,9 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
-    public class patch_KeyboardConfigUI : KeyboardConfigUI {
+    [MonoModIfFlag("V1:Input")]
+    [MonoModPatch("KeyboardConfigUI")]
+    public class patch_KeyboardConfigUI_InputV1 : KeyboardConfigUI {
 
         [MonoModIgnore]
         private enum Mappings {
@@ -30,7 +29,8 @@ namespace Celeste {
             Cancel,
             Pause,
             Journal,
-            QuickRestart
+            QuickRestart,
+            DemoDash
         }
 
         private bool remapping;
@@ -66,7 +66,9 @@ namespace Celeste {
         /// <param name="key">The mapping index</param>
         /// <param name="list">The list of keys currently mapped to it</param>
         protected void AddKeyConfigLine(int key, List<Keys> list) {
-            Add(new Setting(GetLabel(key), list).Pressed(() => Remap(key)));
+            Add(new patch_TextMenu.patch_Setting(GetLabel(key), list).Pressed(() => {
+                Remap(key);
+            }));
         }
 
         /// <summary>
@@ -111,33 +113,33 @@ namespace Celeste {
         public virtual void Reload(int index = -1) {
             Clear();
             Add(new Header(Dialog.Clean("KEY_CONFIG_TITLE")));
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_ADDITION_HINT")));
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
-            AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, Settings.Instance.Left));
-            AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, Settings.Instance.Right));
-            AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, Settings.Instance.Up));
-            AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, Settings.Instance.Down));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MOVEMENT")));
+            AddKeyConfigLine(Mappings.Left, ForceDefaultKey(Keys.Left, patch_Settings_InputV1.Instance.Left));
+            AddKeyConfigLine(Mappings.Right, ForceDefaultKey(Keys.Right, patch_Settings_InputV1.Instance.Right));
+            AddKeyConfigLine(Mappings.Up, ForceDefaultKey(Keys.Up, patch_Settings_InputV1.Instance.Up));
+            AddKeyConfigLine(Mappings.Down, ForceDefaultKey(Keys.Down, patch_Settings_InputV1.Instance.Down));
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
-            AddKeyConfigLine(Mappings.Jump, Settings.Instance.Jump);
-            AddKeyConfigLine(Mappings.Dash, Settings.Instance.Dash);
-            AddKeyConfigLine(Mappings.Grab, Settings.Instance.Grab);
-            AddKeyConfigLine(Mappings.Talk, Settings.Instance.Talk);
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_GAMEPLAY")));
+            AddKeyConfigLine(Mappings.Jump, patch_Settings_InputV1.Instance.Jump);
+            AddKeyConfigLine(Mappings.Dash, patch_Settings_InputV1.Instance.Dash);
+            AddKeyConfigLine(Mappings.Grab, patch_Settings_InputV1.Instance.Grab);
+            AddKeyConfigLine(Mappings.Talk, patch_Settings_InputV1.Instance.Talk);
 
-            Add(new SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
-            AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, Settings.Instance.Confirm));
-            AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, Settings.Instance.Cancel));
-            AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, Settings.Instance.Pause));
-            AddKeyConfigLine(Mappings.Journal, Settings.Instance.Journal);
-            AddKeyConfigLine(Mappings.QuickRestart, Settings.Instance.QuickRestart);
-            Add(new SubHeader(""));
+            Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("KEY_CONFIG_MENUS")));
+            AddKeyConfigLine(Mappings.Confirm, ForceDefaultKey(Keys.Enter, patch_Settings_InputV1.Instance.Confirm));
+            AddKeyConfigLine(Mappings.Cancel, ForceDefaultKey(Keys.Back, patch_Settings_InputV1.Instance.Cancel));
+            AddKeyConfigLine(Mappings.Pause, ForceDefaultKey(Keys.Escape, patch_Settings_InputV1.Instance.Pause));
+            AddKeyConfigLine(Mappings.Journal, patch_Settings_InputV1.Instance.Journal);
+            AddKeyConfigLine(Mappings.QuickRestart, patch_Settings_InputV1.Instance.QuickRestart);
 
+            Add(new patch_TextMenu.patch_SubHeader(""));
             Button button = new Button(Dialog.Clean("KEY_CONFIG_RESET"));
             button.IncludeWidthInMeasurement = false;
             button.AlwaysCenter = true;
             button.OnPressed = delegate {
-                Settings.Instance.SetDefaultKeyboardControls(reset: true);
+                patch_Settings_InputV1.Instance.SetDefaultKeyboardControls(reset: true);
                 Input.Initialize();
                 Reload(Selection);
             };
@@ -190,7 +192,7 @@ namespace Celeste {
 
         /// <summary>
         /// Returns the list used to remap keys during a remap operation.
-        /// This should be the a List<Keys> field in your settings class
+        /// This should be a List&lt;Keys&gt; field in your settings class
         /// </summary>
         /// <param name="remapping">The int value of the mapping being remapped</param>
         /// <param name="newKey">The new key that the user is attempting to set.</param>
@@ -209,60 +211,60 @@ namespace Celeste {
 
             switch (mappedKey) {
                 case Mappings.Left:
-                    Settings.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Left = ((newKey != Keys.Left) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Right:
-                    Settings.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Right = ((newKey != Keys.Right) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Up:
-                    Settings.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Up = ((newKey != Keys.Up) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Down:
-                    Settings.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
+                    patch_Settings_InputV1.Instance.Down = ((newKey != Keys.Down) ? newKey : Keys.None);
                     return null;
 
                 case Mappings.Jump:
-                    return Settings.Instance.Jump;
+                    return patch_Settings_InputV1.Instance.Jump;
 
                 case Mappings.Dash:
-                    return Settings.Instance.Dash;
+                    return patch_Settings_InputV1.Instance.Dash;
 
                 case Mappings.Grab:
-                    return Settings.Instance.Grab;
+                    return patch_Settings_InputV1.Instance.Grab;
 
                 case Mappings.Talk:
-                    return Settings.Instance.Talk;
+                    return patch_Settings_InputV1.Instance.Talk;
 
                 case Mappings.Confirm:
-                    if (!Settings.Instance.Cancel.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                    if (!patch_Settings_InputV1.Instance.Cancel.Contains(newKey) && !patch_Settings_InputV1.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Enter) {
-                            return Settings.Instance.Confirm;
+                            return patch_Settings_InputV1.Instance.Confirm;
                         }
                     }
                     return null;
 
                 case Mappings.Cancel:
-                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Pause.Contains(newKey)) {
+                    if (!patch_Settings_InputV1.Instance.Confirm.Contains(newKey) && !patch_Settings_InputV1.Instance.Pause.Contains(newKey)) {
                         if (newKey != Keys.Back) {
-                            return Settings.Instance.Cancel;
+                            return patch_Settings_InputV1.Instance.Cancel;
                         }
                     }
                     return null;
 
                 case Mappings.Pause:
-                    if (!Settings.Instance.Confirm.Contains(newKey) && !Settings.Instance.Cancel.Contains(newKey)) {
-                        return Settings.Instance.Pause;
+                    if (!patch_Settings_InputV1.Instance.Confirm.Contains(newKey) && !patch_Settings_InputV1.Instance.Cancel.Contains(newKey)) {
+                        return patch_Settings_InputV1.Instance.Pause;
                     }
                     return null;
 
                 case Mappings.Journal:
-                    return Settings.Instance.Journal;
+                    return patch_Settings_InputV1.Instance.Journal;
 
                 case Mappings.QuickRestart:
-                    return Settings.Instance.QuickRestart;
+                    return patch_Settings_InputV1.Instance.QuickRestart;
 
                 default:
                     return null;

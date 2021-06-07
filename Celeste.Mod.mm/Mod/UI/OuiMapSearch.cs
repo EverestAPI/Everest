@@ -5,8 +5,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     public class OuiMapSearch : Oui {
@@ -160,6 +158,8 @@ namespace Celeste.Mod.UI {
                     }
                 };
 
+                goto ValidButton;
+
             } else if (c == (char) 8) {
                 // Backspace - trim.
                 if (search.Length > 0) {
@@ -227,7 +227,7 @@ namespace Celeste.Mod.UI {
 
             menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
 
-            menu.rightMenu.Add(resultHeader = new TextMenu.SubHeader(string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount)));
+            menu.rightMenu.Add(resultHeader = new patch_TextMenu.patch_SubHeader(string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount)));
 
             ReloadItems();
 
@@ -280,7 +280,7 @@ namespace Celeste.Mod.UI {
                 if (levelSet == "Celeste" && i > levelSetAreaOffset + levelSetUnlockedAreas)
                     continue;
 
-                List<String> matchTargets = new List<string> {
+                List<string> matchTargets = new List<string> {
                     id,
                     name,
                     levelSet,

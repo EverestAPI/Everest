@@ -1,7 +1,4 @@
-﻿using Celeste.Mod.Helpers;
-using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Monocle;
 using MonoMod;
@@ -13,15 +10,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -32,7 +26,21 @@ namespace Celeste.Mod {
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
+                CultureInfo originalCurrentThreadCulture = Thread.CurrentThread.CurrentCulture;
+                CultureInfo originalCurrentThreadUICulture = Thread.CurrentThread.CurrentUICulture;
+
+                // 0.1 parses into 1 in regions using ,
+                // This also somehow sets the exception message language to English.
+                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+                Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+                Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
+
                 string everestPath = typeof(Celeste).Assembly.Location;
+
+                // Launching Celeste.exe from a shortcut can sometimes set cwd to System32 on Windows.
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                    Environment.CurrentDirectory = Path.GetDirectoryName(everestPath);
 
                 try {
                     if (RestartViaLauncher())
@@ -105,6 +113,12 @@ namespace Celeste.Mod {
 
                 StartVanilla:
                 using (AppDomainWrapper adw = new AppDomainWrapper("Celeste", out bool[] status)) {
+                    // reset culture setting when starting vanilla
+                    CultureInfo.DefaultThreadCurrentCulture = null;
+                    CultureInfo.DefaultThreadCurrentUICulture = null;
+                    Thread.CurrentThread.CurrentCulture = originalCurrentThreadCulture;
+                    Thread.CurrentThread.CurrentUICulture = originalCurrentThreadUICulture;
+
                     Console.WriteLine("Loading Vanilla");
                     AppDomain ad = adw.AppDomain;
 

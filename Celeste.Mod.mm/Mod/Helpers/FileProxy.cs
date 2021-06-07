@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using YamlDotNet.Serialization;
+﻿using System.IO;
 
 namespace Celeste.Mod.Helpers {
     /// <summary>
@@ -39,16 +33,14 @@ namespace Celeste.Mod.Helpers {
         }
 
         public static FileStream OpenRead(string path) {
-            ModAsset meta;
-            if (Everest.Content.TryGet(_Modize(path), out meta))
+            if (Everest.Content.TryGet(_Modize(path), out ModAsset meta))
                 return new FileProxyStream(meta.Stream);
 
             return File.OpenRead(path);
         }
 
         public static byte[] ReadAllBytes(string path) {
-            ModAsset meta;
-            if (Everest.Content.TryGet(_Modize(path), out meta))
+            if (Everest.Content.TryGet(_Modize(path), out ModAsset meta))
                 return meta.Data;
 
             return File.ReadAllBytes(path);

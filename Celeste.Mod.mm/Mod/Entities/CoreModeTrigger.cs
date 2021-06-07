@@ -5,7 +5,8 @@ namespace Celeste.Mod.Entities {
     public class CoreModeTrigger : Trigger {
         private readonly Session.CoreModes mode;
 
-        public CoreModeTrigger(EntityData data, Vector2 offset) : base(data, offset) {
+        public CoreModeTrigger(EntityData data, Vector2 offset) 
+            : base(data, offset) {
             mode = data.Enum("mode", Session.CoreModes.None);
         }
 

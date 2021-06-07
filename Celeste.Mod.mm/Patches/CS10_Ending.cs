@@ -12,7 +12,7 @@ namespace Celeste {
         public extern IEnumerator orig_EndingRoutine();
 
         private IEnumerator EndingRoutine() {
-            patch_AreaComplete.InitAreaCompleteInfoForEverest(pieScreen: false);
+            patch_AreaComplete.InitAreaCompleteInfoForEverest2(false, (Scene as Level)?.Session);
 
             // call the original EndingRoutine, that will handle displaying the end screen.
             IEnumerator orig = orig_EndingRoutine();

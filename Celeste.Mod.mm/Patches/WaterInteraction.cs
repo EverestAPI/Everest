@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
@@ -8,6 +6,9 @@ using System;
 namespace Celeste {
     class patch_WaterInteraction : WaterInteraction {
 
+        /// <summary>
+        /// The water collision used for this component's Entity.
+        /// </summary>
         public Rectangle Bounds {
             get {
                 if (_bounds != null) {
@@ -18,7 +19,14 @@ namespace Celeste {
         }
         private Rectangle _bounds;
 
-        public patch_WaterInteraction(Func<bool> isDashing) : base(isDashing) {
+
+        /// <summary>
+        /// Create a new <see cref="WaterInteraction"/>.
+        /// </summary>
+        /// <param name="bounds">The collision size.</param>
+        /// <param name="isDashing">Used to determine the force of impact against the <see cref="T:Celeste.Water" />.</param>
+        public patch_WaterInteraction(Rectangle bounds, Func<bool> isDashing) 
+            : base(isDashing) {
             // no-op.
         }
 

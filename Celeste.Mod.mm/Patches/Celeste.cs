@@ -1,26 +1,18 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // The field is never used
 
 using Celeste.Mod;
-using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
-using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using MonoMod.Utils;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -42,27 +34,78 @@ namespace Celeste {
                 File.Delete("BuildIsFNA.txt");
             File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
 
-            if (File.Exists("launch.txt")) {
+            // macOS is FUN.
+            if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
+                // https://github.com/mono/mono/blob/79b6e3f256a59ede74596ce82547f320bf1e9a99/mono/metadata/filewatcher.c#L66
+                Environment.SetEnvironmentVariable("MONO_DARWIN_USE_KQUEUE_FSW", "1");
+            }
+
+            if (File.Exists("everest-launch.txt")) {
                 args =
-                    File.ReadAllLines("launch.txt")
+                    File.ReadAllLines("everest-launch.txt")
                     .Select(l => l.Trim())
                     .Where(l => !l.StartsWith("#"))
                     .SelectMany(l => l.Split(' '))
                     .Concat(args)
                     .ToArray();
             } else {
-                using (StreamWriter writer = File.CreateText("launch.txt")) {
-                    writer.WriteLine("# Add any Everest launch flags here. Lines starting with # are ignored.");
+                using (StreamWriter writer = File.CreateText("everest-launch.txt")) {
+                    writer.WriteLine("# Add any Everest launch flags here.");
+                    writer.WriteLine("# Lines starting with # are ignored.");
+                    writer.WriteLine("# All options here are disabled by default.");
                     writer.WriteLine();
-                    writer.WriteLine("# If you're having graphics issues with the FNA version on Windows,");
-                    writer.WriteLine("# remove the # from the following line to enable using Direct3D.");
-                    writer.WriteLine("#--d3d");
+                    writer.WriteLine("# Windows only: open a separate log console window.");
+                    writer.WriteLine("#--console");
                     writer.WriteLine();
-                    writer.WriteLine("# If you've got an Intel GPU, are using the FNA version on Windows and");
-                    writer.WriteLine("# are 100% sure that you want to use Intel's possibly broken OpenGL drivers,");
-                    writer.WriteLine("# remove the # from the following line to revert to using OpenGL.");
-                    writer.WriteLine("#--no-d3d");
+                    writer.WriteLine("# FNA only: force OpenGL (might be necessary to bypass a load crash on some PCs).");
+                    writer.WriteLine("#--graphics OpenGL");
                     writer.WriteLine();
+
+                    if (File.Exists("launch.txt")) {
+                        using (StreamReader reader = File.OpenText("launch.txt")) {
+                            writer.WriteLine();
+                            writer.WriteLine();
+                            writer.WriteLine("# The following options are migrated from the old launch.txt and force-disabled.");
+                            writer.WriteLine("# Some of them might not work anymore or cause unwanted effects.");
+                            writer.WriteLine();
+                            writer.WriteLine();
+                            for (string line; (line = reader.ReadLine()) != null;) {
+                                writer.Write("#");
+                                writer.WriteLine(line);
+                            }
+                        }
+                        File.Delete("launch.txt");
+                    }
+                }
+            }
+
+            if (File.Exists("everest-env.txt")) {
+                foreach (string line in File.ReadAllLines("everest-env.txt")) {
+                    if (line.StartsWith("#"))
+                        continue;
+
+                    int index = line.IndexOf('=');
+                    if (index == -1)
+                        continue;
+
+                    string key = line.Substring(0, index).Trim();
+                    if (key.StartsWith("'") && key.EndsWith("'"))
+                        key = key.Substring(1, key.Length - 2);
+
+                    string value = line.Substring(index + 1).Trim();
+                    if (value.StartsWith("'") && value.EndsWith("'"))
+                        value = value.Substring(1, value.Length - 2);
+
+                    if (key.EndsWith("!")) {
+                        key = key.Substring(0, key.Length - 1);
+                    } else {
+                        value = value
+                            .Replace("\\r", "\r")
+                            .Replace("\\n", "\n")
+                            .Replace($"${{{key}}}", Environment.GetEnvironmentVariable(key) ?? "");
+                    }
+
+                    Environment.SetEnvironmentVariable(key, value);
                 }
             }
 
@@ -70,37 +113,8 @@ namespace Celeste {
                 AllocConsole();
             }
 
-            // PlatformHelper is part of MonoMod.
-            // Environment.OSVersion.Platform is good enough as well, but Everest consistently uses PlatformHelper.
-            // The following is based off of https://github.com/FNA-XNA/FNA/wiki/4:-FNA-and-Windows-API#direct3d-support
-            if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                bool useD3D = args.Contains("--d3d");
-
-                try {
-                    // Keep all usage of System.Management in a separate method.
-                    // Member references are resolved as soon as a method is called.
-                    // This means that if System.Management cannot be found due to 
-                    // f.e. the use of MonoKickstart, this method won't even get as
-                    // far as checking the platform.
-                    if (DoesGPUHaveBadOpenGLDrivers())
-                        useD3D = true;
-                } catch {
-                    // Silently catch all exceptions: Method and type load errors,
-                    // permission / access related exceptions and whatnot.
-                }
-
-                if (args.Contains("--no-d3d"))
-                    useD3D = false;
-
-                if (useD3D) {
-                    Environment.SetEnvironmentVariable("FNA_OPENGL_FORCE_ES3", "1");
-                    Environment.SetEnvironmentVariable("SDL_OPENGL_ES_DRIVER", "1");
-                }
-            }
-
             if (args.Contains("--nolog")) {
                 MainInner(args);
-                Everest.Shutdown();
                 return;
             }
 
@@ -184,85 +198,6 @@ https://discord.gg/6qjaePQ");
             ErrorLog.Open();
             if (!_CriticalFailureIsUnhandledException)
                 Environment.Exit(-1);
-        }
-
-        [MonoModIfFlag("OS:NotWindows")]
-        [MonoModLinkFrom("System.Boolean Celeste.Celeste::DoesGPUHaveBadOpenGLDrivers()")]
-        private static bool StubBadOpenGLDriversCheck() {
-            // since we are not on Windows, assume the OpenGL drivers are good.
-            return false;
-        }
-
-        [MonoModIfFlag("OS:Windows")]
-        private static bool DoesGPUHaveBadOpenGLDrivers() {
-            bool isBad = false;
-            bool checkIntel = true;
-
-            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher("select * from Win32_VideoController")) {
-
-                // The current machine can have more than one GPU installed.
-                // Let's iterate through all GPUs to catch them all, as we can't
-                // control which GPU will be used to render the game at runtime.
-                foreach (ManagementObject obj in searcher.Get()) {
-
-                    // We can't TryGet, so let's iterate through all available props.
-                    foreach (PropertyData prop in obj.Properties) {
-                        string key = prop.Name;
-                        if (string.IsNullOrEmpty(key))
-                            continue;
-
-                        // At least one of those contains "Intel"
-                        if (key.Equals("AdapterCompatibility", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("Caption", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("Description", StringComparison.InvariantCultureIgnoreCase) &&
-                            key.Equals("VideoProcessor", StringComparison.InvariantCultureIgnoreCase)
-                        )
-                            continue;
-
-                        // The value can be a non-string and / or null.
-                        string value = prop.Value?.ToString();
-                        if (string.IsNullOrEmpty(value))
-                            continue;
-
-                        if (value.IndexOf("Intel", StringComparison.InvariantCultureIgnoreCase) != -1) {
-                            // Good job, this machine has got an Intel GPU and we don't
-                            // know if the installed drivers are good enough or not.
-
-                            // Intel chips can be listed multiple times with some important information only present once.
-                            if (!checkIntel)
-                                break;
-
-                            // Someone reported lag when using ANGLE with an HD Graphics
-                            // 4000 and using the latest drivers (2019).
-                            // Meanwhile, someone else reported graphics issues with an
-                            // HD Graphics 5500 which were fixed by using ANGLE.
-                            // I regret my life decisions.
-                            if (value == "Intel(R) HD Graphics 4000") {
-                                // Don't check this GPU's props any further.
-                                isBad = false;
-                                break;
-                            }
-
-                            // Someone reported the following crash using ANGLE:
-                            // Mobile Intel(R) 4 Series Express Chipset Family
-                            // NoSuitableGraphicsDeviceException: Could not create GLES window surface
-                            // Meanwhile, someone else reported the same crash with a non-mobile variant, yet a missing mountain with OpenGL.
-                            if (value == "Mobile Intel(R) 4 Series Express Chipset Family" ||
-                                value == "Intel(R) 4 Series Express Chipset Family") {
-                                // Don't check this GPU's props any further.
-                                isBad = false;
-                                checkIntel = false;
-                                break;
-                            }
-
-                            // Gonna use ANGLE by default on this setup...
-                            isBad = true;
-                        }
-                    }
-                }
-            }
-
-            return isBad;
         }
 
         [DllImport("kernel32.dll", SetLastError = true)]

@@ -8,7 +8,8 @@ namespace Celeste.Mod.Entities {
         public string BirdId;
         public bool ShowTutorial;
 
-        public CustomBirdTutorialTrigger(EntityData data, Vector2 offset) : base(data, offset) {
+        public CustomBirdTutorialTrigger(EntityData data, Vector2 offset) 
+            : base(data, offset) {
             BirdId = data.Attr("birdId");
             ShowTutorial = data.Bool("showTutorial");
         }
