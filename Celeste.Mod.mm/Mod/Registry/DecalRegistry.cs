@@ -161,6 +161,8 @@ namespace Celeste.Mod {
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
             XmlElement file = doc["decals"];
+
+            List<KeyValuePair<string, DecalInfo>> elements = new();
             foreach (XmlNode node in file) {
                 if (node is XmlElement decal) {
                     string decalPath = decal.Attr("path", null).ToLower();
@@ -180,24 +182,46 @@ namespace Celeste.Mod {
                         }
                     }
 
-                    if (decalPath.EndsWith("*") || decalPath.EndsWith("/")) {
-                        // Removing the '/' made the path wrong
-                        decalPath = decalPath.TrimEnd('*');
-                        int pathLength = decalPath.Length;
+                    elements.Add(new KeyValuePair<string, DecalInfo>(decalPath, info));
+                }
+            }
 
-                        foreach (string subDecalPath in
-                            GFX.Game.GetTextures().Keys
-                            .Select(str => str.StartsWith("decals/") ? str.Remove(0, 7) : null)
-                            .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
-                        ) {
-                            // Decals in subfolders are considered as unmatched
-                            if (!subDecalPath.Remove(0, pathLength).Contains("/"))
-                                RegisterDecal(subDecalPath, info);
-                        }
-                    } else {
-                        // Single decal registered
-                        RegisterDecal(decalPath, info);
+            // Sort by priority in this order: folders -> matching paths -> single decal
+            elements.Sort((a, b) => {
+                int scoreA = a.Key[a.Key.Length - 1] switch {
+                    '/' => 2,
+                    '*' => 1,
+                    _ => 0,
+                };
+                int scoreB = b.Key[b.Key.Length - 1] switch {
+                    '/' => 2,
+                    '*' => 1,
+                    _ => 0,
+                };
+                // If both end with '*', then we can still be more precise and sort for the best match
+                return (scoreA == scoreB && scoreA == 1) ? a.Key.Length - b.Key.Length : scoreB - scoreA;
+            });
+
+            foreach (KeyValuePair<string, DecalInfo> pair in elements) {
+                string decalPath = pair.Key;
+                DecalInfo info = pair.Value;
+                if (decalPath.EndsWith("*") || decalPath.EndsWith("/")) {
+                    // Removing the '/' made the path wrong
+                    decalPath = decalPath.TrimEnd('*');
+                    int pathLength = decalPath.Length;
+
+                    foreach (string subDecalPath in
+                        GFX.Game.GetTextures().Keys
+                        .Select(str => str.StartsWith("decals/") ? str.Remove(0, 7) : null)
+                        .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
+                    ) {
+                        // Decals in subfolders are considered as unmatched
+                        if (!subDecalPath.Remove(0, pathLength).Contains("/"))
+                            RegisterDecal(subDecalPath, info);
                     }
+                } else {
+                    // Single decal registered
+                    RegisterDecal(decalPath, info);
                 }
             }
         }
