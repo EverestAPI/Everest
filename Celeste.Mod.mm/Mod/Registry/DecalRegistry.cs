@@ -212,9 +212,13 @@ namespace Celeste.Mod {
 
                     foreach (string subDecalPath in
                         GFX.Game.GetTextures().Keys
-                        .Select(str => str.StartsWith("decals/") ? str.Remove(0, 7).TrimEnd('0','1','2','3','4','5','6','7','8','9') : null)
+                        .GroupBy(
+                            s => s.StartsWith("decals/") ? 
+                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') : 
+                                null, 
+                            (s, matches) => s
+                        ) 
                         .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
-                        .GroupBy(s => s, (s, matches) => s) // Group duplicates together
                     ) {
                         // Decals in subfolders are considered as unmatched
                         if (!subDecalPath.Remove(0, pathLength).Contains("/"))
