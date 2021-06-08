@@ -188,7 +188,7 @@ namespace Celeste.Mod {
                         foreach (string subDecalPath in
                             GFX.Game.GetTextures().Keys
                             .Select(str => str.StartsWith("decals/") ? str.Remove(0, 7) : null)
-                            .Where(str => str != null && str.StartsWith(decalPath))
+                            .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
                         ) {
                             // Decals in subfolders are considered as unmatched
                             if (!subDecalPath.Remove(0, pathLength).Contains("/"))
