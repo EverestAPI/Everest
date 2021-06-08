@@ -181,36 +181,34 @@ namespace Celeste.Mod {
                     }
 
                     if (decalPath.EndsWith("*") || decalPath.EndsWith("/")) {
+                        // Removing the '/' made the path wrong
                         decalPath = decalPath.TrimEnd('*');
                         int pathLength = decalPath.Length;
 
-                        foreach (string subDecalPath in 
+                        foreach (string subDecalPath in
                             GFX.Game.GetTextures().Keys
                             .Select(str => str.StartsWith("decals/") ? str.Remove(0, 7) : null)
                             .Where(str => str != null && str.StartsWith(decalPath))
                         ) {
                             // Decals in subfolders are considered as unmatched
-                            if (!subDecalPath.Remove(0, pathLength).Contains("/")) {
-                                if (RegisteredDecals.ContainsKey(subDecalPath)) {
-                                    Logger.Log("Decal Registry", $"Replaced decal {subDecalPath}");
-                                    RegisteredDecals[subDecalPath] = info;
-                                } else {
-                                    Logger.Log("Decal Registry", $"Registered decal {subDecalPath}");
-                                    RegisteredDecals.Add(subDecalPath, info);
-                                }
-                            }
+                            if (!subDecalPath.Remove(0, pathLength).Contains("/"))
+                                RegisterDecal(subDecalPath, info);
                         }
                     } else {
                         // Single decal registered
-                        if (RegisteredDecals.ContainsKey(decalPath)) {
-                            Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
-                            RegisteredDecals[decalPath] = info;
-                        } else {
-                            Logger.Log("Decal Registry", $"Registered decal {decalPath}");
-                            RegisteredDecals.Add(decalPath, info);
-                        }
+                        RegisterDecal(decalPath, info);
                     }
                 }
+            }
+        }
+
+        public static void RegisterDecal(string decalPath, DecalInfo info) {
+            if (RegisteredDecals.ContainsKey(decalPath)) {
+                Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
+                RegisteredDecals[decalPath] = info;
+            } else {
+                Logger.Log("Decal Registry", $"Registered decal {decalPath}");
+                RegisteredDecals.Add(decalPath, info);
             }
         }
 
