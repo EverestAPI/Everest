@@ -762,11 +762,13 @@ namespace MonoMod {
 
                     // If we returned false, branch to ldfld. We still have the entity name on stack.
                     // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
-                    instrs.Insert(instri++, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instri++;
                     // Otherwise, pop the entityData, load "" and jump to stloc to skip any original entity handler.
                     instrs.Insert(instri++, il.Create(OpCodes.Pop));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldstr, ""));
-                    instrs.Insert(instri++, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instri++;
                 }
 
                 if (instr.OpCode == OpCodes.Ldstr) {
