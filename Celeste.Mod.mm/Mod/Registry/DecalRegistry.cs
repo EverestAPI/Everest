@@ -156,7 +156,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// Reads a DecalRegistry.xml file's contents
         /// </summary>
-        public static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(string fileContents, bool apply = false) {
+        public static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(string fileContents) {
             // XmlElement file = Calc.LoadXML(path)["decals"];
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
@@ -185,10 +185,6 @@ namespace Celeste.Mod {
                     elements.Add(new KeyValuePair<string, DecalInfo>(decalPath, info));
                 }
             }
-
-            // In-game reload only, we don't want to reload every decal registry each time a file is updated
-            if (apply)
-                ApplyDecalRegistry(elements);
 
             return elements;
         }
