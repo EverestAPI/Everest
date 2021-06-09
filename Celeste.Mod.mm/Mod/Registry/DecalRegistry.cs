@@ -156,7 +156,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// Reads a DecalRegistry.xml file's contents
         /// </summary>
-        public static void ReadDecalRegistryXml(string fileContents) {
+        public static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(string fileContents, bool apply = false) {
             // XmlElement file = Calc.LoadXML(path)["decals"];
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
@@ -186,6 +186,43 @@ namespace Celeste.Mod {
                 }
             }
 
+            // In-game reload only, we don't want to reload every decal registry each time a file is updated
+            if (apply)
+                ApplyDecalRegistry(elements);
+
+            return elements;
+        }
+
+        public static void RegisterDecal(string decalPath, DecalInfo info) {
+            if (RegisteredDecals.ContainsKey(decalPath)) {
+                Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
+                RegisteredDecals[decalPath] = info;
+            } else {
+                Logger.Log("Decal Registry", $"Registered decal {decalPath}");
+                RegisteredDecals.Add(decalPath, info);
+            }
+        }
+
+        public static void LoadDecalRegistry() {
+            List<KeyValuePair<string, DecalInfo>> completeDecalRegistry = new();
+
+            foreach (ModAsset asset in
+                Everest.Content.Mods
+                .Select(mod => mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) ? asset : null)
+                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDecalRegistry))
+            ) {
+                string fileContents;
+                using (StreamReader reader = new StreamReader(asset.Stream)) {
+                    fileContents = reader.ReadToEnd();
+                }
+                completeDecalRegistry.AddRange(ReadDecalRegistryXml(fileContents));
+            }
+
+            // We can treat this as if we only had a single, full decal registry, to keep consistency between files
+            ApplyDecalRegistry(completeDecalRegistry);
+        }
+
+        public static void ApplyDecalRegistry(List<KeyValuePair<string, DecalInfo>> elements) {
             // Sort by priority in this order: folders -> matching paths -> single decal
             elements.Sort((a, b) => {
                 int scoreA = a.Key[a.Key.Length - 1] switch {
@@ -213,11 +250,11 @@ namespace Celeste.Mod {
                     foreach (string subDecalPath in
                         GFX.Game.GetTextures().Keys
                         .GroupBy(
-                            s => s.StartsWith("decals/") ? 
-                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') : 
-                                null, 
+                            s => s.StartsWith("decals/") ?
+                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') :
+                                null,
                             (s, matches) => s
-                        ) 
+                        )
                         .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
                     ) {
                         // Decals in subfolders are considered as unmatched
@@ -228,30 +265,6 @@ namespace Celeste.Mod {
                     // Single decal registered
                     RegisterDecal(decalPath, info);
                 }
-            }
-        }
-
-        public static void RegisterDecal(string decalPath, DecalInfo info) {
-            if (RegisteredDecals.ContainsKey(decalPath)) {
-                Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
-                RegisteredDecals[decalPath] = info;
-            } else {
-                Logger.Log("Decal Registry", $"Registered decal {decalPath}");
-                RegisteredDecals.Add(decalPath, info);
-            }
-        }
-
-        public static void LoadDecalRegistry() {
-            foreach (ModAsset asset in
-                Everest.Content.Mods
-                .Select(mod => mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDecalRegistry))
-            ) {
-                string fileContents;
-                using (StreamReader reader = new StreamReader(asset.Stream)) {
-                    fileContents = reader.ReadToEnd();
-                }
-                ReadDecalRegistryXml(fileContents);
             }
         }
 
