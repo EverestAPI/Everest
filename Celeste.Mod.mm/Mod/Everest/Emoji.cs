@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Xml;
 
 namespace Celeste.Mod {
@@ -142,7 +143,7 @@ namespace Celeste.Mod {
         /// <param name="text"></param>
         /// <returns></returns>
         public static string Apply(string text) {
-            if (text == null)
+            if (text == null || text.Count(c => c == ':') < 2)
                 return text;
             // TODO: This trashes the GC and doesn't allow escaping!
             lock (_IDs) {
