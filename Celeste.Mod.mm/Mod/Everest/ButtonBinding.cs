@@ -101,6 +101,12 @@ namespace Celeste.Mod {
         }
 
         [MonoModIfFlag("V2:Input")]
+        public List<patch_MInput.patch_MouseData.MouseButtons> MouseButtons {
+            get => ((patch_Binding) Binding).Mouse;
+            set => ((patch_Binding) Binding).Mouse = value;
+        }
+
+        [MonoModIfFlag("V2:Input")]
         private Binding _Binding;
 
         [MonoModIfFlag("V2:Input")]
