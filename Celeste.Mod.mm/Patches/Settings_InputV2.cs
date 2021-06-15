@@ -1,4 +1,8 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+
+using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -158,10 +162,17 @@ namespace Celeste {
             set => ScreenShake = value ? ScreenshakeAmount.Off : ScreenshakeAmount.On;
         }
 
-        public void SetDefaultMouseControls(bool reset) {
-            if (!reset)
-                return;
+        public static extern void orig_Initialize();
+        public static void Initialize() {
+            orig_Initialize();
+            // Load Mouse Button Bindings, which are applied to the already-loaded settings.
+            if (UserIO.Open(UserIO.Mode.Read)) {
+                UserIO.Load<VanillaMouseBindings>("modsettings-Everest_MouseBindings").Apply();
+                UserIO.Close();
+            }
+        }
 
+        public void ClearMouseControls() {
             ((patch_Binding) Left).Mouse.Clear();
             ((patch_Binding) Right).Mouse.Clear();
             ((patch_Binding) Down).Mouse.Clear();

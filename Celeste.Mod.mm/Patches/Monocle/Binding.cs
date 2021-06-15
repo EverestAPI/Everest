@@ -1,13 +1,17 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0108 // Method hides inherited member
 
+using Celeste.Mod;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace Monocle {
     class patch_Binding : Binding {
 
+        // Serialized in Everest modsettings to avoid issues when switching to vanilla
+        [XmlIgnore]
         public List<patch_MInput.patch_MouseData.MouseButtons> Mouse;
 
         public extern void orig_ctor();
@@ -25,11 +29,7 @@ namespace Monocle {
         public bool Add(params patch_MInput.patch_MouseData.MouseButtons[] buttons) {
             bool result = false;
             foreach (patch_MInput.patch_MouseData.MouseButtons button in buttons) {
-                if (Mouse.Contains(button)) {
-                    continue;
-                }
-
-                if (ExclusiveFrom.TrueForAll(item => ((patch_Binding)item).Needs(button))) {
+                if (!Mouse.Contains(button) && ExclusiveFrom.TrueForAll(item => !((patch_Binding) item).Needs(button))) {
                     Mouse.Add(button);
                     result = true;
                 }
@@ -39,6 +39,10 @@ namespace Monocle {
 
         public bool Needs(patch_MInput.patch_MouseData.MouseButtons button) {
             if (Mouse.Contains(button)) {
+                // Keyboard takes priority
+                if (Keyboard.Count + Mouse.Count <= 1)
+                    return true;
+
                 if (!IsExclusive(button))
                     return false;
 
@@ -62,8 +66,9 @@ namespace Monocle {
         }
 
         public bool ClearMouse() {
+            int items = Mouse.Count;
             Mouse.Clear();
-            return true;
+            return items > 0;
         }
 
         public extern float orig_Axis(int gamepadIndex, float threshold);

@@ -169,7 +169,7 @@ namespace Celeste {
         }
 
         public virtual void Reset() {
-            ((patch_Settings_InputV2) Settings.Instance).SetDefaultMouseControls(true);
+            ((patch_Settings_InputV2) Settings.Instance).ClearMouseControls();
             Settings.Instance.SetDefaultKeyboardControls(true);
             Input.Initialize();
         }
@@ -195,7 +195,8 @@ namespace Celeste {
         }
 
         private void AddRemap(patch_MInput.patch_MouseData.MouseButtons button) {
-            while (((patch_Binding) remappingBinding).Mouse.Count >= Input.MaxBindings) {
+            // Keyboard bindings take priority over Mouse bindings
+            while (((patch_Binding) remappingBinding).Mouse.Count + remappingBinding.Keyboard.Count >= Input.MaxBindings) {
                 ((patch_Binding) remappingBinding).Mouse.RemoveAt(0);
             }
             remapping = false;
@@ -213,8 +214,8 @@ namespace Celeste {
         [MakeMethodPublic]
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
         public void Clear(Binding binding) {
-            ((patch_Binding) binding).ClearMouse();
-            if (!binding.ClearKeyboard())
+            // Always evaluate both
+            if (!((patch_Binding) binding).ClearMouse() & !binding.ClearKeyboard())
                 Audio.Play(SFX.ui_main_button_invalid);
         }
 
