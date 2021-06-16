@@ -12,7 +12,7 @@ namespace MonoMod {
     /// <summary>
     /// Proxy any System.IO.File.* calls inside the method via Celeste.Mod.Helpers.FileProxy.*
     /// </summary>
-    [MonoModCustomMethodAttribute("ProxyFileCalls")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.ProxyFileCalls))]
     class ProxyFileCallsAttribute : Attribute { }
 
     /// <summary>
@@ -20,351 +20,351 @@ namespace MonoMod {
     /// Also manually execute ProxyFileCalls rule.
     /// Also includes a patch for the strawberry tracker.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchMapDataLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMapDataLoader))]
     class PatchMapDataLoaderAttribute : Attribute { }
 
     /// <summary>
     /// A patch for the strawberry tracker, allowing all registered modded berries to be detected.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelDataBerryTracker")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataBerryTracker))]
     class PatchLevelDataBerryTracker : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoader))]
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
     /// A patch for Strawberry that takes into account that some modded strawberries may not allow standard collection rules.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchStrawberryTrainCollectionOrder")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryTrainCollectionOrder))]
     class PatchStrawberryTrainCollectionOrder : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBackdropParser")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropParser))]
     class PatchBackdropParserAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
     class PatchLevelUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelRender))]
     class PatchLevelRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelLoaderThread")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderThread))]
     class PatchLevelLoaderThreadAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level transition method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTransitionRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTransitionRoutine))]
     class PatchTransitionRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchErrorLogWrite")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchErrorLogWrite))]
     class PatchErrorLogWriteAttribute : Attribute { }
 
     /// <summary>
     /// Patch the heart gem collection routine instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchHeartGemCollectRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchHeartGemCollectRoutine))]
     class PatchHeartGemCollectRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Badeline chase routine instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBadelineChaseRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineChaseRoutine))]
     class PatchBadelineChaseRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Badeline boss OnPlayer method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBadelineBossOnPlayer")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineBossOnPlayer))]
     class PatchBadelineBossOnPlayerAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Cloud.Added method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCloudAdded")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCloudAdded))]
     class PatchCloudAddedAttribute : Attribute { }
 
     /// <summary>
     /// Patch the RainFG.Render method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchRainFGRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchRainFGRender))]
     class PatchRainFGRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Dialog.Load method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchDialogLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDialogLoader))]
     class PatchDialogLoaderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLoadLanguage")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadLanguage))]
     class PatchLoadLanguageAttribute : Attribute { }
 
     /// <summary>
     /// Automatically fill InitMMSharedData based on the current patch flags.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInitMMSharedData")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitMMSharedData))]
     class PatchInitMMSharedDataAttribute : Attribute { }
 
     /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
-    [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterLevelExitRoutine))]
     class PatchLevelExitRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Slap a MapMetaCompleteScreen param at the end of the constructor and ldarg it right before newobj CompleteRenderer
     /// </summary>
-    [MonoModCustomMethodAttribute("RegisterAreaCompleteCtor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterAreaCompleteCtor))]
     class PatchAreaCompleteCtorAttribute : Attribute { }
 
     /// <summary>
     /// Patch the GameLoader.IntroRoutine method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchGameLoaderIntroRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchGameLoaderIntroRoutine))]
     class PatchGameLoaderIntroRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the UserIO.SaveRoutine method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSaveRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveRoutine))]
     class PatchSaveRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigUpdate))]
     class PatchPlayerOrigUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the SwapRoutine method in OuiChapterPanel instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchChapterPanelSwapRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchChapterPanelSwapRoutine))]
     class PatchChapterPanelSwapRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Strawberry class to tack on the IStrawberry interface for the StrawberryRegistry
     /// </summary>
-    [MonoModCustomAttribute("PatchStrawberryInterface")]
+    [MonoModCustomAttribute(nameof(MonoModRules.PatchStrawberryInterface))]
     class PatchStrawberryInterfaceAttribute : Attribute { }
 
     /// <summary>
     /// Helper for patching methods force-implemented by an interface
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInterface")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInterface))]
     class PatchInterfaceAttribute : Attribute { };
 
     /// <summary>
     /// IL-patch the Render method for file select slots instead of reimplementing it,
     /// to un-hardcode stamps.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFileSelectSlotRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFileSelectSlotRender))]
     class PatchFileSelectSlotRenderAttribute : Attribute { };
 
     /// <summary>
     /// Take out the "strawberry" equality check and replace it with a call to StrawberryRegistry.TrackableContains
     /// to include registered mod berries as well.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTrackableStrawberryCheck")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTrackableStrawberryCheck))]
     class PatchTrackableStrawberryCheckAttribute : Attribute { };
 
     /// <summary>
     /// Patch the pathfinder debug rendering to make it aware of the array size being unhardcoded.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchPathfinderRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPathfinderRender))]
     class PatchPathfinderRenderAttribute : Attribute { };
 
     /// <summary>
     /// Patch references to TotalHeartGems to refer to TotalHeartGemsInVanilla instead.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecks")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecks))]
     class PatchTotalHeartGemChecksAttribute : Attribute { };
 
     /// <summary>
     /// Same as above, but for references in routines.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecksInRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecksInRoutine))]
     class PatchTotalHeartGemChecksInRoutineAttribute : Attribute { };
 
     /// <summary>
     /// Patch a reference to TotalHeartGems in the OuiJournalGlobal constructor to unharcode the check for golden berry unlock.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiJournalStatsHeartGemCheck")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiJournalStatsHeartGemCheck))]
     class PatchOuiJournalStatsHeartGemCheckAttribute : Attribute { };
 
     /// <summary>
     /// Makes the annotated method public.
     /// </summary>
-    [MonoModCustomMethodAttribute("MakeMethodPublic")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.MakeMethodPublic))]
     class MakeMethodPublicAttribute : Attribute { };
 
     /// <summary>
     /// Patches the CrystalStaticSpinner.AddSprites method to make it more efficient.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSpinnerCreateSprites")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSpinnerCreateSprites))]
     class PatchSpinnerCreateSpritesAttribute : Attribute { };
 
     /// <summary>
     /// Patches the checks for OuiAssistMode to include a check for OuiFileSelectSlot.ISubmenu as well.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileSelectSubmenuChecks")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSubmenuChecks))]
     class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { };
 
     /// <summary>
     /// Patches the Fonts.Prepare method to also include custom fonts.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFontsPrepare")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFontsPrepare))]
     class PatchFontsPrepareAttribute : Attribute { };
 
     /// <summary>
     /// Make the marked method the new entry point.
     /// </summary>
-    [MonoModCustomMethodAttribute("MakeEntryPoint")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.MakeEntryPoint))]
     class MakeEntryPointAttribute : Attribute { };
 
     /// <summary>
     /// Patch the original Celeste entry point instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCelesteMain")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCelesteMain))]
     class PatchCelesteMainAttribute : Attribute { };
 
     /// <summary>
     /// Removes the [Command] attribute from the matching vanilla method in Celeste.Commands.
     /// </summary>
-    [MonoModCustomMethodAttribute("RemoveCommandAttributeFromVanillaLoadMethod")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttributeFromVanillaLoadMethod))]
     class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
 
     /// <summary>
     /// Patch the fake heart color to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFakeHeartColor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFakeHeartColor))]
     class PatchFakeHeartColorAttribute : Attribute { };
 
     /// <summary>
     /// Patch the file naming rendering to hide the "switch between katakana and hiragana" prompt when the menu is not focused.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileNamingRendering))]
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
     /// <summary>
     /// Include the option to use Y range of trigger nodes.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchRumbleTriggerAwake")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchRumbleTriggerAwake))]
     class PatchRumbleTriggerAwakeAttribute : Attribute { };
 
     /// <summary>
     /// Include check for custom events.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerOnEnter))]
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
     /// <summary>
     /// Modify collision to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchWaterUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchWaterUpdate))]
     class PatchWaterUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Add custom dialog to fake hearts.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFakeHeartDialog))]
     class PatchFakeHeartDialogAttribute : Attribute { };
 
     /// <summary>
     /// Include checks for manual triggering.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchIntroCrusherSequence))]
     class PatchIntroCrusherSequenceAttribute : Attribute { };
 
     /// <summary>
     /// Patches the unselected color in TextMenu.Option to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTextMenuOptionColor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuOptionColor))]
     class PatchTextMenuOptionColorAttribute : Attribute { };
 
     /// <summary>
     /// Patches chapter panel rendering to allow for custom chapter cards.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelRender))]
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
     /// <summary>
     /// Patches GoldenBlocks to disable static movers if the block is disabled.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchGoldenBlockStaticMovers")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchGoldenBlockStaticMovers))]
     class PatchGoldenBlockStaticMoversAttribute : Attribute { };
 
     /// <summary>
     /// Don't remove TalkComponent even watchtower collide solid, so that watchtower can be hidden behind Solid.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLookoutUpdate))]
     class PatchLookoutUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Un-hardcode the range of the "Scared" decals.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchDecalUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
     class PatchDecalUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Patches LevelExit.Begin to make the endscreen music customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAreaCompleteMusic")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAreaCompleteMusic))]
     class PatchAreaCompleteMusicAttribute : Attribute { };
 
     /// <summary>
     /// Patches AreaComplete.VersionNumberAndVariants to offset the version number when necessary.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAreaCompleteVersionNumberAndVariants")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAreaCompleteVersionNumberAndVariants))]
     class PatchAreaCompleteVersionNumberAndVariantsAttribute : Attribute { };
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInputConfigReset")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInputConfigReset))]
     class PatchInputConfigResetAttribute : Attribute { };
 
     /// <summary>
     /// Patches AscendManager.Routine to fix gameplay RNG in custom maps.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAscendManagerRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAscendManagerRoutine))]
     class PatchAscendManagerRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patches Commands.UpdateOpen to make key's repeat timer independent with time rate.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCommandsUpdateOpen")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
     /// <summary>
     /// Patches SettingS.SetDefaultKeyboardControls so that TranslateKeys only gets called when reset = true.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSettingsDoNotTranslateKeys")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsDoNotTranslateKeys))]
     class PatchSettingsDoNotTranslateKeysAttribute : Attribute { }
 
     /// <summary>
     /// Forcibly changes a given member's name.
     /// </summary>
-    [MonoModCustomAttribute("ForceName")]
+    [MonoModCustomAttribute(nameof(MonoModRules.ForceName))]
     class ForceNameAttribute : Attribute {
         public ForceNameAttribute(string name) {
         }
@@ -373,19 +373,19 @@ namespace MonoMod {
     /// <summary>
     /// Patches OuiFileSelect.Enter to fix file slots missing bug.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileSelectEnter")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectEnter))]
     class PatchOuiFileSelectEnterAttribute : Attribute { }
 
     /// <summary>
     /// Patches OuiFileSelect.LoadThread to fix file slots missing bug.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileSelectLoadThread")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectLoadThread))]
     class PatchOuiFileSelectLoadThreadAttribute : Attribute { }
 
     /// <summary>
     /// Patches UserIO.Save to flush save data to disk after writing it.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSaveDataFlushSaves")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
 
     static class MonoModRules {
