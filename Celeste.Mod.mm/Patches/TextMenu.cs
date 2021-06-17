@@ -56,7 +56,9 @@ namespace Celeste {
             if (Selection == -1)
                 FirstSelection();
 
-            RecalculateSize();
+            if (!BatchMode) {
+                RecalculateSize();
+            }
             item.Added();
             return this;
         }
@@ -77,11 +79,13 @@ namespace Celeste {
             Remove(item.ValueWiggler);
             Remove(item.SelectWiggler);
 
-            RecalculateSize();
+            if (!BatchMode) {
+                RecalculateSize();
+            }
             return this;
         }
 
-        /// <inheritdoc cref="TextMenu.GetYOffsetOf(Item)"/>
+        /// <inheritdoc cref="TextMenu.GetYOffsetOf(TextMenu.Item)"/>
         [MonoModReplace]
         public new float GetYOffsetOf(Item targetItem) {
             // this is a small fix of the vanilla method to better support invisible menu items.
@@ -167,15 +171,23 @@ namespace Celeste {
             return skippedItems;
         }
 
-#pragma warning disable CS0626 // extern method with no attribute
-        public extern void orig_RecalculateSize();
-#pragma warning restore CS0626 // extern method with no attribute
-
-        public new void RecalculateSize() {
-            if (BatchMode) {
-                return;
+        /// <inheritdoc cref="TextMenu.Add(TextMenu.Item)"/>
+        [MonoModReplace]
+        public new TextMenu Add(Item item)
+        {
+            items.Add(item);
+            item.Container = this;
+            Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f));
+            Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f));
+            item.ValueWiggler.UseRawDeltaTime = item.SelectWiggler.UseRawDeltaTime = true;
+            if (Selection == -1) {
+                FirstSelection();
             }
-            orig_RecalculateSize();
+            if (!BatchMode) {
+                RecalculateSize();
+            }
+            item.Added();
+            return this;
         }
 
         public class patch_LanguageButton : LanguageButton {
