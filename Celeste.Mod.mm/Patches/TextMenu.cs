@@ -15,10 +15,27 @@ namespace Celeste {
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
 
+        private bool batchMode;
+
         /// <summary>
         /// The items contained in this menu.
         /// </summary>
         public List<Item> Items => items;
+
+
+        /// <summary>
+        /// When a menu is in batch mode, adding / removing items will not recalculate its size to improve performance.
+        /// Size is recalculated immediately after batch mode is disabled.
+        /// </summary>
+        public bool BatchMode {
+            get => batchMode;
+            set {
+                batchMode = value;
+                if (!batchMode) {
+                    RecalculateSize();
+                }
+            }
+        }
 
         // Basically the same as Add(), but with an index parameter.
         /// <summary>
@@ -148,6 +165,17 @@ namespace Celeste {
             }
 
             return skippedItems;
+        }
+
+#pragma warning disable CS0626 // extern method with no attribute
+        public extern void orig_RecalculateSize();
+#pragma warning restore CS0626 // extern method with no attribute
+
+        public new void RecalculateSize() {
+            if (BatchMode) {
+                return;
+            }
+            orig_RecalculateSize();
         }
 
         public class patch_LanguageButton : LanguageButton {
