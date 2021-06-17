@@ -562,52 +562,33 @@ namespace Celeste.Mod {
                 _PrevSettingsType = type;
             }
 
-            foreach (PropertyInfo prop in props) {
-                MethodInfo creator = type.GetMethod(
-                    $"Create{prop.Name}Entry",
-                    BindingFlags.Public | BindingFlags.Instance,
-                    null,
-                    new Type[] { typeof(TextMenu), typeof(bool) },
-                    new ParameterModifier[0]
-                );
-
-                if (creator != null) {
-                    if (!headerCreated) {
-                        CreateModMenuSectionHeader(menu, inGame, snapshot);
-                        headerCreated = true;
-                    }
-
-                    creator.GetFastDelegate()(settings, menu, inGame);
-                    continue;
-                }
+            TextMenu.Item CreateItem(PropertyInfo prop, string name = null, object settingsObject = null) {
+                settingsObject ??= settings;
 
                 if ((attribInGame = prop.GetCustomAttribute<SettingInGameAttribute>()) != null &&
                     attribInGame.InGame != inGame)
-                    continue;
+                    return null;
 
                 if (prop.GetCustomAttribute<SettingIgnoreAttribute>() != null)
-                    continue;
+                    return null;
 
                 if (!prop.CanRead || !prop.CanWrite)
-                    continue;
+                    return null;
 
-                string name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
-                name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
-
-                bool needsRelaunch = prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null;
-
-                string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
+                if (name == null) {
+                    name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
+                    name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
+                }
 
                 TextMenu.Item item = null;
                 Type propType = prop.PropertyType;
-                object value = prop.GetValue(settings);
+                object value = prop.GetValue(settingsObject);
 
                 // Create the matching item based off of the type and attributes.
-
                 if (propType == typeof(bool)) {
                     item =
                         new TextMenu.OnOff(name, (bool) value)
-                        .Change(v => prop.SetValue(settings, v))
+                        .Change(v => prop.SetValue(settingsObject, v))
                     ;
 
                 } else if (
@@ -618,12 +599,12 @@ namespace Celeste.Mod {
                     if (attribRange.LargeRange) {
                         item =
                             new TextMenuExt.IntSlider(name, attribRange.Min, attribRange.Max, (int) value)
-                            .Change(v => prop.SetValue(settings, v))
+                            .Change(v => prop.SetValue(settingsObject, v))
                         ;
                     } else {
                         item =
                             new TextMenu.Slider(name, i => i.ToString(), attribRange.Min, attribRange.Max, (int) value)
-                            .Change(v => prop.SetValue(settings, v))
+                            .Change(v => prop.SetValue(settingsObject, v))
                         ;
                     }
 
@@ -634,10 +615,10 @@ namespace Celeste.Mod {
                     Action<float> valueSetter;
                     if (propType == typeof(int)) {
                         currentValue = (int) value;
-                        valueSetter = v => prop.SetValue(settings, (int) v);
+                        valueSetter = v => prop.SetValue(settingsObject, (int) v);
                     } else {
                         currentValue = (float) value;
-                        valueSetter = v => prop.SetValue(settings, v);
+                        valueSetter = v => prop.SetValue(settingsObject, v);
                     }
                     int maxLength = attribNumber.MaxLength;
                     bool allowNegatives = attribNumber.AllowNegatives;
@@ -667,7 +648,7 @@ namespace Celeste.Mod {
                                 $"modoptions_{propType.Name.ToLowerInvariant()}_{enumName.ToLowerInvariant()}".DialogCleanOrNull() ??
                                 enumName;
                         }, 0, enumValues.Length - 1, (int) value)
-                        .Change(v => prop.SetValue(settings, v))
+                        .Change(v => prop.SetValue(settingsObject, v))
                     ;
 
                 } else if (!inGame && propType == typeof(string)) {
@@ -680,12 +661,64 @@ namespace Celeste.Mod {
                             Audio.Play(SFX.ui_main_savefile_rename_start);
                             menu.SceneAs<Overworld>().Goto<OuiModOptionString>().Init<OuiModOptions>(
                                 (string) value,
-                                v => prop.SetValue(settings, v),
+                                v => prop.SetValue(settingsObject, v),
                                 maxValueLength,
                                 minValueLength
                             );
                         })
                     ;
+                }
+                return item;
+            }
+
+            foreach (PropertyInfo prop in props) {
+                string name = prop.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}{prop.Name.ToLowerInvariant()}";
+                name = name.DialogCleanOrNull() ?? prop.Name.SpacedPascalCase();
+
+                MethodInfo creator = type.GetMethod(
+                    $"Create{prop.Name}Entry",
+                    BindingFlags.Public | BindingFlags.Instance,
+                    null,
+                    new Type[] { typeof(TextMenu), typeof(bool) },
+                    new ParameterModifier[0]
+                );
+
+                if (creator != null) {
+                    if (!headerCreated) {
+                        CreateModMenuSectionHeader(menu, inGame, snapshot);
+                        headerCreated = true;
+                    }
+
+                    creator.GetFastDelegate()(settings, menu, inGame);
+                    continue;
+                }
+
+                TextMenu.Item item = CreateItem(prop, name);
+
+                if (item == null && prop.PropertyType.GetCustomAttribute<SettingSubMenuAttribute>() != null) {
+                    object propObject = prop.GetValue(settings);
+                    if (propObject == null)
+                        prop.SetValue(settings, propObject = Activator.CreateInstance(prop.PropertyType));
+                    TextMenuExt.SubMenu subMenu = new(name, false);
+                    foreach (PropertyInfo subTypeProp in prop.PropertyType.GetProperties()) {
+                        creator = prop.PropertyType.GetMethod(
+                            $"Create{subTypeProp.Name}Entry",
+                            BindingFlags.Public | BindingFlags.Instance,
+                            null,
+                            new Type[] { typeof(TextMenuExt.SubMenu), typeof(bool) },
+                            new ParameterModifier[0]
+                        );
+
+                        if (creator != null) {
+                            creator.GetFastDelegate()(propObject, subMenu, inGame);
+                            continue;
+                        }
+
+                        TextMenu.Item subMenuItem = CreateItem(subTypeProp, settingsObject: propObject);
+                        if (subMenuItem != null)
+                            subMenu.Add(subMenuItem);
+                    }
+                    item = subMenu;
                 }
 
                 if (item == null)
@@ -698,9 +731,10 @@ namespace Celeste.Mod {
 
                 menu.Add(item);
 
-                if (needsRelaunch)
+                if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
                     item = item.NeedsRelaunch(menu);
 
+                string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
                 if (description != null)
                     item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
