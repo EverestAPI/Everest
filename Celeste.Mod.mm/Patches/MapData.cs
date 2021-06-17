@@ -96,6 +96,8 @@ namespace Celeste {
 
             } catch (Exception e) {
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
+                if (e is OutOfMemoryException)
+                    throw e; // Unrecoverable
                 e.LogDetailed();
             }
         }
