@@ -501,7 +501,7 @@ namespace MonoMod {
             }
 
             // Check if Celeste version is supported
-            Version versionMin = new Version(1, 3, 1, 2);
+            Version versionMin = new Version(1, 4, 0, 0);
             if (Version.Major == 0)
                 Version = versionMin;
             if (Version < versionMin)
