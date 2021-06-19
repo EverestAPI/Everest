@@ -163,8 +163,7 @@ namespace Celeste.Mod {
                                 now head and tail are pointing to colons so we need to check if the text inside colons is an emoji name
                             */
                             string name = text.Substring(head + 1, (tail - 1) - (head + 1) + 1);
-                            bool exist = _IDs.TryGetValue(name, out int value);
-                            if (exist) {
+                            if (_IDs.TryGetValue(name, out int value)) {
                                 // if it is, we need to first append the text before emoji
                                 resultBuilder.Append(text, appendStartIndex, (head - 1) - appendStartIndex + 1);
                                 // then append the emoji itself
@@ -193,7 +192,7 @@ namespace Celeste.Mod {
                 /*
                         aaaa:1111:2222:bbbb
                     (6)               H^S  ^T
-                    there are still text left since last append, so we need to append them 
+                    there are still text left since last append, so we need to append them
                 */
                 if (appendStartIndex < text.Length) {
                     resultBuilder.Append(text, appendStartIndex, (text.Length - 1) - appendStartIndex + 1);
