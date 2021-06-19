@@ -11,7 +11,6 @@ namespace Celeste {
         public float Scroll = 0f;
 
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
-        [PatchOuiFileSelectEnter]
         public extern IEnumerator orig_Enter(Oui from);
         public new IEnumerator Enter(Oui from) {
             if (!Loaded) {
@@ -95,10 +94,6 @@ namespace Celeste {
                 }
             }
         }
-
-        [PatchOuiFileSelectLoadThread]
-        [MonoModIgnore]
-        private extern void LoadThread();
 
         private void RemoveSlotsFromScene() {
             Scene.Remove(Slots.Where(slot => slot != null));
