@@ -88,6 +88,8 @@ namespace Celeste {
             if (CoreModule.Settings.QuickRestart != null) {
                 int slot = CoreModule.Settings.QuickRestart.Value;
                 CoreModule.Settings.QuickRestart = null;
+                if (CoreModule.Settings.ForceSaveDataFlush)
+                    CoreModule.Instance.ForceSaveDataFlush++;
                 CoreModule.Instance.SaveSettings();
                 SaveData save = UserIO.Load<SaveData>(SaveData.GetFilename(slot));
                 if (save != null) {

@@ -135,6 +135,25 @@ namespace Celeste {
             SaveData.Instance.AfterInitialize();
         }
 
+        // Used where BeforeSave was previously used to enforce mod saving.
+        internal static void ForceSerializeModSave() {
+            UserIO.Save<ModSaveData>(SaveData.GetFilename(SaveData.Instance.FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData((patch_SaveData) SaveData.Instance)));
+            
+            foreach (EverestModule mod in Everest._Modules) {
+                if (CoreModule.Settings.ForceSaveDataFlush)
+                    mod.ForceSaveDataFlush += 2;
+                if (mod.SaveDataAsync) {
+                    mod.WriteSaveData(SaveData.Instance.FileSlot, mod.SerializeSaveData(SaveData.Instance.FileSlot));
+                    mod.WriteSession(SaveData.Instance.FileSlot, mod.SerializeSession(SaveData.Instance.FileSlot));
+                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.SaveSaveData(SaveData.Instance.FileSlot);
+                    mod.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                }
+            }
+        }
+
         private static IEnumerator SaveNonHandler() {
             yield break;
         }

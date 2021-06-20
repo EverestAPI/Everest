@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Input;
@@ -133,6 +134,10 @@ namespace Celeste.Mod {
         /// Save the mod settings. Saves the settings to {UserIO.GetSavePath("Saves")}/modsettings-{Metadata.Name}.yaml by default.
         /// </summary>
         public virtual void SaveSettings() {
+            bool forceFlush = ForceSaveDataFlush > 0;
+            if (forceFlush)
+                ForceSaveDataFlush--;
+
             if (SettingsType == null || _Settings == null)
                 return;
 
@@ -147,13 +152,13 @@ namespace Celeste.Mod {
                     if (_Settings is EverestModuleBinarySettings) {
                         using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySettings) _Settings).Write(writer);
-                            if (Thread.CurrentThread != MainThreadHelper.MainThread)
+                            if (forceFlush || Thread.CurrentThread != MainThreadHelper.MainThread)
                                 stream.Flush(true);
                         }
                     } else {
                         using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
-                            if (Thread.CurrentThread != MainThreadHelper.MainThread)
+                            if (forceFlush || Thread.CurrentThread != MainThreadHelper.MainThread)
                                 stream.Flush(true);
                         }
                     }
