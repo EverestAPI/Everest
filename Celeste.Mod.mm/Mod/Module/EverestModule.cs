@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.UI;
+﻿using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -54,6 +55,7 @@ namespace Celeste.Mod {
         /// Defaults to true; automatically gets set to false if you override an old method without overriding any new one.
         /// </summary>
         public virtual bool SaveDataAsync { get; set; }
+        private bool ForceSaveDataAsync;
 
         /// <summary>
         /// The type used for the session object. Used for serialization, among other things.
@@ -84,8 +86,10 @@ namespace Celeste.Mod {
                 GetType().GetMethod(nameof(DeserializeSession)) != typeof(EverestModule).GetMethod(nameof(DeserializeSession)) ||
                 GetType().GetMethod(nameof(SerializeSession)) != typeof(EverestModule).GetMethod(nameof(SerializeSession)) ||
                 GetType().GetMethod(nameof(WriteSession)) != typeof(EverestModule).GetMethod(nameof(WriteSession));
+            if (!SaveDataAsync)
+                Logger.Log(LogLevel.Warn, "EverestModule", $"{Metadata.Name} doesn't support save data async IO!");
         }
-        
+
         /// <summary>
         /// Load the mod settings. Loads the settings from {UserIO.GetSavePath("Saves")}/modsettings-{Metadata.Name}.celeste by default.
         /// </summary>
@@ -161,7 +165,9 @@ namespace Celeste.Mod {
         /// </summary>
         [Obsolete("Override DeserializeSaveData and ReadSaveData instead.")]
         public virtual void LoadSaveData(int index) {
+            ForceSaveDataAsync = true;
             DeserializeSaveData(index, ReadSaveData(index));
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
@@ -170,7 +176,9 @@ namespace Celeste.Mod {
         /// 
         [Obsolete("Override SerializeSaveData and WriteSaveData instead.")]
         public virtual void SaveSaveData(int index) {
+            ForceSaveDataAsync = true;
             WriteSaveData(index, SerializeSaveData(index));
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
@@ -178,13 +186,18 @@ namespace Celeste.Mod {
         /// </summary>
         [Obsolete("Override WriteSaveData and handle null data instead.")]
         public virtual void DeleteSaveData(int index) {
+            ForceSaveDataAsync = true;
             WriteSaveData(index, null);
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
         /// Read the mod save data bytes from a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual byte[] ReadSaveData(int index) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SaveDataType == null)
                 return null;
 
@@ -205,6 +218,9 @@ namespace Celeste.Mod {
         /// Write the mod save data bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void WriteSaveData(int index, byte[] data) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SaveDataType == null)
                 return;
 
@@ -233,6 +249,9 @@ namespace Celeste.Mod {
         /// Deserialize the mod save data from its raw bytes, fed with data from ReadSaveData either immediately or async.
         /// </summary>
         public virtual void DeserializeSaveData(int index, byte[] data) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SaveDataType == null)
                 return;
 
@@ -263,16 +282,19 @@ namespace Celeste.Mod {
         /// Serialize the mod save data into its raw bytes, to be fed into WriteSaveData immediately or async.
         /// </summary>
         public virtual byte[] SerializeSaveData(int index) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SaveDataType == null)
                 return null;
 
             try {
                 using (MemoryStream stream = new MemoryStream()) {
                     if (_SaveData is EverestModuleBinarySaveData bsd) {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(new UndisposableStream(stream)))
                             bsd.Write(writer);
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream))
+                        using (StreamWriter writer = new StreamWriter(new UndisposableStream(stream)))
                             YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
                     }
                     stream.Seek(0, SeekOrigin.Begin);
@@ -291,7 +313,9 @@ namespace Celeste.Mod {
         /// </summary>
         [Obsolete("Override DeserializeSession and ReadSession instead.")]
         public virtual void LoadSession(int index, bool forceNew) {
+            ForceSaveDataAsync = true;
             DeserializeSession(index, forceNew ? null : ReadSession(index));
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
@@ -299,7 +323,9 @@ namespace Celeste.Mod {
         /// </summary>
         [Obsolete("Override SerializeSession and WriteSession instead.")]
         public virtual void SaveSession(int index) {
+            ForceSaveDataAsync = true;
             WriteSession(index, SerializeSession(index));
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
@@ -307,13 +333,18 @@ namespace Celeste.Mod {
         /// </summary>
         [Obsolete("Override WriteSession and handle null data instead.")]
         public virtual void DeleteSession(int index) {
+            ForceSaveDataAsync = true;
             WriteSession(index, null);
+            ForceSaveDataAsync = false;
         }
 
         /// <summary>
         /// Read the mod session bytes from a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual byte[] ReadSession(int index) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SessionType == null)
                 return null;
 
@@ -334,6 +365,9 @@ namespace Celeste.Mod {
         /// Write the mod session bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void WriteSession(int index, byte[] data) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SessionType == null)
                 return;
 
@@ -362,6 +396,9 @@ namespace Celeste.Mod {
         /// Deserialize the mod session from its raw bytes, fed with data from ReadSession either immediately or async.
         /// </summary>
         public virtual void DeserializeSession(int index, byte[] data) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SessionType == null)
                 return;
 
@@ -392,16 +429,19 @@ namespace Celeste.Mod {
         /// Serialize the mod session into its raw bytes, to be fed into WriteSession immediately or async.
         /// </summary>
         public virtual byte[] SerializeSession(int index) {
+            if (!SaveDataAsync && !ForceSaveDataAsync)
+                throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
+
             if (SessionType == null)
                 return null;
 
             try {
                 using (MemoryStream stream = new MemoryStream()) {
                     if (_Session is EverestModuleBinarySession bs) {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        using (BinaryWriter writer = new BinaryWriter(new UndisposableStream(stream)))
                             bs.Write(writer);
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream))
+                        using (StreamWriter writer = new StreamWriter(new UndisposableStream(stream)))
                             YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
                     }
                     stream.Seek(0, SeekOrigin.Begin);
