@@ -430,7 +430,7 @@ namespace Celeste.Mod {
                             YamlHelper.DeserializerUsing(_Session).Deserialize(reader, SessionType);
                     }
                 }
-                _SaveData.Index = index;
+                _Session.Index = index;
             } catch (Exception e) {
                 Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to deserialize the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
