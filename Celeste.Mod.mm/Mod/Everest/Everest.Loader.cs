@@ -614,11 +614,23 @@ namespace Celeste.Mod {
                         // be sure to save this module's save data and session before reloading it, so that they are not lost.
                         if (SaveData.Instance != null) {
                             Logger.Log("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                            module.SaveSaveData(SaveData.Instance.FileSlot);
+                            if (module.SaveDataAsync) {
+                                module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
+                            } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                module.SaveSaveData(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                            }
 
                             if (SaveData.Instance.CurrentSession?.InArea ?? false) {
                                 Logger.Log("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                                module.SaveSession(SaveData.Instance.FileSlot);
+                                if (module.SaveDataAsync) {
+                                    module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
+                                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                    module.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                                }
                             }
                         }
 

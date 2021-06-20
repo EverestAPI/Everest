@@ -501,7 +501,7 @@ namespace MonoMod {
             }
 
             // Check if Celeste version is supported
-            Version versionMin = new Version(1, 3, 1, 2);
+            Version versionMin = new Version(1, 4, 0, 0);
             if (Version.Major == 0)
                 Version = versionMin;
             if (Version < versionMin)
@@ -1301,12 +1301,7 @@ namespace MonoMod {
         }
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
-            if (SaveData == null)
-                SaveData = MonoModRule.Modder.FindType("Celeste.SaveData")?.Resolve();
-
-            FieldDefinition f_Instance = SaveData.FindField("Instance");
-
-            MethodDefinition m_AfterInitialize = SaveData.FindMethod("System.Void AfterInitialize()");
+            MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
 
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1324,9 +1319,8 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
                     instri++;
 
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldsfld, f_Instance));
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_AfterInitialize));
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
+                    instri++;
                 }
             }
         }

@@ -20,6 +20,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using YYProject.XXHash;
 
@@ -29,6 +30,8 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently installed Everest version in string form.
         /// </summary>
+        // NOTE: THIS MUST BE THE FIRST THING SET UP BY THE CLASS CONSTRUCTOR.
+        // OTHERWISE OLYMPUS WON'T BE ABLE TO FIND THIS!
         // The following line gets replaced by the buildbot automatically.
         public readonly static string VersionString = "0.0.0-dev";
         /// <summary>
@@ -61,6 +64,11 @@ namespace Celeste.Mod {
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
         public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
+
+        /// <summary>
+        /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
+        /// </summary>
+        public static readonly Encoding UTF8NoBOM = new UTF8Encoding(false);
 
         /// <summary>
         /// The command line arguments passed when launching the game.
@@ -638,12 +646,24 @@ namespace Celeste.Mod {
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
                     Logger.Log("core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                    module.LoadSaveData(SaveData.Instance.FileSlot);
+                    if (module.SaveDataAsync) {
+                        module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
+                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                        module.LoadSaveData(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                    }
 
                     if (SaveData.Instance.CurrentSession?.InArea ?? false) {
                         // we are in a level. we are expecting the session to already be loaded at this point
                         Logger.Log("core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                        module.LoadSession(SaveData.Instance.FileSlot, false);
+                        if (module.SaveDataAsync) {
+                            module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
+                        } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                            module.LoadSession(SaveData.Instance.FileSlot, false);
+#pragma warning restore CS0618
+                        }
                     }
                 }
 

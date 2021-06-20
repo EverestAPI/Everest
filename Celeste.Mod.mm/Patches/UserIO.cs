@@ -4,12 +4,15 @@ using Celeste.Mod;
 using MonoMod;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Xml.Serialization;
 
 namespace Celeste {
     static class patch_UserIO {
+
+        private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
 
         [MonoModIgnore]
         public static bool Saving { get; private set; }
@@ -47,6 +50,25 @@ namespace Celeste {
             return new SafeRoutine(SaveRoutine(file, settings));
         }
 
+
+        private static extern void orig_SaveThread();
+        private static void SaveThread() {
+            if (savingModFileData != null) {
+                foreach (Tuple<EverestModule, byte[], byte[]> data in savingModFileData) {
+                    if (data.Item1 == null) {
+                        UserIO.Save<ModSaveData>(SaveData.GetFilename(SaveData.Instance.FileSlot) + "-modsavedata", data.Item2);
+                        continue;
+                    }
+
+                    data.Item1.WriteSaveData(SaveData.Instance.FileSlot, data.Item2);
+                    data.Item1.WriteSession(SaveData.Instance.FileSlot, data.Item3);
+                }
+                savingModFileData = null;
+            }
+
+            orig_SaveThread();
+        }
+
         // Patch the Deserialize method so that it doesn't use BinaryFormatter (that causes an arbitrary code execution vulnerability).
         [MonoModReplace]
         private static T Deserialize<T>(Stream stream) where T : class {
@@ -82,6 +104,32 @@ namespace Celeste {
         private static void _saveAndFlush(FileStream stream, byte[] array, int offset, int count) {
             stream.Write(array, offset, count);
             stream.Flush(true);
+        }
+
+        private static void _SerializeModSave() {
+            savingModFileData = new List<Tuple<EverestModule, byte[], byte[]>>();
+            savingModFileData.Add(Tuple.Create<EverestModule, byte[], byte[]>(
+                null,
+                UserIO.Serialize(new ModSaveData((patch_SaveData) SaveData.Instance)),
+                null
+            ));
+
+            foreach (EverestModule mod in Everest._Modules) {
+                if (mod.SaveDataAsync) {
+                    savingModFileData.Add(Tuple.Create(
+                        mod,
+                        mod.SerializeSaveData(SaveData.Instance.FileSlot),
+                        mod.SerializeSession(SaveData.Instance.FileSlot)
+                    ));
+                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.SaveSaveData(SaveData.Instance.FileSlot);
+                    mod.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                }
+            }
+
+            SaveData.Instance.AfterInitialize();
         }
 
         private static IEnumerator SaveNonHandler() {

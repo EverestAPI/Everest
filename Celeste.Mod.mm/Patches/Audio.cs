@@ -106,8 +106,9 @@ namespace Celeste {
             if (patch_Banks.ModCache.TryGetValue(asset, out bank))
                 return bank;
 
+            RESULT loadResult;
             if (CoreModule.Settings.UnpackFMODBanks) {
-                system.loadBankFile(asset.GetCachedPath(), LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
+                loadResult = system.loadBankFile(asset.GetCachedPath(), LOAD_BANK_FLAGS.NORMAL, out bank);
 
             } else {
                 IntPtr handle;
@@ -124,8 +125,15 @@ namespace Celeste {
                     seekcallback = ModBankSeek
                 };
 
-                system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank).CheckFMOD();
+                loadResult = system.loadBankCustom(info, LOAD_BANK_FLAGS.NORMAL, out bank);
             }
+
+            if (loadResult == RESULT.ERR_EVENT_ALREADY_LOADED) {
+                Logger.Log(LogLevel.Warn, "Audio.IngestBank", $"Cannot load {asset.PathVirtual} due to conflicting events!");
+                return null;
+            }
+
+            loadResult.CheckFMOD();
 
             if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out ModAsset assetGUIDs)) {
                 IngestGUIDs(assetGUIDs);

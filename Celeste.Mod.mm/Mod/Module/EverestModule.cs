@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Text;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -21,6 +22,7 @@ namespace Celeste.Mod {
         /// The metadata is usually parsed from meta.yaml in the archive.
         /// 
         /// You can override this property to provide dynamic metadata at runtime.
+        /// Doing so isn't advised though unless you absolutely know what you're doing.
         /// Note that this doesn't affect mod loading.
         /// </summary>
         public virtual EverestModuleMetadata Metadata { get; set; }
@@ -35,6 +37,55 @@ namespace Celeste.Mod {
         /// </summary>
         public virtual EverestModuleSettings _Settings { get; set; }
 
+        /// <summary>
+        /// The type used for the save data object. Used for serialization, among other things.
+        /// </summary>
+        public virtual Type SaveDataType => null;
+        /// <summary>
+        /// Any save data stored across runs.
+        /// Define your custom property returning _SaveData typecasted as your custom save data type.
+        /// </summary>
+        public virtual EverestModuleSaveData _SaveData { get; set; }
+
+        /// <summary>
+        /// Whether the save and session data can be saved asynchronously and separately by Everest.
+        /// Doing so will use [Read,Write,Deserialize,Serialize][SaveData,Session].
+        /// Otherwise, the obsolete and forcibly synchronous [Load,Save,Delete] methods will be used.
+        /// Defaults to true; automatically gets set to false if you override an old method without overriding any new one.
+        /// </summary>
+        public virtual bool SaveDataAsync { get; set; }
+
+        /// <summary>
+        /// The type used for the session object. Used for serialization, among other things.
+        /// </summary>
+        public virtual Type SessionType => null;
+        /// <summary>
+        /// Any save data stored for the current session.
+        /// Define your custom property returning _Session typecasted as your custom session type.
+        /// </summary>
+        public virtual EverestModuleSession _Session { get; set; }
+
+        public EverestModule() {
+            // Default to async as long as all old methods stay the same.
+            SaveDataAsync |=
+                GetType().GetMethod(nameof(LoadSaveData)) == typeof(EverestModule).GetMethod(nameof(LoadSaveData)) &&
+                GetType().GetMethod(nameof(SaveSaveData)) == typeof(EverestModule).GetMethod(nameof(SaveSaveData)) &&
+                GetType().GetMethod(nameof(DeleteSaveData)) == typeof(EverestModule).GetMethod(nameof(DeleteSaveData)) &&
+                GetType().GetMethod(nameof(LoadSession)) == typeof(EverestModule).GetMethod(nameof(LoadSession)) &&
+                GetType().GetMethod(nameof(SaveSession)) == typeof(EverestModule).GetMethod(nameof(SaveSession)) &&
+                GetType().GetMethod(nameof(DeleteSession)) == typeof(EverestModule).GetMethod(nameof(DeleteSession));
+            // Prefer async if the mod overrides any new method.
+            SaveDataAsync |=
+                GetType().GetMethod(nameof(ReadSaveData)) != typeof(EverestModule).GetMethod(nameof(ReadSaveData)) ||
+                GetType().GetMethod(nameof(DeserializeSaveData)) != typeof(EverestModule).GetMethod(nameof(DeserializeSaveData)) ||
+                GetType().GetMethod(nameof(SerializeSaveData)) != typeof(EverestModule).GetMethod(nameof(SerializeSaveData)) ||
+                GetType().GetMethod(nameof(WriteSaveData)) != typeof(EverestModule).GetMethod(nameof(WriteSaveData)) ||
+                GetType().GetMethod(nameof(ReadSession)) != typeof(EverestModule).GetMethod(nameof(ReadSession)) ||
+                GetType().GetMethod(nameof(DeserializeSession)) != typeof(EverestModule).GetMethod(nameof(DeserializeSession)) ||
+                GetType().GetMethod(nameof(SerializeSession)) != typeof(EverestModule).GetMethod(nameof(SerializeSession)) ||
+                GetType().GetMethod(nameof(WriteSession)) != typeof(EverestModule).GetMethod(nameof(WriteSession));
+        }
+        
         /// <summary>
         /// Load the mod settings. Loads the settings from {UserIO.GetSavePath("Saves")}/modsettings-{Metadata.Name}.celeste by default.
         /// </summary>
@@ -106,34 +157,96 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// The type used for the save data object. Used for serialization, among other things.
-        /// </summary>
-        public virtual Type SaveDataType => null;
-        /// <summary>
-        /// Any save data stored across runs.
-        /// Define your custom property returning _SaveData typecasted as your custom save data type.
-        /// </summary>
-        public virtual EverestModuleSaveData _SaveData { get; set; }
-
-        /// <summary>
         /// Load the mod save data. Loads the save data from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
+        [Obsolete("Override DeserializeSaveData and ReadSaveData instead.")]
         public virtual void LoadSaveData(int index) {
+            DeserializeSaveData(index, ReadSaveData(index));
+        }
+
+        /// <summary>
+        /// Save the mod save data. Saves the save data to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// </summary>
+        /// 
+        [Obsolete("Override SerializeSaveData and WriteSaveData instead.")]
+        public virtual void SaveSaveData(int index) {
+            WriteSaveData(index, SerializeSaveData(index));
+        }
+
+        /// <summary>
+        /// Delete the mod save data. Deletes the save data at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// </summary>
+        [Obsolete("Override WriteSaveData and handle null data instead.")]
+        public virtual void DeleteSaveData(int index) {
+            WriteSaveData(index, null);
+        }
+
+        /// <summary>
+        /// Read the mod save data bytes from a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual byte[] ReadSaveData(int index) {
+            if (SaveDataType == null)
+                return null;
+
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
+            if (!File.Exists(path))
+                return null;
+
+            try {
+                return File.ReadAllBytes(path);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to read the save data of {Metadata.Name}!");
+                Logger.LogDetailed(e);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Write the mod save data bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual void WriteSaveData(int index, byte[] data) {
+            if (SaveDataType == null)
+                return;
+
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
+            if (File.Exists(path))
+                File.Delete(path);
+
+            if (data == null)
+                return;
+
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+
+            try {
+                using (FileStream stream = File.OpenWrite(path)) {
+                    stream.Write(data, 0, data.Length);
+                    if (SaveDataAsync)
+                        stream.Flush(true);
+                }
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to write the save data of {Metadata.Name}!");
+                Logger.LogDetailed(e);
+            }
+        }
+
+        /// <summary>
+        /// Deserialize the mod save data from its raw bytes, fed with data from ReadSaveData either immediately or async.
+        /// </summary>
+        public virtual void DeserializeSaveData(int index, byte[] data) {
             if (SaveDataType == null)
                 return;
 
             _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _SaveData.Index = index;
 
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
-            if (!File.Exists(path))
+            if (data == null)
                 return;
 
             try {
-                using (Stream stream = File.OpenRead(path)) {
-                    if (_SaveData is EverestModuleBinarySaveData) {
+                using (MemoryStream stream = new MemoryStream(data)) {
+                    if (_SaveData is EverestModuleBinarySaveData bsd) {
                         using (BinaryReader reader = new BinaryReader(stream))
-                            ((EverestModuleBinarySaveData) _SaveData).Read(reader);
+                            bsd.Read(reader);
                     } else {
                         using (StreamReader reader = new StreamReader(stream))
                             YamlHelper.DeserializerUsing(_SaveData).Deserialize(reader, SaveDataType);
@@ -141,149 +254,165 @@ namespace Celeste.Mod {
                 }
                 _SaveData.Index = index;
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the save data of {Metadata.Name}!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to deserialize the save data of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
-
         }
 
         /// <summary>
-        /// Save the mod save data. Saves the save data to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// Serialize the mod save data into its raw bytes, to be fed into WriteSaveData immediately or async.
         /// </summary>
-        public virtual void SaveSaveData(int index) {
+        public virtual byte[] SerializeSaveData(int index) {
             if (SaveDataType == null)
+                return null;
+
+            try {
+                using (MemoryStream stream = new MemoryStream()) {
+                    if (_SaveData is EverestModuleBinarySaveData bsd) {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                            bsd.Write(writer);
+                    } else {
+                        using (StreamWriter writer = new StreamWriter(stream))
+                            YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
+                    }
+                    stream.Seek(0, SeekOrigin.Begin);
+                    return stream.ToArray();
+                }
+
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to serialize the save data of {Metadata.Name}!");
+                Logger.LogDetailed(e);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Load the mod session. Loads the session from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        [Obsolete("Override DeserializeSession and ReadSession instead.")]
+        public virtual void LoadSession(int index, bool forceNew) {
+            DeserializeSession(index, forceNew ? null : ReadSession(index));
+        }
+
+        /// <summary>
+        /// Save the mod session. Saves the session to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        [Obsolete("Override SerializeSession and WriteSession instead.")]
+        public virtual void SaveSession(int index) {
+            WriteSession(index, SerializeSession(index));
+        }
+
+        /// <summary>
+        /// Delete the mod session. Deletes the session at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        [Obsolete("Override WriteSession and handle null data instead.")]
+        public virtual void DeleteSession(int index) {
+            WriteSession(index, null);
+        }
+
+        /// <summary>
+        /// Read the mod session bytes from a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual byte[] ReadSession(int index) {
+            if (SessionType == null)
+                return null;
+
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
+            if (!File.Exists(path))
+                return null;
+
+            try {
+                return File.ReadAllBytes(path);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to read the session of {Metadata.Name}!");
+                Logger.LogDetailed(e);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Write the mod session bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// </summary>
+        public virtual void WriteSession(int index, byte[] data) {
+            if (SessionType == null)
                 return;
 
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
+            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
             if (File.Exists(path))
                 File.Delete(path);
+
+            if (data == null)
+                return;
 
             Directory.CreateDirectory(Path.GetDirectoryName(path));
 
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
-                    if (_SaveData is EverestModuleBinarySaveData) {
-                        using (BinaryWriter writer = new BinaryWriter(stream)) {
-                            ((EverestModuleBinarySaveData) _SaveData).Write(writer);
-                            stream.Flush(true);
-                        }
-                    } else {
-                        using (StreamWriter writer = new StreamWriter(stream)) {
-                            YamlHelper.Serializer.Serialize(writer, _SaveData, SaveDataType);
-                            stream.Flush(true);
-                        }
-                    }
+                    stream.Write(data, 0, data.Length);
+                    if (SaveDataAsync)
+                        stream.Flush(true);
                 }
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the save data of {Metadata.Name}!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to write the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
 
         /// <summary>
-        /// Delete the mod save data. Deletes the save data at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
+        /// Deserialize the mod session from its raw bytes, fed with data from ReadSession either immediately or async.
         /// </summary>
-        public virtual void DeleteSaveData(int index) {
-            if (SaveDataType == null)
-                return;
-
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsave-" + Metadata.Name);
-            if (!File.Exists(path))
-                return;
-
-            File.Delete(path);
-        }
-
-        /// <summary>
-        /// The type used for the session object. Used for serialization, among other things.
-        /// </summary>
-        public virtual Type SessionType => null;
-        /// <summary>
-        /// Any save data stored for the current session.
-        /// Define your custom property returning _Session typecasted as your custom session type.
-        /// </summary>
-        public virtual EverestModuleSession _Session { get; set; }
-
-        /// <summary>
-        /// Load the mod session. Loads the session from {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
-        /// </summary>
-        public virtual void LoadSession(int index, bool forceNew) {
+        public virtual void DeserializeSession(int index, byte[] data) {
             if (SessionType == null)
                 return;
 
             _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
             _Session.Index = index;
 
-            if (forceNew)
-                return;
-
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
-            if (!File.Exists(path))
+            if (data == null)
                 return;
 
             try {
-                using (Stream stream = File.OpenRead(path)) {
-                    if (_Session is EverestModuleBinarySession) {
+                using (MemoryStream stream = new MemoryStream(data)) {
+                    if (_Session is EverestModuleBinarySession bs) {
                         using (BinaryReader reader = new BinaryReader(stream))
-                            ((EverestModuleBinarySession) _Session).Read(reader);
+                            bs.Read(reader);
                     } else {
                         using (StreamReader reader = new StreamReader(stream))
                             YamlHelper.DeserializerUsing(_Session).Deserialize(reader, SessionType);
                     }
                 }
-                _Session.Index = index;
+                _SaveData.Index = index;
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to load the session of {Metadata.Name}!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to deserialize the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
             }
         }
 
         /// <summary>
-        /// Save the mod session. Saves the session to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
+        /// Serialize the mod session into its raw bytes, to be fed into WriteSession immediately or async.
         /// </summary>
-        public virtual void SaveSession(int index) {
+        public virtual byte[] SerializeSession(int index) {
             if (SessionType == null)
-                return;
-
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
-            if (File.Exists(path))
-                File.Delete(path);
-
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
+                return null;
 
             try {
-                using (FileStream stream = File.OpenWrite(path)) {
-                    if (_Session is EverestModuleBinarySession) {
-                        using (BinaryWriter writer = new BinaryWriter(stream)) {
-                            ((EverestModuleBinarySession) _Session).Write(writer);
-                            stream.Flush(true);
-                        }
+                using (MemoryStream stream = new MemoryStream()) {
+                    if (_Session is EverestModuleBinarySession bs) {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                            bs.Write(writer);
                     } else {
-                        using (StreamWriter writer = new StreamWriter(stream)) {
+                        using (StreamWriter writer = new StreamWriter(stream))
                             YamlHelper.Serializer.Serialize(writer, _Session, SessionType);
-                            stream.Flush(true);
-                        }
                     }
+                    stream.Seek(0, SeekOrigin.Begin);
+                    return stream.ToArray();
                 }
+
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to save the session of {Metadata.Name}!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"Failed to serialize the session of {Metadata.Name}!");
                 Logger.LogDetailed(e);
+                return null;
             }
-        }
-
-        /// <summary>
-        /// Delete the mod session. Deletes the session at {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
-        /// </summary>
-        /// <param name="index"></param>
-        public virtual void DeleteSession(int index) {
-            if (SessionType == null)
-                return;
-
-            string path = patch_UserIO.GetSaveFilePath(patch_SaveData.GetFilename(index) + "-modsession-" + Metadata.Name);
-            if (!File.Exists(path))
-                return;
-
-            File.Delete(path);
         }
 
         /// <summary>
