@@ -70,24 +70,24 @@ namespace Celeste.Mod {
         public EverestModule() {
             // Default to async as long as all old methods stay the same.
             SaveDataAsync |=
-                GetType().GetMethod(nameof(LoadSaveData)) == typeof(EverestModule).GetMethod(nameof(LoadSaveData)) &&
-                GetType().GetMethod(nameof(SaveSaveData)) == typeof(EverestModule).GetMethod(nameof(SaveSaveData)) &&
-                GetType().GetMethod(nameof(DeleteSaveData)) == typeof(EverestModule).GetMethod(nameof(DeleteSaveData)) &&
-                GetType().GetMethod(nameof(LoadSession)) == typeof(EverestModule).GetMethod(nameof(LoadSession)) &&
-                GetType().GetMethod(nameof(SaveSession)) == typeof(EverestModule).GetMethod(nameof(SaveSession)) &&
-                GetType().GetMethod(nameof(DeleteSession)) == typeof(EverestModule).GetMethod(nameof(DeleteSession));
+                typeof(EverestModule) == GetType().GetMethod(nameof(LoadSaveData)).DeclaringType &&
+                typeof(EverestModule) == GetType().GetMethod(nameof(SaveSaveData)).DeclaringType &&
+                typeof(EverestModule) == GetType().GetMethod(nameof(DeleteSaveData)).DeclaringType &&
+                typeof(EverestModule) == GetType().GetMethod(nameof(LoadSession)).DeclaringType &&
+                typeof(EverestModule) == GetType().GetMethod(nameof(SaveSession)).DeclaringType &&
+                typeof(EverestModule) == GetType().GetMethod(nameof(DeleteSession)).DeclaringType;
             // Prefer async if the mod overrides any new method.
             SaveDataAsync |=
-                GetType().GetMethod(nameof(ReadSaveData)) != typeof(EverestModule).GetMethod(nameof(ReadSaveData)) ||
-                GetType().GetMethod(nameof(DeserializeSaveData)) != typeof(EverestModule).GetMethod(nameof(DeserializeSaveData)) ||
-                GetType().GetMethod(nameof(SerializeSaveData)) != typeof(EverestModule).GetMethod(nameof(SerializeSaveData)) ||
-                GetType().GetMethod(nameof(WriteSaveData)) != typeof(EverestModule).GetMethod(nameof(WriteSaveData)) ||
-                GetType().GetMethod(nameof(ReadSession)) != typeof(EverestModule).GetMethod(nameof(ReadSession)) ||
-                GetType().GetMethod(nameof(DeserializeSession)) != typeof(EverestModule).GetMethod(nameof(DeserializeSession)) ||
-                GetType().GetMethod(nameof(SerializeSession)) != typeof(EverestModule).GetMethod(nameof(SerializeSession)) ||
-                GetType().GetMethod(nameof(WriteSession)) != typeof(EverestModule).GetMethod(nameof(WriteSession));
+                typeof(EverestModule) != GetType().GetMethod(nameof(ReadSaveData)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(DeserializeSaveData)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(SerializeSaveData)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(WriteSaveData)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(ReadSession)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(DeserializeSession)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(SerializeSession)).DeclaringType ||
+                typeof(EverestModule) != GetType().GetMethod(nameof(WriteSession)).DeclaringType;
             if (!SaveDataAsync)
-                Logger.Log(LogLevel.Warn, "EverestModule", $"{Metadata.Name} doesn't support save data async IO!");
+                Logger.Log(LogLevel.Warn, "EverestModule", $"{GetType().FullName} doesn't support save data async IO!");
         }
 
         /// <summary>
