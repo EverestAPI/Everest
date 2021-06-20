@@ -28,13 +28,10 @@ namespace Celeste.Mod {
     public static partial class Everest {
 
         /// <summary>
-        /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
-        /// </summary>
-        public static readonly Encoding UTF8NoBOM = new UTF8Encoding(false);
-
-        /// <summary>
         /// The currently installed Everest version in string form.
         /// </summary>
+        // NOTE: THIS MUST BE THE FIRST THING SET UP BY THE CLASS CONSTRUCTOR.
+        // OTHERWISE OLYMPUS WON'T BE ABLE TO FIND THIS!
         // The following line gets replaced by the buildbot automatically.
         public readonly static string VersionString = "0.0.0-dev";
         /// <summary>
@@ -67,6 +64,11 @@ namespace Celeste.Mod {
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
         public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
+
+        /// <summary>
+        /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
+        /// </summary>
+        public static readonly Encoding UTF8NoBOM = new UTF8Encoding(false);
 
         /// <summary>
         /// The command line arguments passed when launching the game.
