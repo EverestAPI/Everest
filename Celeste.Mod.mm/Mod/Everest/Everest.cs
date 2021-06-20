@@ -20,11 +20,17 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using YYProject.XXHash;
 
 namespace Celeste.Mod {
     public static partial class Everest {
+
+        /// <summary>
+        /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
+        /// </summary>
+        public static readonly Encoding UTF8NoBOM = new UTF8Encoding(false);
 
         /// <summary>
         /// The currently installed Everest version in string form.
@@ -638,12 +644,24 @@ namespace Celeste.Mod {
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
                     Logger.Log("core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                    module.LoadSaveData(SaveData.Instance.FileSlot);
+                    if (module.SaveDataAsync) {
+                        module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
+                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                        module.LoadSaveData(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                    }
 
                     if (SaveData.Instance.CurrentSession?.InArea ?? false) {
                         // we are in a level. we are expecting the session to already be loaded at this point
                         Logger.Log("core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                        module.LoadSession(SaveData.Instance.FileSlot, false);
+                        if (module.SaveDataAsync) {
+                            module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
+                        } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                            module.LoadSession(SaveData.Instance.FileSlot, false);
+#pragma warning restore CS0618
+                        }
                     }
                 }
 
