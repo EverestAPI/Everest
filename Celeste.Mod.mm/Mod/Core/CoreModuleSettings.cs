@@ -191,6 +191,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public int ExtraCommandHistoryLines { get; set; } = 50;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool ForceSaveDataFlush { get; set; } = false;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";

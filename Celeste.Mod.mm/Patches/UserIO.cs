@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using MonoMod;
 using System;
 using System.Collections;
@@ -123,7 +124,8 @@ namespace Celeste {
                     ));
                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                    mod.ForceSaveDataFlush += 2;
+                    if (CoreModule.Settings.ForceSaveDataFlush)
+                        mod.ForceSaveDataFlush += 2;
                     mod.SaveSaveData(SaveData.Instance.FileSlot);
                     mod.SaveSession(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
