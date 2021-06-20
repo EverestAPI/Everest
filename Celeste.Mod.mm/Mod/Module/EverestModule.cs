@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -145,12 +146,14 @@ namespace Celeste.Mod {
                     if (_Settings is EverestModuleBinarySettings) {
                         using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySettings) _Settings).Write(writer);
-                            stream.Flush(true);
+                            if (Thread.CurrentThread != MainThreadHelper.MainThread)
+                                stream.Flush(true);
                         }
                     } else {
                         using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
-                            stream.Flush(true);
+                            if (Thread.CurrentThread != MainThreadHelper.MainThread)
+                                stream.Flush(true);
                         }
                     }
                 }
@@ -236,7 +239,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (SaveDataAsync)
+                    if (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread)
                         stream.Flush(true);
                 }
             } catch (Exception e) {
@@ -383,7 +386,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (SaveDataAsync)
+                    if (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread)
                         stream.Flush(true);
                 }
             } catch (Exception e) {
