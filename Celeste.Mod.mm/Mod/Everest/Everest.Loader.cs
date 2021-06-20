@@ -618,6 +618,7 @@ namespace Celeste.Mod {
                                 module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                             } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                module.ForceSaveDataFlush++;
                                 module.SaveSaveData(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
                             }
@@ -628,6 +629,7 @@ namespace Celeste.Mod {
                                     module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
                                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                    module.ForceSaveDataFlush++;
                                     module.SaveSession(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
                                 }

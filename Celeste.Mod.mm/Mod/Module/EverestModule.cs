@@ -57,6 +57,7 @@ namespace Celeste.Mod {
         /// </summary>
         public virtual bool SaveDataAsync { get; set; }
         private bool ForceSaveDataAsync;
+        internal int ForceSaveDataFlush;
 
         /// <summary>
         /// The type used for the session object. Used for serialization, among other things.
@@ -221,6 +222,10 @@ namespace Celeste.Mod {
         /// Write the mod save data bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void WriteSaveData(int index, byte[] data) {
+            bool forceFlush = ForceSaveDataFlush > 0;
+            if (forceFlush)
+                ForceSaveDataFlush--;
+
             if (!SaveDataAsync && !ForceSaveDataAsync)
                 throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
 
@@ -239,7 +244,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread)
+                    if (forceFlush || (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread))
                         stream.Flush(true);
                 }
             } catch (Exception e) {
@@ -368,6 +373,10 @@ namespace Celeste.Mod {
         /// Write the mod session bytes into a file, {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsession-{Metadata.Name}.celeste by default.
         /// </summary>
         public virtual void WriteSession(int index, byte[] data) {
+            bool forceFlush = ForceSaveDataFlush > 0;
+            if (forceFlush)
+                ForceSaveDataFlush--;
+
             if (!SaveDataAsync && !ForceSaveDataAsync)
                 throw new Exception($"{Metadata.Name} overrides old methods or otherwise disabled async save data support.");
 
@@ -386,7 +395,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread)
+                    if (forceFlush || (SaveDataAsync && Thread.CurrentThread != MainThreadHelper.MainThread))
                         stream.Flush(true);
                 }
             } catch (Exception e) {

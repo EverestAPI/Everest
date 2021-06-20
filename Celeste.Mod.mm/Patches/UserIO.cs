@@ -123,6 +123,7 @@ namespace Celeste {
                     ));
                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.ForceSaveDataFlush += 2;
                     mod.SaveSaveData(SaveData.Instance.FileSlot);
                     mod.SaveSession(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
