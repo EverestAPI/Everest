@@ -16,6 +16,7 @@ namespace Celeste {
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
 
         private static Queue<Tuple<bool, bool>> QueuedSaves;
+        public static bool SaveQueued => (QueuedSaves?.Count ?? 0) > 0;
 
         [MonoModIgnore]
         public static bool Saving { get; private set; }
