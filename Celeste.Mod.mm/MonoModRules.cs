@@ -48,6 +48,12 @@ namespace MonoMod {
     class PatchBackdropParserAttribute : Attribute { }
 
     /// <summary>
+    /// A patch for the CanPause getter that skips the saving check.
+    /// </summary>
+    [MonoModCustomMethodAttribute("PatchLevelCanPause")]
+    class PatchLevelCanPauseAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute("PatchLevelUpdate")]
@@ -878,6 +884,13 @@ namespace MonoMod {
 
         }
 
+        public static void PatchLevelCanPause(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.UserIO", "get_Saving"));
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_0);
+        }
+
         public static void PatchLevelUpdate(MethodDefinition method, CustomAttribute attrib) {
             if (!method.HasBody)
                 return;
@@ -1687,6 +1700,10 @@ namespace MonoMod {
             if (m_SerializeModSave == null)
                 return;
 
+            MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
+            if (m_OnSaveRoutineEnd == null)
+                return;
+
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
@@ -1704,6 +1721,13 @@ namespace MonoMod {
                     instri++;
 
                     instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
+                    instri++;
+                }
+
+                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
                     instri++;
                 }
             }

@@ -15,6 +15,8 @@ namespace Celeste {
 
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
 
+        private static Queue<Tuple<bool, bool>> QueuedSaves;
+
         [MonoModIgnore]
         public static bool Saving { get; private set; }
 
@@ -42,13 +44,28 @@ namespace Celeste {
         [PatchSaveRoutine]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
 
+        public static extern void orig_SaveHandler(bool file, bool settings);
+        public static void SaveHandler(bool file, bool settings) {
+            if (QueuedSaves == null)
+                QueuedSaves = new Queue<Tuple<bool, bool>>();
+
+            if (Saving)
+                QueuedSaves.Enqueue(Tuple.Create(file, settings));
+
+            orig_SaveHandler(file, settings);
+        }
+
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandlerLegacy(bool file, bool settings) {
-            if (Saving)
-                return SaveNonHandler();
-            Saving = true;
-            // Note how we're calling SaveRoutine, not orig_SaveHandler.
-            return new SafeRoutine(SaveRoutine(file, settings));
+            // SaveHandler sets Celeste.SaveRoutine to an independently updated coroutine.
+            // The caller still expects a "blocking" IEnumerator though.
+            UserIO.SaveHandler(file, settings);
+            return SaveNonHandler();
+        }
+
+        private static IEnumerator SaveNonHandler() {
+            while (Saving)
+                yield break;
         }
 
 
@@ -154,8 +171,11 @@ namespace Celeste {
             }
         }
 
-        private static IEnumerator SaveNonHandler() {
-            yield break;
+        internal static void _OnSaveRoutineEnd() {
+            if (QueuedSaves.Count > 0) {
+                Tuple<bool, bool> entry = QueuedSaves.Dequeue();
+                SaveHandler(entry.Item1, entry.Item2);
+            }
         }
 
         public static T Load<T>(string path) where T : class

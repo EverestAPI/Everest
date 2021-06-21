@@ -49,6 +49,10 @@ namespace Celeste {
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelCanPause] // ... except for manually manipulating the method via MonoModRules
+        public extern bool get_CanPause();
+
+        [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelRender] // ... except for manually manipulating the method via MonoModRules
         public override extern void Render();
 
