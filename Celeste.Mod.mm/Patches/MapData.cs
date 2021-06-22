@@ -94,10 +94,8 @@ namespace Celeste {
                     }
                 }
 
-            } catch (Exception e) {
+            } catch (Exception e) when (e is not OutOfMemoryException) { // OOM errors are currently unrecoverable
                 Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
-                if (e is OutOfMemoryException)
-                    throw e; // Unrecoverable
                 e.LogDetailed();
             }
         }
