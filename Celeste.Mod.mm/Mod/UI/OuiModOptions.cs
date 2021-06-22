@@ -33,6 +33,7 @@ namespace Celeste.Mod.UI {
 
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
+            ((patch_TextMenu) menu).BatchMode = true;
 
             menu.Add(new TextMenuExt.HeaderImage("menu/everest") {
                 ImageColor = Color.White,
@@ -130,6 +131,7 @@ namespace Celeste.Mod.UI {
                 menu.Position.Y = menu.ScrollTargetY;
             }
 
+            ((patch_TextMenu) menu).BatchMode = false;
             return menu;
         }
 
