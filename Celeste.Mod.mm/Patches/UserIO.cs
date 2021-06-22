@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Xml.Serialization;
 
 namespace Celeste {
@@ -122,7 +123,8 @@ namespace Celeste {
 
         private static void _saveAndFlush(FileStream stream, byte[] array, int offset, int count) {
             stream.Write(array, offset, count);
-            stream.Flush(true);
+            if ((CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread)
+                stream.Flush(true);
         }
 
         private static void _SerializeModSave() {
@@ -142,7 +144,7 @@ namespace Celeste {
                     ));
                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                    if (CoreModule.Settings.ForceSaveDataFlush)
+                    if (CoreModule.Settings.SaveDataFlush ?? false)
                         mod.ForceSaveDataFlush += 2;
                     mod.SaveSaveData(SaveData.Instance.FileSlot);
                     mod.SaveSession(SaveData.Instance.FileSlot);
@@ -158,7 +160,7 @@ namespace Celeste {
             UserIO.Save<ModSaveData>(SaveData.GetFilename(SaveData.Instance.FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData((patch_SaveData) SaveData.Instance)));
             
             foreach (EverestModule mod in Everest._Modules) {
-                if (CoreModule.Settings.ForceSaveDataFlush)
+                if (CoreModule.Settings.SaveDataFlush ?? false)
                     mod.ForceSaveDataFlush += 2;
                 if (mod.SaveDataAsync) {
                     mod.WriteSaveData(SaveData.Instance.FileSlot, mod.SerializeSaveData(SaveData.Instance.FileSlot));

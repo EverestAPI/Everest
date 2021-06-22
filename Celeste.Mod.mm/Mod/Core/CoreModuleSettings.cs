@@ -193,7 +193,7 @@ namespace Celeste.Mod.Core {
 
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool ForceSaveDataFlush { get; set; } = false;
+        public bool? SaveDataFlush { get; set; } = null;
 
         public string InputGui { get; set; } = "";
 
