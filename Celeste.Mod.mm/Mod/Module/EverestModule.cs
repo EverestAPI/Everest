@@ -353,7 +353,6 @@ namespace Celeste.Mod {
             }
         }
 
-        [MonoModReplace]
         private void InitializeButtonBinding(object settings, PropertyInfo prop) {
             if (!(prop.GetValue(settings) is ButtonBinding binding)) {
                 binding = new ButtonBinding();

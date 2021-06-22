@@ -6,11 +6,12 @@ using System.Collections.Generic;
 using System.Reflection;
 
 namespace Celeste.Mod {
-    public sealed class ModuleSettingsKeyboardConfigUI : patch_KeyboardConfigUI {
+    [MonoModLinkFrom("Celeste.Mod.ModuleSettingsKeyboardConfigUIV2")] // Holdover from 1.3.1.2 -> 1.4.0.0 input change
+    public class ModuleSettingsKeyboardConfigUI : patch_KeyboardConfigUI {
 
         public EverestModule Module;
 
-        private List<ButtonBindingEntry> Bindings = new List<ButtonBindingEntry>();
+        protected List<ButtonBindingEntry> Bindings = new List<ButtonBindingEntry>();
 
         public ModuleSettingsKeyboardConfigUI(EverestModule module) {
             Module = module;
@@ -82,7 +83,7 @@ namespace Celeste.Mod {
             Reload(Selection);
         }
 
-        private class ButtonBindingEntry {
+        protected class ButtonBindingEntry {
 
             public ButtonBinding Binding;
             public DefaultButtonBindingAttribute Defaults;

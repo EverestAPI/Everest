@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 
 namespace Celeste.Mod {
+    [MonoModLinkFrom("Celeste.Mod.ModuleSettingsButtonConfigUIV2")] // Holdover from 1.3.1.2 -> 1.4.0.0 input change
     public class ModuleSettingsButtonConfigUI : patch_ButtonConfigUI {
 
         public EverestModule Module;

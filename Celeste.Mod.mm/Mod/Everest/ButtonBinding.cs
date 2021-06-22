@@ -17,29 +17,14 @@ namespace Celeste.Mod {
     public class ButtonBinding {
 
         public List<Buttons> Buttons {
-            get => GetButtons();
-            set => SetButtons(value);
+            get => Binding.Controller;
+            set => Binding.Controller = value;
         }
-
-
-        [MonoModReplace]
-        private List<Buttons> GetButtons() => Binding.Controller;
-
-
-        [MonoModReplace]
-        private void SetButtons(List<Buttons> value) => Binding.Controller = value;
 
         public List<Keys> Keys {
-            get => GetKeys();
-            set => SetKeys(value);
+            get => Binding.Keyboard;
+            set => Binding.Keyboard = value;
         }
-
-
-        [MonoModReplace]
-        private List<Keys> GetKeys() => Binding.Keyboard;
-
-        [MonoModReplace]
-        private void SetKeys(List<Keys> value) => Binding.Keyboard = value;
 
         private Binding _Binding;
 

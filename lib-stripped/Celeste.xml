@@ -1224,6 +1224,11 @@ How these should be structured is poorly documented, so if having nested members
               Whether this item should be visible in the menu.
               </summary>
           </member>
+          <member name="F:Celeste.TextMenu.Item.AboveAll">
+              <summary>
+              Items that have AboveAll set to true will render above those that have it set to false.
+              </summary>
+          </member>
           <member name="F:Celeste.TextMenu.Item.Disabled">
               <summary>
               Whether this item's selection should be disabled.
