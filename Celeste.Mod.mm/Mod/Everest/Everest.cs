@@ -872,6 +872,9 @@ namespace Celeste.Mod {
                 }
                 save.BeforeSave();
                 UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
+                patch_UserIO.ForceSerializeModSave();
+                if (CoreModule.Settings.ForceSaveDataFlush)
+                    CoreModule.Instance.ForceSaveDataFlush++;
                 CoreModule.Instance.SaveSettings();
             }
 
@@ -894,6 +897,9 @@ namespace Celeste.Mod {
                 }
                 save.BeforeSave();
                 UserIO.Save<SaveData>(SaveData.GetFilename(save.FileSlot), UserIO.Serialize(save));
+                patch_UserIO.ForceSerializeModSave();
+                if (CoreModule.Settings.ForceSaveDataFlush)
+                    CoreModule.Instance.ForceSaveDataFlush++;
                 CoreModule.Instance.SaveSettings();
             }
 

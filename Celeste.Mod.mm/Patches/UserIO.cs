@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using MonoMod;
 using System;
 using System.Collections;
@@ -13,6 +14,9 @@ namespace Celeste {
     static class patch_UserIO {
 
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
+
+        private static Queue<Tuple<bool, bool>> QueuedSaves;
+        public static bool SaveQueued => (QueuedSaves?.Count ?? 0) > 0;
 
         [MonoModIgnore]
         public static bool Saving { get; private set; }
@@ -41,13 +45,28 @@ namespace Celeste {
         [PatchSaveRoutine]
         private static extern IEnumerator SaveRoutine(bool file, bool settings);
 
+        public static extern void orig_SaveHandler(bool file, bool settings);
+        public static void SaveHandler(bool file, bool settings) {
+            if (QueuedSaves == null)
+                QueuedSaves = new Queue<Tuple<bool, bool>>();
+
+            if (Saving)
+                QueuedSaves.Enqueue(Tuple.Create(file, settings));
+
+            orig_SaveHandler(file, settings);
+        }
+
         [MonoModLinkFrom("System.Collections.IEnumerator Celeste.UserIO::SaveHandler(System.Boolean,System.Boolean)")]
         public static IEnumerator SaveHandlerLegacy(bool file, bool settings) {
-            if (Saving)
-                return SaveNonHandler();
-            Saving = true;
-            // Note how we're calling SaveRoutine, not orig_SaveHandler.
-            return new SafeRoutine(SaveRoutine(file, settings));
+            // SaveHandler sets Celeste.SaveRoutine to an independently updated coroutine.
+            // The caller still expects a "blocking" IEnumerator though.
+            UserIO.SaveHandler(file, settings);
+            return SaveNonHandler();
+        }
+
+        private static IEnumerator SaveNonHandler() {
+            while (Saving)
+                yield break;
         }
 
 
@@ -123,6 +142,8 @@ namespace Celeste {
                     ));
                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    if (CoreModule.Settings.ForceSaveDataFlush)
+                        mod.ForceSaveDataFlush += 2;
                     mod.SaveSaveData(SaveData.Instance.FileSlot);
                     mod.SaveSession(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
@@ -132,8 +153,30 @@ namespace Celeste {
             SaveData.Instance.AfterInitialize();
         }
 
-        private static IEnumerator SaveNonHandler() {
-            yield break;
+        // Used where BeforeSave was previously used to enforce mod saving.
+        internal static void ForceSerializeModSave() {
+            UserIO.Save<ModSaveData>(SaveData.GetFilename(SaveData.Instance.FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData((patch_SaveData) SaveData.Instance)));
+            
+            foreach (EverestModule mod in Everest._Modules) {
+                if (CoreModule.Settings.ForceSaveDataFlush)
+                    mod.ForceSaveDataFlush += 2;
+                if (mod.SaveDataAsync) {
+                    mod.WriteSaveData(SaveData.Instance.FileSlot, mod.SerializeSaveData(SaveData.Instance.FileSlot));
+                    mod.WriteSession(SaveData.Instance.FileSlot, mod.SerializeSession(SaveData.Instance.FileSlot));
+                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.SaveSaveData(SaveData.Instance.FileSlot);
+                    mod.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                }
+            }
+        }
+
+        internal static void _OnSaveRoutineEnd() {
+            if (QueuedSaves.Count > 0) {
+                Tuple<bool, bool> entry = QueuedSaves.Dequeue();
+                SaveHandler(entry.Item1, entry.Item2);
+            }
         }
 
         public static T Load<T>(string path) where T : class
