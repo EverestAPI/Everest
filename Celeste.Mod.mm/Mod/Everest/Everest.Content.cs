@@ -799,7 +799,8 @@ namespace Celeste.Mod {
                         using (StreamReader reader = new StreamReader(next.Stream)) {
                             fileContents = reader.ReadToEnd();
                         }
-                        DecalRegistry.ReadDecalRegistryXml(fileContents);
+                        // Reload decal registry entirely, from every mod, so that decal attributes apply in the same order than on startup consistenly
+                        DecalRegistry.LoadDecalRegistry();
                         AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {
