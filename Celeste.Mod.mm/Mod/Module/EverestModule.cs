@@ -152,13 +152,13 @@ namespace Celeste.Mod {
                     if (_Settings is EverestModuleBinarySettings) {
                         using (BinaryWriter writer = new BinaryWriter(stream)) {
                             ((EverestModuleBinarySettings) _Settings).Write(writer);
-                            if (forceFlush || ((CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread))
+                            if (forceFlush || ((CoreModule.Settings.SaveDataFlush ?? true) && !MainThreadHelper.IsMainThread))
                                 stream.Flush(true);
                         }
                     } else {
                         using (StreamWriter writer = new StreamWriter(stream)) {
                             YamlHelper.Serializer.Serialize(writer, _Settings, SettingsType);
-                            if (forceFlush || ((CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread))
+                            if (forceFlush || ((CoreModule.Settings.SaveDataFlush ?? true) && !MainThreadHelper.IsMainThread))
                                 stream.Flush(true);
                         }
                     }
@@ -249,7 +249,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (forceFlush || (SaveDataAsync && (CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread))
+                    if (forceFlush || (SaveDataAsync && (CoreModule.Settings.SaveDataFlush ?? true) && !MainThreadHelper.IsMainThread))
                         stream.Flush(true);
                 }
             } catch (Exception e) {
@@ -400,7 +400,7 @@ namespace Celeste.Mod {
             try {
                 using (FileStream stream = File.OpenWrite(path)) {
                     stream.Write(data, 0, data.Length);
-                    if (forceFlush || (SaveDataAsync && (CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread))
+                    if (forceFlush || (SaveDataAsync && (CoreModule.Settings.SaveDataFlush ?? true) && !MainThreadHelper.IsMainThread))
                         stream.Flush(true);
                 }
             } catch (Exception e) {

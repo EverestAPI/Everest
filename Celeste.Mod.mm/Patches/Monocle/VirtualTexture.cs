@@ -6,7 +6,9 @@ using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
+using System;
 using System.IO;
+using System.Threading;
 
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
@@ -25,7 +27,26 @@ namespace Monocle {
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
-                if (_Texture_Reloading || !CoreModule.Settings.LazyLoading)
+                // Handle already queued loads appropriately.
+                object queuedLoadLock = _Texture_QueuedLoadLock;
+                bool lazyForce = false;
+                if (queuedLoadLock != null) {
+                    lock (queuedLoadLock) {
+                        // Queued task finished just in time.
+                        if (_Texture_QueuedLoadLock == null)
+                            return Texture_Unsafe;
+
+                        // If we still can, cancel the queued load, then proceed with lazy-loading.
+                        if (MainThreadHelper.IsMainThread)
+                            _Texture_QueuedLoadLock = null;
+                    }
+
+                    if (!MainThreadHelper.IsMainThread)
+                        // Otherwise wait for it to get loaded. (Don't wait locked!)
+                        return _Texture_QueuedLoad.GetResult();
+                }
+
+                if (_Texture_Reloading || !(CoreModule.Settings.LazyLoading || lazyForce))
                     return Texture_Unsafe;
 
                 // If we're accessing the texture from outside (render), load lazily if required.
@@ -39,9 +60,15 @@ namespace Monocle {
             }
         }
 
+        private object _Texture_QueuedLoadLock;
+        private MaybeAwaitable<Texture2D> _Texture_QueuedLoad;
+
         public ModAsset Metadata;
 
         public VirtualTexture Fallback;
+
+        public static bool ForceQueuedLoad;
+        private bool BypassForceQueuedLoad;
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -77,6 +104,44 @@ namespace Monocle {
 
         internal extern void orig_Reload();
         internal override void Reload() {
+            // Handle already queued loads appropriately.
+            object queuedLoadLock = _Texture_QueuedLoadLock;
+            if (queuedLoadLock != null) {
+                lock (queuedLoadLock) {
+                    // Queued task finished just in time.
+                    if (_Texture_QueuedLoadLock == null)
+                        return;
+
+                    // If we still can, cancel the queued load, then proceed with lazy-loading.
+                    if (MainThreadHelper.IsMainThread)
+                        _Texture_QueuedLoadLock = null;
+                }
+
+                if (!MainThreadHelper.IsMainThread) {
+                    // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
+                    _Texture_QueuedLoad.GetResult();
+                    return;
+                }
+            }
+
+            if ((ForceQueuedLoad && !BypassForceQueuedLoad) || (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread)) {
+                // Let's queue a reload onto the main thread and call it a day.
+                _Texture_QueuedLoadLock = queuedLoadLock = new object();
+                _Texture_QueuedLoad = MainThreadHelper.Get(() => {
+                    lock (queuedLoadLock) {
+                        if (_Texture_QueuedLoadLock == null)
+                            return Texture_Unsafe;
+                        BypassForceQueuedLoad = true;
+                        // NOTE: If something dares to change texture info on the fly, make it wait on any existing tasks, then make it force-reload.
+                        Reload();
+                        BypassForceQueuedLoad = false;
+                        _Texture_QueuedLoadLock = null;
+                        return Texture_Unsafe;
+                    }
+                });
+                return;
+            }
+
             _Texture_Reloading = true;
 
             if (Metadata == null) {
@@ -96,14 +161,12 @@ namespace Monocle {
 
                 using (stream) {
                     if (premul) {
-                        Texture = MainThreadHelper.Get(() => Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream)).GetResult();
+                        Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
                     } else {
                         ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
-                        Texture = MainThreadHelper.Get(() => {
-                            Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
-                            tex.SetData(data);
-                            return tex;
-                        }).GetResult();
+                        Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                        tex.SetData(data);
+                        Texture = tex;
                     }
                 }
 

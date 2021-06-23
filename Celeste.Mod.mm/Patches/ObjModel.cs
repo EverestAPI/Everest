@@ -1,5 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste.Mod;
+using Celeste.Mod.Core;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -7,6 +12,12 @@ using System.IO;
 
 namespace Celeste {
     class patch_ObjModel : ObjModel {
+
+        private VertexPositionTexture[] verts;
+
+        private object _Vertices_QueuedLoadLock;
+        private MaybeAwaitable<VertexBuffer> _Vertices_QueuedLoad;
+
         /// <summary>
         /// Create a new ObjModel from a stream
         /// The filename is mainly just to check if it's a .export
@@ -98,13 +109,57 @@ namespace Celeste {
             return objModel;
         }
 
-        private VertexPositionTexture[] verts;
+        private extern bool orig_ResetVertexBuffer();
+        private bool ResetVertexBuffer() {
+            // Checking for IsDisposed on other threads should be fine...
+            if (Vertices != null && !Vertices.IsDisposed && !Vertices.GraphicsDevice.IsDisposed)
+                return false;
 
-        [MonoModIgnore]
-        private extern bool ResetVertexBuffer();
+            // Handle already queued loads appropriately.
+            object queuedLoadLock = _Vertices_QueuedLoadLock;
+            if (queuedLoadLock != null) {
+                lock (queuedLoadLock) {
+                    // Queued task finished just in time.
+                    if (_Vertices_QueuedLoadLock == null)
+                        return true;
+
+                    // If we still can, cancel the queued load, then proceed with lazy-loading.
+                    if (MainThreadHelper.IsMainThread)
+                        _Vertices_QueuedLoadLock = null;
+                }
+
+                if (!MainThreadHelper.IsMainThread) {
+                    // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
+                    _Vertices_QueuedLoad.GetResult();
+                    return true;
+                }
+            }
+
+            if (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread && queuedLoadLock == null) {
+                // Let's queue a reload onto the main thread and call it a day.
+                _Vertices_QueuedLoadLock = queuedLoadLock = new object();
+                _Vertices_QueuedLoad = MainThreadHelper.Get(() => {
+                    lock (queuedLoadLock) {
+                        if (_Vertices_QueuedLoadLock == null)
+                            return Vertices;
+                        // Force-reload as we already returned true on the other thread.
+                        Vertices?.Dispose();
+                        // NOTE: If something dares to change verts on the fly, make it wait on any existing tasks, then make it force-reload.
+                        Vertices = new VertexBuffer(Engine.Graphics.GraphicsDevice, typeof(VertexPositionTexture), verts.Length, BufferUsage.None);
+                        Vertices.SetData(verts);
+                        _Vertices_QueuedLoadLock = null;
+                        return Vertices;
+                    }
+                });
+                return true;
+            }
+
+            return orig_ResetVertexBuffer();
+        }
 
         [MonoModIgnore]
         private static extern float Float(string data);
+
     }
 
     public static class ObjModelExt {

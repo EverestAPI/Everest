@@ -123,7 +123,7 @@ namespace Celeste {
 
         private static void _saveAndFlush(FileStream stream, byte[] array, int offset, int count) {
             stream.Write(array, offset, count);
-            if ((CoreModule.Settings.SaveDataFlush ?? true) && Thread.CurrentThread != MainThreadHelper.MainThread)
+            if ((CoreModule.Settings.SaveDataFlush ?? true) && !MainThreadHelper.IsMainThread)
                 stream.Flush(true);
         }
 

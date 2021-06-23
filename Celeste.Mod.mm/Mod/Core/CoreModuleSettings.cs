@@ -156,7 +156,7 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool NonThreadedGL { get; set; } = false;
+        public bool? ThreadedGL { get; set; } = null;
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
