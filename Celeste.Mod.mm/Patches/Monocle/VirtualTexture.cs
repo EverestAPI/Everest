@@ -75,7 +75,8 @@ namespace Monocle {
         internal patch_VirtualTexture(string path) {
             Path = path;
             Name = path;
-            Preload();
+            if (!Preload())
+                Reload();
         }
 
         [MonoModConstructor]
@@ -85,14 +86,16 @@ namespace Monocle {
             Width = width;
             Height = height;
             this.color = color;
-            Preload();
+            if (!Preload())
+                Reload();
         }
 
         [MonoModConstructor]
         internal patch_VirtualTexture(ModAsset metadata) {
             Metadata = metadata;
             Name = metadata.PathVirtual;
-            Preload();
+            if (!Preload())
+                Reload();
         }
 
         internal extern void orig_Unload();
@@ -126,6 +129,8 @@ namespace Monocle {
 
             if ((ForceQueuedLoad && !BypassForceQueuedLoad) || (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread)) {
                 // Let's queue a reload onto the main thread and call it a day.
+                // Make sure to read the texture size immediately though!
+                Preload(true);
                 _Texture_QueuedLoadLock = queuedLoadLock = new object();
                 _Texture_QueuedLoad = MainThreadHelper.Get(() => {
                     lock (queuedLoadLock) {
@@ -183,10 +188,9 @@ namespace Monocle {
             _Texture_Reloading = false;
         }
 
-        private void Preload() {
-            if (!CoreModule.Settings.LazyLoading) {
-                Reload();
-                return;
+        private bool Preload(bool force = false) {
+            if (!CoreModule.Settings.LazyLoading && !force) {
+                return false;
             }
 
             // Preload the width / height, and if needed, the entire texture.
@@ -200,15 +204,17 @@ namespace Monocle {
                         Width = reader.ReadInt32();
                         Height = reader.ReadInt32();
                     }
+                    return true;
 
                 } else if (extension == ".png") {
                     // Hard.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
                         GetSizeFromPNG(stream);
+                    return true;
 
                 } else {
                     // .xnb and other file formats - impossible.
-                    Reload();
+                    return false;
 
                 }
 
@@ -217,12 +223,15 @@ namespace Monocle {
                     // Hard.
                     using (Stream stream = Metadata.Stream)
                         GetSizeFromPNG(stream);
+                    return true;
 
                 } else {
                     // .xnb and other file formats - impossible.
-                    Reload();
+                    return false;
                 }
             }
+
+            return false;
         }
 
         private void GetSizeFromPNG(Stream stream) {
