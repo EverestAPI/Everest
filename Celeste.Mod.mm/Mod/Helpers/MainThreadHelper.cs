@@ -19,7 +19,7 @@ namespace Celeste.Mod {
         public static Thread MainThread { get; private set; }
         public static bool UpdatedOnce { get; private set; }
 
-        public static bool Boost;
+        public static int Boost;
 
         private Stopwatch Stopwatch = new Stopwatch();
 
@@ -118,7 +118,7 @@ namespace Celeste.Mod {
             if (Queue.Count > 0) {
                 // run as many tasks as possible in 10 milliseconds (a frame is ~16ms).
                 Stopwatch.Restart();
-                while (Boost || Stopwatch.ElapsedMilliseconds < 10) {
+                while (Boost < 0 || Stopwatch.ElapsedMilliseconds < (Boost != 0 ? Boost : 10)) {
                     Action action = null;
                     lock (Queue) {
                         if (Queue.Count > 0) {
