@@ -16,11 +16,7 @@ namespace Celeste {
         [PatchCloudAdded] // ... except for manually manipulating the method via MonoModRules
         public extern new void Added(Scene scene);
 
-        private static bool _IsSmall(bool value, Cloud self)
-            => (self as patch_Cloud).IsSmall(value);
-        public bool IsSmall(bool value) {
-            return Small ?? value;
-        }
+        public bool IsSmall(bool value) => Small ?? value;
 
     }
 }
