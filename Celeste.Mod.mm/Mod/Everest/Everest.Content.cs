@@ -378,6 +378,8 @@ namespace Celeste.Mod {
         public ZipFile OpenZip() => new ZipFile(Path);
 
         public ZipFile OpenContextZip(object h) {
+            if (h == null)
+                h = Thread.CurrentThread;
             lock (ContextZips) {
                 if (!ContextZips.TryGetValue(h, out ZipFile zip) || zip == null) {
                     zip = new ZipFile(Path);
@@ -391,8 +393,10 @@ namespace Celeste.Mod {
         }
 
         public void CloseContextZip(object h) {
+            if (h == null)
+                h = Thread.CurrentThread;
             lock (ContextZips) {
-                if (ContextZips.TryGetValue(h, out ZipFile zip) && --ContextZipOpens[h] <= 0) {
+                if (ContextZips.TryGetValue(h, out ZipFile zip) && zip != null && --ContextZipOpens[h] <= 0) {
                     QueuedTaskHelper.Do(zip, 4, () => {
                         zip?.Dispose();
                         ContextZips[h] = null;
