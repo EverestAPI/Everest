@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -254,13 +255,17 @@ https://discord.gg/6qjaePQ");
              * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
              * Spawning a new thread just to wait for it to end doesn't make much sense,
              * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
+             * 
+             * Note that on XNA, this dies both with and without threaded GL due to OOM exceptions.
              * -ade
              */
 
-            patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = tex =>
-                // tex.Name != "glow-noise" &&
-                // !tex.Name.StartsWith(@"Graphics\Atlases\Overworld\");
-                true;
+            if (CoreModule.Settings.FastTextureLoading ?? !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL)) {
+                patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = tex =>
+                    // tex.Name != "glow-noise" &&
+                    // !tex.Name.StartsWith(@"Graphics\Atlases\Overworld\");
+                    true;
+            }
 
             orig_LoadContent();
 
