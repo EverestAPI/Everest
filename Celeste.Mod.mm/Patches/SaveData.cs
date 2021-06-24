@@ -220,18 +220,31 @@ namespace Celeste {
 
             // load session data.
             foreach (EverestModule mod in Everest._Modules) {
-                mod.LoadSession(slot, false);
+                if (mod.SaveDataAsync) {
+                    mod.DeserializeSession(slot, mod.ReadSession(slot));
+                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.LoadSession(slot, false);
+#pragma warning restore CS0618
+                }
             }
         }
 
         /// <summary>
         /// Load mod saves only when the given slot is not the currently loaded slot.
+        /// This does NOT load mod sessions, which are loaded on Start, making this ideal for f.e. UI purposes.
         /// </summary>
         /// <param name="slot">The slot to load</param>
         public static void LoadModSaveData(int slot) {
             if (LoadedModSaveDataIndex != slot) {
                 foreach (EverestModule mod in Everest._Modules) {
-                    mod.LoadSaveData(slot);
+                    if (mod.SaveDataAsync) {
+                        mod.DeserializeSaveData(slot, mod.ReadSaveData(slot));
+                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                        mod.LoadSaveData(slot);
+#pragma warning restore CS0618
+                    }
                 }
                 LoadedModSaveDataIndex = slot;
             }
@@ -246,8 +259,15 @@ namespace Celeste {
 
         public static bool TryDeleteModSaveData(int slot) {
             foreach (EverestModule mod in Everest._Modules) {
-                mod.DeleteSaveData(slot);
-                mod.DeleteSession(slot);
+                if (mod.SaveDataAsync) {
+                    mod.WriteSaveData(slot, null);
+                    mod.WriteSession(slot, null);
+                } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                    mod.DeleteSaveData(slot);
+                    mod.DeleteSession(slot);
+#pragma warning restore CS0618
+                }
             }
 
             LoadedModSaveDataIndex = int.MinValue;
@@ -269,7 +289,13 @@ namespace Celeste {
 
             if (sessionPrev != session) {
                 foreach (EverestModule mod in Everest._Modules) {
-                    mod.LoadSession(FileSlot, true);
+                    if (mod.SaveDataAsync) {
+                        mod.DeserializeSession(FileSlot, null);
+                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                        mod.LoadSession(FileSlot, true);
+#pragma warning restore CS0618
+                    }
                 }
             }
         }
@@ -509,12 +535,6 @@ namespace Celeste {
 
 
             orig_BeforeSave();
-
-            UserIO.Save<ModSaveData>(GetFilename(FileSlot) + "-modsavedata", UserIO.Serialize(new ModSaveData(this)));
-            foreach (EverestModule mod in Everest._Modules) {
-                mod.SaveSaveData(FileSlot);
-                mod.SaveSession(FileSlot);
-            }
         }
 
         /// <summary>

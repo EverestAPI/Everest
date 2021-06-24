@@ -1,4 +1,4 @@
-﻿using Mono.Cecil;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
@@ -12,7 +12,7 @@ namespace MonoMod {
     /// <summary>
     /// Proxy any System.IO.File.* calls inside the method via Celeste.Mod.Helpers.FileProxy.*
     /// </summary>
-    [MonoModCustomMethodAttribute("ProxyFileCalls")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.ProxyFileCalls))]
     class ProxyFileCallsAttribute : Attribute { }
 
     /// <summary>
@@ -20,351 +20,357 @@ namespace MonoMod {
     /// Also manually execute ProxyFileCalls rule.
     /// Also includes a patch for the strawberry tracker.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchMapDataLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMapDataLoader))]
     class PatchMapDataLoaderAttribute : Attribute { }
 
     /// <summary>
     /// A patch for the strawberry tracker, allowing all registered modded berries to be detected.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelDataBerryTracker")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataBerryTracker))]
     class PatchLevelDataBerryTracker : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoader))]
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
     /// A patch for Strawberry that takes into account that some modded strawberries may not allow standard collection rules.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchStrawberryTrainCollectionOrder")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryTrainCollectionOrder))]
     class PatchStrawberryTrainCollectionOrder : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBackdropParser")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropParser))]
     class PatchBackdropParserAttribute : Attribute { }
+
+    /// <summary>
+    /// A patch for the CanPause getter that skips the saving check.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelCanPause))]
+    class PatchLevelCanPauseAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
     class PatchLevelUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelRender))]
     class PatchLevelRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLevelLoaderThread")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderThread))]
     class PatchLevelLoaderThreadAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level transition method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTransitionRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTransitionRoutine))]
     class PatchTransitionRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchErrorLogWrite")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchErrorLogWrite))]
     class PatchErrorLogWriteAttribute : Attribute { }
 
     /// <summary>
     /// Patch the heart gem collection routine instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchHeartGemCollectRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchHeartGemCollectRoutine))]
     class PatchHeartGemCollectRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Badeline chase routine instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBadelineChaseRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineChaseRoutine))]
     class PatchBadelineChaseRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Badeline boss OnPlayer method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchBadelineBossOnPlayer")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineBossOnPlayer))]
     class PatchBadelineBossOnPlayerAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Cloud.Added method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCloudAdded")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCloudAdded))]
     class PatchCloudAddedAttribute : Attribute { }
 
     /// <summary>
     /// Patch the RainFG.Render method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchRainFGRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchRainFGRender))]
     class PatchRainFGRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Dialog.Load method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchDialogLoader")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDialogLoader))]
     class PatchDialogLoaderAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLoadLanguage")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadLanguage))]
     class PatchLoadLanguageAttribute : Attribute { }
 
     /// <summary>
     /// Automatically fill InitMMSharedData based on the current patch flags.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInitMMSharedData")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitMMSharedData))]
     class PatchInitMMSharedDataAttribute : Attribute { }
 
     /// <summary>
     /// Slap a ldfld completeMeta right before newobj AreaComplete
     /// </summary>
-    [MonoModCustomMethodAttribute("RegisterLevelExitRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterLevelExitRoutine))]
     class PatchLevelExitRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Slap a MapMetaCompleteScreen param at the end of the constructor and ldarg it right before newobj CompleteRenderer
     /// </summary>
-    [MonoModCustomMethodAttribute("RegisterAreaCompleteCtor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterAreaCompleteCtor))]
     class PatchAreaCompleteCtorAttribute : Attribute { }
 
     /// <summary>
     /// Patch the GameLoader.IntroRoutine method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchGameLoaderIntroRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchGameLoaderIntroRoutine))]
     class PatchGameLoaderIntroRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the UserIO.SaveRoutine method instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSaveRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveRoutine))]
     class PatchSaveRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchPlayerOrigUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigUpdate))]
     class PatchPlayerOrigUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patch the SwapRoutine method in OuiChapterPanel instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchChapterPanelSwapRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchChapterPanelSwapRoutine))]
     class PatchChapterPanelSwapRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Strawberry class to tack on the IStrawberry interface for the StrawberryRegistry
     /// </summary>
-    [MonoModCustomAttribute("PatchStrawberryInterface")]
+    [MonoModCustomAttribute(nameof(MonoModRules.PatchStrawberryInterface))]
     class PatchStrawberryInterfaceAttribute : Attribute { }
 
     /// <summary>
     /// Helper for patching methods force-implemented by an interface
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInterface")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInterface))]
     class PatchInterfaceAttribute : Attribute { };
 
     /// <summary>
     /// IL-patch the Render method for file select slots instead of reimplementing it,
     /// to un-hardcode stamps.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFileSelectSlotRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFileSelectSlotRender))]
     class PatchFileSelectSlotRenderAttribute : Attribute { };
 
     /// <summary>
     /// Take out the "strawberry" equality check and replace it with a call to StrawberryRegistry.TrackableContains
     /// to include registered mod berries as well.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTrackableStrawberryCheck")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTrackableStrawberryCheck))]
     class PatchTrackableStrawberryCheckAttribute : Attribute { };
 
     /// <summary>
     /// Patch the pathfinder debug rendering to make it aware of the array size being unhardcoded.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchPathfinderRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPathfinderRender))]
     class PatchPathfinderRenderAttribute : Attribute { };
 
     /// <summary>
     /// Patch references to TotalHeartGems to refer to TotalHeartGemsInVanilla instead.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecks")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecks))]
     class PatchTotalHeartGemChecksAttribute : Attribute { };
 
     /// <summary>
     /// Same as above, but for references in routines.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTotalHeartGemChecksInRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecksInRoutine))]
     class PatchTotalHeartGemChecksInRoutineAttribute : Attribute { };
 
     /// <summary>
     /// Patch a reference to TotalHeartGems in the OuiJournalGlobal constructor to unharcode the check for golden berry unlock.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiJournalStatsHeartGemCheck")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiJournalStatsHeartGemCheck))]
     class PatchOuiJournalStatsHeartGemCheckAttribute : Attribute { };
 
     /// <summary>
     /// Makes the annotated method public.
     /// </summary>
-    [MonoModCustomMethodAttribute("MakeMethodPublic")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.MakeMethodPublic))]
     class MakeMethodPublicAttribute : Attribute { };
 
     /// <summary>
     /// Patches the CrystalStaticSpinner.AddSprites method to make it more efficient.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSpinnerCreateSprites")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSpinnerCreateSprites))]
     class PatchSpinnerCreateSpritesAttribute : Attribute { };
 
     /// <summary>
     /// Patches the checks for OuiAssistMode to include a check for OuiFileSelectSlot.ISubmenu as well.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileSelectSubmenuChecks")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSubmenuChecks))]
     class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { };
 
     /// <summary>
     /// Patches the Fonts.Prepare method to also include custom fonts.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFontsPrepare")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFontsPrepare))]
     class PatchFontsPrepareAttribute : Attribute { };
 
     /// <summary>
     /// Make the marked method the new entry point.
     /// </summary>
-    [MonoModCustomMethodAttribute("MakeEntryPoint")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.MakeEntryPoint))]
     class MakeEntryPointAttribute : Attribute { };
 
     /// <summary>
     /// Patch the original Celeste entry point instead of reimplementing it in Everest.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCelesteMain")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCelesteMain))]
     class PatchCelesteMainAttribute : Attribute { };
 
     /// <summary>
     /// Removes the [Command] attribute from the matching vanilla method in Celeste.Commands.
     /// </summary>
-    [MonoModCustomMethodAttribute("RemoveCommandAttributeFromVanillaLoadMethod")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttributeFromVanillaLoadMethod))]
     class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
 
     /// <summary>
     /// Patch the fake heart color to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFakeHeartColor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFakeHeartColor))]
     class PatchFakeHeartColorAttribute : Attribute { };
 
     /// <summary>
     /// Patch the file naming rendering to hide the "switch between katakana and hiragana" prompt when the menu is not focused.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiFileNamingRendering")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileNamingRendering))]
     class PatchOuiFileNamingRenderingAttribute : Attribute { };
 
     /// <summary>
     /// Include the option to use Y range of trigger nodes.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchRumbleTriggerAwake")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchRumbleTriggerAwake))]
     class PatchRumbleTriggerAwakeAttribute : Attribute { };
 
     /// <summary>
     /// Include check for custom events.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchEventTriggerOnEnter")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEventTriggerOnEnter))]
     class PatchEventTriggerOnEnterAttribute : Attribute { };
 
     /// <summary>
     /// Modify collision to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchWaterUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchWaterUpdate))]
     class PatchWaterUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Add custom dialog to fake hearts.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchFakeHeartDialog")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFakeHeartDialog))]
     class PatchFakeHeartDialogAttribute : Attribute { };
 
     /// <summary>
     /// Include checks for manual triggering.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchIntroCrusherSequence")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchIntroCrusherSequence))]
     class PatchIntroCrusherSequenceAttribute : Attribute { };
 
     /// <summary>
     /// Patches the unselected color in TextMenu.Option to make it customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTextMenuOptionColor")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuOptionColor))]
     class PatchTextMenuOptionColorAttribute : Attribute { };
 
     /// <summary>
     /// Patches chapter panel rendering to allow for custom chapter cards.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchOuiChapterPanelRender")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelRender))]
     class PatchOuiChapterPanelRenderAttribute : Attribute { };
 
     /// <summary>
     /// Patches GoldenBlocks to disable static movers if the block is disabled.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchGoldenBlockStaticMovers")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchGoldenBlockStaticMovers))]
     class PatchGoldenBlockStaticMoversAttribute : Attribute { };
 
     /// <summary>
     /// Don't remove TalkComponent even watchtower collide solid, so that watchtower can be hidden behind Solid.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchLookoutUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLookoutUpdate))]
     class PatchLookoutUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Un-hardcode the range of the "Scared" decals.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchDecalUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
     class PatchDecalUpdateAttribute : Attribute { };
 
     /// <summary>
     /// Patches LevelExit.Begin to make the endscreen music customizable.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAreaCompleteMusic")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAreaCompleteMusic))]
     class PatchAreaCompleteMusicAttribute : Attribute { };
 
     /// <summary>
     /// Patches AreaComplete.VersionNumberAndVariants to offset the version number when necessary.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAreaCompleteVersionNumberAndVariants")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAreaCompleteVersionNumberAndVariants))]
     class PatchAreaCompleteVersionNumberAndVariantsAttribute : Attribute { };
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchInputConfigReset")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInputConfigReset))]
     class PatchInputConfigResetAttribute : Attribute { };
 
     /// <summary>
     /// Patches AscendManager.Routine to fix gameplay RNG in custom maps.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchAscendManagerRoutine")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAscendManagerRoutine))]
     class PatchAscendManagerRoutineAttribute : Attribute { }
 
     /// <summary>
     /// Patches Commands.UpdateOpen to make key's repeat timer independent with time rate.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchCommandsUpdateOpen")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
     /// <summary>
     /// Patches SettingS.SetDefaultKeyboardControls so that TranslateKeys only gets called when reset = true.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSettingsDoNotTranslateKeys")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsDoNotTranslateKeys))]
     class PatchSettingsDoNotTranslateKeysAttribute : Attribute { }
 
     /// <summary>
     /// Forcibly changes a given member's name.
     /// </summary>
-    [MonoModCustomAttribute("ForceName")]
+    [MonoModCustomAttribute(nameof(MonoModRules.ForceName))]
     class ForceNameAttribute : Attribute {
         public ForceNameAttribute(string name) {
         }
@@ -373,7 +379,7 @@ namespace MonoMod {
     /// <summary>
     /// Patches UserIO.Save to flush save data to disk after writing it.
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchSaveDataFlushSaves")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
 
     static class MonoModRules {
@@ -525,18 +531,11 @@ namespace MonoMod {
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
             if (FileProxy == null)
                 FileProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
-            if (FileProxy == null)
-                return;
 
             if (DirectoryProxy == null)
                 DirectoryProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.DirectoryProxy")?.Resolve();
-            if (DirectoryProxy == null)
-                return;
 
             foreach (Instruction instr in method.Body.Instructions) {
                 // System.IO.File.* calls are always static calls.
@@ -572,18 +571,10 @@ namespace MonoMod {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
-            if (!method.HasBody)
-                return;
-
             ProxyFileCalls(method, attrib);
 
             MethodDefinition m_Process = method.DeclaringType.FindMethod("Celeste.BinaryPacker/Element _Process(Celeste.BinaryPacker/Element,Celeste.MapData)");
-            if (m_Process == null)
-                return;
-
             MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[0...,0...]&,System.Int32,System.Int32)");
-            if (m_GrowAndGet == null)
-                return;
 
             bool pop = false;
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
@@ -591,7 +582,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "Corrupted Level Data")
+                if (instr.MatchLdstr("Corrupted Level Data"))
                     pop = true;
 
                 if (pop && instr.OpCode == OpCodes.Throw) {
@@ -599,18 +590,16 @@ namespace MonoMod {
                     pop = false;
                 }
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "Celeste.BinaryPacker/Element Celeste.BinaryPacker::FromBinary(System.String)") {
+                if (instr.MatchCall("Celeste.BinaryPacker", "FromBinary")) {
                     instri++;
 
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_Process));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_Process));
                 }
 
                 if (instri > 2 &&
-                    instrs[instri - 3].OpCode == OpCodes.Ldfld && (instrs[instri - 3].Operand as FieldReference)?.FullName == "Celeste.EntityData[0...,0...] Celeste.ModeProperties::StrawberriesByCheckpoint" &&
-                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "Celeste.EntityData Celeste.EntityData[0...,0...]::Get(System.Int32,System.Int32)"
+                    instrs[instri - 3].MatchLdfld("Celeste.ModeProperties", "StrawberriesByCheckpoint") &&
+                    instr.MatchCallvirt("Celeste.EntityData[0...,0...]", "Celeste.EntityData Get(System.Int32,System.Int32)")
                 ) {
                     instrs[instri - 3].OpCode = OpCodes.Ldflda;
                     instr.OpCode = OpCodes.Call;
@@ -624,23 +613,18 @@ namespace MonoMod {
         public static void PatchTrackableStrawberryCheck(MethodDefinition method, CustomAttribute attrib) {
             if (StrawberryRegistry == null)
                 StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-            if (StrawberryRegistry == null)
-                return;
 
             MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
-            if (m_TrackableContains == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry") {
+                if (instr.MatchLdstr("strawberry")) {
                     instr.OpCode = OpCodes.Nop;
-                    instrs[instri + 1].OpCode = OpCodes.Call;
-                    instrs[instri + 1].Operand = m_TrackableContains;
                     instri++;
+                    instrs[instri].OpCode = OpCodes.Call;
+                    instrs[instri].Operand = m_TrackableContains;
                 }
             }
         }
@@ -649,17 +633,10 @@ namespace MonoMod {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
-            if (!method.HasBody)
-                return;
-
             if (StrawberryRegistry == null)
                 StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-            if (StrawberryRegistry == null)
-                return;
 
             MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(Celeste.BinaryPacker/Element)");
-            if (m_TrackableContains == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -676,7 +653,7 @@ namespace MonoMod {
                 */
 
                 // Strawberry tracker adjustments
-                if (instr.OpCode == OpCodes.Ldstr && (instr.Operand as string) == "strawberry") {
+                if (instr.MatchLdstr("strawberry")) {
 
                     instr.OpCode = OpCodes.Nop;
                     instrs[instri - 1].OpCode = OpCodes.Nop;
@@ -690,24 +667,17 @@ namespace MonoMod {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
-            if (!method.HasBody)
-                return;
-
             if (StrawberryRegistry == null)
                 StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-            if (StrawberryRegistry == null)
-                return;
 
             MethodDefinition m_IsFirst = StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
-            if (m_IsFirst == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
                 // Rip out the vanilla code call and replace it with vanilla-considerate code
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID().Contains("IsFirstStrawberry") == true) {
+                if (instr.MatchCallvirt("Celeste.Strawberry", "get_IsFirstStrawberry")) {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_IsFirst;
                     instri++;
@@ -718,26 +688,13 @@ namespace MonoMod {
         public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
             // Our actual target method is the orig_ method.
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
-            if (!method.HasBody)
-                return;
-
-            MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
-            if (m_LoadNewPlayer == null)
-                return;
-
-            MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
-            if (m_LoadCustomEntity == null)
-                return;
-
             // We also need to do special work in the cctor.
             MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
-            if (m_cctor == null)
-                return;
 
+            MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
+            MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
+            
             FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
-            if (f_LoadStrings == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
             ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
@@ -757,7 +714,7 @@ namespace MonoMod {
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.Player::.ctor(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)") {
+                if (instr.MatchNewobj("Celeste.Player")) {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_LoadNewPlayer;
                 }
@@ -774,35 +731,30 @@ namespace MonoMod {
 
                 if (instri > 0 &&
                         instri < instrs.Count - 4 &&
-                        instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EntityData::Name" &&
-                        instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
-                        instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                        instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                        instr.MatchLdfld("Celeste.EntityData", "Name") &&
+                        instrs[instri + 1].MatchStloc(out int _) &&
+                        instrs[instri + 2].MatchLdloc(out int _) &&
+                        instrs[instri + 3].MatchCall("<PrivateImplementationDetails>", "System.UInt32 ComputeStringHash(System.String)")
                     ) {
                     // Insert a call to our own entity handler here.
                     // If it returns true, replace the name with ""
 
                     // Avoid loading entityData again.
                     // Instead, duplicate already loaded existing value.
-                    instrs.Insert(instri, il.Create(OpCodes.Dup));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Dup));
                     // Load "this" onto stack - we're too lazy to shift this to the beginning of the stack.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
 
                     // Call our static custom entity handler.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_LoadCustomEntity));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_LoadCustomEntity));
 
                     // If we returned false, branch to ldfld. We still have the entity name on stack.
                     // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
                     instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
                     instri++;
                     // Otherwise, pop the entityData, load "" and jump to stloc to skip any original entity handler.
-                    instrs.Insert(instri, il.Create(OpCodes.Pop));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ldstr, ""));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Pop));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldstr, ""));
                     instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
                     instri++;
                 }
@@ -820,246 +772,131 @@ namespace MonoMod {
             cctor_il.Emit(OpCodes.Ret);
         }
 
-        public static void PatchBackdropParser(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchBackdropParser(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_LoadCustomBackdrop = context.Method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
 
-            MethodDefinition m_LoadCustomBackdrop = method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
-            if (m_LoadCustomBackdrop == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
+            ILCursor cursor = new ILCursor(context);
+            // Remove soon-to-be-unneeded instructions
+            cursor.RemoveRange(2);
 
             // Load custom backdrop at the beginning of the method.
             // If it's been loaded, skip to backdrop setup.
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Ldarg_2);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_LoadCustomBackdrop);
+            cursor.Emit(OpCodes.Stloc_0);
+            cursor.Emit(OpCodes.Ldloc_0);
 
-            Instruction origStart = instrs[0];
-
-            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_1));
-            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_2));
-            il.InsertBefore(origStart, il.Create(OpCodes.Ldarg_0));
-            il.InsertBefore(origStart, il.Create(OpCodes.Call, m_LoadCustomBackdrop));
-            il.InsertBefore(origStart, il.Create(OpCodes.Dup));
-            il.InsertBefore(origStart, il.Create(OpCodes.Stloc_0));
-
-            Instruction branchCustomToSetup = il.Create(OpCodes.Nop);
-            branchCustomToSetup.OpCode = OpCodes.Brtrue;
-            branchCustomToSetup.Operand = null;
-            il.InsertBefore(origStart, branchCustomToSetup);
-
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode != OpCodes.Ldstr || instr.Operand as string != "tag")
-                    continue;
-
-                branchCustomToSetup.Operand = instr.Previous;
-                break;
-            }
-
+            // Get the branch target for if a custom backdrop is found
+            cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchLdstr("tag"));
+            Instruction branchCustomToSetup = cursors[0].Prev;
+            cursor.Emit(OpCodes.Brtrue, branchCustomToSetup);
         }
 
-        public static void PatchLevelUpdate(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
-            FieldDefinition f_SubHudRenderer = method.DeclaringType.FindField("SubHudRenderer");
-            if (f_SubHudRenderer == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                /* We expect something similar enough to the following:
-                call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()
-                ldc.i4.s 9
-                callvirt instance bool Monocle.MInput/KeyboardData::Pressed(valuetype [FNA]Microsoft.Xna.Framework.Input.Keys) // We're here
-
-                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
-                */
-
-                if (instri > 1 &&
-                    instri < instrs.Count - 2 &&
-                    instrs[instri - 2].OpCode == OpCodes.Call && (instrs[instri - 2].Operand as MethodReference)?.GetID() == "Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard()" &&
-                    instrs[instri - 1].GetIntOrNull() == 9 &&
-                    instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Boolean Monocle.MInput/KeyboardData::Pressed(Microsoft.Xna.Framework.Input.Keys)"
-                ) {
-                    // Replace the offending instructions with a ldc.i4.0
-                    instri -= 2;
-
-                    instrs.RemoveAt(instri);
-                    instrs.RemoveAt(instri);
-                    instrs.RemoveAt(instri);
-                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
-                    instri++;
-                }
-
-            }
-
+        public static void PatchLevelCanPause(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.UserIO", "get_Saving"));
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_0);
         }
 
-        public static void PatchLevelRender(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
+            /* We expect something similar enough to the following:
+            call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard() // We're here
+            ldc.i4.s 9
+            callvirt instance bool Monocle.MInput/KeyboardData::Pressed(valuetype [FNA]Microsoft.Xna.Framework.Input.Keys) 
 
-            FieldDefinition f_SubHudRenderer = method.DeclaringType.FindField("SubHudRenderer");
-            if (f_SubHudRenderer == null)
-                return;
+            We're replacing 
+            MInput.Keyboard.Pressed(Keys.Tab) 
+            with 
+            false
+            */
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                /* We expect something similar enough to the following:
-                brfalse.s    338 (0441) ldarg.0
-                ldarg.0
-                ldfld    class Celeste.HudRenderer Celeste.Level::HudRenderer // We're here
-                ldarg.0
-                callvirt    instance void Monocle.Renderer::Render(class Monocle.Scene)
-
-                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
-                */
-
-                if (instri > 1 &&
-                    instri < instrs.Count - 2 &&
-                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
-                    instrs[instri + 1].OpCode == OpCodes.Ldarg_0 &&
-                    instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference)?.GetID() == "System.Void Monocle.Renderer::Render(Monocle.Scene)"
-                ) {
-                    // Load this, SubHudRenderer, this and call it right before the branch.
-
-                    MethodReference m_Renderer_Render = instrs[instri + 2].Operand as MethodReference;
-
-                    instri -= 2;
-
-                    // Let's go back before ldarg.0, System.Boolean Monocle.Scene::Paused
-                    int pausedOffs = 0;
-                    while (
-                        instri > 0 &&
-                        !(instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference)?.FullName == "System.Boolean Monocle.Scene::Paused")
-                    ) {
-                        instri--;
-                        pausedOffs++;
-                    }
-
-                    // We use the existing ldarg.0
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_SubHudRenderer));
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_Renderer_Render));
-                    instri++;
-
-                    // Add back the ldarg.0 which we consumed.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-
-                    instri += pausedOffs;
-                    instri += 2;
-                }
-
-            }
-
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
+                instr => instr.GetIntOrNull() == 9,
+                instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"));
+            // Remove the offending instructions, and replace them with 0 (false)
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldc_I4_0);
         }
 
-        public static void PatchLevelLoaderThread(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_SubHudRenderer = context.Method.DeclaringType.FindField("SubHudRenderer");
 
+            /* We expect something similar enough to the following (different on SteamFNA but still works):
+            if (!this.Paused || !this.PauseMainMenuOpen || !Input.MenuJournal.Check || !this.AllowHudHide)
+	        {
+		        this.HudRenderer.Render(this);
+	        }
+            and we want to prepend it with:
+            this.SubHudRenderer.Render(this);
+            */
+
+            ILCursor cursor = new ILCursor(context);
+            // Make use of the pre-existing Ldarg_0
+            cursor.GotoNext(instr => instr.MatchLdfld("Monocle.Scene", "Paused"));
+            // Retrieve a reference to Renderer.Render(Scene) from the following this.HudRenderer.Render(this)
+            cursor.FindNext(out ILCursor[] render, instr => instr.MatchCallvirt("Monocle.Renderer", "Render"));
+            MethodReference m_Renderer_Render = (MethodReference) render[0].Next.Operand;
+
+            cursor.Emit(OpCodes.Ldfld, f_SubHudRenderer);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_Renderer_Render);
+            // Re-add the Ldarg_0 we cannibalized
+            cursor.Emit(OpCodes.Ldarg_0);
+        }
+
+        public static void PatchLevelLoaderThread(ILContext context, CustomAttribute attrib) {
             if (Level == null)
-                Level = MonoModRule.Modder.FindType("Celeste.Level")?.Resolve();
-            if (Level == null)
-                return;
+                Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
 
             FieldDefinition f_SubHudRenderer = Level.FindField("SubHudRenderer");
-            if (f_SubHudRenderer == null)
-                return;
+            MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve().FindMethod("System.Void .ctor()");
 
-            MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve()?.FindMethod("System.Void .ctor()");
-            if (ctor_SubHudRenderer == null)
-                return;
-
+            // Add a local variable we'll use to store a SubHudRenderer object temporarily
             VariableDefinition loc_SubHudRenderer_0 = new VariableDefinition(f_SubHudRenderer.FieldType);
-            method.Body.Variables.Add(loc_SubHudRenderer_0);
+            context.Body.Variables.Add(loc_SubHudRenderer_0);
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            /*
+            We just want to add
+            this.Level.Add(this.Level.SubHudRenderer = new SubHudRenderer());
+            before
+            this.Level.Add(this.Level.HudRenderer = new HudRenderer());
+             */
 
-                /* We expect something similar enough to the following:
-                ldarg.0
-                callvirt    instance class Celeste.Level Celeste.LevelLoader::get_Level()
-                ldarg.0
-                callvirt    instance class Celeste.Level Celeste.LevelLoader::get_Level()
-                newobj    instance void Celeste.HudRenderer::.ctor() // We're here
-                dup
-                stloc.s    V_9 (9)
-                stfld    class Celeste.HudRenderer Celeste.Level::HudRenderer
-                ldloc.s    V_9 (9)
-                callvirt    instance void Monocle.Scene::Add(class Monocle.Renderer)
+            ILCursor cursor = new ILCursor(context);
+            // Got to the point just before we want to add our code, making use of the Level objects loaded for the HudRenderer
+            cursor.GotoNext(instr => instr.MatchNewobj("Celeste.HudRenderer"));
+            // Retrieve methods we want to use from around the target instruction
+            MethodReference m_LevelLoader_get_Level = (MethodReference) cursor.Prev.Operand;
+            cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchCallvirt("Monocle.Scene", "Add"));
+            MethodReference m_Scene_Add = (MethodReference) cursors[0].Next.Operand;
 
-                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
-                */
+            // Load the new renderer onto the stack and duplicate it.
+            cursor.Emit(OpCodes.Newobj, ctor_SubHudRenderer);
+            cursor.Emit(OpCodes.Dup);
+            // Store one copy in a local variable for later
+            cursor.Emit(OpCodes.Stloc_S, loc_SubHudRenderer_0);
+            // Store the other copy in its field
+            cursor.Emit(OpCodes.Stfld, f_SubHudRenderer);
+            // Load the first copy back onto the stack
+            cursor.Emit(OpCodes.Ldloc_S, loc_SubHudRenderer_0);
+            // And add it to the scene
+            cursor.Emit(OpCodes.Callvirt, m_Scene_Add);
 
-                if (instri > 3 &&
-                    instri < instrs.Count - 6 &&
-                    instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.HudRenderer::.ctor()" &&
-                    instrs[instri + 1].OpCode == OpCodes.Dup &&
-                    instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
-                    instrs[instri + 3].OpCode == OpCodes.Stfld && (instrs[instri + 3].Operand as FieldReference)?.FullName == "Celeste.HudRenderer Celeste.Level::HudRenderer" &&
-                    instrs[instri + 4].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                    instrs[instri + 5].OpCode == OpCodes.Callvirt && (instrs[instri + 5].Operand as MethodReference)?.GetID() == "System.Void Monocle.Scene::Add(Monocle.Renderer)"
-                ) {
-                    // Insert our own SubHudRenderer here.
-
-                    // Avoid calling get_Level again.
-                    // Instead, duplicate already loaded existing value.
-                    instrs.Insert(instri, il.Create(OpCodes.Dup)); // Used to Add()
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Dup)); // Used to stfld
-                    instri++;
-
-                    // Load the new renderer onto the stack.
-                    instrs.Insert(instri, il.Create(OpCodes.Newobj, ctor_SubHudRenderer));
-                    instri++;
-
-                    // Store the renderer in a local so we can first stfld, then Add() it.
-                    instrs.Insert(instri, il.Create(OpCodes.Dup));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Stloc, loc_SubHudRenderer_0));
-                    instri++;
-
-                    // Store the renderer in the level.
-                    instrs.Insert(instri, il.Create(OpCodes.Stfld, f_SubHudRenderer));
-                    instri++;
-
-                    // Add the renderer to the scene.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldloc, loc_SubHudRenderer_0));
-                    instri++;
-                    // Offset taken from above.
-                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, instrs[instri + 5].Operand as MethodReference));
-                    instri++;
-
-                    // The rest should work as-is.
-                }
-
-            }
-
+            // We could have dup'd the pre-existing Level object, but this produces a cleaner decomp (replacing the Level objects we cannibalized)
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
         }
 
         public static void PatchTransitionRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GCCollect = method.DeclaringType.FindMethod("System.Void _GCCollect()");
-            if (m_GCCollect == null)
-                return;
 
-            // The gem collection routine is stored in a compiler-generated method.
+            // The level transition routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
                     continue;
@@ -1067,66 +904,36 @@ namespace MonoMod {
                 break;
             }
 
-            if (!method.HasBody)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Void System.GC::Collect()") {
-                    // Replace the method call.
-                    instr.Operand = m_GCCollect;
-                    instri++;
-                }
-
-            }
+            ILCursor cursor = new ILCursor(new ILContext(method));
+            cursor.GotoNext(instr => instr.MatchCall("System.GC", "Collect"));
+            // Replace the method call.
+            cursor.Next.Operand = m_GCCollect;
 
         }
 
-        public static void PatchErrorLogWrite(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
+        public static void PatchErrorLogWrite(ILContext context, CustomAttribute attrib) {
             if (Everest == null)
-                Everest = MonoModRule.Modder.FindType("Celeste.Mod.Everest")?.Resolve();
-            if (Everest == null)
-                return;
+                Everest = MonoModRule.Modder.FindType("Celeste.Mod.Everest").Resolve();
 
             if (m_Everest_get_VersionCelesteString == null)
                 m_Everest_get_VersionCelesteString = Everest.FindMethod("System.String get_VersionCelesteString()");
-            if (m_Everest_get_VersionCelesteString == null)
-                return;
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            /* We expect something similar enough to the following:
+            call	 class Monocle.Engine Monocle.Engine::get_Instance() // We're here
+            ldfld    class [mscorlib] System.Version Monocle.Engine::Version 
+            callvirt instance string[mscorlib] System.Object::ToString() 
 
-                /* We expect something similar enough to the following:
-                ldfld     class [mscorlib] System.Version Monocle.Engine::Version // We're here
-                callvirt instance string[mscorlib] System.Object::ToString()
+            Note that MonoMod requires the full type names (System.String instead of string)
+            */
 
-                Note that MonoMod requires the full type names (System.String instead of string)
-                */
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("Monocle.Engine", "get_Instance"),
+                instr => instr.MatchLdfld("Monocle.Engine", "Version"),
+                instr => instr.MatchCallvirt("System.Object", "ToString"));
 
-                if (instri > 0 &&
-                    instri < instrs.Count - 3 &&
-                    instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.Version Monocle.Engine::Version" &&
-                    instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference)?.GetID() == "System.String System.Object::ToString()"
-                ) {
-                    // Skip the ldfld Version and ToString instructions.
-                    instri += 2;
-
-                    // Pop and replace with our own string.
-                    instrs.Insert(instri, il.Create(OpCodes.Pop));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_Everest_get_VersionCelesteString));
-                    instri++;
-                }
-
-            }
-
+            // Remove all that and replace with our own string.
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Call, m_Everest_get_VersionCelesteString);
         }
 
         public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
@@ -1137,8 +944,6 @@ namespace MonoMod {
             FieldDefinition f_completeArea = null;
 
             MethodDefinition m_IsCompleteArea = method.DeclaringType.FindMethod("System.Boolean IsCompleteArea(System.Boolean)");
-            if (m_IsCompleteArea == null)
-                return;
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1150,56 +955,29 @@ namespace MonoMod {
                 break;
             }
 
-            if (!method.HasBody || f_completeArea == null)
-                return;
+            new ILContext(method).Invoke(ctx => {
+                ILCursor cursor = new ILCursor(ctx);
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+                cursor.GotoNext(instr => instr.MatchLdfld("Celeste.HeartGem", "IsFake"));
+                // Push "this" onto stack, and retrieve the actual HeartGem `this`
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
 
                 // Pre-process the bool on stack before
                 // stfld    bool Celeste.HeartGem/'<CollectRoutine>d__29'::'<completeArea>5__4'
                 // No need to check for the full name when the field name itself is compiler-generated.
-                if (instr.OpCode == OpCodes.Stfld && (instr.Operand as FieldReference)?.Name == f_completeArea.Name
-                ) {
-                    // After stfld, grab the result, process it, store.
-                    instri++;
-                    // Push this on stack and duplicate, keeping a copy for stfld later.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Dup));
-                    instri++;
-                    // Grab this from this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                    instri++;
-                    // Push completeArea on stack.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_completeArea));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsCompleteArea));
-                    instri++;
-                    // Store.
-                    instrs.Insert(instri, il.Create(OpCodes.Stfld, f_completeArea));
-                    instri++;
-                }
-
-            }
-
+                // Using AfterLabel to redirect break instructions to the right place.
+                cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchStfld(f_completeArea.DeclaringType.FullName, f_completeArea.Name));
+                // Process.
+                cursor.Emit(OpCodes.Call, m_IsCompleteArea);
+            });
         }
 
         public static void PatchBadelineChaseRoutine(MethodDefinition method, CustomAttribute attrib) {
             FieldDefinition f_this = null;
 
-            MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean _IsChaseEnd(System.Boolean,Celeste.BadelineOldsite)");
-            if (m_IsChaseEnd == null)
-                return;
-
-            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean _CanChangeMusic(System.Boolean,Celeste.BadelineOldsite)");
-            if (m_CanChangeMusic == null)
-                return;
+            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::CanChangeMusic(System.Boolean)");
+            MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::IsChaseEnd(System.Boolean)");
 
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1210,223 +988,110 @@ namespace MonoMod {
                 break;
             }
 
-            if (!method.HasBody)
-                return;
+            ILCursor cursor = new ILCursor(new ILContext(method));
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            // Add this.CanChangeMusic()
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level");
+            // Push this and grab this from this.
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
 
-                // No need to check for the full name when the field name itself is compiler-generated.
-                if (instri > 3 &&
-                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "System.String Celeste.Session::Level" &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldstr && (instrs[instri - 1].Operand as string) == "2" &&
-                    instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Boolean System.String::op_Equality(System.String,System.String)"
-                ) {
-                    // After ==, process the result.
-                    instri++;
-                    // Push this and grab this from this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsChaseEnd));
-                    instri++;
-                }
-
-                if (instri > 3 &&
-                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
-                    instr.OpCode == OpCodes.Ceq
-                ) {
-                    // After ==, process the result.
-                    instri++;
-                    // Push this and grab this from this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
-                    instri++;
-                }
-
-                // Alternatively:
-
-                if (instri > 2 &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
-                ) {
-                    // Before brtrue
-                    // Insert == 0
-                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ceq));
-                    // After ==, process the result.
-                    instri++;
-                    // Push this and grab this from this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
-                    instri++;
-                    // Move back to brtrue
-                    instri++;
-                    // Replace brtrue with brfalse
-                    instr.OpCode = OpCodes.Brfalse;
-                }
-
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
+            if (cursor.Next.OpCode == OpCodes.Brtrue_S) {
+                // Insert `== 0`
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ceq);
+                // Replace brtrue with brfalse
+                cursor.Next.OpCode = OpCodes.Brfalse_S;
+            } else {
+                // SteamFNA version, `== 0` is already there
+                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ceq);
             }
+            // Process.
+            cursor.Emit(OpCodes.Call, m_CanChangeMusic);
+
+            // Add this.IsChaseEnd()
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                    instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level",
+                    instr => true, instr => true, instr => instr.MatchLdstr("2"));
+            // Push this and grab this from this.
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("2"),
+                instr => instr.MatchCall<string>("op_Equality"));
+            // Process.
+            cursor.Emit(OpCodes.Call, m_IsChaseEnd);
+        }
+
+        public static void PatchBadelineBossOnPlayer(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_CanChangeMusic = context.Method.DeclaringType.FindMethod("System.Boolean Celeste.FinalBoss::CanChangeMusic(System.Boolean)");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
+            if (cursor.Next.OpCode == OpCodes.Brtrue) {
+                // Insert `== 0`
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ceq);
+                // Replace brtrue with brfalse
+                cursor.Next.OpCode = OpCodes.Brfalse_S;
+            } else {
+                // SteamFNA version, `== 0` is already there
+                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ceq);
+            }
+            // Process.
+            cursor.Emit(OpCodes.Call, m_CanChangeMusic);
+
+            // Go back to the start of this "line" and add `this` to be used by CanChangeMusic()
+            cursor.GotoPrev(instr => instr.OpCode == OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldarg_0);
 
         }
 
-        public static void PatchBadelineBossOnPlayer(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchCloudAdded(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_IsSmall = context.Method.DeclaringType.FindMethod("System.Boolean Celeste.Cloud::IsSmall(System.Boolean)");
 
-            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean _CanChangeMusic(System.Boolean,Celeste.FinalBoss)");
-            if (m_CanChangeMusic == null)
-                return;
+            ILCursor cursor = new ILCursor(context);
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            cursor.GotoNext(instr => instr.MatchCall(out MethodReference m) && m.Name == "SceneAs");
+            // Push `this`, to be used later by `IsSmall`
+            cursor.Emit(OpCodes.Ldarg_0);
 
-                if (instri > 3 &&
-                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
-                    instr.OpCode == OpCodes.Ceq
-                ) {
-                    // After ==, process the result.
-                    instri++;
-                    // Grab this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
-                    instri++;
-                }
+            /* We expect something similar enough to the following:
+            ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
+            ldc.i4.0
+            cgt.un    // We're here
+            */
+            bool isSteamFNA = cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"),
+                instr => instr.OpCode == OpCodes.Ldc_I4_0,
+                instr => instr.MatchCgtUn());
 
-                // Alternatively:
+            // Alternatively:
+            /* We expect something similar enough to the following:
+            ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
+            brfalse.s    // We're here
+            */
+            if (!isSteamFNA)
+                // We want to be BEFORE !=
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode") &&
+                    instr.Next.OpCode == OpCodes.Brfalse_S);
 
-                if (instri > 2 &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    (instr.OpCode == OpCodes.Brtrue || instr.OpCode == OpCodes.Brtrue_S)
-                ) {
-                    // Before brtrue
-                    // Insert == 0
-                    instrs.Insert(instri, il.Create(OpCodes.Ldc_I4_0));
-                    instri++;
-                    instrs.Insert(instri, il.Create(OpCodes.Ceq));
-                    // After ==, process the result.
-                    instri++;
-                    // Grab this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_CanChangeMusic));
-                    instri++;
-                    // Move back to brtrue
-                    instri++;
-                    // Replace brtrue with brfalse
-                    instr.OpCode = OpCodes.Brfalse;
-                }
-
-            }
-
+            // Process.
+            cursor.Emit(OpCodes.Call, m_IsSmall);
         }
 
-        public static void PatchCloudAdded(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchRainFGRender(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_GetColor = context.Method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Color Celeste.RainFG::_GetColor(System.String)");
 
-            MethodDefinition m_IsSmall = method.DeclaringType.FindMethod("System.Boolean _IsSmall(System.Boolean,Celeste.Cloud)");
-            if (m_IsSmall == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                /* We expect something similar enough to the following:
-                ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
-                ldc.i4.0
-                cgt.un    // We're here
-
-                Note that MonoMod requires the full type names (System.String instead of string)
-                */
-                // No need to check for the full name when the field name itself is compiler-generated.
-                if (instri > 3 &&
-                    instrs[instri - 2].OpCode == OpCodes.Ldfld && (instrs[instri - 2].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldc_I4_0 &&
-                    instr.OpCode == OpCodes.Cgt_Un
-                ) {
-                    // Process the result after >
-                    instri++;
-                    // Push this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsSmall));
-                    instri++;
-                }
-
-                // Alternatively:
-
-                /* We expect something similar enough to the following:
-                ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
-                brfalse.s    // We're here
-
-                Note that MonoMod requires the full type names (System.String instead of string)
-                */
-                // No need to check for the full name when the field name itself is compiler-generated.
-                if (instri > 2 &&
-                    instrs[instri - 1].OpCode == OpCodes.Ldfld && (instrs[instri - 1].Operand as FieldReference)?.FullName == "Celeste.AreaMode Celeste.AreaKey::Mode" &&
-                    (instr.OpCode == OpCodes.Brfalse || instr.OpCode == OpCodes.Brfalse_S)
-                ) {
-                    // Process the result before !=
-                    // Push this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Process.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_IsSmall));
-                    instri++;
-                    // Skip brfalse.s
-                    instri++;
-                }
-
-            }
-
-        }
-
-        public static void PatchRainFGRender(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
-            MethodDefinition m_GetColor = method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Color _GetColor(System.String,Celeste.RainFG)");
-            if (m_GetColor == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "Microsoft.Xna.Framework.Color Monocle.Calc::HexToColor(System.String)") {
-                    // Push this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Replace the method call.
-                    instr.Operand = m_GetColor;
-                    instri++;
-                }
-            }
+            ILCursor cursor = new ILCursor(context);
+            // AfterLabel to redirect break instructions
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("161933"));
+            // Push `this`.
+            cursor.Emit(OpCodes.Ldarg_0);
+            // Replace the `Calc.HexToColor` method call after ldstr.
+            cursor.Next.Next.Operand = m_GetColor;
         }
 
         public static void PatchDialogLoader(MethodDefinition method, CustomAttribute attrib) {
@@ -1434,66 +1099,48 @@ namespace MonoMod {
             method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
 
             MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
-            if (m_GetFiles == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.String[] System.IO.Directory::GetFiles(System.String,System.String,System.IO.SearchOption)") {
+                if (instr.MatchCall("System.IO.Directory", "GetFiles")) {
                     instr.Operand = m_GetFiles;
                 }
             }
         }
 
-        public static void PatchLoadLanguage(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_GetLanguageText = method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
-            if (m_GetLanguageText == null)
-                return;
+        public static void PatchLoadLanguage(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_GetLanguageText = context.Method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
+            MethodDefinition m_NewLanguage = context.Method.DeclaringType.FindMethod("Celeste.Language _NewLanguage()");
+            MethodDefinition m_SetItem = context.Method.DeclaringType.FindMethod("System.Void _SetItem(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String,System.String,Celeste.Language)");
 
-            MethodDefinition m_NewLanguage = method.DeclaringType.FindMethod("Celeste.Language _NewLanguage()");
-            if (m_NewLanguage == null)
-                return;
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("System.IO.File", "ReadLines"));
+            cursor.Next.Operand = m_GetLanguageText;
 
-            MethodDefinition m_SetItem = method.DeclaringType.FindMethod("System.Void _SetItem(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String,System.String,Celeste.Language)");
-            if (m_SetItem == null)
-                return;
+            cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Language"));
+            cursor.Next.OpCode = OpCodes.Call;
+            cursor.Next.Operand = m_NewLanguage;
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.IEnumerable`1<System.String> System.IO.File::ReadLines(System.String,System.Text.Encoding)") {
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_GetLanguageText;
-                }
-
-                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.Language::.ctor()") {
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_NewLanguage;
-                }
-
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Void System.Collections.Generic.Dictionary`2<System.String,System.String>::set_Item(System.Collections.Generic.Dictionary`2<System.String,System.String>/!0,System.Collections.Generic.Dictionary`2<System.String,System.String>/!1)") {
-                    // Push the language object. Should always be stored in the first local var.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldloc_0));
-                    instri++;
-                    // Replace the method call.
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_SetItem;
-                }
+            // Start again from the top
+            cursor.Goto(cursor.Instrs[0]);
+            int matches = 0;
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt("System.Collections.Generic.Dictionary`2<System.String,System.String>", "set_Item"))) {
+                matches++;
+                // Push the language object. Should always be stored in the first local var.
+                cursor.Emit(OpCodes.Ldloc_0);
+                // Replace the method call.
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = m_SetItem;
             }
-
+            if (matches != 3)
+                throw new Exception("Incorrect number of matches for language.Dialog.set_Item");
+            
         }
 
         public static void PatchInitMMSharedData(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_Set = method.DeclaringType.FindMethod("System.Void SetMMSharedData(System.String,System.Boolean)");
-            if (m_Set == null)
-                return;
-
-            if (!method.HasBody)
-                return;
 
             method.Body.Instructions.Clear();
             ILProcessor il = method.Body.GetILProcessor();
@@ -1528,9 +1175,6 @@ namespace MonoMod {
                 break;
             }
 
-            if (!method.HasBody)
-                return;
-
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -1549,16 +1193,13 @@ namespace MonoMod {
                 // For safety, replace the .ctor call if the new .ctor exists already.
                 instr.Operand = calling.DeclaringType.Resolve().FindMethod("System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow,Celeste.Mod.Meta.MapMetaCompleteScreen)") ?? instr.Operand;
 
-                instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                instri++;
+                instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
 
                 if (f_this != null) {
-                    instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                 }
 
-                instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_completeMeta));
-                instri++;
+                instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_completeMeta));
 
             }
 
@@ -1570,9 +1211,6 @@ namespace MonoMod {
         }
 
         public static void PatchAreaCompleteCtor(MethodDefinition method) {
-            if (!method.HasBody)
-                return;
-
             ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MonoModRule.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
             method.Parameters.Add(paramMeta);
 
@@ -1591,8 +1229,7 @@ namespace MonoMod {
 
                 instr.Operand = calling.DeclaringType.Resolve().FindMethod("System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action,Celeste.Mod.Meta.MapMetaCompleteScreen)");
 
-                instrs.Insert(instri, il.Create(OpCodes.Ldarg, paramMeta));
-                instri++;
+                instrs.Insert(instri++, il.Create(OpCodes.Ldarg, paramMeta));
             }
 
             ILCursor cursor = new ILCursor(new ILContext(method));
@@ -1617,33 +1254,27 @@ namespace MonoMod {
              */
 
             // move the cursor to IL_0092 and find the variable index of "text"
-            if (cursor.TryGotoNext(MoveType.After,
-                instr => (instr.Operand as MethodReference)?.FullName == "System.String Celeste.Dialog::Clean(System.String,Celeste.Language)",
-                instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String")) {
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Dialog", "Clean"),
+                instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String");
 
-                // mark for later use
-                ILLabel target = cursor.MarkLabel();
-                // go back to IL_005D
-                if (cursor.TryGotoPrev(MoveType.Before,
-                    instr => instr.MatchLdstr("areacomplete_"))) {
+            // mark for later use
+            ILLabel target = cursor.MarkLabel();
+            // go back to IL_005D
+            cursor.GotoPrev(MoveType.Before, instr => instr.MatchLdstr("areacomplete_"));
 
-                    // equivalent to "text = this.GetCustomCompleteScreenTitle()"
-                    cursor.Emit(OpCodes.Ldarg_0);
-                    cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
-                    cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
+            // equivalent to "text = this.GetCustomCompleteScreenTitle()"
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
+            cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
 
-                    // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
-                    cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
-                    cursor.Emit(OpCodes.Brtrue_S, target.Target);
-                }
-            }
+            // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
+            cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
+            cursor.Emit(OpCodes.Brtrue_S, target.Target);
         }
 
 
         public static void PatchGameLoaderIntroRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetNextScene = method.DeclaringType.FindMethod("Monocle.Scene _GetNextScene(Celeste.Overworld/StartMode,Celeste.HiresSnow)");
-            if (m_GetNextScene == null)
-                return;
 
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1665,18 +1296,8 @@ namespace MonoMod {
         }
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
-            if (SaveData == null)
-                SaveData = MonoModRule.Modder.FindType("Celeste.SaveData")?.Resolve();
-            if (SaveData == null)
-                return;
-
-            FieldDefinition f_Instance = SaveData.FindField("Instance");
-            if (f_Instance == null)
-                return;
-
-            MethodDefinition m_AfterInitialize = SaveData.FindMethod("System.Void AfterInitialize()");
-            if (m_AfterInitialize == null)
-                return;
+            MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
 
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1694,28 +1315,30 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
                     instri++;
 
-                    instrs.Insert(instri, il.Create(OpCodes.Ldsfld, f_Instance));
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
+                    instri++;
+                }
+
+                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
                     instri++;
 
-                    instrs.Insert(instri, il.Create(OpCodes.Callvirt, m_AfterInitialize));
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
                     instri++;
                 }
             }
         }
 
-        public static void PatchPlayerOrigUpdate(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_IsOverWater = method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
-            if (m_IsOverWater == null)
-                return;
+        public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
+            ILProcessor il = context.Body.GetILProcessor();
             for (int instri = 1; instri < instrs.Count - 5; instri++) {
                 // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
                 if (instrs[instri].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 1].OpCode == OpCodes.Ldflda && (instrs[instri + 1].Operand as FieldReference)?.FullName == "Microsoft.Xna.Framework.Vector2 Celeste.Player::Speed"
-                    && instrs[instri + 2].OpCode == OpCodes.Ldfld && (instrs[instri + 2].Operand as FieldReference)?.FullName == "System.Single Microsoft.Xna.Framework.Vector2::Y"
-                    && instrs[instri + 3].OpCode == OpCodes.Ldc_R4 && (float) instrs[instri + 3].Operand == -60f) {
+                    && instrs[instri + 1].MatchLdflda("Celeste.Player", "Speed")
+                    && instrs[instri + 2].MatchLdfld("Microsoft.Xna.Framework.Vector2", "Y")
+                    && instrs[instri + 3].MatchLdcR4(-60f)) {
 
                     // XNA:
                     // 0: ldarg.0
@@ -1764,8 +1387,6 @@ namespace MonoMod {
 
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
-            if (m_GetCheckpoints == null)
-                return;
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1774,9 +1395,6 @@ namespace MonoMod {
                 method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
                 break;
             }
-
-            if (!method.HasBody)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 1; instri < instrs.Count - 5; instri++) {
@@ -1793,11 +1411,8 @@ namespace MonoMod {
 
         public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
             // MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
-            if (IStrawberry == null) {
-                IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
-            }
             if (IStrawberry == null)
-                return;
+                IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
 
             ((TypeDefinition) provider).Interfaces.Add(IStrawberry);
         }
@@ -1807,176 +1422,108 @@ namespace MonoMod {
             method.Attributes |= flags;
         }
 
-        public static void PatchFileSelectSlotRender(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_maxStrawberryCount = method.DeclaringType.FindField("maxStrawberryCount");
-            if (f_maxStrawberryCount == null)
-                return;
+        public static void PatchFileSelectSlotRender(ILContext context, CustomAttribute attrib) {
+            TypeDefinition declaringType = context.Method.DeclaringType;
+            FieldDefinition f_maxStrawberryCount = declaringType.FindField("maxStrawberryCount");
+            FieldDefinition f_maxGoldenStrawberryCount = declaringType.FindField("maxGoldenStrawberryCount");
+            FieldDefinition f_maxCassettes = declaringType.FindField("maxCassettes");
+            FieldDefinition f_maxCrystalHeartsExcludingCSides = declaringType.FindField("maxCrystalHeartsExcludingCSides");
+            FieldDefinition f_maxCrystalHearts = declaringType.FindField("maxCrystalHearts");
+            FieldDefinition f_summitStamp = declaringType.FindField("summitStamp");
+            FieldDefinition f_farewellStamp = declaringType.FindField("farewellStamp");
+            FieldDefinition f_totalGoldenStrawberries = declaringType.FindField("totalGoldenStrawberries");
+            FieldDefinition f_totalHeartGems = declaringType.FindField("totalHeartGems");
+            FieldDefinition f_totalCassettes = declaringType.FindField("totalCassettes");
 
-            FieldDefinition f_maxGoldenStrawberryCount = method.DeclaringType.FindField("maxGoldenStrawberryCount");
-            if (f_maxGoldenStrawberryCount == null)
-                return;
-
-            FieldDefinition f_maxCassettes = method.DeclaringType.FindField("maxCassettes");
-            if (f_maxCassettes == null)
-                return;
-
-            FieldDefinition f_maxCrystalHeartsExcludingCSides = method.DeclaringType.FindField("maxCrystalHeartsExcludingCSides");
-            if (f_maxCrystalHeartsExcludingCSides == null)
-                return;
-
-            FieldDefinition f_maxCrystalHearts = method.DeclaringType.FindField("maxCrystalHearts");
-            if (f_maxCrystalHearts == null)
-                return;
-
-            FieldDefinition f_summitStamp = method.DeclaringType.FindField("summitStamp");
-            if (f_summitStamp == null)
-                return;
-
-            FieldDefinition f_farewellStamp = method.DeclaringType.FindField("farewellStamp");
-            if (f_farewellStamp == null)
-                return;
-
-            FieldDefinition f_totalGoldenStrawberries = method.DeclaringType.FindField("totalGoldenStrawberries");
-            if (f_totalGoldenStrawberries == null)
-                return;
-
-            FieldDefinition f_totalHeartGems = method.DeclaringType.FindField("totalHeartGems");
-            if (f_totalHeartGems == null)
-                return;
-
-            FieldDefinition f_totalCassettes = method.DeclaringType.FindField("totalCassettes");
-            if (f_totalCassettes == null)
-                return;
+            ILCursor cursor = new ILCursor(context);
+            // SaveData.TotalStrawberries replaced by SaveData.TotalStrawberries_Safe with MonoModLinkFrom
+            // Replace hardcoded ARB value with a field reference
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdcI4(175));
+            cursor.Prev.OpCode = OpCodes.Ldarg_0;
+            cursor.Emit(OpCodes.Ldfld, f_maxStrawberryCount);
 
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count - 8; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4 && (int) instrs[instri].Operand == 175) {
-                    instrs[instri].OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxStrawberryCount));
-                }
+            // SaveData.Areas replaced by SaveData.Areas_Safe with MonoModLinkFrom
+            // We want to replace `this.SaveData.Areas_Safe[7].Modes[0].Completed`
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_Areas_Safe"),
+                instr => instr.OpCode == OpCodes.Ldc_I4_7);
+            // Remove everything but the preceeding `this`
+            cursor.RemoveRange(8);
+            // Replace with `this.summitStamp`
+            cursor.Emit(OpCodes.Ldfld, f_summitStamp);
 
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_8) {
-                    instrs[instri].OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCassettes));
-                }
 
-                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
-                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems"
-                    && instrs[instri + 2].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 2].Operand == 16) {
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalCassettes"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalCassettes);
+            // Replace hardcoded Cassettes value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCassettes);
 
-                    instrs[instri].OpCode = OpCodes.Ldfld;
-                    instrs[instri].Operand = f_totalHeartGems;
 
-                    instrs[instri + 1].OpCode = OpCodes.Ldarg_0;
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalHeartGems);
+            // Replace hardcoded HeartGems value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCrystalHeartsExcludingCSides);
 
-                    instrs[instri + 2].OpCode = OpCodes.Ldfld;
-                    instrs[instri + 2].Operand = f_maxCrystalHeartsExcludingCSides;
-                }
 
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 24) {
-                    instrs[instri].OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxCrystalHearts));
-                }
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchLdfld("Celeste.SaveData", "TotalGoldenStrawberries"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalGoldenStrawberries);
+            // Replace hardcoded GoldenStrawberries value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxGoldenStrawberryCount);
 
-                if (instrs[instri].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri].Operand == 25) {
-                    instrs[instri].OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_maxGoldenStrawberryCount));
-                }
 
-                // here is what we want to replace: this.SaveData.Areas_Safe[7 or 10].Modes[0].Completed;
-                if (instrs[instri].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference).Name == "SaveData"
-                    && instrs[instri + 2].OpCode == OpCodes.Callvirt && (instrs[instri + 2].Operand as MethodReference).Name == "get_Areas_Safe"
-                    // instrs[instri + 3] = ldc.i4 7 or 10
-                    && instrs[instri + 4].OpCode == OpCodes.Callvirt && (instrs[instri + 4].Operand as MethodReference).Name == "get_Item"
-                    && instrs[instri + 5].OpCode == OpCodes.Ldfld && (instrs[instri + 5].Operand as FieldReference).Name == "Modes"
-                    && instrs[instri + 6].OpCode == OpCodes.Ldc_I4_0
-                    && instrs[instri + 7].OpCode == OpCodes.Ldelem_Ref
-                    && instrs[instri + 8].OpCode == OpCodes.Ldfld && (instrs[instri + 8].Operand as FieldReference).Name == "Completed") {
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalHeartGems);
+            // Replace hardcoded HeartGems value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCrystalHearts);
 
-                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_7) {
-                        // remove everything but this
-                        instri++;
-                        for (int i = 0; i < 8; i++)
-                            instrs.RemoveAt(instri);
+            // SaveData.Areas replaced by SaveData.Areas_Safe with MonoModLinkFrom
+            // We want to replace `this.SaveData.Areas_Safe[10].Modes[0].Completed`
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_Areas_Safe"),
+                instr => instr.MatchLdcI4(10));
+            // Remove everything but the preceeding `this`
+            cursor.RemoveRange(8);
+            // Replace with `this.farewellStamp`
+            cursor.Emit(OpCodes.Ldfld, f_farewellStamp);
 
-                        // and put summitStamp instead
-                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_summitStamp));
-
-                    }
-
-                    if (instrs[instri + 3].OpCode == OpCodes.Ldc_I4_S && (sbyte) instrs[instri + 3].Operand == 10) {
-                        // remove everything but this
-                        instri++;
-                        for (int i = 0; i < 8; i++)
-                            instrs.RemoveAt(instri);
-
-                        // and put farewellStamp instead
-                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_farewellStamp));
-                    }
-                }
-
-                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
-                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference).Name == "TotalGoldenStrawberries") {
-
-                    instrs.RemoveAt(instri);
-                    instrs[instri].Operand = f_totalGoldenStrawberries;
-                }
-
-                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
-                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalHeartGems") {
-
-                    instrs.RemoveAt(instri);
-                    instrs[instri].OpCode = OpCodes.Ldfld;
-                    instrs[instri].Operand = f_totalHeartGems;
-                }
-
-                if (instrs[instri].OpCode == OpCodes.Ldfld && (instrs[instri].Operand as FieldReference).Name == "SaveData"
-                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_TotalCassettes") {
-
-                    instrs.RemoveAt(instri);
-                    instrs[instri].OpCode = OpCodes.Ldfld;
-                    instrs[instri].Operand = f_totalCassettes;
-                }
-            }
         }
 
-        public static void PatchPathfinderRender(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_map = method.DeclaringType.FindField("map");
-            if (f_map == null)
-                return;
+        public static void PatchPathfinderRender(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_map = context.Method.DeclaringType.FindField("map");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            bool firstDimension = true;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Ldc_I4 && ((int) instr.Operand) == 200) {
-                    // replace 200 with a call to get the array length.
-                    instr.OpCode = OpCodes.Ldarg_0;
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_map));
-                    instrs.Insert(instri + 2, il.Create(firstDimension ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-                    instrs.Insert(instri + 3, il.Create(OpCodes.Callvirt, typeof(Array).GetMethod("GetLength")));
-
-                    instri += 3;
-                    firstDimension = false;
-                }
+            ILCursor cursor = new ILCursor(context);
+            for (int i = 0; i < 2; i++) {
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdcI4(200));
+                cursor.Prev.OpCode = OpCodes.Ldarg_0;
+                cursor.Emit(OpCodes.Ldfld, f_map);
+                // if `i == 0` we are accessing the first dimension, `1` we are accessing the second
+                cursor.Emit(i == 0 ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Callvirt, typeof(Array).GetMethod("GetLength"));
             }
+
         }
 
         public static void PatchTotalHeartGemChecks(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_getTotalHeartGemsInVanilla = method.Module.GetType("Celeste.SaveData")?.FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
-            if (m_getTotalHeartGemsInVanilla == null)
-                return;
+            MethodDefinition m_getTotalHeartGemsInVanilla = method.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
-                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_TotalHeartGems") {
+                if (instr.MatchCallvirt(out MethodReference m) && m.Name == "get_TotalHeartGems") {
                     // replace the call to the TotalHeartGems property with a call to TotalHeartGemsInVanilla.
                     instr.Operand = m_getTotalHeartGemsInVanilla;
                 }
@@ -1994,78 +1541,62 @@ namespace MonoMod {
             PatchTotalHeartGemChecks(method, attrib);
         }
 
-        public static void PatchOuiJournalStatsHeartGemCheck(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_getUnlockedModes = method.Module.GetType("Celeste.SaveData")?.FindMethod("System.Int32 get_UnlockedModes()");
-            if (m_getUnlockedModes == null)
-                return;
+        public static void PatchOuiJournalStatsHeartGemCheck(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getUnlockedModes = context.Method.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_UnlockedModes()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count - 1; instri++) {
-                Instruction instr = instrs[instri];
-                Instruction nextInstr = instrs[instri + 1];
+            ILCursor cursor = new ILCursor(context);
 
-                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_TotalHeartGems"
-                    && nextInstr.OpCode == OpCodes.Ldc_I4_S && ((sbyte) nextInstr.Operand) == 16) {
+            /* 
+            We want to replace `SaveData.Instance.TotalHeartGems >= 16` with `SaveData.Instance.UnlockedModes >= 3`.
+            This way, we only display the golden berry stat when golden berries are actually unlocked in the level set we are in.
+            (UnlockedModes returns 3 if and only if TotalHeartGems is more than 16 in the vanilla level set anyway.)
+            */
 
-                    // instead of SaveData.Instance.TotalHeartGems >= 16, we want SaveData.Instance.UnlockedModes >= 3.
-                    // this way, we only display the golden berry stat when golden berries are actually unlocked in the level set we are in.
-                    // (UnlockedModes returns 3 if and only if TotalHeartGems is more than 16 in the vanilla level set anyway.)
-                    instr.Operand = m_getUnlockedModes;
-                    nextInstr.OpCode = OpCodes.Ldc_I4_3;
-                }
-            }
+            // Move between these two instructions
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems") &&
+                instr.Next.MatchLdcI4(16));
+            cursor.Prev.Operand = m_getUnlockedModes;
+            cursor.Next.OpCode = OpCodes.Ldc_I4_3;
         }
 
         public static void MakeMethodPublic(MethodDefinition method, CustomAttribute attrib) {
             method.SetPublic(true);
         }
 
-        public static void PatchSpinnerCreateSprites(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_ID = method.DeclaringType.FindField("ID");
-            if (f_ID == null)
-                return;
+        public static void PatchSpinnerCreateSprites(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_ID = context.Method.DeclaringType.FindField("ID");
 
-            ILProcessor il = method.Body.GetILProcessor();
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count - 5; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Ldloc_S
-                    && instrs[instri + 1].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 2].OpCode == OpCodes.Beq_S) {
+            ILCursor cursor = new ILCursor(context);
 
-                    // instead of comparing the X positions for spinners, compare their IDs.
-                    // this way, we are sure spinner 1 will connect to spinner 2, but spinner 2 won't connect to spinner 1.
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldfld, f_ID));
-                    instrs.Insert(instri + 3, il.Create(OpCodes.Ldfld, f_ID));
-                    instrs[instri + 4].OpCode = OpCodes.Ble_S;
-                }
+            // instead of comparing the X positions for spinners, compare their IDs.
+            // this way, we are sure spinner 1 will connect to spinner 2, but spinner 2 won't connect to spinner 1.
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldloc_S,
+                instr => instr.OpCode == OpCodes.Ldarg_0,
+                instr => instr.OpCode == OpCodes.Beq_S);
+            // Move after `ldloc_s`
+            cursor.Goto(cursor.Next, MoveType.After);
+            cursor.Emit(OpCodes.Ldfld, f_ID);
+            // Move after `ldarg_0`
+            cursor.Goto(cursor.Next, MoveType.After);
+            cursor.Emit(OpCodes.Ldfld, f_ID);
+            // Replace `beq_s`(!=) with `ble_s`(>)
+            cursor.Next.OpCode = OpCodes.Ble_S;
 
-                if (instrs[instri].OpCode == OpCodes.Ldloc_S
-                    && instrs[instri + 1].OpCode == OpCodes.Callvirt && (instrs[instri + 1].Operand as MethodReference).Name == "get_X"
-                    && instrs[instri + 2].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference).Name == "get_X"
-                    && instrs[instri + 4].OpCode == OpCodes.Blt_Un_S) {
+            // the other.X >= this.X check is made redundant by the patch above. Remove it.
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldloc_S,
+                instr => instr.MatchCallvirt("Monocle.Entity", "get_X"));
+            cursor.RemoveRange(5);
 
-                    // the other.X >= this.X check is made redundant by the patch above. Remove it.
-                    for (int i = 0; i < 5; i++) {
-                        instrs.RemoveAt(instri);
-                    }
-                }
-
-                // replace "(item.Position - Position).Length() < 24f" with "(item.Position - Position).LengthSquared() < 576f".
-                // this is equivalent, except it skips a square root calculation, which helps with performance.
-                if (instrs[instri].OpCode == OpCodes.Call && ((MethodReference) instrs[instri].Operand).Name == "Length") {
-                    ((MethodReference) instrs[instri].Operand).Name = "LengthSquared";
-                }
-                if (instrs[instri].OpCode == OpCodes.Ldc_R4 && ((float) instrs[instri].Operand) == 24f) {
-                    instrs[instri].Operand = 576f;
-                }
-            }
+            // replace `(item.Position - Position).Length() < 24f` with `.LengthSquared() < 576f`.
+            // this is equivalent, except it skips a square root calculation, which helps with performance.
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Microsoft.Xna.Framework.Vector2", "Length"));
+            ((MethodReference) cursor.Prev.Operand).Name = "LengthSquared";
+            cursor.Next.Operand = 576f;
         }
 
         public static void PatchOuiFileSelectSubmenuChecks(MethodDefinition method, CustomAttribute attrib) {
             TypeDefinition t_ISubmenu = method.Module.GetType("Celeste.OuiFileSelectSlot/ISubmenu");
-            if (t_ISubmenu == null)
-                return;
+
 
             // The routine is stored in a compiler-generated method.
             string methodName = method.Name;
@@ -2085,7 +1616,7 @@ namespace MonoMod {
                 if (instrs[instri].OpCode == OpCodes.Brtrue_S
                     && instrs[instri + 1].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 2].OpCode == OpCodes.Ldfld
-                    && instrs[instri + 3].OpCode == OpCodes.Isinst && ((TypeDefinition) instrs[instri + 3].Operand).Name == "OuiAssistMode") {
+                    && instrs[instri + 3].MatchIsinst("Celeste.OuiAssistMode")) {
 
                     // gather some info
                     FieldReference field = (FieldReference) instrs[instri + 2].Operand;
@@ -2100,7 +1631,7 @@ namespace MonoMod {
 
                 } else if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].OpCode == OpCodes.Ldfld
-                    && instrs[instri + 2].OpCode == OpCodes.Isinst && ((TypeDefinition) instrs[instri + 2].Operand).Name == "OuiAssistMode"
+                    && instrs[instri + 2].MatchIsinst("Celeste.OuiAssistMode")
                     && instrs[instri + 3].OpCode == OpCodes.Brfalse_S) {
 
                     // gather some info
@@ -2119,12 +1650,10 @@ namespace MonoMod {
 
         public static void PatchFontsPrepare(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
-            if (m_GetFiles == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).Name == "GetFiles") {
+                if (instrs[instri].MatchCall("System.IO.Directory", "GetFiles")) {
                     instrs[instri].Operand = m_GetFiles;
                 }
             }
@@ -2134,13 +1663,12 @@ namespace MonoMod {
             MonoModRule.Modder.Module.EntryPoint = method;
         }
 
-        public static void PatchCelesteMain(MethodDefinition method, CustomAttribute attrib) {
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference)?.GetID() == "System.String SDL2.SDL::SDL_GetPlatform()") {
-                    instrs[instri].OpCode = OpCodes.Ldstr;
-                    instrs[instri].Operand = "Windows";
-                }
+        public static void PatchCelesteMain(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            // TryGotoNext used because SDL_GetPlatform does not exist on XNA
+            if (cursor.TryGotoNext(instr => instr.MatchCall("SDL2.SDL", "SDL_GetPlatform"))) {
+                cursor.Next.OpCode = OpCodes.Ldstr;
+                cursor.Next.Operand = "Windows";
             }
         }
 
@@ -2157,50 +1685,31 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchFakeHeartColor(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_getCustomColor = method.DeclaringType.FindMethod("Celeste.AreaMode _getCustomColor(Celeste.AreaMode,Celeste.FakeHeart)");
-            if (m_getCustomColor == null)
-                return;
+        public static void PatchFakeHeartColor(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getCustomColor = context.Method.DeclaringType.FindMethod("Celeste.AreaMode Celeste.FakeHeart::_GetCustomColor(Celeste.AreaMode)");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Choose") {
-                    instrs.Insert(instri + 1, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri + 2, il.Create(OpCodes.Call, m_getCustomColor));
-                }
-            }
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchLdsfld("Monocle.Calc", "Random"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Monocle.Calc", "Choose"));
+            cursor.Emit(OpCodes.Call, m_getCustomColor);
         }
 
-        public static void PatchOuiFileNamingRendering(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_shouldDisplaySwitchAlphabetPrompt = method.DeclaringType.FindMethod("System.Boolean _shouldDisplaySwitchAlphabetPrompt()");
-            if (m_shouldDisplaySwitchAlphabetPrompt == null)
-                return;
+        public static void PatchOuiFileNamingRendering(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_shouldDisplaySwitchAlphabetPrompt = context.Method.DeclaringType.FindMethod("System.Boolean _shouldDisplaySwitchAlphabetPrompt()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Japanese") {
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_shouldDisplaySwitchAlphabetPrompt;
-                }
-            }
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.OuiFileNaming", "get_Japanese"));
+            cursor.Next.OpCode = OpCodes.Call;
+            cursor.Next.Operand = m_shouldDisplaySwitchAlphabetPrompt;
         }
 
         public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrig) {
             MethodDefinition m_entity_get_Y = MonoModRule.Modder.FindType("Monocle.Entity").Resolve().FindMethod("get_Y");
-            if (m_entity_get_Y == null)
-                return;
 
             FieldDefinition f_constrainHeight = method.DeclaringType.FindField("constrainHeight");
             FieldDefinition f_top = method.DeclaringType.FindField("top");
             FieldDefinition f_bottom = method.DeclaringType.FindField("bottom");
-
-            if (f_constrainHeight == null || f_top == null || f_bottom == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -2218,7 +1727,7 @@ namespace MonoMod {
                         ldfld	float32 Celeste.RumbleTrigger::right // We are here
                         bgt.un.s	ldloca.s
                      */
-                if (instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name == "right") {
+                if (instr.MatchLdfld("Celeste.RumbleTrigger", "right")) {
                     Instruction noYConstraintTarget = instrs[instri - 8];
 
                     // Copy relevant instructions and modify as needed
@@ -2227,9 +1736,9 @@ namespace MonoMod {
                         instrCopy[i] = il.Create(instrs[instri + i - 8].OpCode, instrs[instri + i - 8].Operand);
                         if (instrCopy[i].OpCode == OpCodes.Callvirt)
                             instrCopy[i].Operand = m_entity_get_Y;
-                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "left")
+                        if (instrCopy[i].MatchLdfld("Celeste.RumbleTrigger", "left"))
                             instrCopy[i].Operand = f_top;
-                        if (instrCopy[i].OpCode == OpCodes.Ldfld && ((FieldReference) instrCopy[i].Operand).Name == "right")
+                        if (instrCopy[i].MatchLdfld("Celeste.RumbleTrigger", "right"))
                             instrCopy[i].Operand = f_bottom;
                         if (instrCopy[i].OpCode == OpCodes.Cgt_Un) {
                             // we are in Steam FNA, and want to replace this with a blg.un.s with the same target as 5 instructions before
@@ -2250,37 +1759,17 @@ namespace MonoMod {
                     instri += 8;
                 }
             }
-
-            // Fix some issues with short-form branch instructions now being out of range
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-                if (instr.Operand is Instruction i &&
-                    Math.Abs(i.Offset - instr.Offset) > 102) {
-                    instr.OpCode = instr.OpCode.ToLongOp();
-                }
-            }
         }
 
         public static void PatchEventTriggerOnEnter(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
-            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Boolean TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)");
-            if (m_TriggerCustomEvent == null)
-                return;
-
-            FieldDefinition f_Event = method.DeclaringType.FindField("Event");
-            if (f_Event == null)
-                return;
-
             // We also need to do special work in the cctor.
             MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
-            if (m_cctor == null)
-                return;
+
+            MethodDefinition m_TriggerCustomEvent = method.DeclaringType.FindMethod("System.Boolean TriggerCustomEvent(Celeste.EventTrigger,Celeste.Player,System.String)");
+
+            FieldDefinition f_Event = method.DeclaringType.FindField("Event");
 
             FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
-            if (f_LoadStrings == null)
-                return;
 
             Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
             ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
@@ -2311,10 +1800,10 @@ namespace MonoMod {
 
                 if (instri > 0 &&
                         instri < instrs.Count - 4 &&
-                        instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "System.String Celeste.EventTrigger::Event" &&
-                        instrs[instri + 1].OpCode.Name.ToLowerInvariant().StartsWith("stloc") &&
-                        instrs[instri + 2].OpCode.Name.ToLowerInvariant().StartsWith("ldloc") &&
-                        instrs[instri + 3].OpCode == OpCodes.Call && (instrs[instri + 3].Operand as MethodReference)?.GetID() == "System.UInt32 <PrivateImplementationDetails>::ComputeStringHash(System.String)"
+                        instr.MatchLdfld("Celeste.EventTrigger", "Event") &&
+                        instrs[instri + 1].MatchStloc(out int _) &&
+                        instrs[instri + 2].MatchLdloc(out int _) &&
+                        instrs[instri + 3].MatchCall("<PrivateImplementationDetails>", "ComputeStringHash")
                     ) {
                     // Insert a call to our own event handler here.
                     // If it returns true, return.
@@ -2354,112 +1843,82 @@ namespace MonoMod {
             cctor_il.Emit(OpCodes.Ret);
         }
 
-        public static void PatchWaterUpdate(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
-
-            MethodReference m_Component_get_Entity = MonoModRule.Modder.Module.GetType("Monocle.Component").FindMethod("Monocle.Entity get_Entity()");
-            if (m_Component_get_Entity == null)
-                return;
-
+        public static void PatchWaterUpdate(ILContext context, CustomAttribute attrib) {
             MethodReference m_WaterInteraction_get_Bounds = MonoModRule.Modder.Module.GetType("Celeste.WaterInteraction").FindProperty("Bounds").GetMethod;
             TypeReference t_Rectangle = m_WaterInteraction_get_Bounds.ReturnType;
-            if (m_WaterInteraction_get_Bounds == null || t_Rectangle == null)
-                return;
-
-            VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
-            method.Body.Variables.Add(v_Bounds);
-
-            MethodReference m_Entity_CollideCheck = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindMethod($"System.Boolean CollideRect({t_Rectangle.FullName})");
-            if (m_Entity_CollideCheck == null)
-                return;
-
             MethodReference m_Rectangle_get_Center = MonoModRule.Modder.Module.ImportReference(t_Rectangle.Resolve().FindProperty("Center").GetMethod);
-            if (m_Rectangle_get_Center == null)
-                return;
-
             TypeReference t_Point = m_Rectangle_get_Center.ReturnType;
             FieldReference f_Point_Y = MonoModRule.Modder.Module.ImportReference(t_Point.Resolve().FindField("Y"));
+
+            MethodReference m_Component_get_Entity = MonoModRule.Modder.Module.GetType("Monocle.Component").FindMethod("Monocle.Entity get_Entity()");
+            MethodReference m_Entity_CollideRect = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindMethod($"System.Boolean CollideRect({t_Rectangle.FullName})");
+
             MethodReference m_Point_ToVector2 = MonoModRule.Modder.Module.GetType("Celeste.Mod.Extensions").FindMethod($"Microsoft.Xna.Framework.Vector2 Celeste.Mod.Extensions::ToVector2(Microsoft.Xna.Framework.Point)");
-            if (t_Point == null || f_Point_Y == null || m_Point_ToVector2 == null)
-                return;
+
+            VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
+            context.Body.Variables.Add(v_Bounds);
 
             // Steam FNA is weird, and stores the entity in variable 5 instead of 3.
-            bool isSteamFNA = method.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
+            bool isSteamFNA = context.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            ILCursor cursor = new ILCursor(context);
+            // Load the WaterInteraction Bounds into a local variable
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Monocle.Component", "get_Entity"));
+            cursor.Prev.Operand = m_WaterInteraction_get_Bounds;
+            cursor.Next.OpCode = OpCodes.Stloc_S;
+            cursor.Next.Operand = v_Bounds;
 
-                // If we have reached the end of the code to be patched, put everything back to normal.
-                if (instrs[instri + 1].OpCode == OpCodes.Isinst && ((TypeReference) instrs[instri + 1].Operand).FullName == "Celeste.Player") {
-                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Ldloc_S, (byte) 4) : il.Create(OpCodes.Ldloc_2));
-                    instrs.Insert(instri++, il.Create(OpCodes.Callvirt, m_Component_get_Entity));
-                    instrs.Insert(instri++, isSteamFNA ? il.Create(OpCodes.Stloc_S, (byte) 5) : il.Create(OpCodes.Stloc_3));
-                    break;
+            // Replace the collision check (I think this technically loses precision but nobody's complained yet)
+            cursor.GotoNext(instr => instr.MatchCall("Monocle.Entity", "CollideCheck"));
+            cursor.Next.Operand = m_Entity_CollideRect;
+
+            // Replace the Rectangle creation, and any values used for it, with our Bounds value.
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Monocle.Entity", "get_Scene"));
+            while (!cursor.Next.MatchNewobj("Microsoft.Xna.Framework.Rectangle")) {
+                cursor.Remove();
+            }
+            cursor.Next.OpCode = OpCodes.Ldloc_S;
+            cursor.Next.Operand = v_Bounds;
+
+            // Start again from the top and retrieve the Bounds instead of the entity (but only up to a certain point)
+            cursor.Goto(0);
+            for (int i = 0;i<10;i++) {
+                cursor.GotoNext(MoveType.After, instr => (!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || isSteamFNA && instr.MatchLdloc(5));
+                cursor.Prev.OpCode = OpCodes.Ldloca_S;
+                cursor.Prev.Operand = v_Bounds;
+
+                // Modify any method calls/field accesses to the Bounds
+                if (cursor.Next.MatchCallvirt("Monocle.Entity", "get_Center")) {
+                    cursor.Remove();
+                    cursor.Emit(OpCodes.Call, m_Rectangle_get_Center);
+                    if (cursor.Next.OpCode == OpCodes.Ldfld) {
+                        cursor.Remove();
+                        cursor.Emit(OpCodes.Ldfld, f_Point_Y);
+                        cursor.Emit(OpCodes.Conv_R4);
+                    } else
+                        cursor.Emit(OpCodes.Call, m_Point_ToVector2);
+                } else {
+                    cursor.Prev.OpCode = OpCodes.Ldloc_S;
+                    cursor.Prev.Operand = v_Bounds;
                 }
+            }
 
-                // Load the WaterInteraction Bounds into a local variable
-                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Entity") {
-                    instrs[instri].Operand = m_WaterInteraction_get_Bounds;
-                    instr.Operand = m_WaterInteraction_get_Bounds;
-                    instrs[++instri].OpCode = OpCodes.Stloc_S;
-                    instrs[instri].Operand = v_Bounds;
-                }
-
-                // Retrieve the Bounds instead of the entity
-                if ((!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || (isSteamFNA && instr.OpCode == OpCodes.Ldloc_S && ((VariableReference) instr.Operand).Index == 5)) {
-                    if (instrs[instri + 1].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 1].Operand).Name == "get_Center") {
-                        instr.OpCode = OpCodes.Ldloca_S;
-                        instr.Operand = v_Bounds;
-
-                        if (instrs[instri + 2].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 2].Operand).Name == "Y") {
-                            // cast the Y position to float because it is compared to another float.
-                            instrs.Insert(instri + 3, il.Create(OpCodes.Conv_R4));
-                        }
-                    } else {
-                        instr.OpCode = OpCodes.Ldloc_S;
-                        instr.Operand = v_Bounds;
-                    }
-                }
-
-                // Replace any methods that use the entity
-                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).FullName == "System.Boolean Monocle.Entity::CollideCheck(Monocle.Entity)")
-                    instr.Operand = m_Entity_CollideCheck;
-
-                if (instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).Name == "get_Center") {
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_Rectangle_get_Center;
-
-                    Instruction next = instrs[++instri];
-                    if (next.OpCode == OpCodes.Ldfld)
-                        next.Operand = f_Point_Y;
-                    else
-                        instrs.Insert(instri, il.Create(OpCodes.Call, m_Point_ToVector2));
-                }
-
-                // Replace the Rectangle creation
-                if (instr.OpCode == OpCodes.Newobj && ((MethodReference) instr.Operand).FullName == "System.Void Microsoft.Xna.Framework.Rectangle::.ctor(System.Int32,System.Int32,System.Int32,System.Int32)") {
-                    instr.OpCode = OpCodes.Ldloc_S;
-                    instr.Operand = v_Bounds;
-
-                    instri--;
-
-                    // Discard previous Rectangle args
-                    while (instrs[instri].OpCode != OpCodes.Call || ((MethodReference) instrs[instri].Operand).FullName != "Monocle.Scene Monocle.Entity::get_Scene()") {
-                        instrs.RemoveAt(instri);
-                        instri--;
-                    }
-                }
+            // We have reached the end of the code to be patched, we can finally load the WaterInteraction's Entity and continue as normal
+            cursor.GotoNext(instr => instr.Next.MatchIsinst("Celeste.Player"));
+            if (isSteamFNA) {
+                cursor.Emit(OpCodes.Ldloc_S, (byte) 4);
+                cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
+                cursor.Emit(OpCodes.Stloc_S, (byte) 5);
+            } else {
+                cursor.Emit(OpCodes.Ldloc_2);
+                cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
+                cursor.Emit(OpCodes.Stloc_3);
             }
         }
 
         public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {
             FieldReference f_fakeHeartDialog = method.DeclaringType.FindField("fakeHeartDialog");
             FieldReference f_keepGoingDialog = method.DeclaringType.FindField("keepGoingDialog");
-            if (f_fakeHeartDialog == null || f_keepGoingDialog == null)
-                return;
 
             FieldDefinition f_this = null;
 
@@ -2472,47 +1931,29 @@ namespace MonoMod {
                 break;
             }
 
-            if (!method.HasBody || f_this == null)
-                return;
+            ILCursor cursor = new ILCursor(new ILContext(method));
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            cursor.GotoNext(instr => instr.MatchLdstr("CH9_FAKE_HEART"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+            cursor.Next.OpCode = OpCodes.Ldfld;
+            cursor.Next.Operand = f_fakeHeartDialog;
 
-                if (instr.OpCode == OpCodes.Ldstr) {
-                    if (((string) instr.Operand) == "CH9_FAKE_HEART") {
-                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                        instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                        instr.OpCode = OpCodes.Ldfld;
-                        instr.Operand = f_fakeHeartDialog;
-
-                    } else if (((string) instr.Operand) == "CH9_KEEP_GOING") {
-                        instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                        instrs.Insert(instri, il.Create(OpCodes.Ldfld, f_this));
-                        instr.OpCode = OpCodes.Ldfld;
-                        instr.Operand = f_keepGoingDialog;
-                    }
-                }
-            }
+            cursor.GotoNext(instr => instr.MatchLdstr("CH9_KEEP_GOING"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_this);
+            cursor.Next.OpCode = OpCodes.Ldfld;
+            cursor.Next.Operand = f_keepGoingDialog;
         }
 
-        public static void PatchTextMenuOptionColor(MethodDefinition method, CustomAttribute attrib) {
-            FieldReference f_UnselectedColor = method.DeclaringType.FindField("UnselectedColor");
-            if (f_UnselectedColor == null)
-                return;
+        public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
+            FieldReference f_UnselectedColor = context.Method.DeclaringType.FindField("UnselectedColor");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.FullName == "Microsoft.Xna.Framework.Color Microsoft.Xna.Framework.Color::get_White()") {
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instr.OpCode = OpCodes.Ldfld;
-                    instr.Operand = f_UnselectedColor;
-                }
-            }
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Next.OpCode = OpCodes.Ldfld;
+            cursor.Next.Operand = f_UnselectedColor;
         }
 
         public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
@@ -2521,20 +1962,16 @@ namespace MonoMod {
             FieldReference f_delay = method.DeclaringType.FindField("delay");
             FieldReference f_speed = method.DeclaringType.FindField("speed");
 
-
             FieldReference f_this = null;
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
                     continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                method = nest.FindMethod("System.Boolean MoveNext()");
                 f_this = method.DeclaringType.FindField("<>4__this");
                 break;
             }
-
-            if (!method.HasBody || f_this == null)
-                return;
 
             // Steam FNA is weird, and all the local variables are messed up.
             bool isSteamFNA = method.Body.Variables[2].VariableType.FullName != "Celeste.Player";
@@ -2576,7 +2013,7 @@ namespace MonoMod {
                 }
 
                 // Allow for custom activation delay
-                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 1.2f) {
+                if (instr.MatchLdcR4(1.2f)) {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instr.OpCode = OpCodes.Ldfld;
                     instr.Operand = f_this;
@@ -2585,8 +2022,8 @@ namespace MonoMod {
 
                 // If the delay is less than, or equal to zero, don't add a shaker.
                 if (instr.OpCode == OpCodes.Ldarg_0 &&
-                    instrs[instri + 1].OpCode == OpCodes.Ldfld && ((FieldReference) instrs[instri + 1].Operand).Name == "<shaker>5__3" &&
-                    instrs[instri + 2].OpCode == OpCodes.Callvirt && ((MethodReference) instrs[instri + 2].Operand).Name == "Add") {
+                    instrs[instri + 1].MatchLdfld(f_this.DeclaringType.FullName, "<shaker>5__3") &&
+                    instrs[instri + 2].MatchCallvirt("Monocle.Entity", "Add")) {
                     Instruction breakTarget = instrs[instri + 3];
 
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_delay));
@@ -2598,8 +2035,8 @@ namespace MonoMod {
                 }
 
                 // Allow for custom movement speed
-                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 2f &&
-                    instrs[instri + 1].OpCode == OpCodes.Call && ((MethodReference) instrs[instri + 1].Operand).Name == "get_DeltaTime") {
+                if (instr.MatchLdcR4(2f) &&
+                    instrs[instri + 1].MatchCall("Monocle.Engine", "get_DeltaTime")) {
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
                     instr.OpCode = OpCodes.Ldfld;
@@ -2608,208 +2045,124 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchOuiChapterPanelRender(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_ModCardTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModCardTexture(System.String)");
 
-            MethodDefinition m_ModCardTexture = method.DeclaringType.FindMethod("System.String _ModCardTexture(System.String,Celeste.OuiChapterPanel)");
-            if (m_ModCardTexture == null)
-                return;
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Ldstr && ((string) instr.Operand).StartsWith("areaselect/card")) {
-                    // Move to after the string is loaded.
-                    instri++;
-                    // Push this.
-                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
-                    instri++;
-                    // Insert method call to modify the string.
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_ModCardTexture));
-                    instri++;
-                }
+            ILCursor cursor = new ILCursor(context);
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("areaselect/card"))) {
+                // Move to before the string is loaded, but before the labels, so we can redirect break targets to a new instruction.
+                // Push this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                // Move after ldstr
+                cursor.Goto(cursor.Next, MoveType.After);
+                // Insert method call to modify the string.
+                cursor.Emit(OpCodes.Call, m_ModCardTexture);
+                matches++;
             }
+            if (matches != 4)
+                throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
         }
 
-        public static void PatchGoldenBlockStaticMovers(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchGoldenBlockStaticMovers(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Platform = MonoModRule.Modder.Module.GetType("Celeste.Platform");
+            MethodDefinition m_Platform_DisableStaticMovers = t_Platform.FindMethod("System.Void DisableStaticMovers()");
+            MethodDefinition m_Platform_DestroyStaticMovers = t_Platform.FindMethod("System.Void DestroyStaticMovers()");
 
-            MethodDefinition m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
-            MethodDefinition m_Platform_DestroyStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DestroyStaticMovers()");
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Solid", "Awake"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
 
-            ILProcessor il = method.Body.GetILProcessor();
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 1; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "Awake") {
-                    instrs.Insert(++instri, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(++instri, il.Create(OpCodes.Call, m_Platform_DisableStaticMovers));
-                }
-
-                if (instr.OpCode == OpCodes.Call && ((MethodReference) instr.Operand).Name == "RemoveSelf") {
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_Platform_DestroyStaticMovers));
-                }
-            }
+            cursor.GotoNext(instr => instr.MatchCall("Monocle.Entity", "RemoveSelf"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Platform_DestroyStaticMovers);
         }
 
         public static void PatchCrushBlockFirstAlarm(MethodDefinition method) {
-            if (method?.Body == null)
-                return;
+            ILCursor cursor = new ILCursor(new ILContext(method));
 
-            ILProcessor il = method.Body.GetILProcessor();
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-
-            Instruction instrPop = null;
-            for (int instri = 1; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instrs[instri - 1].OpCode == OpCodes.Callvirt && (instrs[instri - 1].Operand as MethodReference)?.GetID() == "Celeste.SoundSource Celeste.SoundSource::Stop(System.Boolean)" &&
-                    instr.OpCode == OpCodes.Pop) {
-                    instrPop = instr;
-                    break;
-                }
-            }
-
-            if (instrPop == null)
-                return;
-
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Ldfld && (instr.Operand as FieldReference)?.FullName == "Celeste.SoundSource Celeste.CrushBlock::currentMoveLoopSfx") {
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Dup));
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Brfalse, instrPop));
-                    instri++;
-                }
-            }
+            // this.currentMoveLoopSfx.Stop(true);
+            // TO
+            // this.currentMoveLoopSfx?.Stop(true);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CrushBlock", "currentMoveLoopSfx"));
+            Instruction instrPop = cursor.Clone().GotoNext(instr => instr.MatchPop()).Next;
+            cursor.Emit(OpCodes.Dup);
+            cursor.Emit(OpCodes.Brfalse_S, instrPop);
         }
 
-        public static void PatchLookoutUpdate(MethodDefinition method, CustomAttribute attrib) {
-            if (method?.Body == null)
-                return;
+        public static void PatchLookoutUpdate(ILContext context, CustomAttribute attrib) {
+            FieldReference f_talk = context.Method.DeclaringType.FindField("talk");
+            FieldReference f_TalkComponent_UI = context.Method.Module.GetType("Celeste.TalkComponent").FindField("UI");
+            FieldReference f_Entity_Visible = context.Method.Module.GetType("Monocle.Entity").FindField("Visible");
 
-            const string lookoutTalkFieldName = "Celeste.TalkComponent Celeste.Lookout::talk";
-            const string entityCollideCheckMethodID = "System.Boolean Monocle.Entity::CollideCheck<Celeste.Solid>()";
-
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-
-            // if (this.talk == null || !CollideCheck<Solid>())  <-- indexTarget is here
+            // Remove the following, saving the MethodReference for CollideCheck<Solid>
+            // if (this.talk == null || !CollideCheck<Solid>())
             //     return;
             // this.Remove((Component) this.talk);
             // this.talk = (TalkComponent) null;
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.OpCode == OpCodes.Ldarg_0,
+                instr => instr.MatchLdfld("Celeste.Lookout", "talk"));
 
-            int indexTarget = -1;
-            MethodReference collideCheckMethodReference = null;
-            for (int instri = 0; instri < instrs.Count - 5; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 1].OpCode == OpCodes.Ldfld && (instrs[instri + 1].Operand as FieldReference)?.FullName == lookoutTalkFieldName
-                    && instrs[instri + 2].OpCode == OpCodes.Brfalse_S
-                    && instrs[instri + 3].OpCode == OpCodes.Ldarg_0
-                    && instrs[instri + 4].OpCode == OpCodes.Call && (instrs[instri + 4].Operand as MethodReference)?.GetID() == entityCollideCheckMethodID
-                    && (instrs[instri + 5].OpCode == OpCodes.Brfalse_S || instrs[instri + 5].OpCode == OpCodes.Br_S)
-                ) {
-                    indexTarget = instri;
-                    collideCheckMethodReference = instrs[instri + 4].Operand as MethodReference;
-                    break;
-                }
-            }
+            MethodReference m_CollideCheck = cursor.Clone().GotoNext(instr => instr.MatchCall("Monocle.Entity", "CollideCheck")).Next.Operand as MethodReference;
+            cursor.Next.OpCode = OpCodes.Nop; // This instr may have a break instruction pointing to it
+            while (cursor.TryGotoNext(instr => instr.Next != null))
+                cursor.Remove();
 
-            if (indexTarget < 0)
-                return;
 
-            // if (true || !CollideCheck<Solid>())  <-- after patch
-            //     return;
-            // this.Remove((Component) this.talk);
-            // this.talk = (TalkComponent) null;
-            ILProcessor il = method.Body.GetILProcessor();
-            instrs[indexTarget].OpCode = OpCodes.Nop;
-            instrs[indexTarget + 1] = il.Create(OpCodes.Ldc_I4_0);
-
-            // insert at begin
+            // Reset to the top and insert
             // if (talk.UI != null) {
             //     talk.UI.Visible = !CollideCheck<Solid>();
             // }
-            int indexInsert = 0;
-            Instruction startIns = instrs[0];
+            cursor.Goto(0);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_talk);
+            cursor.Emit(OpCodes.Ldfld, f_TalkComponent_UI);
+            cursor.Emit(OpCodes.Brfalse_S, cursor.Next);
 
-            instrs.Insert(indexInsert, il.Create(OpCodes.Ldarg_0));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Brfalse_S, startIns));
-
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.DeclaringType.FindField("talk")));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldfld, method.Module.GetType("Celeste.TalkComponent").FindField("UI")));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldarg_0));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Call, collideCheckMethodReference));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ldc_I4_0));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Ceq));
-            instrs.Insert(++indexInsert, il.Create(OpCodes.Stfld, method.Module.GetType("Monocle.Entity").FindField("Visible")));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_talk);
+            cursor.Emit(OpCodes.Ldfld, f_TalkComponent_UI);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_CollideCheck);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ceq);
+            cursor.Emit(OpCodes.Stfld, f_Entity_Visible);
         }
 
-        public static void PatchDecalUpdate(MethodDefinition method, CustomAttribute attrib) {
-            if (!method.HasBody)
-                return;
+        public static void PatchDecalUpdate(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_hideRange = context.Method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = context.Method.DeclaringType.FindField("showRange");
 
-            FieldDefinition f_hideRange = method.DeclaringType.FindField("hideRange");
-            FieldDefinition f_showRange = method.DeclaringType.FindField("showRange");
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchLdcR4(32f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_hideRange);
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 32f) {
-                    instrs.RemoveAt(instri);
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_hideRange));
-                }
-
-                if (instr.OpCode == OpCodes.Ldc_R4 && ((float) instr.Operand) == 48f) {
-                    instrs.RemoveAt(instri);
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_showRange));
-                }
-            }
+            cursor.GotoNext(instr => instr.MatchLdcR4(48f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_showRange);
         }
 
-        public static void PatchAreaCompleteMusic(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_playCustomCompleteScreenMusic = method.DeclaringType.FindMethod("System.Boolean playCustomCompleteScreenMusic()");
+        public static void PatchAreaCompleteMusic(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_playCustomCompleteScreenMusic = context.Method.DeclaringType.FindMethod("System.Boolean playCustomCompleteScreenMusic()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            int injectionPoint = -1;
-            for (int instri = 0; instri < instrs.Count - 2; instri++) {
-                if (instrs[instri].OpCode == OpCodes.Call && (instrs[instri].Operand as MethodReference).DeclaringType.Name == "RunThread") {
-                    injectionPoint = instri + 1;
-                }
+            ILCursor cursor = new ILCursor(context);
 
-                if (injectionPoint != -1
-                    && instrs[instri].OpCode == OpCodes.Ldnull
-                    && instrs[instri + 1].OpCode == OpCodes.Ldc_I4_1
-                    && instrs[instri + 2].OpCode == OpCodes.Call && (instrs[instri + 2].Operand as MethodReference).Name == "SetAmbience") {
-
-                    // we want to inject code just after RunThread.Start (which position was saved earlier) that calls playCustomCompleteScreenMusic(),
-                    // and sends execution to Audio.SetAmbience(null) if it returned true (skipping over the vanilla code playing endscreen music).
-
-                    Instruction target = instrs[instri];
-
-                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Call, m_playCustomCompleteScreenMusic));
-                    instrs.Insert(injectionPoint++, il.Create(OpCodes.Brtrue_S, target));
-                    break;
-                }
-            }
+            // we want to inject code just after RunThread.Start that calls playCustomCompleteScreenMusic(),
+            // and sends execution to Audio.SetAmbience(null) if it returned true (skipping over the vanilla code playing endscreen music).
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.RunThread", "Start"));
+            Instruction breakTarget = cursor.Clone().GotoNext(
+                instr => instr.MatchLdnull(),
+                instr => instr.OpCode == OpCodes.Ldc_I4_1,
+                instr => instr.MatchCall("Celeste.Audio", "SetAmbience")
+            ).Next;
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_playCustomCompleteScreenMusic);
+            cursor.Emit(OpCodes.Brtrue_S, breakTarget);
         }
 
         public static void PatchAreaCompleteVersionNumberAndVariants(ILContext il, CustomAttribute attrib) {
@@ -2949,7 +2302,7 @@ namespace MonoMod {
 
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
-            PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0")?.FindMethod("<AttackSequence>b__1"));
+            PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
 
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)

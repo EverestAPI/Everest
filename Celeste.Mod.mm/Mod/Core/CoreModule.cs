@@ -54,15 +54,6 @@ namespace Celeste.Mod.Core {
 
             // If we're running in an environment that prefers this flag, forcibly enable them.
             Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
-
-            // If using FNA with DISABLE_THREADING, forcibly enable non-threaded GL.
-            // Note: This isn't accurate, as it doesn't check which GL device is being used.
-            Type t_OpenGLDevice = typeof(Game).Assembly.GetType("Microsoft.Xna.Framework.Graphics.OpenGLDevice");
-            if (typeof(Game).Assembly.FullName.Contains("FNA") &&
-                t_OpenGLDevice != null &&
-                t_OpenGLDevice.GetMethod("ForceToMainThread", BindingFlags.NonPublic | BindingFlags.Instance) == null) {
-                Settings.NonThreadedGL = true;
-            }
         }
 
         public override void SaveSettings() {
@@ -167,23 +158,6 @@ namespace Celeste.Mod.Core {
                 Celeste.HudTarget.Dispose();
                 Celeste.HudTarget = null;
             }
-
-            if (Settings.NonThreadedGL) {
-                GFX.Load();
-                MTN.Load();
-                GFX.LoadData();
-                MTN.LoadData();
-            }
-            // Otherwise loaded in GameLoader.LoadThread
-
-            // Celeste 1.3.0.0 gets rid of those.
-            for (int i = 0; i <= 29; i++)
-                GFX.Game[$"objects/checkpoint/flag{i:D2}"] = GFX.Game["util/pixel"];
-            for (int i = 0; i <= 27; i++)
-                GFX.Game[$"objects/checkpoint/obelisk{i:D2}"] = GFX.Game["util/pixel"];
-
-            GFX.Gui["fileselect/assist"] = GFX.Game["util/pixel"];
-            GFX.Gui["fileselect/cheatmode"] = GFX.Game["util/pixel"];
         }
 
         private void patchNLuaAssemblyGetTypes(ILContext il) {

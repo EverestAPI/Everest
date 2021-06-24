@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -16,6 +17,14 @@ namespace Celeste.Mod {
         private static readonly HashSet<object> Enqueued = new HashSet<object>();
         private static readonly Dictionary<object, object> EnqueuedWaiting = new Dictionary<object, object>();
         public static Thread MainThread { get; private set; }
+        public static bool UpdatedOnce { get; private set; }
+
+        public static bool Boost;
+
+        private Stopwatch Stopwatch = new Stopwatch();
+
+        public static bool IsMainThread => MainThread == Thread.CurrentThread;
+
 
         public MainThreadHelper(Game game)
             : base(game) {
@@ -26,7 +35,7 @@ namespace Celeste.Mod {
         }
 
         public static void Do(Action a) {
-            if (Thread.CurrentThread == MainThread) {
+            if (IsMainThread) {
                 a();
                 return;
             }
@@ -37,7 +46,7 @@ namespace Celeste.Mod {
         }
 
         public static void Do(object key, Action a) {
-            if (Thread.CurrentThread == MainThread) {
+            if (IsMainThread) {
                 a();
                 return;
             }
@@ -56,14 +65,14 @@ namespace Celeste.Mod {
         }
 
         public static MaybeAwaitable<T> Get<T>(Func<T> f) {
-            if (Thread.CurrentThread == MainThread) {
+            if (IsMainThread) {
                 return new MaybeAwaitable<T>(f());
             }
 
             lock (Queue) {
                 T result = default;
                 Task<T> proxy = new Task<T>(() => result);
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
+                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter(), () => UpdatedOnce);
 
                 Queue.Enqueue(() => {
                     result = f != null ? f.Invoke() : default;
@@ -75,7 +84,7 @@ namespace Celeste.Mod {
         }
 
         public static MaybeAwaitable<T> Get<T>(object key, Func<T> f) {
-            if (Thread.CurrentThread == MainThread) {
+            if (IsMainThread) {
                 return new MaybeAwaitable<T>(f());
             }
 
@@ -85,7 +94,7 @@ namespace Celeste.Mod {
 
                 T result = default;
                 Task<T> proxy = new Task<T>(() => result);
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
+                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter(), () => UpdatedOnce);
                 EnqueuedWaiting[key] = awaitable;
 
                 Queue.Enqueue(() => {
@@ -102,10 +111,12 @@ namespace Celeste.Mod {
         }
 
         public override void Update(GameTime gameTime) {
+            UpdatedOnce = true;
+
             if (Queue.Count > 0) {
                 // run as many tasks as possible in 10 milliseconds (a frame is ~16ms).
-                Stopwatch stopwatch = Stopwatch.StartNew();
-                while (stopwatch.ElapsedMilliseconds < 10) {
+                Stopwatch.Restart();
+                while (Boost || Stopwatch.ElapsedMilliseconds < 10) {
                     Action action = null;
                     lock (Queue) {
                         if (Queue.Count > 0) {
@@ -116,7 +127,7 @@ namespace Celeste.Mod {
                         break;
                     action.Invoke();
                 }
-                stopwatch.Stop();
+                Stopwatch.Stop();
             }
 
             if (gameTime == null)
@@ -135,6 +146,7 @@ namespace Celeste.Mod {
             _Awaiter = new MaybeAwaiter();
             _Awaiter._IsImmediate = true;
             _Awaiter._Result = result;
+            _Awaiter._CanGetResult = null;
         }
 
         public MaybeAwaitable(TaskAwaiter<T> task) {
@@ -142,6 +154,15 @@ namespace Celeste.Mod {
             _Awaiter._IsImmediate = false;
             _Awaiter._Result = default;
             _Awaiter._Task = task;
+            _Awaiter._CanGetResult = null;
+        }
+
+        public MaybeAwaitable(TaskAwaiter<T> task, Func<bool> canGetResult) {
+            _Awaiter = new MaybeAwaiter();
+            _Awaiter._IsImmediate = false;
+            _Awaiter._Result = default;
+            _Awaiter._Task = task;
+            _Awaiter._CanGetResult = canGetResult;
         }
 
         public MaybeAwaiter GetAwaiter() => _Awaiter;
@@ -152,12 +173,15 @@ namespace Celeste.Mod {
             internal bool _IsImmediate;
             internal T _Result;
             internal TaskAwaiter<T> _Task;
+            internal Func<bool> _CanGetResult;
 
             public bool IsCompleted => _IsImmediate || _Task.IsCompleted;
 
             public T GetResult() {
                 if (_IsImmediate)
                     return _Result;
+                if (!(_CanGetResult?.Invoke() ?? true))
+                    throw new Exception("Cannot obtain the result - potential deadlock!");
                 return _Task.GetResult();
             }
 

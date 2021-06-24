@@ -156,11 +156,13 @@ namespace Celeste.Mod {
         /// <summary>
         /// Reads a DecalRegistry.xml file's contents
         /// </summary>
-        public static void ReadDecalRegistryXml(string fileContents) {
+        public static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(string fileContents) {
             // XmlElement file = Calc.LoadXML(path)["decals"];
             XmlDocument doc = new XmlDocument();
             doc.LoadXml(fileContents);
             XmlElement file = doc["decals"];
+
+            List<KeyValuePair<string, DecalInfo>> elements = new();
             foreach (XmlNode node in file) {
                 if (node is XmlElement decal) {
                     string decalPath = decal.Attr("path", null).ToLower();
@@ -180,19 +182,26 @@ namespace Celeste.Mod {
                         }
                     }
 
-                    if (RegisteredDecals.ContainsKey(decalPath)) {
-                        Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
-                        RegisteredDecals[decalPath] = info;
-                    } else {
-                        Logger.Log("Decal Registry", $"Registered decal {decalPath}");
-                        RegisteredDecals.Add(decalPath, info);
-                    }
-
+                    elements.Add(new KeyValuePair<string, DecalInfo>(decalPath, info));
                 }
+            }
+
+            return elements;
+        }
+
+        public static void RegisterDecal(string decalPath, DecalInfo info) {
+            if (RegisteredDecals.ContainsKey(decalPath)) {
+                Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
+                RegisteredDecals[decalPath] = info;
+            } else {
+                Logger.Log("Decal Registry", $"Registered decal {decalPath}");
+                RegisteredDecals.Add(decalPath, info);
             }
         }
 
         public static void LoadDecalRegistry() {
+            List<KeyValuePair<string, DecalInfo>> completeDecalRegistry = new();
+
             foreach (ModAsset asset in
                 Everest.Content.Mods
                 .Select(mod => mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) ? asset : null)
@@ -202,7 +211,56 @@ namespace Celeste.Mod {
                 using (StreamReader reader = new StreamReader(asset.Stream)) {
                     fileContents = reader.ReadToEnd();
                 }
-                ReadDecalRegistryXml(fileContents);
+                completeDecalRegistry.AddRange(ReadDecalRegistryXml(fileContents));
+            }
+
+            // We can treat this as if we only had a single, full decal registry, to keep consistency between files
+            ApplyDecalRegistry(completeDecalRegistry);
+        }
+
+        public static void ApplyDecalRegistry(List<KeyValuePair<string, DecalInfo>> elements) {
+            // Sort by priority in this order: folders -> matching paths -> single decal
+            elements.Sort((a, b) => {
+                int scoreA = a.Key[a.Key.Length - 1] switch {
+                    '/' => 2,
+                    '*' => 1,
+                    _ => 0,
+                };
+                int scoreB = b.Key[b.Key.Length - 1] switch {
+                    '/' => 2,
+                    '*' => 1,
+                    _ => 0,
+                };
+                // If both end with '*', then we can still be more precise and sort for the best match
+                return (scoreA == scoreB && scoreA == 1) ? a.Key.Length - b.Key.Length : scoreB - scoreA;
+            });
+
+            foreach (KeyValuePair<string, DecalInfo> pair in elements) {
+                string decalPath = pair.Key;
+                DecalInfo info = pair.Value;
+                if (decalPath.EndsWith("*") || decalPath.EndsWith("/")) {
+                    // Removing the '/' made the path wrong
+                    decalPath = decalPath.TrimEnd('*');
+                    int pathLength = decalPath.Length;
+
+                    foreach (string subDecalPath in
+                        GFX.Game.GetTextures().Keys
+                        .GroupBy(
+                            s => s.StartsWith("decals/") ?
+                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') :
+                                null,
+                            (s, matches) => s
+                        )
+                        .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
+                    ) {
+                        // Decals in subfolders are considered as unmatched
+                        if (!subDecalPath.Remove(0, pathLength).Contains("/"))
+                            RegisterDecal(subDecalPath, info);
+                    }
+                } else {
+                    // Single decal registered
+                    RegisterDecal(decalPath, info);
+                }
             }
         }
 

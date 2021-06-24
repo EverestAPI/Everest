@@ -75,8 +75,6 @@ namespace Celeste {
             RemoveSelf();
         }
 
-        private static bool _IsChaseEnd(bool value, BadelineOldsite self)
-            => (self as patch_BadelineOldsite).IsChaseEnd(value);
         public bool IsChaseEnd(bool value) {
             Level level = Scene as Level;
             if (level.Session.Area.GetLevelSet() == "Celeste")
@@ -88,8 +86,6 @@ namespace Celeste {
             return false;
         }
 
-        private static bool _CanChangeMusic(bool value, BadelineOldsite self)
-            => (self as patch_BadelineOldsite).CanChangeMusic(value);
         public bool CanChangeMusic(bool value) {
             Level level = Scene as Level;
             if (level.Session.Area.GetLevelSet() == "Celeste")

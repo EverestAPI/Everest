@@ -238,6 +238,8 @@ namespace Celeste.Mod.UI {
             itemCount = 0;
             matchCount = 0;
 
+            ((patch_TextMenu) menu.rightMenu).BatchMode = true;
+
             foreach (TextMenu.Item item in items)
                 menu.rightMenu.Remove(item);
             items.Clear();
@@ -362,6 +364,8 @@ namespace Celeste.Mod.UI {
             if (resultHeader != null) {
                 resultHeader.Title = string.Format(itemCount == 1 ? Dialog.Get("maplist_results_singular") : Dialog.Get("maplist_results_plural"), itemCount);
             }
+
+            ((patch_TextMenu) menu.rightMenu).BatchMode = false;
 
             // compute a delay so that options don't take more than a second to show up if many mods are installed.
             float delayBetweenOptions = 0.03f;

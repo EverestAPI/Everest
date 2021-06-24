@@ -115,4 +115,10 @@ namespace Celeste.Mod {
         public SettingIgnoreAttribute() {
         }
     }
+
+    /// <summary>
+    /// When used as a <see cref="EverestModuleSettings"/> property type, create a submenu based on this type.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
+    public class SettingSubMenuAttribute : Attribute { }
 }

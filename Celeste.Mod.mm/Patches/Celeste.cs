@@ -243,10 +243,23 @@ https://discord.gg/6qjaePQ");
             // DON'T! The original method is orig_LoadContent
             bool firstLoad = this.firstLoad;
 
+            /* Vanilla calls GFX.Load and MTN.Load in LoadContent on non-Stadia platforms.
+             * Sadly we can't load them in GameLoader.LoadThread as mods rely on them in LoadContent.
+             *
+             * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
+             * Spawning a new thread just to wait for it to end doesn't make much sense,
+             * BUT delaying the slow texture load ops might get the game window to appear sooner.
+             * -ade
+             */
+
+            patch_VirtualTexture.ForceQueuedLoad = true;
+
             orig_LoadContent();
 
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
+
+            patch_VirtualTexture.ForceQueuedLoad = false;
 
             Everest._ContentLoaded = true;
         }

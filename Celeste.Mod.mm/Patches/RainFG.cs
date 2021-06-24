@@ -11,8 +11,8 @@ namespace Celeste {
         [PatchRainFGRender] // ... except for manually manipulating the method via MonoModRules
         public new extern void Render(Scene scene);
 
-        private static Color _GetColor(string orig, patch_RainFG self) {
-            return self.Color ?? Calc.HexToColor(orig);
+        private Color _GetColor(string orig) {
+            return Color ?? Calc.HexToColor(orig);
         }
 
     }

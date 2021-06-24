@@ -527,7 +527,8 @@ namespace Celeste.Mod {
             public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
 
-                if (path.StartsWith(".git/") || path.StartsWith("__MACOSX/"))
+                if (path.StartsWith(".git/") || path.StartsWith("__MACOSX/") ||
+                    Path.GetFileName(path).StartsWith("._"))
                     return false;
 
                 if (metadata != null) {
@@ -798,7 +799,8 @@ namespace Celeste.Mod {
                         using (StreamReader reader = new StreamReader(next.Stream)) {
                             fileContents = reader.ReadToEnd();
                         }
-                        DecalRegistry.ReadDecalRegistryXml(fileContents);
+                        // Reload decal registry entirely, from every mod, so that decal attributes apply in the same order than on startup consistenly
+                        DecalRegistry.LoadDecalRegistry();
                         AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {

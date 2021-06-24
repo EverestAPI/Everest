@@ -188,6 +188,8 @@ namespace Celeste {
                 if (MInput.Keyboard.Check(Keys.LeftControl) && MInput.Keyboard.Pressed(Keys.S)) {
                     // Ctrl+S: change the default starting level set to the currently selected one.
                     CoreModule.Settings.DefaultStartingLevelSet = newGameLevelSetPicker.NewGameLevelSet;
+                    if (CoreModule.Settings.SaveDataFlush ?? false)
+                        CoreModule.Instance.ForceSaveDataFlush++;
                     CoreModule.Instance.SaveSettings();
                     Audio.Play("event:/new_content/ui/rename_entry_accept_locked");
                 }

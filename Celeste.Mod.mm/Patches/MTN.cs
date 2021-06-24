@@ -4,13 +4,15 @@ using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
 namespace Celeste {
-    class patch_MTN {
+    static class patch_MTN {
+
         // We don't need an Unload() because the vanilla MTN disposes with the Atlas we use
 
         public static extern void orig_UnloadData();
