@@ -78,6 +78,8 @@ namespace Celeste.Mod.UI {
         }
 
         private void ReloadItems() {
+            ((patch_TextMenu) menu).BatchMode = true;
+
             foreach (TextMenu.Item item in items)
                 menu.Remove(item);
             items.Clear();
@@ -148,6 +150,8 @@ namespace Celeste.Mod.UI {
                 items.Add(button);
             }
 
+            ((patch_TextMenu) menu).BatchMode = false;
+            
             // compute a delay so that options don't take more than a second to show up if many mods are installed.
             float delayBetweenOptions = 0.03f;
             if (items.Count > 0)

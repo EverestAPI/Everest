@@ -198,9 +198,9 @@ namespace Celeste {
         [PatchOuiChapterPanelRender] // ... except for manually manipulating the method via MonoModRules
         public new extern void Render();
 
-        private static string _ModCardTexture(string textureName, patch_OuiChapterPanel self) {
+        private string _ModCardTexture(string textureName) {
             // First, check for area (chapter) specific card textures.
-            string area = AreaData.Areas[self.Area.ID].Name;
+            string area = AreaData.Areas[Area.ID].Name;
             string areaTextureName = textureName.Replace("areaselect/card", $"areaselect/{area}_card");
             if (GFX.Gui.Has(areaTextureName)) {
                 textureName = areaTextureName;

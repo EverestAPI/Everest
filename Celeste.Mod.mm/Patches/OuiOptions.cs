@@ -6,7 +6,6 @@ using MonoMod;
 using System.Collections;
 
 namespace Celeste {
-    [MonoModIfFlag("V2:Input")]
     class patch_OuiOptions : OuiOptions {
         public extern IEnumerator orig_Leave(Oui next);
         public override IEnumerator Leave(Oui next) {

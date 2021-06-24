@@ -4,9 +4,7 @@ using MonoMod;
 using System.Collections.Generic;
 
 namespace Monocle {
-    [MonoModIfFlag("V2:Input")]
-    [MonoModPatch("VirtualJoystick")]
-    public class patch_VirtualJoystick_InputV2 : VirtualJoystick {
+    public class patch_VirtualJoystick : VirtualJoystick {
 
         public List<Node> Nodes;
 
@@ -16,12 +14,12 @@ namespace Monocle {
         [MonoModIgnore]
         public new Vector2 Value { get; private set; }
 
-        public patch_VirtualJoystick_InputV2(bool normalized)
+        public patch_VirtualJoystick(bool normalized)
             : base(new Binding(), new Binding(), new Binding(), new Binding(), 0, 0f, OverlapBehaviors.TakeNewer) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public patch_VirtualJoystick_InputV2(bool normalized, params Node[] nodes)
+        public patch_VirtualJoystick(bool normalized, params Node[] nodes)
             : base(new Binding(), new Binding(), new Binding(), new Binding(), 0, 0f, OverlapBehaviors.TakeNewer) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
@@ -101,12 +99,10 @@ namespace Monocle {
 
         // Copied from Celeste 1.3.3.11
 
-        [MonoModIfFlag("V2:Input")]
         public abstract class Node : VirtualInputNode {
             public abstract Vector2 Value { get; }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftStick : Node {
             public int GamepadIndex;
 
@@ -120,7 +116,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightStick : Node {
             public int GamepadIndex;
 
@@ -134,7 +129,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadDpad : Node {
             public int GamepadIndex;
 
@@ -161,7 +155,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class KeyboardKeys : Node {
             public OverlapBehaviors OverlapBehavior;
 

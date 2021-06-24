@@ -10,7 +10,6 @@ namespace Celeste.Mod.Helpers {
     /// We can't just serialize them as properties with the appropriate `get` and `set` accessors because
     /// xml deserializes IEnumerables by getting the object and then using the `Add` method to add to it.
     /// </summary>
-    [MonoModIfFlag("V2:Input")]
     public class VanillaMouseBindings {
 
         public List<patch_MInput.patch_MouseData.MouseButtons> Left;

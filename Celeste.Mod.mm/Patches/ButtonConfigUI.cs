@@ -11,9 +11,7 @@ using System;
 using System.Collections.Generic;
 
 namespace Celeste {
-    [MonoModIfFlag("V2:Input")]
-    [MonoModPatch("ButtonConfigUI")]
-    public class patch_ButtonConfigUI_InputV2 : ButtonConfigUI {
+    public class patch_ButtonConfigUI : ButtonConfigUI {
 
         private List<Buttons> all;
         protected List<Buttons> All => all;
@@ -41,6 +39,8 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchInputConfigReset]
         public new extern void Update();
+
+        #region Legacy Input
 
         /// <summary>
         /// ForceRemap all important mappings which are fully unassigned and require mappings when leaving the menu.
@@ -109,6 +109,8 @@ namespace Celeste {
                 boundBtns.Add(defaultBtn);
             return boundBtns;
         }
+
+        #endregion
 
         /// <summary>
         /// Rebuilds the button mapping menu. Should clear the menu and add back all options.
@@ -207,6 +209,8 @@ namespace Celeste {
         [MakeMethodPublic]
         public extern void AddRemap(Keys key);
 
+        #region Legacy Input
+
         [Obsolete("This method exists so that older mods can still be loaded but should no longer be used.")]
         private void Remap(int mapping) {
             if (Input.GuiInputController()) {
@@ -259,6 +263,8 @@ namespace Celeste {
         protected virtual List<Buttons> GetRemapList(int remapping, Buttons newBtn) {
             return null;
         }
+
+        #endregion
 
     }
 }

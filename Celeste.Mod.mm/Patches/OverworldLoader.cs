@@ -13,31 +13,6 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        private object _LoadThread_Lock;
-        private Thread _LoadThread_MainThread;
-
-        public extern void orig_Begin();
-        public override void Begin() {
-            _LoadThread_Lock = new object();
-            _LoadThread_MainThread = Thread.CurrentThread;
-
-            orig_Begin();
-
-            if (CoreModule.Settings.NonThreadedGL) {
-                LoadThread();
-            }
-        }
-
-        private extern void orig_LoadThread();
-        private void LoadThread() {
-            lock (_LoadThread_Lock) {
-                if (CoreModule.Settings.NonThreadedGL && Thread.CurrentThread != _LoadThread_MainThread)
-                    return;
-
-                orig_LoadThread();
-            }
-        }
-
         [MonoModIgnore] // don't change anything in the method...
         [PatchTotalHeartGemChecks] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
         private extern void CheckVariantsPostcardAtLaunch();

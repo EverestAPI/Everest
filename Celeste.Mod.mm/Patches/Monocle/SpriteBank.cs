@@ -58,13 +58,14 @@ namespace Monocle {
             string modAssetPath = filename.Substring(0, filename.Length - 4).Replace('\\', '/');
 
             // Find all mod files that match this one, EXCEPT for the "shadow structure" asset - the unique "Graphics/Sprites" asset.
-            IEnumerable<ModAsset> modAssets;
+            List<ModAsset> modAssets;
             lock (Everest.Content.Map)
                 modAssets = Everest.Content.Map
                     .Where((a) => a.Value.Type == typeof(AssetTypeSpriteBank) &&
                         a.Value.PathVirtual.Equals(modAssetPath) &&
                         !a.Value.PathVirtual.Equals(a.Key)) // Filter out the unique asset
-                    .Select(kvp => kvp.Value);
+                    .Select(kvp => kvp.Value)
+                    .ToList();
 
             foreach (ModAsset modAsset in modAssets) {
                 string modPath = modAsset.Source.Mod.PathDirectory;

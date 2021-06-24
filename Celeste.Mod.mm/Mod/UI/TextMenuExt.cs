@@ -227,7 +227,7 @@ namespace Celeste {
                 // gradually make the sub-header fade in or out. (~333ms fade)
                 float targetAlpha = FadeVisible ? 1 : 0;
                 if (uneasedAlpha != targetAlpha) {
-                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.DeltaTime * 3f);
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
 
                     if (FadeVisible)
                         Alpha = Ease.SineOut(uneasedAlpha);
@@ -336,7 +336,7 @@ namespace Celeste {
 
             public override void LeftPressed() {
                 if (Input.MenuLeft.Repeating)
-                    fastMoveTimer += Engine.DeltaTime * 8;
+                    fastMoveTimer += Engine.RawDeltaTime * 8;
                 else
                     fastMoveTimer = 0;
 
@@ -353,7 +353,7 @@ namespace Celeste {
 
             public override void RightPressed() {
                 if (Input.MenuRight.Repeating)
-                    fastMoveTimer += Engine.DeltaTime * 8;
+                    fastMoveTimer += Engine.RawDeltaTime * 8;
                 else
                     fastMoveTimer = 0;
 
@@ -779,9 +779,9 @@ namespace Celeste {
 
             public override void Update() {
                 if (Focused)
-                    ease = Calc.Approach(ease, 1f, Engine.DeltaTime * 4f);
+                    ease = Calc.Approach(ease, 1f, Engine.RawDeltaTime * 4f);
                 else
-                    ease = Calc.Approach(ease, 0f, Engine.DeltaTime * 4f);
+                    ease = Calc.Approach(ease, 0f, Engine.RawDeltaTime * 4f);
                 base.Update();
 
                 // ease check needed to eat the first input from Container
@@ -1206,7 +1206,7 @@ namespace Celeste {
             }
 
             public override void Update() {
-                MenuHeight = Calc.Approach(MenuHeight, _MenuHeight, Engine.DeltaTime * Math.Abs(MenuHeight - _MenuHeight) * 8f);
+                MenuHeight = Calc.Approach(MenuHeight, _MenuHeight, Engine.RawDeltaTime * Math.Abs(MenuHeight - _MenuHeight) * 8f);
 
                 sine += Engine.RawDeltaTime;
                 base.Update();

@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Text;
 using System.Xml;
 
 namespace Celeste.Mod {
@@ -146,10 +148,57 @@ namespace Celeste.Mod {
                 return text;
             // TODO: This trashes the GC and doesn't allow escaping!
             lock (_IDs) {
-                foreach (KeyValuePair<string, int> kvp in _IDs)
-                    text = text.Replace(":" + kvp.Key + ":", ((char) (Start + kvp.Value)).ToString());
+                StringBuilder resultBuilder = new StringBuilder();
+                int appendStartIndex = 0;
+                int head = -1, tail = 0;
+                // suppose text is "aaaa:1111:2222:bbbb", and only ":2222:" is emoji name
+                // H = head, T = tail, S = appendStartIndex
+                while (tail < text.Length) {
+                    if (text[tail] == ':') {
+                        if (head >= 0 && text[head] == ':') {
+                            /*
+                                    aaaa:1111:2222:bbbb
+                                (2) ^S  ^H   ^T   ^
+                                (4) ^S       ^H   ^T
+                                now head and tail are pointing to colons so we need to check if the text inside colons is an emoji name
+                            */
+                            string name = text.Substring(head + 1, (tail - 1) - (head + 1) + 1);
+                            if (_IDs.TryGetValue(name, out int value)) {
+                                // if it is, we need to first append the text before emoji
+                                resultBuilder.Append(text, appendStartIndex, (head - 1) - appendStartIndex + 1);
+                                // then append the emoji itself
+                                resultBuilder.Append((char) (Start + value));
+                                // the emoji name has been replaced, we need to advance tail pointer once
+                                // because the colon is used and can't belong to next emoji
+                                tail++;
+                                appendStartIndex = tail;
+                                /*
+                                        aaaa:1111:2222:bbbb
+                                    (5)          ^H   S^T
+                                */
+                            }
+                        }
+                        head = tail;
+                        /*
+                                aaaa:1111:2222:bbbb
+                            (1) ^S H^T   ^
+                            (3) ^S      H^T
+                            when tail is pointing to a colon, we need to let head also points to it
+                            so when tail moves to next colon, text[head..tail] can be an emoji name and we can check then replace it
+                        */
+                    }
+                    tail++;
+                }
+                /*
+                        aaaa:1111:2222:bbbb
+                    (6)               H^S  ^T
+                    there are still text left since last append, so we need to append them
+                */
+                if (appendStartIndex < text.Length) {
+                    resultBuilder.Append(text, appendStartIndex, (text.Length - 1) - appendStartIndex + 1);
+                }
+                return resultBuilder.ToString();
             }
-            return text;
         }
 
     }

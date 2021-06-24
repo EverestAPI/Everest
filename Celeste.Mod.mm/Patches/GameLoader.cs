@@ -87,13 +87,10 @@ namespace Celeste {
             Console.WriteLine(" - AUDIO LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 
-            if (!CoreModule.Settings.NonThreadedGL) {
-                GFX.Load();
-                MTN.Load();
-                GFX.LoadData();
-                MTN.LoadData();
-            }
-            // Otherwise loaded in CoreModule.LoadContent
+            GFX.Load();
+            MTN.Load();
+            GFX.LoadData();
+            MTN.LoadData();
 
             timer = Stopwatch.StartNew();
             Fonts.Prepare();
@@ -108,6 +105,12 @@ namespace Celeste {
             timer = Stopwatch.StartNew();
             AreaData.Load();
             Console.WriteLine(" - LEVELS LOAD: " + timer.ElapsedMilliseconds + "ms");
+            timer.Stop();
+
+            timer = Stopwatch.StartNew();
+            MainThreadHelper.Boost = true;
+            MainThreadHelper.Get(() => MainThreadHelper.Boost = false).GetResult();
+            Console.WriteLine(" - MAIN THREAD QUEUE REMAINDER LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 
             Console.WriteLine("DONE LOADING (in " + Celeste.LoadTimer.ElapsedMilliseconds + "ms)");

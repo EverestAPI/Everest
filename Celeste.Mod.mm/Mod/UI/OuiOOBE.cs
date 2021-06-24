@@ -326,6 +326,8 @@ namespace Celeste.Mod.UI {
             if (start != Overworld.StartMode.Titlescreen)
                 return false;
             if (CoreModule.Settings.CurrentVersion != null) {
+                if (CoreModule.Settings.SaveDataFlush ?? false)
+                    CoreModule.Instance.ForceSaveDataFlush++;
                 CoreModule.Instance.SaveSettings(); // be sure CurrentVersion is updated on startup.
                 return false;
             }

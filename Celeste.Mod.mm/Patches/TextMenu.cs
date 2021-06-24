@@ -15,10 +15,83 @@ namespace Celeste {
         // We're effectively in TextMenu, but still need to "expose" private fields to our mod.
         private List<Item> items;
 
+        private bool batchMode;
+        private float width;
+        private float leftColumnWidth;
+        private float rightColumnWidth;
+        private float height;
+        private bool recalculatingSizeInBatchMode;
+
         /// <summary>
         /// The items contained in this menu.
         /// </summary>
         public List<Item> Items => items;
+
+        /// <summary>
+        /// When a menu is in batch mode, adding / removing items will not recalculate its size to improve performance.
+        /// Size is recalculated immediately after batch mode is disabled.
+        /// </summary>
+        public bool BatchMode {
+            get => batchMode;
+            set {
+                batchMode = value;
+                if (!batchMode) {
+                    RecalculateSize();
+                }
+            }
+        }
+
+        /// <inheritdoc cref="TextMenu.Width"/>
+        public new float Width {
+            [MonoModReplace]
+            get {
+                if (batchMode && !recalculatingSizeInBatchMode) {
+                    RecalculateSize();
+                }
+                return width;
+            }
+            [MonoModReplace]
+            private set => width = value;
+        }
+
+        /// <inheritdoc cref="TextMenu.Height"/>
+        public new float Height {
+            [MonoModReplace]
+            get {
+                if (batchMode && !recalculatingSizeInBatchMode) {
+                    RecalculateSize();
+                }
+                return height;
+            }
+            [MonoModReplace]
+            private set => height = value;
+        }
+
+        /// <inheritdoc cref="TextMenu.LeftColumnWidth"/>
+        public new float LeftColumnWidth {
+            [MonoModReplace]
+            get {
+                if (batchMode && !recalculatingSizeInBatchMode) {
+                    RecalculateSize();
+                }
+                return leftColumnWidth;
+            }
+            [MonoModReplace]
+            private set => leftColumnWidth = value;
+        }
+
+        /// <inheritdoc cref="TextMenu.RightColumnWidth"/>
+        public new float RightColumnWidth {
+            [MonoModReplace]
+            get {
+                if (batchMode && !recalculatingSizeInBatchMode) {
+                    RecalculateSize();
+                }
+                return rightColumnWidth;
+            }
+            [MonoModReplace]
+            private set => rightColumnWidth = value;
+        }
 
         // Basically the same as Add(), but with an index parameter.
         /// <summary>
@@ -39,7 +112,9 @@ namespace Celeste {
             if (Selection == -1)
                 FirstSelection();
 
-            RecalculateSize();
+            if (!BatchMode) {
+                RecalculateSize();
+            }
             item.Added();
             return this;
         }
@@ -60,11 +135,13 @@ namespace Celeste {
             Remove(item.ValueWiggler);
             Remove(item.SelectWiggler);
 
-            RecalculateSize();
+            if (!BatchMode) {
+                RecalculateSize();
+            }
             return this;
         }
 
-        /// <inheritdoc cref="TextMenu.GetYOffsetOf(Item)"/>
+        /// <inheritdoc cref="TextMenu.GetYOffsetOf(TextMenu.Item)"/>
         [MonoModReplace]
         public new float GetYOffsetOf(Item targetItem) {
             // this is a small fix of the vanilla method to better support invisible menu items.
@@ -148,6 +225,39 @@ namespace Celeste {
             }
 
             return skippedItems;
+        }
+
+        /// <inheritdoc cref="TextMenu.Add(TextMenu.Item)"/>
+        [MonoModReplace]
+        public new TextMenu Add(Item item)
+        {
+            items.Add(item);
+            item.Container = this;
+            Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f));
+            Add(item.SelectWiggler = Wiggler.Create(0.25f, 3f));
+            item.ValueWiggler.UseRawDeltaTime = item.SelectWiggler.UseRawDeltaTime = true;
+            if (Selection == -1) {
+                FirstSelection();
+            }
+            if (!BatchMode) {
+                RecalculateSize();
+            }
+            item.Added();
+            return this;
+        }
+
+#pragma warning disable CS0626 // extern method with no attribute
+        public extern void orig_RecalculateSize();
+#pragma warning restore CS0626 // extern method with no attribute
+
+        public new void RecalculateSize() {
+            if (BatchMode) {
+                recalculatingSizeInBatchMode = true;
+            }
+            orig_RecalculateSize();
+            if (BatchMode) {
+                recalculatingSizeInBatchMode = false;
+            }
         }
 
         public class patch_LanguageButton : LanguageButton {
@@ -237,12 +347,6 @@ namespace Celeste {
             /// Set this property to true to force the Item to render even when off-screen.
             /// </summary>
             public virtual bool AlwaysRender { get; } = false;
-
-            /// <summary>
-            /// Items that have AboveAll set to true will render above those that have it set to false.
-            /// </summary>
-            [MonoModIfFlag("V1:Input")]
-            public new bool AboveAll = false;
         }
 
         public class patch_SubHeader : SubHeader {

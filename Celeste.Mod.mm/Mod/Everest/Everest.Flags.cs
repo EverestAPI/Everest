@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Xna.Framework;
+using System;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -38,6 +39,11 @@ namespace Celeste.Mod {
             public static bool PreferLazyLoading { get; private set; }
 
             /// <summary>
+            /// Does the environment (renderer, framework ,...) prefer threaded GL?
+            /// </summary>
+            public static bool PreferThreadedGL { get; private set; }
+
+            /// <summary>
             /// Does the environment (platform, ...) support loading runtime mods?
             /// </summary>
             public static bool SupportRuntimeMods { get; private set; }
@@ -62,6 +68,9 @@ namespace Celeste.Mod {
 
                 AvoidRenderTargets = IsMobile || Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
                 PreferLazyLoading = IsMobile;
+
+                // The way how FNA3D's D3D11 implementation handles threaded GL is hated by a few drivers.
+                PreferThreadedGL = !typeof(Game).Assembly.FullName.Contains("FNA");
 
                 SupportRuntimeMods = true;
                 SupportRelinkingMods = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*

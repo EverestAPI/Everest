@@ -5,17 +5,15 @@ using System.Collections.Generic;
 using Node = Monocle.VirtualAxis.Node;
 
 namespace Monocle {
-    [MonoModIfFlag("V2:Input")]
-    [MonoModPatch("VirtualIntegerAxis")]
-    public class patch_VirtualIntegerAxis_InputV2 : VirtualIntegerAxis {
+    public class patch_VirtualIntegerAxis : VirtualIntegerAxis {
 
         public List<Node> Nodes;
 
-        public patch_VirtualIntegerAxis_InputV2() {
+        public patch_VirtualIntegerAxis() {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public patch_VirtualIntegerAxis_InputV2(params Node[] nodes) {
+        public patch_VirtualIntegerAxis(params Node[] nodes) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
@@ -80,7 +78,7 @@ namespace Monocle {
             neg = Negative.Axis(GamepadIndex, Threshold) > 0f;
         }
 
-        public static implicit operator int(patch_VirtualIntegerAxis_InputV2 axis) => axis.Value;
+        public static implicit operator int(patch_VirtualIntegerAxis axis) => axis.Value;
 
     }
 }
