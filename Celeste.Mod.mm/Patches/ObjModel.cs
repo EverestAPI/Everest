@@ -9,6 +9,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 namespace Celeste {
     class patch_ObjModel : ObjModel {
@@ -130,6 +131,8 @@ namespace Celeste {
 
                 if (!MainThreadHelper.IsMainThread) {
                     // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
+                    while (!_Vertices_QueuedLoad.IsValid)
+                        Thread.Yield();
                     _Vertices_QueuedLoad.GetResult();
                     return true;
                 }

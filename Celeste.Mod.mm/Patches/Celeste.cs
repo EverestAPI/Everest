@@ -253,18 +253,21 @@ https://discord.gg/6qjaePQ");
              *
              * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
              * Spawning a new thread just to wait for it to end doesn't make much sense,
-             * BUT delaying the slow texture load ops might get the game window to appear sooner.
+             * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
              * -ade
              */
 
-            patch_VirtualTexture.ForceQueuedLoad = true;
+            patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = tex =>
+                // tex.Name != "glow-noise" &&
+                // !tex.Name.StartsWith(@"Graphics\Atlases\Overworld\");
+                true;
 
             orig_LoadContent();
 
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            patch_VirtualTexture.ForceQueuedLoad = false;
+            patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = null;
 
             Everest._ContentLoaded = true;
         }

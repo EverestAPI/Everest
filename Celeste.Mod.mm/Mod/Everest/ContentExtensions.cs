@@ -215,9 +215,9 @@ namespace Celeste.Mod {
                                     continue;
                                 }
 
-                                to[i + 0] = (byte) Math.Round(r * a / 255D);
-                                to[i + 1] = (byte) Math.Round(g * a / 255D);
-                                to[i + 2] = (byte) Math.Round(b * a / 255D);
+                                to[i + 0] = (byte) (r * a / 255D);
+                                to[i + 1] = (byte) (g * a / 255D);
+                                to[i + 2] = (byte) (b * a / 255D);
                                 to[i + 3] = a;
                             }
                         }
@@ -241,10 +241,10 @@ namespace Celeste.Mod {
                         if (a == 0 || a == 255)
                             continue;
 
-                        raw[i + 0] = (byte) Math.Round(raw[i + 0] * a / 255D);
-                        raw[i + 1] = (byte) Math.Round(raw[i + 1] * a / 255D);
-                        raw[i + 2] = (byte) Math.Round(raw[i + 2] * a / 255D);
-                        raw[i + 3] = a;
+                        raw[i + 0] = (byte) (raw[i + 0] * a / 255D);
+                        raw[i + 1] = (byte) (raw[i + 1] * a / 255D);
+                        raw[i + 2] = (byte) (raw[i + 2] * a / 255D);
+                        // raw[i + 3] = a;
                     }
                 }
             }

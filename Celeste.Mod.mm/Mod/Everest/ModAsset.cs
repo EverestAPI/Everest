@@ -1,8 +1,10 @@
-﻿using Ionic.Zip;
+﻿using Celeste.Mod.Helpers;
+using Ionic.Zip;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Celeste.Mod {
     public abstract class ModAsset {
@@ -45,6 +47,11 @@ namespace Celeste.Mod {
                 return stream;
             }
         }
+
+        /// <summary>
+        /// Can multiple streams to the same asset / source be obtained on multiple threads without any penalties?
+        /// </summary>
+        public virtual bool StreamAsync => true;
 
         /// <summary>
         /// The contents of the asset.
@@ -301,12 +308,23 @@ namespace Celeste.Mod {
 
         protected override void Open(out Stream stream, out bool isSection) {
             string path = Path;
-
+            ZipFile zip = Source.Zip;
             ZipEntry found = Entry;
+            object zipContext = null;
+
+            if (!MainThreadHelper.IsMainThread) {
+                // Apparently DotNetZip HATES multithreading.
+                found = null;
+                zipContext = Thread.CurrentThread;
+                zip = Source.OpenContextZip(zipContext);
+            }
+
             if (found == null) {
-                foreach (ZipEntry entry in Source.Zip.Entries) {
+                foreach (ZipEntry entry in zip.Entries) {
                     if (entry.FileName.Replace('\\', '/') == path) {
                         stream = entry.ExtractStream();
+                        if (zipContext != null)
+                            stream = new DisposeActionStream(stream, () => Source.CloseContextZip(zipContext));
                         isSection = false;
                         return;
                     }
@@ -316,7 +334,7 @@ namespace Celeste.Mod {
             if (found == null)
                 throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
 
-            stream = Entry.ExtractStream();
+            stream = found.ExtractStream();
             isSection = false;
         }
     }
