@@ -140,20 +140,22 @@ namespace Celeste {
 
             if (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread && queuedLoadLock == null) {
                 // Let's queue a reload onto the main thread and call it a day.
-                _Vertices_QueuedLoadLock = queuedLoadLock = new object();
-                _Vertices_QueuedLoad = MainThreadHelper.Get(() => {
-                    lock (queuedLoadLock) {
-                        if (_Vertices_QueuedLoadLock == null)
+                lock (queuedLoadLock = new object()) {
+                    _Vertices_QueuedLoadLock = queuedLoadLock;
+                    _Vertices_QueuedLoad = MainThreadHelper.Get(() => {
+                        lock (queuedLoadLock) {
+                            if (_Vertices_QueuedLoadLock == null)
+                                return Vertices;
+                            // Force-reload as we already returned true on the other thread.
+                            Vertices?.Dispose();
+                            // NOTE: If something dares to change verts on the fly, make it wait on any existing tasks, then make it force-reload.
+                            Vertices = new VertexBuffer(Engine.Graphics.GraphicsDevice, typeof(VertexPositionTexture), verts.Length, BufferUsage.None);
+                            Vertices.SetData(verts);
+                            _Vertices_QueuedLoadLock = null;
                             return Vertices;
-                        // Force-reload as we already returned true on the other thread.
-                        Vertices?.Dispose();
-                        // NOTE: If something dares to change verts on the fly, make it wait on any existing tasks, then make it force-reload.
-                        Vertices = new VertexBuffer(Engine.Graphics.GraphicsDevice, typeof(VertexPositionTexture), verts.Length, BufferUsage.None);
-                        Vertices.SetData(verts);
-                        _Vertices_QueuedLoadLock = null;
-                        return Vertices;
-                    }
-                });
+                        }
+                    });
+                }
                 return true;
             }
 

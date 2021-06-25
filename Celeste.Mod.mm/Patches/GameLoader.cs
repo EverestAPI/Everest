@@ -78,7 +78,7 @@ namespace Celeste {
         [MonoModReplace]
         private void LoadThread() {
             MInput.Disabled = true;
-            MainThreadHelper.Boost = 30;
+            MainThreadHelper.Boost = 25;
             Stopwatch timer = Stopwatch.StartNew();
 
             Audio.Init();
@@ -109,7 +109,7 @@ namespace Celeste {
             timer.Stop();
 
             timer = Stopwatch.StartNew();
-            MainThreadHelper.Boost = -1;
+            MainThreadHelper.Boost = 50;
             MainThreadHelper.Get(() => MainThreadHelper.Boost = 0).GetResult();
             Console.WriteLine(" - MAIN THREAD QUEUE REMAINDER LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();

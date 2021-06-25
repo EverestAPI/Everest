@@ -16,6 +16,9 @@ namespace Celeste.Mod {
         private static readonly Queue<Action> Queue = new Queue<Action>();
         private static readonly HashSet<object> Enqueued = new HashSet<object>();
         private static readonly Dictionary<object, object> EnqueuedWaiting = new Dictionary<object, object>();
+        private static int EnqueuedNew = 0;
+        private static readonly ManualResetEventSlim EnqueuedNextFrame = new ManualResetEventSlim(true);
+
         public static Thread MainThread { get; private set; }
         public static bool UpdatedOnce { get; private set; }
 
@@ -34,11 +37,19 @@ namespace Celeste.Mod {
             MainThread = Thread.CurrentThread;
         }
 
+        private static void PreventQueueOverload() {
+            if (!IsMainThread && Interlocked.Increment(ref EnqueuedNew) > 10) {
+                EnqueuedNextFrame.Wait(Boost > 0 ? Boost * 2 : 20);
+            }
+        }
+
         public static void Do(Action a) {
             if (IsMainThread) {
                 a();
                 return;
             }
+
+            PreventQueueOverload();
 
             lock (Queue) {
                 Queue.Enqueue(a);
@@ -50,6 +61,8 @@ namespace Celeste.Mod {
                 a();
                 return;
             }
+
+            PreventQueueOverload();
 
             lock (Queue) {
                 if (!Enqueued.Add(key))
@@ -73,6 +86,8 @@ namespace Celeste.Mod {
         }
 
         public static MaybeAwaitable<T> GetForceQueue<T>(Func<T> f) {
+            PreventQueueOverload();
+
             lock (Queue) {
                 MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(() => UpdatedOnce);
                 Queue.Enqueue(() => awaitable.SetResult(f != null ? f.Invoke() : default));
@@ -90,6 +105,8 @@ namespace Celeste.Mod {
         }
 
         public static MaybeAwaitable<T> GetForceQueue<T>(object key, Func<T> f) {
+            PreventQueueOverload();
+
             lock (Queue) {
                 if (!Enqueued.Add(key))
                     return (MaybeAwaitable<T>) EnqueuedWaiting[key];
@@ -117,8 +134,12 @@ namespace Celeste.Mod {
 
             if (Queue.Count > 0) {
                 // run as many tasks as possible in 10 milliseconds (a frame is ~16ms).
+                Interlocked.Exchange(ref EnqueuedNew, 0);
+                EnqueuedNextFrame.Reset();
+                int i = 0;
                 Stopwatch.Restart();
-                while (Boost < 0 || Stopwatch.ElapsedMilliseconds < (Boost != 0 ? Boost : 10)) {
+                while (Boost <= i || Stopwatch.ElapsedMilliseconds < (Boost != 0 ? Boost : 10)) {
+                    i--;
                     Action action = null;
                     lock (Queue) {
                         if (Queue.Count > 0) {
@@ -130,12 +151,20 @@ namespace Celeste.Mod {
                     action.Invoke();
                 }
                 Stopwatch.Stop();
+                EnqueuedNextFrame.Set();
             }
 
             if (gameTime == null)
                 return;
 
             base.Update(gameTime);
+        }
+
+        protected override void Dispose(bool disposing) {
+            base.Dispose(disposing);
+
+            EnqueuedNextFrame.Set();
+            EnqueuedNextFrame.Dispose();
         }
 
     }

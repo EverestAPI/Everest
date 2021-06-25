@@ -310,7 +310,7 @@ namespace Celeste.Mod {
             string path = Path;
             ZipFile zip = Source.Zip;
             ZipEntry found = Entry;
-            object zipContext = null;
+            Thread zipContext = null;
 
             if (!MainThreadHelper.IsMainThread) {
                 // Apparently DotNetZip HATES multithreading.

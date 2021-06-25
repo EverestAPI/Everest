@@ -192,33 +192,36 @@ namespace Monocle {
 
             // Let's queue a reload onto the main thread and call it a day.
             // Make sure to read the texture size immediately though!
-            object queuedLoadLock = _Texture_QueuedLoadLock = new object();
+            object queuedLoadLock;
+            lock (queuedLoadLock = new object()) {
+                _Texture_QueuedLoadLock = queuedLoadLock;
 
-            Func<Texture2D> _load = load;
-            load = () => {
-                Texture2D tex;
-                lock (queuedLoadLock) {
-                    if (_Texture_QueuedLoadLock == null)
-                        return Texture_Unsafe;
-                    // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
-                    Texture_Unsafe?.Dispose();
-                    Texture_Unsafe = tex = _load();
-                    _Texture_QueuedLoadLock = null;
-                }
-                if (_Texture_UnloadAfterReload) {
-                    tex?.Dispose();
-                    tex = Texture_Unsafe;
-                    // ... can anything even swap the texture here?
-                    Texture_Unsafe = null;
-                    tex?.Dispose();
-                    _Texture_UnloadAfterReload = false;
-                }
-                return tex;
-            };
+                Func<Texture2D> _load = load;
+                load = () => {
+                    Texture2D tex;
+                    lock (queuedLoadLock) {
+                        if (_Texture_QueuedLoadLock == null)
+                            return Texture_Unsafe;
+                        // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                        Texture_Unsafe?.Dispose();
+                        Texture_Unsafe = tex = _load();
+                        _Texture_QueuedLoadLock = null;
+                    }
+                    if (_Texture_UnloadAfterReload) {
+                        tex?.Dispose();
+                        tex = Texture_Unsafe;
+                        // ... can anything even swap the texture here?
+                        Texture_Unsafe = null;
+                        tex?.Dispose();
+                        _Texture_UnloadAfterReload = false;
+                    }
+                    return tex;
+                };
 
-            _Texture_QueuedLoad = (ForceQueuedLoad?.Invoke((VirtualTexture) (object) this) ?? false) ?
-                MainThreadHelper.GetForceQueue(load) :
-                MainThreadHelper.Get(load);
+                _Texture_QueuedLoad = (ForceQueuedLoad?.Invoke((VirtualTexture) (object) this) ?? false) ?
+                    MainThreadHelper.GetForceQueue(load) :
+                    MainThreadHelper.Get(load);
+            }
 
             if (wait || _Texture_Requesting)
                 _Texture_QueuedLoad.GetResult();
@@ -256,29 +259,31 @@ namespace Monocle {
             if ((Metadata?.StreamAsync ?? true) && (ForceTaskedParse?.Invoke((VirtualTexture) (object) this) ?? false) &&
                 !_Texture_Reloading && !_Texture_Requesting) {
                 Preload(true);
-                queuedLoadLock = _Texture_QueuedLoadLock = new object();
-                _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
-                    Texture2D tex;
-                    lock (queuedLoadLock) {
-                        if (_Texture_QueuedLoadLock == null)
-                            return Texture_Unsafe;
-                        // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
-                        _Texture_Reloading = true;
-                        Reload();
-                        if (_Texture_QueuedLoadLock == queuedLoadLock)
-                            _Texture_QueuedLoadLock = null;
-                        tex = Texture_Unsafe;
-                    }
-                    if (_Texture_UnloadAfterReload) {
-                        tex?.Dispose();
-                        tex = Texture_Unsafe;
-                        // ... can anything even swap the texture here?
-                        Texture_Unsafe = null;
-                        tex?.Dispose();
-                        _Texture_UnloadAfterReload = false;
-                    }
-                    return tex;
-                }).GetAwaiter());
+                lock (queuedLoadLock = new object()) {
+                    _Texture_QueuedLoadLock = queuedLoadLock;
+                    _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
+                        Texture2D tex;
+                        lock (queuedLoadLock) {
+                            if (_Texture_QueuedLoadLock == null)
+                                return Texture_Unsafe;
+                            // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                            _Texture_Reloading = true;
+                            Reload();
+                            if (_Texture_QueuedLoadLock == queuedLoadLock)
+                                _Texture_QueuedLoadLock = null;
+                            tex = Texture_Unsafe;
+                        }
+                        if (_Texture_UnloadAfterReload) {
+                            tex?.Dispose();
+                            tex = Texture_Unsafe;
+                            // ... can anything even swap the texture here?
+                            Texture_Unsafe = null;
+                            tex?.Dispose();
+                            _Texture_UnloadAfterReload = false;
+                        }
+                        return tex;
+                    }).GetAwaiter());
+                }
                 return;
             }
 

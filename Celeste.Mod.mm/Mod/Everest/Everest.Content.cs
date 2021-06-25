@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -367,8 +368,12 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly ZipFile Zip;
 
-        private Dictionary<object, ZipFile> ContextZips = new Dictionary<object, ZipFile>();
-        private Dictionary<object, int> ContextZipOpens = new Dictionary<object, int>();
+        private class ZipOpenCounter {
+            public int Value = 1;
+        }
+
+        private ConcurrentDictionary<Thread, ZipFile> ContextZips = new ConcurrentDictionary<Thread, ZipFile>();
+        private ConcurrentDictionary<Thread, ZipOpenCounter> ContextZipOpens = new ConcurrentDictionary<Thread, ZipOpenCounter>();
 
         public ZipModContent(string path) {
             Path = path;
@@ -377,31 +382,39 @@ namespace Celeste.Mod {
 
         public ZipFile OpenZip() => new ZipFile(Path);
 
-        public ZipFile OpenContextZip(object h) {
-            if (h == null)
-                h = Thread.CurrentThread;
-            lock (ContextZips) {
-                if (!ContextZips.TryGetValue(h, out ZipFile zip) || zip == null) {
-                    zip = new ZipFile(Path);
-                    ContextZips[h] = zip;
-                    ContextZipOpens[h] = 1;
-                } else {
-                    ContextZipOpens[h]++;
-                }
-                return zip;
-            }
+        public ZipFile OpenContextZip(Thread t) {
+            if (t == null)
+                t = Thread.CurrentThread;
+
+            Retry:
+            bool added = false;
+            ZipFile zip = ContextZips.GetOrAdd(t, t => {
+                added = true;
+                ContextZipOpens[t] = new ZipOpenCounter();
+                return new ZipFile(Path);
+            });
+
+            // If we obtained an existing zip and are the first to do so, check if it's still there.
+            if (!added && Interlocked.Increment(ref ContextZipOpens[t].Value) <= 1 && !ContextZips.ContainsKey(t))
+                goto Retry;
+
+            return zip;
         }
 
-        public void CloseContextZip(object h) {
-            if (h == null)
-                h = Thread.CurrentThread;
-            lock (ContextZips) {
-                if (ContextZips.TryGetValue(h, out ZipFile zip) && zip != null && --ContextZipOpens[h] <= 0) {
-                    QueuedTaskHelper.Do(zip, 4, () => {
+        public void CloseContextZip(Thread t) {
+            if (t == null)
+                t = Thread.CurrentThread;
+
+            if (Interlocked.Decrement(ref ContextZipOpens[t].Value) <= 0 &&
+                ContextZips.TryGetValue(t, out ZipFile zip)) {
+                // Allow reopens within a certain timeframe.
+                QueuedTaskHelper.Do(zip, 4, () => {
+                    if (ContextZipOpens[t].Value <= 0) {
                         zip?.Dispose();
-                        ContextZips[h] = null;
-                    });
-                }
+                        if (!ContextZips.TryRemove(t, out _))
+                            throw new Exception("Failed to remove disposed contexted zip!");
+                    }
+                });
             }
         }
 
