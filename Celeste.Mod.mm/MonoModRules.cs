@@ -412,8 +412,6 @@ namespace MonoMod {
         static TypeDefinition StrawberryRegistry;
         static InterfaceImplementation IStrawberry;
 
-        static TypeDefinition SaveData;
-
         static TypeDefinition FileProxy;
         static TypeDefinition DirectoryProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new Dictionary<string, MethodDefinition>();
@@ -425,6 +423,11 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
+
+            foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
+                foreach (AssemblyNameReference dep in mod.AssemblyReferences)
+                    if (dep.Name == "MonoMod" && MonoModder.Version < dep.Version)
+                        throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {dep.Version}+)");
 
             FMODStub = Environment.GetEnvironmentVariable("EVEREST_FMOD_STUB") == "1";
             MonoModRule.Flag.Set("FMODStub", FMODStub);
