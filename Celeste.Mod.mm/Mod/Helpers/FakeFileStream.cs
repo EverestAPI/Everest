@@ -8,7 +8,7 @@ namespace Celeste.Mod.Helpers {
 
         // I'm overcomplicating this. -ade
 
-        private readonly static string Dummy = Path.Combine(Path.GetTempPath(), "FileProxyStreamDummy.txt");
+        private readonly static string Dummy = Path.GetTempFileName();
 
         public readonly Stream Inner;
 
