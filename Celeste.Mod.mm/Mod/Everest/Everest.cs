@@ -258,7 +258,7 @@ namespace Celeste.Mod {
         [MonoModPatch("GetTotalRAMWindows")]
         [MonoModReplace]
         private static float GetTotalRAMWindowsReal() {
-            // Mono returns memory size in kilobytes as string.
+            // Windows returns memory size in kilobytes as string.
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(new ObjectQuery("SELECT * FROM CIM_OperatingSystem")))
                 foreach (ManagementObject item in searcher.Get())
                     if (long.TryParse(item["TotalVisibleMemorySize"]?.ToString() ?? "", out long size))

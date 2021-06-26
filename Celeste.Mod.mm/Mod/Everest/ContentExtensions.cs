@@ -381,14 +381,12 @@ namespace Celeste.Mod {
         [MonoModPatch("_LoadTextureRaw")]
         [MonoModReplace]
         private static unsafe void _LoadTextureRawFNA(GraphicsDevice gd, Stream stream, out int w, out int h, out byte[] data, out IntPtr dataPtr, bool gc) {
-            int length;
             if (gc) {
                 Texture2D.TextureDataFromStreamEXT(stream, out w, out h, out data);
                 dataPtr = IntPtr.Zero;
-                length = data.Length;
             } else {
                 data = new byte[0];
-                dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out length);
+                dataPtr = FNA3D_ReadImageStream(stream, out w, out h, out _);
             }
         }
 

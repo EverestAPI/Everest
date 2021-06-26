@@ -394,6 +394,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the attributed method to replace _initblk calls with the initblk opcode.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitblk))]
+    class PatchInitblkAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2420,6 +2426,14 @@ namespace MonoMod {
             // replace Files.Copy with _saveAndFlushToFile
             c.Next.OpCode = OpCodes.Call;
             c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlushToFile");
+        }
+
+        public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
+                c.Next.OpCode = OpCodes.Initblk;
+                c.Next.Operand = null;
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

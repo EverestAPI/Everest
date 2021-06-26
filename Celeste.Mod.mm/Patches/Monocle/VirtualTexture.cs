@@ -229,7 +229,13 @@ namespace Monocle {
             return false;
         }
 
+        // Same signature as .NET Core Unsafe variant, which also matches IL expectations.
+        // This should get replaced with initblk at the call site in Reload as PatchInitblk is used
+        [MonoModIgnore]
+        private static unsafe extern void _initblk(void* startAddress, byte value, uint byteCount);
+
         [MonoModReplace]
+        [PatchInitblk]
         internal override unsafe void Reload() {
             // Unload task might end up conflicting with Reload - let's instead force-unload in Load.
             // Unload();
@@ -436,13 +442,14 @@ namespace Monocle {
                             fixed (byte* bufferPin = buffer) {
                                 byte* to = bufferGC ? bufferPin : (byte*) bufferPtr;
                                 int* toI = (int*) to;
-                                int iB = 0;
-                                int iI = 0;
+                                uint iB = 0;
+                                uint iI = 0;
 
-                                while (iB < size) {
-                                    int linesize = from[pB];
+                                // Let's dupe the loop and move hasAlpha out, otherwise hasAlpha gets checked often.
+                                if (hasAlpha) {
+                                    while (iB < size) {
+                                        uint linesize = from[pB];
 
-                                    if (hasAlpha) {
                                         byte a = from[pB + 1];
                                         if (a > 0) {
                                             to[iB] = from[pB + 4];
@@ -454,30 +461,54 @@ namespace Monocle {
                                             toI[iI] = 0;
                                             pB += 2;
                                         }
-                                    } else {
+
+                                        if (linesize > 1) {
+                                            if (a == 0) {
+                                                _initblk(to + iB + 4, 0, linesize * 4 - 4);
+                                            } else {
+                                                for (uint jI = iI + 1, end = iI + linesize; jI < end; jI++)
+                                                    toI[jI] = toI[iI];
+                                            }
+                                        }
+
+                                        iI += linesize;
+                                        iB = iI * 4;
+
+                                        if (pB > bytesSize - 32) {
+                                            int offset = bytesSize - pB;
+                                            for (int oB = 0; oB < offset; oB++) {
+                                                from[oB] = from[pB + oB];
+                                            }
+                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            pB = 0;
+                                        }
+                                    }
+
+                                } else {
+                                    while (iB < size) {
+                                        uint linesize = from[pB];
+
                                         to[iB] = from[pB + 3];
                                         to[iB + 1] = from[pB + 2];
                                         to[iB + 2] = from[pB + 1];
                                         to[iB + 3] = 255;
                                         pB += 4;
-                                    }
 
-                                    if (linesize > 1) {
-                                        // memset would be nice but initblk is either IL-only or Unsafe.*-via-Core-only
-                                        for (int jI = iI + 1, end = iI + linesize; jI < end; jI++)
-                                            toI[jI] = toI[iI];
-                                    }
+                                        if (linesize > 1)
+                                            for (uint jI = iI + 1, end = iI + linesize; jI < end; jI++)
+                                                toI[jI] = toI[iI];
 
-                                    iI += linesize;
-                                    iB = iI * 4;
+                                        iI += linesize;
+                                        iB = iI * 4;
 
-                                    if (pB > bytesSize - 32) {
-                                        int offset = bytesSize - pB;
-                                        for (int oB = 0; oB < offset; oB++) {
-                                            from[oB] = from[pB + oB];
+                                        if (pB > bytesSize - 32) {
+                                            int offset = bytesSize - pB;
+                                            for (int oB = 0; oB < offset; oB++) {
+                                                from[oB] = from[pB + oB];
+                                            }
+                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            pB = 0;
                                         }
-                                        stream.Read(bytes, offset, bytesSize - offset);
-                                        pB = 0;
                                     }
                                 }
                             }
