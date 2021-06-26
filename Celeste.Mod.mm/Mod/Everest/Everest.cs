@@ -5,6 +5,7 @@ using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Mono.Cecil.Cil;
 using Monocle;
+using MonoMod;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MonoMod.RuntimeDetour.HookGen;
@@ -240,7 +241,7 @@ namespace Celeste.Mod {
             try {
                 SystemMemoryMB = Type.GetType("Mono.Runtime") != null ? GetTotalRAMMono() : GetTotalRAMWindows();
             } catch {
-                SystemMemoryMB = 0;
+                SystemMemoryMB = 0f;
             }
         }
 
@@ -250,12 +251,25 @@ namespace Celeste.Mod {
                 return pc.NextValue() / 1024f / 1024f;
         }
 
-        private static float GetTotalRAMWindows() {
+        [MonoModIgnore]
+        private static extern float GetTotalRAMWindows();
+
+        [MonoModIfFlag("PatchingWithoutMono")]
+        [MonoModPatch("GetTotalRAMWindows")]
+        [MonoModReplace]
+        private static float GetTotalRAMWindowsReal() {
             // Mono returns memory size in kilobytes as string.
             using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(new ObjectQuery("SELECT * FROM CIM_OperatingSystem")))
                 foreach (ManagementObject item in searcher.Get())
                     if (long.TryParse(item["TotalVisibleMemorySize"]?.ToString() ?? "", out long size))
                         return size / 1024f;
+            return 0f;
+        }
+
+        [MonoModIfFlag("PatchingWithMono")]
+        [MonoModPatch("GetTotalRAMWindows")]
+        [MonoModReplace]
+        private static float GetTotalRAMWindowsMono() {
             return 0f;
         }
 
@@ -294,7 +308,7 @@ namespace Celeste.Mod {
             Logger.Log(LogLevel.Info, "core", "Booting Everest");
             Logger.Log(LogLevel.Info, "core", $"AppDomain: {AppDomain.CurrentDomain.FriendlyName ?? "???"}");
             Logger.Log(LogLevel.Info, "core", $"VersionCelesteString: {VersionCelesteString}");
-            Logger.Log(LogLevel.Info, "core", $"SystemRAM: {SystemMemoryMB:F3} MB");
+            Logger.Log(LogLevel.Info, "core", $"SystemMemoryMB: {SystemMemoryMB:F3} MB");
 
             if (Type.GetType("Mono.Runtime") != null) {
                 // Mono hates HTTPS.

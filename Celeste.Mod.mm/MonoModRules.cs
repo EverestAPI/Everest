@@ -445,6 +445,9 @@ namespace MonoMod {
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
             MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
 
+            MonoModRule.Flag.Set("PatchingWithMono", Type.GetType("Mono.Runtime") != null);
+            MonoModRule.Flag.Set("PatchingWithoutMono", Type.GetType("Mono.Runtime") == null);
+
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
             if (Celeste == null)

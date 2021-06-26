@@ -269,7 +269,7 @@ https://discord.gg/6qjaePQ");
                     if (maxsize <= (512L * 1024L * 1024L))
                         maxsize = (512L * 1024L * 1024L);
                 }
-                // ... and even if the user forcibly lowered it below 512 MB, fall back to 128 MB as even the vanilla gameplay atlas is 64MB.
+                // ... and even if the user forcibly lowered it below 128 MB, fall back to 128 MB as even the vanilla gameplay atlas is 64MB.
                 if (maxsize <= (128L * 1024L * 1024L))
                     maxsize = (128L * 1024L * 1024L);
 
