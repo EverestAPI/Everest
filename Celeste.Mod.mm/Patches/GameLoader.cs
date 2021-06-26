@@ -111,6 +111,7 @@ namespace Celeste {
             timer = Stopwatch.StartNew();
             MainThreadHelper.Boost = 50;
             MainThreadHelper.Get(() => MainThreadHelper.Boost = 0).GetResult();
+            // FIXME: There could be ongoing tasks which add to the main thread queue right here.
             Console.WriteLine(" - MAIN THREAD QUEUE REMAINDER LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 

@@ -324,8 +324,13 @@ namespace Celeste.Mod {
                             byte b = from[i + 0];
                             byte a = from[i + 3];
 
-                            if (a == 0)
+                            if (a == 0) {
+                                to[i + 0] = 0;
+                                to[i + 1] = 0;
+                                to[i + 2] = 0;
+                                to[i + 3] = 0;
                                 continue;
+                            }
 
                             if (a == 255) {
                                 to[i + 0] = r;

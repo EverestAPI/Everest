@@ -388,7 +388,7 @@ namespace Monocle {
 
             } else {
                 int w, h;
-                bool bufferGC = ContentExtensions.TextureSetDataSupportsPtr;
+                bool bufferGC = !ContentExtensions.TextureSetDataSupportsPtr;
                 byte[] buffer = null;
                 IntPtr bufferPtr = IntPtr.Zero;
                 bool bufferStolen = false;
