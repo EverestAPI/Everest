@@ -166,6 +166,11 @@ namespace Celeste.Mod.Core {
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
+        public float FastTextureLoadingMaxMB { get; set; } = 0;
+
+        [SettingNeedsRelaunch]
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
         public bool UnpackFMODBanks { get; set; } = true;
 
         [SettingNeedsRelaunch]

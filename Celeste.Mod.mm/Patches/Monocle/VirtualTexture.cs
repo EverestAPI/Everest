@@ -24,7 +24,7 @@ namespace Monocle {
         internal static readonly byte[] buffer;
         internal static byte[] bufferSafe;
         internal static object bufferLock;
-        internal const int bufferSize = 67108864;
+        internal const int bufferSize = 4096 * 4096 * 4; // 67108864
 
         private static extern void orig_cctor();
         [MonoModConstructor]
@@ -98,8 +98,8 @@ namespace Monocle {
 
         public VirtualTexture Fallback;
 
-        public static Func<VirtualTexture, bool> ForceTaskedParse;
-        public static Func<VirtualTexture, bool> ForceQueuedLoad;
+        public static bool ForceTaskedParse;
+        public static bool ForceQueuedLoad;
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -181,7 +181,7 @@ namespace Monocle {
         }
 
         internal bool LoadImmediately =>
-            (_Texture_Requesting || !(ForceQueuedLoad?.Invoke((VirtualTexture) (object) this) ?? false)) &&
+            (_Texture_Requesting || !ForceQueuedLoad) &&
             ((CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) || MainThreadHelper.IsMainThread);
         internal bool Load(bool wait, Func<Texture2D> load) {
             if (LoadImmediately) {
@@ -218,7 +218,7 @@ namespace Monocle {
                     return tex;
                 };
 
-                _Texture_QueuedLoad = (ForceQueuedLoad?.Invoke((VirtualTexture) (object) this) ?? false) ?
+                _Texture_QueuedLoad = ForceQueuedLoad ?
                     MainThreadHelper.GetForceQueue(load) :
                     MainThreadHelper.Get(load);
             }
@@ -256,7 +256,7 @@ namespace Monocle {
                 }
             }
 
-            if ((Metadata?.StreamAsync ?? true) && (ForceTaskedParse?.Invoke((VirtualTexture) (object) this) ?? false) &&
+            if ((Metadata?.StreamAsync ?? true) && ForceTaskedParse &&
                 !_Texture_Reloading && !_Texture_Requesting) {
                 Preload(true);
                 lock (queuedLoadLock = new object()) {
@@ -291,46 +291,45 @@ namespace Monocle {
 
             if (Metadata != null) {
                 if (Metadata.StreamAsync || MainThreadHelper.IsMainThread) {
-                    // Can't autodispose the stream as it might get passed across threads.
                     Stream stream = Metadata.Stream;
                     if (stream != null) {
-                        bool png = Metadata.Format == "png";
-                        if (png) {
-                            GetSizeFromPNG(stream);
-                            if (stream.CanSeek) {
-                                try {
-                                    stream.Seek(0, SeekOrigin.Begin);
-                                } catch {
-                                    stream.Dispose();
-                                    stream = null;
-                                }
+                        using (stream) {
+                            bool premul = false; // Assume unpremultiplied by default.
+                            if (Metadata.TryGetMeta(out TextureMeta meta))
+                                premul = meta.Premultiplied;
+
+                            if (ContentExtensions.TextureSetDataSupportsPtr) {
+                                int w, h;
+                                IntPtr dataPtr;
+                                if (premul)
+                                    ContentExtensions.LoadTextureRaw(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
+                                else
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
+                                stream.Dispose();
+                                Width = w;
+                                Height = h;
+                                Load(false, () => {
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(dataPtr);
+                                    ContentExtensions.UnloadTextureRaw(dataPtr);
+                                    return tex;
+                                });
                             } else {
+                                int w, h;
+                                byte[] data;
+                                if (premul)
+                                    ContentExtensions.LoadTextureRaw(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out data);
+                                else
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out data);
                                 stream.Dispose();
-                                stream = null;
+                                Width = w;
+                                Height = h;
+                                Load(false, () => {
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(data);
+                                    return tex;
+                                });
                             }
-                        }
-
-                        if (stream == null)
-                            stream = Metadata.Stream;
-
-                        bool premul = false; // Assume unpremultiplied by default.
-                        if (Metadata.TryGetMeta(out TextureMeta meta))
-                            premul = meta.Premultiplied;
-
-                        if (premul) {
-                            Load(!png, () => {
-                                Texture2D tex = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
-                                stream.Dispose();
-                                return tex;
-                            });
-                        } else {
-                            ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
-                            stream.Dispose();
-                            Load(!png, () => {
-                                Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
-                                tex.SetData(data);
-                                return tex;
-                            });
                         }
 
                     } else if (Fallback != null) {
@@ -350,6 +349,12 @@ namespace Monocle {
 
                                 if (premul) {
                                     Texture2D tex = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                                    return tex;
+                                } else if (ContentExtensions.TextureSetDataSupportsPtr) {
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out IntPtr dataPtr);
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(dataPtr);
+                                    ContentExtensions.UnloadTextureRaw(dataPtr);
                                     return tex;
                                 } else {
                                     ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
@@ -383,7 +388,9 @@ namespace Monocle {
 
             } else {
                 int w, h;
+                bool bufferGC = ContentExtensions.TextureSetDataSupportsPtr;
                 byte[] buffer = null;
+                IntPtr bufferPtr = IntPtr.Zero;
                 bool bufferStolen = false;
                 switch (System.IO.Path.GetExtension(Path)) {
                     case ".data":
@@ -412,15 +419,22 @@ namespace Monocle {
                                     buffer = bufferSafe;
                                     bufferSafe = null;
                                     bufferStolen = true;
+                                    bufferGC = false;
                                 }
                             }
                             if (buffer == null) {
-                                buffer = new byte[size];
+                                if (bufferGC) {
+                                    buffer = new byte[size];
+                                } else {
+                                    buffer = new byte[0];
+                                    bufferPtr = Marshal.AllocHGlobal(size);
+                                }
                                 bufferStolen = false;
                             }
 
                             fixed (byte* from = bytes)
-                            fixed (byte* to = buffer) {
+                            fixed (byte* bufferPin = buffer) {
+                                byte* to = bufferGC ? bufferPin : (byte*) bufferPtr;
                                 int* toI = (int*) to;
                                 int iB = 0;
                                 int iI = 0;
@@ -470,22 +484,42 @@ namespace Monocle {
                         }
                         Load(false, () => {
                             Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h);
-                            // This is on the main thread so buffer should be consumed immediately.
-                            tex.SetData(buffer);
-                            if (bufferStolen)
-                                bufferSafe = buffer;
+                            // This is on the main thread so buffer should be consumed by SetData, reusable afterwards.
+                            if (bufferGC) {
+                                tex.SetData(buffer);
+                                if (bufferStolen)
+                                    bufferSafe = buffer;
+                            } else {
+                                tex.SetData(bufferPtr);
+                                Marshal.FreeHGlobal(bufferPtr);
+                            }
                             return tex;
                         });
                         break;
 
                     case ".png":
-                        using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                            ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out buffer);
-                        Load(false, () => {
-                            Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
-                            tex.SetData(buffer);
-                            return tex;
-                        });
+                        if (bufferGC) {
+                            using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                                ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out buffer);
+                            Width = w;
+                            Height = h;
+                            Load(false, () => {
+                                Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                tex.SetData(buffer);
+                                return tex;
+                            });
+                        } else {
+                            using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                                ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out bufferPtr);
+                            Width = w;
+                            Height = h;
+                            Load(false, () => {
+                                Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                tex.SetData(bufferPtr);
+                                ContentExtensions.UnloadTextureRaw(bufferPtr);
+                                return tex;
+                            });
+                        }
                         break;
 
                     case ".xnb":
