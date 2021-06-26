@@ -419,7 +419,7 @@ namespace Monocle {
                                     buffer = bufferSafe;
                                     bufferSafe = null;
                                     bufferStolen = true;
-                                    bufferGC = false;
+                                    bufferGC = true;
                                 }
                             }
                             if (buffer == null) {
