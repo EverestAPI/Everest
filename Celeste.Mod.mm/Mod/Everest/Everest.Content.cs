@@ -575,7 +575,7 @@ namespace Celeste.Mod {
             public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
 
-                if (path.StartsWith(".git/") || path.StartsWith("__MACOSX/") ||
+                if (path.Contains("/.git/") || path.Contains("/__MACOSX/") ||
                     Path.GetFileName(path).StartsWith("._"))
                     return false;
 
