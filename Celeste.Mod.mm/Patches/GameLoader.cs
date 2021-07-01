@@ -110,9 +110,10 @@ namespace Celeste {
 
             timer = Stopwatch.StartNew();
             MainThreadHelper.Boost = 50;
+            patch_VirtualTexture.WaitFinishFastTextureLoading();
             MainThreadHelper.Get(() => MainThreadHelper.Boost = 0).GetResult();
             // FIXME: There could be ongoing tasks which add to the main thread queue right here.
-            Console.WriteLine(" - MAIN THREAD QUEUE REMAINDER LOAD: " + timer.ElapsedMilliseconds + "ms");
+            Console.WriteLine(" - FASTTEXTURELOADING LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 
             Console.WriteLine("DONE LOADING (in " + Celeste.LoadTimer.ElapsedMilliseconds + "ms)");

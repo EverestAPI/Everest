@@ -1,6 +1,13 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
 
+// #define FTL_DEBUG
+// #define FTL_VERIFY
+
+#if DEBUG || FTL_DEBUG
+#define FTL_VERIFY
+#endif
+
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
@@ -8,6 +15,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -18,13 +26,26 @@ namespace Monocle {
 
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
         internal static readonly byte[] bytes;
-        internal const int bytesSize = 524288;
+        internal const int bytesSize = 512 * 1024; // 524288
 
         // Let's make the fixed buffer non-readonly.
         internal static readonly byte[] buffer;
         internal static byte[] bufferSafe;
         internal static object bufferLock;
         internal const int bufferSize = 4096 * 4096 * 4; // 67108864
+
+        private static bool ftlEnabled;
+        private static object ftlLock;
+        private static ManualResetEventSlim ftlFree;
+        private static ManualResetEventSlim ftlFinish;
+        private static long ftlLimit;
+        private static long ftlUsed;
+        private static int ftlTotalCount;
+        private static int ftlUsedCount;
+#if FTL_VERIFY
+        private static HashSet<patch_VirtualTexture> ftlTotalCountVerify;
+        private static HashSet<patch_VirtualTexture> ftlUsedCountVerify;
+#endif
 
         private static extern void orig_cctor();
         [MonoModConstructor]
@@ -33,6 +54,14 @@ namespace Monocle {
 
             bufferSafe = buffer;
             bufferLock = new object();
+
+            ftlLock = new object();
+            ftlFree = new ManualResetEventSlim(true);
+            ftlFinish = new ManualResetEventSlim(true);
+#if FTL_VERIFY
+            ftlTotalCountVerify = new HashSet<patch_VirtualTexture>();
+            ftlUsedCountVerify = new HashSet<patch_VirtualTexture>();
+#endif
         }
 
         public string Path { get; private set; }
@@ -53,7 +82,7 @@ namespace Monocle {
                 if (queuedLoadLock != null) {
                     lock (queuedLoadLock) {
                         // Queued task finished just in time.
-                        if (_Texture_QueuedLoadLock == null)
+                        if (_Texture_QueuedLoadLock != queuedLoadLock)
                             return Texture_Unsafe;
 
                         // If we still can, cancel the queued load, then proceed with lazy-loading.
@@ -93,13 +122,147 @@ namespace Monocle {
         private bool _Texture_UnloadAfterReload;
         private object _Texture_QueuedLoadLock;
         private MaybeAwaitable<Texture2D> _Texture_QueuedLoad;
+        private bool _Texture_FTLCount;
+        private bool _Texture_FTLLoading;
+        private long _Texture_FTLSize;
 
         public ModAsset Metadata;
 
         public VirtualTexture Fallback;
 
-        public static bool ForceTaskedParse;
-        public static bool ForceQueuedLoad;
+        public static void StartFastTextureLoading(long limit) {
+            lock (ftlLock) {
+                ftlLimit = limit;
+                ftlEnabled = true;
+            }
+        }
+
+        public static void StopFastTextureLoading() {
+            lock (ftlLock) {
+                ftlEnabled = false;
+            }
+        }
+
+        private void CountFastTextureLoad() {
+            // This should ALWAYS be called from the main thread.
+            lock (ftlLock) {
+                if (_Texture_FTLCount)
+                    return;
+#if FTL_VERIFY
+                if (!ftlTotalCountVerify.Add(this))
+                    throw new Exception($"FTL count total verify failed for texture \"{Name}\"");
+#endif
+#if FTL_DEBUG
+                Console.WriteLine($"FTL Count   {Name} (queue: {ftlCount + 1})");
+#endif
+
+                _Texture_FTLCount = true;
+                ftlTotalCount++;
+            }
+        }
+
+        private void GrabFastTextureLoad() {
+            // This should ALWAYS be called from the task.
+            long size = Width * Height * 4;
+
+            if (size == 0)
+                throw new Exception($"Fast texture loading encountered zero-size texture: {Name}");
+
+            // Smaller textures might contribute to fragmentation.
+            // Let's allow squeezing small textures into small holes, but make them take up lots of space.
+            // 512 * 512 * 4 = 1 MB
+            if (size < 512 * 512 * 4)
+                size = 512 * 512 * 4;
+            // Add some artificial overhead (DotNetZip, .data file buffer, thread local data, ...).
+            size += 1024 * 1024 * 16;
+            size = (long) (size * 1.3f);
+
+            if (size >= ftlLimit)
+                throw new Exception($"Fast texture loading encountered oversized texture: {Name}");
+
+            // Don't wait inside of the lock or we will risk making other textures wait, even those which would fit.
+            Rewait:
+            while (size <= ftlLimit ? ftlUsed + size > ftlLimit : ftlUsedCount > 1) {
+                ftlFree.Wait();
+                ftlFree.Reset();
+            }
+
+            lock (ftlLock) {
+                if (size <= ftlLimit ? ftlUsed + size > ftlLimit : ftlUsedCount > 1)
+                    goto Rewait;
+
+#if FTL_VERIFY
+                if (!ftlUsedCountVerify.Add(this))
+                    throw new Exception($"FTL grab used verify failed for texture \"{Name}\"");
+#endif
+#if FTL_DEBUG
+                Console.WriteLine($"FTL TryGrab {Name} {size} {ftlUsed + size <= ftlLimit} (avail: {ftlLimit - ftlUsed - size})");
+#endif
+
+                ftlFinish.Reset();
+                ftlUsedCount++;
+                ftlUsed += size;
+                _Texture_FTLSize = size;
+                _Texture_FTLLoading = true;
+            }
+        }
+
+        private void FreeFastTextureLoad() {
+            // This should ALWAYS be called from the main thread.
+            lock (ftlLock) {
+                if (!_Texture_FTLLoading) {
+                    if (_Texture_FTLCount) {
+#if FTL_VERIFY
+                        if (ftlUsedCountVerify.Contains(this))
+                            throw new Exception($"FTL cancel unused verify failed for texture \"{Name}\"");
+                        if (!ftlTotalCountVerify.Remove(this))
+                            throw new Exception($"FTL cancel total verify failed for texture \"{Name}\"");
+#endif
+#if FTL_DEBUG
+                        Console.WriteLine($"FTL Cancel  {Name} (remain: {ftlCount - 1})");
+#endif
+                        ftlTotalCount--;
+                        if (ftlTotalCount == 0)
+                            ftlFinish.Set();
+                        _Texture_FTLCount = false;
+                    }
+                    return;
+                }
+
+#if FTL_VERIFY
+                if (!ftlUsedCountVerify.Remove(this))
+                    throw new Exception($"FTL free used verify failed for texture \"{Name}\"");
+                if (!ftlTotalCountVerify.Remove(this))
+                    throw new Exception($"FTL free total verify failed for texture \"{Name}\"");
+#endif
+#if FTL_DEBUG
+                Console.WriteLine($"FTL Free    {Name} {size} (remain: {ftlCount - 1})");
+#endif
+
+                long size = _Texture_FTLSize;
+                _Texture_FTLLoading = false;
+                _Texture_FTLSize = 0;
+                ftlUsed -= size;
+                ftlUsedCount--;
+                ftlTotalCount--;
+                if (ftlTotalCount == 0)
+                    ftlFinish.Set();
+                ftlFree.Set();
+                _Texture_FTLCount = false;
+            }
+        }
+
+        public static void WaitFinishFastTextureLoading() {
+            // This should ALWAYS be called from the loader thread.
+            lock (ftlLock) {
+                ftlEnabled = false;
+                // Don't set the limit as there could still be grabs happening afterwards.
+                // ftlLimit = 0;
+            }
+            // Lock shouldn't be necessary, all TryGrabs should've happened beforehand.
+            // On the contrary, lock would make this / TryGrab / Free prone to deadlocks.
+            ftlFinish.Wait();
+        }
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -181,12 +344,12 @@ namespace Monocle {
         }
 
         internal bool LoadImmediately =>
-            (_Texture_Requesting || !ForceQueuedLoad) &&
-            ((CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) || MainThreadHelper.IsMainThread);
+            !_Texture_FTLLoading && ((CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) || MainThreadHelper.IsMainThread);
         internal bool Load(bool wait, Func<Texture2D> load) {
             if (LoadImmediately) {
                 Texture_Unsafe?.Dispose();
                 Texture_Unsafe = load();
+                FreeFastTextureLoad();
                 return true;
             }
 
@@ -200,11 +363,15 @@ namespace Monocle {
                 load = () => {
                     Texture2D tex;
                     lock (queuedLoadLock) {
-                        if (_Texture_QueuedLoadLock == null)
+                        if (_Texture_QueuedLoadLock != queuedLoadLock) {
+                            _load = null;
+                            FreeFastTextureLoad();
                             return Texture_Unsafe;
+                        }
                         // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
                         Texture_Unsafe?.Dispose();
                         Texture_Unsafe = tex = _load();
+                        FreeFastTextureLoad();
                         _Texture_QueuedLoadLock = null;
                     }
                     if (_Texture_UnloadAfterReload) {
@@ -218,7 +385,7 @@ namespace Monocle {
                     return tex;
                 };
 
-                _Texture_QueuedLoad = ForceQueuedLoad ?
+                _Texture_QueuedLoad = !_Texture_FTLLoading ?
                     MainThreadHelper.GetForceQueue(load) :
                     MainThreadHelper.Get(load);
             }
@@ -245,7 +412,7 @@ namespace Monocle {
             if (queuedLoadLock != null && !_Texture_Reloading) {
                 lock (queuedLoadLock) {
                     // Queued task finished just in time.
-                    if (_Texture_QueuedLoadLock == null)
+                    if (_Texture_QueuedLoadLock != queuedLoadLock)
                         return;
 
                     // If we still can, cancel the queued load, then proceed with lazy-loading.
@@ -262,35 +429,43 @@ namespace Monocle {
                 }
             }
 
-            if ((Metadata?.StreamAsync ?? true) && ForceTaskedParse &&
+            if (ftlEnabled && CanPreload && (Metadata?.StreamAsync ?? true) &&
                 !_Texture_Reloading && !_Texture_Requesting) {
+                // Preload as we need to know the texture size WITHOUT ALLOCATING SPACE.
+                // ... also because the texture size is required in the calling ctx past Reload.
                 Preload(true);
+                CountFastTextureLoad();
                 lock (queuedLoadLock = new object()) {
                     _Texture_QueuedLoadLock = queuedLoadLock;
                     _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
-                        Texture2D tex;
                         lock (queuedLoadLock) {
-                            if (_Texture_QueuedLoadLock == null)
+                            // Queued load cancelled or replaced with another queued load.
+                            if (_Texture_QueuedLoadLock != queuedLoadLock) {
+                                FreeFastTextureLoad();
                                 return Texture_Unsafe;
+                            }
+
+                            GrabFastTextureLoad();
+
                             // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
                             _Texture_Reloading = true;
                             Reload();
                             if (_Texture_QueuedLoadLock == queuedLoadLock)
                                 _Texture_QueuedLoadLock = null;
-                            tex = Texture_Unsafe;
+                            Texture2D tex = Texture_Unsafe;
+                            if (_Texture_UnloadAfterReload) {
+                                tex?.Dispose();
+                                tex = Texture_Unsafe;
+                                // ... can anything even swap the texture here?
+                                Texture_Unsafe = null;
+                                tex?.Dispose();
+                                _Texture_UnloadAfterReload = false;
+                            }
+                            return tex;
                         }
-                        if (_Texture_UnloadAfterReload) {
-                            tex?.Dispose();
-                            tex = Texture_Unsafe;
-                            // ... can anything even swap the texture here?
-                            Texture_Unsafe = null;
-                            tex?.Dispose();
-                            _Texture_UnloadAfterReload = false;
-                        }
-                        return tex;
                     }).GetAwaiter());
+                    return;
                 }
-                return;
             }
 
             _Texture_Reloading = false;
@@ -333,6 +508,7 @@ namespace Monocle {
                                 Load(false, () => {
                                     Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
                                     tex.SetData(data);
+                                    data = null;
                                     return tex;
                                 });
                             }
@@ -366,6 +542,7 @@ namespace Monocle {
                                     ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
                                     Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
                                     tex.SetData(data);
+                                    data = null;
                                     return tex;
                                 }
 
@@ -389,6 +566,7 @@ namespace Monocle {
                 Load(false, () => {
                     Texture2D tex = new Texture2D(Engine.Instance.GraphicsDevice, Width, Height);
                     tex.SetData(data);
+                    data = null;
                     return tex;
                 });
 
@@ -406,7 +584,7 @@ namespace Monocle {
                             byte[] bytes = LoadImmediately ?
                                 patch_VirtualTexture.bytes :
                                 new byte[bytesSize];
-                            stream.Read(bytes, 0, bytesSize);
+                            stream.Read(bytes, 0, bytes.Length);
 
                             int pB = 0;
                             w = BitConverter.ToInt32(bytes, pB);
@@ -474,12 +652,12 @@ namespace Monocle {
                                         iI += linesize;
                                         iB = iI * 4;
 
-                                        if (pB > bytesSize - 32) {
-                                            int offset = bytesSize - pB;
+                                        if (pB > bytes.Length - 32) {
+                                            int offset = bytes.Length - pB;
                                             for (int oB = 0; oB < offset; oB++) {
                                                 from[oB] = from[pB + oB];
                                             }
-                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            stream.Read(bytes, offset, bytes.Length - offset);
                                             pB = 0;
                                         }
                                     }
@@ -501,12 +679,12 @@ namespace Monocle {
                                         iI += linesize;
                                         iB = iI * 4;
 
-                                        if (pB > bytesSize - 32) {
-                                            int offset = bytesSize - pB;
+                                        if (pB > bytes.Length - 32) {
+                                            int offset = bytes.Length - pB;
                                             for (int oB = 0; oB < offset; oB++) {
                                                 from[oB] = from[pB + oB];
                                             }
-                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            stream.Read(bytes, offset, bytes.Length - offset);
                                             pB = 0;
                                         }
                                     }
@@ -520,6 +698,7 @@ namespace Monocle {
                                 tex.SetData(buffer);
                                 if (bufferStolen)
                                     bufferSafe = buffer;
+                                buffer = null;
                             } else {
                                 tex.SetData(bufferPtr);
                                 Marshal.FreeHGlobal(bufferPtr);
@@ -537,6 +716,7 @@ namespace Monocle {
                             Load(false, () => {
                                 Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
                                 tex.SetData(buffer);
+                                buffer = null;
                                 return tex;
                             });
                         } else {
@@ -573,6 +753,31 @@ namespace Monocle {
             }
 
             _Texture_Requesting = false;
+        }
+
+        private bool CanPreload {
+            get {
+                if (!string.IsNullOrEmpty(Path)) {
+                    string extension = System.IO.Path.GetExtension(Path);
+                    if (extension == ".data") {
+                        return true;
+                    } else if (extension == ".png") {
+                        return true;
+                    } else {
+                        return false;
+
+                    }
+
+                } else if (Metadata != null) {
+                    if (Metadata.Format == "png") {
+                        return true;
+                    } else {
+                        return false;
+                    }
+                }
+
+                return false;
+            }
         }
 
         private bool Preload(bool force = false) {

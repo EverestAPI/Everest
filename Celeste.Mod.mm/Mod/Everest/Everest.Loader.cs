@@ -765,7 +765,6 @@ namespace Celeste.Mod {
                     f_CustomFlagPath.SetValue(null, Path.Combine(PathSettings, "modsettings-Prideline-Flag.celeste"));
                 }
                 */
-
             }
 
         }

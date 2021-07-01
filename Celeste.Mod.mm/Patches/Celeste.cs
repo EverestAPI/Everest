@@ -256,19 +256,19 @@ https://discord.gg/6qjaePQ");
              */
 
             if (CoreModule.Settings.FastTextureLoading ?? !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL)) {
-                long maxsize = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
+                long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
 
-                if (maxsize <= 0) {
-                    maxsize = (long) (Everest.SystemMemoryMB * 0.2f * 1024f * 1024f);
+                if (limit <= 0) {
+                    limit = (long) (Everest.SystemMemoryMB * 0.2f * 1024f * 1024f);
                     // Assume that even in the worst case with 4 GB system RAM, 512 MB (12.5%) are still available for texture loads. 
-                    if (maxsize <= (512L * 1024L * 1024L))
-                        maxsize = (512L * 1024L * 1024L);
+                    if (limit <= (512L * 1024L * 1024L))
+                        limit = (512L * 1024L * 1024L);
                 }
                 // ... and even if the user forcibly lowered it below 128 MB, fall back to 128 MB as even the vanilla gameplay atlas is 64MB.
-                if (maxsize <= (128L * 1024L * 1024L))
-                    maxsize = (128L * 1024L * 1024L);
+                if (limit <= (128L * 1024L * 1024L))
+                    limit = (128L * 1024L * 1024L);
 
-                patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = true;
+                patch_VirtualTexture.StartFastTextureLoading(limit);
             }
 
             orig_LoadContent();
@@ -276,7 +276,7 @@ https://discord.gg/6qjaePQ");
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = false;
+            patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
         }
