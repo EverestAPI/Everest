@@ -8,6 +8,7 @@ namespace Celeste {
     class patch_CrystalStaticSpinner : CrystalStaticSpinner {
 
         private CrystalColor color;
+        private Entity filler;
 
         private int ID;
 
@@ -36,6 +37,25 @@ namespace Celeste {
             }
 
             orig_Awake(scene);
+        }
+
+        [MonoModReplace]
+        private void OnShake(Vector2 amount) {
+            foreach (Component component in Components) {
+                if (component is Image image) {
+                    // change from vanilla: instead of setting the position, add to it.
+                    image.Position += amount;
+                }
+            }
+
+            // addition from vanilla: also shake spinner connectors.
+            if (filler != null) {
+                foreach (Component component in filler.Components) {
+                    if (component is Image image) {
+                        image.Position += amount;
+                    }
+                }
+            }
         }
 
         [MonoModIgnore] // do not change anything in the method...
