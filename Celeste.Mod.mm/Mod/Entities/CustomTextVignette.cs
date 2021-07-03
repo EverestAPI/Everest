@@ -94,6 +94,8 @@ namespace Celeste.Mod.Entities {
                         StartGame();
                     }
                     if (timer < (SFXDuration - 2f) && menu == null && (Input.Pause.Pressed || Input.ESC.Pressed)) {
+                        Input.Pause.ConsumeBuffer();
+                        Input.ESC.ConsumeBuffer();
                         OpenMenu();
                     }
                 }
