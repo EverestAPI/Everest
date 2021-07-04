@@ -400,6 +400,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitblk))]
     class PatchInitblkAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches <see cref="Celeste.CassetteBlock.Awake(Monocle.Scene)" /> to fix issue #334.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCassetteBlockAwake))]
+    class PatchCassetteBlockAwakeAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2434,6 +2440,29 @@ namespace MonoMod {
                 c.Next.OpCode = OpCodes.Initblk;
                 c.Next.Operand = null;
             }
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="MonoMod.PatchCassetteBlockAwakeAttribute" />
+        /// </summary>
+        public static void PatchCassetteBlockAwake(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            FieldReference f_Entity_Collidable = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindField("Collidable");
+            MethodReference m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+
+            cursor.GotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchCallOrCallvirt("Celeste.CassetteBlock", "System.Void UpdateVisualState()"));
+
+            Instruction target = cursor.Next;
+
+            // add if (!Collidable) { DisableStaticMovers(); } before UpdateVisualState()
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Entity_Collidable);
+            cursor.Emit(OpCodes.Brtrue, target);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
         }
 
         public static void PostProcessor(MonoModder modder) {
