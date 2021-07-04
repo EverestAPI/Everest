@@ -8,7 +8,10 @@ namespace Celeste {
     class patch_CrystalStaticSpinner : CrystalStaticSpinner {
 
         private CrystalColor color;
+
+#pragma warning disable CS0649 // this attribute is from vanilla, so it's defined in there
         private Entity filler;
+#pragma warning restore CS0649
 
         private int ID;
 
