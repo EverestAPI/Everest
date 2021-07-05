@@ -241,5 +241,35 @@ namespace Celeste {
         private static float Float(string data) {
             return float.Parse(data, CultureInfo.InvariantCulture);
         }
+
+        [Command("mainmenu", "go to the main menu")]
+        private static void CmdMainMenu() {
+            Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
+        }
+
+        [MonoModReplace]
+        [Command("hearts", "gives a certain number of hearts for the specified level set (default all hearts and current level set)")]
+        private static void CmdHearts(int amount = int.MaxValue, string levelSet = null) {
+            patch_SaveData saveData = SaveData.Instance as patch_SaveData;
+            if (saveData == null)
+                return;
+
+            amount = Calc.Clamp(amount, 0, saveData.LevelSetStats.MaxHeartGems);
+
+            if (string.IsNullOrEmpty(levelSet))
+                levelSet = saveData.GetLevelSet();
+
+            int num = 0;
+            foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {
+                foreach (AreaModeStats areaStatsMode in areaStats.Modes) {
+                    if (num < amount) {
+                        areaStatsMode.HeartGem = true;
+                        num++;
+                    } else {
+                        areaStatsMode.HeartGem = false;
+                    }
+                }
+            }
+        }
     }
 }
