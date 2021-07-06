@@ -261,12 +261,12 @@ namespace Celeste {
 
             int num = 0;
             foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {
-                foreach (AreaModeStats areaStatsMode in areaStats.Modes) {
+                foreach (AreaModeStats areaModeStats in areaStats.Modes) {
                     if (num < amount) {
-                        areaStatsMode.HeartGem = true;
+                        areaModeStats.HeartGem = true;
                         num++;
                     } else {
-                        areaStatsMode.HeartGem = false;
+                        areaModeStats.HeartGem = false;
                     }
                 }
             }
