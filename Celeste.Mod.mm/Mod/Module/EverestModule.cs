@@ -640,7 +640,7 @@ namespace Celeste.Mod {
 
             string name; // We lazily reuse this field for the props later on.
             name = type.GetCustomAttribute<SettingNameAttribute>()?.Name ?? $"{nameDefaultPrefix}title";
-            name = name.DialogCleanOrNull() ?? Metadata.Name.SpacedPascalCase();
+            name = name.DialogCleanOrNull() ?? ModUpdaterHelper.FormatModName(Metadata.Name);
 
             menu.Add(new patch_TextMenu.patch_SubHeader(name + " | v." + Metadata.VersionString));
         }
