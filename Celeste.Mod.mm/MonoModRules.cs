@@ -400,6 +400,27 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitblk))]
     class PatchInitblkAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches <see cref="Celeste.SaveData.AddStrawberry(Celeste.AreaKey,Celeste.EntityID,bool)"/>
+    /// to prevent unlocking strawberry count achievements in custom maps.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataAddStrawberry))]
+    class PatchSaveDataAddStrawberryAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches <see cref="Celeste.patch_Strawberry.orig_OnCollect()"/>
+    /// to prevent unlocking moon berry achievement in custom maps.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryOnCollect))]
+    class PatchStrawberryOnCollectAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches <see cref="Celeste.StrawberryPoints.Added(Monocle.Scene)"/>
+    /// to prevent unlocking 1-up achievement in custom maps.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryPointsAdded))]
+    class PatchStrawberryPointsAddedAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2434,6 +2455,104 @@ namespace MonoMod {
                 c.Next.OpCode = OpCodes.Initblk;
                 c.Next.Operand = null;
             }
+        }
+
+        /// <inheritdoc cref="MonoMod.PatchSaveDataAddStrawberryAttribute"/>
+        public static void PatchSaveDataAddStrawberry(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            FieldReference f_TotalStrawberries = il.Method.DeclaringType.FindField("TotalStrawberries");
+
+            // DO NOT use int[] here otherwise the patcher will throw System.MissingFieldException: Field not found: '<PrivateImplementationDetails>.[OMITTED]'.
+            // see https://github.com/MonoMod/MonoMod/issues/78
+            object[] strawberryCheckValues = {30, 80, 175};
+
+            foreach (int value in strawberryCheckValues) {
+                cursor.GotoNext(instr => instr.MatchLdarg(0),
+                    instr => instr.MatchCallvirt("Celeste.SaveData", "System.Int32 get_TotalStrawberries_Safe()"),
+                    instr => instr.MatchLdcI4(value));
+
+                Instruction instr = cursor.Next.Next;
+                instr.OpCode = OpCodes.Ldfld;
+                // change TotalStrawberries_Safe to TotalStrawberries, which is vanilla strawberry count
+                instr.Operand = f_TotalStrawberries;
+            }
+        }
+
+        /// <inheritdoc cref="MonoMod.PatchStrawberryOnCollectAttribute"/>
+        public static void PatchStrawberryOnCollect(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_AreaKey = MonoModRule.Modder.FindType("Celeste.AreaKey").Resolve();
+            TypeDefinition t_Session = MonoModRule.Modder.FindType("Celeste.Session").Resolve();
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            FieldDefinition f_Session_Area = t_Session.FindField("Area");
+            MethodDefinition m_AreaKey_get_LevelSet = t_AreaKey.FindProperty("LevelSet").GetMethod;
+            MethodReference m_String_op_Equality = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("op_Equality"));
+
+            ILLabel branchTarget = null;
+            cursor.GotoNext(instr => instr.MatchLdarg(0),
+                instr => instr.MatchCallvirt("Celeste.Strawberry", "System.Boolean get_Moon()"),
+                instr => instr.MatchBrfalse(out branchTarget));
+            int insertIndex = cursor.Index;
+
+            // move `session = (Scene as Level).Session` before `if (Moon) { ... }`
+            cursor.GotoNext(instr => instr.MatchLdarg(0),
+                instr => instr.MatchCall("Monocle.Entity", "Monocle.Scene get_Scene()"),
+                instr => instr.MatchIsinst("Celeste.Level"),
+                instr => instr.MatchLdfld("Celeste.Level", "Session"));
+            Instruction[] moveInstrs = cursor.Instrs.Skip(cursor.Index).Take(4).ToArray();
+
+            cursor.RemoveRange(4);
+            cursor.Goto(insertIndex);
+
+            cursor.Instrs.InsertRange(insertIndex, moveInstrs);
+
+            // fix branching issue otherwise the instructions will be in `if (Follower.Leader != null) { ... }`
+            Instruction labelTarget = cursor.Instrs[insertIndex];
+            cursor.MoveBeforeLabels();
+            foreach (ILLabel label in cursor.IncomingLabels) {
+                label.Target = labelTarget;
+            }
+
+            // change `if (Moon)` to `if (session.Area.LevelSet == "Celeste" && Moon)`
+            cursor.Emit(OpCodes.Dup);
+            cursor.Emit(OpCodes.Ldflda, f_Session_Area);
+            cursor.Emit(OpCodes.Call, m_AreaKey_get_LevelSet);
+            cursor.Emit(OpCodes.Ldstr, "Celeste");
+            cursor.Emit(OpCodes.Call, m_String_op_Equality);
+            cursor.Emit(OpCodes.Brfalse, branchTarget);
+        }
+
+        /// <inheritdoc cref="MonoMod.PatchStrawberryPointsAddedAttribute"/>
+        public static void PatchStrawberryPointsAdded(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
+            TypeDefinition t_AreaKey = MonoModRule.Modder.FindType("Celeste.AreaKey").Resolve();
+            TypeDefinition t_Session = MonoModRule.Modder.FindType("Celeste.Session").Resolve();
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            FieldDefinition f_Session_Area = t_Session.FindField("Area");
+            FieldDefinition f_Level_Session = t_Level.FindField("Session");
+            MethodDefinition m_AreaKey_get_LevelSet = t_AreaKey.FindProperty("LevelSet").GetMethod;
+            MethodReference m_String_op_Equality = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("op_Equality"));
+
+            ILLabel target = null;
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld("Celeste.StrawberryPoints", "index"),
+                instr => instr.MatchLdcI4(5),
+                instr => instr.MatchBlt(out target));
+
+            // change `if (index >= 5)` to `if (index >= 5 && (scene as Level).Session.Area.LevelSet == "Celeste")`
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Isinst, t_Level);
+            cursor.Emit(OpCodes.Ldfld, f_Level_Session);
+            cursor.Emit(OpCodes.Ldflda, f_Session_Area);
+            cursor.Emit(OpCodes.Call, m_AreaKey_get_LevelSet);
+            cursor.Emit(OpCodes.Ldstr, "Celeste");
+            cursor.Emit(OpCodes.Call, m_String_op_Equality);
+            cursor.Emit(OpCodes.Brfalse, target);
         }
 
         public static void PostProcessor(MonoModder modder) {
