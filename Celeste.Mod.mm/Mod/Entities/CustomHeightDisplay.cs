@@ -5,9 +5,9 @@ using System.Collections;
 
 namespace Celeste.Mod.Entities {
     public class CustomHeightDisplay : Entity {
-        private bool drawText => ease > 0f && !string.IsNullOrEmpty(text);
+        private bool drawText => ease > 0f && !string.IsNullOrEmpty(Text);
 
-        private string text;
+        public string Text { get; }
         private string leftText;
         private string rightText;
 
@@ -16,8 +16,8 @@ namespace Celeste.Mod.Entities {
 
         private Vector2 size;
 
-        private int height;
-        private float approach;
+        public int Target { get; }
+        public float Approach { get; private set; }
         private bool hasCount;
 
         private float ease;
@@ -31,41 +31,48 @@ namespace Celeste.Mod.Entities {
 
         private string displaySound;
 
-        public CustomHeightDisplay(string dialog, int height, int from = 0, bool progressAudio = false, bool displayOnTransition = false) : base() {
-            text = dialog;
+        /// <summary></summary>
+        /// <param name="dialog">Dialog ID, replaces first occurence of "{X}" with the counter.</param>
+        /// <param name="target">Target for the counter.</param>
+        /// <param name="from">Counter start.</param>
+        /// <param name="progressAudio">Whether to increment audio progression.</param>
+        /// <param name="displayOnTransition"></param>
+        public CustomHeightDisplay(string dialog, int target, int from = 0, bool progressAudio = false, bool displayOnTransition = false)
+            : base() {
+            Text = dialog;
             leftText = "";
             rightText = "";
 
             this.displayOnTransition = displayOnTransition;
             easingCamera = true;
 
+            // Just pretend audio was already progressed if not needed
             setAudioProgression = !progressAudio;
 
-            if (height > from) {
-                Console.WriteLine("Height greater than From");
+            if (target > from) {
                 if (Dialog.Has(dialog))
-                    text = Dialog.Get(dialog).ToUpper();
+                    Text = Dialog.Get(dialog).ToUpper();
 
-                this.height = height;
-                approach = from;
+                Target = target;
+                Approach = from;
 
-                int idx = text.IndexOf("{X}");
+                int idx = Text.IndexOf("{x}", StringComparison.InvariantCultureIgnoreCase);
                 if (idx != -1) {
                     hasCount = true;
                     displaySound = SFX.game_07_altitudecount;
 
-                    leftText = text.Substring(0, idx);
-                    //if (idx + 3 < text.Length)
-                        //rightText = text[(idx + 3)..];
+                    leftText = Text.Substring(0, idx);
+                    if (idx + 3 < Text.Length)
+                        rightText = Text.Substring(idx + 3);
 
                     leftSize = ActiveFont.Measure(leftText).X;
-                    numberSize = ActiveFont.Measure(height.ToString()).X;
+                    numberSize = ActiveFont.Measure(Target.ToString()).X;
 
-                    size = ActiveFont.Measure(leftText + height + rightText);
+                    size = ActiveFont.Measure(leftText + Target + rightText);
                 } else {
                     displaySound = SFX.game_07_checkpointconfetti;
 
-                    leftText = text;
+                    leftText = Text;
                     size = ActiveFont.Measure(leftText);
                 }
             }
@@ -91,23 +98,25 @@ namespace Celeste.Mod.Entities {
             if (displayOnTransition)
                 Add(new Coroutine(CameraUp()));
 
-            if (!string.IsNullOrEmpty(text))
+            if (!string.IsNullOrEmpty(Text))
                 Audio.Play(displaySound);
             while ((ease += Engine.DeltaTime / 0.15f) < 1f)
                 yield return null;
 
             float displayTimer = 0f;
-            while (approach < height && player != null && (!player.OnGround(1) || displayTimer < 0.5f) && !(displayTimer > 3f)) {
+            while (Approach < Target && player != null && (!player.OnGround(1) || displayTimer < 0.5f) && !(displayTimer > 3f)) {
                 displayTimer += Engine.DeltaTime;
                 yield return null;
             }
 
-            approach = height;
-            pulse = 1f;
-            while ((pulse -= Engine.DeltaTime * 4f) > 0f)
-                yield return null;
+            Approach = Target;
+            if (hasCount) {
+                pulse = 1f;
+                while ((pulse -= Engine.DeltaTime * 4f) > 0f)
+                    yield return null;
+                pulse = 0f;
+            }
 
-            pulse = 0f;
             yield return 1f;
             while ((ease -= Engine.DeltaTime / 0.15f) > 0f)
                 yield return null;
@@ -127,9 +136,9 @@ namespace Celeste.Mod.Entities {
         }
 
         private void StepAudioProgression() {
-            Session session = (Scene as Level).Session;
             if (!setAudioProgression) {
-                setAudioProgression = true;
+                Session session = (Scene as Level).Session;
+                setAudioProgression = true; // Make sure audio only ever progressed once
                 session.Audio.Music.Progress++;
                 session.Audio.Apply(false);
             }
@@ -137,16 +146,17 @@ namespace Celeste.Mod.Entities {
 
         public override void Update() {
             if (ease > 0f && hasCount) {
-                if (height - approach > 100f) {
-                    approach += 1000f * Engine.DeltaTime;
-                } else if (height - approach > 25f) {
-                    approach += 200f * Engine.DeltaTime;
-                } else if (height - approach > 5f) {
-                    approach += 50f * Engine.DeltaTime;
-                } else if (height - approach > 0f) {
-                    approach += 10f * Engine.DeltaTime;
+                // This could be made to scale better for larger/smaller values
+                if (Target - Approach > 100f) {
+                    Approach += 1000f * Engine.DeltaTime;
+                } else if (Target - Approach > 25f) {
+                    Approach += 200f * Engine.DeltaTime;
+                } else if (Target - Approach > 5f) {
+                    Approach += 50f * Engine.DeltaTime;
+                } else if (Target - Approach > 0f) {
+                    Approach += 10f * Engine.DeltaTime;
                 } else {
-                    approach = height;
+                    Approach = Target;
                 }
             }
 
@@ -177,7 +187,7 @@ namespace Celeste.Mod.Entities {
                 ActiveFont.Draw(leftText, textPosition, new Vector2(0f, 0.5f), scale, textColor);
                 ActiveFont.Draw(rightText, textPosition + Vector2.UnitX * (leftSize + numberSize) * scaleFactor, new Vector2(0f, 0.5f), scale, textColor);
                 if (hasCount)
-                    ActiveFont.Draw(((int) approach).ToString(), textPosition + Vector2.UnitX * (leftSize + numberSize * 0.5f) * scaleFactor, new Vector2(0.5f, 0.5f), scale, textColor);
+                    ActiveFont.Draw(((int) Approach).ToString(), textPosition + Vector2.UnitX * (leftSize + numberSize * 0.5f) * scaleFactor, new Vector2(0.5f, 0.5f), scale, textColor);
             }
         }
 

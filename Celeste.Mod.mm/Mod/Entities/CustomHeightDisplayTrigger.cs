@@ -2,9 +2,9 @@
 
 namespace Celeste.Mod.Entities {
     [CustomEntity("everest/CustomHeightDisplayTrigger")]
-    class CustomHeightDisplayTrigger : Trigger {
+    public class CustomHeightDisplayTrigger : Trigger {
         bool isVanilla;
-        int height;
+        int target;
 
         int from;
         string text;
@@ -14,10 +14,10 @@ namespace Celeste.Mod.Entities {
         public CustomHeightDisplayTrigger(EntityData data, Vector2 offset)
             : base(data, offset) {
             isVanilla = data.Bool("vanilla", false);
-            height = data.Int("target", 0);
+            target = data.Int("target", 0);
 
             from = data.Int("from", 0);
-            text = data.Attr("text");
+            text = data.Attr("text", "{X}m");
             progressAudio = data.Bool("progressAudio", false);
             displayOnTransition = data.Bool("displayOnTransition", false);
         }
@@ -25,9 +25,9 @@ namespace Celeste.Mod.Entities {
         public override void OnEnter(Player player) {
             base.OnEnter(player);
             if (isVanilla)
-                Scene.Add(new HeightDisplay(height));
+                Scene.Add(new HeightDisplay(target));
             else
-                Scene.Add(new CustomHeightDisplay(text, height, from, progressAudio, displayOnTransition));
+                Scene.Add(new CustomHeightDisplay(text, target, from, progressAudio, displayOnTransition));
             RemoveSelf();
         }
 
