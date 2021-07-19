@@ -5,6 +5,7 @@ using System.Collections;
 
 namespace Celeste.Mod.Entities {
     public class CustomHeightDisplay : Entity {
+
         private bool drawText => ease > 0f && !string.IsNullOrEmpty(Text);
 
         public string Text { get; }
@@ -26,7 +27,7 @@ namespace Celeste.Mod.Entities {
         private bool displayOnTransition;
         private string spawnedLevel;
 
-        private bool setAudioProgression;
+        private bool audioProgressed; // Whether audio has already been progressed (or should not be progressed at all)
         private bool easingCamera;
 
         private string displaySound;
@@ -47,7 +48,7 @@ namespace Celeste.Mod.Entities {
             easingCamera = true;
 
             // Just pretend audio was already progressed if not needed
-            setAudioProgression = !progressAudio;
+            audioProgressed = !progressAudio;
 
             if (target > from) {
                 if (Dialog.Has(dialog))
@@ -83,7 +84,7 @@ namespace Celeste.Mod.Entities {
 
         public override void Added(Scene scene) {
             base.Added(scene);
-            spawnedLevel = (scene as Level).Session.Level;
+            spawnedLevel = SceneAs<Level>().Session.Level;
         }
 
         private IEnumerator Routine() {
@@ -122,23 +123,21 @@ namespace Celeste.Mod.Entities {
                 yield return null;
 
             RemoveSelf();
-            yield break;
         }
 
         private IEnumerator CameraUp() {
             easingCamera = true;
-            Level level = Scene as Level;
+            Level level = SceneAs<Level>();
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 1.5f) {
                 level.Camera.Y = level.Bounds.Bottom - 180 + 64f * (1f - Ease.CubeOut(p));
                 yield return null;
             }
-            yield break;
         }
 
         private void StepAudioProgression() {
-            if (!setAudioProgression) {
-                Session session = (Scene as Level).Session;
-                setAudioProgression = true; // Make sure audio only ever progressed once
+            if (!audioProgressed) {
+                Session session = SceneAs<Level>().Session;
+                audioProgressed = true; // Make sure audio only ever progressed once
                 session.Audio.Music.Progress++;
                 session.Audio.Apply(false);
             }
@@ -161,16 +160,16 @@ namespace Celeste.Mod.Entities {
             }
 
             if (!easingCamera) {
-                Level level = Scene as Level;
+                Level level = SceneAs<Level>();
                 level.Camera.Y = level.Bounds.Bottom - 180 + 64;
             }
             base.Update();
         }
 
         public override void Render() {
-            if (Scene.Paused) {
+            if (Scene.Paused)
                 return;
-            }
+
             if (drawText) {
                 Vector2 center = new Vector2(1920f, 1080f) / 2f;
 
