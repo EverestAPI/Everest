@@ -53,10 +53,10 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.Utils" Version="21.04.29.01" />
+    <PackageReference Include="MonoMod" Version="21.07.08.03" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.07.08.03" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.07.08.03" />
+    <PackageReference Include="MonoMod.Utils" Version="21.07.08.03" />
     <PackageReference Include="DotNetZip" Version="1.13.8" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
