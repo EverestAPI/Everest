@@ -9,6 +9,10 @@ namespace Celeste {
 
         private CrystalColor color;
 
+#pragma warning disable CS0649 // this attribute is from vanilla, so it's defined in there
+        private Entity filler;
+#pragma warning restore CS0649
+
         private int ID;
 
         public patch_CrystalStaticSpinner(Vector2 position, bool attachToSolid, CrystalColor color)
@@ -36,6 +40,25 @@ namespace Celeste {
             }
 
             orig_Awake(scene);
+        }
+
+        [MonoModReplace]
+        private void OnShake(Vector2 amount) {
+            foreach (Component component in Components) {
+                if (component is Image image) {
+                    // change from vanilla: instead of setting the position, add to it.
+                    image.Position += amount;
+                }
+            }
+
+            // addition from vanilla: also shake spinner connectors.
+            if (filler != null) {
+                foreach (Component component in filler.Components) {
+                    if (component is Image image) {
+                        image.Position += amount;
+                    }
+                }
+            }
         }
 
         [MonoModIgnore] // do not change anything in the method...
