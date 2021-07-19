@@ -24,10 +24,10 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor(EntityData data, Vector2 offset);
         [MonoModConstructor]
-        public void ctor(EntityData data, Vector2 offset) {
-            orig_ctor(data, offset);
+        [MonoModReplace]
+        public patch_IntroCrusher(EntityData data, Vector2 offset)
+            : this(data.Position + offset, data.Width, data.Height, data.Nodes[0] + offset) {
 
             levelFlags = data.Attr("flags");
 
