@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Xml;
@@ -33,6 +34,19 @@ namespace MiniInstaller {
                 // setting up paths failed (Celeste.exe was not found).
                 return 1;
             }
+
+            // .NET hates it when strong-named dependencies get updated.
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName asmName = new AssemblyName(asmArgs.Name);
+                if (!asmName.Name.StartsWith("Mono.Cecil"))
+                    return null;
+
+                Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
+                if (asm != null)
+                    return asm;
+
+                return Assembly.LoadFrom(Path.Combine(Path.GetDirectoryName(PathUpdate), asmName.Name + ".dll"));
+            };
 
             if (File.Exists(PathLog))
                 File.Delete(PathLog);

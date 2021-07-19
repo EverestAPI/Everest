@@ -368,10 +368,16 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly ZipFile Zip;
 
+        private class ZipPoolEntry {
+            public bool Taken = false;
+            public ZipFile Value;
+        }
+
         private class ZipOpenCounter {
             public int Value = 1;
         }
 
+        private ConcurrentBag<ZipPoolEntry> PoolZips = new ConcurrentBag<ZipPoolEntry>();
         private ConcurrentDictionary<Thread, ZipFile> ContextZips = new ConcurrentDictionary<Thread, ZipFile>();
         private ConcurrentDictionary<Thread, ZipOpenCounter> ContextZipOpens = new ConcurrentDictionary<Thread, ZipOpenCounter>();
 
@@ -410,9 +416,13 @@ namespace Celeste.Mod {
                 // Allow reopens within a certain timeframe.
                 QueuedTaskHelper.Do(zip, 4, () => {
                     if (ContextZipOpens[t].Value <= 0) {
-                        zip?.Dispose();
                         if (!ContextZips.TryRemove(t, out _))
                             throw new Exception("Failed to remove disposed contexted zip!");
+                        if (zip != null) {
+                            PoolZips.Add(new ZipPoolEntry() {
+                                Value = zip
+                            });
+                        }
                     }
                 });
             }
