@@ -19,36 +19,23 @@ namespace Celeste {
 
         public string levelFlags;
 
-        private bool manualTrigger;
-        private float delay;
-        private bool triggered;
-
-        private float speed;
-
         public patch_IntroCrusher(Vector2 position, int width, int height, Vector2 node)
             : base(position, width, height, true) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor(EntityData data, Vector2 offset);
         [MonoModConstructor]
-        public void ctor(EntityData data, Vector2 offset) {
-            orig_ctor(data, offset);
+        [MonoModReplace]
+        public patch_IntroCrusher(EntityData data, Vector2 offset)
+            : this(data.Position + offset, data.Width, data.Height, data.Nodes[0] + offset) {
 
             levelFlags = data.Attr("flags");
-
-            manualTrigger = data.Bool("manualTrigger");
-            delay = data.Float("delay", 1.2f);
-
-            speed = data.Float("speed", 2f);
 
             string tiletype = data.Attr("tiletype");
             if (!string.IsNullOrEmpty(tiletype)) {
                 Remove(tilegrid);
                 Add(tilegrid = GFX.FGAutotiler.GenerateBox(tiletype[0], data.Width / 8, data.Height / 8).TileGrid);
             }
-
-            Add(new EntityTriggerListener(Trigger, StartTriggered));
         }
 
         public extern void orig_Added(Scene scene);
@@ -68,21 +55,7 @@ namespace Celeste {
             }
         }
 
-        public void Trigger() {
-            if (manualTrigger)
-                triggered = true;
-        }
-
-        public void StartTriggered() {
-            if (manualTrigger) {
-                triggered = true;
-                Position = end;
-                Remove(Get<Coroutine>());
-            }
-        }
-
         [MonoModIgnore]
-        [PatchIntroCrusherSequence]
         private extern IEnumerator Sequence();
 
     }

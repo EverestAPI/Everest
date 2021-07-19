@@ -296,12 +296,6 @@ namespace MonoMod {
     class PatchFakeHeartDialogAttribute : Attribute { };
 
     /// <summary>
-    /// Include checks for manual triggering.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchIntroCrusherSequence))]
-    class PatchIntroCrusherSequenceAttribute : Attribute { };
-
-    /// <summary>
     /// Patches the unselected color in TextMenu.Option to make it customizable.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuOptionColor))]
@@ -1972,95 +1966,6 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
-        }
-
-        public static void PatchIntroCrusherSequence(MethodDefinition method, CustomAttribute attrib) {
-            FieldReference f_triggered = method.DeclaringType.FindField("triggered");
-            FieldReference f_manualTrigger = method.DeclaringType.FindField("manualTrigger");
-            FieldReference f_delay = method.DeclaringType.FindField("delay");
-            FieldReference f_speed = method.DeclaringType.FindField("speed");
-
-            FieldReference f_this = null;
-
-            // The gem collection routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()");
-                f_this = method.DeclaringType.FindField("<>4__this");
-                break;
-            }
-
-            // Steam FNA is weird, and all the local variables are messed up.
-            bool isSteamFNA = method.Body.Variables[2].VariableType.FullName != "Celeste.Player";
-
-            ILProcessor il = method.Body.GetILProcessor();
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 1; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-
-                if (instr.OpCode == (isSteamFNA ? OpCodes.Ldloc_1 : OpCodes.Ldloc_2) &&
-                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
-                    // Get the instruction at the beginning of this while loop.
-                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
-                    // Get the instruction after the end of this while statement
-                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_triggered));
-                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, breakTarget));
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
-                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
-                }
-
-                if (instr.OpCode == OpCodes.Ldloc_3 && // The value stored in loc_3 is different between versions, but it still works the same.
-                    instrs[instri + 1].OpCode == OpCodes.Brfalse_S) {
-                    // Get the instruction at the beginning of this while loop.
-                    Instruction loopTarget = (Instruction) instrs[instri + 1].Operand;
-                    // Get the instruction after the end of this while statement
-                    Instruction breakTarget = instrs.Last(i => i.Operand == loopTarget).Next;
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_manualTrigger));
-                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, loopTarget));
-                }
-
-                // Allow for custom activation delay
-                if (instr.MatchLdcR4(1.2f)) {
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instr.OpCode = OpCodes.Ldfld;
-                    instr.Operand = f_this;
-                    instrs.Insert(++instri, il.Create(OpCodes.Ldfld, f_delay));
-                }
-
-                // If the delay is less than, or equal to zero, don't add a shaker.
-                if (instr.OpCode == OpCodes.Ldarg_0 &&
-                    instrs[instri + 1].MatchLdfld(f_this.DeclaringType.FullName, "<shaker>5__3") &&
-                    instrs[instri + 2].MatchCallvirt("Monocle.Entity", "Add")) {
-                    Instruction breakTarget = instrs[instri + 3];
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_delay));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldc_R4, 0f));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ble, breakTarget));
-
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                }
-
-                // Allow for custom movement speed
-                if (instr.MatchLdcR4(2f) &&
-                    instrs[instri + 1].MatchCall("Monocle.Engine", "get_DeltaTime")) {
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
-                    instr.OpCode = OpCodes.Ldfld;
-                    instr.Operand = f_speed;
-                }
-            }
         }
 
         public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
