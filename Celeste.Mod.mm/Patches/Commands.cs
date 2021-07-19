@@ -248,7 +248,7 @@ namespace Celeste {
         }
 
         [MonoModReplace]
-        [Command("hearts", "gives a certain number of hearts for the specified level set (default all hearts and current level set)")]
+        [Command("hearts", "sets the amount of obtained hearts for the specified level set to a given number (default all hearts and current level set)")]
         private static void CmdHearts(int amount = int.MaxValue, string levelSet = null) {
             patch_SaveData saveData = SaveData.Instance as patch_SaveData;
             if (saveData == null)
