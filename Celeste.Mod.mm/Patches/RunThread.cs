@@ -73,7 +73,7 @@ namespace Celeste {
                 while (thread.IsAlive) {
                     // Some mods (mis)use RunThread.Start for long-living background threads
                     // which prevent the game from shutting down.
-                    if ((DateTime.UtcNow - start).TotalSeconds >= 90) {
+                    if ((DateTime.UtcNow - start).TotalSeconds >= 10) {
                         // Even if a background thread lives on for way too long, give it some
                         // time to recognize that the game is shutting down before discarding it.
                         if (timeout == null)

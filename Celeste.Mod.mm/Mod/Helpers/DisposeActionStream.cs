@@ -1,17 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
-    public sealed class UndisposableStream : Stream {
+    public sealed class DisposeActionStream : Stream {
 
         // I'm overcomplicating this. -ade
 
         public readonly Stream Inner;
 
-        public UndisposableStream(Stream inner) {
+        public readonly Action Action;
+
+        public DisposeActionStream(Stream inner, Action action) {
             Inner = inner;
+            Action = action;
         }
 
         public override bool CanRead {
@@ -105,9 +109,13 @@ namespace Celeste.Mod.Helpers {
         }
 
         public override void Close() {
+            Inner.Close();
+            Action?.Invoke();
         }
 
         protected override void Dispose(bool disposing) {
+            Inner.Dispose();
+            Action?.Invoke();
         }
 
     }

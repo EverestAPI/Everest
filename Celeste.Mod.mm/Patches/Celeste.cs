@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -248,18 +249,34 @@ https://discord.gg/6qjaePQ");
              *
              * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
              * Spawning a new thread just to wait for it to end doesn't make much sense,
-             * BUT delaying the slow texture load ops might get the game window to appear sooner.
+             * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
+             * 
+             * Note that on XNA, this dies both with and without threaded GL due to OOM exceptions.
              * -ade
              */
 
-            patch_VirtualTexture.ForceQueuedLoad = true;
+            if (CoreModule.Settings.FastTextureLoading ?? !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL)) {
+                long maxsize = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
+
+                if (maxsize <= 0) {
+                    maxsize = (long) (Everest.SystemMemoryMB * 0.2f * 1024f * 1024f);
+                    // Assume that even in the worst case with 4 GB system RAM, 512 MB (12.5%) are still available for texture loads. 
+                    if (maxsize <= (512L * 1024L * 1024L))
+                        maxsize = (512L * 1024L * 1024L);
+                }
+                // ... and even if the user forcibly lowered it below 128 MB, fall back to 128 MB as even the vanilla gameplay atlas is 64MB.
+                if (maxsize <= (128L * 1024L * 1024L))
+                    maxsize = (128L * 1024L * 1024L);
+
+                patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = true;
+            }
 
             orig_LoadContent();
 
             foreach (EverestModule mod in Everest._Modules)
                 mod.LoadContent(firstLoad);
 
-            patch_VirtualTexture.ForceQueuedLoad = false;
+            patch_VirtualTexture.ForceTaskedParse = patch_VirtualTexture.ForceQueuedLoad = false;
 
             Everest._ContentLoaded = true;
         }

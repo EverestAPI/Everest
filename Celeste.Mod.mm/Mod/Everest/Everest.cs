@@ -5,6 +5,7 @@ using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Mono.Cecil.Cil;
 using Monocle;
+using MonoMod;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using MonoMod.RuntimeDetour.HookGen;
@@ -17,6 +18,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Net;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -209,6 +211,8 @@ namespace Celeste.Mod {
         private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
         internal static List<string> _DetourLog = new List<string>();
 
+        public static readonly float SystemMemoryMB;
+
         static Everest() {
             int versionSplitIndex = VersionString.IndexOf('-');
             if (versionSplitIndex == -1) {
@@ -233,6 +237,40 @@ namespace Celeste.Mod {
                     VersionCommit = VersionSuffix.Substring(versionSplitIndex + 1);
                 }
             }
+
+            try {
+                SystemMemoryMB = Type.GetType("Mono.Runtime") != null ? GetTotalRAMMono() : GetTotalRAMWindows();
+            } catch {
+                SystemMemoryMB = 0f;
+            }
+        }
+
+        private static float GetTotalRAMMono() {
+            // Mono returns memory size in bytes as float.
+            using (PerformanceCounter pc = new PerformanceCounter("Mono Memory", "Total Physical Memory", true))
+                return pc.NextValue() / 1024f / 1024f;
+        }
+
+        [MonoModIgnore]
+        private static extern float GetTotalRAMWindows();
+
+        [MonoModIfFlag("PatchingWithoutMono")]
+        [MonoModPatch("GetTotalRAMWindows")]
+        [MonoModReplace]
+        private static float GetTotalRAMWindowsReal() {
+            // Windows returns memory size in kilobytes as string.
+            using (ManagementObjectSearcher searcher = new ManagementObjectSearcher(new ObjectQuery("SELECT * FROM CIM_OperatingSystem")))
+                foreach (ManagementObject item in searcher.Get())
+                    if (long.TryParse(item["TotalVisibleMemorySize"]?.ToString() ?? "", out long size))
+                        return size / 1024f;
+            return 0f;
+        }
+
+        [MonoModIfFlag("PatchingWithMono")]
+        [MonoModPatch("GetTotalRAMWindows")]
+        [MonoModReplace]
+        private static float GetTotalRAMWindowsMono() {
+            return 0f;
         }
 
         internal static void ParseArgs(string[] args) {
@@ -270,6 +308,7 @@ namespace Celeste.Mod {
             Logger.Log(LogLevel.Info, "core", "Booting Everest");
             Logger.Log(LogLevel.Info, "core", $"AppDomain: {AppDomain.CurrentDomain.FriendlyName ?? "???"}");
             Logger.Log(LogLevel.Info, "core", $"VersionCelesteString: {VersionCelesteString}");
+            Logger.Log(LogLevel.Info, "core", $"SystemMemoryMB: {SystemMemoryMB:F3} MB");
 
             if (Type.GetType("Mono.Runtime") != null) {
                 // Mono hates HTTPS.

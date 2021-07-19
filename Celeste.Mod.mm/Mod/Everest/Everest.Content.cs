@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -367,9 +368,54 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly ZipFile Zip;
 
+        private class ZipOpenCounter {
+            public int Value = 1;
+        }
+
+        private ConcurrentDictionary<Thread, ZipFile> ContextZips = new ConcurrentDictionary<Thread, ZipFile>();
+        private ConcurrentDictionary<Thread, ZipOpenCounter> ContextZipOpens = new ConcurrentDictionary<Thread, ZipOpenCounter>();
+
         public ZipModContent(string path) {
             Path = path;
-            Zip = new ZipFile(path);
+            Zip = OpenZip();
+        }
+
+        public ZipFile OpenZip() => new ZipFile(Path);
+
+        public ZipFile OpenContextZip(Thread t) {
+            if (t == null)
+                t = Thread.CurrentThread;
+
+            Retry:
+            bool added = false;
+            ZipFile zip = ContextZips.GetOrAdd(t, t => {
+                added = true;
+                ContextZipOpens[t] = new ZipOpenCounter();
+                return new ZipFile(Path);
+            });
+
+            // If we obtained an existing zip and are the first to do so, check if it's still there.
+            if (!added && Interlocked.Increment(ref ContextZipOpens[t].Value) <= 1 && !ContextZips.ContainsKey(t))
+                goto Retry;
+
+            return zip;
+        }
+
+        public void CloseContextZip(Thread t) {
+            if (t == null)
+                t = Thread.CurrentThread;
+
+            if (Interlocked.Decrement(ref ContextZipOpens[t].Value) <= 0 &&
+                ContextZips.TryGetValue(t, out ZipFile zip)) {
+                // Allow reopens within a certain timeframe.
+                QueuedTaskHelper.Do(zip, 4, () => {
+                    if (ContextZipOpens[t].Value <= 0) {
+                        zip?.Dispose();
+                        if (!ContextZips.TryRemove(t, out _))
+                            throw new Exception("Failed to remove disposed contexted zip!");
+                    }
+                });
+            }
         }
 
         protected override void Crawl() {
@@ -384,6 +430,8 @@ namespace Celeste.Mod {
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
             Zip.Dispose();
+            foreach (ZipFile zip in ContextZips.Values)
+                zip?.Dispose();
         }
     }
 
@@ -527,7 +575,7 @@ namespace Celeste.Mod {
             public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
 
-                if (path.StartsWith(".git/") || path.StartsWith("__MACOSX/") ||
+                if (path.Contains("/.git/") || path.Contains("/__MACOSX/") ||
                     Path.GetFileName(path).StartsWith("._"))
                     return false;
 

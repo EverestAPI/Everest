@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
@@ -8,12 +9,32 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
+        internal static readonly byte[] bytes;
+        internal const int bytesSize = 524288;
+
+        // Let's make the fixed buffer non-readonly.
+        internal static readonly byte[] buffer;
+        internal static byte[] bufferSafe;
+        internal static object bufferLock;
+        internal const int bufferSize = 4096 * 4096 * 4; // 67108864
+
+        private static extern void orig_cctor();
+        [MonoModConstructor]
+        private static void cctor() {
+            orig_cctor();
+
+            bufferSafe = buffer;
+            bufferLock = new object();
+        }
+
         public string Path { get; private set; }
         private Color color;
 
@@ -23,7 +44,6 @@ namespace Monocle {
         [MonoModRemove]
         public Texture2D Texture_Unsafe;
 
-        private bool _Texture_Reloading;
         [MonoModLinkFrom("Microsoft.Xna.Framework.Graphics.Texture2D Monocle.VirtualTexture::Texture")]
         public Texture2D Texture_Safe {
             get {
@@ -37,21 +57,29 @@ namespace Monocle {
                             return Texture_Unsafe;
 
                         // If we still can, cancel the queued load, then proceed with lazy-loading.
-                        if (MainThreadHelper.IsMainThread)
+                        if (MainThreadHelper.IsMainThread) {
                             _Texture_QueuedLoadLock = null;
+                            _Texture_Reloading = false;
+                            lazyForce = true;
+                        }
                     }
 
-                    if (!MainThreadHelper.IsMainThread)
+                    if (!MainThreadHelper.IsMainThread) { 
                         // Otherwise wait for it to get loaded. (Don't wait locked!)
+                        while (!_Texture_QueuedLoad.IsValid)
+                            Thread.Yield();
                         return _Texture_QueuedLoad.GetResult();
+                    }
                 }
 
                 if (_Texture_Reloading || !(CoreModule.Settings.LazyLoading || lazyForce))
                     return Texture_Unsafe;
 
-                // If we're accessing the texture from outside (render), load lazily if required.
-                if (Texture_Unsafe?.IsDisposed ?? true)
+                // If we're accessing the texture from elsewhere (render), load lazily if required.
+                if (Texture_Unsafe?.IsDisposed ?? true) {
+                    _Texture_Requesting = true;
                     Reload();
+                }
 
                 return Texture_Unsafe;
             }
@@ -60,6 +88,9 @@ namespace Monocle {
             }
         }
 
+        private bool _Texture_Reloading;
+        private bool _Texture_Requesting;
+        private bool _Texture_UnloadAfterReload;
         private object _Texture_QueuedLoadLock;
         private MaybeAwaitable<Texture2D> _Texture_QueuedLoad;
 
@@ -67,8 +98,8 @@ namespace Monocle {
 
         public VirtualTexture Fallback;
 
+        public static bool ForceTaskedParse;
         public static bool ForceQueuedLoad;
-        private bool BypassForceQueuedLoad;
 
         [MonoModConstructor]
         [MonoModReplace]
@@ -98,18 +129,120 @@ namespace Monocle {
                 Reload();
         }
 
-        internal extern void orig_Unload();
+        [MonoModReplace]
         internal override void Unload() {
-            _Texture_Reloading = true;
-            orig_Unload();
-            _Texture_Reloading = false;
-        }
+            Texture2D tex = Texture_Unsafe;
 
-        internal extern void orig_Reload();
-        internal override void Reload() {
             // Handle already queued loads appropriately.
             object queuedLoadLock = _Texture_QueuedLoadLock;
             if (queuedLoadLock != null) {
+                bool gotLock = false;
+                try {
+                    Monitor.TryEnter(queuedLoadLock, ref gotLock);
+                    if (gotLock) {
+                        if (_Texture_QueuedLoadLock != null) {
+                            // If we still can, cancel the queued load.
+                            _Texture_QueuedLoadLock = null;
+                        }
+                    } else {
+                        // Welp.
+                        _Texture_UnloadAfterReload = true;
+                        Monitor.TryEnter(queuedLoadLock, ref gotLock);
+                        if (gotLock) {
+                            // It might be too late - let's unload ourselves.
+                            _Texture_UnloadAfterReload = false;
+                        } else {
+                            // The loader will still handle the request.
+                            return;
+                        }
+                    }
+                } finally {
+                    if (gotLock)
+                        Monitor.Exit(queuedLoadLock);
+                }
+
+                if (!MainThreadHelper.IsMainThread) {
+                    // Otherwise wait for it to get loaded. (Don't wait locked!)
+                    while (!_Texture_QueuedLoad.IsValid)
+                        Thread.Yield();
+                    tex = _Texture_QueuedLoad.GetResult();
+                }
+            }
+
+            Texture_Unsafe = null;
+            if (tex == null || tex.IsDisposed)
+                return;
+
+            if (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread) {
+                MainThreadHelper.Do(() => tex.Dispose());
+            } else {
+                tex.Dispose();
+            }
+        }
+
+        internal bool LoadImmediately =>
+            (_Texture_Requesting || !ForceQueuedLoad) &&
+            ((CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) || MainThreadHelper.IsMainThread);
+        internal bool Load(bool wait, Func<Texture2D> load) {
+            if (LoadImmediately) {
+                Texture_Unsafe?.Dispose();
+                Texture_Unsafe = load();
+                return true;
+            }
+
+            // Let's queue a reload onto the main thread and call it a day.
+            // Make sure to read the texture size immediately though!
+            object queuedLoadLock;
+            lock (queuedLoadLock = new object()) {
+                _Texture_QueuedLoadLock = queuedLoadLock;
+
+                Func<Texture2D> _load = load;
+                load = () => {
+                    Texture2D tex;
+                    lock (queuedLoadLock) {
+                        if (_Texture_QueuedLoadLock == null)
+                            return Texture_Unsafe;
+                        // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                        Texture_Unsafe?.Dispose();
+                        Texture_Unsafe = tex = _load();
+                        _Texture_QueuedLoadLock = null;
+                    }
+                    if (_Texture_UnloadAfterReload) {
+                        tex?.Dispose();
+                        tex = Texture_Unsafe;
+                        // ... can anything even swap the texture here?
+                        Texture_Unsafe = null;
+                        tex?.Dispose();
+                        _Texture_UnloadAfterReload = false;
+                    }
+                    return tex;
+                };
+
+                _Texture_QueuedLoad = ForceQueuedLoad ?
+                    MainThreadHelper.GetForceQueue(load) :
+                    MainThreadHelper.Get(load);
+            }
+
+            if (wait || _Texture_Requesting)
+                _Texture_QueuedLoad.GetResult();
+
+            return false;
+        }
+
+        // Same signature as .NET Core Unsafe variant, which also matches IL expectations.
+        // This should get replaced with initblk at the call site in Reload as PatchInitblk is used
+        [MonoModIgnore]
+        private static unsafe extern void _initblk(void* startAddress, byte value, uint byteCount);
+
+        [MonoModReplace]
+        [PatchInitblk]
+        internal override unsafe void Reload() {
+            // Unload task might end up conflicting with Reload - let's instead force-unload in Load.
+            // Unload();
+
+            // Handle already queued loads appropriately.
+            object queuedLoadLock = _Texture_QueuedLoadLock;
+            if (queuedLoadLock != null && !_Texture_Reloading) {
                 lock (queuedLoadLock) {
                     // Queued task finished just in time.
                     if (_Texture_QueuedLoadLock == null)
@@ -122,70 +255,324 @@ namespace Monocle {
 
                 if (!MainThreadHelper.IsMainThread) {
                     // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
+                    while (!_Texture_QueuedLoad.IsValid)
+                        Thread.Yield();
                     _Texture_QueuedLoad.GetResult();
                     return;
                 }
             }
 
-            if ((ForceQueuedLoad && !BypassForceQueuedLoad) || (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread)) {
-                // Let's queue a reload onto the main thread and call it a day.
-                // Make sure to read the texture size immediately though!
+            if ((Metadata?.StreamAsync ?? true) && ForceTaskedParse &&
+                !_Texture_Reloading && !_Texture_Requesting) {
                 Preload(true);
-                _Texture_QueuedLoadLock = queuedLoadLock = new object();
-                _Texture_QueuedLoad = MainThreadHelper.Get(() => {
-                    lock (queuedLoadLock) {
-                        if (_Texture_QueuedLoadLock == null)
-                            return Texture_Unsafe;
-                        BypassForceQueuedLoad = true;
-                        // NOTE: If something dares to change texture info on the fly, make it wait on any existing tasks, then make it force-reload.
-                        Reload();
-                        BypassForceQueuedLoad = false;
-                        _Texture_QueuedLoadLock = null;
-                        return Texture_Unsafe;
-                    }
-                });
-                return;
-            }
-
-            _Texture_Reloading = true;
-
-            if (Metadata == null) {
-                orig_Reload();
-                _Texture_Reloading = false;
-                return;
-            }
-
-            Unload();
-            Texture = null;
-
-            Stream stream = Metadata.Stream;
-            if (stream != null) {
-                bool premul = false; // Assume unpremultiplied by default.
-                if (Metadata.TryGetMeta(out TextureMeta meta))
-                    premul = meta.Premultiplied;
-
-                using (stream) {
-                    if (premul) {
-                        Texture = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
-                    } else {
-                        ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
-                        Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
-                        tex.SetData(data);
-                        Texture = tex;
-                    }
+                lock (queuedLoadLock = new object()) {
+                    _Texture_QueuedLoadLock = queuedLoadLock;
+                    _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
+                        Texture2D tex;
+                        lock (queuedLoadLock) {
+                            if (_Texture_QueuedLoadLock == null)
+                                return Texture_Unsafe;
+                            // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                            _Texture_Reloading = true;
+                            Reload();
+                            if (_Texture_QueuedLoadLock == queuedLoadLock)
+                                _Texture_QueuedLoadLock = null;
+                            tex = Texture_Unsafe;
+                        }
+                        if (_Texture_UnloadAfterReload) {
+                            tex?.Dispose();
+                            tex = Texture_Unsafe;
+                            // ... can anything even swap the texture here?
+                            Texture_Unsafe = null;
+                            tex?.Dispose();
+                            _Texture_UnloadAfterReload = false;
+                        }
+                        return tex;
+                    }).GetAwaiter());
                 }
-
-            } else if (Fallback != null) {
-                ((patch_VirtualTexture) (object) Fallback).Reload();
-                Texture = Fallback.Texture;
-            }
-
-            if (Texture != null) {
-                Width = Texture.Width;
-                Height = Texture.Height;
+                return;
             }
 
             _Texture_Reloading = false;
+
+            if (Metadata != null) {
+                if (Metadata.StreamAsync || MainThreadHelper.IsMainThread) {
+                    Stream stream = Metadata.Stream;
+                    if (stream != null) {
+                        using (stream) {
+                            bool premul = false; // Assume unpremultiplied by default.
+                            if (Metadata.TryGetMeta(out TextureMeta meta))
+                                premul = meta.Premultiplied;
+
+                            if (ContentExtensions.TextureSetDataSupportsPtr) {
+                                int w, h;
+                                IntPtr dataPtr;
+                                if (premul)
+                                    ContentExtensions.LoadTextureRaw(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
+                                else
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out dataPtr);
+                                stream.Dispose();
+                                Width = w;
+                                Height = h;
+                                Load(false, () => {
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(dataPtr);
+                                    ContentExtensions.UnloadTextureRaw(dataPtr);
+                                    return tex;
+                                });
+                            } else {
+                                int w, h;
+                                byte[] data;
+                                if (premul)
+                                    ContentExtensions.LoadTextureRaw(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out data);
+                                else
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out data);
+                                stream.Dispose();
+                                Width = w;
+                                Height = h;
+                                Load(false, () => {
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(data);
+                                    return tex;
+                                });
+                            }
+                        }
+
+                    } else if (Fallback != null) {
+                        ((patch_VirtualTexture) (object) Fallback).Reload();
+                        Texture_Unsafe = Fallback.Texture;
+                    }
+
+                } else {
+                    // This is ugly but if the asset doesn't like multithreading, so be it.
+                    // Not even preloading will be beneficial here, and forget about GetMeta.
+                    Load(true, () => {
+                        using (Stream stream = Metadata.Stream) {
+                            if (stream != null) {
+                                bool premul = false; // Assume unpremultiplied by default.
+                                if (Metadata.TryGetMeta(out TextureMeta meta))
+                                    premul = meta.Premultiplied;
+
+                                if (premul) {
+                                    Texture2D tex = Texture2D.FromStream(Celeste.Celeste.Instance.GraphicsDevice, stream);
+                                    return tex;
+                                } else if (ContentExtensions.TextureSetDataSupportsPtr) {
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out IntPtr dataPtr);
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(dataPtr);
+                                    ContentExtensions.UnloadTextureRaw(dataPtr);
+                                    return tex;
+                                } else {
+                                    ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out int w, out int h, out byte[] data);
+                                    Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                    tex.SetData(data);
+                                    return tex;
+                                }
+
+                            } else if (Fallback != null) {
+                                ((patch_VirtualTexture) (object) Fallback).Reload();
+                                return Fallback.Texture;
+                            }
+
+                            return null;
+                        }
+                    });
+                }
+
+            } else if (string.IsNullOrEmpty(Path)) {
+                Color[] data = new Color[Width * Height];
+                fixed (Color* ptr = data) {
+                    for (int i = 0; i < data.Length; i++) {
+                        ptr[i] = color;
+                    }
+                }
+                Load(false, () => {
+                    Texture2D tex = new Texture2D(Engine.Instance.GraphicsDevice, Width, Height);
+                    tex.SetData(data);
+                    return tex;
+                });
+
+            } else {
+                int w, h;
+                bool bufferGC = !ContentExtensions.TextureSetDataSupportsPtr;
+                byte[] buffer = null;
+                IntPtr bufferPtr = IntPtr.Zero;
+                bool bufferStolen = false;
+                switch (System.IO.Path.GetExtension(Path)) {
+                    case ".data":
+                        using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path))) {
+                            // Vanilla has got a static readonly byte[] bytes of fixed length - currently 524288
+                            // Luckily we can read more chunks on demand.
+                            byte[] bytes = LoadImmediately ?
+                                patch_VirtualTexture.bytes :
+                                new byte[bytesSize];
+                            stream.Read(bytes, 0, bytesSize);
+
+                            int pB = 0;
+                            w = BitConverter.ToInt32(bytes, pB);
+                            h = BitConverter.ToInt32(bytes, pB + 4);
+                            bool hasAlpha = bytes[pB + 8] == 1;
+                            pB += 9;
+
+                            Width = w;
+                            Height = h;
+
+                            int size = w * h * 4;
+                            // Vanilla has got a static readonly byte[] buffer of fixed length - currently 67108864
+                            // Ideally there should be only a single texture using the max-sized buffer.
+                            if (size == bufferSize) {
+                                lock (bufferLock) {
+                                    buffer = bufferSafe;
+                                    bufferSafe = null;
+                                    bufferStolen = true;
+                                    bufferGC = true;
+                                }
+                            }
+                            if (buffer == null) {
+                                if (bufferGC) {
+                                    buffer = new byte[size];
+                                } else {
+                                    buffer = new byte[0];
+                                    bufferPtr = Marshal.AllocHGlobal(size);
+                                }
+                                bufferStolen = false;
+                            }
+
+                            fixed (byte* from = bytes)
+                            fixed (byte* bufferPin = buffer) {
+                                byte* to = bufferGC ? bufferPin : (byte*) bufferPtr;
+                                int* toI = (int*) to;
+                                uint iB = 0;
+                                uint iI = 0;
+
+                                // Let's dupe the loop and move hasAlpha out, otherwise hasAlpha gets checked often.
+                                if (hasAlpha) {
+                                    while (iB < size) {
+                                        uint linesize = from[pB];
+
+                                        byte a = from[pB + 1];
+                                        if (a > 0) {
+                                            to[iB] = from[pB + 4];
+                                            to[iB + 1] = from[pB + 3];
+                                            to[iB + 2] = from[pB + 2];
+                                            to[iB + 3] = a;
+                                            pB += 5;
+                                        } else {
+                                            toI[iI] = 0;
+                                            pB += 2;
+                                        }
+
+                                        if (linesize > 1) {
+                                            if (a == 0) {
+                                                _initblk(to + iB + 4, 0, linesize * 4 - 4);
+                                            } else {
+                                                for (uint jI = iI + 1, end = iI + linesize; jI < end; jI++)
+                                                    toI[jI] = toI[iI];
+                                            }
+                                        }
+
+                                        iI += linesize;
+                                        iB = iI * 4;
+
+                                        if (pB > bytesSize - 32) {
+                                            int offset = bytesSize - pB;
+                                            for (int oB = 0; oB < offset; oB++) {
+                                                from[oB] = from[pB + oB];
+                                            }
+                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            pB = 0;
+                                        }
+                                    }
+
+                                } else {
+                                    while (iB < size) {
+                                        uint linesize = from[pB];
+
+                                        to[iB] = from[pB + 3];
+                                        to[iB + 1] = from[pB + 2];
+                                        to[iB + 2] = from[pB + 1];
+                                        to[iB + 3] = 255;
+                                        pB += 4;
+
+                                        if (linesize > 1)
+                                            for (uint jI = iI + 1, end = iI + linesize; jI < end; jI++)
+                                                toI[jI] = toI[iI];
+
+                                        iI += linesize;
+                                        iB = iI * 4;
+
+                                        if (pB > bytesSize - 32) {
+                                            int offset = bytesSize - pB;
+                                            for (int oB = 0; oB < offset; oB++) {
+                                                from[oB] = from[pB + oB];
+                                            }
+                                            stream.Read(bytes, offset, bytesSize - offset);
+                                            pB = 0;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Load(false, () => {
+                            Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h);
+                            // This is on the main thread so buffer should be consumed by SetData, reusable afterwards.
+                            if (bufferGC) {
+                                tex.SetData(buffer);
+                                if (bufferStolen)
+                                    bufferSafe = buffer;
+                            } else {
+                                tex.SetData(bufferPtr);
+                                Marshal.FreeHGlobal(bufferPtr);
+                            }
+                            return tex;
+                        });
+                        break;
+
+                    case ".png":
+                        if (bufferGC) {
+                            using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                                ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out buffer);
+                            Width = w;
+                            Height = h;
+                            Load(false, () => {
+                                Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                tex.SetData(buffer);
+                                return tex;
+                            });
+                        } else {
+                            using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                                ContentExtensions.LoadTextureLazyPremultiply(Celeste.Celeste.Instance.GraphicsDevice, stream, out w, out h, out bufferPtr);
+                            Width = w;
+                            Height = h;
+                            Load(false, () => {
+                                Texture2D tex = new Texture2D(Celeste.Celeste.Instance.GraphicsDevice, w, h, false, SurfaceFormat.Color);
+                                tex.SetData(bufferPtr);
+                                ContentExtensions.UnloadTextureRaw(bufferPtr);
+                                return tex;
+                            });
+                        }
+                        break;
+
+                    case ".xnb":
+                        Load(true, () => Engine.Instance.Content.Load<Texture2D>(Path.Replace(".xnb", "")));
+                        break;
+
+                    default:
+                        Load(true, () => {
+                            using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
+                                return Texture2D.FromStream(Engine.Graphics.GraphicsDevice, stream);
+                        });
+                        break;
+                }
+            }
+
+            Texture2D tex = Texture_Unsafe;
+            if (tex != null) {
+                Width = tex.Width;
+                Height = tex.Height;
+            }
+
+            _Texture_Requesting = false;
         }
 
         private bool Preload(bool force = false) {

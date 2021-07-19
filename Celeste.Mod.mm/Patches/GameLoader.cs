@@ -78,6 +78,7 @@ namespace Celeste {
         [MonoModReplace]
         private void LoadThread() {
             MInput.Disabled = true;
+            MainThreadHelper.Boost = 25;
             Stopwatch timer = Stopwatch.StartNew();
 
             Audio.Init();
@@ -108,8 +109,9 @@ namespace Celeste {
             timer.Stop();
 
             timer = Stopwatch.StartNew();
-            MainThreadHelper.Boost = true;
-            MainThreadHelper.Get(() => MainThreadHelper.Boost = false).GetResult();
+            MainThreadHelper.Boost = 50;
+            MainThreadHelper.Get(() => MainThreadHelper.Boost = 0).GetResult();
+            // FIXME: There could be ongoing tasks which add to the main thread queue right here.
             Console.WriteLine(" - MAIN THREAD QUEUE REMAINDER LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
 

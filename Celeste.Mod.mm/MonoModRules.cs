@@ -385,8 +385,14 @@ namespace MonoMod {
     /// <summary>
     /// Patches TextMenu.Setting.Update to handle MouseButtons
     /// </summary>
-    [MonoModCustomMethodAttribute("PatchTextMenuSettingUpdate")]
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuSettingUpdate))]
     class PatchTextMenuSettingUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the attributed method to replace _initblk calls with the initblk opcode.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInitblk))]
+    class PatchInitblkAttribute : Attribute { }
 
     static class MonoModRules {
 
@@ -406,8 +412,6 @@ namespace MonoMod {
         static TypeDefinition StrawberryRegistry;
         static InterfaceImplementation IStrawberry;
 
-        static TypeDefinition SaveData;
-
         static TypeDefinition FileProxy;
         static TypeDefinition DirectoryProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new Dictionary<string, MethodDefinition>();
@@ -419,6 +423,11 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
+
+            foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
+                foreach (AssemblyNameReference dep in mod.AssemblyReferences)
+                    if (dep.Name == "MonoMod" && MonoModder.Version < dep.Version)
+                        throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {dep.Version}+)");
 
             FMODStub = Environment.GetEnvironmentVariable("EVEREST_FMOD_STUB") == "1";
             MonoModRule.Flag.Set("FMODStub", FMODStub);
@@ -435,6 +444,9 @@ namespace MonoMod {
             MonoModRule.Flag.Set("XNA", !isFNA);
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
             MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
+
+            MonoModRule.Flag.Set("PatchingWithMono", Type.GetType("Mono.Runtime") != null);
+            MonoModRule.Flag.Set("PatchingWithoutMono", Type.GetType("Mono.Runtime") == null);
 
             if (Celeste == null)
                 Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
@@ -2401,6 +2413,14 @@ namespace MonoMod {
             // replace Files.Copy with _saveAndFlushToFile
             c.Next.OpCode = OpCodes.Call;
             c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlushToFile");
+        }
+
+        public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
+                c.Next.OpCode = OpCodes.Initblk;
+                c.Next.Operand = null;
+            }
         }
 
         public static void PostProcessor(MonoModder modder) {

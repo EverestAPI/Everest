@@ -19,6 +19,7 @@ namespace Celeste {
 
         private int currentIndex;
         private int beatIndex;
+        private int beatIndexOffset;
         private float beatTimer;
         private int leadBeats;
         private EventInstance sfx;
@@ -94,6 +95,11 @@ namespace Celeste {
             if (leadBeats <= 0) {
                 sfx?.setParameterValue("sixteenth_note", GetSixteenthNote());
             }
+        }
+
+        [MonoModReplace]
+        public new int GetSixteenthNote() {
+            return (beatIndex + beatIndexOffset) % beatIndexMax + 1;
         }
 
         [MonoModReplace]

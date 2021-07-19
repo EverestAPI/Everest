@@ -61,7 +61,7 @@ namespace MiniInstaller {
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
                     }
-                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
+                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
                     RunHookGen(PathEverestExe, PathCelesteExe);
                     MakeLargeAddressAware(PathEverestExe);
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
@@ -224,13 +224,14 @@ namespace MiniInstaller {
             AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.exe"));
         }
 
-        public static void RunMonoMod(string asmFrom, string asmTo = null) {
-            if (asmTo == null)
-                asmTo = asmFrom;
+        public static void RunMonoMod(string asmFrom, string asmTo = null, string[] dllPaths = null) {
+            asmTo ??= asmFrom;
+            dllPaths ??= new string[] { PathGame };
+
             LogLine($"Running MonoMod for {asmFrom}");
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
-            Environment.SetEnvironmentVariable("MONOMOD_MODS", PathGame);
+            Environment.SetEnvironmentVariable("MONOMOD_MODS", string.Join(Path.PathSeparator.ToString(), dllPaths));
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
 
