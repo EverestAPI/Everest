@@ -10,30 +10,8 @@ namespace Celeste {
     static class patch_Input {
 
         // Celeste 1.3.3.X introduced DemoDash, 1.3.3.19 renamed it to CrouchDash
-        [MonoModIfFlag("V2:Input")]
         [MonoModLinkFrom("Monocle.VirtualButton Celeste.Input.DemoDash")]
         public static VirtualButton CrouchDash;
-
-        // Celeste 1.3.3.19 introduced these properties which must be shimmed for 1.3.1.2.
-
-        [MonoModIfFlag("V1:Input")]
-        public static bool DashPressed {
-            [MonoModIfFlag("V1:Input")]
-            get => Input.Dash.Pressed;
-        }
-
-        [MonoModIfFlag("V1:Input")]
-        public static bool CrouchDashPressed {
-            [MonoModIfFlag("V1:Input")]
-            get => false; // FIXME: Can this be improved for 1.3.1.2?
-        }
-
-        // Celeste 1.3.3.X (1.3.3.17?) introduced this property which must be shimmed for 1.3.1.2.
-        [MonoModIfFlag("V1:InputGrabCheck")]
-        public static bool GrabCheck {
-            [MonoModIfFlag("V1:InputGrabCheck")]
-            get => Input.Grab.Check;
-        }
 
         public static extern void orig_Initialize();
         public static void Initialize() {

@@ -347,12 +347,6 @@ namespace Celeste {
             /// Set this property to true to force the Item to render even when off-screen.
             /// </summary>
             public virtual bool AlwaysRender { get; } = false;
-
-            /// <summary>
-            /// Items that have AboveAll set to true will render above those that have it set to false.
-            /// </summary>
-            [MonoModIfFlag("V1:Input")]
-            public new bool AboveAll = false;
         }
 
         public class patch_SubHeader : SubHeader {

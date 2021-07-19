@@ -11,9 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace Celeste {
-    [MonoModIfFlag("V2:Input")]
-    [MonoModPatch("KeyboardConfigUI")]
-    public class patch_KeyboardConfigUI_InputV2 : KeyboardConfigUI {
+    public class patch_KeyboardConfigUI : KeyboardConfigUI {
 
         [MonoModIgnore]
         private bool remapping;
@@ -41,6 +39,8 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchInputConfigReset]
         public new extern void Update();
+
+        #region Legacy Input
 
         /// <summary>
         /// Gets the label to display on-screen for a mapping.
@@ -98,6 +98,8 @@ namespace Celeste {
                 boundKeys.Add(defaultKey);
             return boundKeys;
         }
+
+        #endregion
 
         /// <summary>
         /// Rebuilds the key mapping menu. Should clear the menu and add back all options.
@@ -198,6 +200,8 @@ namespace Celeste {
         [MakeMethodPublic]
         public extern void AddRemap(Keys key);
 
+        #region Legacy Input
+
         [Obsolete("This method exists so that older mods can still be loaded but should no longer be used.")]
         private void Remap(int mapping) {
             List<Keys> keys = GetRemapList(mapping, (Keys) (-1));
@@ -235,6 +239,8 @@ namespace Celeste {
         protected virtual List<Keys> GetRemapList(int remapping, Keys newKey) {
             return null;
         }
+
+        #endregion
 
     }
 }

@@ -244,11 +244,6 @@ https://discord.gg/6qjaePQ");
             // DON'T! The original method is orig_LoadContent
             bool firstLoad = this.firstLoad;
 
-            if (!firstLoad && Version <= new Version(1, 3, 1, 2)) {
-                // Celeste 1.3.1.2 and older runs Directory.Add in PlaybackData.Load
-                PlaybackData.Tutorials.Clear();
-            }
-
             /* Vanilla calls GFX.Load and MTN.Load in LoadContent on non-Stadia platforms.
              * Sadly we can't load them in GameLoader.LoadThread as mods rely on them in LoadContent.
              *

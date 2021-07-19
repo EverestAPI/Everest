@@ -539,55 +539,7 @@ namespace Celeste.Mod {
             }
         }
 
-        [MonoModIgnore]
-        private extern void InitializeButtonBinding(object settings, PropertyInfo prop);
-
-        [MonoModIfFlag("V1:Input")]
-        [MonoModPatch("InitializeButtonBinding")]
-        [MonoModReplace]
-        [Obsolete]
-        private void InitializeButtonBindingV1(object settings, PropertyInfo prop) {
-            if (!(prop.GetValue(settings) is ButtonBinding binding)) {
-                binding = new ButtonBinding();
-
-                DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
-                if (defaults != null) {
-                    if (defaults.Button != 0)
-                        binding.Buttons.Add(defaults.Button);
-                    if (defaults.Key != 0)
-                        binding.Keys.Add(defaults.Key);
-                }
-
-                prop.SetValue(settings, binding);
-            }
-
-            patch_VirtualButton_InputV1 vbutton = new patch_VirtualButton_InputV1();
-
-            foreach (Keys key in binding.Keys)
-                vbutton.Nodes.Add(new patch_VirtualButton_InputV1.KeyboardKey(key));
-
-            foreach (Buttons button_ in binding.Buttons) {
-                Buttons button = button_;
-                if ((button & Buttons.LeftTrigger) == Buttons.LeftTrigger) {
-                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadLeftTrigger(Input.Gamepad, 0.25f));
-                    button &= ~Buttons.LeftTrigger;
-                }
-                if ((button & Buttons.RightTrigger) == Buttons.RightTrigger) {
-                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadLeftTrigger(Input.Gamepad, 0.25f));
-                    button &= ~Buttons.RightTrigger;
-                }
-                if (button != 0) {
-                    vbutton.Nodes.Add(new patch_VirtualButton_InputV1.PadButton(Input.Gamepad, button));
-                }
-            }
-
-            binding.Button = vbutton;
-        }
-
-        [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("InitializeButtonBinding")]
-        [MonoModReplace]
-        private void InitializeButtonBindingV2(object settings, PropertyInfo prop) {
+        private void InitializeButtonBinding(object settings, PropertyInfo prop) {
             if (!(prop.GetValue(settings) is ButtonBinding binding)) {
                 binding = new ButtonBinding();
 
@@ -602,8 +554,8 @@ namespace Celeste.Mod {
                 prop.SetValue(settings, binding);
             }
 
-            binding.Button = (patch_VirtualButton_InputV1) new VirtualButton(binding.Binding, Input.Gamepad, 0.08f, 0.2f);
-            ((patch_VirtualButton_InputV2) (VirtualButton) binding.Button).AutoConsumeBuffer = true;
+            binding.Button = (patch_VirtualButton) new VirtualButton(binding.Binding, Input.Gamepad, 0.08f, 0.2f);
+            ((patch_VirtualButton) (VirtualButton) binding.Button).AutoConsumeBuffer = true;
         }
 
         public virtual void OnInputDeregister() {
@@ -659,46 +611,16 @@ namespace Celeste.Mod {
             }));
         }
 
-        [MonoModIgnore]
-        private extern Entity CreateKeyboardConfigUI(TextMenu menu);
-
-        [MonoModIfFlag("V1:Input")]
-        [MonoModPatch("CreateKeyboardConfigUI")]
         [MonoModReplace]
-        [Obsolete]
-        private Entity CreateKeyboardConfigUIV1(TextMenu menu) {
+        private Entity CreateKeyboardConfigUI(TextMenu menu) {
             return new ModuleSettingsKeyboardConfigUI(this) {
                 OnClose = () => menu.Focused = true
             };
         }
 
-        [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("CreateKeyboardConfigUI")]
         [MonoModReplace]
-        private Entity CreateKeyboardConfigUIV2(TextMenu menu) {
-            return new ModuleSettingsKeyboardConfigUIV2(this) {
-                OnClose = () => menu.Focused = true
-            };
-        }
-
-        [MonoModIgnore]
-        private extern Entity CreateButtonConfigUI(TextMenu menu);
-
-        [MonoModIfFlag("V1:Input")]
-        [MonoModPatch("CreateButtonConfigUI")]
-        [MonoModReplace]
-        [Obsolete]
-        private Entity CreateButtonConfigUIV1(TextMenu menu) {
+        private Entity CreateButtonConfigUI(TextMenu menu) {
             return new ModuleSettingsButtonConfigUI(this) {
-                OnClose = () => menu.Focused = true
-            };
-        }
-
-        [MonoModIfFlag("V2:Input")]
-        [MonoModPatch("CreateButtonConfigUI")]
-        [MonoModReplace]
-        private Entity CreateButtonConfigUIV2(TextMenu menu) {
-            return new ModuleSettingsButtonConfigUIV2(this) {
                 OnClose = () => menu.Focused = true
             };
         }

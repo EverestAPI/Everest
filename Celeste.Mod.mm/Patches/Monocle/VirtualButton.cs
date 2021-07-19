@@ -3,9 +3,8 @@ using MonoMod;
 using System.Collections.Generic;
 
 namespace Monocle {
-    [MonoModIfFlag("V2:Input")]
     [MonoModPatch("VirtualButton")]
-    public class patch_VirtualButton_InputV2 : VirtualButton {
+    public class patch_VirtualButton : VirtualButton {
 
         public List<Node> Nodes;
 
@@ -98,19 +97,19 @@ namespace Monocle {
             }
         }
 
-        public patch_VirtualButton_InputV2() {
+        public patch_VirtualButton() {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public patch_VirtualButton_InputV2(float bufferTime) {
+        public patch_VirtualButton(float bufferTime) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public patch_VirtualButton_InputV2(float bufferTime, params Node[] nodes) {
+        public patch_VirtualButton(float bufferTime, params Node[] nodes) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public patch_VirtualButton_InputV2(params Node[] nodes) {
+        public patch_VirtualButton(params Node[] nodes) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
@@ -206,7 +205,6 @@ namespace Monocle {
 
         // Copied from Celeste 1.3.3.11
 
-        [MonoModIfFlag("V2:Input")]
         public abstract class Node : VirtualInputNode {
             public abstract bool Check { get; }
             public abstract bool Pressed { get; }
@@ -216,7 +214,6 @@ namespace Monocle {
             public virtual bool Bufferable { get; set; }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class KeyboardKey : Node {
             public Keys Key;
 
@@ -231,7 +228,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadButton : Node {
             public int GamepadIndex;
 
@@ -249,7 +245,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickRight : Node {
             public int GamepadIndex;
 
@@ -267,7 +262,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickLeft : Node {
             public int GamepadIndex;
 
@@ -285,7 +279,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickUp : Node {
             public int GamepadIndex;
 
@@ -303,7 +296,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftStickDown : Node {
             public int GamepadIndex;
 
@@ -321,7 +313,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightStickRight : Node {
             public int GamepadIndex;
 
@@ -339,7 +330,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightStickLeft : Node {
             public int GamepadIndex;
 
@@ -357,7 +347,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightStickUp : Node {
             public int GamepadIndex;
 
@@ -375,7 +364,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightStickDown : Node {
             public int GamepadIndex;
 
@@ -393,7 +381,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadLeftTrigger : Node {
             public int GamepadIndex;
 
@@ -411,7 +398,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadRightTrigger : Node {
             public int GamepadIndex;
 
@@ -429,7 +415,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadDPadRight : Node {
             public int GamepadIndex;
 
@@ -444,7 +429,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadDPadLeft : Node {
             public int GamepadIndex;
 
@@ -459,7 +443,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadDPadUp : Node {
             public int GamepadIndex;
 
@@ -474,7 +457,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class PadDPadDown : Node {
             public int GamepadIndex;
 
@@ -489,7 +471,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class MouseLeftButton : Node {
             public override bool Check => MInput.Mouse.CheckLeftButton;
 
@@ -498,7 +479,6 @@ namespace Monocle {
             public override bool Released => MInput.Mouse.ReleasedLeftButton;
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class MouseRightButton : Node {
             public override bool Check => MInput.Mouse.CheckRightButton;
 
@@ -507,7 +487,6 @@ namespace Monocle {
             public override bool Released => MInput.Mouse.ReleasedRightButton;
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class MouseMiddleButton : Node {
             public override bool Check => MInput.Mouse.CheckMiddleButton;
 
@@ -516,7 +495,6 @@ namespace Monocle {
             public override bool Released => MInput.Mouse.ReleasedMiddleButton;
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class VirtualAxisTrigger : Node {
             public enum Modes {
                 LargerThan,
@@ -573,7 +551,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class VirtualIntegerAxisTrigger : Node {
             public enum Modes {
                 LargerThan,
@@ -630,7 +607,6 @@ namespace Monocle {
             }
         }
 
-        [MonoModIfFlag("V2:Input")]
         public class VirtualJoystickXTrigger : Node {
             public enum Modes {
                 LargerThan,
@@ -690,7 +666,6 @@ namespace Monocle {
         // 1.3.3.11's VirtualJoystickYTrigger is virtually identical to the VirtualJoystickXTrigger.
         // This could be a copy-pasta bug, or it could be intentional.
 
-        [MonoModIfFlag("V2:Input")]
         public class VirtualJoystickYTrigger : Node {
             public ThresholdModes Mode;
 
