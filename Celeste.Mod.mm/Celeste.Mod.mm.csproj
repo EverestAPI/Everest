@@ -52,7 +52,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="MonoMod" Version="21.07.08.03" />
     <PackageReference Include="MonoMod.RuntimeDetour" Version="21.07.08.03" />
     <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.07.08.03" />
