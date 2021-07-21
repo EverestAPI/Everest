@@ -260,7 +260,7 @@ https://discord.gg/6qjaePQ");
 
                 if (limit <= 0) {
                     limit = (long) (Everest.SystemMemoryMB * 0.2f * 1024f * 1024f);
-                    // Assume that even in the worst case with 4 GB system RAM, 512 MB (12.5%) are still available for texture loads. 
+                    // Assume that even in the worst case with 4 GB system RAM, 512 MB (= 12.5% = 1/8) are still available for texture loads.
                     if (limit <= (512L * 1024L * 1024L))
                         limit = (512L * 1024L * 1024L);
                 }

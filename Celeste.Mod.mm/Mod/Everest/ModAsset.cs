@@ -285,6 +285,13 @@ namespace Celeste.Mod {
 
         private readonly ZipModContent.ZipModSecret Secret;
 
+        public override byte[] Data {
+            get {
+                using (MemoryStream ms = Entry.ExtractStream())
+                    return ms.ToArray();
+            }
+        }
+
         public ZipModAsset(ZipModContent source, ZipModContent.ZipModSecret secret, string path)
             : base(source) {
             Path = path = path.Replace('\\', '/');

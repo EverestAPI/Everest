@@ -25,11 +25,21 @@ namespace Monocle {
     class patch_VirtualTexture : patch_VirtualAsset {
 
         // We're effectively in VirtualAsset, but still need to "expose" private fields to our mod.
-        internal static readonly byte[] bytes;
-        internal const int bytesSize = 512 * 1024; // 524288
 
-        // Let's make the fixed buffer non-readonly.
-        internal static readonly byte[] buffer;
+        // Let's make the fixed buffers non-readonly and thread-static.
+        // FIXME for MonoMod: Replacing fields is broken? Not critical though.
+        // [MonoModRemove]
+        // internal static readonly byte[] bytes;
+        [ThreadStatic]
+        [MonoModLinkFrom("System.Byte[] Monocle.VirtualTexture::bytes")]
+        internal static byte[] bytesSafe;
+        internal const int bytesSize = 512 * 1024; // 524288
+        internal const int bytesCheckSize = 512 * 1024 - 32; // 524256
+
+        // This one isn't thread-static as it's borrowed whenever necessary.
+        // [MonoModRemove]
+        // internal static readonly byte[] buffer;
+        [MonoModLinkFrom("System.Byte[] Monocle.VirtualTexture::buffer")]
         internal static byte[] bufferSafe;
         internal static object bufferLock;
         internal const int bufferSize = 4096 * 4096 * 4; // 67108864
@@ -38,10 +48,10 @@ namespace Monocle {
         private static object ftlLock;
         private static ManualResetEventSlim ftlFree;
         private static ManualResetEventSlim ftlFinish;
-        private static long ftlLimit;
-        private static long ftlUsed;
-        private static int ftlTotalCount;
-        private static int ftlUsedCount;
+        private static volatile uint ftlLimit;
+        private static volatile uint ftlUsed;
+        private static volatile int ftlTotalCount;
+        private static volatile int ftlUsedCount;
 #if FTL_VERIFY
         private static HashSet<patch_VirtualTexture> ftlTotalCountVerify;
         private static HashSet<patch_VirtualTexture> ftlUsedCountVerify;
@@ -52,7 +62,6 @@ namespace Monocle {
         private static void cctor() {
             orig_cctor();
 
-            bufferSafe = buffer;
             bufferLock = new object();
 
             ftlLock = new object();
@@ -124,7 +133,7 @@ namespace Monocle {
         private MaybeAwaitable<Texture2D> _Texture_QueuedLoad;
         private bool _Texture_FTLCount;
         private bool _Texture_FTLLoading;
-        private long _Texture_FTLSize;
+        private uint _Texture_FTLSize;
 
         public ModAsset Metadata;
 
@@ -132,7 +141,10 @@ namespace Monocle {
 
         public static void StartFastTextureLoading(long limit) {
             lock (ftlLock) {
-                ftlLimit = limit;
+                if (limit >= uint.MaxValue)
+                    ftlLimit = uint.MaxValue;
+                else
+                    ftlLimit = (uint) limit;
                 ftlEnabled = true;
             }
         }
@@ -175,11 +187,24 @@ namespace Monocle {
                 size = 512 * 512 * 4;
             // Add some artificial overhead (DotNetZip, .data file buffer, thread local data, ...).
             size += 1024 * 1024;
+            // Guesstimate somewhere between the already estimated size and the next power of two.
+            long sizePOT = size;
+            sizePOT--;
+            sizePOT |= sizePOT >> 1;
+            sizePOT |= sizePOT >> 2;
+            sizePOT |= sizePOT >> 4;
+            sizePOT |= sizePOT >> 8;
+            sizePOT |= sizePOT >> 16;
+            sizePOT |= sizePOT >> 32;
+            sizePOT++;
+            size += (long) ((sizePOT - size) * 0.3);
 
-            if (size >= ftlLimit)
-                throw new Exception($"Fast texture loading encountered oversized texture: {Name}");
+            if (size >= ftlLimit || size >= uint.MaxValue)
+                // throw new Exception($"Fast texture loading encountered an oversized texture: {Name} (estimated {size} bytes with overhead)");
+                size = ftlLimit;
 
             // Don't wait inside of the lock or we will risk making other textures wait, even those which would fit.
+            // Note that this could theoretically hold back fitting textures waiting to be tasked.
             Rewait:
             while (size <= ftlLimit ? ftlUsed + size > ftlLimit : ftlUsedCount > 1) {
                 ftlFree.Wait();
@@ -200,8 +225,7 @@ namespace Monocle {
 
                 ftlFinish.Reset();
                 ftlUsedCount++;
-                ftlUsed += size;
-                _Texture_FTLSize = size;
+                ftlUsed += _Texture_FTLSize = (uint) size;
                 _Texture_FTLLoading = true;
             }
         }
@@ -238,7 +262,7 @@ namespace Monocle {
                 Console.WriteLine($"FTL Free    {Name} {size} (remain: {ftlCount - 1})");
 #endif
 
-                long size = _Texture_FTLSize;
+                uint size = _Texture_FTLSize;
                 _Texture_FTLLoading = false;
                 _Texture_FTLSize = 0;
                 ftlUsed -= size;
@@ -342,7 +366,7 @@ namespace Monocle {
             }
         }
 
-        internal bool LoadImmediately =>
+        internal bool LoadImmediately => 
             !_Texture_FTLLoading && ((CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) || MainThreadHelper.IsMainThread);
         internal bool Load(bool wait, Func<Texture2D> load) {
             if (LoadImmediately) {
@@ -437,30 +461,35 @@ namespace Monocle {
                 lock (queuedLoadLock = new object()) {
                     _Texture_QueuedLoadLock = queuedLoadLock;
                     _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
-                        lock (queuedLoadLock) {
-                            // Queued load cancelled or replaced with another queued load.
-                            if (_Texture_QueuedLoadLock != queuedLoadLock) {
-                                FreeFastTextureLoad();
-                                return Texture_Unsafe;
-                            }
+                        try {
+                            lock (queuedLoadLock) {
+                                // Queued load cancelled or replaced with another queued load.
+                                if (_Texture_QueuedLoadLock != queuedLoadLock) {
+                                    FreeFastTextureLoad();
+                                    return Texture_Unsafe;
+                                }
 
-                            GrabFastTextureLoad();
+                                GrabFastTextureLoad();
 
-                            // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
-                            _Texture_Reloading = true;
-                            Reload();
-                            if (_Texture_QueuedLoadLock == queuedLoadLock)
-                                _Texture_QueuedLoadLock = null;
-                            Texture2D tex = Texture_Unsafe;
-                            if (_Texture_UnloadAfterReload) {
-                                tex?.Dispose();
-                                tex = Texture_Unsafe;
-                                // ... can anything even swap the texture here?
-                                Texture_Unsafe = null;
-                                tex?.Dispose();
-                                _Texture_UnloadAfterReload = false;
+                                // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                                _Texture_Reloading = true;
+                                Reload();
+                                if (_Texture_QueuedLoadLock == queuedLoadLock)
+                                    _Texture_QueuedLoadLock = null;
+                                Texture2D tex = Texture_Unsafe;
+                                if (_Texture_UnloadAfterReload) {
+                                    tex?.Dispose();
+                                    tex = Texture_Unsafe;
+                                    // ... can anything even swap the texture here?
+                                    Texture_Unsafe = null;
+                                    tex?.Dispose();
+                                    _Texture_UnloadAfterReload = false;
+                                }
+                                return tex;
                             }
-                            return tex;
+                        } catch (Exception e) {
+                            Celeste.patch_Celeste.CriticalFailureHandler(e);
+                            throw;
                         }
                     }).GetAwaiter());
                     return;
@@ -557,11 +586,9 @@ namespace Monocle {
 
             } else if (string.IsNullOrEmpty(Path)) {
                 Color[] data = new Color[Width * Height];
-                fixed (Color* ptr = data) {
-                    for (int i = 0; i < data.Length; i++) {
+                fixed (Color* ptr = data)
+                    for (int i = 0; i < data.Length; i++)
                         ptr[i] = color;
-                    }
-                }
                 Load(false, () => {
                     Texture2D tex = new Texture2D(Engine.Instance.GraphicsDevice, Width, Height);
                     tex.SetData(data);
@@ -580,15 +607,13 @@ namespace Monocle {
                         using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path))) {
                             // Vanilla has got a static readonly byte[] bytes of fixed length - currently 524288
                             // Luckily we can read more chunks on demand.
-                            byte[] bytes = LoadImmediately ?
-                                patch_VirtualTexture.bytes :
-                                new byte[bytesSize];
-                            stream.Read(bytes, 0, bytes.Length);
+                            byte[] read = bytesSafe ??= new byte[bytesSize];
+                            stream.Read(read, 0, read.Length);
 
                             int pB = 0;
-                            w = BitConverter.ToInt32(bytes, pB);
-                            h = BitConverter.ToInt32(bytes, pB + 4);
-                            bool hasAlpha = bytes[pB + 8] == 1;
+                            w = BitConverter.ToInt32(read, pB);
+                            h = BitConverter.ToInt32(read, pB + 4);
+                            bool hasAlpha = read[pB + 8] == 1;
                             pB += 9;
 
                             Width = w;
@@ -609,13 +634,13 @@ namespace Monocle {
                                 if (bufferGC) {
                                     buffer = new byte[size];
                                 } else {
-                                    buffer = new byte[0];
+                                    buffer = null;
                                     bufferPtr = Marshal.AllocHGlobal(size);
                                 }
                                 bufferStolen = false;
                             }
 
-                            fixed (byte* from = bytes)
+                            fixed (byte* from = read)
                             fixed (byte* bufferPin = buffer) {
                                 byte* to = bufferGC ? bufferPin : (byte*) bufferPtr;
                                 int* toI = (int*) to;
@@ -651,12 +676,12 @@ namespace Monocle {
                                         iI += linesize;
                                         iB = iI * 4;
 
-                                        if (pB > bytes.Length - 32) {
-                                            int offset = bytes.Length - pB;
+                                        if (pB > read.Length - 32) {
+                                            int offset = read.Length - pB;
                                             for (int oB = 0; oB < offset; oB++) {
                                                 from[oB] = from[pB + oB];
                                             }
-                                            stream.Read(bytes, offset, bytes.Length - offset);
+                                            stream.Read(read, offset, read.Length - offset);
                                             pB = 0;
                                         }
                                     }
@@ -678,12 +703,12 @@ namespace Monocle {
                                         iI += linesize;
                                         iB = iI * 4;
 
-                                        if (pB > bytes.Length - 32) {
-                                            int offset = bytes.Length - pB;
+                                        if (pB > bytesCheckSize) {
+                                            int offset = read.Length - pB;
                                             for (int oB = 0; oB < offset; oB++) {
                                                 from[oB] = from[pB + oB];
                                             }
-                                            stream.Read(bytes, offset, bytes.Length - offset);
+                                            stream.Read(read, offset, read.Length - offset);
                                             pB = 0;
                                         }
                                     }
