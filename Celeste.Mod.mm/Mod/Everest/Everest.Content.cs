@@ -356,6 +356,15 @@ namespace Celeste.Mod {
     }
 
     public class ZipModContent : ModContent {
+        private static readonly FieldInfo f_ZipEntry__container =
+            typeof(ZipEntry).GetField("_container", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo f_ZipEntry__CompressionMethod_FromZipFile =
+            typeof(ZipEntry).GetField("_CompressionMethod_FromZipFile", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo f_ZipEntry__CompressedFileDataSize =
+            typeof(ZipEntry).GetField("_CompressedFileDataSize", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly FieldInfo f_ZipEntry__archiveStream =
+            typeof(ZipEntry).GetField("_archiveStream", BindingFlags.NonPublic | BindingFlags.Instance);
+
         public override string DefaultName => System.IO.Path.GetFileName(Path);
 
         /// <summary>
@@ -368,64 +377,73 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly ZipFile Zip;
 
+        private readonly ZipModSecret Secret;
+        private object _container;
+
+        public class ZipModSecret {
+            private ZipModContent Content;
+            internal ZipModSecret(ZipModContent content) {
+                Content = content;
+            }
+            public ZipEntry OpenParaEntry(ZipEntry real) => Content.OpenParaEntry(real);
+            public void CloseParaEntry(ZipEntry fake) => Content.CloseParaEntry(fake);
+        }
+
         private class ZipPoolEntry {
-            public bool Taken = false;
-            public ZipFile Value;
+            public Stream Value;
         }
 
-        private class ZipOpenCounter {
-            public int Value = 1;
-        }
-
-        private ConcurrentBag<ZipPoolEntry> PoolZips = new ConcurrentBag<ZipPoolEntry>();
-        private ConcurrentDictionary<Thread, ZipFile> ContextZips = new ConcurrentDictionary<Thread, ZipFile>();
-        private ConcurrentDictionary<Thread, ZipOpenCounter> ContextZipOpens = new ConcurrentDictionary<Thread, ZipOpenCounter>();
+        private ConcurrentBag<ZipPoolEntry> Pool = new ConcurrentBag<ZipPoolEntry>();
 
         public ZipModContent(string path) {
             Path = path;
             Zip = OpenZip();
+            Secret = new ZipModSecret(this);
         }
 
         public ZipFile OpenZip() => new ZipFile(Path);
 
-        public ZipFile OpenContextZip(Thread t) {
-            if (t == null)
-                t = Thread.CurrentThread;
+        private ZipEntry OpenParaEntry(ZipEntry real) {
+            Stream stream;
 
-            Retry:
-            bool added = false;
-            ZipFile zip = ContextZips.GetOrAdd(t, t => {
-                added = true;
-                ContextZipOpens[t] = new ZipOpenCounter();
-                return new ZipFile(Path);
-            });
+            Retake:
+            if (Pool.TryTake(out ZipPoolEntry pooled)) {
+                stream = Interlocked.Exchange(ref pooled.Value, null);
+                if (stream == null)
+                    goto Retake;
+                stream.Seek(0, SeekOrigin.Begin);
+            } else {
+                // Same as DotNetZip itself. Luckily we're not dealing with segmented (multi-part) zips.
+                stream = File.Open(Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Write);
+            }
 
-            // If we obtained an existing zip and are the first to do so, check if it's still there.
-            if (!added && Interlocked.Increment(ref ContextZipOpens[t].Value) <= 1 && !ContextZips.ContainsKey(t))
-                goto Retry;
+            // TODO: ILHook CloneForNewZipFile to adapt it to our needs and to simplify the following code.
+            // Nothing else should be using it anyway (and if anything does, copy method with DynamicMethodDefinition).
 
-            return zip;
+            // Thanks, DotNetZip, for being unwilling to clone uncompressed entries in compressed zips?!
+            // ZipEntry has got a special CompressionMethod setter while ZipFile doesn't.
+            // Let's hope that its value isn't used anywhere else...
+            ZipEntry fake;
+            lock (Zip) {
+                Zip.CompressionMethod = real.CompressionMethod;
+                fake = real.CloneForNewZipFile(Zip);
+            }
+            // Can't re-set the compression methods as this might be conflicting with other ongoing clonings.
+            f_ZipEntry__container.SetValue(fake, _container ??= f_ZipEntry__container.GetValue(real));
+            f_ZipEntry__CompressionMethod_FromZipFile.SetValue(fake, (short) real.CompressionMethod);
+            f_ZipEntry__CompressedFileDataSize.SetValue(fake, f_ZipEntry__CompressedFileDataSize.GetValue(real));
+            f_ZipEntry__archiveStream.SetValue(fake, stream);
+            return fake;
         }
 
-        public void CloseContextZip(Thread t) {
-            if (t == null)
-                t = Thread.CurrentThread;
-
-            if (Interlocked.Decrement(ref ContextZipOpens[t].Value) <= 0 &&
-                ContextZips.TryGetValue(t, out ZipFile zip)) {
-                // Allow reopens within a certain timeframe.
-                QueuedTaskHelper.Do(zip, 4, () => {
-                    if (ContextZipOpens[t].Value <= 0) {
-                        if (!ContextZips.TryRemove(t, out _))
-                            throw new Exception("Failed to remove disposed contexted zip!");
-                        if (zip != null) {
-                            PoolZips.Add(new ZipPoolEntry() {
-                                Value = zip
-                            });
-                        }
-                    }
-                });
-            }
+        private void CloseParaEntry(ZipEntry fake) {
+            // Allow reopens - even by other threads - within a certain timeframe.
+            Stream stream = (Stream) f_ZipEntry__archiveStream.GetValue(fake);
+            ZipPoolEntry pooled = new ZipPoolEntry() {
+                Value = stream
+            };
+            Pool.Add(pooled);
+            QueuedTaskHelper.Do(stream, 1.5, () => Interlocked.Exchange(ref pooled.Value, null)?.Dispose());
         }
 
         protected override void Crawl() {
@@ -433,15 +451,16 @@ namespace Celeste.Mod {
                 string entryName = entry.FileName.Replace('\\', '/');
                 if (entryName.EndsWith("/"))
                     continue;
-                Add(entryName, new ZipModAsset(this, entry));
+                Add(entryName, new ZipModAsset(this, Secret, entry));
             }
         }
 
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
             Zip.Dispose();
-            foreach (ZipFile zip in ContextZips.Values)
-                zip?.Dispose();
+            foreach (ZipPoolEntry pooled in Pool) {
+                Interlocked.Exchange(ref pooled.Value, null)?.Dispose();
+            }
         }
     }
 

@@ -327,7 +327,8 @@ namespace Celeste.Mod {
                 AssemblyName asmName = new AssemblyName(asmArgs.Name);
                 if (!asmName.Name.StartsWith("Mono.Cecil") &&
                     !asmName.Name.StartsWith("YamlDotNet") &&
-                    !asmName.Name.StartsWith("NLua"))
+                    !asmName.Name.StartsWith("NLua") &&
+                    !asmName.Name.StartsWith("DotNetZip"))
                     return null;
 
                 Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);

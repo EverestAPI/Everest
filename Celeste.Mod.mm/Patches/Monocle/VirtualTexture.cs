@@ -174,8 +174,7 @@ namespace Monocle {
             if (size < 512 * 512 * 4)
                 size = 512 * 512 * 4;
             // Add some artificial overhead (DotNetZip, .data file buffer, thread local data, ...).
-            size += 1024 * 1024 * 16;
-            size = (long) (size * 1.3f);
+            size += 1024 * 1024;
 
             if (size >= ftlLimit)
                 throw new Exception($"Fast texture loading encountered oversized texture: {Name}");

@@ -59,16 +59,11 @@ namespace Celeste.Mod {
         public virtual byte[] Data {
             get {
                 using (Stream stream = Stream) {
-                    if (stream is MemoryStream) {
-                        return ((MemoryStream) stream).GetBuffer();
-                    }
+                    if (stream is MemoryStream ms)
+                        return ms.GetBuffer();
 
-                    using (MemoryStream ms = new MemoryStream()) {
-                        byte[] buffer = new byte[2048];
-                        int read;
-                        while (0 < (read = stream.Read(buffer, 0, buffer.Length))) {
-                            ms.Write(buffer, 0, read);
-                        }
+                    using (ms = new MemoryStream()) {
+                        stream.CopyTo(ms);
                         return ms.ToArray();
                     }
                 }
@@ -288,9 +283,12 @@ namespace Celeste.Mod {
         /// </summary>
         public readonly ZipEntry Entry;
 
-        public ZipModAsset(ZipModContent source, string path)
+        private readonly ZipModContent.ZipModSecret Secret;
+
+        public ZipModAsset(ZipModContent source, ZipModContent.ZipModSecret secret, string path)
             : base(source) {
             Path = path = path.Replace('\\', '/');
+            Secret = secret;
 
             foreach (ZipEntry entry in source.Zip.Entries) {
                 if (entry.FileName.Replace('\\', '/') == path) {
@@ -300,41 +298,19 @@ namespace Celeste.Mod {
             }
         }
 
-        public ZipModAsset(ZipModContent source, ZipEntry entry)
+        public ZipModAsset(ZipModContent source, ZipModContent.ZipModSecret secret, ZipEntry entry)
             : base(source) {
             Path = entry.FileName.Replace('\\', '/');
+            Secret = secret;
             Entry = entry;
         }
 
         protected override void Open(out Stream stream, out bool isSection) {
-            string path = Path;
-            ZipFile zip = Source.Zip;
-            ZipEntry found = Entry;
-            Thread zipContext = null;
-
-            if (!MainThreadHelper.IsMainThread) {
-                // Apparently DotNetZip HATES multithreading.
-                found = null;
-                zipContext = Thread.CurrentThread;
-                zip = Source.OpenContextZip(zipContext);
-            }
-
-            if (found == null) {
-                foreach (ZipEntry entry in zip.Entries) {
-                    if (entry.FileName.Replace('\\', '/') == path) {
-                        stream = entry.ExtractStream();
-                        if (zipContext != null)
-                            stream = new DisposeActionStream(stream, () => Source.CloseContextZip(zipContext));
-                        isSection = false;
-                        return;
-                    }
-                }
-            }
-
-            if (found == null)
+            if (Entry == null)
                 throw new KeyNotFoundException($"{GetType().Name} {Path} not found in archive {Source.Path}");
 
-            stream = found.ExtractStream();
+            // Apparently DotNetZip HATES multithreading, concurrent access and seeking.
+            stream = new ZipAssetStream(this, Secret);
             isSection = false;
         }
     }
