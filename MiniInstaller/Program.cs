@@ -104,6 +104,12 @@ namespace MiniInstaller {
                         LogLine("Make sure to upload your log file.");
                     }
                     return 1;
+
+                } finally {
+                    // Let's not pollute <insert installer name here>.
+                    Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", "");
+                    Environment.SetEnvironmentVariable("MONOMOD_MODS", "");
+                    Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "");
                 }
 
                 Console.SetOut(logWriter.STDOUT);
