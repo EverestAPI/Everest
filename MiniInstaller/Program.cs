@@ -236,7 +236,7 @@ namespace MiniInstaller {
         }
 
         public static void MoveDylibs() {
-            if (PathDylibs != PathGame) {
+            if (PathDylibs != null) {
                 LogLine("Moving native libraries");
                 foreach (string fileGame in Directory.GetFiles(PathGame)) {
                     if (!fileGame.EndsWith(".dylib"))
