@@ -565,18 +565,6 @@ namespace Celeste {
             return checkpoints;
         }
 
-        [MonoModIgnore]
-        [PatchSaveDataAddStrawberry]
-        public new extern void AddStrawberry(AreaKey area, EntityID strawberry, bool golden);
-
-        [MonoModReplace]
-        public new void RegisterCassette(AreaKey area) {
-            Areas_Safe[area.ID].Cassette = true;
-            if (area.GetLevelSet() == "Celeste") {
-                Achievements.Register(Achievement.CASS);
-            }
-        }
-
     }
     [Serializable]
     public class LevelSetStats {

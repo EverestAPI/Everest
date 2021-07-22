@@ -13,7 +13,6 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        [PatchStrawberryOnCollect]
         public extern void orig_OnCollect();
         [PatchInterface]
         public new void OnCollect() {
