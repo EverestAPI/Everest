@@ -529,17 +529,6 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("Has:BirdTutorialGuiButtonPromptEnum", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() != null);
             MonoModRule.Flag.Set("Fill:CompleteRendererImageLayerScale", MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer").Resolve().FindField("Scale") == null);
-
-            TypeDefinition t_Input = MonoModRule.Modder.FindType("Celeste.Input").Resolve();
-            MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");
-            MonoModRule.Flag.Set("V1:GuiInputController", m_GuiInputController.Parameters.Count == 0);
-            MonoModRule.Flag.Set("V2:GuiInputController", m_GuiInputController.Parameters.Count == 1);
-
-            MonoModRule.Flag.Set("V1:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String)") != null);
-            MonoModRule.Flag.Set("V2:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String,System.Boolean)") != null);
-
-            MonoModRule.Flag.Set("V1:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData)") != null);
-            MonoModRule.Flag.Set("V2:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData,System.Int32,System.Int32)") != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {

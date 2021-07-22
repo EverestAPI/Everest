@@ -16,12 +16,7 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        [MonoModIfFlag("V1:TrySquishWiggle")]
-        protected new bool TrySquishWiggle(CollisionData data, int wiggleX = 3, int wiggleY = 3) {
-            return TrySquishWiggle(data);
-        }
-
-        [MonoModIfFlag("V2:TrySquishWiggle")]
+        // Legacy Support
         protected bool TrySquishWiggle(CollisionData data) {
             return TrySquishWiggle(data, 3, 3);
         }
