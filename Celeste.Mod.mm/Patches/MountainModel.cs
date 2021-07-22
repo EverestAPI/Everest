@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace Celeste {
     class patch_MountainModel : MountainModel {
@@ -62,6 +64,14 @@ namespace Celeste {
         private Color targetFogColor = Color.White;
         private float fogFade = 1f;
         private bool firstUpdate = true;
+
+        // Private vars required for queued disposal.
+        private VertexBuffer billboardVertices;
+        private IndexBuffer billboardIndices;
+        private VertexPositionColorTexture[] billboardInfo;
+
+        private object _Billboard_QueuedLoadLock;
+        private MaybeAwaitable<VertexBuffer> _Billboard_QueuedLoad;
 
         public extern void orig_ctor();
         [MonoModConstructor]
@@ -383,6 +393,90 @@ namespace Celeste {
             Draw.SpriteBatch.End();
 
             PreviousSID = SIDToUse;
+        }
+
+        [MonoModReplace]
+        public new void DisposeBillboardBuffers() {
+            if (!MainThreadHelper.IsMainThread && (
+                    (billboardVertices != null && !billboardVertices.IsDisposed) ||
+                    (billboardIndices != null && !billboardIndices.IsDisposed)
+                )) {
+                // This is a disposal, there's no need to wait for this to be disposed,
+                // let following reset calls realloc even before the olds get disposed.
+                VertexBuffer billboardVerticesOld = billboardVertices;
+                IndexBuffer billboardIndicesOld = billboardIndices;
+                billboardVertices = null;
+                billboardIndices = null;
+                MainThreadHelper.Do(() => {
+                    if (billboardVerticesOld != null && !billboardVerticesOld.IsDisposed)
+                        billboardVerticesOld.Dispose();
+                    if (billboardIndicesOld != null && !billboardIndicesOld.IsDisposed)
+                        billboardIndicesOld.Dispose();
+                });
+                return;
+            }
+
+            if (billboardVertices != null && !billboardVertices.IsDisposed)
+                billboardVertices.Dispose();
+            if (billboardIndices != null && !billboardIndices.IsDisposed)
+                billboardIndices.Dispose();
+        }
+
+        public extern void orig_ResetBillboardBuffers();
+        public new void ResetBillboardBuffers() {
+            // Checking for IsDisposed on other threads should be fine...
+            if (billboardVertices != null && !billboardIndices.IsDisposed && !billboardIndices.GraphicsDevice.IsDisposed &&
+                billboardVertices != null && !billboardVertices.IsDisposed && !billboardVertices.GraphicsDevice.IsDisposed &&
+                billboardInfo.Length <= billboardVertices.VertexCount)
+                return;
+
+            // Handle already queued loads appropriately.
+            object queuedLoadLock = _Billboard_QueuedLoadLock;
+            if (queuedLoadLock != null) {
+                lock (queuedLoadLock) {
+                    // Queued task finished just in time.
+                    if (_Billboard_QueuedLoadLock == null)
+                        return;
+
+                    // If we still can, cancel the queued load, then proceed with lazy-loading.
+                    if (MainThreadHelper.IsMainThread)
+                        _Billboard_QueuedLoadLock = null;
+                }
+
+                if (!MainThreadHelper.IsMainThread) {
+                    // Otherwise wait for it to get loaded, don't reload twice. (Don't wait locked!)
+                    while (!_Billboard_QueuedLoad.IsValid)
+                        Thread.Yield();
+                    _Billboard_QueuedLoad.GetResult();
+                    return;
+                }
+            }
+
+            if (!(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL) && !MainThreadHelper.IsMainThread && queuedLoadLock == null) {
+                // Let's queue a reload onto the main thread and call it a day.
+                lock (queuedLoadLock = new object()) {
+                    _Billboard_QueuedLoadLock = queuedLoadLock;
+                    _Billboard_QueuedLoad = MainThreadHelper.Get(() => {
+                        lock (queuedLoadLock) {
+                            if (_Billboard_QueuedLoadLock == null)
+                                return billboardVertices;
+                            // Force-reload as we already returned true on the other thread.
+                            if (billboardVertices != null && !billboardVertices.IsDisposed)
+                                billboardVertices.Dispose();
+                            if (billboardIndices != null && !billboardIndices.IsDisposed)
+                                billboardIndices.Dispose();
+                            // NOTE: If something dares to change verts on the fly, make it wait on any existing tasks, then make it force-reload.
+                            // Let's rely on the original code for now.
+                            orig_ResetBillboardBuffers();
+                            _Billboard_QueuedLoadLock = null;
+                            return billboardVertices;
+                        }
+                    });
+                }
+                return;
+            }
+
+            orig_ResetBillboardBuffers();
         }
 
         private static bool hasCustomSettings(MapMeta meta) {
