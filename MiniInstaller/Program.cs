@@ -15,6 +15,7 @@ namespace MiniInstaller {
         public static string PathCelesteExe;
         public static string PathEverestExe;
         public static string PathOrig;
+        public static string PathDylibs;
         public static string PathLog;
 
         public static Assembly AsmMonoMod;
@@ -71,6 +72,8 @@ namespace MiniInstaller {
                     Backup();
 
                     MoveFilesFromUpdate();
+
+                    MoveDylibs();
 
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
@@ -179,6 +182,14 @@ namespace MiniInstaller {
                 LogLine("Creating Mods directory");
                 Directory.CreateDirectory(Path.Combine(PathGame, "Mods"));
             }
+
+            // Can't check for platform as some morons^Wuninformed people could be running MiniInstaller via wine.
+            if (PathGame.Replace(Path.DirectorySeparatorChar, '/').Trim('/').EndsWith(".app/Contents/Resources")) {
+                PathDylibs = Path.Combine(Path.GetDirectoryName(PathGame), "MacOS", "osx");
+                if (!Directory.Exists(PathDylibs))
+                    PathDylibs = null;
+            }
+
             return true;
         }
 
@@ -220,6 +231,20 @@ namespace MiniInstaller {
                     string fileGame = Path.Combine(PathGame, fileRelative);
                     LogLine($"Copying {fileUpdate} +> {fileGame}");
                     File.Copy(fileUpdate, fileGame, true);
+                }
+            }
+        }
+
+        public static void MoveDylibs() {
+            if (PathDylibs != PathGame) {
+                LogLine("Moving native libraries");
+                foreach (string fileGame in Directory.GetFiles(PathGame)) {
+                    if (!fileGame.EndsWith(".dylib"))
+                        continue;
+                    string fileRelative = fileGame.Substring(PathGame.Length + 1);
+                    string fileDylibs = Path.Combine(PathDylibs, fileRelative);
+                    LogLine($"Copying {fileGame} +> {fileDylibs}");
+                    File.Copy(fileGame, fileDylibs, true);
                 }
             }
         }

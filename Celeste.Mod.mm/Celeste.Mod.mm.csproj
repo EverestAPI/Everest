@@ -185,32 +185,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\lib-ext\discord-rpc.dll">
-      <Link>discord-rpc.dll</Link>
+    <Content Include="..\lib-ext\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\lib-ext\libdiscord-rpc.dylib">
-      <Link>libdiscord-rpc.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-ext\libdiscord-rpc.so">
-      <Link>libdiscord-rpc.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.so">
-      <Link>libMonoPosixHelper.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libmono-btls-shared.so">
-      <Link>libmono-btls-shared.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.dylib">
-      <Link>libMonoPosixHelper.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libmono-btls-shared.dylib">
-      <Link>libmono-btls-shared.dylib</Link>
+    <Content Include="..\lib-mono\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
