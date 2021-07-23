@@ -332,6 +332,12 @@ namespace MiniInstaller {
 
         public static void StartGame() {
             LogLine("Restarting Celeste");
+
+            // Let's not pollute the game with our MonoMod env vars.
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", "");
+            Environment.SetEnvironmentVariable("MONOMOD_MODS", "");
+            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "");
+
             Process game = new Process();
             // If the game was installed via Steam, it should restart in a Steam context on its own.
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
