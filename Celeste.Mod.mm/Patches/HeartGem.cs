@@ -29,8 +29,8 @@ namespace Celeste {
             keepGoingDialog = data.Attr("keepGoingDialog", "CH9_KEEP_GOING");
         }
 
-        private extern IEnumerator orig_CollectRoutine(Player player);
         [PatchHeartGemCollectRoutine]
+        private extern IEnumerator orig_CollectRoutine(Player player);
         private IEnumerator CollectRoutine(Player player) {
             Level level = Scene as Level;
 

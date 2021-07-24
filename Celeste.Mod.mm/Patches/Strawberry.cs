@@ -21,11 +21,9 @@ namespace Celeste {
             Everest.Discord.OnStrawberryCollect();
         }
 
-        public extern void orig_Update();
+        [MonoModIgnore]
         [PatchStrawberryTrainCollectionOrder]
-        public new void Update() {
-            orig_Update();
-        }
+        public new extern void Update();
 
         // Patch interface-implemented methods
         [MonoModIgnore]

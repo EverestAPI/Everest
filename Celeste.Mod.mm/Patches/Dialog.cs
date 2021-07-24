@@ -13,8 +13,8 @@ namespace Celeste {
 
         private static Language FallbackLanguage;
 
-        public static extern void orig_Load();
         [PatchDialogLoader]
+        public static extern void orig_Load();
         public static void Load() {
             orig_Load();
             PostLanguageLoad();

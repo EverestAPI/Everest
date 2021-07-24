@@ -9,12 +9,10 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        public extern void orig_ctor(BinaryPacker.Element data);
-
-        [MonoModConstructor]
+        [MonoModIgnore]
         [PatchLevelDataBerryTracker]
-        public void ctor(BinaryPacker.Element data) {
-            orig_ctor(data);
-        }
+        [MonoModConstructor]
+        public extern void ctor(BinaryPacker.Element data);
+
     }
 }

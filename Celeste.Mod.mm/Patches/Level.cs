@@ -180,8 +180,8 @@ namespace Celeste {
             }
         }
 
-        public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted

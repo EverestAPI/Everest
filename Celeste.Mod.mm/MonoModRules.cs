@@ -392,8 +392,6 @@ namespace MonoMod {
 
         static bool IsCeleste;
 
-        static bool FMODStub = false;
-
         static Version Version;
 
         static TypeDefinition Celeste;
@@ -569,9 +567,6 @@ namespace MonoMod {
         }
 
         public static void PatchMapDataLoader(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
             ProxyFileCalls(method, attrib);
 
             MethodDefinition m_Process = method.DeclaringType.FindMethod("Celeste.BinaryPacker/Element _Process(Celeste.BinaryPacker/Element,Celeste.MapData)");
@@ -631,9 +626,6 @@ namespace MonoMod {
         }
 
         public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
             if (StrawberryRegistry == null)
                 StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
 
@@ -665,9 +657,6 @@ namespace MonoMod {
         }
 
         public static void PatchStrawberryTrainCollectionOrder(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
             if (StrawberryRegistry == null)
                 StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
 
@@ -687,8 +676,6 @@ namespace MonoMod {
         }
 
         public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
             // We also need to do special work in the cctor.
             MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
 
@@ -938,9 +925,6 @@ namespace MonoMod {
         }
 
         public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
             FieldDefinition f_this = null;
             FieldDefinition f_completeArea = null;
 
@@ -1077,9 +1061,6 @@ namespace MonoMod {
         }
 
         public static void PatchDialogLoader(MethodDefinition method, CustomAttribute attrib) {
-            // Our actual target method is the orig_ method.
-            method = method.DeclaringType.FindMethod(method.GetID(name: method.GetOriginalName()));
-
             MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
