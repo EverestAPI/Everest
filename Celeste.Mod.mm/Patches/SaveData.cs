@@ -7,6 +7,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -373,6 +374,9 @@ namespace Celeste {
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
 
+                // compute the level set's AreaOffset and MaxArea.
+                set.ComputeBounds();
+
                 int offset = set.AreaOffset;
                 if (offset == -1) {
                     // LevelSet gone - let's move it to the recycle bin.
@@ -732,13 +736,6 @@ namespace Celeste {
         }
 
         [XmlIgnore]
-        public int AreaOffset {
-            get {
-                return AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
-            }
-        }
-
-        [XmlIgnore]
         public int UnlockedModes {
             get {
                 int offset = AreaOffset;
@@ -774,13 +771,27 @@ namespace Celeste {
         }
 
         [XmlIgnore]
+        public int AreaOffset {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get;
+            private set;
+        }
+
+        [XmlIgnore]
         public int MaxArea {
-            get {
-                int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name && string.IsNullOrEmpty(area.GetMeta()?.Parent)) - 1;
-                if (Celeste.PlayMode == Celeste.PlayModes.Event)
-                    return Math.Min(count, AreaOffset + 2);
-                return count;
-            }
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get;
+            private set;
+        }
+
+        internal void ComputeBounds() {
+            AreaOffset = AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
+
+            int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name && string.IsNullOrEmpty(area.GetMeta()?.Parent)) - 1;
+            if (Celeste.PlayMode == Celeste.PlayModes.Event)
+                MaxArea = Math.Min(count, AreaOffset + 2);
+            else
+                MaxArea = count;
         }
 
         [XmlIgnore]
