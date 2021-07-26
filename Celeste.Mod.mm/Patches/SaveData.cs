@@ -7,6 +7,7 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -770,10 +771,18 @@ namespace Celeste {
         }
 
         [XmlIgnore]
-        public int AreaOffset { get; private set; }
+        public int AreaOffset {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get;
+            private set;
+        }
 
         [XmlIgnore]
-        public int MaxArea { get; private set; }
+        public int MaxArea {
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            get;
+            private set;
+        }
 
         internal void ComputeBounds() {
             AreaOffset = AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
