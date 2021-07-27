@@ -529,17 +529,6 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("Has:BirdTutorialGuiButtonPromptEnum", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() != null);
             MonoModRule.Flag.Set("Fill:CompleteRendererImageLayerScale", MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer").Resolve().FindField("Scale") == null);
-
-            TypeDefinition t_Input = MonoModRule.Modder.FindType("Celeste.Input").Resolve();
-            MethodDefinition m_GuiInputController = t_Input.FindMethod("GuiInputController");
-            MonoModRule.Flag.Set("V1:GuiInputController", m_GuiInputController.Parameters.Count == 0);
-            MonoModRule.Flag.Set("V2:GuiInputController", m_GuiInputController.Parameters.Count == 1);
-
-            MonoModRule.Flag.Set("V1:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String)") != null);
-            MonoModRule.Flag.Set("V2:SubHeader", MonoModRule.Modder.FindType("Celeste.TextMenu/SubHeader").Resolve().FindMethod("System.Void .ctor(System.String,System.Boolean)") != null);
-
-            MonoModRule.Flag.Set("V1:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData)") != null);
-            MonoModRule.Flag.Set("V2:TrySquishWiggle", MonoModRule.Modder.FindType("Celeste.Actor").Resolve().FindMethod("System.Boolean TrySquishWiggle(Celeste.CollisionData,System.Int32,System.Int32)") != null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
@@ -837,7 +826,7 @@ namespace MonoMod {
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {
             FieldDefinition f_SubHudRenderer = context.Method.DeclaringType.FindField("SubHudRenderer");
 
-            /* We expect something similar enough to the following (different on SteamFNA but still works):
+            /* We expect something similar enough to the following:
             if (!this.Paused || !this.PauseMainMenuOpen || !Input.MenuJournal.Check || !this.AllowHudHide)
 	        {
 		        this.HudRenderer.Render(this);
@@ -1010,16 +999,12 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_this);
 
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
-            if (cursor.Next.OpCode == OpCodes.Brtrue_S) {
-                // Insert `== 0`
-                cursor.Emit(OpCodes.Ldc_I4_0);
-                cursor.Emit(OpCodes.Ceq);
-                // Replace brtrue with brfalse
-                cursor.Next.OpCode = OpCodes.Brfalse_S;
-            } else {
-                // SteamFNA version, `== 0` is already there
-                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ceq);
-            }
+            // Insert `== 0`
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ceq);
+            // Replace brtrue with brfalse
+            cursor.Next.OpCode = OpCodes.Brfalse_S;
+
             // Process.
             cursor.Emit(OpCodes.Call, m_CanChangeMusic);
 
@@ -1043,16 +1028,12 @@ namespace MonoMod {
             ILCursor cursor = new ILCursor(context);
 
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
-            if (cursor.Next.OpCode == OpCodes.Brtrue) {
-                // Insert `== 0`
-                cursor.Emit(OpCodes.Ldc_I4_0);
-                cursor.Emit(OpCodes.Ceq);
-                // Replace brtrue with brfalse
-                cursor.Next.OpCode = OpCodes.Brfalse_S;
-            } else {
-                // SteamFNA version, `== 0` is already there
-                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ceq);
-            }
+            // Insert `== 0`
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ceq);
+            // Replace brtrue with brfalse
+            cursor.Next.OpCode = OpCodes.Brfalse_S;
+
             // Process.
             cursor.Emit(OpCodes.Call, m_CanChangeMusic);
 
@@ -1073,22 +1054,11 @@ namespace MonoMod {
 
             /* We expect something similar enough to the following:
             ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
-            ldc.i4.0
-            cgt.un    // We're here
-            */
-            bool isSteamFNA = cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"),
-                instr => instr.OpCode == OpCodes.Ldc_I4_0,
-                instr => instr.MatchCgtUn());
-
-            // Alternatively:
-            /* We expect something similar enough to the following:
-            ldfld    Celeste.AreaMode Celeste.AreaKey::Mode
             brfalse.s    // We're here
             */
-            if (!isSteamFNA)
-                // We want to be BEFORE !=
-                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode") &&
-                    instr.Next.OpCode == OpCodes.Brfalse_S);
+            // We want to be BEFORE !=
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode") &&
+                instr.Next.OpCode == OpCodes.Brfalse_S);
 
             // Process.
             cursor.Emit(OpCodes.Call, m_IsSmall);
@@ -1365,33 +1335,6 @@ namespace MonoMod {
                         instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
                         instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
                         instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
-                    }
-
-                    // FNA:
-                    // -1: bge.un.s [instruction setting flag to false]
-                    // 0: ldarg.0
-                    // 1: ldflda Celeste.Player::Speed
-                    // 2: ldfld Vector2::Y
-                    // 3: ldc.r4 -60
-                    // 4: clt.un
-                    // 5: ldc.i4.0
-                    // 6: ceq [final value for the flag. if this flag is true, we enter the if]
-                    if (instrs[instri - 1].OpCode == OpCodes.Bge_Un_S
-                        && instrs[instri + 4].OpCode == OpCodes.Clt_Un
-                        && instrs[instri + 5].OpCode == OpCodes.Ldc_I4_0) {
-                        // 4: blt.un [instruction setting flag to false]
-                        // 5: ldarg.0
-                        // 6: call Player::_IsOverWater
-                        // 7: ldc.i4.1
-                        // 8: ceq
-                        instrs[instri + 4].OpCode = OpCodes.Blt_Un;
-                        instrs[instri + 4].Operand = instrs[instri - 1].Operand;
-
-                        instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
-                        instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
-
-                        instrs[instri + 7].OpCode = OpCodes.Ldc_I4_1;
-
                     }
                 }
             }
@@ -1752,11 +1695,6 @@ namespace MonoMod {
                             instrCopy[i].Operand = f_top;
                         if (instrCopy[i].MatchLdfld("Celeste.RumbleTrigger", "right"))
                             instrCopy[i].Operand = f_bottom;
-                        if (instrCopy[i].OpCode == OpCodes.Cgt_Un) {
-                            // we are in Steam FNA, and want to replace this with a blg.un.s with the same target as 5 instructions before
-                            instrCopy[i].OpCode = OpCodes.Bgt_Un_S;
-                            instrCopy[i].Operand = instrCopy[i - 5].Operand;
-                        }
                     }
 
                     instri -= 8;
@@ -1870,9 +1808,6 @@ namespace MonoMod {
             VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
             context.Body.Variables.Add(v_Bounds);
 
-            // Steam FNA is weird, and stores the entity in variable 5 instead of 3.
-            bool isSteamFNA = context.Body.Variables[5].VariableType.FullName == "Monocle.Entity";
-
             ILCursor cursor = new ILCursor(context);
             // Load the WaterInteraction Bounds into a local variable
             cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Monocle.Component", "get_Entity"));
@@ -1895,7 +1830,7 @@ namespace MonoMod {
             // Start again from the top and retrieve the Bounds instead of the entity (but only up to a certain point)
             cursor.Goto(0);
             for (int i = 0;i<10;i++) {
-                cursor.GotoNext(MoveType.After, instr => (!isSteamFNA && instr.OpCode == OpCodes.Ldloc_3) || isSteamFNA && instr.MatchLdloc(5));
+                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ldloc_3);
                 cursor.Prev.OpCode = OpCodes.Ldloca_S;
                 cursor.Prev.Operand = v_Bounds;
 
@@ -1917,15 +1852,9 @@ namespace MonoMod {
 
             // We have reached the end of the code to be patched, we can finally load the WaterInteraction's Entity and continue as normal
             cursor.GotoNext(instr => instr.Next.MatchIsinst("Celeste.Player"));
-            if (isSteamFNA) {
-                cursor.Emit(OpCodes.Ldloc_S, (byte) 4);
-                cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
-                cursor.Emit(OpCodes.Stloc_S, (byte) 5);
-            } else {
-                cursor.Emit(OpCodes.Ldloc_2);
-                cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
-                cursor.Emit(OpCodes.Stloc_3);
-            }
+            cursor.Emit(OpCodes.Ldloc_2);
+            cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
+            cursor.Emit(OpCodes.Stloc_3);
         }
 
         public static void PatchFakeHeartDialog(MethodDefinition method, CustomAttribute attrib) {

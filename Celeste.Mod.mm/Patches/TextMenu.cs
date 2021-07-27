@@ -360,7 +360,7 @@ namespace Celeste {
             [MonoModIgnore]
             public extern void ctor(string label, bool topPadding = true);
 
-            [MonoModIfFlag("V2:SubHeader")]
+            // Legacy Support
             [MonoModConstructor]
             public void ctor(string label) {
                 ctor(label, true);

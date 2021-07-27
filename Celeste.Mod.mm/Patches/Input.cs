@@ -33,48 +33,21 @@ namespace Celeste {
             Everest.Events.Input.Deregister();
         }
 
-        // Celeste 1.3.3.0 comes with a new parameter.
+        #region Legacy Support
 
-        /*
-        [MonoModLinkTo("Celeste.Input", "System.Boolean GuiInputController()")]
-        [MonoModIgnore]
-        public static extern bool GuiInputControllerOld();
-        */
-
-        [MonoModIfFlag("V1:GuiInputController")]
-        public static bool GuiInputController(PrefixMode mode = PrefixMode.Latest) {
-            return GuiInputController();
-        }
-
-        [MonoModIfFlag("V2:GuiInputController")]
         public static bool GuiInputController() {
-            return GuiInputController(PrefixMode.Latest);
+            return Input.GuiInputController(Input.PrefixMode.Latest);
         }
 
-        [MonoModIfFlag("V1:GuiInputController")]
-        public static MTexture GuiButton(VirtualButton button, PrefixMode mode = PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
-            return GuiButton(button, fallback);
-        }
-
-        [MonoModIfFlag("V2:GuiInputController")]
         public static MTexture GuiButton(VirtualButton button, string fallback = "controls/keyboard/oemquestion") {
-            return GuiButton(button, PrefixMode.Latest, fallback);
+            return Input.GuiButton(button, Input.PrefixMode.Latest, fallback);
         }
 
-        [MonoModIfFlag("V1:GuiInputController")]
-        public static MTexture GuiSingleButton(Buttons button, PrefixMode mode = PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
-            return GuiSingleButton(button, fallback);
-        }
-
-        [MonoModIfFlag("V2:GuiInputController")]
         public static MTexture GuiSingleButton(Buttons button, string fallback = "controls/keyboard/oemquestion") {
-            return GuiSingleButton(button, PrefixMode.Latest, fallback);
+            return Input.GuiSingleButton(button, Input.PrefixMode.Latest, fallback);
         }
 
-        [MonoModIfFlag("V1:EaseCamera")]
-        public enum PrefixMode {
-            Latest,
-            Attached
-        }
+        #endregion
+
     }
 }
