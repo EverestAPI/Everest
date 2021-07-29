@@ -133,8 +133,8 @@ namespace Celeste {
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
-        private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         [PatchTransitionRoutine]
+        private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
             Player player = Tracker.GetEntity<Player>();
             if (player == null) {

@@ -885,12 +885,7 @@ namespace MonoMod {
             MethodDefinition m_GCCollect = method.DeclaringType.FindMethod("System.Void _GCCollect()");
 
             // The level transition routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
 
             ILCursor cursor = new ILCursor(new ILContext(method));
             cursor.GotoNext(instr => instr.MatchCall("System.GC", "Collect"));
@@ -931,14 +926,9 @@ namespace MonoMod {
             MethodDefinition m_IsCompleteArea = method.DeclaringType.FindMethod("System.Boolean IsCompleteArea(System.Boolean)");
 
             // The gem collection routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<CollectRoutine>d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
-                f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
+            f_this = method.DeclaringType.FindField("<>4__this");
+            f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
 
             new ILContext(method).Invoke(ctx => {
                 ILCursor cursor = new ILCursor(ctx);
@@ -965,13 +955,8 @@ namespace MonoMod {
             MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::IsChaseEnd(System.Boolean)");
 
             // The routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
+            f_this = method.DeclaringType.FindField("<>4__this");
 
             ILCursor cursor = new ILCursor(new ILContext(method));
 
@@ -1130,13 +1115,8 @@ namespace MonoMod {
             FieldDefinition f_this = null;
 
             // The level exit routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
+            f_this = method.DeclaringType.FindField("<>4__this");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -1240,12 +1220,7 @@ namespace MonoMod {
             MethodDefinition m_GetNextScene = method.DeclaringType.FindMethod("Monocle.Scene _GetNextScene(Celeste.Overworld/StartMode,Celeste.HiresSnow)");
 
             // The routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -1263,12 +1238,7 @@ namespace MonoMod {
             MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
 
             // The routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -1324,13 +1294,8 @@ namespace MonoMod {
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
 
-            // The gem collection routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<SwapRoutine>d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 1; instri < instrs.Count - 5; instri++) {
@@ -1467,12 +1432,7 @@ namespace MonoMod {
         }
         public static void PatchTotalHeartGemChecksInRoutine(MethodDefinition method, CustomAttribute attrib) {
             // Routines are stored in compiler-generated methods.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
 
             PatchTotalHeartGemChecks(method, attrib);
         }
@@ -1535,16 +1495,7 @@ namespace MonoMod {
 
 
             // The routine is stored in a compiler-generated method.
-            string methodName = method.Name;
-            if (methodName.StartsWith("orig_")) {
-                methodName = methodName.Substring(5);
-            }
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + methodName + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
 
             ILProcessor il = method.Body.GetILProcessor();
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
@@ -1845,13 +1796,8 @@ namespace MonoMod {
             FieldDefinition f_this = null;
 
             // The routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
-                    continue;
-                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                f_this = method.DeclaringType.FindField("<>4__this");
-                break;
-            }
+            method = method.GetEnumeratorMoveNext();
+            f_this = method.DeclaringType.FindField("<>4__this");
 
             ILCursor cursor = new ILCursor(new ILContext(method));
 
@@ -2022,16 +1968,8 @@ namespace MonoMod {
         }
 
         public static void PatchAscendManagerRoutine(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition routine = method;
-
             // The routine is stored in a compiler-generated method.
-            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
-                if (!nest.Name.StartsWith("<" + method.Name + ">d__")) {
-                    continue;
-                }
-                routine = nest.FindMethod("System.Boolean MoveNext()") ?? method;
-                break;
-            }
+            MethodDefinition routine = method.GetEnumeratorMoveNext();
 
             TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
 
