@@ -388,7 +388,7 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCassetteBlockAwake))]
     class PatchCassetteBlockAwakeAttribute : Attribute { }
 
-    static class MonoModRules {
+    static partial class MonoModRules {
 
         static bool IsCeleste;
 
