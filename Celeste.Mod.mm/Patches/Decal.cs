@@ -60,27 +60,27 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeParallax(float amount);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeFloaty();
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true);
 
         public void MakeCoreSwap(string coldPath, string hotPath) {

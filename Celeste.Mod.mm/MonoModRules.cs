@@ -218,12 +218,6 @@ namespace MonoMod {
     class PatchOuiJournalStatsHeartGemCheckAttribute : Attribute { };
 
     /// <summary>
-    /// Makes the annotated method public.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.MakeMethodPublic))]
-    class MakeMethodPublicAttribute : Attribute { };
-
-    /// <summary>
     /// Patches the CrystalStaticSpinner.AddSprites method to make it more efficient.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSpinnerCreateSprites))]
@@ -1453,10 +1447,6 @@ namespace MonoMod {
                 instr.Next.MatchLdcI4(16));
             cursor.Prev.Operand = m_getUnlockedModes;
             cursor.Next.OpCode = OpCodes.Ldc_I4_3;
-        }
-
-        public static void MakeMethodPublic(MethodDefinition method, CustomAttribute attrib) {
-            method.SetPublic(true);
         }
 
         public static void PatchSpinnerCreateSprites(ILContext context, CustomAttribute attrib) {
