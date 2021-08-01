@@ -7,7 +7,7 @@ $EverestPath = [io.path]::combine('Celeste.Mod.mm', 'Mod', 'Everest', 'Everest.c
 $HelperPath = [io.path]::combine('Celeste.Mod.mm', 'Mod', 'Helpers', 'EverestVersion.cs')
 echo @"
 namespace Celeste.Mod.Helpers {
-    private static class EverestBuild$BuildNumber {
+    internal static class EverestBuild$BuildNumber {
         public static string EverestBuild = "EverestBuild$BuildNumber";
     }
 }
