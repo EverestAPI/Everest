@@ -5,10 +5,10 @@ $EverestPath = [io.path]::combine('Celeste.Mod.mm', 'Mod', 'Everest', 'Everest.c
 
 # Currently unstable/in development
 $HelperPath = [io.path]::combine('Celeste.Mod.mm', 'Mod', 'Helpers', 'EverestVersion.cs')
-echo @'
+echo @"
 namespace Celeste.Mod.Helpers {
     private static class EverestBuild$BuildNumber {
         public static string EverestBuild = "EverestBuild$BuildNumber";
     }
 }
-'@ | Set-Content $HelperPath
+"@ | Set-Content $HelperPath
