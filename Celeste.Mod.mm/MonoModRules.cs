@@ -450,9 +450,6 @@ namespace MonoMod {
 
             if (IsCeleste) {
                 MonoModRule.Modder.PostProcessors += PostProcessor;
-
-                if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
-                    throw new Exception("MonoModRules failed resolving Microsoft.Xna.Framework.Game");
             }
 
             // Get version - used to set any MonoMod flags.
@@ -521,6 +518,10 @@ namespace MonoMod {
                 // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
                 if (MonoModRule.Modder.FindType("MonoMod.WasHere") != null)
                     throw new Exception("This version of Celeste is already modded. You need a clean install of Celeste to mod it.");
+
+                // Ensure that FNA.dll is present / that XNA is installed.
+                if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
+                    throw new Exception("MonoModRules failed resolving Microsoft.Xna.Framework.Game");
             }
 
 
