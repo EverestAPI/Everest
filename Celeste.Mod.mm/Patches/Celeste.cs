@@ -255,7 +255,7 @@ https://discord.gg/6qjaePQ");
              * -ade
              */
 
-            if (CoreModule.Settings.FastTextureLoading ?? !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL)) {
+            if (CoreModule.Settings.FastTextureLoading ?? (Environment.ProcessorCount >= 4 && !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL))) {
                 long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
 
                 if (limit <= 0) {
