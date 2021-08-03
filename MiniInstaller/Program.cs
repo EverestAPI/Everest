@@ -95,7 +95,8 @@ namespace MiniInstaller {
                     LogLine(msg);
                     LogLine("");
                     LogLine("Installing Everest failed.");
-                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework")) {
+                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework") ||
+                        msg.Contains("MonoModRules failed resolving Microsoft.Xna.Framework.Game")) {
                         LogLine("Please run the game at least once to install missing dependencies.");
                     } else {
                         if (msg.Contains("--->")) {

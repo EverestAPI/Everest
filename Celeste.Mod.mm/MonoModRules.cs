@@ -450,6 +450,9 @@ namespace MonoMod {
 
             if (IsCeleste) {
                 MonoModRule.Modder.PostProcessors += PostProcessor;
+
+                if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
+                    throw new Exception("MonoModRules failed resolving Microsoft.Xna.Framework.Game");
             }
 
             // Get version - used to set any MonoMod flags.
