@@ -162,7 +162,7 @@
 	MODUPDATECHECKER_FAILED=		Update fehlgeschlagen!
 	MODUPDATECHECKER_CANCELLING=	Update abbrechen...
 	MODUPDATECHECKER_CANCELLED=		Update abgebrochen
-	MODUPDATECHECKER_WILLRESTART=	Rücktaste drücken, um Celeste neuzustarten
+	MODUPDATECHECKER_WILLRESTART=	Drücke Zurück, um Celeste neuzustarten
 	MODUPDATECHECKER_UPDATE_ALL=	Alle Mods updaten
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Update alle Mods...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	Alle Mods wurden geupdatet.
@@ -193,8 +193,8 @@
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			FEHLER: Version {1} von {0} wird benötigt, es ist aber nur Version {2} verfügbar. Bitte installiere diese Mod manuell.
 	DEPENDENCYDOWNLOADER_RESTARTING=				Neustart
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Neustart in {0}
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Rücktaste drücken, um Celeste neuzustarten.
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Rücktaste drücken, um zu Mod-Optionen zurückzukehren.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Drücke Zurück, um Celeste neuzustarten.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Drücke Zurück, um zu Mod-Optionen zurückzukehren.
 	DEPENDENCYDOWNLOADER_DOWNLOADING=				Lade {0} von {1} herunter...
 	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		Download fehlgeschlagen, versuche Mirror {0}...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			Download abgeschlossen.
