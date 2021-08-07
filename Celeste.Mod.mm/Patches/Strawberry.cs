@@ -23,7 +23,11 @@ namespace Celeste {
 
         [MonoModIgnore]
         [PatchStrawberryTrainCollectionOrder]
-        public new extern void Update();
+        public extern void orig_Update();
+
+        public new void Update() {
+            orig_Update();
+        }
 
         // Patch interface-implemented methods
         [MonoModIgnore]

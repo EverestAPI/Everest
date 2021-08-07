@@ -11,8 +11,11 @@ namespace Celeste {
 
         [MonoModIgnore]
         [PatchLevelDataBerryTracker]
-        [MonoModConstructor]
-        public extern void ctor(BinaryPacker.Element data);
+        public extern void orig_ctor(BinaryPacker.Element data);
 
+        [MonoModConstructor]
+        public void ctor(BinaryPacker.Element data) {
+            orig_ctor(data);
+        }
     }
 }
