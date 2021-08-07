@@ -712,7 +712,7 @@ namespace MonoMod {
                 */
 
                 if (instri > 0 &&
-                        instri < instrs.Count - 4 &&
+                        instri < instrs.Count - 3 &&
                         instr.MatchLdfld("Celeste.EntityData", "Name") &&
                         instrs[instri + 1].MatchStloc(out int _) &&
                         instrs[instri + 2].MatchLdloc(out int _) &&
@@ -1260,7 +1260,7 @@ namespace MonoMod {
 
             Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
             ILProcessor il = context.Body.GetILProcessor();
-            for (int instri = 1; instri < instrs.Count - 5; instri++) {
+            for (int instri = 0; instri < instrs.Count - 4; instri++) {
                 // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
                 if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].MatchLdflda("Celeste.Player", "Speed")
@@ -1292,7 +1292,7 @@ namespace MonoMod {
             method = method.GetEnumeratorMoveNext();
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 1; instri < instrs.Count - 5; instri++) {
+            for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
                 if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.HashSet`1<System.String> Celeste.SaveData::GetCheckpoints(Celeste.AreaKey)") {
@@ -1671,7 +1671,7 @@ namespace MonoMod {
                 */
 
                 if (instri > 0 &&
-                        instri < instrs.Count - 4 &&
+                        instri < instrs.Count - 3 &&
                         instr.MatchLdfld("Celeste.EventTrigger", "Event") &&
                         instrs[instri + 1].MatchStloc(out int _) &&
                         instrs[instri + 2].MatchLdloc(out int _) &&
