@@ -881,11 +881,12 @@ namespace MonoMod {
             // The level transition routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
-            ILCursor cursor = new ILCursor(new ILContext(method));
-            cursor.GotoNext(instr => instr.MatchCall("System.GC", "Collect"));
-            // Replace the method call.
-            cursor.Next.Operand = m_GCCollect;
-
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                cursor.GotoNext(instr => instr.MatchCall("System.GC", "Collect"));
+                // Replace the method call.
+                cursor.Next.Operand = m_GCCollect;
+            });
         }
 
         public static void PatchErrorLogWrite(ILContext context, CustomAttribute attrib) {
@@ -924,8 +925,8 @@ namespace MonoMod {
             f_this = method.DeclaringType.FindField("<>4__this");
             f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
 
-            new ILContext(method).Invoke(ctx => {
-                ILCursor cursor = new ILCursor(ctx);
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
 
                 cursor.GotoNext(instr => instr.MatchLdfld("Celeste.HeartGem", "IsFake"));
                 // Push "this" onto stack, and retrieve the actual HeartGem `this`
@@ -952,37 +953,39 @@ namespace MonoMod {
             method = method.GetEnumeratorMoveNext();
             f_this = method.DeclaringType.FindField("<>4__this");
 
-            ILCursor cursor = new ILCursor(new ILContext(method));
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
 
-            // Add this.CanChangeMusic()
-            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
-                instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level");
-            // Push this and grab this from this.
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_this);
+                // Add this.CanChangeMusic()
+                cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                    instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level");
+                // Push this and grab this from this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
 
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
-            // Insert `== 0`
-            cursor.Emit(OpCodes.Ldc_I4_0);
-            cursor.Emit(OpCodes.Ceq);
-            // Replace brtrue with brfalse
-            cursor.Next.OpCode = OpCodes.Brfalse_S;
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
+                // Insert `== 0`
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ceq);
+                // Replace brtrue with brfalse
+                cursor.Next.OpCode = OpCodes.Brfalse_S;
 
-            // Process.
-            cursor.Emit(OpCodes.Call, m_CanChangeMusic);
+                // Process.
+                cursor.Emit(OpCodes.Call, m_CanChangeMusic);
 
-            // Add this.IsChaseEnd()
-            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                // Add this.IsChaseEnd()
+                cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
                     instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level",
                     instr => true, instr => true, instr => instr.MatchLdstr("2"));
-            // Push this and grab this from this.
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_this);
+                // Push this and grab this from this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
 
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("2"),
-                instr => instr.MatchCall<string>("op_Equality"));
-            // Process.
-            cursor.Emit(OpCodes.Call, m_IsChaseEnd);
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("2"),
+                    instr => instr.MatchCall<string>("op_Equality"));
+                // Process.
+                cursor.Emit(OpCodes.Call, m_IsChaseEnd);
+            });
         }
 
         public static void PatchBadelineBossOnPlayer(ILContext context, CustomAttribute attrib) {
@@ -1169,44 +1172,46 @@ namespace MonoMod {
                 instrs.Insert(instri++, il.Create(OpCodes.Ldarg, paramMeta));
             }
 
-            ILCursor cursor = new ILCursor(new ILContext(method));
-            MethodDefinition m_GetCustomCompleteScreenTitle = method.DeclaringType.FindMethod("System.String GetCustomCompleteScreenTitle()");
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                MethodDefinition m_GetCustomCompleteScreenTitle = method.DeclaringType.FindMethod("System.String GetCustomCompleteScreenTitle()");
 
-            int textVariableIndex = 0;
+                int textVariableIndex = 0;
 
-            /*
-             * // string text = Dialog.Clean("areacomplete_" + session.Area.Mode + (session.FullClear ? "_fullclear" : ""), null);
-             * IL_005D: ldstr     "areacomplete_"
-             * IL_0062: ldarg.1
-             * IL_0063: ldflda    valuetype Celeste.AreaKey Celeste.Session::Area
-             * ...
-             * IL_008B: ldnull
-             * IL_008C: call      string Celeste.Dialog::Clean(string, class Celeste.Language)
-             * IL_0091: stloc.1
-             *
-             * // Vector2 origin = new Vector2(960f, 200f);
-             * IL_0092: ldloca.s  V_2
-             * IL_0094: ldc.r4    960
-             * ...
-             */
+                /*
+                 * // string text = Dialog.Clean("areacomplete_" + session.Area.Mode + (session.FullClear ? "_fullclear" : ""), null);
+                 * IL_005D: ldstr     "areacomplete_"
+                 * IL_0062: ldarg.1
+                 * IL_0063: ldflda    valuetype Celeste.AreaKey Celeste.Session::Area
+                 * ...
+                 * IL_008B: ldnull
+                 * IL_008C: call      string Celeste.Dialog::Clean(string, class Celeste.Language)
+                 * IL_0091: stloc.1
+                 *
+                 * // Vector2 origin = new Vector2(960f, 200f);
+                 * IL_0092: ldloca.s  V_2
+                 * IL_0094: ldc.r4    960
+                 * ...
+                 */
 
-            // move the cursor to IL_0092 and find the variable index of "text"
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Dialog", "Clean"),
-                instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String");
+                // move the cursor to IL_0092 and find the variable index of "text"
+                cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Dialog", "Clean"),
+                    instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String");
 
-            // mark for later use
-            ILLabel target = cursor.MarkLabel();
-            // go back to IL_005D
-            cursor.GotoPrev(MoveType.Before, instr => instr.MatchLdstr("areacomplete_"));
+                // mark for later use
+                ILLabel target = cursor.MarkLabel();
+                // go back to IL_005D
+                cursor.GotoPrev(MoveType.Before, instr => instr.MatchLdstr("areacomplete_"));
 
-            // equivalent to "text = this.GetCustomCompleteScreenTitle()"
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
-            cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
+                // equivalent to "text = this.GetCustomCompleteScreenTitle()"
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
+                cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
 
-            // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
-            cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
-            cursor.Emit(OpCodes.Brtrue_S, target.Target);
+                // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
+                cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
+                cursor.Emit(OpCodes.Brtrue_S, target.Target);
+            });
         }
 
 
@@ -1783,25 +1788,25 @@ namespace MonoMod {
             FieldReference f_fakeHeartDialog = method.DeclaringType.FindField("fakeHeartDialog");
             FieldReference f_keepGoingDialog = method.DeclaringType.FindField("keepGoingDialog");
 
-            FieldDefinition f_this = null;
-
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
-            f_this = method.DeclaringType.FindField("<>4__this");
+            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
 
-            ILCursor cursor = new ILCursor(new ILContext(method));
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
 
-            cursor.GotoNext(instr => instr.MatchLdstr("CH9_FAKE_HEART"));
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_this);
-            cursor.Next.OpCode = OpCodes.Ldfld;
-            cursor.Next.Operand = f_fakeHeartDialog;
+                cursor.GotoNext(instr => instr.MatchLdstr("CH9_FAKE_HEART"));
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Next.OpCode = OpCodes.Ldfld;
+                cursor.Next.Operand = f_fakeHeartDialog;
 
-            cursor.GotoNext(instr => instr.MatchLdstr("CH9_KEEP_GOING"));
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_this);
-            cursor.Next.OpCode = OpCodes.Ldfld;
-            cursor.Next.Operand = f_keepGoingDialog;
+                cursor.GotoNext(instr => instr.MatchLdstr("CH9_KEEP_GOING"));
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Next.OpCode = OpCodes.Ldfld;
+                cursor.Next.Operand = f_keepGoingDialog;
+            });
         }
 
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
@@ -1971,32 +1976,34 @@ namespace MonoMod {
             FieldDefinition f_from = routine.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<from>5__"));
             FieldReference f_Vector2_X = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("X"));
 
-            ILCursor cursor = new ILCursor(new ILContext(routine));
+            new ILContext(routine).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
 
-            // move after this.Scene.Add(fader)
-            cursor.GotoNext(MoveType.After,
-                instr => instr.MatchLdarg(0),
-                instr => instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name.StartsWith("<fader>5__"),
-                instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
+                // move after this.Scene.Add(fader)
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdarg(0),
+                    instr => instr.OpCode == OpCodes.Ldfld && ((FieldReference) instr.Operand).Name.StartsWith("<fader>5__"),
+                    instr => instr.OpCode == OpCodes.Callvirt && ((MethodReference) instr.Operand).GetID() == "System.Void Monocle.Scene::Add(Monocle.Entity)");
 
-            // target: from = player.Position;
-            Instruction target = cursor.Next;
+                // target: from = player.Position;
+                Instruction target = cursor.Next;
 
-            // _ = this.ShouldRestorePlayerX();
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_this);
-            cursor.Emit(OpCodes.Call, m_ShouldRestorePlayerX);
+                // _ = this.ShouldRestorePlayerX();
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Call, m_ShouldRestorePlayerX);
 
-            // if (!_) goto target;
-            cursor.Emit(OpCodes.Brfalse, target);
+                // if (!_) goto target;
+                cursor.Emit(OpCodes.Brfalse, target);
 
-            // player.X = from.X;
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, f_player);
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldflda, f_from);
-            cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
-            cursor.Emit(OpCodes.Callvirt, m_Entity_set_X);
+                // player.X = from.X;
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_player);
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldflda, f_from);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+                cursor.Emit(OpCodes.Callvirt, m_Entity_set_X);
+            });
         }
 
         public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
