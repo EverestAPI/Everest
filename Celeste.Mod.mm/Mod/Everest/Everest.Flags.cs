@@ -4,6 +4,15 @@ using System;
 namespace Celeste.Mod {
     public static partial class Everest {
         public static class Flags {
+            /// <summary>
+            /// Is the game running on XNA?
+            /// </summary>
+            public static bool IsXNA { get; private set; }
+
+            /// <summary>
+            /// Is the game running on FNA?
+            /// </summary>
+            public static bool IsFNA { get; private set; }
 
             /// <summary>
             /// Is Everest running headlessly?
@@ -57,6 +66,9 @@ namespace Celeste.Mod {
             public static bool SupportUpdatingEverest { get; private set; }
 
             internal static void Initialize() {
+                IsFNA = typeof(Game).Assembly.FullName.Contains("FNA");
+                IsXNA = !IsFNA;
+
                 IsHeadless = Environment.GetEnvironmentVariable("EVEREST_HEADLESS") == "1";
 
                 IsMono = Type.GetType("Mono.Runtime") != null;
@@ -70,7 +82,7 @@ namespace Celeste.Mod {
                 PreferLazyLoading = IsMobile;
 
                 // The way how FNA3D's D3D11 implementation handles threaded GL is hated by a few drivers.
-                PreferThreadedGL = !typeof(Game).Assembly.FullName.Contains("FNA");
+                PreferThreadedGL = IsXNA;
 
                 SupportRuntimeMods = true;
                 SupportRelinkingMods = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*
