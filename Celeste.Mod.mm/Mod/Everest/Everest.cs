@@ -899,12 +899,12 @@ namespace Celeste.Mod {
                 return;
             }
 
-            Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld)));
+            BlackScreen scene = new BlackScreen();
+            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld, scene)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _QuickFullRestart(bool fromOverworld) {
+        private static IEnumerator _QuickFullRestart(bool fromOverworld, BlackScreen scene) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
@@ -919,7 +919,12 @@ namespace Celeste.Mod {
             }
 
             AppDomain.CurrentDomain.SetData("EverestRestart", true);
-            Engine.Instance.Exit();
+            scene.RunAfterRender = () => {
+                if (Engine.Graphics.IsFullScreen) {
+                    Engine.SetWindowed(320 * (Settings.Instance?.WindowScale ?? 1), 180 * (Settings.Instance?.WindowScale ?? 1));
+                }
+                Engine.Instance.Exit();
+            };
             yield break;
         }
 
