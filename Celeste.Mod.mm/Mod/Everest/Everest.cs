@@ -65,7 +65,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(Flags.IsFNA ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
         /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
@@ -430,7 +430,7 @@ namespace Celeste.Mod {
             // Note: Everest fulfills some mod dependencies by itself.
             new NullModule(new EverestModuleMetadata() {
                 Name = "Celeste",
-                VersionString = $"{Celeste.Instance.Version.ToString()}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")}"
+                VersionString = $"{Celeste.Instance.Version.ToString()}-{(Flags.IsFNA ? "fna" : "xna")}"
             }).Register();
             new NullModule(new EverestModuleMetadata() {
                 Name = "DialogCutscene",
