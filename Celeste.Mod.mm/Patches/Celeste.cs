@@ -33,7 +33,9 @@ namespace Celeste {
                 File.Delete("BuildIsXNA.txt");
             if (File.Exists("BuildIsFNA.txt"))
                 File.Delete("BuildIsFNA.txt");
-            File.WriteAllText($"BuildIs{(Everest.Flags.IsFNA ? "FNA" : "XNA")}.txt", "");
+
+            // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet.
+            File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
 
             // macOS is FUN.
             if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
