@@ -415,10 +415,6 @@ namespace Celeste.Mod {
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
-
-                // Initialize all main managers before loading any mods.
-                TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
-                // Don't add it yet, though - add it in Initialize.
             }
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
@@ -476,8 +472,6 @@ namespace Celeste.Mod {
             TextInput.Initialize(Celeste.Instance);
 
             // Add the previously created managers.
-            if (TouchInputManager.Instance != null)
-                Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
             Celeste.Instance.Components.Add(STAThreadHelper.Instance);
 

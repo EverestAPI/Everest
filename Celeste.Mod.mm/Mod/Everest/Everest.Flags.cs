@@ -25,20 +25,6 @@ namespace Celeste.Mod {
             public static bool IsMono { get; private set; }
 
             /// <summary>
-            /// Is the game running on a mobile platform, f.e. Android?
-            /// </summary>
-            public static bool IsMobile { get; private set; }
-
-            /// <summary>
-            /// Is the game running on Android?
-            /// </summary>
-            public static bool IsAndroid { get; private set; }
-            /// <summary>
-            /// Is the game running using FNADroid?
-            /// </summary>
-            public static bool IsFNADroid { get; private set; }
-
-            /// <summary>
             /// Should the game avoid creating render targets if possible?
             /// </summary>
             public static bool AvoidRenderTargets { get; private set; }
@@ -73,20 +59,15 @@ namespace Celeste.Mod {
 
                 IsMono = Type.GetType("Mono.Runtime") != null;
 
-                IsFNADroid = Environment.GetEnvironmentVariable("FNADROID") == "1";
-                IsAndroid = IsFNADroid;
-
-                IsMobile = IsAndroid;
-
-                AvoidRenderTargets = IsMobile || Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
-                PreferLazyLoading = IsMobile;
+                AvoidRenderTargets = Environment.GetEnvironmentVariable("EVEREST_NO_RT") == "1";
+                PreferLazyLoading = false;
 
                 // The way how FNA3D's D3D11 implementation handles threaded GL is hated by a few drivers.
                 PreferThreadedGL = IsXNA;
 
                 SupportRuntimeMods = true;
-                SupportRelinkingMods = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*
-                SupportUpdatingEverest = !IsMobile; // FIXME: Mono.Cecil can't find GAC when using Xamarin.*
+                SupportRelinkingMods = true;
+                SupportUpdatingEverest = true;
             }
 
         }
