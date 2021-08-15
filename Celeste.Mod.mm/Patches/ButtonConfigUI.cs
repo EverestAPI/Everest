@@ -207,7 +207,7 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MakeMethodPublic]
-        public extern void AddRemap(Keys key);
+        public extern void AddRemap(Buttons btn);
 
         #region Legacy Input
 
