@@ -388,18 +388,6 @@ namespace MonoMod {
 
         static Version Version;
 
-        static TypeDefinition Celeste;
-
-        static TypeDefinition Everest;
-        static MethodDefinition m_Everest_get_VersionCelesteString;
-
-        static TypeDefinition Level;
-
-        static TypeDefinition StrawberryRegistry;
-        static InterfaceImplementation IStrawberry;
-
-        static TypeDefinition FileProxy;
-        static TypeDefinition DirectoryProxy;
         static IDictionary<string, MethodDefinition> FileProxyCache = new Dictionary<string, MethodDefinition>();
         static IDictionary<string, MethodDefinition> DirectoryProxyCache = new Dictionary<string, MethodDefinition>();
 
@@ -434,11 +422,10 @@ namespace MonoMod {
             MonoModRule.Flag.Set("PatchingWithMono", Type.GetType("Mono.Runtime") != null);
             MonoModRule.Flag.Set("PatchingWithoutMono", Type.GetType("Mono.Runtime") == null);
 
-            if (Celeste == null)
-                Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
-            if (Celeste == null)
+            TypeDefinition t_Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
+            if (t_Celeste == null)
                 return;
-            IsCeleste = Celeste.Scope == MonoModRule.Modder.Module;
+            IsCeleste = t_Celeste.Scope == MonoModRule.Modder.Module;
 
             if (IsCeleste) {
                 MonoModRule.Modder.PostProcessors += PostProcessor;
@@ -449,7 +436,7 @@ namespace MonoMod {
             string versionString = null;
             int[] versionInts = null;
             // Find Celeste .ctor (luckily only has one)
-            MethodDefinition c_Celeste = Celeste.FindMethod(".ctor", true);
+            MethodDefinition c_Celeste = t_Celeste.FindMethod(".ctor", true);
             if (c_Celeste != null && c_Celeste.HasBody) {
                 Mono.Collections.Generic.Collection<Instruction> instrs = c_Celeste.Body.Instructions;
                 for (int instri = 0; instri < instrs.Count; instri++) {
@@ -524,11 +511,8 @@ namespace MonoMod {
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
-            if (FileProxy == null)
-                FileProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
-
-            if (DirectoryProxy == null)
-                DirectoryProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.DirectoryProxy")?.Resolve();
+            TypeDefinition t_FileProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
+            TypeDefinition t_DirectoryProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.DirectoryProxy")?.Resolve();
 
             foreach (Instruction instr in method.Body.Instructions) {
                 // System.IO.File.* calls are always static calls.
@@ -541,11 +525,11 @@ namespace MonoMod {
 
                 if (calling?.DeclaringType?.FullName == "System.IO.File") {
                     if (!FileProxyCache.TryGetValue(calling.Name, out replacement))
-                        FileProxyCache[calling.GetID(withType: false)] = replacement = FileProxy.FindMethod(calling.GetID(withType: false));
+                        FileProxyCache[calling.GetID(withType: false)] = replacement = t_FileProxy.FindMethod(calling.GetID(withType: false));
 
                 } else if (calling?.DeclaringType?.FullName == "System.IO.Directory") {
                     if (!DirectoryProxyCache.TryGetValue(calling.Name, out replacement))
-                        DirectoryProxyCache[calling.GetID(withType: false)] = replacement = DirectoryProxy.FindMethod(calling.GetID(withType: false));
+                        DirectoryProxyCache[calling.GetID(withType: false)] = replacement = t_DirectoryProxy.FindMethod(calling.GetID(withType: false));
 
                 } else {
                     continue;
@@ -601,10 +585,8 @@ namespace MonoMod {
         }
 
         public static void PatchTrackableStrawberryCheck(MethodDefinition method, CustomAttribute attrib) {
-            if (StrawberryRegistry == null)
-                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-
-            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+            TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            MethodDefinition m_TrackableContains = t_StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -620,10 +602,8 @@ namespace MonoMod {
         }
 
         public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib) {
-            if (StrawberryRegistry == null)
-                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-
-            MethodDefinition m_TrackableContains = StrawberryRegistry.FindMethod("System.Boolean TrackableContains(Celeste.BinaryPacker/Element)");
+            TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            MethodDefinition m_TrackableContains = t_StrawberryRegistry.FindMethod("System.Boolean TrackableContains(Celeste.BinaryPacker/Element)");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -651,10 +631,8 @@ namespace MonoMod {
         }
 
         public static void PatchStrawberryTrainCollectionOrder(MethodDefinition method, CustomAttribute attrib) {
-            if (StrawberryRegistry == null)
-                StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
-
-            MethodDefinition m_IsFirst = StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
+            TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
+            MethodDefinition m_IsFirst = t_StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -831,10 +809,8 @@ namespace MonoMod {
         }
 
         public static void PatchLevelLoaderThread(ILContext context, CustomAttribute attrib) {
-            if (Level == null)
-                Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
-
-            FieldDefinition f_SubHudRenderer = Level.FindField("SubHudRenderer");
+            TypeDefinition t_Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
+            FieldDefinition f_SubHudRenderer = t_Level.FindField("SubHudRenderer");
             MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve().FindMethod("System.Void .ctor()");
 
             // Add a local variable we'll use to store a SubHudRenderer object temporarily
@@ -890,11 +866,8 @@ namespace MonoMod {
         }
 
         public static void PatchErrorLogWrite(ILContext context, CustomAttribute attrib) {
-            if (Everest == null)
-                Everest = MonoModRule.Modder.FindType("Celeste.Mod.Everest").Resolve();
-
-            if (m_Everest_get_VersionCelesteString == null)
-                m_Everest_get_VersionCelesteString = Everest.FindMethod("System.String get_VersionCelesteString()");
+            TypeDefinition t_Everest = MonoModRule.Modder.FindType("Celeste.Mod.Everest").Resolve();
+            MethodDefinition m_Everest_get_VersionCelesteString = t_Everest.FindMethod("System.String get_VersionCelesteString()");
 
             /* We expect something similar enough to the following:
             call	 class Monocle.Engine Monocle.Engine::get_Instance() // We're here
@@ -1311,10 +1284,9 @@ namespace MonoMod {
 
         public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
             // MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry");
-            if (IStrawberry == null)
-                IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
+            InterfaceImplementation i_IStrawberry = new InterfaceImplementation(MonoModRule.Modder.FindType("Celeste.Mod.IStrawberry"));
 
-            ((TypeDefinition) provider).Interfaces.Add(IStrawberry);
+            ((TypeDefinition) provider).Interfaces.Add(i_IStrawberry);
         }
 
         public static void PatchInterface(MethodDefinition method, CustomAttribute attrib) {
