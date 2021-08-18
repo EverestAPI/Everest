@@ -279,7 +279,10 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", string.Join(Path.PathSeparator.ToString(), dllPaths));
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+
+            if (returnCode != 0 && File.Exists(asmTo + ".tmp"))
+                File.Delete(asmTo + ".tmp");
 
             if (!File.Exists(asmTo + ".tmp"))
                 throw new Exception("MonoMod failed creating a patched assembly!");
