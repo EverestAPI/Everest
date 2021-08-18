@@ -91,7 +91,10 @@ namespace Celeste.Mod {
                 { "BGswitch", new Version(0, 1, 0, 0) },
 
                 // Infinite Saves 1.0.0 does not work well with the "extra save slots" feature of Everest
-                { "InfiniteSaves", new Version(1, 0, 1) }
+                { "InfiniteSaves", new Version(1, 0, 1) },
+                // Both deprecated by integration into Everest
+                { "DebugRebind", new Version(1, 0, 1) },
+                { "RebindPeriod", new Version(1, 0, 1) },
             };
 
             /// <summary>
