@@ -168,5 +168,22 @@ namespace Celeste {
                 yield return null;
             }
         }
+
+        [MonoModReplace]
+        private Vector2 PutInside(Vector2 pos) {
+            // vanilla used loops here to move the particle inside the dream block step by step,
+            // which can decrease the performance when the dream block is very far from (0, 0)
+            if (pos.X > Right) {
+                pos.X -= (float) Math.Ceiling((pos.X - Right) / Width) * Width;
+            } else if (pos.X < Left) {
+                pos.X += (float) Math.Ceiling((Left - pos.X) / Width) * Width;
+            }
+            if (pos.Y > Bottom) {
+                pos.Y -= (float) Math.Ceiling((pos.Y - Bottom) / Height) * Height;
+            } else if (pos.Y < Top) {
+                pos.Y += (float) Math.Ceiling((Top - pos.Y) / Height) * Height;
+            }
+            return pos;
+        }
     }
 }
