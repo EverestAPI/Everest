@@ -436,6 +436,18 @@ namespace Celeste.Mod {
                 Name = "UpdateChecker",
                 VersionString = "1.0.2"
             }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "InfiniteSaves",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "DebugRebind",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "RebindPeriod",
+                VersionString = "1.0.0"
+            }).Register();
 
             LuaLoader.Initialize();
 
