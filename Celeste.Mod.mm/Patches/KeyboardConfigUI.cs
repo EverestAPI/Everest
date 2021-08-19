@@ -2,6 +2,7 @@
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -197,8 +198,13 @@ namespace Celeste {
         public extern void Clear(Binding binding);
 
         [MonoModIgnore]
+        public extern void orig_AddRemap(Keys key);
         [MakeMethodPublic]
-        public extern void AddRemap(Keys key);
+        public void AddRemap(Keys key) {
+            orig_AddRemap(key);
+            CoreModule.Settings.DebugConsole.ConsumePress();
+            CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
+        }
 
         #region Legacy Input
 
