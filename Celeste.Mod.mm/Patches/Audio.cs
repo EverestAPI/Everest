@@ -141,7 +141,7 @@ namespace Celeste {
             loadResult.CheckFMOD();
 
             if (Everest.Content.TryGet<AssetTypeGUIDs>(asset.PathVirtual + ".guids", out ModAsset assetGUIDs)) {
-                IngestGUIDs(bank, assetGUIDs);
+                IngestGUIDs(assetGUIDs);
             }
 
             patch_Banks.ModCache[asset] = bank;
@@ -152,17 +152,9 @@ namespace Celeste {
         }
 
         /// <summary>
-        /// Loads an FMOD GUID table from the given asset, loading only GUIDs for events that exist in the given bank.
+        /// Loads an FMOD GUID table from the given asset.
         /// </summary>
-        public static void IngestGUIDs(Bank bank, ModAsset asset) {
-            // get all the guids that are in the bank.
-            bank.getEventList(out EventDescription[] eventsInBank);
-            HashSet<Guid> guidsInBank = new HashSet<Guid>();
-            foreach (EventDescription eventInBank in eventsInBank) {
-                eventInBank.getID(out Guid id);
-                guidsInBank.Add(id);
-            }
-
+        public static void IngestGUIDs(ModAsset asset) {
             Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
             using (StreamReader reader = new StreamReader(asset.Stream)) {
@@ -176,9 +168,6 @@ namespace Celeste {
 
                     if (!Guid.TryParse(line.Substring(0, indexOfSpace), out Guid id) ||
                         cachedPaths.ContainsKey(id))
-                        continue;
-
-                    if (!guidsInBank.Contains(id))
                         continue;
 
                     string path = line.Substring(indexOfSpace + 1);
@@ -373,9 +362,9 @@ namespace Celeste {
         public static Bank IngestBank(ModAsset asset)
             => patch_Audio.IngestBank(asset);
 
-        /// <inheritdoc cref="patch_Audio.IngestGUIDs(Bank, ModAsset)"/>
-        public static void IngestGUIDs(Bank bank, ModAsset asset)
-            => patch_Audio.IngestGUIDs(bank, asset);
+        /// <inheritdoc cref="patch_Audio.IngestGUIDs(ModAsset)"/>
+        public static void IngestGUIDs(ModAsset asset)
+            => patch_Audio.IngestGUIDs(asset);
 
     }
 }
