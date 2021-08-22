@@ -170,17 +170,20 @@ namespace Celeste {
                         cachedPaths.ContainsKey(id))
                         continue;
 
+                    // only ingest the GUID if the corresponding event exists.
+                    if (system.getEventByID(id, out EventDescription _event) > RESULT.OK)
+                        continue;
+
                     string path = line.Substring(indexOfSpace + 1);
                     if (!usedGuids.TryGetValue(path, out HashSet<Guid> used))
                         usedGuids[path] = used = new HashSet<Guid>();
                     if (!used.Add(id))
                         continue;
 
-                    if (system.getEventByID(id, out EventDescription _event) <= RESULT.OK) {
-                        _event.unloadSampleData();
-                        cachedPaths[id] = path;
-                        cachedModEvents[path] = _event;
-                    }
+                    _event.unloadSampleData();
+                    cachedPaths[id] = path;
+                    cachedModEvents[path] = _event;
+
                     // TODO: Ingest buses and vcas
                 }
             }
