@@ -3,13 +3,13 @@
   <info face="Noto Sans CJK JP Medium" size="64" bold="0" italic="0" charset="" unicode="1" stretchH="100" smooth="1" aa="1" padding="0,0,0,0" spacing="1,1" outline="0"/>
   <common lineHeight="64" base="50" scaleW="256" scaleH="256" pages="7" packed="0" alphaChnl="0" redChnl="4" greenChnl="4" blueChnl="4"/>
   <pages>
-    <page id="0" file="everest_japanese_0.png" />
-    <page id="1" file="everest_japanese_1.png" />
-    <page id="2" file="everest_japanese_2.png" />
-    <page id="3" file="everest_japanese_3.png" />
-    <page id="4" file="everest_japanese_4.png" />
-    <page id="5" file="everest_japanese_5.png" />
-    <page id="6" file="everest_japanese_6.png" />
+    <page id="0" file="japanese_everest_0.png" />
+    <page id="1" file="japanese_everest_1.png" />
+    <page id="2" file="japanese_everest_2.png" />
+    <page id="3" file="japanese_everest_3.png" />
+    <page id="4" file="japanese_everest_4.png" />
+    <page id="5" file="japanese_everest_5.png" />
+    <page id="6" file="japanese_everest_6.png" />
   </pages>
   <chars count="342">
     <char id="9" x="34" y="44" width="3" height="1" xoffset="-1" yoffset="63" xadvance="10" page="0" chnl="15" />
