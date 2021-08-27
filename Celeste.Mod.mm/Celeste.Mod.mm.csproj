@@ -76,6 +76,7 @@
     </EmbeddedResource>
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese-noto.bmfc" />
     <EmbeddedResource Remove="Content\Dialog\Fonts\chinese_additional_characters.txt" />
+    <EmbeddedResource Remove="Content\**\*.xcf" />
   </ItemGroup>
 
   <ItemGroup>
