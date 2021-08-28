@@ -94,12 +94,5 @@ namespace Celeste {
             }
         }
 
-        private void RemoveSlotsFromScene() {
-            Scene.Remove(Slots.Where(slot => slot != null));
-        }
-
-        private void AddSlotsToScene() {
-            Scene.Add(Slots);
-        }
     }
 }
