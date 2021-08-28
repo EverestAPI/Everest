@@ -58,6 +58,9 @@ steps:
   displayName: 'Run azure-pipelines-postbuild.ps1'
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
+  env:
+    STEAM_USERNAME: $(steamUsername)
+    STEAM_PASSWORD: $(steamPassword)
 
 # Create and "publish" Olympus artifacts.
 - task: PublishBuildArtifacts@1
@@ -75,6 +78,16 @@ steps:
   inputs:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)/olympus/build/'
     artifactName: 'olympus-build'
+    publishLocation: 'Container'
+
+# Create and "publish" mono-cil-strip binary artifacts
+- task: PublishBuildArtifacts@1
+  condition: succeded()
+  displayName: 'Public lib-stripped artifact'
+  continueOnError: true
+  inputs:
+    pathtoPublish: '$(Build.ArtifactStagingDirectory)/lib-stripped/build/'
+    artifactName: 'lib-stripped'
     publishLocation: 'Container'
 
 # Announce new stable versions on Discord (#modding_updates).
