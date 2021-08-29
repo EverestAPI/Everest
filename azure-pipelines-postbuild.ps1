@@ -1,5 +1,10 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-Add-Type -Path "azure-pipelines-ext.cs" -ReferencedAssemblies @("System.IO.Compression.FileSystem", "System.IO.Compression.ZipFile", "System.Text.Encoding.Extensions")
+Add-Type -Path "azure-pipelines-ext.cs" -ReferencedAssemblies @(
+	"System.IO.Compression"
+	"System.IO.Compression.FileSystem"
+	"System.IO.Compression.ZipFile"
+	"System.Text.Encoding.Extensions"
+)
 
 $OLYMPUS="$env:Build_ArtifactStagingDirectory/olympus/"
 if ($OLYMPUS -eq "/olympus/") {
