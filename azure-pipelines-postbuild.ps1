@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$OLYMPUS="$env:Build_ArtifactStagingDirectory/olympus/"
+$OLYMPUS="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/olympus/"
 if ($OLYMPUS -eq "/olympus/") {
 	$OLYMPUS = "./tmp-olympus/"
 }
@@ -15,7 +15,7 @@ New-Item -ItemType "directory" -Path $OLYMPUS/build
 
 Write-Output "Building Olympus build artifact"
 $compress = @{
-	Path = "$env:Build_ArtifactStagingDirectory/main"
+	Path = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main"
 	CompressionLevel = "Optimal"
 	DestinationPath = "$ZIP"
 }
@@ -25,7 +25,7 @@ Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
 
 # lib-stripped setup
-$LIB_STRIPPED="$env:Build_ArtifactStagingDirectory/lib-stripped"
+$LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped"
 if ($LIB_STRIPPED -eq "/lib-stripped/") {
 	$LIB_STRIPPED = "./tmp-lib-stripped/"
 }
@@ -33,14 +33,14 @@ if ($LIB_STRIPPED -eq "/lib-stripped/") {
 $ZIP="$LIB_STRIPPED/build/build.zip"
 
 Write-Output "Installing SteamRE DepotDownloader"
-Invoke-WebRequest -URI 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.4/depotdownloader-2.4.4.zip' -OutFile "$env:Agent_TempDirectory/depotdownloader.zip"
-Expand-Archive -Path "$env:Agent_TempDirectory/depotdownloader.zip" -Destination $env:Agent_ToolsDirectory
+Invoke-WebRequest -URI 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.4/depotdownloader-2.4.4.zip' -OutFile "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip"
+Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip" -Destination $env:AGENT_TOOLSDIRECTORY
 
 Write-Output "Downloading Celeste package"
 dotnet DepotDownloader.dll -app 504230 -beta opengl -username $env:STEAM_USERNAME -password $env:STEAM_PASSWORD -dir $LIB_STRIPPED
 
 Write-Output "Applying Everest patch"
-Copy-Item -Path "$env:Build_ArtifactStagingDirectory/main/*" -Destination $LIB_STRIPPED -Recurse
+Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED -Recurse
 Start-Process -FilePath "$LIB_STRIPPED/Miniinstaller.exe" -WorkingDirectory "$LIB_STRIPPED"
 
 Write-Output "Generating stripped files"
