@@ -82,7 +82,7 @@ steps:
 
 # Create and "publish" mono-cil-strip binary artifacts
 - task: PublishBuildArtifacts@1
-  condition: succeded()
+  condition: succeeded()
   displayName: 'Public lib-stripped artifact'
   continueOnError: true
   inputs:
