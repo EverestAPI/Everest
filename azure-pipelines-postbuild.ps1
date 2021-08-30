@@ -32,6 +32,11 @@ if ($LIB_STRIPPED -eq "/lib-stripped") {
 
 $ZIP="$LIB_STRIPPED/build/build.zip"
 
+Write-Output "Creating lib-stripped artifact directories"
+Remove-Item -ErrorAction Ignore -Recurse -Force -Path $LIB_STRIPPED
+New-Item -ItemType "directory" -Path $LIB_STRIPPED
+New-Item -ItemType "directory" -Path $LIB_STRIPPED/build
+
 Write-Output "Installing SteamRE DepotDownloader"
 Invoke-WebRequest -URI 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.4/depotdownloader-2.4.4.zip' -OutFile "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip"
 Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip" -Destination $env:AGENT_TOOLSDIRECTORY
@@ -41,8 +46,7 @@ dotnet $env:AGENT_TOOLSDIRECTORY/DepotDownloader.dll -app 504230 -beta opengl -u
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED -Recurse
-Write-Output "Running Miniinstaller in $LIB_STRIPPED"
-Start-Process -FilePath "mono" -ArgumentList "Miniinstaller.exe"
+Start-Process -FilePath "mono" -ArgumentList "Miniinstaller.exe" -WorkingDirectory $LIB_STRIPPED
 
 Write-Output "Generating stripped files"
 $files = Get-ChildItem -Path $LIB_STRIPPED* -Include *.dll,*.exe
