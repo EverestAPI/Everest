@@ -46,7 +46,7 @@ dotnet $env:AGENT_TOOLSDIRECTORY/DepotDownloader.dll -app 504230 -beta opengl -u
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED -Recurse
-Start-Process -FilePath "mono" -ArgumentList "Miniinstaller.exe" -WorkingDirectory $LIB_STRIPPED
+Start-Process -FilePath "mono" -ArgumentList "$LIB_STRIPPED/Miniinstaller.exe" -WorkingDirectory $LIB_STRIPPED -Wait
 
 Write-Output "Generating stripped files"
 $files = Get-ChildItem -Path $LIB_STRIPPED* -Include *.dll,*.exe
