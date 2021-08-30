@@ -25,7 +25,7 @@ Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
 
 # lib-stripped setup
-$LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped"
+$LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped/"
 if ($LIB_STRIPPED -eq "/lib-stripped/") {
 	$LIB_STRIPPED = "./tmp-lib-stripped/"
 }
@@ -37,11 +37,11 @@ Invoke-WebRequest -URI 'https://github.com/SteamRE/DepotDownloader/releases/down
 Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip" -Destination $env:AGENT_TOOLSDIRECTORY
 
 Write-Output "Downloading Celeste package"
-dotnet DepotDownloader.dll -app 504230 -beta opengl -username $env:STEAM_USERNAME -password $env:STEAM_PASSWORD -dir $LIB_STRIPPED
+dotnet $env:AGENT_TOOLSDIRECTORY/DepotDownloader.dll -app 504230 -beta opengl -username $env:STEAM_USERNAME -password $env:STEAM_PASSWORD -dir $LIB_STRIPPED
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED -Recurse
-Start-Process -FilePath "$LIB_STRIPPED/Miniinstaller.exe" -WorkingDirectory "$LIB_STRIPPED/"
+Start-Process -FilePath "Miniinstaller.exe" -WorkingDirectory "$LIB_STRIPPED"
 
 Write-Output "Generating stripped files"
 $files = Get-ChildItem -Path $LIB_STRIPPED* -Include *.dll,*.exe
