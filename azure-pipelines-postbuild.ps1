@@ -45,11 +45,13 @@ Write-Output "Downloading Celeste package"
 dotnet $env:AGENT_TOOLSDIRECTORY/DepotDownloader.dll -app 504230 -beta opengl -username $env:STEAM_USERNAME -password $env:STEAM_PASSWORD -dir $LIB_STRIPPED
 
 Write-Output "Applying Everest patch"
-Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED -Recurse -Container: $false
+Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED
+$children = Get-ChildItem -Path "$LIB_STRIPPED/*"
+Write-Output $children
 Start-Process -FilePath "mono" -ArgumentList "$LIB_STRIPPED/Miniinstaller.exe" -WorkingDirectory $LIB_STRIPPED -Wait
 
 Write-Output "Generating stripped files"
-$files = Get-ChildItem -Path $LIB_STRIPPED* -Include *.dll,*.exe
+$files = Get-ChildItem -Path "$LIB_STRIPPED/*" -Include *.dll,*.exe
 foreach ($dll in $files) {
 	mono-cil-strip -q $dll
 }
