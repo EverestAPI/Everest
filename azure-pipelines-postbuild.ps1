@@ -25,9 +25,9 @@ Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
 
 # lib-stripped setup
-$LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped/"
-if ($LIB_STRIPPED -eq "/lib-stripped/") {
-	$LIB_STRIPPED = "./tmp-lib-stripped/"
+$LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped"
+if ($LIB_STRIPPED -eq "/lib-stripped") {
+	$LIB_STRIPPED = "./tmp-lib-stripped"
 }
 
 $ZIP="$LIB_STRIPPED/build/build.zip"
