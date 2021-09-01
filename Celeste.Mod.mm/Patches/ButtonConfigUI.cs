@@ -28,6 +28,7 @@ namespace Celeste {
         private bool resetHeld;
         private float resetTime;
         private float resetDelay;
+        private float inputDelay;
 
         public extern void orig_ctor();
         [MonoModConstructor]
@@ -205,9 +206,21 @@ namespace Celeste {
         [MonoModLinkFrom("System.Void Celeste.ButtonConfigUI::ClearRemap(Monocle.Binding)")]
         public extern void Clear(Binding binding);
 
-        [MonoModIgnore]
-        [MakeMethodPublic]
-        public extern void AddRemap(Buttons btn);
+        [MonoModReplace]
+        public void AddRemap(Buttons btn) {
+            remapping = false;
+            inputDelay = 0.25f;
+            bool valid = remappingBinding.Controller.Contains(btn)
+                ? ((patch_Binding) remappingBinding).Remove(btn)
+                : remappingBinding.Add(btn);
+            if (!valid) {
+                Audio.Play("event:/ui/main/button_invalid");
+            }
+            while (remappingBinding.Controller.Count > Input.MaxBindings) {
+                remappingBinding.Controller.RemoveAt(0);
+            }
+            Input.Initialize();
+        }
 
         #region Legacy Input
 

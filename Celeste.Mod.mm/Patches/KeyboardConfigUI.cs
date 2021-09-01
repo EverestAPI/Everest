@@ -26,6 +26,7 @@ namespace Celeste {
         private bool resetHeld;
 		private float resetTime;
 		private float resetDelay;
+        private float inputDelay;
 
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
@@ -197,11 +198,20 @@ namespace Celeste {
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
         public extern void Clear(Binding binding);
 
-        [MonoModIgnore]
-        public extern void orig_AddRemap(Keys key);
-        [MakeMethodPublic]
+        [MonoModReplace]
         public void AddRemap(Keys key) {
-            orig_AddRemap(key);
+            remapping = false;
+            inputDelay = 0.25f;
+            bool valid = remappingBinding.Keyboard.Contains(key)
+                ? ((patch_Binding) remappingBinding).Remove(key)
+                : remappingBinding.Add(key);
+            if (!valid) {
+                Audio.Play("event:/ui/main/button_invalid");
+            }
+            while (remappingBinding.Keyboard.Count > Input.MaxBindings) {
+                remappingBinding.Keyboard.RemoveAt(0);
+            }
+            Input.Initialize();
             CoreModule.Settings.DebugConsole.ConsumePress();
             CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
         }
