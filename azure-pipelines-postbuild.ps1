@@ -38,8 +38,7 @@ New-Item -ItemType "directory" -Path $LIB_STRIPPED/build
 Write-Output "Downloading Celeste package"
 $creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$env:BIN_USERNAME:$env:BIN_PASSWORD"))
 $headers = @{'Authorization'= "Basic $creds"}
-$uri = "$env:BIN_URL/Celeste_Linux.zip"
-Invoke-WebRequest -URI $uri -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
+Invoke-WebRequest -URI 'coloursofnoise.0x0a.de/AzureBin/Celeste_Linux.zip' -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
 Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $LIB_STRIPPED
 
 Write-Output "Applying Everest patch"
