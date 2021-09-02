@@ -36,7 +36,7 @@ New-Item -ItemType "directory" -Path $LIB_STRIPPED
 New-Item -ItemType "directory" -Path $LIB_STRIPPED/build
 
 Write-Output "Downloading Celeste package"
-$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$env:BIN_USERNAME:$env:BIN_PASSWORD"))
+$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($env:BIN_USERNAME):$($env:BIN_PASSWORD)"))
 $headers = @{'Authorization'= "Basic $creds"}
 Invoke-WebRequest -URI "$env:BIN_URL/Celeste_Linux.zip" -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
 Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $LIB_STRIPPED
