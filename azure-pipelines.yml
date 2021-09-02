@@ -59,8 +59,9 @@ steps:
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
   env:
-    STEAM_USERNAME: $(steamUsername)
-    STEAM_PASSWORD: $(steamPassword)
+    BIN_URL: $(BIN_URL)
+    BIN_USERNAME: $(BIN_USERNAME)
+    BIN_PASSWORD: $(BIN_PASSWORD)
 
 # Create and "publish" Olympus artifacts.
 - task: PublishBuildArtifacts@1

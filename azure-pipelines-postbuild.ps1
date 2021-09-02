@@ -30,36 +30,24 @@ if ($LIB_STRIPPED -eq "/lib-stripped") {
 	$LIB_STRIPPED = "./tmp-lib-stripped"
 }
 
-$ZIP="$LIB_STRIPPED/build/build.zip"
-
 Write-Output "Creating lib-stripped artifact directories"
 Remove-Item -ErrorAction Ignore -Recurse -Force -Path $LIB_STRIPPED
 New-Item -ItemType "directory" -Path $LIB_STRIPPED
 New-Item -ItemType "directory" -Path $LIB_STRIPPED/build
 
-Write-Output "Installing SteamRE DepotDownloader"
-Invoke-WebRequest -URI 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_2.4.4/depotdownloader-2.4.4.zip' -OutFile "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip"
-Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/depotdownloader.zip" -Destination $env:AGENT_TOOLSDIRECTORY
-
 Write-Output "Downloading Celeste package"
-dotnet $env:AGENT_TOOLSDIRECTORY/DepotDownloader.dll -app 504230 -beta opengl -username $env:STEAM_USERNAME -password $env:STEAM_PASSWORD -dir $LIB_STRIPPED
+$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$env:BIN_USERNAME:$env:BIN_PASSWORD"))
+$headers = @{'Authorization'= "Basic $creds"}
+Invoke-WebRequest -URI "$env:BIN_URL/Celeste_Linux.zip" -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
+Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $LIB_STRIPPED
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED
-$children = Get-ChildItem -Path "$LIB_STRIPPED/*"
-Write-Output $children
-Start-Process -FilePath "mono" -ArgumentList "$LIB_STRIPPED/Miniinstaller.exe" -WorkingDirectory $LIB_STRIPPED -Wait
+Start-Process -FilePath "mono" -ArgumentList "$LIB_STRIPPED/MiniInstaller.exe" -WorkingDirectory $LIB_STRIPPED -Wait
 
 Write-Output "Generating stripped files"
 $files = Get-ChildItem -Path "$LIB_STRIPPED/*" -Include *.dll,*.exe
 foreach ($dll in $files) {
 	mono-cil-strip -q $dll
 }
-
-Write-Output "Building lib-stripped artifact"
-$compress = @{
-	Path = "$LIB_STRIPPED/*.dll", "$LIB_STRIPPED/*.exe"
-	CompressionLevel = "Optimal"
-	DestinationPath = $ZIP
-}
-Compress-Archive @compress
+Copy-Item $files -Destination "$LIB_STRIPPED/build"
