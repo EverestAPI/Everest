@@ -25,6 +25,10 @@ Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
 
 # lib-stripped setup
+if ([string]::IsNullOrEmpty($env:BIN_URL) -or ())) {
+	Exit 0
+}
+
 $LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped"
 if ($LIB_STRIPPED -eq "/lib-stripped") {
 	$LIB_STRIPPED = "./tmp-lib-stripped"
@@ -51,3 +55,4 @@ foreach ($dll in $files) {
 	mono-cil-strip -q $dll
 }
 Copy-Item $files -Destination "$LIB_STRIPPED/build"
+Write-Host "##vso[task.setvariable variable=lib_stripped]True"

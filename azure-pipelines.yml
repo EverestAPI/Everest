@@ -54,6 +54,7 @@ steps:
 
 # Post-build steps.
 - task: PowerShell@2
+  name: PostBuild
   condition: succeeded()
   displayName: 'Run azure-pipelines-postbuild.ps1'
   inputs:
@@ -83,7 +84,7 @@ steps:
 
 # Create and "publish" mono-cil-strip binary artifacts
 - task: PublishBuildArtifacts@1
-  condition: succeeded()
+  condition: eq($(PostBuild.lib_stripped), 'True')
   displayName: 'Public lib-stripped artifact'
   continueOnError: true
   inputs:
