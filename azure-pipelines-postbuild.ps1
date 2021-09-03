@@ -25,7 +25,8 @@ Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
 
 # lib-stripped setup
-if ([string]::IsNullOrEmpty($env:BIN_URL)) {
+if ([string]::IsNullOrEmpty("$env:BIN_URL")) {
+	Write-Output "Skipping lib-stripped artifact"
 	Exit 0
 }
 
