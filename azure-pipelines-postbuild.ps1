@@ -28,6 +28,8 @@ Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/siz
 if ([string]::IsNullOrEmpty("$env:BIN_URL")) {
 	Write-Output "Skipping lib-stripped artifact"
 	Exit 0
+} else {
+	Write-Output "BIN_URL `"secret`": ``$env:BIN_URL``"
 }
 
 $LIB_STRIPPED="$env:BUILD_ARTIFACTSTAGINGDIRECTORY/lib-stripped"
