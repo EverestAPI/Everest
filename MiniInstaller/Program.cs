@@ -95,7 +95,8 @@ namespace MiniInstaller {
                     LogLine(msg);
                     LogLine("");
                     LogLine("Installing Everest failed.");
-                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework")) {
+                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework") ||
+                        msg.Contains("MonoModRules failed resolving Microsoft.Xna.Framework.Game")) {
                         LogLine("Please run the game at least once to install missing dependencies.");
                     } else {
                         if (msg.Contains("--->")) {
@@ -278,7 +279,10 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", string.Join(Path.PathSeparator.ToString(), dllPaths));
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+
+            if (returnCode != 0 && File.Exists(asmTo + ".tmp"))
+                File.Delete(asmTo + ".tmp");
 
             if (!File.Exists(asmTo + ".tmp"))
                 throw new Exception("MonoMod failed creating a patched assembly!");

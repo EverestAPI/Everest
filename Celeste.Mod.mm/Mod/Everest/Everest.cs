@@ -65,7 +65,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
+        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(Flags.IsFNA ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
         /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
@@ -415,10 +415,6 @@ namespace Celeste.Mod {
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
-
-                // Initialize all main managers before loading any mods.
-                TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
-                // Don't add it yet, though - add it in Initialize.
             }
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
@@ -430,7 +426,7 @@ namespace Celeste.Mod {
             // Note: Everest fulfills some mod dependencies by itself.
             new NullModule(new EverestModuleMetadata() {
                 Name = "Celeste",
-                VersionString = $"{Celeste.Instance.Version.ToString()}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")}"
+                VersionString = $"{Celeste.Instance.Version.ToString()}-{(Flags.IsFNA ? "fna" : "xna")}"
             }).Register();
             new NullModule(new EverestModuleMetadata() {
                 Name = "DialogCutscene",
@@ -439,6 +435,18 @@ namespace Celeste.Mod {
             new NullModule(new EverestModuleMetadata() {
                 Name = "UpdateChecker",
                 VersionString = "1.0.2"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "InfiniteSaves",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "DebugRebind",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "RebindPeriod",
+                VersionString = "1.0.0"
             }).Register();
 
             LuaLoader.Initialize();
@@ -476,8 +484,6 @@ namespace Celeste.Mod {
             TextInput.Initialize(Celeste.Instance);
 
             // Add the previously created managers.
-            if (TouchInputManager.Instance != null)
-                Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
             Celeste.Instance.Components.Add(STAThreadHelper.Instance);
 
@@ -899,12 +905,12 @@ namespace Celeste.Mod {
                 return;
             }
 
-            Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld)));
+            BlackScreen scene = new BlackScreen();
+            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld, scene)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _QuickFullRestart(bool fromOverworld) {
+        private static IEnumerator _QuickFullRestart(bool fromOverworld, BlackScreen scene) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
@@ -919,7 +925,12 @@ namespace Celeste.Mod {
             }
 
             AppDomain.CurrentDomain.SetData("EverestRestart", true);
-            Engine.Instance.Exit();
+            scene.RunAfterRender = () => {
+                if (Flags.IsXNA && Engine.Graphics.IsFullScreen) {
+                    Engine.SetWindowed(320 * (Settings.Instance?.WindowScale ?? 1), 180 * (Settings.Instance?.WindowScale ?? 1));
+                }
+                Engine.Instance.Exit();
+            };
             yield break;
         }
 

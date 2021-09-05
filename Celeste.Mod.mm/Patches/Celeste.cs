@@ -33,6 +33,8 @@ namespace Celeste {
                 File.Delete("BuildIsXNA.txt");
             if (File.Exists("BuildIsFNA.txt"))
                 File.Delete("BuildIsFNA.txt");
+
+            // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet.
             File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
 
             // macOS is FUN.
@@ -255,7 +257,7 @@ https://discord.gg/6qjaePQ");
              * -ade
              */
 
-            if (CoreModule.Settings.FastTextureLoading ?? !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL)) {
+            if (CoreModule.Settings.FastTextureLoading ?? (Environment.ProcessorCount >= 4 && !(CoreModule.Settings.ThreadedGL ?? Everest.Flags.PreferThreadedGL))) {
                 long limit = (long) (CoreModule.Settings.FastTextureLoadingMaxMB * 1024f * 1024f);
 
                 if (limit <= 0) {

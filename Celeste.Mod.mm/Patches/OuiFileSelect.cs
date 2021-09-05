@@ -8,7 +8,6 @@ using System.Linq;
 
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
-        public float Scroll = 0f;
 
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
         public extern IEnumerator orig_Enter(Oui from);
@@ -95,12 +94,5 @@ namespace Celeste {
             }
         }
 
-        private void RemoveSlotsFromScene() {
-            Scene.Remove(Slots.Where(slot => slot != null));
-        }
-
-        private void AddSlotsToScene() {
-            Scene.Add(Slots);
-        }
     }
 }

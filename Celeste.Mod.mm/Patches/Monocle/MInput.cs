@@ -2,7 +2,6 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 #pragma warning disable CS0169 // The field is never used
 
-using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 
 namespace Monocle {
@@ -16,23 +15,6 @@ namespace Monocle {
             lock (VirtualInputs) {
                 orig_UpdateVirtualInputs();
             }
-        }
-
-        public class patch_KeyboardData {
-            public extern bool orig_Check(Keys key);
-
-            public bool Check(Keys key)
-                => key != Keys.None && orig_Check(key);
-
-            public extern bool orig_Pressed(Keys key);
-
-            public bool Pressed(Keys key)
-                => key != Keys.None && orig_Pressed(key);
-
-            public extern bool orig_Released(Keys key);
-
-            public bool Released(Keys key)
-                => key != Keys.None && orig_Released(key);
         }
     }
 }

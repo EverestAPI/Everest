@@ -2,6 +2,7 @@
 #pragma warning disable CS0414 // The field is assigned to, but never used
 #pragma warning disable CS0108 // Member hides inherited member; missing new keyword
 
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -25,6 +26,7 @@ namespace Celeste {
         private bool resetHeld;
 		private float resetTime;
 		private float resetDelay;
+        private float inputDelay;
 
 #pragma warning disable CS0626 // method is external and has no attribute
         public extern void orig_ctor();
@@ -196,9 +198,23 @@ namespace Celeste {
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
         public extern void Clear(Binding binding);
 
-        [MonoModIgnore]
-        [MonoModPublic]
-        public extern void AddRemap(Keys key);
+        [MonoModReplace]
+        public void AddRemap(Keys key) {
+            remapping = false;
+            inputDelay = 0.25f;
+            bool valid = remappingBinding.Keyboard.Contains(key)
+                ? ((patch_Binding) remappingBinding).Remove(key)
+                : remappingBinding.Add(key);
+            if (!valid) {
+                Audio.Play("event:/ui/main/button_invalid");
+            }
+            while (remappingBinding.Keyboard.Count > Input.MaxBindings) {
+                remappingBinding.Keyboard.RemoveAt(0);
+            }
+            Input.Initialize();
+            CoreModule.Settings.DebugConsole.ConsumePress();
+            CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
+        }
 
         #region Legacy Input
 

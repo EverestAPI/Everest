@@ -456,43 +456,44 @@ namespace Monocle {
                 !_Texture_Reloading && !_Texture_Requesting) {
                 // Preload as we need to know the texture size WITHOUT ALLOCATING SPACE.
                 // ... also because the texture size is required in the calling ctx past Reload.
-                Preload(true);
-                CountFastTextureLoad();
-                lock (queuedLoadLock = new object()) {
-                    _Texture_QueuedLoadLock = queuedLoadLock;
-                    _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
-                        try {
-                            lock (queuedLoadLock) {
-                                // Queued load cancelled or replaced with another queued load.
-                                if (_Texture_QueuedLoadLock != queuedLoadLock) {
-                                    FreeFastTextureLoad();
-                                    return Texture_Unsafe;
-                                }
+                if (Preload(true)) {
+                    CountFastTextureLoad();
+                    lock (queuedLoadLock = new object()) {
+                        _Texture_QueuedLoadLock = queuedLoadLock;
+                        _Texture_QueuedLoad = new MaybeAwaitable<Texture2D>(Task.Run(() => {
+                            try {
+                                lock (queuedLoadLock) {
+                                    // Queued load cancelled or replaced with another queued load.
+                                    if (_Texture_QueuedLoadLock != queuedLoadLock) {
+                                        FreeFastTextureLoad();
+                                        return Texture_Unsafe;
+                                    }
 
-                                GrabFastTextureLoad();
+                                    GrabFastTextureLoad();
 
-                                // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
-                                _Texture_Reloading = true;
-                                Reload();
-                                if (_Texture_QueuedLoadLock == queuedLoadLock)
-                                    _Texture_QueuedLoadLock = null;
-                                Texture2D tex = Texture_Unsafe;
-                                if (_Texture_UnloadAfterReload) {
-                                    tex?.Dispose();
-                                    tex = Texture_Unsafe;
-                                    // ... can anything even swap the texture here?
-                                    Texture_Unsafe = null;
-                                    tex?.Dispose();
-                                    _Texture_UnloadAfterReload = false;
+                                    // NOTE: If something dares to change texture info on the fly, GOOD LUCK.
+                                    _Texture_Reloading = true;
+                                    Reload();
+                                    if (_Texture_QueuedLoadLock == queuedLoadLock)
+                                        _Texture_QueuedLoadLock = null;
+                                    Texture2D tex = Texture_Unsafe;
+                                    if (_Texture_UnloadAfterReload) {
+                                        tex?.Dispose();
+                                        tex = Texture_Unsafe;
+                                        // ... can anything even swap the texture here?
+                                        Texture_Unsafe = null;
+                                        tex?.Dispose();
+                                        _Texture_UnloadAfterReload = false;
+                                    }
+                                    return tex;
                                 }
-                                return tex;
+                            } catch (Exception e) {
+                                Celeste.patch_Celeste.CriticalFailureHandler(e);
+                                throw;
                             }
-                        } catch (Exception e) {
-                            Celeste.patch_Celeste.CriticalFailureHandler(e);
-                            throw;
-                        }
-                    }).GetAwaiter());
-                    return;
+                        }).GetAwaiter());
+                        return;
+                    }
                 }
             }
 
@@ -825,8 +826,7 @@ namespace Monocle {
                 } else if (extension == ".png") {
                     // Hard.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
-                        GetSizeFromPNG(stream);
-                    return true;
+                        return PreloadSizeFromPNG(stream);
 
                 } else {
                     // .xnb and other file formats - impossible.
@@ -838,8 +838,7 @@ namespace Monocle {
                 if (Metadata.Format == "png") {
                     // Hard.
                     using (Stream stream = Metadata.Stream)
-                        GetSizeFromPNG(stream);
-                    return true;
+                        return PreloadSizeFromPNG(stream);
 
                 } else {
                     // .xnb and other file formats - impossible.
@@ -850,25 +849,26 @@ namespace Monocle {
             return false;
         }
 
-        private void GetSizeFromPNG(Stream stream) {
+        private bool PreloadSizeFromPNG(Stream stream) {
             using (BinaryReader reader = new BinaryReader(stream)) {
                 ulong magic = reader.ReadUInt64();
                 if (magic != 0x0A1A0A0D474E5089U) {
-                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
-                    throw new InvalidDataException("PNG magic mismatch!");
+                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected magic to be 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
+                    return false;
                 }
                 uint length = reader.ReadUInt32();
                 if (length != 0x0D000000U) {
-                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
-                    throw new InvalidDataException("First chunk of PNG not 0x0000000D (13) bytes long!");
+                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected first chunk length to be 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
+                    return false;
                 }
                 uint chunk = reader.ReadUInt32();
                 if (chunk != 0x52444849U) {
-                    Celeste.Mod.Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
-                    throw new InvalidDataException("PNG doesn't start with IHDR!");
+                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
+                    return false;
                 }
                 Width = SwapEndian(reader.ReadInt32());
                 Height = SwapEndian(reader.ReadInt32());
+                return true;
             }
         }
 

@@ -383,6 +383,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCassetteBlockAwake))]
     class PatchCassetteBlockAwakeAttribute : Attribute { }
 
+    /// <summary>
+    /// Replaces hard-coded key checks with Everest CoreModule ButtonBinding checks
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMountainRendererUpdate))]
+    class PatchMountainRendererUpdate : Attribute { }
+
     static partial class MonoModRules {
 
         static bool IsCeleste;
@@ -403,9 +409,6 @@ namespace MonoMod {
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)
                     if (dep.Name == "MonoMod" && MonoModder.Version < dep.Version)
                         throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {dep.Version}+)");
-
-            // this should be removed after "Remove FNADroid code" is done
-            MonoModRule.Flag.Set("FMODStub", false);
 
             bool isFNA = false;
             bool isSteamworks = false;
@@ -498,6 +501,10 @@ namespace MonoMod {
                 // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
                 if (MonoModRule.Modder.FindType("MonoMod.WasHere") != null)
                     throw new Exception("This version of Celeste is already modded. You need a clean install of Celeste to mod it.");
+
+                // Ensure that FNA.dll is present / that XNA is installed.
+                if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
+                    throw new Exception("MonoModRules failed resolving Microsoft.Xna.Framework.Game");
             }
 
 
@@ -508,7 +515,6 @@ namespace MonoMod {
             MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
 
             MonoModRule.Flag.Set("Has:BirdTutorialGuiButtonPromptEnum", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() != null);
-            MonoModRule.Flag.Set("Fill:CompleteRendererImageLayerScale", MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer").Resolve().FindField("Scale") == null);
         }
 
         public static void ProxyFileCalls(MethodDefinition method, CustomAttribute attrib) {
@@ -2063,6 +2069,68 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Brtrue, target);
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
+        }
+
+        public static void PatchMountainRendererUpdate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
+            TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+
+            MethodReference m_ButtonBinding_Check = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Check").GetMethod;
+            MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
+
+            var checkKeys = new Dictionary<int, string>() {
+                { 87 /* Keys.W */, "CameraForward" },
+                { 83 /* Keys.S */, "CameraBackward" },
+                { 68 /* Keys.D */, "CameraRight" },
+                { 65 /* Keys.A */, "CameraLeft" },
+                { 81 /* Keys.Q */, "CameraUp" },
+                { 90 /* Keys.Z */, "CameraDown" },
+                { 160 /* Keys.LeftShift */, "CameraSlow" },
+            };
+
+            int key = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel,
+                instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
+                instr => instr.MatchLdcI4(out key),
+                instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Check"))) {
+
+                cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
+                cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty(checkKeys[key]).GetMethod);
+                cursor.Emit(OpCodes.Call, m_ButtonBinding_Check);
+
+                cursor.RemoveRange(3);
+                checkKeys.Remove(key);
+            }
+            if (checkKeys.Count > 0)
+                throw new Exception("MountainRenderer failed to patch key checks for keys: " + checkKeys.Keys);
+
+            var pressedKeys = new Dictionary<int, string>() {
+                { 80 /* Keys.P */, "CameraPrint" },
+                //{ 113 /* Keys.F2 */, "ReloadOverworld" },
+                { 0x20 /* Keys.Space */, "ToggleMountainFreeCam" },
+                //{ 112 /* Keys.F1 */, "ReloadMountainViews" },
+            };
+
+            while (cursor.TryGotoNext(MoveType.AfterLabel,
+                instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
+                instr => instr.MatchLdcI4(out key),
+                instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"))) {
+
+                // Only some pressed keys are currently handled
+                if (!pressedKeys.ContainsKey(key))
+                    continue;
+
+                cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
+                cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty(pressedKeys[key]).GetMethod);
+                cursor.Emit(OpCodes.Call, m_ButtonBinding_Pressed);
+
+                cursor.RemoveRange(3);
+                pressedKeys.Remove(key);
+            }
+            if (pressedKeys.Count > 0)
+                throw new Exception("MountainRenderer failed to patch key presses for keys: " + pressedKeys.Keys);
         }
 
         public static void PostProcessor(MonoModder modder) {
