@@ -889,15 +889,12 @@ namespace MonoMod {
         }
 
         public static void PatchHeartGemCollectRoutine(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_this = null;
-            FieldDefinition f_completeArea = null;
-
             MethodDefinition m_IsCompleteArea = method.DeclaringType.FindMethod("System.Boolean IsCompleteArea(System.Boolean)");
 
             // The gem collection routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
-            f_this = method.DeclaringType.FindField("<>4__this");
-            f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
+            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
+            FieldDefinition f_completeArea = method.DeclaringType.Fields.FirstOrDefault(f => f.Name.StartsWith("<completeArea>5__"));
 
             new ILContext(method).Invoke(il => {
                 ILCursor cursor = new ILCursor(il);
@@ -918,14 +915,12 @@ namespace MonoMod {
         }
 
         public static void PatchBadelineChaseRoutine(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_this = null;
-
             MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::CanChangeMusic(System.Boolean)");
             MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::IsChaseEnd(System.Boolean)");
 
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
-            f_this = method.DeclaringType.FindField("<>4__this");
+            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
 
             new ILContext(method).Invoke(il => {
                 ILCursor cursor = new ILCursor(il);
@@ -1083,11 +1078,10 @@ namespace MonoMod {
 
         public static void PatchLevelExitRoutine(MethodDefinition method) {
             FieldDefinition f_completeMeta = method.DeclaringType.FindField("completeMeta");
-            FieldDefinition f_this = null;
 
             // The level exit routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
-            f_this = method.DeclaringType.FindField("<>4__this");
+            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -1241,25 +1235,24 @@ namespace MonoMod {
             ILProcessor il = context.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count - 4; instri++) {
                 // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
+
+                // 0: ldarg.0
+                // 1: ldflda Celeste.Player::Speed
+                // 2: ldfld Vector2::Y
+                // 3: ldc.r4 -60
+                // 4: blt.un [instruction after if]
+                // 5: ldarg.0
+                // 6: call Player::_IsOverWater
+                // 7: brfalse [instruction after if]
                 if (instrs[instri].OpCode == OpCodes.Ldarg_0
                     && instrs[instri + 1].MatchLdflda("Celeste.Player", "Speed")
                     && instrs[instri + 2].MatchLdfld("Microsoft.Xna.Framework.Vector2", "Y")
-                    && instrs[instri + 3].MatchLdcR4(-60f)) {
-
-                    // XNA:
-                    // 0: ldarg.0
-                    // 1: ldflda Celeste.Player::Speed
-                    // 2: ldfld Vector2::Y
-                    // 3: ldc.r4 -60
-                    // 4: blt.un [instruction after if]
-                    if (instrs[instri + 4].OpCode == OpCodes.Blt_Un) {
-                        // 5: ldarg.0
-                        // 6: call Player::_IsOverWater
-                        // 7: brfalse [instruction after if]
-                        instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
-                        instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
-                        instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
-                    }
+                    && instrs[instri + 3].MatchLdcR4(-60f)
+                    && instrs[instri + 4].OpCode == OpCodes.Blt_Un
+                ) {
+                    instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
+                    instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
                 }
             }
         }
@@ -1559,7 +1552,7 @@ namespace MonoMod {
             cursor.Next.Operand = m_shouldDisplaySwitchAlphabetPrompt;
         }
 
-        public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrig) {
+        public static void PatchRumbleTriggerAwake(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_entity_get_Y = MonoModRule.Modder.FindType("Monocle.Entity").Resolve().FindMethod("get_Y");
 
             FieldDefinition f_constrainHeight = method.DeclaringType.FindField("constrainHeight");

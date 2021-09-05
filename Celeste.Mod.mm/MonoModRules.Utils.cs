@@ -4,6 +4,7 @@ using MonoMod.Utils;
 
 namespace MonoMod {
     static partial class MonoModRules {
+
         #region Patch-time IteratorStateMachine target utils
 
         /*
@@ -49,7 +50,7 @@ namespace MonoMod {
                 enumeratorType = enumeratorCtor.DeclaringType.SafeResolve();
                 // enumerator type should be in same class as the source method and implements IEnumerator,
                 // its declaring type or itself should have CompilerGenerated attribute
-                if (enumeratorType == null || enumeratorType.DeclaringType != method.DeclaringType || !IsCompilerGeneratorEnumerator(enumeratorType)) {
+                if (enumeratorType == null || enumeratorType.DeclaringType != method.DeclaringType || !enumeratorType.IsCompilerGeneratorEnumerator()) {
                     return;
                 }
                 enumeratorMoveNext = enumeratorType.FindMethod("System.Boolean MoveNext()", simple: true);
@@ -61,7 +62,7 @@ namespace MonoMod {
             return matched ? enumeratorMoveNext : null;
         }
 
-        private static bool IsCompilerGeneratorEnumerator(TypeDefinition type) {
+        private static bool IsCompilerGeneratorEnumerator(this TypeDefinition type) {
             if (type == null || !type.IsCompilerGeneratedOrIsInCompilerGeneratedClass() || type.DeclaringType == null) {
                 return false;
             }
@@ -86,5 +87,6 @@ namespace MonoMod {
         }
 
         #endregion
+
     }
 }
