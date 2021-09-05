@@ -436,6 +436,7 @@ namespace Monocle {
             }
             drawCommands.Insert(0, new patch_Line(text, color));
             int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw, 0, Math.Max(drawCommands.Count - 1, 0));
             while (drawCommands.Count > maxCommandLines) {
                 drawCommands.RemoveAt(drawCommands.Count - 1);
             }
