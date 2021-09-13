@@ -70,8 +70,11 @@ namespace Celeste {
 
             // Load any additional banks.
             lock (Everest.Content.Map) {
-                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank)))
-                    IngestBank(asset);
+                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank))) {
+                    if (!ingestedModBankPaths.Contains(asset.PathVirtual)) {
+                        IngestBank(asset);
+                    }
+                }
             }
 
             AudioInitialized = true;
