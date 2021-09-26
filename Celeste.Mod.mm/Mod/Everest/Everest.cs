@@ -65,7 +65,8 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
-        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(Flags.IsFNA ? "fna" : "xna")} [Everest: {BuildString}]";
+        // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet when it's used for the first time in log
+        public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
         /// UTF8 text encoding without a byte order mark, to be preferred over Encoding.UTF8
