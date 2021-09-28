@@ -206,10 +206,10 @@ namespace MonoMod {
     class PatchTotalHeartGemChecksAttribute : Attribute { };
 
     /// <summary>
-    /// Same as above, but for references in routines.
+    /// Patch TotalHeartGems to refer to TotalHeartGemsInVanilla, and whether to show the UnlockCSide postcard
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecksInRoutine))]
-    class PatchTotalHeartGemChecksInRoutineAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemCSidePostcard))]
+    class PatchTotalHeartGemCSidePostcardAttribute : Attribute { };
 
     /// <summary>
     /// Patch a reference to TotalHeartGems in the OuiJournalGlobal constructor to unharcode the check for golden berry unlock.
@@ -1475,20 +1475,21 @@ namespace MonoMod {
 
         }
 
-        public static void PatchTotalHeartGemChecks(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_getTotalHeartGemsInVanilla = method.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
+        public static void PatchTotalHeartGemChecks(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getTotalHeartGemsInVanilla = context.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            ILCursor cursor = new ILCursor(context);
 
-                if (instr.MatchCallvirt(out MethodReference m) && m.Name == "get_TotalHeartGems") {
-                    // replace the call to the TotalHeartGems property with a call to TotalHeartGemsInVanilla.
-                    instr.Operand = m_getTotalHeartGemsInVanilla;
-                }
-            }
+            cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.Next.Operand = m_getTotalHeartGemsInVanilla;
         }
-        public static void PatchTotalHeartGemChecksInRoutine(MethodDefinition method, CustomAttribute attrib) {
+
+        public static void PatchTotalHeartGemCSidePostcard(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_SaveData_Instance = method.Module.GetType("Celeste.SaveData").FindField("Instance");
+            MethodDefinition m_SaveData_get_LevelSetStats = method.Module.GetType("Celeste.SaveData").FindMethod("Celeste.LevelSetStats get_LevelSetStats()");
+            MethodDefinition m_LevelSetStats_get_MaxAreaMode = method.Module.GetType("Celeste.LevelSetStats").FindMethod("System.Int32 get_MaxAreaMode()");
+
+
             // Routines are stored in compiler-generated methods.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
@@ -1497,7 +1498,19 @@ namespace MonoMod {
                 break;
             }
 
-            PatchTotalHeartGemChecks(method, attrib);
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.Session", "UnlockedCSide"));
+                cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand);
+                cursor.Emit(OpCodes.Ldsfld, f_SaveData_Instance);
+                cursor.Emit(OpCodes.Callvirt, m_SaveData_get_LevelSetStats);
+                cursor.Emit(OpCodes.Callvirt, m_LevelSetStats_get_MaxAreaMode);
+                cursor.Emit(OpCodes.Ldc_I4_2);
+                cursor.Next.OpCode = OpCodes.Blt_S;
+
+                PatchTotalHeartGemChecks(il, attrib);
+            });
         }
 
         public static void PatchOuiJournalStatsHeartGemCheck(ILContext context, CustomAttribute attrib) {
