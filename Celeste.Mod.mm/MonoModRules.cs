@@ -394,6 +394,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMountainRendererUpdate))]
     class PatchMountainRendererUpdate : Attribute { }
 
+    /// <summary>
+    /// Patches the method to only set the player Speed.X if not in the RedDash state.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerBeforeUpTransition))]
+    class PatchPlayerBeforeUpTransition : Attribute { }
+
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDeathEffectUpdate))]
     class PatchDeathEffectUpdateAttribute : Attribute { }
 
@@ -2265,10 +2271,25 @@ namespace MonoMod {
                 throw new Exception("MountainRenderer failed to patch key presses for keys: " + pressedKeys.Keys);
         }
 
+        public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_Player_StateMachine = context.Method.DeclaringType.FindField("StateMachine");
+            MethodDefinition m_StateMachine_get_State = f_Player_StateMachine.FieldType.Resolve().FindMethod("System.Int32 get_State()");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Player_StateMachine);
+            cursor.Emit(OpCodes.Callvirt, m_StateMachine_get_State);
+            cursor.Emit(OpCodes.Ldc_I4_5);
+            Instruction target = cursor.Clone().GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0, instr => instr.MatchLdfld("Celeste.Player", "StateMachine")).Next;
+            cursor.Emit(OpCodes.Beq_S, target);
+        }
+
         public static void PatchDeathEffectUpdate(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(instr => instr.OpCode == OpCodes.Ble_Un_S);
             cursor.Next.OpCode = OpCodes.Blt_Un_S;
+
         }
 
         public static void PostProcessor(MonoModder modder) {
