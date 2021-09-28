@@ -84,7 +84,7 @@ steps:
 
 # Create and "publish" mono-cil-strip binary artifacts
 - task: PublishBuildArtifacts@1
-  condition: eq(variables['PostBuild.lib_stripped'], 'True')
+  condition: eq(variables['lib_stripped'], 'True')
   displayName: 'Publish lib-stripped artifact'
   continueOnError: true
   inputs:
