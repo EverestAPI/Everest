@@ -394,6 +394,9 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMountainRendererUpdate))]
     class PatchMountainRendererUpdate : Attribute { }
 
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDeathEffectUpdate))]
+    class PatchDeathEffectUpdateAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2260,6 +2263,12 @@ namespace MonoMod {
             }
             if (pressedKeys.Count > 0)
                 throw new Exception("MountainRenderer failed to patch key presses for keys: " + pressedKeys.Keys);
+        }
+
+        public static void PatchDeathEffectUpdate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ble_Un_S);
+            cursor.Next.OpCode = OpCodes.Blt_Un_S;
         }
 
         public static void PostProcessor(MonoModder modder) {
