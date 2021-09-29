@@ -15,7 +15,7 @@ New-Item -ItemType "directory" -Path $OLYMPUS/build
 
 Write-Output "Building Olympus build artifact"
 $compress = @{
-	Path = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main"
+	Path = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*"
 	CompressionLevel = "Optimal"
 	DestinationPath = "$ZIP"
 }
