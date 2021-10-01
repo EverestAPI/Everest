@@ -73,7 +73,7 @@ steps:
 # Post-build steps.
 - task: PowerShell@2
   name: PostBuild
-  condition: and(succeeded()
+  condition: and(succeeded())
   displayName: 'Run azure-pipelines-postbuild.ps1'
   continueOnError: true
   inputs:
