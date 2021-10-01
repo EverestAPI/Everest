@@ -10,6 +10,7 @@ variables:
   solution: '**/*.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
+  VANILLA_CACHE: $(Pipeline.Workspace)/vanilla
 
 name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
@@ -53,6 +54,12 @@ steps:
     publishLocation: 'Container'
 
 # Verify patches.
+- task: Cache@2
+  displayName: Cache Vanilla files
+  inputs:
+    key: '"lib-stripped" | "$(BIN_USERNAME)" | "$(BIN_PASSWORD)"'
+    path: $(VANILLA_CACHE)
+    cacheHitVar: CACHE_RESTORED
 - task: PowerShell@2
   condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
   displayName: 'Verify patches'

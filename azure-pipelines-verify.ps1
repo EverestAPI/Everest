@@ -12,13 +12,16 @@ if ($PATCH -eq "/patch") {
 Write-Output "Creating patch directories"
 Remove-Item -ErrorAction Ignore -Recurse -Force -Path $PATCH
 New-Item -ItemType "directory" -Path $PATCH
-New-Item -ItemType "directory" -Path $PATCH/build
 
-Write-Output "Downloading Celeste package"
-$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($env:BIN_USERNAME):$($env:BIN_PASSWORD)"))
-$headers = @{'Authorization'= "Basic $creds"}
-Invoke-WebRequest -URI "$env:BIN_URL/Celeste_Linux.zip" -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
-Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $PATCH
+if ($env:CACHE_RESTORED -eq "false") {
+	Write-Output "Downloading Celeste package"
+	$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($env:BIN_USERNAME):$($env:BIN_PASSWORD)"))
+	$headers = @{'Authorization'= "Basic $creds"}
+	Invoke-WebRequest -URI "$env:BIN_URL/Celeste_Linux.zip" -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
+	Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $env:VANILLA_CACHE
+}
+
+Copy-Item -Path "$env:VANILLA_CACHE/*" - Destination $PATCH
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $PATCH
