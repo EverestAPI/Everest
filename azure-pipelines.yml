@@ -79,6 +79,8 @@ steps:
   continueOnError: true
   inputs:
     filePath: 'azure-pipelines-postbuild.ps1'
+  env:
+    BIN_URL: $(BIN_URL)
 
 # Create and "publish" Olympus artifacts.
 - task: PublishBuildArtifacts@1
