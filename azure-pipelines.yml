@@ -62,7 +62,7 @@ steps:
     path: $(VANILLA_CACHE)
     cacheHitVar: CACHE_RESTORED
 - task: PowerShell@2
-  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+  condition: succeeded()
   displayName: 'Verify patches'
   inputs:
     filePath: 'azure-pipelines-verify.ps1'
