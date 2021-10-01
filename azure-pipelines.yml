@@ -52,21 +52,29 @@ steps:
     artifactName: 'main'
     publishLocation: 'Container'
 
-# Post-build steps.
+# Verify patches.
 - task: PowerShell@2
-  name: PostBuild
-  condition: succeeded()
-  displayName: 'Run azure-pipelines-postbuild.ps1'
+  condition: and(succeeded(), in(variables['Build.Reason'], 'IndividualCI', 'BatchedCI'))
+  displayName: 'Verify patches'
   inputs:
-    filePath: 'azure-pipelines-postbuild.ps1'
+    filePath: 'azure-pipelines-verify.ps1'
   env:
     BIN_URL: $(BIN_URL)
     BIN_USERNAME: $(BIN_USERNAME)
     BIN_PASSWORD: $(BIN_PASSWORD)
 
+# Post-build steps.
+- task: PowerShell@2
+  name: PostBuild
+  condition: and(succeeded()
+  displayName: 'Run azure-pipelines-postbuild.ps1'
+  continueOnError: true
+  inputs:
+    filePath: 'azure-pipelines-postbuild.ps1'
+
 # Create and "publish" Olympus artifacts.
 - task: PublishBuildArtifacts@1
-  condition: succeeded()
+  condition: eq(variables['olympus'], 'True')
   displayName: 'Publish olympus-meta artifact'
   continueOnError: true
   inputs:
@@ -74,7 +82,7 @@ steps:
     artifactName: 'olympus-meta'
     publishLocation: 'Container'
 - task: PublishBuildArtifacts@1
-  condition: succeeded()
+  condition: eq(variables['olyumpus'], 'True')
   displayName: 'Publish olympus-build artifact'
   continueOnError: true
   inputs:

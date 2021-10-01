@@ -23,6 +23,7 @@ Compress-Archive @compress
 
 Write-Output "Building Olympus metadata artifact"
 Write-Output (Get-Item -Path $ZIP).length | Out-File -FilePath $OLYMPUS/meta/size.txt
+Write-Host "##vso[task.setvariable variable=olympus]True"
 
 # lib-stripped setup
 if ([string]::IsNullOrEmpty("$env:BIN_URL") -or ($env:BIN_URL -eq '$(BIN_URL)')) {
@@ -40,15 +41,8 @@ Remove-Item -ErrorAction Ignore -Recurse -Force -Path $LIB_STRIPPED
 New-Item -ItemType "directory" -Path $LIB_STRIPPED
 New-Item -ItemType "directory" -Path $LIB_STRIPPED/build
 
-Write-Output "Downloading Celeste package"
-$creds = [System.Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("$($env:BIN_USERNAME):$($env:BIN_PASSWORD)"))
-$headers = @{'Authorization'= "Basic $creds"}
-Invoke-WebRequest -URI "$env:BIN_URL/Celeste_Linux.zip" -OutFile "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -Headers $headers
-Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $LIB_STRIPPED
-
-Write-Output "Applying Everest patch"
-Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $LIB_STRIPPED
-Start-Process -FilePath "mono" -ArgumentList "$LIB_STRIPPED/MiniInstaller.exe" -WorkingDirectory $LIB_STRIPPED -Wait
+Write-Output "Copying patched files"
+Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/patch/*" -Destination $LIB_STRIPPED
 
 Write-Output "Generating stripped files"
 $files = Get-ChildItem -Path "$LIB_STRIPPED/*" -Include *.dll,*.exe
