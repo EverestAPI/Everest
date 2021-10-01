@@ -1,6 +1,13 @@
 # Patch verification
 if ([string]::IsNullOrEmpty("$env:BIN_URL") -or ($env:BIN_URL -eq '$(BIN_URL)')) {
 	Write-Output "Skipping patch verification"
+
+	if ($env:CACHE_RESTORED -eq "false") {
+		# Add placeholder for vanilla path to prevent cache warnings
+		New-Item -ItemType "directory" -Path $env:VANILLA_CACHE
+		Write-Output "Vanilla cache not available" | Out-File -FilePath $env:VANILLA_CACHE/placeholder.txt
+	}
+
 	Exit 0
 }
 
