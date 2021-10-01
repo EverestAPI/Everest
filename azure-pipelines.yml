@@ -90,7 +90,7 @@ steps:
     artifactName: 'olympus-meta'
     publishLocation: 'Container'
 - task: PublishBuildArtifacts@1
-  condition: eq(variables['olyumpus'], 'True')
+  condition: eq(variables['olympus'], 'True')
   displayName: 'Publish olympus-build artifact'
   continueOnError: true
   inputs:
