@@ -56,6 +56,7 @@ steps:
 # Verify patches.
 - task: Cache@2
   displayName: Cache Vanilla files
+  continueOnError: true
   inputs:
     key: '"lib-stripped" | "$(BIN_USERNAME)" | "$(BIN_PASSWORD)"'
     path: $(VANILLA_CACHE)
