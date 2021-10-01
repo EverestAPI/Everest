@@ -641,8 +641,6 @@ namespace MonoMod {
                     instrs[instri].Operand = m_TrackableContains;
                 }
             }
-
-            throw new Exception("This exception was thrown on purpose for testing reasons. DO NOT USE THIS BUILD");
         }
 
         public static void PatchLevelDataBerryTracker(MethodDefinition method, CustomAttribute attrib) {
