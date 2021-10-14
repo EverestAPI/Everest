@@ -403,6 +403,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDeathEffectUpdate))]
     class PatchDeathEffectUpdateAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the method to fix mini textbox not closing when it's expanding and another textbox is triggered.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMiniTextboxRoutine))]
+    class PatchMiniTextboxRoutine : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2290,6 +2296,63 @@ namespace MonoMod {
             cursor.GotoNext(instr => instr.OpCode == OpCodes.Ble_Un_S);
             cursor.Next.OpCode = OpCodes.Blt_Un_S;
 
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="MonoMod.PatchMiniTextboxRoutine" />
+        /// </summary>
+        public static void PatchMiniTextboxRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_MiniTextbox_closing = method.DeclaringType.FindField("closing");
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__")) {
+                    continue;
+                }
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                /*
+                    Change:
+
+                        while ((this.ease += Engine.DeltaTime * 4f) < 1f)) {
+                            continueLoopTarget:
+                            yield return null;
+                        }
+                        this.ease = 1f;
+
+                    to:
+
+                        while ((this.ease += Engine.DeltaTime * 4f) < 1f)) {
+                            continueLoopTarget:
+                            if (this.closing) {
+                                yield break;
+                            }
+                            yieldReturnNullTarget:
+                            yield return null;
+                        }
+                        this.ease = 1f;
+                */
+                ILLabel continueLoopTarget = cursor.DefineLabel();
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdloc(6),
+                    instr => instr.MatchLdcR4(1f),
+                    instr => instr.MatchBlt(out continueLoopTarget));
+
+                cursor.Goto(continueLoopTarget.Target, MoveType.AfterLabel);
+
+                ILLabel yieldReturnNullTarget = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Ldloc_1);
+                cursor.Emit(OpCodes.Ldfld, f_MiniTextbox_closing);
+                cursor.Emit(OpCodes.Brfalse, yieldReturnNullTarget);
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(yieldReturnNullTarget);
+            });
         }
 
         public static void PostProcessor(MonoModder modder) {
