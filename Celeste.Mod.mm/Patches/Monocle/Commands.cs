@@ -161,7 +161,7 @@ namespace Monocle {
             }
 
             if (drawCommands.Count > 0) {
-                int drawCount = Math.Min((Engine.Instance.Window.ClientBounds.Height - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
+                int drawCount = Math.Min((viewHeight - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
                 float height = 10f + 30f * drawCount;
                 Draw.Rect(10f, viewHeight - height - 60f, viewWidth - 20f, height, Color.Black * 0.8f);
                 for (int i = 0; i < drawCount && firstLineIndexToDraw + i < drawCommands.Count; i++) {
@@ -417,7 +417,7 @@ namespace Monocle {
                 }
                 return;
             }
-            int width = Engine.Instance.Window.ClientBounds.Width - 40;
+            int width = Engine.ViewWidth - 40;
             while (Draw.DefaultFont.MeasureString(text).X > width) {
                 int index = -1;
                 for (int i = 0; i < text.Length; i++) {
@@ -435,7 +435,7 @@ namespace Monocle {
                 text = text.Substring(index + 1);
             }
             drawCommands.Insert(0, new patch_Line(text, color));
-            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.ViewHeight - 100) / 30, 0);
             firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw, 0, Math.Max(drawCommands.Count - 1, 0));
             while (drawCommands.Count > maxCommandLines) {
                 drawCommands.RemoveAt(drawCommands.Count - 1);
