@@ -254,10 +254,10 @@ namespace MonoMod {
     class PatchCelesteMainAttribute : Attribute { };
 
     /// <summary>
-    /// Removes the [Command] attribute from the matching vanilla method in Celeste.Commands.
+    /// Removes the [Command] attribute from annotated method.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttributeFromVanillaLoadMethod))]
-    class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttribute))]
+    class RemoveCommandAttributeAttribute : Attribute { };
 
     /// <summary>
     /// Patch the fake heart color to make it customizable.
@@ -1659,15 +1659,12 @@ namespace MonoMod {
             }
         }
 
-        public static void RemoveCommandAttributeFromVanillaLoadMethod(MethodDefinition method, CustomAttribute attrib) {
-            // find the vanilla method: CmdLoadIDorSID(string, string) => CmdLoad(int, string)
-            string vanillaMethodName = method.Name.Replace("IDorSID", "");
-            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.DeclaringType.FindMethod($"System.Void {vanillaMethodName}(System.Int32,System.String)").CustomAttributes;
-            for (int i = 0; i < attributes.Count; i++) {
+        public static void RemoveCommandAttribute(MethodDefinition method, CustomAttribute attrib) {
+            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.CustomAttributes;
+            for (int i = attributes.Count - 1; i >= 0; i--) {
                 // remove all Command attributes.
                 if (attributes[i]?.AttributeType.FullName == "Monocle.Command") {
                     attributes.RemoveAt(i);
-                    i--;
                 }
             }
         }
