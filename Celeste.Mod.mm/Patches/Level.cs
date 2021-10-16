@@ -426,6 +426,40 @@ namespace Celeste {
                 ((patch_EntityList) (object) Entities).ClearEntities();
             }
         }
+
+        public Vector2 ScreenToWorld(Vector2 position) {
+            Vector2 size = new Vector2(320f, 180f);
+            Vector2 scaledSize = size / ZoomTarget;
+            Vector2 offset = ZoomTarget != 1f ? (ZoomFocusPoint - scaledSize / 2f) / (size - scaledSize) * size : Vector2.Zero;
+            float scale = Zoom * ((320f - ScreenPadding * 2f) / 320f);
+            Vector2 paddingOffset = new Vector2(ScreenPadding, ScreenPadding * 9f / 16f);
+
+            if (SaveData.Instance?.Assists.MirrorMode ?? false) {
+                position.X = 1920f - position.X;
+            }
+            position /= 1920f / 320f;
+            position -= paddingOffset;
+            position = (position - offset) / scale + offset;
+            position = Camera.ScreenToCamera(position);
+            return position;
+        }
+
+        public Vector2 WorldToScreen(Vector2 position) {
+            Vector2 size = new Vector2(320f, 180f);
+            Vector2 scaledSize = size / ZoomTarget;
+            Vector2 offset = ZoomTarget != 1f ? (ZoomFocusPoint - scaledSize / 2f) / (size - scaledSize) * size : Vector2.Zero;
+            float scale = Zoom * ((320f - ScreenPadding * 2f) / 320f);
+            Vector2 paddingOffset = new Vector2(ScreenPadding, ScreenPadding * 9f / 16f);
+
+            position = Camera.CameraToScreen(position);
+            position = (position - offset) * scale + offset;
+            position += paddingOffset;
+            position *= 1920f / 320f;
+            if (SaveData.Instance?.Assists.MirrorMode ?? false) {
+                position.X = 1920f - position.X;
+            }
+            return position;
+        }
     }
 
     public static class LevelExt {
