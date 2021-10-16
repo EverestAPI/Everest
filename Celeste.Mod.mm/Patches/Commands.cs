@@ -244,6 +244,10 @@ namespace Celeste {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
         }
 
+        [MonoModIgnore]
+        [RemoveCommandAttribute]
+        private static extern void CmdHearts(int amount);
+
         [MonoModReplace]
         [Command("hearts", "sets the amount of obtained hearts for the specified level set to a given number (default all hearts and current level set)")]
         private static void CmdHearts(int amount = int.MaxValue, string levelSet = null) {
