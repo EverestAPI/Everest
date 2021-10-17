@@ -18,7 +18,10 @@ namespace Celeste.Pico8 {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [MonoModIgnore]
+        [PatchEmulatorConstructor]
         public extern void orig_ctor(Scene returnTo, int levelX = 0, int levelY = 0);
+
         [MonoModConstructor]
         public void ctor(Scene returnTo, int levelX = 0, int levelY = 0) {
             orig_ctor(returnTo, levelX, levelY);

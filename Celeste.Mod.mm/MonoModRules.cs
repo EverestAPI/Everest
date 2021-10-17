@@ -409,6 +409,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMiniTextboxRoutine))]
     class PatchMiniTextboxRoutine : Attribute { }
 
+    /// <summary>
+    /// Patches the method to fix "$" not printed in PICO-8.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
+    class PatchEmulatorConstructorAttribute : Attribute { }
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2350,6 +2356,21 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ret);
                 cursor.MarkLabel(yieldReturnNullTarget);
             });
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="MonoMod.PatchEmulatorConstructorAttribute" />
+        /// </summary>
+        public static void PatchEmulatorConstructor(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            string fontMap = null;
+            cursor.GotoNext(MoveType.Before,
+                instr => instr.MatchLdstr(out fontMap),
+                instr => instr.MatchStfld("Celeste.Pico8.Emulator", "fontMap"));
+            // devs forgot to press shift when typing "$" for some reason
+            fontMap = fontMap.Replace("#4%", "#$%");
+            cursor.Next.Operand = fontMap;
         }
 
         public static void PostProcessor(MonoModder modder) {
