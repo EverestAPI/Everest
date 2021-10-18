@@ -80,7 +80,7 @@ namespace Monocle {
             int viewHeight = Engine.ViewHeight;
 
             // Vector2 mousePosition = MInput.Mouse.Position;
-            // For whatever reason, MInput.Mouse.Position keeps returning 0, 0
+            // When the console is opening, MInput.Mouse.UpdateNull is called so MInput.Mouse.Position keeps returning 0, 0
             // Let's just use the XNA / FNA MouseState instead.
             MouseState mouseState = Mouse.GetState();
             int mouseScrollDelta = mouseState.ScrollWheelValue - mouseScroll;
