@@ -5,7 +5,8 @@
   <pages>
     <page id="0" file="japanese_everest_0.png" />
   </pages>
-  <chars count="15">
+  <chars count="16">
+    <char id="60" x="123" y="83" width="22" height="21" xoffset="2" yoffset="23" xadvance="25" page="0" chnl="15" />
     <char id="64" x="168" y="42" width="37" height="40" xoffset="2" yoffset="18" xadvance="42" page="0" chnl="15" />
     <char id="20006" x="42" y="83" width="39" height="39" xoffset="2" yoffset="13" xadvance="43" page="0" chnl="15" />
     <char id="20381" x="40" y="42" width="43" height="40" xoffset="0" yoffset="13" xadvance="43" page="0" chnl="15" />
