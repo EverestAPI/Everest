@@ -110,38 +110,9 @@ steps:
     artifactName: 'lib-stripped'
     publishLocation: 'Container'
 
-# Define build_number variable and zip build artifacts
-- script: |
-    declare -i BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)
-    echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
-
-    zip -r $(Build.ArtifactStagingDirectory)/main.zip $(Build.ArtifactStagingDirectory)/main/
-    zip -r $(Build.ArtifactStagingDirectory)/olympus-meta.zip $(Build.ArtifactStagingDirectory)/olympus/meta/
-    zip -r $(Build.ArtifactStagingDirectory)/olympus-build.zip $(Build.ArtifactStagingDirectory)/olympus/meta/
-    zip -r $(Build.ArtifactStagingDirectory)/lib-stripped.zip $(Build.ArtifactStagingDirectory)/lib-stripped/build/
-
-# Create GitHub release for new stable versions.
-- task: GitHubRelease@1
-  displayName: 'Create GitHub Release'
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/dev'))
-  inputs:
-    githubConnection: 0x0ade-bot
-    repositoryName: EverestAPI/Everest
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: 'v1.$(build_number).0'
-    title: 'Stable Build $(build_number)'
-    assets: |
-      '$(Build.ArtifactStagingDirectory)/main.zip'
-      '$(Build.ArtifactStagingDirectory)/olympus-meta.zip'
-      '$(Build.ArtifactStagingDirectory)/olympus-build.zip'
-      '$(Build.ArtifactStagingDirectory)/lib-stripped.zip'
-    isDraft: true
-
 # Announce new stable versions on Discord (#modding_updates).
 - script: |
-    declare -i BUILD_NUMBER=$(build_number)
+    declare -i BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)
     curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$BUILD_NUMBER**.\"}" $(WEBHOOK_URL)
   displayName: 'Celeste Discord webhook'
   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/stable'))
