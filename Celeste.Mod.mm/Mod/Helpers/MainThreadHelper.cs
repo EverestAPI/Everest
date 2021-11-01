@@ -89,7 +89,7 @@ namespace Celeste.Mod {
             PreventQueueOverload();
 
             lock (Queue) {
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(() => UpdatedOnce);
+                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>();
                 Queue.Enqueue(() => awaitable.SetResult(f != null ? f.Invoke() : default));
                 return awaitable;
             }
@@ -113,7 +113,7 @@ namespace Celeste.Mod {
 
                 T result = default;
                 Task<T> proxy = new Task<T>(() => result);
-                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter(), () => UpdatedOnce);
+                MaybeAwaitable<T> awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
                 EnqueuedWaiting[key] = awaitable;
 
                 Queue.Enqueue(() => {
