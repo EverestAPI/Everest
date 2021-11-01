@@ -178,6 +178,7 @@ namespace Celeste.Mod {
             _Awaiter = new MaybeAwaiter();
             _Awaiter._IsImmediate = true;
             _Awaiter._Result = result;
+            _Awaiter._MRE = new ManualResetEventSlim(false);
             _Awaiter._CanGetResult = null;
             IsValid = true;
         }
