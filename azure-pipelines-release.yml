@@ -25,7 +25,8 @@ steps:
 
 # Define build_number variable and zip build artifacts
 - script: |
-    declare -i BUILD_NUMBER=$(RESOURCES_PIPELINE_build_RUNID)+$(Build.BuildIdOffset)
+    # TODO: -1 hackfix to match triggering build, should be replaced with actual reference
+    declare -i BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)-1
     echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
 
     zip -9r $(Build.ArtifactStagingDirectory)/main.zip $(Build.ArtifactStagingDirectory)/main/
