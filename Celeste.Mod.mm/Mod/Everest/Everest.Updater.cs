@@ -161,7 +161,7 @@ namespace Celeste.Mod {
                 new Source {
                     NameDialog = "updater_src_buildbot",
 
-                    Index = "https://dev.azure.com/EverestAPI/Everest/_apis/build/builds?api-version=5.0",
+                    Index = "https://dev.azure.com/EverestAPI/Everest/_apis/build/builds?definitions=3&api-version=5.0",
 
                     IsCurrent = () => VersionSuffix.StartsWith("azure-"),
 
