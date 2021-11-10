@@ -1,0 +1,53 @@
+pool:
+  vmImage: 'ubuntu-latest'
+
+# Only run when main build pipeline completes, and only for main branch builds
+trigger: none
+resources:
+  pipelines:
+    - pipeline: build
+      source: EverestAPI.Everest
+      trigger:
+        branches:
+          include:
+            - dev
+
+steps:
+# Download artifacts from build pipeline
+- task: DownloadBuildArtifacts@1
+  inputs:
+    buildType: specific
+    project: Everest
+    pipeline: EverestAPI.Everest
+    specificBuildWithTriggering: true
+    downloadType: specific
+    downloadPath: $(Build.ArtifactStagingDirectory)
+
+# Define build_number variable and zip build artifacts
+- script: |
+    declare -i BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)
+    echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
+
+    zip -r $(Build.ArtifactStagingDirectory)/main.zip $(Build.ArtifactStagingDirectory)/main/
+    zip -r $(Build.ArtifactStagingDirectory)/olympus-meta.zip $(Build.ArtifactStagingDirectory)/olympus-meta/
+    zip -r $(Build.ArtifactStagingDirectory)/olympus-build.zip $(Build.ArtifactStagingDirectory)/olympus-build/
+    zip -r $(Build.ArtifactStagingDirectory)/lib-stripped.zip $(Build.ArtifactStagingDirectory)/lib-stripped/
+
+# Create GitHub release for new stable versions.
+- task: GitHubRelease@1
+  displayName: 'Create GitHub Release'
+  condition: succeeded()
+  inputs:
+    githubConnection: 0x0ade-bot
+    repositoryName: EverestAPI/Everest
+    action: 'create'
+    target: '$(Build.SourceVersion)'
+    tagSource: 'userSpecifiedTag'
+    tag: 'stable-1.$(build_number).0'
+    title: 'Stable Build $(build_number)'
+    assets: |
+      '$(Build.ArtifactStagingDirectory)/main.zip'
+      '$(Build.ArtifactStagingDirectory)/olympus-meta.zip'
+      '$(Build.ArtifactStagingDirectory)/olympus-build.zip'
+      '$(Build.ArtifactStagingDirectory)/lib-stripped.zip'
+    isDraft: true
