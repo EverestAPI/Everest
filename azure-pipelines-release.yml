@@ -46,8 +46,8 @@ steps:
     tag: 'stable-1.$(build_number).0'
     title: 'Stable Build $(build_number)'
     assets: |
-      '$(Build.ArtifactStagingDirectory)/main.zip'
-      '$(Build.ArtifactStagingDirectory)/olympus-meta.zip'
-      '$(Build.ArtifactStagingDirectory)/olympus-build.zip'
-      '$(Build.ArtifactStagingDirectory)/lib-stripped.zip'
+      $(Build.ArtifactStagingDirectory)/main.zip
+      $(Build.ArtifactStagingDirectory)/olympus-meta.zip
+      $(Build.ArtifactStagingDirectory)/olympus-build.zip
+      $(Build.ArtifactStagingDirectory)/lib-stripped.zip
     isDraft: true
