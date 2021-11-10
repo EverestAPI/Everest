@@ -109,10 +109,3 @@ steps:
     pathtoPublish: '$(Build.ArtifactStagingDirectory)/lib-stripped/build/'
     artifactName: 'lib-stripped'
     publishLocation: 'Container'
-
-# Announce new stable versions on Discord (#modding_updates).
-- script: |
-    declare -i BUILD_NUMBER=$(Build.BuildId)+$(Build.BuildIdOffset)
-    curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$BUILD_NUMBER**.\"}" $(WEBHOOK_URL)
-  displayName: 'Celeste Discord webhook'
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/stable'))

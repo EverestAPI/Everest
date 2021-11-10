@@ -1,7 +1,7 @@
 pool:
   vmImage: 'ubuntu-latest'
 
-# Only run when main build pipeline completes, and only for main branch builds
+# Only run when main build pipeline completes, and only for stable branch builds
 trigger: none
 resources:
   pipelines:
@@ -10,7 +10,7 @@ resources:
       trigger:
         branches:
           include:
-            - dev
+            - stable
 
 steps:
 # Download artifacts from build pipeline
@@ -51,4 +51,9 @@ steps:
       $(Build.ArtifactStagingDirectory)/olympus-meta.zip
       $(Build.ArtifactStagingDirectory)/olympus-build.zip
       $(Build.ArtifactStagingDirectory)/lib-stripped.zip
-    isDraft: true
+
+# Announce new stable versions on Discord (#modding_updates).
+- script: |
+    curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$(build_number)**.\"}" $(WEBHOOK_URL)
+  displayName: 'Celeste Discord webhook'
+  condition: succeeded()
