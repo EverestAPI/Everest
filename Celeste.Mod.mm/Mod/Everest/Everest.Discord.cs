@@ -46,33 +46,42 @@ namespace Celeste.Mod {
                 Events.Level.OnExit -= OnLevelExit;
             }
 
+            private static void TryLoadDiscordLib(string lib) {
+                Logger.Log(LogLevel.Info, "discord", string.Format("Attempting to load {0}", lib));
+                DynDll.Mappings["discord-rpc"] = new List<DynDllMapping>() { lib };
+
+                try {
+                    typeof(DiscordRpc).ResolveDynDllImports();
+                } catch {
+
+                }
+            }
+
             private static void WorkerLoop() {
                 string lib = null;
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordLib))
                     lib = CoreModule.Settings.DiscordLib;
                 else if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     lib = "discord-rpc.dll";
-                else if (Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                    lib = "libdiscord-rpc.dylib";
-                    // FIXME: macOS doesn't see libdiscord-rpc.dylib wherever Celeste.exe is.
-                } else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                else if (Environment.OSVersion.Platform == PlatformID.Unix)
                     lib = "libdiscord-rpc.so";
 
                 if (!string.IsNullOrEmpty(lib))
-                    DynDll.Mappings["discord-rpc"] = new List<DynDllMapping>() { lib };
+                    TryLoadDiscordLib(lib);
+
+                if (DiscordRpc.Initialize == null) {
+                    // Check for macOS dll
+                    TryLoadDiscordLib("libdiscord-rpc.dylib");
+
+                    if (DiscordRpc.Initialize == null) {
+                        Logger.Log(LogLevel.Info, "discord", "Discord_Initialize not found - skipping Discord Rich Presence.");
+                        return;
+                    }
+                }
 
                 string discordID = "430794114037055489";
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))
                     discordID = CoreModule.Settings.DiscordID;
-
-                try {
-                    typeof(DiscordRpc).ResolveDynDllImports();
-                } catch {
-                }
-                if (DiscordRpc.Initialize == null) {
-                    Logger.Log(LogLevel.Info, "discord", "Discord_Initialize not found - skipping Discord Rich Presence.");
-                    return;
-                }
 
                 Logger.Log(LogLevel.Verbose, "discord", $"Discord_Initialize found - initializing Discord Rich Presence, app ID {discordID}");
 
