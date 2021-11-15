@@ -47,7 +47,6 @@ namespace Celeste.Mod {
             }
 
             private static void TryLoadDiscordLib(string lib) {
-                Logger.Log(LogLevel.Info, "discord", string.Format("Attempting to load {0}", lib));
                 DynDll.Mappings["discord-rpc"] = new List<DynDllMapping>() { lib };
 
                 try {
