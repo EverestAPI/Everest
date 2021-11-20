@@ -255,14 +255,16 @@ namespace Celeste {
             if (saveData == null)
                 return;
 
-            amount = Calc.Clamp(amount, 0, saveData.LevelSetStats.MaxHeartGems);
-
             if (string.IsNullOrEmpty(levelSet))
                 levelSet = saveData.GetLevelSet();
 
             int num = 0;
             foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {
-                foreach (AreaModeStats areaModeStats in areaStats.Modes) {
+                for (int i = 0; i < areaStats.Modes.Length; i++) {
+                    if (AreaData.Get(areaStats.ID).Mode is not {} mode || mode.Length <= i || mode[i]?.MapData == null)
+                        continue;
+
+                    AreaModeStats areaModeStats = areaStats.Modes[i];
                     if (num < amount) {
                         areaModeStats.HeartGem = true;
                         num++;
