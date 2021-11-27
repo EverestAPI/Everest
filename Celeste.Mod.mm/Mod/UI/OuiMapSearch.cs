@@ -41,6 +41,8 @@ namespace Celeste.Mod.UI {
         private int itemCount;
         private int matchCount;
 
+        private bool quickMatched = false;
+
         private TextMenu.SubHeader resultHeader;
 
         private static TextMenuExt.SubHeaderExt perfectMatchHeader;
@@ -382,6 +384,8 @@ namespace Celeste.Mod.UI {
                 menu.rightMenu.Position.Y = menu.rightMenu.ScrollTargetY;
             }
 
+            quickMatched = matched;
+
             // Don't allow pressing any buttons while searching
             foreach (TextMenu.Item item in items)
                 item.Disabled = Searching;
@@ -493,7 +497,13 @@ namespace Celeste.Mod.UI {
                 menu.leftFocused = nextIsLeft;
                 Searching = nextIsLeft;
                 MInput.Disabled = nextIsLeft;
-                menu.currentMenu.Selection = nextIsLeft ? -1 : 2;
+                int resultIndex = quickMatched ? 1 : 2;
+                menu.currentMenu.Selection = nextIsLeft ? -1 : resultIndex;
+                if (nextIsLeft) {
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+                } else {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+                }
                 return true;
             }
             return false;
@@ -526,14 +536,12 @@ namespace Celeste.Mod.UI {
                 if (Input.MenuRight.Pressed) {
                     if (!menu.leftFocused)
                         return;
-                    Audio.Play(SFX.ui_main_button_toggle_on);
                     switchMenu();
                 }
 
                 if (Input.MenuLeft.Pressed) {
                     if (menu.leftFocused)
                         return;
-                    Audio.Play(SFX.ui_main_button_toggle_off);
                     switchMenu();
                 }
 
