@@ -576,6 +576,11 @@ namespace Celeste.Mod.UI {
             base.Render();
         }
 
+        public override void SceneEnd(Scene scene) {
+            TextInput.OnInput -= OnTextInput;
+            MInput.Disabled = false;
+        }
+
         protected void Inspect(AreaData area, AreaMode mode = AreaMode.Normal) {
             Focused = false;
             Audio.Play(SFX.ui_world_icon_select);
