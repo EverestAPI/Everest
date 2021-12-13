@@ -216,6 +216,24 @@ namespace Celeste {
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
         }
 
+        private AreaMode _PatchHeartGemBehavior(AreaMode levelMode) {
+            if (Session.Area.GetLevelSet() == "Celeste") {
+                // do not mess with vanilla.
+                return levelMode;
+            }
+
+            MapMetaModeProperties properties = Session.MapData.GetMeta();
+            if (properties != null && (properties.HeartIsEnd ?? false)) {
+                // heart ends the level: this is like B-Sides.
+                // the heart will appear even if it was collected, to avoid a softlock if we save & quit after collecting it.
+                return AreaMode.BSide;
+            } else {
+                // heart does not end the level: this is like A-Sides.
+                // the heart will disappear after it is collected.
+                return AreaMode.Normal;
+            }
+        }
+
         private IEnumerator ErrorRoutine(string message) {
             yield return null;
 

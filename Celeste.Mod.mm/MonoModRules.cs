@@ -792,6 +792,17 @@ namespace MonoMod {
                     cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
                 }
 
+                if (instri > 0 &&
+                        instri < instrs.Count - 4 &&
+                        instr.MatchLdfld("Celeste.Level", "Session") &&
+                        instrs[instri + 1].MatchLdflda("Celeste.Session", "Area") &&
+                        instrs[instri + 2].MatchLdfld("Celeste.AreaKey", "Mode") &&
+                        instrs[instri + 3].OpCode == OpCodes.Brfalse
+                    ) {
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 4, il.Create(OpCodes.Call, method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)")));
+                }
             }
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
