@@ -570,15 +570,23 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                bool foundModule = false;
                 for (int i = 0; i < types.Length; i++) {
                     Type type = types[i];
 
-                    if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract && !typeof(NullModule).IsAssignableFrom(type)) {
-                        EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-                        mod.Metadata = meta;
-                        mod.Register();
+                    if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
+                        foundModule = true;
+                        if (!typeof(NullModule).IsAssignableFrom(type)) {
+                            EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+                            mod.Metadata = meta;
+                            mod.Register();
+                        }
                     }
                 }
+                
+                // Warn if we didn't find a module, as that could indicate an oversight from the developer
+                if (!foundModule)
+                    Logger.Log(LogLevel.Warn, "loader", "Assembly doesn't contain an EverestModule!");
             }
 
             internal static void ReloadModAssembly(object source, FileSystemEventArgs e, bool retrying = false) {

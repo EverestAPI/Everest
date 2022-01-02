@@ -1,0 +1,249 @@
+# NOTES:
+# The # Symbol at the start of a line counts as a Comment. To include in dialog, use a \#
+# The . Symbol will cause a pause unless escaped with \. (ex: Mr. Oshiro has a pause, Mr\. Oshiro does not)
+# Newlines automatically create a Page Break, unless there is an {n} command on the previous line
+# Commands: Anything inside of curly braces {...} is a command and should not be translated.
+
+# Inline Text Commands:
+# {~}wavy text{/~}
+# {!}impact text{/!}
+# {>> x}changes speed at which characters are displayed{>>}
+# {# 000000}this text is black{#} (uses HEX color values)
+# {+MENU_BEGIN} inserts the dialog from the MENU_BEGIN value (in English, "CLIMB")
+# {n} creates a newline, without a page break
+# {0.5} creates a 0.5 second pause
+# {big}this text is large{/big}
+
+# Gameplay Control Commands (should never change)
+# {trigger x} this triggers an in-game event
+# {anchor} controls the visual position of the textbox in-game
+
+# Helper Postcards
+	POSTCARD_LEVELGONE= 		{big}Obrigado ((player))!{/big}{n}Mas nosso {#ff1144}((sid)){#} está em outra montanha.
+	POSTCARD_LEVELLOADFAILED= 	{big}Desculpa!{/big}{n}Mas {#ff1144}((sid)){#} não carregou corretamente.{n}Por favor envie o seu {#44adf7}log.txt{#}{n}para o criador do mapa.
+	POSTCARD_LEVELNOSPAWN= 		{big}Ops!{/big}{n}Alguém tirou seu {#44adf7}spawn point!{#}{n}Verifique se seu mapa{n}tem uma entity de {#44adf7}Player{#}.
+
+# Main Menu
+	MENU_TITLETOUCH= 		TÁTIL
+	MENU_MAPLIST= 			Lista de mapas
+	MENU_MODOPTIONS= 		Opções de mod
+	MENU_PAUSE_MODOPTIONS= 	Opções de mod
+    
+	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod não carregou corretamente
+	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods não carregaram corretamente
+	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		ocorreram erros de carregamento no everest.yaml
+	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Uma atualização do Everest está disponível
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Uma atualização para 1 mod está disponível
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Atualizações estão disponíveis para {0} mods
+
+# Title Screen
+	MENU_TITLESCREEN_RESTART_VANILLA= Reiniciando em orig/Celeste.exe
+    
+# Extra Key Mapping
+	KEY_CONFIG_ADDING= PRESSIONE TECLA ADICIONAL PARA
+	KEY_CONFIG_ADDITION_HINT= Pressione SHIFT + CONFIRMAR para adicionar ou remover teclas adicionais
+
+# Mod Options
+	MODOPTIONS_TITLE= 										EVEREST
+	MODOPTIONS_NEEDSRELAUNCH=								Requer que você reinicie para fazer efeito
+
+# Core Module Options
+	MODOPTIONS_COREMODULE_UPDATE= 							Atualizar Everest para ((version))
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Instalar dependências que faltam
+	MODOPTIONS_COREMODULE_VERSIONLIST= 							Mudar versão do Everest
+	MODOPTIONS_COREMODULE_TITLE= 							Núcleo Everest
+	MODOPTIONS_COREMODULE_DEBUGMODE= 						Modo Debug
+	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Abrir c/ FMOD Live Update
+	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				Iniciar sem introdução
+	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				Mostrar opções de mod no jogo
+	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			Mostrar tela de início do Everest
+	MODOPTIONS_COREMODULE_INPUTGUI= 						Formato dos botões
+	MODOPTIONS_COREMODULE_INPUTGUI_= 						AUTO
+	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				TECLADO
+	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						SWITCH
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			SWITCH L
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			SWITCH R
+	MODOPTIONS_COREMODULE_INPUTGUI_PS4= 					PS4
+	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBONE
+	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					TÁTIL
+	MODOPTIONS_COREMODULE_MAINMENUMODE= 					Modo do menu principal
+	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					VANILLA
+	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				LINHAS
+	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				TÁTIL
+	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			Atualizar mods automaticamente ao iniciar
+	MODOPTIONS_COREMODULE_MODUPDATES= 						Verificar se há atualizações de mods
+	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Usar o teclado para texto
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Alertar sobre erros no everest.yaml 
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Útil para criadores de mods
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
+	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page Up nos menus
+	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page Down nos menus
+	MODOPTIONS_COREMODULE_KEYCONFIG=						Teclas de menu -
+
+	MODOPTIONS_COREMODULE_SOUNDTEST= 						Teste de som
+	MODOPTIONS_COREMODULE_OOBE= 							Refazer configuração inicial
+	MODOPTIONS_COREMODULE_TOGGLEMODS=						Ativar ou desativar mods
+
+	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Alguns mods falharam ao carregar.
+	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Por favor verifique seu log.txt para mais informações.
+	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} não foi encontrado
+	MODOPTIONS_COREMODULE_YAMLERRORS= 						Alguns arquivos everest.yaml não puderam ser carregados.
+
+	MODOPTIONS_VANILLATRISTATE_NEVER=						NÃO
+	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
+	MODOPTIONS_VANILLATRISTATE_ALWAYS=						SEMPRE
+
+# Sound Test
+	SOUNDTEST_TITLE=	TESTE DE SOM
+	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Pressione
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	para editar parâmetros de áudio
+	SOUNDTEST_AUDIOPARAMS=	Parâmetros de áudio
+
+# Maplist
+	MAPLIST_TITLE= 			LISTA DE MAPAS
+	MAPLIST_FILTERS= 		Filtros
+	MAPLIST_TYPE= 			De
+	MAPLIST_TYPE_ALLMODS=  	Todos os mods
+	MAPLIST_SIDE= 			Lado
+	MAPLIST_LIST= 			Mapas
+	MAPLIST_UNCATEGORIZED= 	Sem categoria
+	MAPLIST_SEARCH=			Procurar
+	MAPLIST_SEARCH_MATCH=	Resultados
+	MAPLIST_TYPE_EVERYTHING=  Tudo
+	MAPLIST_RESULTS_SINGULAR= {0} resultado encontrado  
+	MAPLIST_RESULTS_PLURAL=   {0} resultados encontrados
+
+	LEVELSET_CELESTE= 		Celeste
+	LEVELSET_= 				Sem categoria
+
+# Updater
+	UPDATER_TITLE= 					ATUALIZADOR
+	UPDATER_VERSIONS_TITLE= 		MUDAR VERSÃO DO EVEREST
+	UPDATER_VERSIONS_CURRENT= 		Instalou: ((version))
+	UPDATER_VERSIONS_REQUESTING= 	Recarregando...
+    
+	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Falhou em baixar lista de versões.
+	UPDATER_VERSIONS_ERR_FORMAT= 	Formato desconhecido.
+    
+	UPDATER_SRC_BUILDBOT= 			Versões automáticas
+    
+# Everest Updater
+	EVERESTUPDATER_NOTSUPPORTED=	Atualização não suportada nesta plataforma - cancelando.
+	EVERESTUPDATER_NOUPDATE=		Sem atualizações - cancelando.
+	EVERESTUPDATER_UPDATING=		Atualizando para {0} (branch: {1}) @ {2}
+	EVERESTUPDATER_DOWNLOADING=		Instalando
+	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Instalando:
+	EVERESTUPDATER_DOWNLOADFAILED=	A instalação falhou!
+	EVERESTUPDATER_DOWNLOADFINISHED=	Instalação finalizada.
+	EVERESTUPDATER_EXTRACTING=		Extraindo atualização entradas
+	EVERESTUPDATER_ZIPENTRIES=		.zip
+	EVERESTUPDATER_EXTRACTIONFAILED=	A extração falhou!
+	EVERESTUPDATER_EXTRACTIONFINISHED=	Extração finalizada.
+	EVERESTUPDATER_RESTARTING=		Reiniciando
+	EVERESTUPDATER_RESTARTINGIN=	Reiniciando em {0}
+	EVERESTUPDATER_STARTINGFAILED=	A iniciação do instalador falhou!
+	EVERESTUPDATER_ERRORHINT1=		Por favor crie um novo issue no GitHub @ https://github.com/EverestAPI/Everest
+	EVERESTUPDATER_ERRORHINT2=		ou entre em #modding_help no Discord (convite no repositório).
+	EVERESTUPDATER_ERRORHINT3=		Certifique-se de enviar seu log.txt
+
+# Mod Updater
+	MODUPDATECHECKER_MENU_TITLE=	ATUALIZAÇÕES DE MOD
+	MODUPDATECHECKER_NOUPDATE=		Sem atualizações disponíveis
+	MODUPDATECHECKER_MENU_HEADER=	Atualizações disponíveis
+	MODUPDATECHECKER_FETCHING=		Checando por atualizações...
+	MODUPDATECHECKER_ERROR=			A checagem de atualizações falhou.
+	MODUPDATECHECKER_UPDATED=		atualizado
+	MODUPDATECHECKER_DOWNLOADING=	baixando...
+	MODUPDATECHECKER_INSTALLING=	instalando...
+	MODUPDATECHECKER_FAILED=		a atualização falhou!
+	MODUPDATECHECKER_CANCELLING=	cancelando atualização...
+	MODUPDATECHECKER_CANCELLED=		atualização cancelada
+	MODUPDATECHECKER_WILLRESTART=	pressione Voltar para reiniciar Celeste
+	MODUPDATECHECKER_UPDATE_ALL=	Atualizar todos mods.
+	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Atualizando todos mods...
+	MODUPDATECHECKER_UPDATE_ALL_DONE=	Todos os mods foram atualizados.
+    
+# Auto Mod Updater
+	AUTOUPDATECHECKER_CHECKING=		Verificando se há atualizações de mods...
+	AUTOUPDATECHECKER_UPDATING=		Atualizando automaticamente
+	AUTOUPDATECHECKER_DOWNLOADING=	Baixando
+	AUTOUPDATECHECKER_VERIFYING=	Verificando
+	AUTOUPDATECHECKER_INSTALLING=	Instalando
+	AUTOUPDATECHECKER_FAILED=		Algumas atualizações falharam. Verifique seu log.txt para mais informações.
+	AUTOUPDATECHECKER_CONTINUE=		Pressione Confirmar para continuar
+	AUTOUPDATECHECKER_REBOOT=		Pressione Confirmar para reiniciar Celeste
+	AUTOUPDATECHECKER_SKIP=		Pular
+	AUTOUPDATECHECKER_SKIPPING=		Pulando atualização...
+
+# Dependency downloader
+	DEPENDENCYDOWNLOADER_TITLE=						INSTALAR DEPENDÊNCIAS
+	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Baixando o banco de dados de mods...
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Carregando informações dos mods instalados...
+	DEPENDENCYDOWNLOADER_DONE=						concluído.
+	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERRO: Falha ao baixar o banco de dados. Verifique o seu log.txt para mais informações.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		AVISO: Uma versão atualizada do Everest é requerida para carregar alguns mods. Instale-a pelo menu Mudar Versão do Everest.
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest será atualizado à versão {0} para fazer alguns mods funcionarem. Pressione Confirmar para continuar.
+	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERRO: {0} não pode ser encontrado no banco de dados. Por favor instale esse mod manualmente.
+	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ERRO: Alguns dos seus mods requerem uma versão mais recente de Celeste para funcionar. Por favor atualize o jogo.
+	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ERRO: {0} está disponível em várias versões e não pode ser instalado automaticamente. Por favor instale esse mod manualmente.
+	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ERRO: Versão(ões) {1} de {0} são requeridas, mas apenas a versão {2} está disponível. Por favor instale esse mod manualmente.
+	DEPENDENCYDOWNLOADER_RESTARTING=				Reiniciando
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Reiniciando em {0}
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Pressione Voltar para reiniciar Celeste.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Pressione Voltar para regressar a Opções de Mod.
+	DEPENDENCYDOWNLOADER_DOWNLOADING=				Descarregando {0} de {1}...
+	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		Descarga falhada, tentando mirror {0}...
+	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			Descarga terminada.
+	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Verificando checksum...
+	DEPENDENCYDOWNLOADER_UPDATING=					Instalando atualização para {0} ({1} -> {2}) para {3}...
+	DEPENDENCYDOWNLOADER_INSTALLING=				Instalando mod {0} v.{1} para {2}...
+	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ERRO: Instalação de {0} falhou. Verifique o seu log.txt para mais informações.
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Removendo mod {0} da lista negra...
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		A remoção de alguns mods da lista negra falhou. Verifique o seu log.txt para mais informações.
+	DEPENDENCYDOWNLOADER_LOADING_MOD=				Carregando {0} de {1}...
+	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		Carregando mod de {0}...
+
+# OOBE (Out Of Box Experience) - first launch stuff
+	OOBE_WELCOME_HEADER=		Bem-vindo(a) ao Everest!
+	OOBE_WELCOME_SUBHEADER=		O que você quer fazer?
+	OOBE_WELCOME_PLAY=			Eu quero JOGAR mods.
+	OOBE_WELCOME_SPEEDRUN=		Eu quero fazer SPEEDRUNS.
+	OOBE_WELCOME_CREATE=		Eu quero CRIAR mods.
+	OOBE_WELCOME_SKIP=			Eu não preciso de ajuda.
+
+	OOBE_SETTINGS_PLAY=			Você pode encontrar e instalar mods pelo GameBanana.{n}Mapas instalados podem ser encontrados no mapa do mundo.{n}Seu progresso será compartilhado ao vivo no status de jogo no Discord.{n}Aperte F6 no modo debug para ligar e desligar a nova tela de debug de mapa.
+	OOBE_SETTINGS_SPEEDRUN=		Segure a seta de direita na tela inicial para recomeçar o jogo no modo vanilla.{n}Você pode encontrar e instalar mods pelo GameBanana.{n}Mapas instalados podem ser encontrados no mapa do mundo.{n}Aperte F6 no modo debug para ligar e desligar a nova tela de debug de mapa.
+	OOBE_SETTINGS_CREATE=		Você pode encontrar e compartilhar mods pelo GameBanana.{n}Mapas customizados podem ser encontrados no mapa do mundo.{n}Aperte F6 no modo debug para ligar e desligar a nova tela de debug de mapa.{n}Aperte F5 para recarregar o mapa atual, ou CTRL+F5 para recarregar o jogo.{n}Se o seu teclado não segue o padrão QWERTY, a tecla . abre o console, e a tecla q fecha-o.
+	OOBE_SETTINGS_SUBHEADER=	Aqui estão algumas configurações que podem te interessar.
+	OOBE_SETTINGS_MORE=			Você pode mudar isso e mais na tela Opções de Mod.
+	OOBE_SETTINGS_OK=			OK
+
+# Mod Toggle Menu
+	MODOPTIONS_MODTOGGLE=				ATIVAR MODS
+	MODOPTIONS_MODTOGGLE_LOADING=		Carregando informações dos mods...
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Ativar Dependências Automaticamente
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	Quando você ativa um mod, todas suas dependências vão ser ativadas.
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	Quando você desativa um mod, todos mods que dependem dele vão ser desativados.
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Se você ativar ou desativar mods, sua blacklist.txt será atualizada,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		e Celeste irá reiniciar para aplicar as mudanças.
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Mods destacados são usados como dependências para outros mods ativados.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Desative sua whitelist para que essas mudanças sejam aplicadas corretamente.
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		Ativar todos
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	Desativar todos
+	MODOPTIONS_MODTOGGLE_CANCEL=		Cancelar
+	MODOPTIONS_MODTOGGLE_ZIPS=			Arquivos zip
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Diretórios
+	MODOPTIONS_MODTOGGLE_BINS=			Arquivos bin do mapa
+
+# Asset Reload Helper
+	ASSETRELOADHELPER_RELOADINGMAP=			Recarregando mapa
+	ASSETRELOADHELPER_RELOADINGLEVEL=		Recarregando nível
+	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Descarregando textura:
+	ASSETRELOADHELPER_RELOADINGMAPNAME=		Recarregando mapa:
+	ASSETRELOADHELPER_RELOADINGALLMAPS=		Recarregando todos mapas
+	ASSETRELOADHELPER_RELOADINGDIALOG=		Recarregando diálogos:
+	ASSETRELOADHELPER_RELOADINGTEXTURE=		Recarregando textura:
+	ASSETRELOADHELPER_RELOADINGTEXTURES=	Recarregando texturas:
+	ASSETRELOADHELPER_LOADINGNEWMOD=		Carregando novo mod:
+	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Recarregando coletânea de mods:
+	ASSETRELOADHELPER_RELOADINGMOUNTAIN=	Recarregando montanha

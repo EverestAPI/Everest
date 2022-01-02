@@ -15,10 +15,7 @@ Using [MonoMod](https://github.com/MonoMod/MonoMod), an open-source C# modding u
 [![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
 
 ### Mod Development:
-Use [Fabeline](https://github.com/EverestAPI/RainbowMod) as an example mod. It already contains:
-- Everest as a submodule
-- The required references (`lib/`, `lib-stripped/`) with "Copy Local" set to "False"
-- The mod `metadata.yaml`
+For information about mod development, check out the [Everest Wiki](https://github.com/EverestAPI/Resources/wiki) or ask questions in the `#modding_help` channel on discord.
 
 ## Compiling Everest yourself
 - ***If you just want to install Everest, go to the [Everest website](https://everestapi.github.io/).***

@@ -80,7 +80,7 @@ namespace Monocle {
             int viewHeight = Engine.ViewHeight;
 
             // Vector2 mousePosition = MInput.Mouse.Position;
-            // For whatever reason, MInput.Mouse.Position keeps returning 0, 0
+            // When the console is opening, MInput.Mouse.UpdateNull is called so MInput.Mouse.Position keeps returning 0, 0
             // Let's just use the XNA / FNA MouseState instead.
             MouseState mouseState = Mouse.GetState();
             int mouseScrollDelta = mouseState.ScrollWheelValue - mouseScroll;
@@ -88,7 +88,7 @@ namespace Monocle {
             Vector2 mousePosition = new Vector2(mouseState.X, mouseState.Y);
             Vector2? mouseSnapPosition = null;
 
-            int viewScale = 1;
+            int maxCursorScale = 1;
 
             string mouseText = "";
 
@@ -102,11 +102,9 @@ namespace Monocle {
 
             if (level != null) {
                 Camera cam = level.Camera;
-                viewScale = (int) Math.Round(Engine.Instance.GraphicsDevice.PresentationParameters.BackBufferWidth / (float) cam.Viewport.Width);
-                Vector2 mouseWorldPosition = mousePosition;
-                // Convert screen to world position.
-                mouseWorldPosition = Calc.Floor(mouseWorldPosition / viewScale);
-                mouseWorldPosition = cam.ScreenToCamera(mouseWorldPosition);
+                float viewScale = (float) Engine.ViewWidth / Engine.Width;
+                // Convert screen to world position. The method assumes screen is in full size (1920x1080) so we need to scale the position.
+                Vector2 mouseWorldPosition = Calc.Floor(((patch_Level) level).ScreenToWorld(mousePosition / viewScale));
                 // CelesteTAS already displays world coordinates. If it is installed, leave that up to it.
                 if (!celesteTASInstalled.Value) {
                     mouseText += $"\n world:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
@@ -114,16 +112,16 @@ namespace Monocle {
                 mouseWorldPosition -= level.LevelOffset;
                 mouseText += $"\n level:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
                 // Convert world to world-snap position.
-                mouseSnapPosition = mouseWorldPosition;
-                mouseSnapPosition = Calc.Floor(mouseSnapPosition.Value / 8f);
+                mouseSnapPosition = Calc.Floor(mouseWorldPosition / 8f);
                 mouseText += $"\n level, /8:   {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
                 mouseSnapPosition = 8f * mouseSnapPosition;
                 mouseText += $"\n level, snap: {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
                 // Convert world-snap to screen-snap position.
                 mouseSnapPosition += new Vector2(4f, 4f); // Center the cursor on the tile.
                 mouseSnapPosition += level.LevelOffset;
-                mouseSnapPosition = cam.CameraToScreen(mouseSnapPosition.Value);
-                mouseSnapPosition *= viewScale;
+                mouseSnapPosition = Calc.Floor(((patch_Level) level).WorldToScreen(mouseSnapPosition.Value) * viewScale);
+                // Cursor shouldn't be larger than an unzoomed tile (level.Zoom and cam.Zoom are both 1)
+                maxCursorScale = Engine.ViewWidth / cam.Viewport.Width;
             }
 
             Draw.SpriteBatch.Begin();
@@ -133,7 +131,7 @@ namespace Monocle {
                 cursorScale--;
             else if (mouseScrollDelta > 0)
                 cursorScale++;
-            cursorScale = Calc.Clamp(cursorScale, 1, viewScale);
+            cursorScale = Calc.Clamp(cursorScale, 1, maxCursorScale);
             if (mouseSnapPosition != null)
                 DrawCursor(mouseSnapPosition.Value, cursorScale, Color.Red);
             DrawCursor(mousePosition, cursorScale, Color.Yellow);
@@ -161,7 +159,7 @@ namespace Monocle {
             }
 
             if (drawCommands.Count > 0) {
-                int drawCount = Math.Min((Engine.Instance.Window.ClientBounds.Height - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
+                int drawCount = Math.Min((viewHeight - 100) / 30, drawCommands.Count - firstLineIndexToDraw);
                 float height = 10f + 30f * drawCount;
                 Draw.Rect(10f, viewHeight - height - 60f, viewWidth - 20f, height, Color.Black * 0.8f);
                 for (int i = 0; i < drawCount && firstLineIndexToDraw + i < drawCommands.Count; i++) {
@@ -417,7 +415,7 @@ namespace Monocle {
                 }
                 return;
             }
-            int width = Engine.Instance.Window.ClientBounds.Width - 40;
+            int width = Engine.ViewWidth - 40;
             while (Draw.DefaultFont.MeasureString(text).X > width) {
                 int index = -1;
                 for (int i = 0; i < text.Length; i++) {
@@ -435,7 +433,7 @@ namespace Monocle {
                 text = text.Substring(index + 1);
             }
             drawCommands.Insert(0, new patch_Line(text, color));
-            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.Instance.Window.ClientBounds.Height - 100) / 30, 0);
+            int maxCommandLines = Math.Max(CoreModule.Settings.ExtraCommandHistoryLines + (Engine.ViewHeight - 100) / 30, 0);
             firstLineIndexToDraw = Calc.Clamp(firstLineIndexToDraw, 0, Math.Max(drawCommands.Count - 1, 0));
             while (drawCommands.Count > maxCommandLines) {
                 drawCommands.RemoveAt(drawCommands.Count - 1);

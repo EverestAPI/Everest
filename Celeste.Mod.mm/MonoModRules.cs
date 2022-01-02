@@ -206,10 +206,10 @@ namespace MonoMod {
     class PatchTotalHeartGemChecksAttribute : Attribute { };
 
     /// <summary>
-    /// Same as above, but for references in routines.
+    /// Patch TotalHeartGems to refer to TotalHeartGemsInVanilla, and whether to show the UnlockCSide postcard
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemChecksInRoutine))]
-    class PatchTotalHeartGemChecksInRoutineAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemCSidePostcard))]
+    class PatchTotalHeartGemCSidePostcardAttribute : Attribute { };
 
     /// <summary>
     /// Patch a reference to TotalHeartGems in the OuiJournalGlobal constructor to unharcode the check for golden berry unlock.
@@ -254,10 +254,10 @@ namespace MonoMod {
     class PatchCelesteMainAttribute : Attribute { };
 
     /// <summary>
-    /// Removes the [Command] attribute from the matching vanilla method in Celeste.Commands.
+    /// Removes the [Command] attribute from annotated method.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttributeFromVanillaLoadMethod))]
-    class RemoveCommandAttributeFromVanillaLoadMethodAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RemoveCommandAttribute))]
+    class RemoveCommandAttributeAttribute : Attribute { };
 
     /// <summary>
     /// Patch the fake heart color to make it customizable.
@@ -393,6 +393,27 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMountainRendererUpdate))]
     class PatchMountainRendererUpdate : Attribute { }
+
+    /// <summary>
+    /// Patches the method to only set the player Speed.X if not in the RedDash state.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerBeforeUpTransition))]
+    class PatchPlayerBeforeUpTransition : Attribute { }
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDeathEffectUpdate))]
+    class PatchDeathEffectUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to fix mini textbox not closing when it's expanding and another textbox is triggered.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMiniTextboxRoutine))]
+    class PatchMiniTextboxRoutine : Attribute { }
+
+    /// <summary>
+    /// Patches the method to fix "$" not printed in PICO-8.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
+    class PatchEmulatorConstructorAttribute : Attribute { }
 
     static class MonoModRules {
 
@@ -771,6 +792,17 @@ namespace MonoMod {
                     cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
                 }
 
+                if (instri > 0 &&
+                        instri < instrs.Count - 4 &&
+                        instr.MatchLdfld("Celeste.Level", "Session") &&
+                        instrs[instri + 1].MatchLdflda("Celeste.Session", "Area") &&
+                        instrs[instri + 2].MatchLdfld("Celeste.AreaKey", "Mode") &&
+                        instrs[instri + 3].OpCode == OpCodes.Brfalse
+                    ) {
+
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 4, il.Create(OpCodes.Call, method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)")));
+                }
             }
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
@@ -1475,20 +1507,21 @@ namespace MonoMod {
 
         }
 
-        public static void PatchTotalHeartGemChecks(MethodDefinition method, CustomAttribute attrib) {
-            MethodDefinition m_getTotalHeartGemsInVanilla = method.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
+        public static void PatchTotalHeartGemChecks(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getTotalHeartGemsInVanilla = context.Module.GetType("Celeste.SaveData").FindMethod("System.Int32 get_TotalHeartGemsInVanilla()");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            ILCursor cursor = new ILCursor(context);
 
-                if (instr.MatchCallvirt(out MethodReference m) && m.Name == "get_TotalHeartGems") {
-                    // replace the call to the TotalHeartGems property with a call to TotalHeartGemsInVanilla.
-                    instr.Operand = m_getTotalHeartGemsInVanilla;
-                }
-            }
+            cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.Next.Operand = m_getTotalHeartGemsInVanilla;
         }
-        public static void PatchTotalHeartGemChecksInRoutine(MethodDefinition method, CustomAttribute attrib) {
+
+        public static void PatchTotalHeartGemCSidePostcard(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_SaveData_Instance = method.Module.GetType("Celeste.SaveData").FindField("Instance");
+            MethodDefinition m_SaveData_get_LevelSetStats = method.Module.GetType("Celeste.SaveData").FindMethod("Celeste.LevelSetStats get_LevelSetStats()");
+            MethodDefinition m_LevelSetStats_get_MaxAreaMode = method.Module.GetType("Celeste.LevelSetStats").FindMethod("System.Int32 get_MaxAreaMode()");
+
+
             // Routines are stored in compiler-generated methods.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
                 if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
@@ -1497,7 +1530,19 @@ namespace MonoMod {
                 break;
             }
 
-            PatchTotalHeartGemChecks(method, attrib);
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.Session", "UnlockedCSide"));
+                cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand);
+                cursor.Emit(OpCodes.Ldsfld, f_SaveData_Instance);
+                cursor.Emit(OpCodes.Callvirt, m_SaveData_get_LevelSetStats);
+                cursor.Emit(OpCodes.Callvirt, m_LevelSetStats_get_MaxAreaMode);
+                cursor.Emit(OpCodes.Ldc_I4_2);
+                cursor.Next.OpCode = OpCodes.Blt_S;
+
+                PatchTotalHeartGemChecks(il, attrib);
+            });
         }
 
         public static void PatchOuiJournalStatsHeartGemCheck(ILContext context, CustomAttribute attrib) {
@@ -1631,15 +1676,12 @@ namespace MonoMod {
             }
         }
 
-        public static void RemoveCommandAttributeFromVanillaLoadMethod(MethodDefinition method, CustomAttribute attrib) {
-            // find the vanilla method: CmdLoadIDorSID(string, string) => CmdLoad(int, string)
-            string vanillaMethodName = method.Name.Replace("IDorSID", "");
-            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.DeclaringType.FindMethod($"System.Void {vanillaMethodName}(System.Int32,System.String)").CustomAttributes;
-            for (int i = 0; i < attributes.Count; i++) {
+        public static void RemoveCommandAttribute(MethodDefinition method, CustomAttribute attrib) {
+            Mono.Collections.Generic.Collection<CustomAttribute> attributes = method.CustomAttributes;
+            for (int i = attributes.Count - 1; i >= 0; i--) {
                 // remove all Command attributes.
                 if (attributes[i]?.AttributeType.FullName == "Monocle.Command") {
                     attributes.RemoveAt(i);
-                    i--;
                 }
             }
         }
@@ -2247,6 +2289,99 @@ namespace MonoMod {
             }
             if (pressedKeys.Count > 0)
                 throw new Exception("MountainRenderer failed to patch key presses for keys: " + pressedKeys.Keys);
+        }
+
+        public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_Player_StateMachine = context.Method.DeclaringType.FindField("StateMachine");
+            MethodDefinition m_StateMachine_get_State = f_Player_StateMachine.FieldType.Resolve().FindMethod("System.Int32 get_State()");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Player_StateMachine);
+            cursor.Emit(OpCodes.Callvirt, m_StateMachine_get_State);
+            cursor.Emit(OpCodes.Ldc_I4_5);
+            Instruction target = cursor.Clone().GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0, instr => instr.MatchLdfld("Celeste.Player", "StateMachine")).Next;
+            cursor.Emit(OpCodes.Beq_S, target);
+        }
+
+        public static void PatchDeathEffectUpdate(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ble_Un_S);
+            cursor.Next.OpCode = OpCodes.Blt_Un_S;
+
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="MonoMod.PatchMiniTextboxRoutine" />
+        /// </summary>
+        public static void PatchMiniTextboxRoutine(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_MiniTextbox_closing = method.DeclaringType.FindField("closing");
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__")) {
+                    continue;
+                }
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                /*
+                    Change:
+
+                        while ((this.ease += Engine.DeltaTime * 4f) < 1f)) {
+                            continueLoopTarget:
+                            yield return null;
+                        }
+                        this.ease = 1f;
+
+                    to:
+
+                        while ((this.ease += Engine.DeltaTime * 4f) < 1f)) {
+                            continueLoopTarget:
+                            if (this.closing) {
+                                yield break;
+                            }
+                            yieldReturnNullTarget:
+                            yield return null;
+                        }
+                        this.ease = 1f;
+                */
+                ILLabel continueLoopTarget = cursor.DefineLabel();
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdloc(6),
+                    instr => instr.MatchLdcR4(1f),
+                    instr => instr.MatchBlt(out continueLoopTarget));
+
+                cursor.Goto(continueLoopTarget.Target, MoveType.AfterLabel);
+
+                ILLabel yieldReturnNullTarget = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Ldloc_1);
+                cursor.Emit(OpCodes.Ldfld, f_MiniTextbox_closing);
+                cursor.Emit(OpCodes.Brfalse, yieldReturnNullTarget);
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ret);
+                cursor.MarkLabel(yieldReturnNullTarget);
+            });
+        }
+
+        /// <summary>
+        /// <inheritdoc cref="MonoMod.PatchEmulatorConstructorAttribute" />
+        /// </summary>
+        public static void PatchEmulatorConstructor(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            string fontMap = null;
+            cursor.GotoNext(MoveType.Before,
+                instr => instr.MatchLdstr(out fontMap),
+                instr => instr.MatchStfld("Celeste.Pico8.Emulator", "fontMap"));
+            // devs forgot to press shift when typing "$" for some reason
+            fontMap = fontMap.Replace("#4%", "#$%");
+            cursor.Next.Operand = fontMap;
         }
 
         public static void PostProcessor(MonoModder modder) {
