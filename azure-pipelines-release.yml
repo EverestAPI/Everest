@@ -28,10 +28,11 @@ steps:
     declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(Build.BuildIdOffset)
     echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
 
-    zip -9r $(Build.ArtifactStagingDirectory)/main.zip $(Build.ArtifactStagingDirectory)/main/
-    zip -9r $(Build.ArtifactStagingDirectory)/olympus-meta.zip $(Build.ArtifactStagingDirectory)/olympus-meta/
-    zip -9r $(Build.ArtifactStagingDirectory)/olympus-build.zip $(Build.ArtifactStagingDirectory)/olympus-build/
-    zip -9r $(Build.ArtifactStagingDirectory)/lib-stripped.zip $(Build.ArtifactStagingDirectory)/lib-stripped/
+    cd $(Build.ArtifactStagingDirectory)
+    zip -9r main.zip ./main/
+    zip -9r olympus-meta.zip olympus-meta
+    zip -9r olympus-build.zip olympus-build
+    zip -9r lib-stripped.zip lib-stripped
 
 # Create GitHub release for new stable versions.
 - task: GitHubRelease@1
