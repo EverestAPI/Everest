@@ -2410,37 +2410,6 @@ namespace MonoMod {
             foreach (TypeDefinition nested in type.NestedTypes)
                 PostProcessType(modder, nested);
         }
-        /*
-        public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
-            TypeDefinition entityType = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
-            FieldDefinition entity_UpdateFinalizer = entityType.FindField("UpdateFinalizer");
-            GenericInstanceType action_entity = new GenericInstanceType(MonoModRule.Modder.FindType("System.Action"));
-            action_entity.GenericArguments.Add(entityType);
-            ILCursor cursor = new ILCursor(context);
-            ILLabel iterateLoop = cursor.DefineLabel();
-            cursor.GotoNext(MoveType.Before, instr => instr.MatchBr(out iterateLoop)); //Retrieve loop iterator code (at the end of the loop)
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update")); // Go after entity.Update
-            //entity.UpdateFinalizer?.Invoke();
-            //entity to stack
-            cursor.Emit(OpCodes.Ldloc_1);
-            //entity.UpdateFinalizer to stack
-            cursor.Emit(OpCodes.Ldfld, entity_UpdateFinalizer);
-            //entity.UpdateFinalizer to stack x2
-            cursor.Emit(OpCodes.Dup);
-            //Mark this as a label 
-            ILLabel passCheck = cursor.MarkLabel();
-            //Invoke the UpdateFinalizer
-            cursor.Emit(OpCodes.Ldloc_1);
-            cursor.Emit(OpCodes.Callvirt, action_entity_Invoke);
-            cursor.Emit(OpCodes.Nop); //Necessary according to SharpLab. idfk
-            //Goes behind the passCheck label, after the Dup instruction but before the lable for callvirt. This lets me insert code at this point
-            cursor.GotoLabel(passCheck, MoveType.Before);
-            //takes the latter of the entity.UpdateFinalizer on the stack and compares to null, branch to passCheck if true
-            cursor.Emit(OpCodes.Brtrue, passCheck);
-            //Assuming this false, it pops the latter of the UpdateFinalizers off stack and branches to the iteration loop, the instruction after this point
-            cursor.Emit(OpCodes.Pop);
-            cursor.Emit(OpCodes.Br, iterateLoop);
-        }*/
 
         public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
@@ -2448,12 +2417,23 @@ namespace MonoMod {
             MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("UpdateFinalizer");
 
             ILCursor cursor = new ILCursor(context);
-            cursor.GotoNext(MoveType.Before, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update")); // Go after entity.Update
+            ILLabel activeBranchLabel = cursor.DefineLabel();
+            ILLabel loopBranchLabel = null;
+            if (!cursor.TryGotoNext(MoveType.Before, instr=>instr.MatchBr(out loopBranchLabel))) {
+                throw new Exception("Label not found. This is a temporary error that shouldn't be shown to you unless you know what you're doing.");
+            }
+            ILCursor clone = cursor.Clone();
+            clone.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update"));
+            clone.MarkLabel(activeBranchLabel);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
-            cursor.Index += 2;
-            cursor.Emit(OpCodes.Ldloc_1);
-            cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Entity", "Active"));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Brfalse, activeBranchLabel);
+
+            clone.Emit(OpCodes.Ldloc_1);
+            clone.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
         }
     }
 }
