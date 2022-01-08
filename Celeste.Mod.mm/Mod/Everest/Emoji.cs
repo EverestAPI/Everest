@@ -61,7 +61,6 @@ namespace Celeste.Mod {
             Register(name, emoji, ((patch_MTexture) emoji)?.ScaleFix ?? 1f);
         }
 
-
         /// <summary>
         /// Register an emoji.
         /// </summary>
