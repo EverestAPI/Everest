@@ -57,11 +57,27 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="name">The emoji name.</param>
         /// <param name="emoji">The emoji texture.</param>
-        public static void Register(string name, MTexture emoji) {
+        /// <param name="targetHeight">The height to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
+        public static void Register(string name, MTexture emoji, int targetHeight) {
+            if(emoji != null && emoji.Height != targetHeight)
+                ((patch_MTexture) emoji).ScaleFix = targetHeight / (float) emoji.Height;
+            Register(name, emoji);
+        }
+
+        /// <summary>
+        /// Register an emoji.
+        /// </summary>
+        /// <param name="name">The emoji name.</param>
+        /// <param name="emoji">The emoji texture.</param>
+        /// <param name="scale">Scaling factor for the emoji spacing. Defaults to emoji.ScaleFix.</param>
+        public static void Register(string name, MTexture emoji, float? scale = null) {
             if (!Initialized) {
                 Queue.Enqueue(new KeyValuePair<string, MTexture>(name, emoji));
                 return;
             }
+
+            if (scale == null)
+                scale = emoji != null ? ((patch_MTexture) emoji).ScaleFix : 1f;
 
             bool monochrome;
             if (monochrome = name.EndsWith(".m")) {
@@ -75,7 +91,7 @@ namespace Celeste.Mod {
             xml.SetAttr("height", emoji.Height);
             xml.SetAttr("xoffset", 0);
             xml.SetAttr("yoffset", 0);
-            xml.SetAttr("xadvance", emoji.Width);
+            xml.SetAttr("xadvance", (int) (emoji.Width * scale));
 
             int id = _Registered.IndexOf(name);
             if (id < 0) {
