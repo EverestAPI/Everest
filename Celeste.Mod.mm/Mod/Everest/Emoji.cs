@@ -62,14 +62,28 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Register an emoji.
+        /// Register an emoji with scaling constraints.
         /// </summary>
         /// <param name="name">The emoji name.</param>
         /// <param name="emoji">The emoji texture.</param>
+        /// <param name="targetWidth">The width to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
         /// <param name="targetHeight">The height to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
-        public static void Register(string name, MTexture emoji, int targetHeight) {
-            if(emoji != null && emoji.Height != targetHeight)
-                ((patch_MTexture) emoji).ScaleFix = targetHeight / (float) emoji.Height;
+        public static void Register(string name, MTexture emoji, int targetWidth = 0, int targetHeight = 0) {
+            if (emoji == null) {
+                Register(name, emoji);
+                return;
+            }
+
+            float scaleFixW = targetWidth <= 0 ? 1f : targetWidth / (float) emoji.Width;
+            float scaleFixH = targetHeight <= 0 ? 1f : targetHeight / (float) emoji.Height;
+
+            if (targetWidth <= 0)
+                ((patch_MTexture) emoji).ScaleFix = scaleFixH;
+            else if (targetHeight <= 0)
+                ((patch_MTexture) emoji).ScaleFix = scaleFixW;
+            else
+                ((patch_MTexture) emoji).ScaleFix = System.Math.Min(scaleFixW, scaleFixH);
+
             Register(name, emoji);
         }
 
