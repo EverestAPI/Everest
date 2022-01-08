@@ -57,6 +57,16 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="name">The emoji name.</param>
         /// <param name="emoji">The emoji texture.</param>
+        public static void Register(string name, MTexture emoji) {
+            Register(name, emoji, ((patch_MTexture) emoji)?.ScaleFix ?? 1f);
+        }
+
+
+        /// <summary>
+        /// Register an emoji.
+        /// </summary>
+        /// <param name="name">The emoji name.</param>
+        /// <param name="emoji">The emoji texture.</param>
         /// <param name="targetHeight">The height to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
         public static void Register(string name, MTexture emoji, int targetHeight) {
             if(emoji != null && emoji.Height != targetHeight)
@@ -70,14 +80,11 @@ namespace Celeste.Mod {
         /// <param name="name">The emoji name.</param>
         /// <param name="emoji">The emoji texture.</param>
         /// <param name="scale">Scaling factor for the emoji spacing. Defaults to emoji.ScaleFix.</param>
-        public static void Register(string name, MTexture emoji, float? scale = null) {
+        public static void Register(string name, MTexture emoji, float scale) {
             if (!Initialized) {
                 Queue.Enqueue(new KeyValuePair<string, MTexture>(name, emoji));
                 return;
             }
-
-            if (scale == null)
-                scale = emoji != null ? ((patch_MTexture) emoji).ScaleFix : 1f;
 
             bool monochrome;
             if (monochrome = name.EndsWith(".m")) {
