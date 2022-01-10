@@ -1,5 +1,6 @@
 ﻿
 using MonoMod;
+using Celeste.Mod.Entities;
 
 namespace Monocle {
     class patch_Entity : Entity {
@@ -12,6 +13,17 @@ namespace Monocle {
 
         internal void DissociateFromScene() {
             Scene = null;
+        }
+        internal void UpdatePreceder() {
+            foreach (IPreUpdateComponent pc in Components) {
+                pc.PreUpdate();
+            }
+        }
+
+        internal void UpdateFinalizer() {
+            foreach (IPostUpdateComponent pc in Components) {
+                pc.PostUpdate();
+            }
         }
     }
 }

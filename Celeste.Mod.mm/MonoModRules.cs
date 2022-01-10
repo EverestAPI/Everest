@@ -415,6 +415,14 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
     class PatchEmulatorConstructorAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the method to run UpdatePreceder and UpdateFinalizer
+    /// </summary>
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdate))]
+    class PatchEntityListUpdateAttribute : Attribute { }
+
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2384,6 +2392,28 @@ namespace MonoMod {
             cursor.Next.Operand = fontMap;
         }
 
+        public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
+            MethodDefinition entity_UpdatePreceder = Entity.FindMethod("UpdatePreceder");
+            MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("UpdateFinalizer");
+
+            ILCursor cursor = new ILCursor(context);
+            ILLabel activeBranchLabel = cursor.DefineLabel();
+            ILLabel loopBranchLabel = null;
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchBr(out loopBranchLabel));
+            ILCursor clone = cursor.Clone();
+            clone.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update"));
+            clone.MarkLabel(activeBranchLabel);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Entity", "Active"));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Brfalse, activeBranchLabel);
+            clone.Emit(OpCodes.Ldloc_1);
+            clone.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+        }
+
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
             PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
@@ -2407,6 +2437,5 @@ namespace MonoMod {
             foreach (TypeDefinition nested in type.NestedTypes)
                 PostProcessType(modder, nested);
         }
-
     }
 }
