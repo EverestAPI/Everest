@@ -748,6 +748,7 @@ namespace Celeste.Mod {
             }
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
+            Events.Everest.RegisterModule(module);
 
             CheckDependenciesOfDelayedMods();
         }
