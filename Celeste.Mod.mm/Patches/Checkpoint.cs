@@ -3,18 +3,27 @@
 
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 using System;
 
 namespace Celeste {
-    class patch_Checkpoint : Entity {
+    class patch_Checkpoint : Checkpoint {
 
         private string bg;
         private Image image;
         private Sprite sprite;
         private Sprite flash;
 
+        public patch_Checkpoint(Vector2 position, string bg = "", Vector2? spawnTarget = null)
+            : base(position, bg, spawnTarget) {
+            //no-op
+        }
+
+        [MonoModLinkTo("Monocle.Entity", "Awake")]
+        [MonoModIgnore]
+        public extern void base_Awake(Scene scene);
         public override void Awake(Scene scene) {
-            base.Awake(scene);
+            base_Awake(scene);
 
             Level level = scene as Level;
             if (level == null || level.Session.Area.GetLevelSet() == "Celeste")

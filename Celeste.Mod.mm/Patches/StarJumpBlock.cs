@@ -7,14 +7,16 @@ using MonoMod;
 using System.Collections.Generic;
 
 namespace Celeste {
-    // : Solid because base.Awake
-    class patch_StarJumpBlock : Solid {
+    class patch_StarJumpBlock : StarJumpBlock {
         private Level level;
 
         public patch_StarJumpBlock(Vector2 position, float width, float height, bool sinks) : base(position, width, height, sinks) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [MonoModLinkTo("Celeste.Solid", "Awake")]
+        [MonoModIgnore]
+        public extern void base_Awake(Scene scene);
         public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
             if ((scene as Level).Session.Area.GetLevelSet() == "Celeste") {
@@ -27,7 +29,7 @@ namespace Celeste {
 
             // TODO: Inner corner textures? Or keep them empty as-is?
 
-            base.Awake(scene);
+            base_Awake(scene);
 
             level = SceneAs<Level>();
 
@@ -177,6 +179,9 @@ namespace Celeste {
             }
         }
 
+        [MonoModLinkTo("Monocle.Entity", "Render")]
+        [MonoModIgnore]
+        public extern void base_Render();
         public extern void orig_Render();
         public override void Render() {
             if (SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
@@ -208,7 +213,7 @@ namespace Celeste {
                 );
             }
 
-            base.Render();
+            base_Render();
         }
 
         [MonoModIgnore]
