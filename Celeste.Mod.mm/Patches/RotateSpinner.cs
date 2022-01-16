@@ -7,7 +7,6 @@ using MonoMod;
 using System;
 
 namespace Celeste {
-    // : Entity because there's no original Awake method to hook, thus base.Awake must be Entity::Awake.
     class patch_RotateSpinner : RotateSpinner {
 
         public new float Angle {

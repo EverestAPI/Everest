@@ -5,7 +5,6 @@ using Monocle;
 using MonoMod;
 
 namespace Celeste {
-    // : Solid because base.Added
     class patch_BounceBlock : BounceBlock {
 
         // We're effectively in BounceBlock, but still need to "expose" private fields to our mod.
