@@ -28,7 +28,7 @@ namespace Celeste {
         public extern void base_Added(Scene scene);
         [MonoModReplace]
         public override void Added(Scene scene) {
-            base.Added(scene);
+            base_Added(scene);
             iceModeNext = iceMode = SceneAs<Level>().CoreMode == Session.CoreModes.Cold || notCoreMode;
             ToggleSprite();
         }
