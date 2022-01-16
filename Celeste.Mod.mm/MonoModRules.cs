@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 
 namespace MonoMod {
     /// <summary>
@@ -2285,33 +2284,11 @@ namespace MonoMod {
 
         private static void PostProcessType(MonoModder modder, TypeDefinition type) {
             foreach (MethodDefinition method in type.Methods) {
-                FixIteratorStateMachineAttribute(method);
                 method.FixShortLongOps();
             }
 
             foreach (TypeDefinition nested in type.NestedTypes)
                 PostProcessType(modder, nested);
         }
-
-        private static void FixIteratorStateMachineAttribute(MethodDefinition method) {
-            TypeDefinition t_IteratorStateMachineAttribute = MonoModRule.Modder.Module.ImportReference(typeof(IteratorStateMachineAttribute)).Resolve();
-            MethodReference m_IteratorStateMachineAttribute_ctor = MonoModRule.Modder.Module.ImportReference(t_IteratorStateMachineAttribute.FindMethod("System.Void .ctor(System.Type)"));
-
-            List<CustomAttribute> attributes = method.CustomAttributes
-                .Where(attr => attr.AttributeType.FullName != t_IteratorStateMachineAttribute.FullName)
-                .ToList();
-            MethodDefinition targetMethod = method.GetEnumeratorMoveNext();
-            if (targetMethod != null) {
-                CustomAttribute attribute = new CustomAttribute(m_IteratorStateMachineAttribute_ctor) {
-                    ConstructorArguments = {
-                        new CustomAttributeArgument(MonoModRule.Modder.Module.ImportReference(typeof(Type)), targetMethod.DeclaringType)
-                    }
-                };
-                attributes.Add(attribute);
-            }
-            method.CustomAttributes.Clear();
-            method.CustomAttributes.AddRange(attributes);
-        }
-
     }
 }
