@@ -903,6 +903,8 @@ namespace Celeste.Mod {
                             MTNExt.ObjModelCache.Remove(next.PathVirtual + ".export");
                         }
                         MainThreadHelper.Do(() => MTNExt.ReloadModData());
+                    } else if (next.Type == typeof(AssetTypeFont)) {
+                        MainThreadHelper.Do(() => Fonts.Reload());
                     }
 
                     // Loaded assets can be folders, which means that we need to check the updated assets' entire path.

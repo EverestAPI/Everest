@@ -216,6 +216,24 @@ namespace Celeste {
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
         }
 
+        private AreaMode _PatchHeartGemBehavior(AreaMode levelMode) {
+            if (Session.Area.GetLevelSet() == "Celeste") {
+                // do not mess with vanilla.
+                return levelMode;
+            }
+
+            MapMetaModeProperties properties = Session.MapData.GetMeta();
+            if (properties != null && (properties.HeartIsEnd ?? false)) {
+                // heart ends the level: this is like B-Sides.
+                // the heart will appear even if it was collected, to avoid a softlock if we save & quit after collecting it.
+                return AreaMode.BSide;
+            } else {
+                // heart does not end the level: this is like A-Sides.
+                // the heart will disappear after it is collected.
+                return AreaMode.Normal;
+            }
+        }
+
         private IEnumerator ErrorRoutine(string message) {
             yield return null;
 
@@ -425,6 +443,40 @@ namespace Celeste {
                 }
                 ((patch_EntityList) (object) Entities).ClearEntities();
             }
+        }
+
+        public Vector2 ScreenToWorld(Vector2 position) {
+            Vector2 size = new Vector2(320f, 180f);
+            Vector2 scaledSize = size / ZoomTarget;
+            Vector2 offset = ZoomTarget != 1f ? (ZoomFocusPoint - scaledSize / 2f) / (size - scaledSize) * size : Vector2.Zero;
+            float scale = Zoom * ((320f - ScreenPadding * 2f) / 320f);
+            Vector2 paddingOffset = new Vector2(ScreenPadding, ScreenPadding * 9f / 16f);
+
+            if (SaveData.Instance?.Assists.MirrorMode ?? false) {
+                position.X = 1920f - position.X;
+            }
+            position /= 1920f / 320f;
+            position -= paddingOffset;
+            position = (position - offset) / scale + offset;
+            position = Camera.ScreenToCamera(position);
+            return position;
+        }
+
+        public Vector2 WorldToScreen(Vector2 position) {
+            Vector2 size = new Vector2(320f, 180f);
+            Vector2 scaledSize = size / ZoomTarget;
+            Vector2 offset = ZoomTarget != 1f ? (ZoomFocusPoint - scaledSize / 2f) / (size - scaledSize) * size : Vector2.Zero;
+            float scale = Zoom * ((320f - ScreenPadding * 2f) / 320f);
+            Vector2 paddingOffset = new Vector2(ScreenPadding, ScreenPadding * 9f / 16f);
+
+            position = Camera.CameraToScreen(position);
+            position = (position - offset) * scale + offset;
+            position += paddingOffset;
+            position *= 1920f / 320f;
+            if (SaveData.Instance?.Assists.MirrorMode ?? false) {
+                position.X = 1920f - position.X;
+            }
+            return position;
         }
     }
 

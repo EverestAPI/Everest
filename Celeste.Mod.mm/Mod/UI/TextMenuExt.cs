@@ -710,10 +710,12 @@ namespace Celeste {
 
             /// <inheritdoc cref="TextMenu.GetYOffsetOf(TextMenu.Item)"/>
             public float GetYOffsetOf(TextMenu.Item item) {
+                float offset = Container.GetYOffsetOf(this) - Height() * 0.5f;
                 if (item == null) {
-                    return 0f;
+                    // common case is all items in submenu are disabled when item is null
+                    return offset + TitleHeight * 0.5f;
                 }
-                float offset = 0f;
+                offset += TitleHeight;
                 foreach (TextMenu.Item child in Items) {
                     if (child.Visible) {
                         offset += child.Height() + ItemSpacing;
@@ -722,11 +724,11 @@ namespace Celeste {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
+                return offset - item.Height() * 0.5f - ItemSpacing;
             }
 
             public void Exit() {
-                Current.OnLeave?.Invoke();
+                Current?.OnLeave?.Invoke();
                 Focused = false;
                 if (!Input.MenuUp.Repeating && !Input.MenuDown.Repeating)
                     Audio.Play(SFX.ui_main_button_back);
@@ -1121,19 +1123,21 @@ namespace Celeste {
             }
 
             public float GetYOffsetOf(TextMenu.Item item) {
+                float offset = Container.GetYOffsetOf(this) - Height() * 0.5f;
                 if (item == null) {
-                    return 0f;
+                    // common case is all items in submenu are disabled when item is null
+                    return offset + TitleHeight * 0.5f;
                 }
-                float offset = 0f;
-                foreach (TextMenu.Item item2 in CurrentMenu) {
-                    if (item2.Visible) {
-                        offset += item2.Height() + ItemSpacing;
+                offset += TitleHeight;
+                foreach (TextMenu.Item child in CurrentMenu) {
+                    if (child.Visible) {
+                        offset += child.Height() + ItemSpacing;
                     }
-                    if (item2 == item) {
+                    if (child == item) {
                         break;
                     }
                 }
-                return offset - item.Height() * 0.5f - ItemSpacing + Container.GetYOffsetOf(this) - Height() * 0.5f + TitleHeight;
+                return offset - item.Height() * 0.5f - ItemSpacing;
             }
 
             #endregion
@@ -1239,7 +1243,7 @@ namespace Celeste {
                         }
                         if (!Input.MenuConfirm.Pressed) {
                             if (Input.MenuCancel.Pressed || Input.ESC.Pressed || Input.Pause.Pressed) {
-                                Current.OnLeave?.Invoke();
+                                Current?.OnLeave?.Invoke();
                                 Focused = false;
                                 Audio.Play(SFX.ui_main_button_back);
                                 Container.AutoScroll = containerAutoScroll;

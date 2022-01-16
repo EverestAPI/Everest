@@ -28,6 +28,11 @@ namespace MiniInstaller {
             Console.WriteLine(line);
         }
 
+        public static void LogErr(string line) {
+            LineLogger?.Invoke(line);
+            Console.Error.WriteLine(line);
+        }
+
         public static int Main(string[] args) {
             Console.WriteLine("Everest MiniInstaller");
 
@@ -62,8 +67,8 @@ namespace MiniInstaller {
                 try {
 
                     if (!IsMonoVersionCompatible()) {
-                        LogLine("Everest installer only works with Mono 5 and higher.");
-                        LogLine("Please upgrade Mono and run the installer again.");
+                        LogErr("Everest installer only works with Mono 5 and higher.");
+                        LogErr("Please upgrade Mono and run the installer again.");
                         throw new Exception("Incompatible Mono version");
                     }
 
@@ -92,20 +97,20 @@ namespace MiniInstaller {
                 } catch (Exception e) {
                     string msg = e.ToString();
                     LogLine("");
-                    LogLine(msg);
-                    LogLine("");
-                    LogLine("Installing Everest failed.");
+                    LogErr(msg);
+                    LogErr("");
+                    LogErr("Installing Everest failed.");
                     if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework") ||
                         msg.Contains("MonoModRules failed resolving Microsoft.Xna.Framework.Game")) {
-                        LogLine("Please run the game at least once to install missing dependencies.");
+                        LogErr("Please run the game at least once to install missing dependencies.");
                     } else {
                         if (msg.Contains("--->")) {
-                            LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
+                            LogErr("Please review the error after the '--->' to see if you can fix it on your end.");
                         }
-                        LogLine("");
-                        LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
-                        LogLine("or join the #modding_help channel on Discord (invite in the repo).");
-                        LogLine("Make sure to upload your log file.");
+                        LogErr("");
+                        LogErr("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                        LogErr("or join the #modding_help channel on Discord (invite in the repo).");
+                        LogErr("Make sure to upload your log file.");
                     }
                     return 1;
 
@@ -167,8 +172,8 @@ namespace MiniInstaller {
 
             PathCelesteExe = Path.Combine(PathGame, "Celeste.exe");
             if (!File.Exists(PathCelesteExe)) {
-                LogLine("Celeste.exe not found!");
-                LogLine("Did you extract the .zip into the same place as Celeste?");
+                LogErr("Celeste.exe not found!");
+                LogErr("Did you extract the .zip into the same place as Celeste?");
                 return false;
             }
 

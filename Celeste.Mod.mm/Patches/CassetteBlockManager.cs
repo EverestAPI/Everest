@@ -52,6 +52,7 @@ namespace Celeste {
                 beatsPerTick = meta.BeatsPerTick;
                 ticksPerSwap = meta.TicksPerSwap;
                 beatIndexMax = meta.BeatsMax;
+                beatIndexOffset = meta.BeatIndexOffset;
             }
         }
 
@@ -114,7 +115,7 @@ namespace Celeste {
                 maxBeat = level.CassetteBlockBeats;
                 tempoMult = level.CassetteBlockTempo;
 
-                if (beatIndex % 8 >= 5) {
+                if (beatIndex % (beatsPerTick * ticksPerSwap) > ((beatsPerTick * ticksPerSwap) / 2)) {
                     currentIndex = maxBeat - 2;
                 } else {
                     currentIndex = maxBeat - 1;

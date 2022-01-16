@@ -247,7 +247,7 @@ namespace Celeste.Mod {
                         GFX.Game.GetTextures().Keys
                         .GroupBy(
                             s => s.StartsWith("decals/") ?
-                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') :
+                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9').ToLower() :
                                 null,
                             (s, matches) => s
                         )

@@ -197,6 +197,10 @@ namespace Celeste {
                 level = null;
             }
         }
+
+        [MonoModIgnore]
+        [PatchPlayerBeforeUpTransition]
+        public new extern void BeforeUpTransition();
     }
     public static class PlayerExt {
 
