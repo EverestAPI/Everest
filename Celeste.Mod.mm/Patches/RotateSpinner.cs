@@ -13,7 +13,7 @@ namespace Celeste {
             [MonoModReplace]
             get => fixAngle ?
                 MathHelper.Lerp(MathHelper.Pi, -MathHelper.Pi, Easer(rotationPercent)) :
-                MathHelper.Lerp(4.712389f, -(float)Math.PI / 2f, Easer(rotationPercent));
+                MathHelper.Lerp(MathHelper.Pi + MathHelper.Pi / 2, -MathHelper.Pi / 2, Easer(rotationPercent));
         }
 
         private bool fixAngle;
