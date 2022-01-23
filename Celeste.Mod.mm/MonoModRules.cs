@@ -1379,7 +1379,7 @@ namespace MonoMod {
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
             FieldDefinition f_Area = method.DeclaringType.FindField("Area");
-            MethodDefinition m_GetCheckpointName = MonoModRule.Modder.FindType("Celeste.AreaData").Resolve().FindMethod("System.String GetCheckpointName(Celeste.AreaKey,System.String)");
+            MethodDefinition m_GetStartName = MonoModRule.Modder.FindType("Celeste.AreaData").Resolve().FindMethod("System.String GetStartName(Celeste.AreaKey)");
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1396,13 +1396,12 @@ namespace MonoMod {
                 cursor.Next.Operand = m_GetCheckpoints;
 
                 cursor.GotoNext(instr => instr.MatchLdstr("overworld_start"));
-                // Emit before
+                cursor.Remove(); // Remove ldstr
+                cursor.Remove(); // Remove ldnull
+                // Load this.Area
                 cursor.Emit(OpCodes.Ldloc_1);
                 cursor.Emit(OpCodes.Ldfld, f_Area);
-                // Move after
-                cursor.Goto(cursor.Next, MoveType.After);
-                cursor.Remove(); // Remove ldnull
-                cursor.Next.Operand = m_GetCheckpointName;
+                cursor.Next.Operand = m_GetStartName;
             });
         }
 
