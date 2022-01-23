@@ -1378,6 +1378,8 @@ namespace MonoMod {
 
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
+            FieldDefinition f_Area = method.DeclaringType.FindField("Area");
+            MethodDefinition m_GetCheckpointName = MonoModRule.Modder.FindType("Celeste.AreaData").Resolve().FindMethod("System.String GetCheckpointName(Celeste.AreaKey,System.String)");
 
             // The gem collection routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -1387,17 +1389,21 @@ namespace MonoMod {
                 break;
             }
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 1; instri < instrs.Count - 5; instri++) {
-                Instruction instr = instrs[instri];
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.SaveData", "GetCheckpoints"));
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = m_GetCheckpoints;
 
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.HashSet`1<System.String> Celeste.SaveData::GetCheckpoints(Celeste.AreaKey)") {
-                    // Replace the method call.
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_GetCheckpoints;
-                    instri++;
-                }
-            }
+                cursor.GotoNext(instr => instr.MatchLdstr("overworld_start"));
+                // Emit before
+                cursor.Emit(OpCodes.Ldloc_1);
+                cursor.Emit(OpCodes.Ldfld, f_Area);
+                // Move after
+                cursor.Goto(cursor.Next, MoveType.After);
+                cursor.Remove(); // Remove ldnull
+                cursor.Next.Operand = m_GetCheckpointName;
+            });
         }
 
         public static void PatchStrawberryInterface(ICustomAttributeProvider provider, CustomAttribute attrib) {
