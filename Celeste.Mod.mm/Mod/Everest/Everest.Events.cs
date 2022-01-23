@@ -31,6 +31,24 @@ namespace Celeste.Mod {
                     => OnShutdown?.Invoke();
             }
 
+            public static class Everest {
+                public delegate void ModLoadedHandler(EverestModuleMetadata meta);
+                /// <summary>
+                /// Called when a mod finishes loading.
+                /// </summary>
+                public static event ModLoadedHandler OnLoadMod;
+                internal static void LoadMod(EverestModuleMetadata meta)
+                    => OnLoadMod?.Invoke(meta);
+
+                public delegate void RegisterModuleHandler(EverestModule module);
+                /// <summary>
+                /// Called when a mod is registered.
+                /// </summary>
+                public static event RegisterModuleHandler OnRegisterModule;
+                internal static void RegisterModule(EverestModule module)
+                    => OnRegisterModule?.Invoke(module);
+            }
+
             [Obsolete("Use MainMenu instead.")]
             public static class OuiMainMenu {
                 public delegate void CreateButtonsHandler(_OuiMainMenu menu, List<MenuButton> buttons);

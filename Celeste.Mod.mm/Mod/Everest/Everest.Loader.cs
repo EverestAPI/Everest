@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Ionic.Zip;
 using MonoMod.Utils;
 using System;
@@ -473,6 +474,8 @@ namespace Celeste.Mod {
 
                 if (meta == null)
                     return;
+
+                using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
 
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
