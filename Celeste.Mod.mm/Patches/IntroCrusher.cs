@@ -10,8 +10,7 @@ using System.Collections;
 using System.Linq;
 
 namespace Celeste {
-    // : Solid because base.Added
-    class patch_IntroCrusher : Solid {
+    class patch_IntroCrusher : IntroCrusher {
 
         // We're effectively in IntroCrusher, but still need to "expose" private fields to our mod.
         private Vector2 end;
@@ -19,15 +18,10 @@ namespace Celeste {
 
         public string levelFlags;
 
-        public patch_IntroCrusher(Vector2 position, int width, int height, Vector2 node)
-            : base(position, width, height, true) {
-            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
-        }
-
         [MonoModConstructor]
         [MonoModReplace]
         public patch_IntroCrusher(EntityData data, Vector2 offset)
-            : this(data.Position + offset, data.Width, data.Height, data.Nodes[0] + offset) {
+            : base(data.Position + offset, data.Width, data.Height, data.Nodes[0] + offset) {
 
             levelFlags = data.Attr("flags");
 
@@ -38,6 +32,9 @@ namespace Celeste {
             }
         }
 
+        [MonoModLinkTo("Monocle.Entity", "Added")]
+        [MonoModIgnore]
+        public extern void base_Added(Scene scene);
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
             Level level = scene as Level;
@@ -46,7 +43,7 @@ namespace Celeste {
                 return;
             }
 
-            base.Added(scene);
+            base_Added(scene);
 
             if (levelFlags.Split(',').Any(flag => level.Session.GetLevelFlag(flag))) {
                 Position = end;

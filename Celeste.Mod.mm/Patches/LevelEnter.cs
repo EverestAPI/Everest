@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 
 namespace Celeste {
+    // LevelEnter has a private .ctor
     class patch_LevelEnter : Scene {
 
         /// <summary>
