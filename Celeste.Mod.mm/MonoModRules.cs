@@ -2398,20 +2398,19 @@ namespace MonoMod {
             MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("UpdateFinalizer");
 
             ILCursor cursor = new ILCursor(context);
-            ILLabel activeBranchLabel = cursor.DefineLabel();
             ILLabel loopBranchLabel = null;
             cursor.GotoNext(MoveType.Before, instr => instr.MatchBr(out loopBranchLabel));
-            ILCursor clone = cursor.Clone();
-            clone.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update"));
-            clone.MarkLabel(activeBranchLabel);
-            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchCallvirt("Monocle.Entity", "Update"));
+            ILLabel activeBranchLabel = cursor.MarkLabel();
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+            cursor.GotoPrev(MoveType.After, instr => instr.MatchStloc(1));
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Entity", "Active"));
             cursor.Remove();
             cursor.Emit(OpCodes.Brfalse, activeBranchLabel);
-            clone.Emit(OpCodes.Ldloc_1);
-            clone.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+            
         }
 
         public static void PostProcessor(MonoModder modder) {
