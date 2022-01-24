@@ -14,6 +14,7 @@ namespace Monocle {
         internal void DissociateFromScene() {
             Scene = null;
         }
+
         internal void UpdatePreceder() {
             foreach (IPreUpdateComponent pc in Components) {
                 pc.PreUpdate();
