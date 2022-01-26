@@ -719,7 +719,7 @@ namespace MonoMod {
 
             MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
             MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
-            
+
             FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
 
             Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
@@ -1154,7 +1154,7 @@ namespace MonoMod {
             }
             if (matches != 3)
                 throw new Exception("Incorrect number of matches for language.Dialog.set_Item");
-            
+
         }
 
         public static void PatchInitMMSharedData(MethodDefinition method, CustomAttribute attrib) {
@@ -1875,7 +1875,7 @@ namespace MonoMod {
 
             // Start again from the top and retrieve the Bounds instead of the entity (but only up to a certain point)
             cursor.Goto(0);
-            for (int i = 0;i<10;i++) {
+            for (int i = 0; i < 10; i++) {
                 cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ldloc_3);
                 cursor.Prev.OpCode = OpCodes.Ldloca_S;
                 cursor.Prev.Operand = v_Bounds;
@@ -1945,6 +1945,7 @@ namespace MonoMod {
 
         public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_ModCardTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModCardTexture(System.String)");
+            MethodDefinition m_FixTitleLength = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::_FixTitleLength(System.Single)");
 
             ILCursor cursor = new ILCursor(context);
             int matches = 0;
@@ -1960,6 +1961,15 @@ namespace MonoMod {
             }
             if (matches != 4)
                 throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
+
+            cursor.Index = 0;
+
+            // Resize the title if it does not fit.
+            while (cursor.TryGotoNext(instr => instr.MatchLdcR4(-60))) {
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Call, m_FixTitleLength);
+            }
         }
 
         public static void PatchGoldenBlockStaticMovers(ILContext context, CustomAttribute attrib) {

@@ -86,6 +86,7 @@
     <Content Include="..\lib-mono\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Remove="Content\Graphics\Atlases\Gui\areaselect\title.png" />
     <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
       <Link>lib64\liblua53.so</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

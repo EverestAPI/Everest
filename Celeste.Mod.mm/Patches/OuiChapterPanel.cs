@@ -4,6 +4,7 @@ using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -217,6 +218,11 @@ namespace Celeste {
 
             // If that doesn't exist either, return without changing anything.
             return textureName;
+        }
+
+        private float _FixTitleLength(float vanillaValue) {
+            float mapNameSize = ActiveFont.Measure(Dialog.Clean(AreaData.Get(Area).Name)).X;
+            return vanillaValue - Math.Max(0f, mapNameSize + vanillaValue - 490f);
         }
     }
 }
