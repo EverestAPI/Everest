@@ -1963,13 +1963,17 @@ namespace MonoMod {
                 throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
 
             cursor.Index = 0;
+            matches = 0;
 
             // Resize the title if it does not fit.
             while (cursor.TryGotoNext(instr => instr.MatchLdcR4(-60))) {
                 cursor.Emit(OpCodes.Ldarg_0);
                 cursor.Index++;
                 cursor.Emit(OpCodes.Call, m_FixTitleLength);
+                matches++;
             }
+            if (matches != 2)
+                throw new Exception("Incorrect number of matches for float -60f.");
         }
 
         public static void PatchGoldenBlockStaticMovers(ILContext context, CustomAttribute attrib) {
