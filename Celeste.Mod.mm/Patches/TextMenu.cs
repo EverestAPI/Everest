@@ -366,6 +366,10 @@ namespace Celeste {
                 ctor(label, true);
             }
 
+            [MonoModReplace]
+            public override float Height() {
+                return (Title.Length > 0 ? (ActiveFont.HeightOf(Title) * 0.6f) : 0f) + (TopPadding ? 48 : 0);
+            }
         }
 
         public class patch_Setting : Setting {
