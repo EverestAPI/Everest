@@ -16,14 +16,16 @@ namespace Monocle {
         }
 
         internal void UpdatePreceder() {
-            foreach (IPreUpdateComponent pc in Components) {
-                pc.PreUpdate();
+            foreach (var component in Components) {
+                if(component is IPreUpdateComponent pc)
+                    pc.PreUpdate();
             }
         }
 
         internal void UpdateFinalizer() {
-            foreach (IPostUpdateComponent pc in Components) {
-                pc.PostUpdate();
+            foreach (var component in Components) {
+                if (component is IPostUpdateComponent pc)
+                    pc.PostUpdate();
             }
         }
     }
