@@ -42,6 +42,17 @@ namespace Monocle {
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
+        private extern void orig_ProcessMethod(MethodInfo method);
+        private void ProcessMethod(MethodInfo method) {
+            try {
+                orig_ProcessMethod(method);
+            } catch (Exception e) {
+                // we probably met a method with some missing optional dependency, so just skip it.
+                Logger.Log(LogLevel.Warn, "commands", "Could not look for custom commands in method " + method.Name);
+                Logger.LogDetailed(e);
+            }
+        }
+
         [MonoModReplace] // Don't create orig_ method.
         internal void UpdateClosed() {
             if (!canOpen) {
