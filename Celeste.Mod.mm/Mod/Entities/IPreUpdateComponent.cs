@@ -3,13 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Monocle;
 
 namespace Celeste.Mod.Entities {
 
     /// <summary>
-    /// All Components added to an Entity that inherit this interface will run the code inside PreUpdate before the Entity runs its Update call.
+    /// All PreUpdateComponents will run the code inside PreUpdate before the Entity runs its Update call.
     /// </summary>
-    public interface IPreUpdateComponent {
-        void PreUpdate();
+    public abstract class PreUpdateComponent : Component {
+        public PreUpdateComponent(bool active, bool visible):base(active, visible) {
+
+        }
+
+        public abstract void PreUpdate();
     }
 }
