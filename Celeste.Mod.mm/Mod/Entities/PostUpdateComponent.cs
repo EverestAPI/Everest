@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 using Monocle;
 
 namespace Celeste.Mod.Entities {
-
     /// <summary>
-    /// All PreUpdateComponents will run the code inside PostUpdate after the Entity completes running its Update call.
+    /// A class that adds update functions before any of the parent entity update and after all of the parent entity update is called.
     /// </summary>
-    public abstract class PostUpdateComponent : Component {
+    public class UpdateWrappingComponent : Component {
 
-        public PostUpdateComponent(bool active, bool visible) : base(active, visible) {
+        public UpdateWrappingComponent(bool active, bool visible) : base(active, visible) {
 
         }
-        public abstract void PostUpdate();
+
+        public virtual void PreUpdate() { }
+        public virtual void PostUpdate() { }
     }
 }

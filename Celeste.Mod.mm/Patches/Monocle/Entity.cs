@@ -16,14 +16,14 @@ namespace Monocle {
         }
 
         internal void UpdatePreceder() {
-            foreach (PreUpdateComponent puc in Components) {
-                    puc.PreUpdate();
+            foreach (UpdateWrappingComponent component in Components.GetAll<UpdateWrappingComponent>()) {
+                component.PreUpdate();
             }
         }
 
         internal void UpdateFinalizer() {
-            foreach (PostUpdateComponent puc in Components) {
-                    puc.PostUpdate();
+            foreach (UpdateWrappingComponent component in Components.GetAll<UpdateWrappingComponent>()) {
+                component.PostUpdate();
             }
         }
     }
