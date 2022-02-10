@@ -80,20 +80,40 @@ namespace Celeste.Editor {
         private void LoadLevel(LevelTemplate level, Vector2 at) {
             Save();
 
-            KeyboardState keys = Keyboard.GetState();
+            KeyboardState kbState = Keyboard.GetState();
+            bool createSession = kbState.IsKeyDown(Keys.LeftControl) || kbState.IsKeyDown(Keys.RightControl);
+            bool customRespawnPoint = kbState.IsKeyDown(Keys.LeftShift) || kbState.IsKeyDown(Keys.RightShift);
 
-            Session session = keys.IsKeyDown(Keys.LeftControl) || keys.IsKeyDown(Keys.RightControl) ? null : CurrentSession;
-            if (session == null) {
+            Session session;
+            if (createSession) {
                 if (AreaData.GetCheckpoint(area, level.Name) != null) {
                     session = new Session(area, level.Name) {StartCheckpoint = null};
                 } else {
                     session = new Session(area);
                 }
+            } else {
+                session = CurrentSession;
             }
+
+            session.Level = level.Name;
+            session.RespawnPoint = customRespawnPoint ? at : null;
             session.FirstLevel = false;
             session.StartedFromBeginning = false;
-            session.Level = level.Name;
-            session.RespawnPoint = keys.IsKeyDown(Keys.LeftShift) || keys.IsKeyDown(Keys.RightShift) ? at : (Vector2?) null;
+
+            if (createSession && !customRespawnPoint) {
+                bool firstLevel = level.Name == session.MapData.StartLevel().Name;
+                session.FirstLevel = firstLevel;
+                if (firstLevel) {
+                    Vector2 defaultSpawnPoint;
+                    if (session.Area.GetLevelSet() == "Celeste") {
+                        Rectangle bounds = session.LevelData.Bounds;
+                        defaultSpawnPoint = session.GetSpawnPoint(new Vector2(bounds.Left, bounds.Bottom));
+                    } else {
+                        defaultSpawnPoint = session.LevelData.Spawns[0];
+                    }
+                    session.StartedFromBeginning = session.GetSpawnPoint(at) == defaultSpawnPoint;
+                }
+            }
 
             Engine.Scene = new LevelLoader(session, at);
         }

@@ -54,7 +54,7 @@ namespace Celeste.Mod {
                     try {
                         setClipboardText(value);
                     } catch (ExternalException e) {
-                        Logger.Log(LogLevel.Warn, "TextInputs", $"Failed to set the clipboard");
+                        Logger.Log(LogLevel.Warn, "TextInputs", "Failed to set the clipboard");
                         Logger.LogDetailed(e);
                     }
                     return value;
