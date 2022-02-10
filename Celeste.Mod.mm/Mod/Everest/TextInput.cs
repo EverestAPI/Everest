@@ -50,7 +50,15 @@ namespace Celeste.Mod {
                 Func<string> getClipboardText = t_Clipboard.GetMethod("GetText", new Type[] { } ).CreateDelegate(typeof(Func<string>)) as Func<string>;
                 _GetClipboardText = () => STAThreadHelper.Get(getClipboardText).GetResult();
                 Action<string> setClipboardText = t_Clipboard.GetMethod("SetText", new Type[] { typeof(string) }).CreateDelegate(typeof(Action<string>)) as Action<string>;
-                _SetClipboardText = (value) => STAThreadHelper.Get(() => { setClipboardText(value); return value; }).GetResult();
+                _SetClipboardText = (value) => STAThreadHelper.Get(() => {
+                    try {
+                        setClipboardText(value);
+                    } catch (ExternalException e) {
+                        Logger.Log(LogLevel.Warn, "TextInputs", $"Failed to set the clipboard");
+                        Logger.LogDetailed(e);
+                    }
+                    return value;
+                }).GetResult();
             }
         }
 
