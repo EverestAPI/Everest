@@ -52,7 +52,7 @@ namespace Celeste.Mod {
                 Action<string> setClipboardText = t_Clipboard.GetMethod("SetText", new Type[] { typeof(string) }).CreateDelegate(typeof(Action<string>)) as Action<string>;
                 _SetClipboardText = (value) => STAThreadHelper.Get(() => {
                     try {
-                        setClipboardText(value);
+                        setClipboardText(string.IsNullOrEmpty(value) ? "\0" : value);
                     } catch (ExternalException e) {
                         Logger.Log(LogLevel.Warn, "TextInputs", "Failed to set the clipboard");
                         Logger.LogDetailed(e);
