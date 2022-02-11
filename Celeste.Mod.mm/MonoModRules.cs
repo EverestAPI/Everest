@@ -2398,13 +2398,16 @@ namespace MonoMod {
             MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("UpdateFinalizer");
 
             ILCursor cursor = new ILCursor(context);
+            ILLabel branch = null;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchBr(out branch));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
             cursor.GotoNext(MoveType.AfterLabel, instr=>instr.MatchLdloca(0), i2 => i2.MatchCall(out MethodReference method) && method.Name == "MoveNext");
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
-            cursor.GotoPrev(MoveType.After, instr => instr.MatchStloc(1));
-            cursor.Emit(OpCodes.Ldloc_1);
-            cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
-            
+            cursor.MarkLabel(branch);
+
         }
 
         public static void PostProcessor(MonoModder modder) {
