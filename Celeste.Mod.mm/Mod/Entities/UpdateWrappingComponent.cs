@@ -14,7 +14,7 @@ namespace Celeste.Mod.Entities {
         public Action PreUpdate;
         public Action PostUpdate;
 
-        public UpdateWrappingComponent(Action preUpdate, Action postUpdate, bool active, bool visible) : base(active, visible) {
+        public UpdateWrappingComponent(Action preUpdate, Action postUpdate) : base(false, false) {
             PreUpdate = preUpdate;
             PostUpdate = postUpdate;
         }
