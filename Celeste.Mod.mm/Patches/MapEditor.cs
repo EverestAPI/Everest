@@ -85,7 +85,7 @@ namespace Celeste.Editor {
             bool customRespawnPoint = kbState.IsKeyDown(Keys.LeftShift) || kbState.IsKeyDown(Keys.RightShift);
 
             Session session;
-            if (createSession) {
+            if (createSession || CurrentSession == null) {
                 if (AreaData.GetCheckpoint(area, level.Name) != null) {
                     session = new Session(area, level.Name) {StartCheckpoint = null};
                 } else {
