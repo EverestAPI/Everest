@@ -832,17 +832,21 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Brtrue, branchCustomToSetup);
 
             // Allow multiple comma separated tags
-            OpCode argOpcode = OpCodes.Ldarg_1;
+            int matches = 0;
             while (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdstr("tag"), instr => instr.MatchCallvirt("Celeste.BinaryPacker/Element", "HasAttr"))) {
                 cursor.Index++; // move past the branch
                 cursor.RemoveRange(8); // remove old code
 
-                cursor.Emit(argOpcode); // child
+                cursor.Emit(matches switch {
+                    0 => OpCodes.Ldarg_1, // child
+                    1 => OpCodes.Ldarg_2, // above
+                    _ => throw new Exception($"Incorrect number of matches for HasAttr(\"tag\"): {matches}")
+                }); // child
                 cursor.Emit(OpCodes.Ldloc_0); // backdrop
 
                 cursor.Emit(OpCodes.Call, m_ParseTags);
 
-                argOpcode = OpCodes.Ldarg_2;
+                matches++;
             }
         }
 
