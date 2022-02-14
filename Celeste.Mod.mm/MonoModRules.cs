@@ -840,13 +840,16 @@ namespace MonoMod {
                 cursor.Emit(matches switch {
                     0 => OpCodes.Ldarg_1, // child
                     1 => OpCodes.Ldarg_2, // above
-                    _ => throw new Exception($"Incorrect number of matches for HasAttr(\"tag\"): {matches}")
+                    _ => throw new Exception($"Too many of matches for HasAttr(\"tag\"): {matches}")
                 }); // child
                 cursor.Emit(OpCodes.Ldloc_0); // backdrop
 
                 cursor.Emit(OpCodes.Call, m_ParseTags);
 
                 matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
             }
         }
 
