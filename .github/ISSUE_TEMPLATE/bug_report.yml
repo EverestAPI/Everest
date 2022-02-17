@@ -1,0 +1,83 @@
+name: Bug Report
+description: Report an issue with Everest.
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Thanks for reporting a bug!
+  - type: markdown
+    attributes:
+      value: '## Please confirm:'
+  - type: input
+    attributes:
+      label: My mods and Everest install are up to date
+      placeholder: yes/no
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: I have recreated the bug with only Everest OR a minimum number of mods enabled
+      placeholder: yes/no
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe the bug
+      description: A clear and concise description of the bug
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Provide a description, screenshots, video, and/or map containing the issue
+      placeholder: |
+        1.
+        2.
+        3.
+        ...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+      description: A clear description of what you expected to happen instead
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Operating System
+      placeholder: e.g. Windows 10
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Everest Version
+      placeholder: e.g. 3205
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Mods required to reproduce
+      placeholder: |
+        - SomeHelper 1.0.0
+        - SomeOtherHelper 1.1.0
+        -
+        -
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: |
+        Add any other context about the problem here.
+
+        Make sure to upload any game logs (`log.txt`) or crash reports (`error_log.txt`).
+        :warning: If you have restarted your game since the crash, your `log.txt` will have been reset. Everest will automatically store past logs in the LogHistory folder, which is also in your Celeste folder.
+        :warning: Log files may contain sensitive data like your username, please check and remove them before you upload the log.
+
+        **Tip: You can attach images or log files by clicking this area to highlight it and then dragging files in.**
+    validations:
+      required: false
+
