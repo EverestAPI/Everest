@@ -1,4 +1,7 @@
 contact_links:
+  - name: Everest Modding Wiki
+    url: https://github.com/EverestAPI/Resources/wiki
+    about: Everest modding resources.
   - name: Celeste Community Discord
     url: https://discord.gg/celeste
     about: Ask for help here.
