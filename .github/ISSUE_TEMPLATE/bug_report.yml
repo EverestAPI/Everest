@@ -10,16 +10,16 @@ body:
   - type: markdown
     attributes:
       value: '## Please confirm:'
-  - type: input
+  - type: dropdown
     attributes:
       label: My mods and Everest install are up to date
-      placeholder: yes/no
+      options: ['Yes', 'No']
     validations:
       required: true
-  - type: input
+  - type: dropdown
     attributes:
       label: I have recreated the bug with only Everest OR a minimum number of mods enabled
-      placeholder: yes/no
+      options: ['Yes', 'No']
     validations:
       required: true
   - type: textarea

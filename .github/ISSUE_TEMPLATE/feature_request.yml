@@ -8,10 +8,10 @@ body:
       value: |
         # Thanks for suggesting your idea!
         Please keep in mind that adding new entities or features to the game is almost always better suited for a separate mod.
-  - type: input
+  - type: dropdown
     attributes:
       label: I am planning on implementing this myself
-      placeholder: yes/no
+      options: ['Yes', 'No']
     validations:
       required: true
   - type: textarea
