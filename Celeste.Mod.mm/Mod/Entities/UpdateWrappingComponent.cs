@@ -11,10 +11,10 @@ namespace Celeste.Mod.Entities {
     /// </summary>
     public class UpdateWrappingComponent : Component {
 
-        public Action PreUpdate;
-        public Action PostUpdate;
+        public Action<Entity> PreUpdate;
+        public Action<Entity> PostUpdate;
 
-        public UpdateWrappingComponent(Action preUpdate, Action postUpdate) : base(false, false) {
+        public UpdateWrappingComponent(Action<Entity> preUpdate, Action<Entity> postUpdate) : base(false, false) {
             PreUpdate = preUpdate;
             PostUpdate = postUpdate;
         }

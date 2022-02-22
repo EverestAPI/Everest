@@ -18,14 +18,14 @@ namespace Monocle {
         internal void UpdatePreceder() {
             foreach (Component _component in Components) {
                 if(_component is UpdateWrappingComponent component)
-                    component.PreUpdate?.Invoke();
+                    component.PreUpdate?.Invoke(this);
             }
         }
 
         internal void UpdateFinalizer() {
             foreach (Component _component in Components) {
                 if (_component is UpdateWrappingComponent component)
-                    component.PostUpdate?.Invoke();
+                    component.PostUpdate?.Invoke(this);
             }
         }
     }
