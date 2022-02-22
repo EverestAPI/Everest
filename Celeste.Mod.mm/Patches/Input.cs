@@ -12,6 +12,7 @@ namespace Celeste {
         // Celeste 1.3.3.X introduced DemoDash, 1.3.3.19 renamed it to CrouchDash
         [MonoModLinkFrom("Monocle.VirtualButton Celeste.Input.DemoDash")]
         public static VirtualButton CrouchDash;
+        public static VirtualJoystick Feather;
 
         public static extern void orig_Initialize();
         public static void Initialize() {
@@ -26,6 +27,7 @@ namespace Celeste {
         public static extern void orig_Deregister();
         public static void Deregister() {
             orig_Deregister();
+            Feather?.Deregister();
 
             foreach (EverestModule mod in Everest._Modules)
                 mod.OnInputDeregister();
