@@ -50,7 +50,7 @@ namespace MonoMod {
                 enumeratorType = enumeratorCtor.DeclaringType.SafeResolve();
                 // enumerator type should be in same class as the source method and implements IEnumerator,
                 // its declaring type or itself should have CompilerGenerated attribute
-                if (enumeratorType == null || enumeratorType.DeclaringType != method.DeclaringType || !enumeratorType.IsCompilerGeneratorEnumerator()) {
+                if (enumeratorType == null || enumeratorType.DeclaringType != method.DeclaringType || !enumeratorType.IsCompilerGeneratedEnumerator()) {
                     return;
                 }
                 enumeratorMoveNext = enumeratorType.FindMethod("System.Boolean MoveNext()", simple: true);
@@ -62,7 +62,7 @@ namespace MonoMod {
             return matched ? enumeratorMoveNext : null;
         }
 
-        private static bool IsCompilerGeneratorEnumerator(this TypeDefinition type) {
+        public static bool IsCompilerGeneratedEnumerator(this TypeDefinition type) {
             if (type == null || !type.IsCompilerGeneratedOrIsInCompilerGeneratedClass() || type.DeclaringType == null) {
                 return false;
             }
@@ -75,14 +75,14 @@ namespace MonoMod {
             return false;
         }
 
-        private static bool IsCompilerGeneratedOrIsInCompilerGeneratedClass(this TypeDefinition type) {
+        public static bool IsCompilerGeneratedOrIsInCompilerGeneratedClass(this TypeDefinition type) {
             if (type.IsCompilerGenerated()) {
                 return true;
             }
             return type.DeclaringType?.IsCompilerGenerated() ?? false;
         }
 
-        private static bool IsCompilerGenerated(this TypeDefinition type) {
+        public static bool IsCompilerGenerated(this TypeDefinition type) {
             return type.HasCustomAttribute("System.Runtime.CompilerServices.CompilerGeneratedAttribute");
         }
 

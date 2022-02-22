@@ -2267,6 +2267,24 @@ namespace MonoMod {
             cursor.Next.Operand = fontMap;
         }
 
+        /// <summary>
+        /// Fix ILSpy unable to decompile enumerator after MonoMod patching<br />
+        /// (<code>yield-return decompiler failed: Unexpected instruction in Iterator.Dispose()</code>)
+        /// </summary>
+        public static void FixEnumeratorDecompile(TypeDefinition type) {
+            foreach (MethodDefinition method in type.Methods) {
+                new ILContext(method).Invoke(il => {
+                    ILCursor cursor = new ILCursor(il);
+                    while (cursor.TryGotoNext(instr => instr.MatchCallvirt(out MethodReference m) &&
+                        (m.Name is "System.Collections.IEnumerable.GetEnumerator" or "System.IDisposable.Dispose" ||
+                            m.Name.StartsWith("<>m__Finally")))
+                    ) {
+                        cursor.Next.OpCode = OpCodes.Call;
+                    }
+                });
+            }
+        }
+
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
             PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
@@ -2283,6 +2301,9 @@ namespace MonoMod {
         }
 
         private static void PostProcessType(MonoModder modder, TypeDefinition type) {
+            if (type.IsCompilerGeneratedEnumerator()) {
+                FixEnumeratorDecompile(type);
+            }
             foreach (MethodDefinition method in type.Methods) {
                 method.FixShortLongOps();
             }
