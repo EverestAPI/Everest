@@ -811,6 +811,7 @@ namespace MonoMod {
 
         public static void PatchBackdropParser(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_LoadCustomBackdrop = context.Method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
+            MethodDefinition m_ParseTags = context.Method.DeclaringType.FindMethod("System.Void ParseTags(Celeste.BinaryPacker/Element,Celeste.Backdrop)");
 
             ILCursor cursor = new ILCursor(context);
             // Remove soon-to-be-unneeded instructions
@@ -829,6 +830,27 @@ namespace MonoMod {
             cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchLdstr("tag"));
             Instruction branchCustomToSetup = cursors[0].Prev;
             cursor.Emit(OpCodes.Brtrue, branchCustomToSetup);
+
+            // Allow multiple comma separated tags
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdstr("tag"), instr => instr.MatchCallvirt("Celeste.BinaryPacker/Element", "HasAttr"))) {
+                cursor.Index++; // move past the branch
+                cursor.RemoveRange(8); // remove old code
+
+                cursor.Emit(matches switch {
+                    0 => OpCodes.Ldarg_1, // child
+                    1 => OpCodes.Ldarg_2, // above
+                    _ => throw new Exception($"Too many matches for HasAttr(\"tag\"): {matches}")
+                }); // child
+                cursor.Emit(OpCodes.Ldloc_0); // backdrop
+
+                cursor.Emit(OpCodes.Call, m_ParseTags);
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
         }
 
         public static void PatchLevelCanPause(ILContext il, CustomAttribute attrib) {
