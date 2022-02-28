@@ -13,6 +13,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_GameLoader : GameLoader {
@@ -184,5 +187,34 @@ namespace Celeste {
                 SaveData.Instance = null;
             }
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the GameLoader.IntroRoutine method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchGameLoaderIntroRoutine))]
+    class PatchGameLoaderIntroRoutineAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchGameLoaderIntroRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetNextScene = method.DeclaringType.FindMethod("Monocle.Scene _GetNextScene(Celeste.Overworld/StartMode,Celeste.HiresSnow)");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GetNextScene;
+                }
+            }
+        }
+
     }
 }

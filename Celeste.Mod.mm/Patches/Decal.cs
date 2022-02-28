@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
+using System;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -9,6 +10,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -158,5 +163,33 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Un-hardcode the range of the "Scared" decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
+    class PatchDecalUpdateAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchDecalUpdate(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_hideRange = context.Method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = context.Method.DeclaringType.FindField("showRange");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchLdcR4(32f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_hideRange);
+
+            cursor.GotoNext(instr => instr.MatchLdcR4(48f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_showRange);
+        }
+
     }
 }

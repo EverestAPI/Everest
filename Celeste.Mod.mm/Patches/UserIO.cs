@@ -10,6 +10,10 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Xml.Serialization;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     static class patch_UserIO {
@@ -183,6 +187,73 @@ namespace Celeste {
 
         public static T Load<T>(string path) where T : class
             => UserIO.Load<T>(path, false);
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the UserIO.SaveRoutine method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveRoutine))]
+    class PatchSaveRoutineAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches UserIO.Save to flush save data to disk after writing it.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
+    class PatchSaveDataFlushSavesAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
+                    instri++;
+                }
+
+                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
+                    instri++;
+
+                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
+                    instri++;
+                }
+            }
+        }
+
+        public static void PatchSaveDataFlushSaves(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(instr => instr.MatchCallvirt<Stream>("Write"));
+            c.Next.OpCode = OpCodes.Call;
+            c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlush");
+
+            // File.Copy(from, to, overwrite: true) => _saveAndFlushToFile(data, to)
+            c.GotoNext(instr => instr.MatchCall(typeof(File), "Copy"));
+            c.Index -= 3;
+
+            // replace "from" with "data"
+            c.Next.OpCode = OpCodes.Ldarg_1;
+            // skip to "overwrite: true" and remove it
+            c.Index += 2;
+            c.Remove();
+            // replace Files.Copy with _saveAndFlushToFile
+            c.Next.OpCode = OpCodes.Call;
+            c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlushToFile");
+        }
 
     }
 }

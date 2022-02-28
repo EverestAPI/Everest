@@ -5,6 +5,9 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
@@ -90,6 +93,59 @@ namespace Celeste {
                 // selection moved, so update the Y position of all file slots.
                 foreach (OuiFileSelectSlot slot in Slots) {
                     (slot as patch_OuiFileSelectSlot).ScrollTo(slot.IdlePosition.X, slot.IdlePosition.Y);
+                }
+            }
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the checks for OuiAssistMode to include a check for OuiFileSelectSlot.ISubmenu as well.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSubmenuChecks))]
+    class PatchOuiFileSelectSubmenuChecksAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchOuiFileSelectSubmenuChecks(MethodDefinition method, CustomAttribute attrib) {
+            TypeDefinition t_ISubmenu = method.Module.GetType("Celeste.OuiFileSelectSlot/ISubmenu");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            ILProcessor il = method.Body.GetILProcessor();
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count - 4; instri++) {
+                if (instrs[instri].OpCode == OpCodes.Brtrue_S
+                    && instrs[instri + 1].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 2].OpCode == OpCodes.Ldfld
+                    && instrs[instri + 3].MatchIsinst("Celeste.OuiAssistMode")) {
+                    // gather some info
+                    FieldReference field = (FieldReference) instrs[instri + 2].Operand;
+                    Instruction branchTarget = (Instruction) instrs[instri].Operand;
+
+                    // then inject another similar check for ISubmenu
+                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, field));
+                    instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
+                } else if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].OpCode == OpCodes.Ldfld
+                    && instrs[instri + 2].MatchIsinst("Celeste.OuiAssistMode")
+                    && instrs[instri + 3].OpCode == OpCodes.Brfalse_S) {
+                    // gather some info
+                    FieldReference field = (FieldReference) instrs[instri + 1].Operand;
+                    Instruction branchTarget = instrs[instri + 4];
+
+                    // then inject another similar check for ISubmenu
+                    instri++;
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, field));
+                    instrs.Insert(instri++, il.Create(OpCodes.Isinst, t_ISubmenu));
+                    instrs.Insert(instri++, il.Create(OpCodes.Brtrue_S, branchTarget));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                 }
             }
         }

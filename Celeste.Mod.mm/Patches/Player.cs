@@ -9,6 +9,10 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Player : Player {
@@ -216,6 +220,67 @@ namespace Celeste {
         /// </summary>
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigUpdate))]
+    class PatchPlayerOrigUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to only set the player Speed.X if not in the RedDash state.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerBeforeUpTransition))]
+    class PatchPlayerBeforeUpTransition : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
+            ILProcessor il = context.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count - 4; instri++) {
+                // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
+
+                // 0: ldarg.0
+                // 1: ldflda Celeste.Player::Speed
+                // 2: ldfld Vector2::Y
+                // 3: ldc.r4 -60
+                // 4: blt.un [instruction after if]
+                // 5: ldarg.0
+                // 6: call Player::_IsOverWater
+                // 7: brfalse [instruction after if]
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].MatchLdflda("Celeste.Player", "Speed")
+                    && instrs[instri + 2].MatchLdfld("Microsoft.Xna.Framework.Vector2", "Y")
+                    && instrs[instri + 3].MatchLdcR4(-60f)
+                    && instrs[instri + 4].OpCode == OpCodes.Blt_Un
+                ) {
+                    instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
+                    instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
+                }
+            }
+        }
+
+        public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_Player_StateMachine = context.Method.DeclaringType.FindField("StateMachine");
+            MethodDefinition m_StateMachine_get_State = f_Player_StateMachine.FieldType.Resolve().FindMethod("System.Int32 get_State()");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Player_StateMachine);
+            cursor.Emit(OpCodes.Callvirt, m_StateMachine_get_State);
+            cursor.Emit(OpCodes.Ldc_I4_5);
+            Instruction target = cursor.Clone().GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0, instr => instr.MatchLdfld("Celeste.Player", "StateMachine")).Next;
+            cursor.Emit(OpCodes.Beq_S, target);
+        }
 
     }
 }

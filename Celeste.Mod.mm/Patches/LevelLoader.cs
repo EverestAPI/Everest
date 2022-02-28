@@ -12,6 +12,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
@@ -158,6 +163,61 @@ namespace Celeste {
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelLoaderThread] // ... except for manually manipulating the method via MonoModRules
         private extern void LoadingThread();
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderThread))]
+    class PatchLevelLoaderThreadAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchLevelLoaderThread(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
+            FieldDefinition f_SubHudRenderer = t_Level.FindField("SubHudRenderer");
+            MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve().FindMethod("System.Void .ctor()");
+
+            // Add a local variable we'll use to store a SubHudRenderer object temporarily
+            VariableDefinition loc_SubHudRenderer_0 = new VariableDefinition(f_SubHudRenderer.FieldType);
+            context.Body.Variables.Add(loc_SubHudRenderer_0);
+
+            /*
+            We just want to add
+            this.Level.Add(this.Level.SubHudRenderer = new SubHudRenderer());
+            before
+            this.Level.Add(this.Level.HudRenderer = new HudRenderer());
+            */
+
+            ILCursor cursor = new ILCursor(context);
+            // Got to the point just before we want to add our code, making use of the Level objects loaded for the HudRenderer
+            cursor.GotoNext(instr => instr.MatchNewobj("Celeste.HudRenderer"));
+            // Retrieve methods we want to use from around the target instruction
+            MethodReference m_LevelLoader_get_Level = (MethodReference) cursor.Prev.Operand;
+            cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchCallvirt("Monocle.Scene", "Add"));
+            MethodReference m_Scene_Add = (MethodReference) cursors[0].Next.Operand;
+
+            // Load the new renderer onto the stack and duplicate it.
+            cursor.Emit(OpCodes.Newobj, ctor_SubHudRenderer);
+            cursor.Emit(OpCodes.Dup);
+            // Store one copy in a local variable for later
+            cursor.Emit(OpCodes.Stloc_S, loc_SubHudRenderer_0);
+            // Store the other copy in its field
+            cursor.Emit(OpCodes.Stfld, f_SubHudRenderer);
+            // Load the first copy back onto the stack
+            cursor.Emit(OpCodes.Ldloc_S, loc_SubHudRenderer_0);
+            // And add it to the scene
+            cursor.Emit(OpCodes.Callvirt, m_Scene_Add);
+
+            // We could have dup'd the pre-existing Level object, but this produces a cleaner decomp (replacing the Level objects we cannibalized)
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+        }
 
     }
 }

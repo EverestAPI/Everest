@@ -11,6 +11,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Mono.Cecil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 
 namespace Monocle {
     class patch_Commands : Commands {
@@ -471,6 +475,29 @@ namespace Monocle {
             public Action<string[]> Action;
             public string Help;
             public string Usage;
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches Commands.UpdateOpen to make key's repeat timer independent with time rate.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
+    class PatchCommandsUpdateOpenAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_Engine = MonoModRule.Modder.FindType("Monocle.Engine").Resolve();
+            MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("System.Single get_RawDeltaTime()");
+
+            while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall("Monocle.Engine", "get_DeltaTime"))) {
+                cursor.Next.Operand = m_get_RawDeltaTime;
+            }
         }
 
     }

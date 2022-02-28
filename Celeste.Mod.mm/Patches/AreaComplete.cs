@@ -11,6 +11,11 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_AreaComplete : AreaComplete {
@@ -184,5 +189,100 @@ namespace Celeste {
             }
             return Dialog.Clean(text);
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Slap a MapMetaCompleteScreen param at the end of the constructor and ldarg it right before newobj CompleteRenderer
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterAreaCompleteCtor))]
+    class PatchAreaCompleteCtorAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches AreaComplete.VersionNumberAndVariants to offset the version number when necessary.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchAreaCompleteVersionNumberAndVariants))]
+    class PatchAreaCompleteVersionNumberAndVariantsAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void RegisterAreaCompleteCtor(MethodDefinition method, CustomAttribute attrib) {
+            // Register it. Don't patch it directly as we require an explicit patching order.
+            AreaCompleteCtors.Add(method);
+        }
+
+        public static void PatchAreaCompleteCtor(MethodDefinition method) {
+            ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MonoModRule.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
+            method.Parameters.Add(paramMeta);
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+                MethodReference calling = instr.Operand as MethodReference;
+                string callingID = calling?.GetID();
+
+                // The matching CompleteRenderer .ctor has been added manually, thus manually relink to it.
+                if (instr.OpCode != OpCodes.Newobj ||
+                    callingID != "System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action)"
+                ) {
+                    continue;
+                }
+
+                instr.Operand = calling.DeclaringType.Resolve().FindMethod("System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action,Celeste.Mod.Meta.MapMetaCompleteScreen)");
+
+                instrs.Insert(instri++, il.Create(OpCodes.Ldarg, paramMeta));
+            }
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                MethodDefinition m_GetCustomCompleteScreenTitle = method.DeclaringType.FindMethod("System.String GetCustomCompleteScreenTitle()");
+
+                int textVariableIndex = 0;
+
+                /*
+                    // string text = Dialog.Clean("areacomplete_" + session.Area.Mode + (session.FullClear ? "_fullclear" : ""), null);
+                    IL_005D: ldstr     "areacomplete_"
+                    IL_0062: ldarg.1
+                    IL_0063: ldflda    valuetype Celeste.AreaKey Celeste.Session::Area
+                    ...
+                    IL_008B: ldnull
+                    IL_008C: call      string Celeste.Dialog::Clean(string, class Celeste.Language)
+                    IL_0091: stloc.1
+
+                    // Vector2 origin = new Vector2(960f, 200f);
+                    IL_0092: ldloca.s  V_2
+                    IL_0094: ldc.r4    960
+                    ...
+                */
+
+                // move the cursor to IL_0092 and find the variable index of "text"
+                cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Dialog", "Clean"),
+                    instr => instr.MatchStloc(out textVariableIndex) && il.Body.Variables[textVariableIndex].VariableType.FullName == "System.String");
+
+                // mark for later use
+                ILLabel target = cursor.MarkLabel();
+                // go back to IL_005D
+                cursor.GotoPrev(MoveType.Before, instr => instr.MatchLdstr("areacomplete_"));
+
+                // equivalent to "text = this.GetCustomCompleteScreenTitle()"
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Call, m_GetCustomCompleteScreenTitle);
+                cursor.Emit(OpCodes.Stloc_S, (byte) textVariableIndex);
+
+                // wrap the original text assignment code in "if (text == null)", fallback to original if no custom title in meta.yaml
+                cursor.Emit(OpCodes.Ldloc_S, (byte) textVariableIndex);
+                cursor.Emit(OpCodes.Brtrue_S, target.Target);
+            });
+        }
+
+        public static void PatchAreaCompleteVersionNumberAndVariants(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, instr => instr.MatchLdcR4(1020f));
+            c.Emit(OpCodes.Ldsfld, il.Method.DeclaringType.FindField("versionOffset"));
+            c.Emit(OpCodes.Add);
+        }
+
     }
 }

@@ -12,6 +12,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     public class patch_OuiFileSelectSlot : OuiFileSelectSlot {
@@ -287,5 +291,89 @@ namespace Celeste {
             tween.OnComplete = t => tween = null;
             tween.Start();
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// IL-patch the Render method for file select slots instead of reimplementing it,
+    /// to un-hardcode stamps.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFileSelectSlotRender))]
+    class PatchFileSelectSlotRenderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchFileSelectSlotRender(ILContext context, CustomAttribute attrib) {
+            TypeDefinition declaringType = context.Method.DeclaringType;
+            FieldDefinition f_maxStrawberryCount = declaringType.FindField("maxStrawberryCount");
+            FieldDefinition f_maxGoldenStrawberryCount = declaringType.FindField("maxGoldenStrawberryCount");
+            FieldDefinition f_maxCassettes = declaringType.FindField("maxCassettes");
+            FieldDefinition f_maxCrystalHeartsExcludingCSides = declaringType.FindField("maxCrystalHeartsExcludingCSides");
+            FieldDefinition f_maxCrystalHearts = declaringType.FindField("maxCrystalHearts");
+            FieldDefinition f_summitStamp = declaringType.FindField("summitStamp");
+            FieldDefinition f_farewellStamp = declaringType.FindField("farewellStamp");
+            FieldDefinition f_totalGoldenStrawberries = declaringType.FindField("totalGoldenStrawberries");
+            FieldDefinition f_totalHeartGems = declaringType.FindField("totalHeartGems");
+            FieldDefinition f_totalCassettes = declaringType.FindField("totalCassettes");
+
+            ILCursor cursor = new ILCursor(context);
+            // SaveData.TotalStrawberries replaced by SaveData.TotalStrawberries_Safe with MonoModLinkFrom
+            // Replace hardcoded ARB value with a field reference
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdcI4(175));
+            cursor.Prev.OpCode = OpCodes.Ldarg_0;
+            cursor.Emit(OpCodes.Ldfld, f_maxStrawberryCount); // SaveData.Areas replaced by SaveData.Areas_Safe with MonoModLinkFrom
+            // We want to replace `this.SaveData.Areas_Safe[7].Modes[0].Completed`
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_Areas_Safe"),
+                instr => instr.OpCode == OpCodes.Ldc_I4_7);
+            // Remove everything but the preceeding `this`
+            cursor.RemoveRange(8);
+            // Replace with `this.summitStamp`
+            cursor.Emit(OpCodes.Ldfld, f_summitStamp);
+
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalCassettes"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalCassettes);
+            // Replace hardcoded Cassettes value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCassettes);
+
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalHeartGems);
+            // Replace hardcoded HeartGems value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCrystalHeartsExcludingCSides);
+
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchLdfld("Celeste.SaveData", "TotalGoldenStrawberries"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalGoldenStrawberries);
+            // Replace hardcoded GoldenStrawberries value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxGoldenStrawberryCount);
+
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_TotalHeartGems"));
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Ldfld, f_totalHeartGems);
+            // Replace hardcoded HeartGems value with a field reference
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_maxCrystalHearts);
+
+            // SaveData.Areas replaced by SaveData.Areas_Safe with MonoModLinkFrom
+            // We want to replace `this.SaveData.Areas_Safe[10].Modes[0].Completed`
+            cursor.GotoNext(instr => instr.MatchLdfld(declaringType.FullName, "SaveData"),
+                instr => instr.MatchCallvirt("Celeste.SaveData", "get_Areas_Safe"),
+                instr => instr.MatchLdcI4(10));
+            // Remove everything but the preceeding `this`
+            cursor.RemoveRange(8);
+            // Replace with `this.farewellStamp`
+            cursor.Emit(OpCodes.Ldfld, f_farewellStamp);
+        }
+
     }
 }

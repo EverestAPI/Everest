@@ -6,6 +6,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Language : Language {
@@ -125,6 +129,47 @@ namespace Celeste {
 
 
             dict[key] = value;
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Language.LoadTxt method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadLanguage))]
+    class PatchLoadLanguageAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchLoadLanguage(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_GetLanguageText = context.Method.DeclaringType.FindMethod("System.Collections.Generic.IEnumerable`1<System.String> _GetLanguageText(System.String,System.Text.Encoding)");
+            MethodDefinition m_NewLanguage = context.Method.DeclaringType.FindMethod("Celeste.Language _NewLanguage()");
+            MethodDefinition m_SetItem = context.Method.DeclaringType.FindMethod("System.Void _SetItem(System.Collections.Generic.Dictionary`2<System.String,System.String>,System.String,System.String,Celeste.Language)");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("System.IO.File", "ReadLines"));
+            cursor.Next.Operand = m_GetLanguageText;
+
+            cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Language"));
+            cursor.Next.OpCode = OpCodes.Call;
+            cursor.Next.Operand = m_NewLanguage;
+
+            // Start again from the top
+            cursor.Goto(cursor.Instrs[0]);
+            int matches = 0;
+            while (cursor.TryGotoNext(instr => instr.MatchCallvirt("System.Collections.Generic.Dictionary`2<System.String,System.String>", "set_Item"))) {
+                matches++;
+                // Push the language object. Should always be stored in the first local var.
+                cursor.Emit(OpCodes.Ldloc_0);
+                // Replace the method call.
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = m_SetItem;
+            }
+            if (matches != 3) {
+                throw new Exception("Incorrect number of matches for language.Dialog.set_Item");
+            }
         }
 
     }

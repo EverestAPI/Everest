@@ -7,6 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+
 
 namespace Celeste {
     static class patch_Dialog {
@@ -238,6 +242,32 @@ namespace Celeste {
         /// <inheritdoc cref="patch_Dialog.CleanLevelSet(string)"/>
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Dialog.Load method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDialogLoader))]
+    class PatchDialogLoaderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchDialogLoader(MethodDefinition method, CustomAttribute attrib) {
+            // we can't use method.DeclaringType.FindMethod extension here because importing MonoMod.Utils causes ambiguous string.SpacedPascalCase above
+            MethodDefinition m_GetFiles = Utils.Extensions.FindMethod(method.DeclaringType, "System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.MatchCall("System.IO.Directory", "GetFiles")) {
+                    instr.Operand = m_GetFiles;
+                }
+            }
+        }
 
     }
 }

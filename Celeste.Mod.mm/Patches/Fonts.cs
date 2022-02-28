@@ -1,12 +1,17 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using System;
 using Celeste.Mod;
 using Monocle;
 using MonoMod;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     static class patch_Fonts {
@@ -49,5 +54,28 @@ namespace Celeste {
                 Load(fontToReload);
             }
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the Fonts.Prepare method to also include custom fonts.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchFontsPrepare))]
+    class PatchFontsPrepareAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchFontsPrepare(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                if (instrs[instri].MatchCall("System.IO.Directory", "GetFiles")) {
+                    instrs[instri].Operand = m_GetFiles;
+                }
+            }
+        }
+
     }
 }

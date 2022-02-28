@@ -8,6 +8,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -224,5 +228,77 @@ namespace Celeste {
             float mapNameSize = ActiveFont.Measure(Dialog.Clean(AreaData.Get(Area).Name)).X;
             return vanillaValue - Math.Max(0f, mapNameSize + vanillaValue - 490f);
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the SwapRoutine method in OuiChapterPanel instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchChapterPanelSwapRoutine))]
+    class PatchChapterPanelSwapRoutineAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches chapter panel rendering to allow for custom chapter cards.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelRender))]
+    class PatchOuiChapterPanelRenderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.HashSet`1<System.String> Celeste.SaveData::GetCheckpoints(Celeste.AreaKey)") {
+                    // Replace the method call.
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GetCheckpoints;
+                    instri++;
+                }
+            }
+        }
+
+        public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_ModCardTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModCardTexture(System.String)");
+            MethodDefinition m_FixTitleLength = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::_FixTitleLength(System.Single)");
+
+            ILCursor cursor = new ILCursor(context);
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("areaselect/card"))) {
+                // Move to before the string is loaded, but before the labels, so we can redirect break targets to a new instruction.
+                // Push this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                // Move after ldstr
+                cursor.Goto(cursor.Next, MoveType.After);
+                // Insert method call to modify the string.
+                cursor.Emit(OpCodes.Call, m_ModCardTexture);
+                matches++;
+            }
+            if (matches != 4) {
+                throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
+            }
+
+            cursor.Index = 0;
+            matches = 0;
+
+            // Resize the title if it does not fit.
+            while (cursor.TryGotoNext(instr => instr.MatchLdcR4(-60))) {
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Call, m_FixTitleLength);
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception("Incorrect number of matches for float -60f.");
+            }
+        }
+
     }
 }
