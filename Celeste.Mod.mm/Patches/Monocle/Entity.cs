@@ -15,14 +15,14 @@ namespace Monocle {
             Scene = null;
         }
 
-        internal void UpdatePreceder() {
+        internal void PreUpdate() {
             foreach (Component _component in Components) {
-                if(_component is UpdateWrappingComponent component)
+                if (_component is UpdateWrappingComponent component)
                     component.PreUpdate?.Invoke(this);
             }
         }
 
-        internal void UpdateFinalizer() {
+        internal void PostUpdate() {
             foreach (Component _component in Components) {
                 if (_component is UpdateWrappingComponent component)
                     component.PostUpdate?.Invoke(this);

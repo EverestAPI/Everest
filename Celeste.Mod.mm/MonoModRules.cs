@@ -2394,8 +2394,8 @@ namespace MonoMod {
 
         public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
-            MethodDefinition entity_UpdatePreceder = Entity.FindMethod("UpdatePreceder");
-            MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("UpdateFinalizer");
+            MethodDefinition entity_UpdatePreceder = Entity.FindMethod("PreUpdate");
+            MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("PostUpdate");
 
             ILCursor cursor = new ILCursor(context);
             ILLabel branch = null;
@@ -2403,7 +2403,7 @@ namespace MonoMod {
             cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
-            cursor.GotoNext(MoveType.AfterLabel, instr=>instr.MatchLdloca(0), i2 => i2.MatchCall(out MethodReference method) && method.Name == "MoveNext");
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloca(0), i2 => i2.MatchCall(out MethodReference method) && method.Name == "MoveNext");
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
             cursor.MarkLabel(branch);
