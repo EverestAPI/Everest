@@ -415,6 +415,14 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
     class PatchEmulatorConstructorAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the method to run UpdatePreceder and UpdateFinalizer
+    /// </summary>
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdate))]
+    class PatchEntityListUpdateAttribute : Attribute { }
+
+
     static class MonoModRules {
 
         static bool IsCeleste;
@@ -2420,6 +2428,24 @@ namespace MonoMod {
             cursor.Next.Operand = fontMap;
         }
 
+        public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
+            MethodDefinition entity_UpdatePreceder = Entity.FindMethod("PreUpdate");
+            MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("PostUpdate");
+
+            ILCursor cursor = new ILCursor(context);
+            ILLabel branch = null;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchBr(out branch));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloca(0), i2 => i2.MatchCall(out MethodReference method) && method.Name == "MoveNext");
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+            cursor.MarkLabel(branch);
+
+        }
+
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
             PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
@@ -2443,6 +2469,5 @@ namespace MonoMod {
             foreach (TypeDefinition nested in type.NestedTypes)
                 PostProcessType(modder, nested);
         }
-
     }
 }
