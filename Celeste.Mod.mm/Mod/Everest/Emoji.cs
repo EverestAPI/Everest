@@ -58,6 +58,42 @@ namespace Celeste.Mod {
         /// <param name="name">The emoji name.</param>
         /// <param name="emoji">The emoji texture.</param>
         public static void Register(string name, MTexture emoji) {
+            Register(name, emoji, ((patch_MTexture) emoji)?.ScaleFix ?? 1f);
+        }
+
+        /// <summary>
+        /// Register an emoji with scaling constraints.
+        /// </summary>
+        /// <param name="name">The emoji name.</param>
+        /// <param name="emoji">The emoji texture.</param>
+        /// <param name="targetWidth">The width to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
+        /// <param name="targetHeight">The height to render this emoji as. Adjusts the MTexture.ScaleFix as side-effect!</param>
+        public static void Register(string name, MTexture emoji, int targetWidth = 0, int targetHeight = 0) {
+            if (emoji == null) {
+                Register(name, emoji);
+                return;
+            }
+
+            float scaleFixW = targetWidth <= 0 ? 1f : targetWidth / (float) emoji.Width;
+            float scaleFixH = targetHeight <= 0 ? 1f : targetHeight / (float) emoji.Height;
+
+            if (targetWidth <= 0)
+                ((patch_MTexture) emoji).ScaleFix = scaleFixH;
+            else if (targetHeight <= 0)
+                ((patch_MTexture) emoji).ScaleFix = scaleFixW;
+            else
+                ((patch_MTexture) emoji).ScaleFix = System.Math.Min(scaleFixW, scaleFixH);
+
+            Register(name, emoji);
+        }
+
+        /// <summary>
+        /// Register an emoji.
+        /// </summary>
+        /// <param name="name">The emoji name.</param>
+        /// <param name="emoji">The emoji texture.</param>
+        /// <param name="scale">Scaling factor for the emoji spacing. Defaults to emoji.ScaleFix.</param>
+        public static void Register(string name, MTexture emoji, float scale) {
             if (!Initialized) {
                 Queue.Enqueue(new KeyValuePair<string, MTexture>(name, emoji));
                 return;
@@ -75,7 +111,7 @@ namespace Celeste.Mod {
             xml.SetAttr("height", emoji.Height);
             xml.SetAttr("xoffset", 0);
             xml.SetAttr("yoffset", 0);
-            xml.SetAttr("xadvance", emoji.Width);
+            xml.SetAttr("xadvance", (int) (emoji.Width * scale));
 
             int id = _Registered.IndexOf(name);
             if (id < 0) {

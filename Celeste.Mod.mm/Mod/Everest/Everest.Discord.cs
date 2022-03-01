@@ -40,6 +40,8 @@ namespace Celeste.Mod {
             public static void Disable() {
                 OnGameExit();
 
+                DiscordHandlers = new DiscordRpc.EventHandlers();
+
                 Events.Celeste.OnExiting -= OnGameExit;
                 Events.MainMenu.OnCreateButtons -= OnMainMenu;
                 Events.Level.OnLoadLevel -= OnLoadLevel;

@@ -201,7 +201,7 @@ namespace MiniInstaller {
 
         public static void WaitForGameExit() {
             if (!CanReadWrite(PathEverestExe)) {
-                LogLine("Celeste not read-writeable - waiting");
+                LogErr("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(5000);
             }
@@ -407,7 +407,7 @@ namespace MiniInstaller {
                 to.Load(xmlTo);
             } catch (FileNotFoundException e) {
                 LogLine(e.Message);
-                LogLine("Documentation combining aborted.");
+                LogErr("Documentation combining aborted.");
                 return;
             }
 

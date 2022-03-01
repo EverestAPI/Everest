@@ -409,6 +409,14 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
     class PatchEmulatorConstructorAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the method to run UpdatePreceder and UpdateFinalizer
+    /// </summary>
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdate))]
+    class PatchEntityListUpdateAttribute : Attribute { }
+
+
     static partial class MonoModRules {
 
         static bool IsCeleste;
@@ -680,7 +688,7 @@ namespace MonoMod {
 
             MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
             MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
-            
+
             FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
 
             Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
@@ -772,6 +780,7 @@ namespace MonoMod {
 
         public static void PatchBackdropParser(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_LoadCustomBackdrop = context.Method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
+            MethodDefinition m_ParseTags = context.Method.DeclaringType.FindMethod("System.Void ParseTags(Celeste.BinaryPacker/Element,Celeste.Backdrop)");
 
             ILCursor cursor = new ILCursor(context);
             // Remove soon-to-be-unneeded instructions
@@ -790,6 +799,27 @@ namespace MonoMod {
             cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchLdstr("tag"));
             Instruction branchCustomToSetup = cursors[0].Prev;
             cursor.Emit(OpCodes.Brtrue, branchCustomToSetup);
+
+            // Allow multiple comma separated tags
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdstr("tag"), instr => instr.MatchCallvirt("Celeste.BinaryPacker/Element", "HasAttr"))) {
+                cursor.Index++; // move past the branch
+                cursor.RemoveRange(8); // remove old code
+
+                cursor.Emit(matches switch {
+                    0 => OpCodes.Ldarg_1, // child
+                    1 => OpCodes.Ldarg_2, // above
+                    _ => throw new Exception($"Too many matches for HasAttr(\"tag\"): {matches}")
+                }); // child
+                cursor.Emit(OpCodes.Ldloc_0); // backdrop
+
+                cursor.Emit(OpCodes.Call, m_ParseTags);
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
         }
 
         public static void PatchLevelCanPause(ILContext il, CustomAttribute attrib) {
@@ -1087,7 +1117,7 @@ namespace MonoMod {
             }
             if (matches != 3)
                 throw new Exception("Incorrect number of matches for language.Dialog.set_Item");
-            
+
         }
 
         public static void PatchInitMMSharedData(MethodDefinition method, CustomAttribute attrib) {
@@ -1769,7 +1799,7 @@ namespace MonoMod {
 
             // Start again from the top and retrieve the Bounds instead of the entity (but only up to a certain point)
             cursor.Goto(0);
-            for (int i = 0;i<10;i++) {
+            for (int i = 0; i < 10; i++) {
                 cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ldloc_3);
                 cursor.Prev.OpCode = OpCodes.Ldloca_S;
                 cursor.Prev.Operand = v_Bounds;
@@ -1834,6 +1864,7 @@ namespace MonoMod {
 
         public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_ModCardTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModCardTexture(System.String)");
+            MethodDefinition m_FixTitleLength = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::_FixTitleLength(System.Single)");
 
             ILCursor cursor = new ILCursor(context);
             int matches = 0;
@@ -1849,6 +1880,19 @@ namespace MonoMod {
             }
             if (matches != 4)
                 throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
+
+            cursor.Index = 0;
+            matches = 0;
+
+            // Resize the title if it does not fit.
+            while (cursor.TryGotoNext(instr => instr.MatchLdcR4(-60))) {
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Call, m_FixTitleLength);
+                matches++;
+            }
+            if (matches != 2)
+                throw new Exception("Incorrect number of matches for float -60f.");
         }
 
         public static void PatchGoldenBlockStaticMovers(ILContext context, CustomAttribute attrib) {
@@ -2265,6 +2309,24 @@ namespace MonoMod {
             // devs forgot to press shift when typing "$" for some reason
             fontMap = fontMap.Replace("#4%", "#$%");
             cursor.Next.Operand = fontMap;
+        }
+
+        public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
+            MethodDefinition entity_UpdatePreceder = Entity.FindMethod("PreUpdate");
+            MethodDefinition entity_UpdateFinalizer = Entity.FindMethod("PostUpdate");
+
+            ILCursor cursor = new ILCursor(context);
+            ILLabel branch = null;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchBr(out branch));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStloc(1));
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdatePreceder);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdloca(0), i2 => i2.MatchCall(out MethodReference method) && method.Name == "MoveNext");
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
+            cursor.MarkLabel(branch);
+
         }
 
         /// <summary>

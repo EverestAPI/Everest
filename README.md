@@ -30,18 +30,11 @@ For information about mod development, check out the [Everest Wiki](https://gith
 - Copy everything in `MiniInstaller\bin\Debug` and `Celeste.Mod.mm\bin\Debug` to your Celeste directory
 - Run MiniInstaller.exe
 
-### macOS / Linux (no Nix)
+### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
 - Build all
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
-    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `xbuild`
+    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet build`
 - Copy everything in `MiniInstaller/bin/Debug` and `Celeste.Mod.mm/bin/Debug` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
 - Run `mono MiniInstaller.exe`
-
-### Nix
-**Note:** At the time of writing, no member of the Everest Team is using Nix.
-- Run `nix-env -f . -iA everest` in the Everest repo
-- Wait for it to install
-- Run `miniinstaller ~/Celeste`, where `~/Celeste` is your Celeste path.
-    - **`miniinstaller` is a *wrapper* over the MiniInstaller.exe in the other methods.**

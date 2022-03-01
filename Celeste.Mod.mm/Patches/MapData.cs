@@ -208,6 +208,11 @@ namespace Celeste {
             return null;
         }
 
+        public static void ParseTags(BinaryPacker.Element child, Backdrop backdrop) {
+            foreach (string tag in child.Attr("tag").Split(',')) {
+                backdrop.Tags.Add(tag);
+            }
+        }
     }
     public static class MapDataExt {
 

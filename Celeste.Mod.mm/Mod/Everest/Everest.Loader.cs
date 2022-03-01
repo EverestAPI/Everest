@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Ionic.Zip;
 using MonoMod.Utils;
 using System;
@@ -474,6 +475,8 @@ namespace Celeste.Mod {
                 if (meta == null)
                     return;
 
+                using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
+
                 // Add an AssemblyResolve handler for all bundled libraries.
                 AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
 
@@ -682,7 +685,17 @@ namespace Celeste.Mod {
             /// </summary>
             /// <param name="dep">Dependency to check for. Name and Version will be checked.</param>
             /// <returns>True if the dependency has already been loaded by Everest, false otherwise.</returns>
-            public static bool DependencyLoaded(EverestModuleMetadata dep) {
+            public static bool DependencyLoaded(EverestModuleMetadata dep) =>
+                TryGetDependency(dep, out EverestModule _);
+
+            /// <summary>
+            /// Fetch a dependency if it is loaded.
+            /// Can be used by mods manually to f.e. activate / disable functionality.
+            /// </summary>
+            /// <param name="dep">Dependency to check for. Name and Version will be checked.</param>
+            /// <param name="module">EverestModule for the dependency if found, null if not.</param>
+            /// <returns>True if the dependency has already been loaded by Everest, false otherwise.</returns>
+            public static bool TryGetDependency(EverestModuleMetadata dep, out EverestModule module) {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;
 
@@ -693,10 +706,13 @@ namespace Celeste.Mod {
                             continue;
 
                         Version version = meta.Version;
-                        return VersionSatisfiesDependency(depVersion, version);
+                        if (VersionSatisfiesDependency(depVersion, version)) {
+                            module = other;
+                            return true;
+                        }
                     }
                 }
-
+                module = null;
                 return false;
             }
 
