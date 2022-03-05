@@ -61,7 +61,7 @@ Content added *must not* change the functionality of the base game, or change an
 While many mods also make use of non-public code it is not as important to maintain backwards compatibility for it.
 
 New features should only be added to improve or un-hardcode vanilla features, especially for general use in code mods (f.e. [StrawberryRegistry](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Registry/StrawberryRegistry.cs), [CustomNPC](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Mod/Entities/CustomNPC.cs), [Custom Events](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/Patches/EventTrigger.cs)).  
-Gameplay mechanics, entities, and other features not present in the base game are usually better suited for a mod.
+Gameplay mechanics, entities, and other features not present in the base game are usually better suited for a mod, although some exceptions will be made on a case by case basis.
 
 ## Patching
 As with in adding content, patches *must not* change the functionality of the base game, or change any public API.
@@ -86,7 +86,7 @@ public void DoThing(int val) {
 ```
 
 There are a few attributes that can be applied to members of the class with different effects:
-- `[MonoModIgnore]` ignore this member, do not patch it.
+- `[MonoModIgnore]` ignore this member, do not patch it except for MonoMod custom attributes.
 - `[MonoModConstructor]` treat this method as a constructor - [why this is needed](https://github.com/MonoMod/MonoMod/issues/51#issuecomment-496115932). 
 - `[MonoModReplace]` replace this method entirely, do not generate an `orig_` method.
 
