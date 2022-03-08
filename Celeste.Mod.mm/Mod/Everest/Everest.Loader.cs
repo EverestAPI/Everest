@@ -745,6 +745,10 @@ namespace Celeste.Mod {
 
             private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
                 => (sender, args) => {
+                    EverestModule module = _Modules.FirstOrDefault(module => module.Metadata.Name == meta.Name);
+                    if (module is not null)
+                        return module.GetType().Assembly;
+
                     AssemblyName name = args?.Name == null ? null : new AssemblyName(args.Name);
                     if (string.IsNullOrEmpty(name?.Name))
                         return null;
