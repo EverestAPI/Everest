@@ -34,6 +34,16 @@ namespace Celeste.Mod {
             public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
 
             /// <summary>
+            /// The path to the Everest /Mods/temperalblacklist.txt file.
+            /// </summary>
+            public static string PathTemperalBlacklist { get; internal set; }
+            internal static string NameTemperalBlacklist;
+            internal static List<string> _TemperalBlacklist;
+            /// <summary>
+            /// The currently loaded mod whitelist.
+            /// </summary>
+            public static ReadOnlyCollection<string> TemperalBlacklist => _TemperalBlacklist?.AsReadOnly();
+            /// <summary>
             /// The path to the Everest /Mods/whitelist.txt file.
             /// </summary>
             public static string PathWhitelist { get; internal set; }
@@ -109,6 +119,9 @@ namespace Celeste.Mod {
 
             public static bool AutoLoadNewMods { get; internal set; }
 
+            public static bool ShouldLoadFile(string file)
+                => !Blacklist.Contains(file) && !TemperalBlacklist.Contains(file) && (Whitelist == null || Whitelist.Contains(file));
+
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
@@ -121,6 +134,12 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("ExampleFolder");
                         writer.WriteLine("SomeMod.zip");
+                    }
+                }
+                if (!string.IsNullOrEmpty(NameTemperalBlacklist)) {
+                    PathTemperalBlacklist = Path.Combine(PathMods, NameTemperalBlacklist);
+                    if (File.Exists(PathTemperalBlacklist)) {
+                        _TemperalBlacklist = File.ReadAllLines(PathTemperalBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
                 }
 
@@ -161,9 +180,7 @@ namespace Celeste.Mod {
                 string[] files = Directory.GetFiles(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
-                    if (!file.EndsWith(".zip") || _Blacklist.Contains(file))
-                        continue;
-                    if (_Whitelist != null && !_Whitelist.Contains(file))
+                    if (!file.EndsWith(".zip") || !ShouldLoadFile(file))
                         continue;
                     LoadZip(Path.Combine(PathMods, file));
                 }
@@ -171,9 +188,7 @@ namespace Celeste.Mod {
                 files = Directory.GetDirectories(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
-                    if (file == "Cache" || _Blacklist.Contains(file))
-                        continue;
-                    if (_Whitelist != null && !_Whitelist.Contains(file))
+                    if (file == "Cache" || !ShouldLoadFile(file))
                         continue;
                     LoadDir(Path.Combine(PathMods, file));
                 }
