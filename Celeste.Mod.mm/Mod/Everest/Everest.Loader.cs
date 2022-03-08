@@ -120,7 +120,7 @@ namespace Celeste.Mod {
             public static bool AutoLoadNewMods { get; internal set; }
 
             public static bool ShouldLoadFile(string file)
-                => !Blacklist.Contains(file) && !TemperalBlacklist.Contains(file) && (Whitelist == null || Whitelist.Contains(file));
+                => !Blacklist.Contains(file) && (TemperalBlacklist == null || !TemperalBlacklist.Contains(file)) && (Whitelist == null || Whitelist.Contains(file));
 
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
