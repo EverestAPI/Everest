@@ -484,6 +484,7 @@ namespace Celeste.Mod {
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
                     bool returnEarly = false;
+                    string dllDirectory = Path.GetDirectoryName(meta.DLL);
                     using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                         foreach (ZipEntry entry in zip.Entries) {
                             string entryName = entry.FileName.Replace('\\', '/');
@@ -492,7 +493,7 @@ namespace Celeste.Mod {
                                 using MemoryStream stream = entry.ExtractStream();
                                 if (entryName == meta.DLL)
                                     asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
-                                else // immediately load any other libraries to avoid reading zip files over and over again later
+                                else if (entryName.StartsWith(dllDirectory)) // immediately load any other libraries to avoid reading zip files over and over again later
                                     Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(entryName), stream);
                             }
 
