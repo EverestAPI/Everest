@@ -38,3 +38,11 @@ For information about mod development, check out the [Everest Wiki](https://gith
 - Copy everything in `MiniInstaller/bin/Debug` and `Celeste.Mod.mm/bin/Debug` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
 - Run `mono MiniInstaller.exe`
+
+## Contributing
+Contributions of any kind are welcome, and a guide on how to contribute effectively to the Everest project is available [here](./CONTRIBUTING.md).
+Make sure to join the discussion in the [Celeste Discord](https://discord.gg/6qjaePQ), and feel free to ask any questions you have there as well.
+
+### Other Ways To Contribute
+This project is created, improved, and maintained entirely by volunteers.
+If you would like to show your support for this project, consider donating to one or more of its contributors.
