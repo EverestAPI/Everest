@@ -586,7 +586,7 @@ namespace Celeste.Mod {
                         }
                     }
                 }
-                
+
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
                 if (!foundModule)
                     Logger.Log(LogLevel.Warn, "loader", "Assembly doesn't contain an EverestModule!");
@@ -767,7 +767,7 @@ namespace Celeste.Mod {
                     if (!string.IsNullOrEmpty(meta.PathDirectory)) {
                         string filePath = path;
                         if (!File.Exists(filePath))
-                            path = Path.Combine(meta.PathDirectory, filePath);
+                            filePath = Path.Combine(meta.PathDirectory, filePath);
                         if (File.Exists(filePath))
                             using (FileStream stream = File.OpenRead(filePath))
                                 return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
