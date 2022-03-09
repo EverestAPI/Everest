@@ -487,9 +487,13 @@ namespace Celeste.Mod {
                     using (ZipFile zip = new ZipFile(meta.PathArchive)) {
                         foreach (ZipEntry entry in zip.Entries) {
                             string entryName = entry.FileName.Replace('\\', '/');
-                            if (entryName == meta.DLL) {
-                                using (MemoryStream stream = entry.ExtractStream())
+
+                            if (Path.GetExtension(entryName) == ".dll") {
+                                using MemoryStream stream = entry.ExtractStream();
+                                if (entryName == meta.DLL)
                                     asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
+                                else // immediately load any other libraries to avoid reading zip files over and over again later
+                                    Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(entryName), stream);
                             }
 
                             if (entryName == "main.lua") {
@@ -745,10 +749,6 @@ namespace Celeste.Mod {
 
             private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
                 => (sender, args) => {
-                    EverestModule module = _Modules.FirstOrDefault(module => module.Metadata.Name == meta.Name);
-                    if (module is not null)
-                        return module.GetType().Assembly;
-
                     AssemblyName name = args?.Name == null ? null : new AssemblyName(args.Name);
                     if (string.IsNullOrEmpty(name?.Name))
                         return null;
@@ -756,17 +756,6 @@ namespace Celeste.Mod {
                     string path = name.Name + ".dll";
                     if (!string.IsNullOrEmpty(meta.DLL))
                         path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
-
-                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                        string zipPath = path.Replace('\\', '/');
-                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                            foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName == zipPath)
-                                    using (MemoryStream stream = entry.ExtractStream())
-                                        return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
-                            }
-                        }
-                    }
 
                     if (!string.IsNullOrEmpty(meta.PathDirectory)) {
                         string filePath = path;
@@ -791,7 +780,6 @@ namespace Celeste.Mod {
                 }
                 */
             }
-
         }
     }
 }
