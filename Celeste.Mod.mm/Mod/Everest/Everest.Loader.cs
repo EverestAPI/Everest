@@ -493,7 +493,7 @@ namespace Celeste.Mod {
                                 if (entryName == meta.DLL)
                                     using (MemoryStream stream = entry.ExtractStream())
                                         asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
-                                else if (entryName.StartsWith(dllDirectory)) // immediately load any other libraries to avoid reading zip files over and over again later
+                                else if (Path.GetDirectoryName(entryName) == dllDirectory) // immediately load any other libraries to avoid reading zip files over and over again later
                                     using (MemoryStream stream = entry.ExtractStream())
                                         Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(entryName), stream);
                             }
