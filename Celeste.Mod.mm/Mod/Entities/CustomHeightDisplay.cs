@@ -105,7 +105,7 @@ namespace Celeste.Mod.Entities {
                 yield return null;
 
             float displayTimer = 0f;
-            while (Approach < Target && player != null && (!player.OnGround(1) || displayTimer < 0.5f) && !(displayTimer > 3f)) {
+            while (Approach < Target && player.Scene != null && (!player.OnGround(1) || displayTimer < 0.5f) && !(displayTimer > 3f)) {
                 displayTimer += Engine.DeltaTime;
                 yield return null;
             }
