@@ -205,13 +205,13 @@ namespace Monocle {
                     tabIndex = -1;
                     break;
             }
-            
+
             // all keys should be repeatable except for enter (and stuff not handled by this function)
             if (key != Keys.Enter && (repeatKey == null || repeatKey != key)) {
                 repeatKey = key;
                 repeatCounter = 0.0f;
             }
-            
+
             // handle main functionality
             switch (key) {
                 case Keys.Enter:
@@ -250,7 +250,7 @@ namespace Monocle {
                         }
                         tabIndex %= tabResults.Length;
                     }
-                    
+
                     // by this point tabIndex should be valid. perform a completion
                     currentText = tabPrefix + tabResults[tabIndex];
                     charIndex = currentText.Length;
@@ -305,6 +305,18 @@ namespace Monocle {
                         seekIndex = Calc.Clamp(seekIndex + hdir, -1, commandHistory.Count - 1);
                         currentText = seekIndex == -1 ? "" : commandHistory[seekIndex];
                         charIndex = currentText.Length;
+                    }
+                    break;
+                case Keys.C:
+                    if (ctrl && currentText.Length > 0) {
+                        TextInput.SetClipboardText(currentText);
+                    }
+                    break;
+                case Keys.V:
+                    if (ctrl && TextInput.GetClipboardText() is {Length: > 0} clipboard) {
+                        clipboard = clipboard.Replace("\n", " ");
+                        currentText = currentText.Substring(0, charIndex) + clipboard + currentText.Substring(charIndex);;
+                        charIndex = Math.Min(charIndex + clipboard.Length, currentText.Length);
                     }
                     break;
                 case Keys.F1:
