@@ -76,7 +76,7 @@ namespace Celeste.Mod.Helpers {
                     string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
                     Logger.Log("ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
                     if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
-                        availableUpdatesCatalog.Add(updateCatalog[metadata.Name], metadata);
+                        availableUpdatesCatalog[updateCatalog[metadata.Name]] = metadata;
                     }
                 }
             }
