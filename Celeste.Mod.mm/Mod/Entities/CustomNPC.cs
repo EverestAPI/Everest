@@ -114,6 +114,9 @@ namespace Celeste.Mod.Entities {
             if (onlyOnce && (dialogs.Length == 1 || Session.GetCounter(id + "DialogCounter") > dialogs.Length - 2)) {
                 (Scene as Level).Session.SetFlag("DoNotTalk" + id, true); // Sets flag to not load
             }
+            if (endLevel) {
+                (Scene as Level).RegisterAreaComplete();
+            }
             player.StateMachine.State = Player.StDummy;
             OnStart?.Invoke(Session.GetCounter(id + "DialogCounter"));
             Level.StartCutscene(OnTalkEnd);
