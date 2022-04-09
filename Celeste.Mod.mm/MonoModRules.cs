@@ -421,6 +421,12 @@ namespace MonoMod {
 
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdate))]
     class PatchEntityListUpdateAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to kill the player instead of crashing when exiting a feather in a solid.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
+    class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
 
 
     static class MonoModRules {
@@ -2444,6 +2450,22 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
             cursor.MarkLabel(branch);
 
+        }
+
+        public static void PatchPlayerStarFlyReturnToNormalHitbox(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+            MethodReference m_Vector2_get_Zero = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindProperty("Zero").GetMethod);
+            MethodReference m_Player_Die = MonoModRule.Modder.FindType("Celeste.Player").Resolve().FindMethod("Die");
+            
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("Could not get out of solids when exiting Star Fly State!"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Vector2_get_Zero);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ldc_I4_1);
+            cursor.Emit(OpCodes.Callvirt, m_Player_Die);
+            cursor.Emit(OpCodes.Pop);
+            cursor.RemoveRange(3);
         }
 
         public static void PostProcessor(MonoModder modder) {

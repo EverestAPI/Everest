@@ -201,6 +201,10 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerBeforeUpTransition]
         public new extern void BeforeUpTransition();
+
+        [MonoModIgnore]
+        [PatchPlayerStarFlyReturnToNormalHitbox]
+        private extern void StarFlyReturnToNormalHitbox();
     }
     public static class PlayerExt {
 
