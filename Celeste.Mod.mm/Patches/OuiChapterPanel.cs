@@ -11,6 +11,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using MonoMod.InlineRT;
 using MonoMod.Utils;
 
 namespace Celeste {
@@ -248,21 +249,26 @@ namespace MonoMod {
 
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
+            FieldDefinition f_Area = method.DeclaringType.FindField("Area");
+            MethodDefinition m_GetStartName = MonoModRule.Modder.FindType("Celeste.AreaData").Resolve().FindMethod("System.String GetStartName(Celeste.AreaKey)");
 
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.SaveData", "GetCheckpoints"));
+                cursor.Next.OpCode = OpCodes.Call;
+                cursor.Next.Operand = m_GetCheckpoints;
 
-                if (instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference)?.GetID() == "System.Collections.Generic.HashSet`1<System.String> Celeste.SaveData::GetCheckpoints(Celeste.AreaKey)") {
-                    // Replace the method call.
-                    instr.OpCode = OpCodes.Call;
-                    instr.Operand = m_GetCheckpoints;
-                    instri++;
-                }
-            }
+                cursor.GotoNext(instr => instr.MatchLdstr("overworld_start"));
+                cursor.Remove(); // Remove ldstr
+                cursor.Remove(); // Remove ldnull
+                // Load this.Area
+                cursor.Emit(OpCodes.Ldloc_1);
+                cursor.Emit(OpCodes.Ldfld, f_Area);
+                cursor.Next.Operand = m_GetStartName;
+            });
         }
 
         public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {

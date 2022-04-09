@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 using MonoMod;
 using Celeste.Mod.Entities;
 
@@ -11,22 +11,15 @@ namespace Monocle {
             private set;
         }
 
+        public event Action<Entity> PreUpdate;
+        public event Action<Entity> PostUpdate;
+
         internal void DissociateFromScene() {
             Scene = null;
         }
 
-        internal void PreUpdate() {
-            foreach (Component _component in Components) {
-                if (_component is UpdateWrappingComponent component)
-                    component.PreUpdate?.Invoke(this);
-            }
-        }
+        internal void _PreUpdate() => PreUpdate?.Invoke(this);
 
-        internal void PostUpdate() {
-            foreach (Component _component in Components) {
-                if (_component is UpdateWrappingComponent component)
-                    component.PostUpdate?.Invoke(this);
-            }
-        }
+        internal void _PostUpdate() => PostUpdate?.Invoke(this);
     }
 }

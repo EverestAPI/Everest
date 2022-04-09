@@ -451,6 +451,13 @@ namespace Celeste {
             return 0;
         }
 
+        public static string GetStartName(AreaKey area) {
+            string start_key = $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/start";
+            if (AreaData.Get(area).GetLevelSet() == "Celeste" || !Dialog.Has(start_key))
+                return Dialog.Clean("overworld_start");
+            return Dialog.Clean(start_key);
+        }
+
         public static extern string orig_GetCheckpointName(AreaKey area, string level);
         public static new string GetCheckpointName(AreaKey area, string level) {
             int split = level?.IndexOf('|') ?? -1;
