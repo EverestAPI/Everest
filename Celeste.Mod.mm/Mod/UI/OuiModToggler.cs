@@ -191,8 +191,8 @@ namespace Celeste.Mod.UI {
                     // remove the "loading..." message
                     menu.Remove(loading);
 
-                    // if there is a whitelist or temperal blacklist, warn the user that it will break those settings.
-                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemperalBlacklist != null) {
+                    // if there is a whitelist or temporary blacklist, warn the user that it will break those settings.
+                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {
                         menu.Add(restartMessage1 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_WHITELISTWARN")) { TextColor = Color.OrangeRed });
                     }
 
@@ -202,7 +202,7 @@ namespace Celeste.Mod.UI {
                     menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE_3")) { HeightExtra = 20f, TextColor = Color.Goldenrod });
 
                     // reduce spacing between the whitelist warning and the blacklist overwrite warning
-                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemperalBlacklist != null) {
+                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {
                         restartMessage1.HeightExtra = 30f;
                     }
 

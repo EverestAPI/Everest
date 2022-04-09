@@ -36,13 +36,13 @@ namespace Celeste.Mod {
             /// <summary>
             /// The path to the Everest /Mods/temperalblacklist.txt file.
             /// </summary>
-            public static string PathTemperalBlacklist { get; internal set; }
-            internal static string NameTemperalBlacklist;
-            internal static List<string> _TemperalBlacklist;
+            public static string PathTemporaryBlacklist { get; internal set; }
+            internal static string NameTemporaryBlacklist;
+            internal static List<string> _TemporaryBlacklist;
             /// <summary>
             /// The currently loaded mod whitelist.
             /// </summary>
-            public static ReadOnlyCollection<string> TemperalBlacklist => _TemperalBlacklist?.AsReadOnly();
+            public static ReadOnlyCollection<string> TemporaryBlacklist => _TemporaryBlacklist?.AsReadOnly();
             /// <summary>
             /// The path to the Everest /Mods/whitelist.txt file.
             /// </summary>
@@ -120,7 +120,7 @@ namespace Celeste.Mod {
             public static bool AutoLoadNewMods { get; internal set; }
 
             public static bool ShouldLoadFile(string file)
-                => !Blacklist.Contains(file) && (TemperalBlacklist == null || !TemperalBlacklist.Contains(file)) && (Whitelist == null || Whitelist.Contains(file));
+                => !Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)) && (Whitelist == null || Whitelist.Contains(file));
 
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
@@ -136,10 +136,10 @@ namespace Celeste.Mod {
                         writer.WriteLine("SomeMod.zip");
                     }
                 }
-                if (!string.IsNullOrEmpty(NameTemperalBlacklist)) {
-                    PathTemperalBlacklist = Path.Combine(PathMods, NameTemperalBlacklist);
-                    if (File.Exists(PathTemperalBlacklist)) {
-                        _TemperalBlacklist = File.ReadAllLines(PathTemperalBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
+                if (!string.IsNullOrEmpty(NameTemporaryBlacklist)) {
+                    PathTemporaryBlacklist = Path.Combine(PathMods, NameTemporaryBlacklist);
+                    if (File.Exists(PathTemporaryBlacklist)) {
+                        _TemporaryBlacklist = File.ReadAllLines(PathTemporaryBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
                 }
 
