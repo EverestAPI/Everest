@@ -15,6 +15,9 @@ namespace Celeste.Mod.Entities {
         }
 
         public override void OnBegin(Level level) {
+            if (endLevel) {
+                level.RegisterAreaComplete();
+            }
             Add(new Coroutine(Cutscene(level)));
         }
 
