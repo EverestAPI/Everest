@@ -1,7 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using Celeste.Mod;
 using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -14,15 +13,6 @@ using System.Linq;
 
 namespace Celeste.Editor {
     class patch_MapEditor : MapEditor {
-        private static readonly Lazy<bool> _OldSpeedrunToolInstalled = new Lazy<bool>(() =>
-            Everest.Modules.Any(module => {
-                EverestModuleMetadata meta = module?.Metadata;
-                if (meta == null || meta.Version == null)
-                    return false;
-                return meta.Name == "SpeedrunTool" && meta.Version <= new Version(1, 6, 7, 0);
-            })
-        );
-
         private const string ManualText = "Right Click:  Teleport to the room\n" +
                                           "Confirm:      Teleport to the room\n" +
                                           "Hold Control: Restart Chapter before teleporting\n" +
@@ -35,7 +25,6 @@ namespace Celeste.Editor {
 
         private const string MinimalManualText = "F5: Show/Hide instructions";
 
-        private static bool OldSpeedrunToolInstalled => _OldSpeedrunToolInstalled.Value;
         private static readonly int ZoomIntervalFrames = 6;
 
         private static Camera Camera;
@@ -120,11 +109,8 @@ namespace Celeste.Editor {
 
         public extern void orig_Update();
         public override void Update() {
-            // The following feature is from an older version of SpeedrunTool
-            if (!OldSpeedrunToolInstalled) {
-                MakeMapEditorBetter();
-            }
-            
+            MakeMapEditorBetter();
+
             // press F2 to center on current respawn
             if (MInput.Keyboard.Pressed(Keys.F2)) {
                 CenterViewOnCurrentRespawn();
@@ -156,15 +142,17 @@ namespace Celeste.Editor {
 
             // speed up camera when zoom out
             if (Camera != null) {
-                bool? mirrorMod = SaveData.Instance?.Assists.MirrorMode;
                 Vector2 origScrollPosition = new Vector2(Input.MoveX.Value, Input.MoveY.Value) * 300f * Engine.DeltaTime;
                 Camera.Position -= origScrollPosition;
 
-                Vector2 mirrorScrollPosition = new Vector2(origScrollPosition.X * (mirrorMod == true ? -1 : 1), origScrollPosition.Y);
+                int hDir = Input.MoveX.Inverted ? -1 : 1;
+                int vDir = Input.MoveY.Inverted ? -1 : 1;
+                Vector2 correctScrollPosition = new(origScrollPosition.X * hDir, origScrollPosition.Y * vDir);
+
                 if (Camera.Zoom < 6f) {
-                    Camera.Position += mirrorScrollPosition * (float) Math.Pow(1.3, 6 - Camera.Zoom);
+                    Camera.Position += correctScrollPosition * (float) Math.Pow(1.3, 6 - Camera.Zoom);
                 } else {
-                    Camera.Position += mirrorScrollPosition;
+                    Camera.Position += correctScrollPosition;
                 }
             }
 

@@ -898,7 +898,7 @@ namespace Celeste {
             }
         }
 
-        public int MaxAreaMode { 
+        public int MaxAreaMode {
             get {
                 if (Name == "Celeste") {
                     return (int) AreaMode.CSide;
@@ -908,7 +908,7 @@ namespace Celeste {
                 for (int i = 0; i <= MaxArea; i++) {
                     ModeProperties[] mode = AreaData.Areas[areaOffset + i].Mode;
                     foreach (ModeProperties modeProperties in mode) {
-                        if ((int) modeProperties.MapData.Area.Mode > maxAreaMode) {
+                        if (modeProperties != null && (int) modeProperties.MapData.Area.Mode > maxAreaMode) {
                             maxAreaMode = (int) modeProperties.MapData.Area.Mode;
                         }
                     }
