@@ -37,22 +37,21 @@ namespace Celeste {
             oui.Add(title);
             oui.UIs.Add(title);
 
-            MenuButton selected = null;
+            string selectedLabel = null;
             foreach (MenuButton button in buttons) {
-                if (!button.Selected)
+                if (!button.Selected || (button is MainMenuClimb))
                     continue;
-                selected = button;
+                selectedLabel = (button as MainMenuSmallButton)?.GetLabelName();
                 break;
             }
 
             CreateButtons();
 
-            if (selected is MainMenuClimb) {
+            if (selectedLabel == null) {
                 foreach (MenuButton button in buttons) {
                     button.SetSelected(button is MainMenuClimb);
                 }
             } else {
-                string selectedLabel = (selected as MainMenuSmallButton)?.GetLabelName();
                 foreach (MenuButton button in buttons) {
                     button.SetSelected((button as MainMenuSmallButton)?.GetLabelName() == selectedLabel);
                 }
