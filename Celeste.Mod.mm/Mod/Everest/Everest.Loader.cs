@@ -34,7 +34,7 @@ namespace Celeste.Mod {
             public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
 
             /// <summary>
-            /// The path to the Everest /Mods/temperalblacklist.txt file.
+            /// The path to the Everest /Mods/temporaryblacklist.txt file.
             /// </summary>
             public static string PathTemporaryBlacklist { get; internal set; }
             internal static string NameTemporaryBlacklist;
