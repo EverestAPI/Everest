@@ -302,6 +302,9 @@ namespace Celeste.Mod {
                 else if (arg == "--whitelist" && queue.Count >= 1)
                     Loader.NameWhitelist = queue.Dequeue();
 
+                else if (arg == "--blacklist" && queue.Count >= 1)
+                    Loader.NameTemporaryBlacklist = queue.Dequeue();
+
             }
         }
 

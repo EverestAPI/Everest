@@ -321,9 +321,7 @@ namespace Celeste.Mod {
             for (int i = 0; i < files.Length; i++) {
                 string file = files[i];
                 string name = file.Substring(Path.Length + 1);
-                if (!file.EndsWith(".bin") || Everest.Loader._Blacklist.Contains(name))
-                    continue;
-                if (Everest.Loader._Whitelist != null && !Everest.Loader._Whitelist.Contains(name))
+                if (!file.EndsWith(".bin") || !Everest.Loader.ShouldLoadFile(name))
                     continue;
                 Add("Maps/" + file.Substring(Path.Length + 1), new MapBinsInModsModAsset(this, file));
             }
