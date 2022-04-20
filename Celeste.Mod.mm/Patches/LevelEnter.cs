@@ -49,7 +49,7 @@ namespace Celeste {
                     ;
 
                     LevelEnterExt.ErrorMessage = message;
-                    LevelEnter.Go(new Session(new AreaKey(1)), false);
+                    LevelEnter.Go(new Session(AreaData.Get(session) == null ? new AreaKey(1) : session.Area), false);
                 }
             }
         }
