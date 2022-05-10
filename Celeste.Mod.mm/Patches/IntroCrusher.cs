@@ -26,6 +26,7 @@ namespace Celeste {
             levelFlags = data.Attr("flags");
 
             string tiletype = data.Attr("tiletype");
+            SurfaceSoundIndex = SurfaceIndex.TileToIndex[tiletype[0]];
             if (!string.IsNullOrEmpty(tiletype)) {
                 Remove(tilegrid);
                 Add(tilegrid = GFX.FGAutotiler.GenerateBox(tiletype[0], data.Width / 8, data.Height / 8).TileGrid);
