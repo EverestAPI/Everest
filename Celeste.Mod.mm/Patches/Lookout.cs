@@ -18,15 +18,9 @@ namespace Celeste {
         [PatchLookoutUpdate]
         public override extern void Update();
 
+        // keep for backward compatibility
         public override void SceneEnd(Scene scene) {
             base.SceneEnd(scene);
-            if (interacting) {
-                Player player = scene.Tracker.GetEntity<Player>();
-                if (player != null) {
-                    player.StateMachine.State = 0;
-                    player.Sprite.Visible = player.Hair.Visible = true;
-                }
-            }
         }
     }
 }
