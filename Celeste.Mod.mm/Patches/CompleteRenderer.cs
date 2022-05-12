@@ -117,8 +117,6 @@ namespace Celeste {
 
         public class ImageLayerNoXML : ImageLayer {
 
-            public bool Loop;
-
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
                 Position = meta.Position;
@@ -137,7 +135,7 @@ namespace Celeste {
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
                 Scale = meta.Scale;
-                Loop = meta.Loop;
+                ((patch_ImageLayer) (ImageLayer) this).Loop = meta.Loop;
             }
         }
 
