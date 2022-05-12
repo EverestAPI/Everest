@@ -1,4 +1,5 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 
 using Celeste.Mod.Meta;
@@ -97,7 +98,26 @@ namespace Celeste {
 
         }
 
+        public class patch_ImageLayer : ImageLayer {
+
+            public bool Loop;
+            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml) : base(offset, atlas, xml) {
+                //no-op
+            }
+
+            public extern void orig_ctor(Vector2 offset, Atlas atlas, XmlElement xml);
+
+            [MonoModConstructor]
+            public void ctor(Vector2 offset, Atlas atlas, XmlElement xml) {
+                orig_ctor(offset, atlas, xml);
+
+                Loop = xml.AttrBool("loop", true);
+            }
+        }
+
         public class ImageLayerNoXML : ImageLayer {
+
+            public bool Loop;
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
@@ -117,6 +137,7 @@ namespace Celeste {
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
                 Scale = meta.Scale;
+                Loop = meta.Loop;
             }
         }
 
