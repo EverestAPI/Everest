@@ -427,6 +427,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to support non-looping complete screen layers.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCompleteRendererImageLayerRender))]
+    class PatchCompleteRendererImageLayerRenderAttribute : Attribute { }
 
 
     static class MonoModRules {
@@ -2471,6 +2477,17 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Callvirt, m_Player_Die);
             cursor.Emit(OpCodes.Pop);
             cursor.RemoveRange(3);
+        }
+
+        public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
+            MethodReference m_ImageLayer_Render = MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer")
+                .Resolve().FindProperty("ImageIndex").GetMethod;
+            
+            ILCursor cursor = new(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_Render);
+            cursor.RemoveRange(8);
         }
 
         public static void PostProcessor(MonoModder modder) {

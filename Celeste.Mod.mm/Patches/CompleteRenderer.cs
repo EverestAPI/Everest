@@ -113,6 +113,29 @@ namespace Celeste {
 
                 Loop = xml.AttrBool("loop", true);
             }
+
+            private bool loopDone;
+            public int ImageIndex {
+                get {
+                    if (Loop) {
+                        return (int) (Frame % (float) Images.Count); // as in vanilla
+                    } else {
+                        if (loopDone) {
+                            return Images.Count - 1;
+                        } else {
+                            int index = (int) (Frame % (float) Images.Count);
+                            if (index == Images.Count - 1) {
+                                loopDone = true;
+                            }
+                            return index;
+                        }
+                    }
+                }
+            }
+
+            [MonoModIgnore]
+            [PatchCompleteRendererImageLayerRender]
+            public new extern void Render(Vector2 scroll);
         }
 
         public class ImageLayerNoXML : patch_ImageLayer {
