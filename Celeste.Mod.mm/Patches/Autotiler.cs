@@ -69,8 +69,8 @@ namespace Celeste {
                 ReadIntoCustomTemplate(data, tileset, xml);
             }
 
-            if (!SurfaceIndex.TileToIndex.ContainsKey(xml.AttrChar("id"))) {
-                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.HasAttr("sound") ? xml.AttrInt("sound") : 8; // '8' as fallback instead of '0' to match vanilla's default index
+            if (!SurfaceIndex.TileToIndex.ContainsKey(xml.AttrChar("id")) || xml.AttrChar("id") == 'o') { // Backwards-compat: some existing mods (e.g. Into the Jungle) use 'o' and overwrite its sound
+                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.HasAttr("sound") ? xml.AttrInt("sound") : 8; // 8 as fallback instead of 0 to match vanilla's default index
             }
 
             if (xml.HasAttr("debris"))
