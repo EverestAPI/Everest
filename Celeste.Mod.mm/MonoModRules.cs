@@ -428,6 +428,11 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches MoveBlock.Controller to disable static movers before resetting their position when breaking.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMoveBlockController))]
+    class PatchMoveBlockControllerAttribute : Attribute { }
 
     static class MonoModRules {
 
@@ -2471,6 +2476,29 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Callvirt, m_Player_Die);
             cursor.Emit(OpCodes.Pop);
             cursor.RemoveRange(3);
+        }
+
+        public static void PatchMoveBlockController(MethodDefinition method, CustomAttribute attrib) {
+            FieldDefinition f_this = null;
+            MethodReference m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            // Goal is to flip these two commands. We move to before the Move call, emit the Disable call, then remove the original Disable call.
+            // this.MoveStaticMovers(this.startPosition - this.Position);
+            // this.DisableStaticMovers();
+            ILCursor cursor = new ILCursor(new ILContext(method));
+            cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Blt);
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
+            cursor.RemoveRange(2);
         }
 
         public static void PostProcessor(MonoModder modder) {
