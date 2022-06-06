@@ -29,8 +29,6 @@ namespace Celeste {
         private float showRange;
 
         private StaticMover staticMover;
-        private Vector2 position;
-        private string texture;
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
@@ -60,8 +58,6 @@ namespace Celeste {
             }
             hideRange = 32f;
             showRange = 48f;
-            this.texture = texture;
-            this.position = position;
 
             orig_ctor(texture, position, scale, depth);
         }
@@ -101,7 +97,7 @@ namespace Celeste {
                 OnShake = v => { X += v.X; Y += v.Y; },
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => RemoveSelf()));
-                    (Scene as Level).Session.SetFlag($"Everest_Decal_texture:{texture}_X:{position.X}_Y:{position.Y}_WasAttached");
+                    (Scene as Level).Session.SetFlag($"Everest_Decal_texture:{Name}_X:{Position.X}_Y:{Position.Y}_WasAttached");
                 }
             };
             if (jumpThrus)
@@ -131,7 +127,7 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && (scene as Level).Session.GetFlag($"Everest_Decal_texture:{texture}_X:{position.X}_Y:{position.Y}_WasAttached"))
+            if (staticMover?.Platform == null && (scene as Level).Session.GetFlag($"Everest_Decal_texture:{Name}_X:{Position.X}_Y:{Position.Y}_WasAttached"))
                 RemoveSelf();
         }
 
