@@ -66,6 +66,9 @@ namespace Celeste {
                 { 'o', 43 }
             };
 
+            // Clear any custom tileset sound paths
+            patch_SurfaceIndex.IndexToCustomPath.Clear();
+
             AreaData area = AreaData.Get(session);
             MapMeta meta = area.GetMeta();
             string path;

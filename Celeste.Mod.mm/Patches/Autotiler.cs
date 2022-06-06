@@ -69,8 +69,12 @@ namespace Celeste {
                 ReadIntoCustomTemplate(data, tileset, xml);
             }
 
-            if (xml.HasAttr("sound"))
+            if (xml.HasAttr("soundPath") && xml.HasAttr("sound")) { // Could accommodate for no sound attr, but requiring it should improve clarity on user's end 
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
+                patch_SurfaceIndex.IndexToCustomPath[xml.AttrInt("sound")] = (xml.Attr("soundPath").StartsWith("event:/") ? "" : "event:/") + xml.Attr("soundPath");
+            } else if (!SurfaceIndex.TileToIndex.ContainsKey(xml.AttrChar("id")) || xml.AttrChar("id") == 'o') { // Backwards-compat: some existing mods use 'o' and overwrite its sound
+                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.HasAttr("sound") ? xml.AttrInt("sound") : 8; // 8 as fallback instead of 0 to match vanilla's default index
+            }
 
             if (xml.HasAttr("debris"))
                 data.Debris = xml.Attr("debris");
