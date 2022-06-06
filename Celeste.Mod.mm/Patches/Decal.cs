@@ -2,6 +2,7 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -26,6 +27,10 @@ namespace Celeste {
 
         private float hideRange;
         private float showRange;
+
+        private StaticMover staticMover;
+        private Vector2 position;
+        private string texture;
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
@@ -55,6 +60,8 @@ namespace Celeste {
             }
             hideRange = 32f;
             showRange = 48f;
+            this.texture = texture;
+            this.position = position;
 
             orig_ctor(texture, position, scale, depth);
         }
@@ -88,14 +95,18 @@ namespace Celeste {
         }
 
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
-            StaticMover sm = new StaticMover {
+            staticMover = new StaticMover {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnMove = v => { X += v.X; Y += v.Y; },
                 OnShake = v => { X += v.X; Y += v.Y; },
+                OnAttach = p => {
+                    p.Add(new EntityRemovedListener(() => RemoveSelf()));
+                    (Scene as Level).Session.SetFlag($"Everest_Decal_texture:{texture}_X:{position.X}_Y:{position.Y}_WasAttached");
+                }
             };
             if (jumpThrus)
-                sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
-            Add(sm);
+                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
+            Add(staticMover);
         }
 
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
@@ -117,6 +128,12 @@ namespace Celeste {
         private Component image;
 
         public Component Image { get { return image; } set { image = value; } }
+
+        public override void Awake(Scene scene) {
+            base.Awake(scene);
+            if (staticMover?.Platform == null && (scene as Level).Session.GetFlag($"Everest_Decal_texture:{texture}_X:{position.X}_Y:{position.Y}_WasAttached"))
+                RemoveSelf();
+        }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
