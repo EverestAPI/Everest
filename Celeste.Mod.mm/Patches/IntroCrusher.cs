@@ -30,6 +30,7 @@ namespace Celeste {
                 Remove(tilegrid);
                 Add(tilegrid = GFX.FGAutotiler.GenerateBox(tiletype[0], data.Width / 8, data.Height / 8).TileGrid);
             }
+            Add(new TileInterceptor(tilegrid, highPriority: false));
         }
 
         [MonoModLinkTo("Monocle.Entity", "Added")]
