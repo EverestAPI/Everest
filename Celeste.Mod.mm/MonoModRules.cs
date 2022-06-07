@@ -2630,11 +2630,42 @@ namespace MonoMod {
             cursor.Remove();
         }
 
+        public static void PatchNPCSetupSpriteSoundsOnFrameChange(MethodDefinition method) {
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = method.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String Concat(System.String,System.String)"));
+
+            ILCursor cursor = new ILCursor(new ILContext(method));
+
+            // Retrieve method we want to use from near target instr
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/footstep"));
+            cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetStepSoundIndex(Monocle.Entity)"));
+            MethodReference m_Platform_GetStepSoundIndex = (MethodReference) cursors[0].Next.Operand;
+
+            /*  Change:
+                    Audio.Play("event:/char/madeline/footstep", base.Center, "surface_index", platformByPriority.GetStepSoundIndex(this));
+                to:
+                    Audio.Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetStepSoundIndex(this)) + "/footstep", base.Center, "surface_index", 
+                         platformByPriority.GetStepSoundIndex(this));
+            */
+            cursor.Emit(OpCodes.Ldloc_1);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_Platform_GetStepSoundIndex);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.Emit(OpCodes.Ldstr, "/footstep");
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+            cursor.Remove();
+        }
+
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
             PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
             // Patch Player::ctor's OnFrameChange delegate manually because see above
             PatchPlayerCtorOnFrameChange(modder.Module.GetType("Celeste.Player").FindMethod("<.ctor>b__280_1"));
+            // Patch NPC::SetupTheoSpriteSounds's OnFrameChange delegate manually because see above
+            // We can also re-use the same patch code for NPC::SetupGrannySpriteSounds
+            PatchNPCSetupSpriteSoundsOnFrameChange(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupTheoSpriteSounds>b__19_0"));
+            PatchNPCSetupSpriteSoundsOnFrameChange(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupGrannySpriteSounds>b__20_0"));
 
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
