@@ -2549,12 +2549,12 @@ namespace MonoMod {
             ILCursor cursor = new ILCursor(context);
 
             /*  Move cursor to after IL_040d in
-                    // num2 = platformByPriority.GetLandSoundIndex(this)
-                    IL_040a: ldloc.s 4
+                   // num2 = platformByPriority.GetLandSoundIndex(this)
+                   IL_040a: ldloc.s 4
 	                IL_040c: ldarg.0
 	                IL_040d: callvirt instance int32 Celeste.Platform::GetLandSoundIndex(class Monocle.Entity)
 	                IL_0412: stloc.s 5
-               and get the variable index of num2  
+                and get the variable index of num2  
             */
             int num2VariableIndex = 0;
             cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
@@ -2646,7 +2646,7 @@ namespace MonoMod {
                     Audio.Play("event:/char/madeline/footstep", base.Center, "surface_index", platformByPriority.GetStepSoundIndex(this));
                 to:
                     Audio.Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetStepSoundIndex(this)) + "/footstep", base.Center, "surface_index", 
-                         platformByPriority.GetStepSoundIndex(this));
+                               platformByPriority.GetStepSoundIndex(this));
             */
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Ldarg_0);
@@ -2663,7 +2663,7 @@ namespace MonoMod {
             // Patch Player::ctor's OnFrameChange delegate manually because see above
             PatchPlayerCtorOnFrameChange(modder.Module.GetType("Celeste.Player").FindMethod("<.ctor>b__280_1"));
             // Patch NPC::SetupTheoSpriteSounds's OnFrameChange delegate manually because see above
-            // We can also re-use the same patch code for NPC::SetupGrannySpriteSounds
+            // We can also re-use the same patch code for NPC::SetupGrannySpriteSounds's OnFrameChange delegate
             PatchNPCSetupSpriteSoundsOnFrameChange(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupTheoSpriteSounds>b__19_0"));
             PatchNPCSetupSpriteSoundsOnFrameChange(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupGrannySpriteSounds>b__20_0"));
 
