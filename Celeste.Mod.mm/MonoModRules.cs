@@ -2549,8 +2549,8 @@ namespace MonoMod {
             ILCursor cursor = new ILCursor(context);
 
             /*  Move cursor to after IL_040d in
-                   // num2 = platformByPriority.GetLandSoundIndex(this)
-                   IL_040a: ldloc.s 4
+                    // num2 = platformByPriority.GetLandSoundIndex(this)
+                    IL_040a: ldloc.s 4
 	                IL_040c: ldarg.0
 	                IL_040d: callvirt instance int32 Celeste.Platform::GetLandSoundIndex(class Monocle.Entity)
 	                IL_0412: stloc.s 5
