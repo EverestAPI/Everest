@@ -140,6 +140,9 @@ namespace Celeste.Mod {
                 int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
                 decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
             }},
+            { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).MakeOverlay();
+            }},
         };
 
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();

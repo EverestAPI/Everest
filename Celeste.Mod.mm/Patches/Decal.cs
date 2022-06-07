@@ -27,6 +27,8 @@ namespace Celeste {
         private float hideRange;
         private float showRange;
 
+        public bool Overlay { get; private set; }
+
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -113,6 +115,10 @@ namespace Celeste {
             scaredAnimal = true;
         }
 
+        public void MakeOverlay() {
+            Overlay = true;
+        }
+
         [MonoModIgnore]
         private Component image;
 
@@ -148,9 +154,20 @@ namespace Celeste {
             }
         }
 
-        [MonoModIgnore]
         [PatchDecalUpdate]
-        public extern override void Update();
+        public extern void orig_Update();
+        public override void Update() {
+            if (Overlay) {
+                Tileset tileset = new Tileset(textures[0], 8, 8);
+                for (int i = 0; i < textures[0].Width / 8; i++) {
+                    for (int j = 0; j < textures[0].Height / 8; j++) {
+                        TileInterceptor.TileCheck(Scene, tileset[i, j], new Vector2(Position.X - textures[0].Center.X + i * 8, Position.Y - textures[0].Center.Y + j * 8));
+                    }
+                }
+                RemoveSelf();
+            }
+            orig_Update();
+        }
     }
     public static class DecalExt {
 
