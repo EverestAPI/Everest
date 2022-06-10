@@ -155,11 +155,26 @@ namespace Celeste {
                     }
                     buttons.Add(newGameLevelSetPicker);
                 }
+            } else if (!Corrupted) {
+                buttons.Insert(buttons.FindIndex(button => button.Label == Dialog.Clean("file_delete")), // Insert immediately before "Delete"
+                    new Button {
+                        Label = Dialog.Clean("file_rename"),
+                        Action = OnRenameSelected,
+                        Scale = 0.7f
+                    }
+                );
             }
 
             patch_SaveData.LoadModSaveData(FileSlot);
             Everest.Events.FileSelectSlot.HandleCreateButtons(buttons, this, Exists);
         }
+
+        [MonoModIgnore]
+        private extern void OnRenameSelected();
+
+        [MonoModIgnore]
+        [PatchOuiFileSelectSlotOnContinueSelected]
+        private extern void OnContinueSelected();
 
         public extern void orig_OnNewGameSelected();
         public void OnNewGameSelected() {
