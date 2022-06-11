@@ -429,7 +429,7 @@ namespace MonoMod {
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
 
     /// <summary>
-    /// Patches the method to update the Name and TheoSisterName in the file's SaveData.
+    /// Patches the method to update the Name and the TheoSisterName, if the file has been renamed in-game, in the file's SaveData.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSlotOnContinueSelected))]
     class PatchOuiFileSelectSlotOnContinueSelectedAttribute : Attribute { }
@@ -2481,6 +2481,7 @@ namespace MonoMod {
 
         public static void PatchOuiFileSelectSlotOnContinueSelected(ILContext context, CustomAttribute attrib) {
             FieldDefinition f_OuiFileSelectSlot_Name = context.Method.DeclaringType.FindField("Name");
+            FieldDefinition f_OuiFileSelectSlot_renamed = context.Method.DeclaringType.FindField("renamed");
             FieldDefinition f_SaveData_Name = context.Module.GetType("Celeste.SaveData").Resolve().FindField("Name");
             FieldDefinition f_SaveData_TheoSisterName = context.Module.GetType("Celeste.SaveData").Resolve().FindField("TheoSisterName");
             MethodDefinition m_Dialog_Clean = context.Module.GetType("Celeste.Dialog").Resolve().FindMethod("System.String Clean(System.String,Celeste.Language)");
@@ -2491,13 +2492,27 @@ namespace MonoMod {
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.SaveData", "System.Void Start(Celeste.SaveData,System.Int32)"));
 
-            // SaveData.Instance.Name = Name;
+            // if (renamed)
+            // {
+            //     SaveData.Instance.Name = Name;
+            //     SaveData.Instance.TheoSisterName = Dialog.Clean((Name.IndexOf(Dialog.Clean("THEO_SISTER_NAME"), StringComparison.InvariantCultureIgnoreCase) >= 0) ? "THEO_SISTER_ALT_NAME" : "THEO_SISTER_NAME");
+            // }
+            ILLabel renamedTarget = cursor.DefineLabel();
+            ILLabel altNameTarget = cursor.DefineLabel();
+            ILLabel defaultNameTarget = cursor.DefineLabel();
+
+            // if (renamed)
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_OuiFileSelectSlot_renamed);
+            cursor.Emit(OpCodes.Brfalse_S, renamedTarget);
+
+            // Assign Name
             cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand); // ldsfld class Celeste.SaveData Celeste.SaveData::Instance
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, f_OuiFileSelectSlot_Name);
             cursor.Emit(OpCodes.Stfld, f_SaveData_Name);
 
-            // SaveData.Instance.TheoSisterName = Dialog.Clean((Name.IndexOf(Dialog.Clean("THEO_SISTER_NAME"), StringComparison.InvariantCultureIgnoreCase) >= 0) ? "THEO_SISTER_ALT_NAME" : "THEO_SISTER_NAME");
+            // Assign TheoSisterName
             cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand); // ldsfld class Celeste.SaveData Celeste.SaveData::Instance
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, f_OuiFileSelectSlot_Name);
@@ -2507,17 +2522,18 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldc_I4_3);
             cursor.Emit(OpCodes.Callvirt, m_String_IndexOf);
             cursor.Emit(OpCodes.Ldc_I4_0);
-            ILLabel altNameTarget = cursor.DefineLabel();
-            ILLabel defaultTarget = cursor.DefineLabel();
             cursor.Emit(OpCodes.Bge_S, altNameTarget);
             cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_NAME");
-            cursor.Emit(OpCodes.Br_S, defaultTarget);
+            cursor.Emit(OpCodes.Br_S, defaultNameTarget);
             cursor.MarkLabel(altNameTarget);
             cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_ALT_NAME");
-            cursor.MarkLabel(defaultTarget);
+            cursor.MarkLabel(defaultNameTarget);
             cursor.Emit(OpCodes.Ldnull);
             cursor.Emit(OpCodes.Call, m_Dialog_Clean);
             cursor.Emit(OpCodes.Stfld, f_SaveData_TheoSisterName);
+
+            // Target for if renamed is false
+            cursor.MarkLabel(renamedTarget);
         }
 
         public static void PostProcessor(MonoModder modder) {
