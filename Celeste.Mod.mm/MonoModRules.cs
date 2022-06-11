@@ -2486,6 +2486,7 @@ namespace MonoMod {
             MethodDefinition m_Dialog_Clean = context.Module.GetType("Celeste.Dialog").Resolve().FindMethod("System.String Clean(System.String,Celeste.Language)");
             TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
             MethodReference m_String_IndexOf = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.Int32 IndexOf(System.String,System.StringComparison)"));
+            MethodReference m_String_opEquality = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.Boolean op_Equality(System.String,System.String)"));
 
             // Insert after SaveData.Start(SaveData, FileSlot)
             ILCursor cursor = new ILCursor(context);
@@ -2497,27 +2498,45 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_OuiFileSelectSlot_Name);
             cursor.Emit(OpCodes.Stfld, f_SaveData_Name);
 
-            // SaveData.Instance.TheoSisterName = Dialog.Clean((Name.IndexOf(Dialog.Clean("THEO_SISTER_NAME"), StringComparison.InvariantCultureIgnoreCase) >= 0) ? "THEO_SISTER_ALT_NAME" : "THEO_SISTER_NAME");
-            cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand); // ldsfld class Celeste.SaveData Celeste.SaveData::Instance
+            // if (Name.IndexOf(SaveData.Instance.TheoSisterName, StringComparison.InvariantCultureIgnoreCase) >= 0)
+            // {
+            //     SaveData.Instance.TheoSisterName = Dialog.Clean((SaveData.Instance.TheoSisterName == Dialog.Clean("THEO_SISTER_NAME")) ? "THEO_SISTER_ALT_NAME" : "THEO_SISTER_NAME");
+            // }
+            ILLabel indexOfTarget = cursor.DefineLabel();
+            ILLabel altNameTarget = cursor.DefineLabel();
+            ILLabel defaultTarget = cursor.DefineLabel();
+
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, f_OuiFileSelectSlot_Name);
-            cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_NAME");
-            cursor.Emit(OpCodes.Ldnull);
-            cursor.Emit(OpCodes.Call, m_Dialog_Clean);
+            cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand);
+            cursor.Emit(OpCodes.Ldfld, f_SaveData_TheoSisterName);
             cursor.Emit(OpCodes.Ldc_I4_3);
             cursor.Emit(OpCodes.Callvirt, m_String_IndexOf);
             cursor.Emit(OpCodes.Ldc_I4_0);
-            ILLabel altNameTarget = cursor.DefineLabel();
-            ILLabel defaultTarget = cursor.DefineLabel();
-            cursor.Emit(OpCodes.Bge_S, altNameTarget);
+            cursor.Emit(OpCodes.Clt);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ceq);
+            cursor.Emit(OpCodes.Brfalse_S, indexOfTarget);
+
+            cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand); // ldsfld class Celeste.SaveData Celeste.SaveData::Instance
+            cursor.Emit(cursor.Next.OpCode, cursor.Next.Operand); // and again
+            cursor.Emit(OpCodes.Ldfld, f_SaveData_TheoSisterName);
+            cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_NAME");
+            cursor.Emit(OpCodes.Ldnull);
+            cursor.Emit(OpCodes.Call, m_Dialog_Clean);
+
+            cursor.Emit(OpCodes.Call, m_String_opEquality);
+            cursor.Emit(OpCodes.Brtrue_S, altNameTarget);
             cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_NAME");
             cursor.Emit(OpCodes.Br_S, defaultTarget);
             cursor.MarkLabel(altNameTarget);
             cursor.Emit(OpCodes.Ldstr, "THEO_SISTER_ALT_NAME");
             cursor.MarkLabel(defaultTarget);
             cursor.Emit(OpCodes.Ldnull);
+
             cursor.Emit(OpCodes.Call, m_Dialog_Clean);
             cursor.Emit(OpCodes.Stfld, f_SaveData_TheoSisterName);
+            cursor.MarkLabel(indexOfTarget);
         }
 
         public static void PostProcessor(MonoModder modder) {
