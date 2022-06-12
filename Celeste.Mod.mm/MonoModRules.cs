@@ -2560,24 +2560,18 @@ namespace MonoMod {
             cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
                 instr => instr.MatchStloc(out num2VariableIndex) && il.Body.Variables[num2VariableIndex].VariableType.FullName == "System.Int32");
 
-            /*  Change:
+            /*  Change
                     Play((playFootstepOnLand > 0f) ? "event:/char/madeline/footstep" : "event:/char/madeline/landing", "surface_index", num2);
-                to:
-                    Play((playFootstepOnLand > 0f) ? (SurfaceIndex.GetPathFromIndex(num2) + "/footstep") : (SurfaceIndex.GetPathFromIndex(num2) + "/landing"), 
-                         "surface_index", num2);
+                to
+                    Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", num2);
             */
-            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/landing"));
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "playFootstepOnLand"));
             cursor.Emit(OpCodes.Ldloc_S, (byte) num2VariableIndex);
             cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
-            cursor.Emit(OpCodes.Ldstr, "/landing");
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("surface_index"));
+            cursor.Prev.Operand = "/footstep";
+            cursor.Prev.Previous.Previous.Operand = "/landing";
             cursor.Emit(OpCodes.Call, m_String_Concat);
-            cursor.Remove();
-            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/footstep"));
-            cursor.Emit(OpCodes.Ldloc_S, (byte) num2VariableIndex);
-            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
-            cursor.Emit(OpCodes.Ldstr, "/footstep");
-            cursor.Emit(OpCodes.Call, m_String_Concat);
-            cursor.Remove();
         }
 
         public static void PatchPlayerClimbBegin(ILContext context, CustomAttribute attrib) {
