@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace Monocle {
     class patch_Commands : Commands {
@@ -41,6 +42,8 @@ namespace Monocle {
         private int firstLineIndexToDraw;
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
+
+        private StringBuilder debugRClog;
 
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
@@ -432,6 +435,10 @@ namespace Monocle {
         [MonoModReplace]
         public new void Log(object obj, Color color) {
             string text = obj.ToString();
+            if (debugRClog != null) {
+                debugRClog.AppendLine(text);
+                return;
+            }
             if (text.Contains("\n")) {
                 foreach (string obj2 in text.Split('\n')) {
                     Log(obj2, color);

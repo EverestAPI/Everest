@@ -547,6 +547,38 @@ header {
                         Write(c, "OK");
                     }
                 },
+                
+                new RCEndPoint {
+                    Path = "/console",
+                    Name = "Console",
+                    PathHelp = "/console?command={command}",
+                    PathExample = "/console?command=berries",
+                    InfoHTML = "Execute a console command and show the output.",
+                    Handle = c => {
+                        NameValueCollection data = ParseQueryString(c.Request.RawUrl);
+
+                        string rawCommand = data["command"];
+                        if (string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
+                            return;
+                        }
+                        string[] commandAndArgs = WebUtility.UrlDecode(rawCommand).Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
+                        string[] args = new string[commandAndArgs.Length - 1];
+                        Array.Copy(commandAndArgs, 1, args, 0, args.Length);
+
+                        StringBuilder output = new();
+                        MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
+                            DynamicData commandsData = DynamicData.For(Engine.Commands);
+                            try {
+                                commandsData.Set("debugRClog", output);
+                                Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
+                            } finally {
+                                commandsData.Set("debugRClog", null);
+                            }
+                            return null;
+                        }).GetResult(); // wait for command to finish before writing output
+                        Write(c, output.ToString());
+                    }
+                },
 
             };
 
