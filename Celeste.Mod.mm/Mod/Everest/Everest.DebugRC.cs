@@ -557,11 +557,11 @@ header {
                     Handle = c => {
                         NameValueCollection data = ParseQueryString(c.Request.RawUrl);
 
-                        string rawCommand = data["command"];
+                        string rawCommand = WebUtility.UrlDecode(data["command"]);
                         if (string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
                             return;
                         }
-                        string[] commandAndArgs = WebUtility.UrlDecode(rawCommand).Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
+                        string[] commandAndArgs = rawCommand.Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
                         string[] args = new string[commandAndArgs.Length - 1];
                         Array.Copy(commandAndArgs, 1, args, 0, args.Length);
 
