@@ -551,32 +551,54 @@ header {
                 new RCEndPoint {
                     Path = "/console",
                     Name = "Console",
-                    PathHelp = "/console?command={command}",
+                    PathHelp = "/console?command={*|COMMAND} (Example: ?command=berries)",
                     PathExample = "/console?command=berries",
-                    InfoHTML = "Execute a console command and show the output.",
+                    InfoHTML = "Execute a console command and show the output. If no command is given, list the available commands.",
                     Handle = c => {
                         NameValueCollection data = ParseQueryString(c.Request.RawUrl);
-
+                        
                         string rawCommand = WebUtility.UrlDecode(data["command"]);
-                        if (string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
-                            return;
-                        }
-                        string[] commandAndArgs = rawCommand.Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
-                        string[] args = new string[commandAndArgs.Length - 1];
-                        Array.Copy(commandAndArgs, 1, args, 0, args.Length);
-
-                        StringBuilder output = new();
-                        MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
-                            DynamicData commandsData = DynamicData.For(Engine.Commands);
-                            try {
-                                commandsData.Set("debugRClog", output);
-                                Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
-                            } finally {
-                                commandsData.Set("debugRClog", null);
+                        if (string.IsNullOrWhiteSpace(rawCommand) || string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
+                            StringBuilder commandList = new();
+                            WriteHTMLStart(c, commandList);
+                            commandList.AppendLine(@"<ul>");
+                            commandList.AppendLine(@"<h2>Commands</h2>");
+                            foreach (var command in ((Monocle.patch_Commands) (Engine.Commands)).commands.OrderBy(kv => kv.Key))
+                            {
+                                commandList.AppendLine(@"<li>");
+                                commandList.AppendLine($@"<h3>{command.Key}</h3>");
+                                commandList.AppendLine(@"<p>");
+                                if (string.IsNullOrEmpty(command.Value.Usage)) {
+                                    commandList.AppendLine($@"<a href=""{Listener.Prefixes.First()}console?command={command.Key}""><code>/console?command={command.Key}</code></a>");
+                                } else {
+                                    commandList.AppendLine($@"<code>Usage: {command.Value.Usage}</code>");
+                                }
+                                commandList.AppendLine(@"<br>");
+                                commandList.AppendLine(command.Value.Help);
+                                commandList.AppendLine(@"</p>");
+                                commandList.AppendLine(@"</li>");
                             }
-                            return null;
-                        }).GetResult(); // wait for command to finish before writing output
-                        Write(c, output.ToString());
+                            commandList.AppendLine(@"</ul>");
+                            WriteHTMLEnd(c, commandList);
+                            Write(c, commandList.ToString());
+                        } else {
+                            string[] commandAndArgs = rawCommand.Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
+                            string[] args = new string[commandAndArgs.Length - 1];
+                            Array.Copy(commandAndArgs, 1, args, 0, args.Length);
+
+                            StringBuilder output = new();
+                            DynamicData commandsData = DynamicData.For(Engine.Commands);
+                            MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
+                                try {
+                                    commandsData.Set("debugRClog", output);
+                                    Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
+                                } finally {
+                                    commandsData.Set("debugRClog", null);
+                                }
+                                return null;
+                            }).GetResult(); // wait for command to finish before writing output
+                            Write(c, output.ToString());
+                        }
                     }
                 },
 
