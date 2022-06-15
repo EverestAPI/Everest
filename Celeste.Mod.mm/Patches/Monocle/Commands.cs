@@ -44,7 +44,8 @@ namespace Monocle {
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
 
-        private StringBuilder debugRClog;
+        // redirects command logs to the StringBuilder when not null, only set this from main thread
+        public StringBuilder debugRClog;
 
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {

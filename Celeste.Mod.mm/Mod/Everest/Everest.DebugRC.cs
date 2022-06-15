@@ -587,13 +587,12 @@ header {
                             Array.Copy(commandAndArgs, 1, args, 0, args.Length);
 
                             StringBuilder output = new();
-                            DynamicData commandsData = DynamicData.For(Engine.Commands);
                             MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
                                 try {
-                                    commandsData.Set("debugRClog", output);
+                                    ((Monocle.patch_Commands) Engine.Commands).debugRClog = output;
                                     Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
                                 } finally {
-                                    commandsData.Set("debugRClog", null);
+                                    ((Monocle.patch_Commands) Engine.Commands).debugRClog = null;
                                 }
                                 return null;
                             }).GetResult(); // wait for command to finish before writing output
