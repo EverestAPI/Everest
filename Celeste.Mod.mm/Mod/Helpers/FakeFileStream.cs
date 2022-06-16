@@ -8,7 +8,7 @@ namespace Celeste.Mod.Helpers {
 
         // I'm overcomplicating this. -ade
 
-        private readonly static string Dummy = Path.GetTempFileName();
+        private static readonly string Dummy = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.tmp");
 
         public readonly Stream Inner;
 
