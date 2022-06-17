@@ -8,7 +8,7 @@ namespace Celeste.Mod.Helpers {
 
         // I'm overcomplicating this. -ade
 
-        private static readonly string Dummy = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.tmp");
+        private static readonly string Dummy = Path.Combine(Everest.PathGame, "FileProxyStreamDummy.txt");
 
         public readonly Stream Inner;
 
@@ -120,5 +120,13 @@ namespace Celeste.Mod.Helpers {
             Inner.Dispose();
         }
 
+        public static void DeleteDummy() {
+            try {
+                if (File.Exists(Dummy))
+                    File.Delete(Dummy);
+            } catch {
+                // ignore
+            }
+        }
     }
 }
