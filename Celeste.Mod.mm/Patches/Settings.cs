@@ -1,6 +1,4 @@
-﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-
-using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework.Input;
 using MonoMod;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,9 +6,6 @@ using System.Xml.Serialization;
 
 namespace Celeste {
     class patch_Settings : Settings {
-
-        [MonoModIgnore]
-        public static new patch_Settings Instance;
 
         [MonoModIgnore]
         [PatchSettingsDoNotTranslateKeys]

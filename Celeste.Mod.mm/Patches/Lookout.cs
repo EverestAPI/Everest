@@ -1,5 +1,4 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
-#pragma warning disable CS0169 // Field is never used
 
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -7,8 +6,6 @@ using MonoMod;
 
 namespace Celeste {
     class patch_Lookout : Lookout {
-
-        private bool interacting;
 
         public patch_Lookout(EntityData data, Vector2 offset)
             : base(data, offset) {
