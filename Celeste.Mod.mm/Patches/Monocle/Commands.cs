@@ -32,8 +32,7 @@ namespace Monocle {
         private List<string> sorted;
         private List<string> commandHistory;
         private int seekIndex;
-        [MonoModPublic]
-        public Dictionary<string, patch_CommandInfo> commands;
+        private Dictionary<string, patch_CommandInfo> commands;
 
         private int mouseScroll;
         private int cursorScale;
@@ -488,11 +487,22 @@ namespace Monocle {
         }
 
         [MonoModIgnore]
-        [MonoModPublic]
-        public struct patch_CommandInfo {
+        private struct patch_CommandInfo {
             public Action<string[]> Action;
             public string Help;
             public string Usage;
+        }
+
+        public struct CommandData {
+            public string Name;
+            public string Help;
+            public string Usage;
+        }
+
+        public IEnumerable<CommandData> GetCommands() {
+            foreach (var command in commands) {
+                yield return new() {Name = command.Key, Help = command.Value.Help, Usage = command.Value.Usage};
+            }
         }
 
     }

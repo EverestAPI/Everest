@@ -563,18 +563,18 @@ header {
                             WriteHTMLStart(c, commandList);
                             commandList.AppendLine(@"<ul>");
                             commandList.AppendLine(@"<h2>Commands</h2>");
-                            foreach (var command in ((Monocle.patch_Commands) (Engine.Commands)).commands.OrderBy(kv => kv.Key))
+                            foreach (var command in ((Monocle.patch_Commands) (Engine.Commands)).GetCommands().OrderBy(comm => comm.Name))
                             {
                                 commandList.AppendLine(@"<li>");
-                                commandList.AppendLine($@"<h3>{command.Key}</h3>");
+                                commandList.AppendLine($@"<h3>{command.Name}</h3>");
                                 commandList.AppendLine(@"<p>");
-                                if (string.IsNullOrEmpty(command.Value.Usage)) {
-                                    commandList.AppendLine($@"<a href=""{Listener.Prefixes.First()}console?command={command.Key}""><code>/console?command={command.Key}</code></a>");
+                                if (string.IsNullOrEmpty(command.Usage)) {
+                                    commandList.AppendLine($@"<a href=""{Listener.Prefixes.First()}console?command={command.Name}""><code>/console?command={command.Name}</code></a>");
                                 } else {
-                                    commandList.AppendLine($@"<code>Usage: {command.Value.Usage}</code>");
+                                    commandList.AppendLine($@"<code>Usage: {command.Usage}</code>");
                                 }
                                 commandList.AppendLine(@"<br>");
-                                commandList.AppendLine(command.Value.Help);
+                                commandList.AppendLine(command.Help);
                                 commandList.AppendLine(@"</p>");
                                 commandList.AppendLine(@"</li>");
                             }
