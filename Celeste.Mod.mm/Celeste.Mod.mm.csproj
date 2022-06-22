@@ -61,7 +61,7 @@
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="KeraLua" Version="1.0.22" />
     <PackageReference Include="NLua" Version="1.4.25" />
   </ItemGroup>
