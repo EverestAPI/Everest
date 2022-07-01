@@ -592,14 +592,23 @@ namespace Celeste.Mod {
                 for (int i = 0; i < types.Length; i++) {
                     Type type = types[i];
 
-                    if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
-                        foundModule = true;
-                        if (!typeof(NullModule).IsAssignableFrom(type)) {
-                            EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-                            mod.Metadata = meta;
-                            mod.Register();
+                    EverestModule mod = null;
+                    try {
+                        if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
+                            foundModule = true;
+                            if (!typeof(NullModule).IsAssignableFrom(type)) {
+                                mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+                            }
                         }
+                    } catch (TypeLoadException e) {
+                        // The type likely depends on a base class from a missing optional dependency
+                        Logger.Log(LogLevel.Warn, "loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
                     }
+
+                   if (mod != null) {
+                        mod.Metadata = meta;
+                        mod.Register();
+                   }
                 }
 
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
