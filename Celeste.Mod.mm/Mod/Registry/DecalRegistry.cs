@@ -148,6 +148,9 @@ namespace Celeste.Mod {
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 decal.Add(new LightOcclude(new Rectangle(x, y, width, height), alpha));
             }},
+            { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).MakeOverlay();
+            }},
         };
 
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
