@@ -1,6 +1,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 
+using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -109,6 +110,7 @@ namespace Celeste {
                     if (atlas.Has(img)) {
                         Images.Add(atlas[img]);
                     } else {
+                        Logger.Log(LogLevel.Warn, "Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.GetDataPath().Substring(17)}/{img}");
                         Images.Add(null);
                     }
                 }

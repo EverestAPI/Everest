@@ -33,6 +33,8 @@ namespace Celeste {
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
+        
+        private float unpauseTimer;
 
         /// <summary>
         /// If in vanilla levels, gets the spawnpoint closest to the bottom left of the level.<br/>
@@ -477,6 +479,22 @@ namespace Celeste {
                 position.X = 1920f - position.X;
             }
             return position;
+        }
+
+        private void FixChaserStatesTimeStamp() {
+            if (unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
+                float offset = Engine.DeltaTime;
+
+                // add one more frame at the end
+                if (unpauseTimer - Engine.RawDeltaTime <= 0f)
+                    offset *= 2;
+
+                for (int i = 0; i < chaserStates.Count; i++) {
+                    Player.ChaserState chaserState = chaserStates[i];
+                    chaserState.TimeStamp += offset;
+                    chaserStates[i] = chaserState;
+                }
+            }
         }
     }
 

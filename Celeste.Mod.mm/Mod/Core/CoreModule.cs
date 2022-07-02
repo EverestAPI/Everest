@@ -63,6 +63,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Load() {
+            Everest.Events.Celeste.OnExiting += FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
@@ -155,6 +156,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Unload() {
+            Everest.Events.Celeste.OnExiting -= FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();
