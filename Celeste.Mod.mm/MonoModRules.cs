@@ -2548,7 +2548,6 @@ namespace MonoMod {
             TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
             MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String Concat(System.String,System.String)"));
 
-            ILProcessor il = context.Body.GetILProcessor();
             ILCursor cursor = new ILCursor(context);
 
             /*  Move cursor to after IL_040d in
@@ -2559,9 +2558,10 @@ namespace MonoMod {
 	                IL_0412: stloc.s 5
                 and get the variable index of num2  
             */
-            int num2VariableIndex = 0;
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
-                instr => instr.MatchStloc(out num2VariableIndex) && il.Body.Variables[num2VariableIndex].VariableType.FullName == "System.Int32");
+            int loc_landSoundIdx = -1;
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
+                instr => instr.MatchStloc(out loc_landSoundIdx));
 
             /*  Change
                     Play((playFootstepOnLand > 0f) ? "event:/char/madeline/footstep" : "event:/char/madeline/landing", "surface_index", num2);
@@ -2569,11 +2569,13 @@ namespace MonoMod {
                     Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", num2);
             */
             cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "playFootstepOnLand"));
-            cursor.Emit(OpCodes.Ldloc_S, (byte) num2VariableIndex);
+            cursor.Emit(OpCodes.Ldloc, loc_landSoundIdx);
             cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/landing"))
+                .Next.Operand = "/landing";
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/footstep"))
+                .Next.Operand = "/footstep";
             cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("surface_index"));
-            cursor.Prev.Operand = "/footstep";
-            cursor.Prev.Previous.Previous.Operand = "/landing";
             cursor.Emit(OpCodes.Call, m_String_Concat);
         }
 
