@@ -101,7 +101,8 @@ namespace Celeste {
         public class patch_ImageLayer : ImageLayer {
 
             public bool Loop;
-            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml) : base(offset, atlas, xml) {
+            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml)
+                : base(offset, atlas, xml) {
                 //no-op
             }
 
