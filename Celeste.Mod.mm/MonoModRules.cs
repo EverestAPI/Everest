@@ -2545,8 +2545,10 @@ namespace MonoMod {
 
         public static void PatchPlayerOnCollideV(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
-            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
-            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String Concat(System.String,System.String)"));
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
 
             ILCursor cursor = new ILCursor(context);
 
@@ -2587,8 +2589,10 @@ namespace MonoMod {
             // Doesn't use PatchPlaySurfaceIndex because index, not platform, is stored in the local variable
 
             MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
-            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
-            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String Concat(System.String,System.String)"));
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
             
             ILCursor cursor = new ILCursor(context);
 
