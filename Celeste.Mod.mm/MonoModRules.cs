@@ -2494,7 +2494,7 @@ namespace MonoMod {
         public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
             MethodReference m_ImageLayer_Render = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
             
-            ILCursor cursor = new(context);
+            ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_ImageLayer_Render);
