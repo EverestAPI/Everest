@@ -2480,8 +2480,7 @@ namespace MonoMod {
         }
 
         public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
-            MethodReference m_ImageLayer_Render = MonoModRule.Modder.FindType("Celeste.CompleteRenderer/ImageLayer")
-                .Resolve().FindProperty("ImageIndex").GetMethod;
+            MethodReference m_ImageLayer_Render = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
             
             ILCursor cursor = new(context);
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
