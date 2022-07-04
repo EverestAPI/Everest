@@ -2,6 +2,7 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 
+using Celeste.Mod;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -151,6 +152,7 @@ namespace Celeste {
                     if (atlas.Has(img)) {
                         Images.Add(atlas[img]);
                     } else {
+                        Logger.Log(LogLevel.Warn, "Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.GetDataPath().Substring(17)}/{img}");
                         Images.Add(null);
                     }
                 }

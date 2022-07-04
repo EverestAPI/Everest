@@ -8,9 +8,6 @@ namespace Celeste {
     class patch_Settings : Settings {
 
         [MonoModIgnore]
-        public static new patch_Settings Instance;
-
-        [MonoModIgnore]
         [PatchSettingsDoNotTranslateKeys]
         public extern new void SetDefaultKeyboardControls(bool reset);
 

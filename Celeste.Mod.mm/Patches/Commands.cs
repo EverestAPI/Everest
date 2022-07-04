@@ -243,6 +243,16 @@ namespace Celeste {
         private static void CmdMainMenu() {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
         }
+        
+        [Command("returntomap", "return to map")]
+        private static void ReturnToMap() {
+            if (SaveData.Instance == null) {
+                SaveData.InitializeDebugMode();
+                SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
+            }
+
+            Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
+        }
 
         [MonoModIgnore]
         [RemoveCommandAttribute]
