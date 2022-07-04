@@ -16,6 +16,9 @@ namespace Celeste {
         public int DetectedStrawberriesIncludingUntracked;
         public List<EntityData> DashlessGoldenberries = new List<EntityData>();
 
+        public delegate Backdrop BackdropLoader(BinaryPacker.Element data);
+        public static readonly Dictionary<string, BackdropLoader> BackdropLoaders = new Dictionary<string, BackdropLoader>();
+
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();

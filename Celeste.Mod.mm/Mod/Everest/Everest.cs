@@ -1,4 +1,5 @@
-﻿using Celeste.Mod.Core;
+﻿using Celeste.Mod.Backdrops;
+using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
@@ -652,7 +653,7 @@ namespace Celeste.Mod {
                         genName = genName.Trim();
 
                         patch_EventTrigger.CutsceneLoader loader = null;
-
+                        
                         ConstructorInfo ctor;
                         MethodInfo gen;
 
@@ -680,6 +681,54 @@ namespace Celeste.Mod {
                             continue;
                         }
                         patch_EventTrigger.CutsceneLoaders[id] = loader;
+                    }
+                }
+
+                // Search for all Backdrops marked with the CustomBackdropAttribute.
+                foreach (CustomBackdropAttribute attrib in type.GetCustomAttributes<CustomBackdropAttribute>()) {
+                    foreach (string idFull in attrib.IDs) {
+                        string id;
+                        string genName;
+                        string[] split = idFull.Split('=');
+
+                        if (split.Length == 1) {
+                            id = split[0];
+                            genName = "Load";
+                        } else if (split.Length == 2) {
+                            id = split[0];
+                            genName = split[1];
+                        } else {
+                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
+                            continue;
+                        }
+
+                        id = id.Trim();
+                        genName = genName.Trim();
+
+                        patch_MapData.BackdropLoader loader = null;
+
+                        ConstructorInfo ctor;
+                        MethodInfo gen;
+
+                        gen = type.GetMethod(genName, new Type[] { typeof(BinaryPacker.Element) });
+                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Backdrop))) {
+                            loader = data => (Backdrop) gen.Invoke(null, new object[] { data });
+                            goto RegisterBackdropLoader;
+                        }
+
+                        ctor = type.GetConstructor(new Type[] { typeof(BinaryPacker.Element) });
+                        if (ctor != null) {
+                            loader = data => (Backdrop) ctor.Invoke(new object[] { data });
+                            goto RegisterBackdropLoader;
+                        }
+
+                        RegisterBackdropLoader:
+                        if (loader == null) {
+                            Logger.Log(LogLevel.Warn, "core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
+                            continue;
+                        }
+                        patch_MapData.BackdropLoaders[id] = loader;
+                        Console.WriteLine(patch_MapData.BackdropLoaders.Count);
                     }
                 }
             }
