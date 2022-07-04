@@ -116,6 +116,13 @@ namespace Celeste {
             scaredAnimal = true;
         }
 
+        [MonoModIgnore]
+        private float frame;
+
+        public void MakeRandomAnimationOffset() {
+            this.frame = Calc.Random.NextFloat(textures.Count);
+        }
+
         public void MakeOverlay() {
             Overlay = true;
         }
