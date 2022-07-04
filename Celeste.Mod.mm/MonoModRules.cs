@@ -2559,13 +2559,18 @@ namespace MonoMod {
                 break;
             }
 
-            // Goal is to flip these two commands by swapping the Move call to after the Disable call.
-            // this.MoveStaticMovers(this.startPosition - this.Position);
-            // this.DisableStaticMovers();
+            // From:
+            //     this.MoveStaticMovers(this.startPosition - this.Position);
+            //     this.DisableStaticMovers();
+            // To:
+            //     this.DisableStaticMovers();
+            //     this.MoveStaticMovers(this.startPosition - this.Position);
             ILCursor cursor = new ILCursor(new ILContext(method));
             cursor.GotoNext(MoveType.Before, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
             cursor.Remove();
             cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "DisableStaticMovers"));
+
+            // The argument order happens to let us emit the two function calls adjacent to each other
             cursor.Emit(OpCodes.Callvirt, m_Platform_MoveStaticMovers);
         }
 

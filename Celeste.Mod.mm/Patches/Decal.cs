@@ -118,10 +118,12 @@ namespace Celeste {
                 },
                 OnMove = v => {
                     Position += v;
-                    if (staticMover.Platform != null) 
-                        solid.LiftSpeed = staticMover.Platform.LiftSpeed;
-                    solid?.MoveHExact((int) v.X);
-                    solid?.MoveVExact((int) v.Y);
+                    if (solid != null) {
+                        if (staticMover.Platform != null)
+                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
+                        solid.MoveHExact((int) v.X);
+                        solid.MoveVExact((int) v.Y);
+                    }
                 },
                 OnShake = v => { Position += v; },
             };
