@@ -559,7 +559,7 @@ header {
                         
                         string rawCommand = WebUtility.UrlDecode(data["command"]);
                         if (string.IsNullOrWhiteSpace(rawCommand) || string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
-                            StringBuilder commandList = new();
+                            StringBuilder commandList = new StringBuilder();
                             WriteHTMLStart(c, commandList);
                             commandList.AppendLine(@"<ul>");
                             commandList.AppendLine(@"<h2>Commands</h2>");
@@ -586,7 +586,7 @@ header {
                             string[] args = new string[commandAndArgs.Length - 1];
                             Array.Copy(commandAndArgs, 1, args, 0, args.Length);
 
-                            StringBuilder output = new();
+                            StringBuilder output = new StringBuilder();
                             MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
                                 try {
                                     ((Monocle.patch_Commands) Engine.Commands).debugRClog = output;

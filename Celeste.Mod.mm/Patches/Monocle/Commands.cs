@@ -501,7 +501,7 @@ namespace Monocle {
 
         public IEnumerable<CommandData> GetCommands() {
             foreach (var command in commands) {
-                yield return new() {Name = command.Key, Help = command.Value.Help, Usage = command.Value.Usage};
+                yield return new CommandData {Name = command.Key, Help = command.Value.Help, Usage = command.Value.Usage};
             }
         }
 
