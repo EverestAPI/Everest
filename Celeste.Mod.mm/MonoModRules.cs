@@ -2563,8 +2563,9 @@ namespace MonoMod {
             //     this.MoveStaticMovers(this.startPosition - this.Position);
             //     this.DisableStaticMovers();
             // To:
+            //     Vector2 amount = this.startPosition - this.Position;
             //     this.DisableStaticMovers();
-            //     this.MoveStaticMovers(this.startPosition - this.Position);
+            //     this.MoveStaticMovers(amount);
             ILCursor cursor = new ILCursor(new ILContext(method));
             cursor.GotoNext(MoveType.Before, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
             cursor.Remove();
