@@ -102,6 +102,8 @@ namespace Celeste {
         public class patch_ImageLayer : ImageLayer {
 
             public bool Loop;
+            private bool loopDone;
+            
             public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml)
                 : base(offset, atlas, xml) {
                 //no-op
@@ -115,8 +117,7 @@ namespace Celeste {
 
                 Loop = xml.AttrBool("loop", true);
             }
-
-            private bool loopDone;
+            
             public int ImageIndex {
                 get {
                     if (Loop) {
