@@ -104,8 +104,7 @@ namespace Celeste {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnDestroy = () => {
                     RemoveSelf();
-                    if (solid != null) 
-                        solid.RemoveSelf(); 
+                    solid?.RemoveSelf();
                 },
                 OnDisable = () => {
                     Active = Visible = Collidable = false;
@@ -119,12 +118,10 @@ namespace Celeste {
                 },
                 OnMove = v => {
                     Position += v;
-                    if (solid != null) {
-                        if (staticMover.Platform != null) 
-                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
-                        solid.MoveHExact((int) v.X);
-                        solid.MoveVExact((int) v.Y);
-                    }
+                    if (staticMover.Platform != null) 
+                        solid.LiftSpeed = staticMover.Platform.LiftSpeed;
+                    solid?.MoveHExact((int) v.X);
+                    solid?.MoveVExact((int) v.Y);
                 },
                 OnShake = v => { Position += v; },
             };

@@ -428,6 +428,7 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
 
+    /// <summary>
     /// Patches the method to update the Name and the TheoSisterName, if the file has been renamed in-game, in the file's SaveData.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSlotOnContinueSelected))]
@@ -438,6 +439,7 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMoveBlockController))]
     class PatchMoveBlockControllerAttribute : Attribute { }
+
 
     static class MonoModRules {
 
@@ -2547,8 +2549,7 @@ namespace MonoMod {
         }
         
         public static void PatchMoveBlockController(MethodDefinition method, CustomAttribute attrib) {
-            FieldDefinition f_this = null;
-            MethodReference m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+            MethodReference m_Platform_MoveStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void MoveStaticMovers(Microsoft.Xna.Framework.Vector2)");
 
             // The routine is stored in a compiler-generated method.
             foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
@@ -2558,15 +2559,14 @@ namespace MonoMod {
                 break;
             }
 
-            // Goal is to flip these two commands. We move to before the Move call, emit the Disable call, then remove the original Disable call.
+            // Goal is to flip these two commands by swapping the Move call to after the Disable call.
             // this.MoveStaticMovers(this.startPosition - this.Position);
             // this.DisableStaticMovers();
             ILCursor cursor = new ILCursor(new ILContext(method));
-            cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Blt);
-            cursor.Emit(OpCodes.Ldloc_1);
-            cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
-            cursor.RemoveRange(2);
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
+            cursor.Remove();
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "DisableStaticMovers"));
+            cursor.Emit(OpCodes.Callvirt, m_Platform_MoveStaticMovers);
         }
 
         public static void PostProcessor(MonoModder modder) {
