@@ -201,6 +201,12 @@ namespace Celeste {
             if (backdropFromMod != null)
                 return backdropFromMod;
 
+            if (BackdropLoaders.TryGetValue(child.Name, out BackdropLoader loader)) {
+                Backdrop loaded = loader(child);
+                if (loaded != null)
+                    return loaded;
+            }
+
             if (child.Name.Equals("rain", StringComparison.OrdinalIgnoreCase)) {
                 patch_RainFG rain = new patch_RainFG();
                 if (child.HasAttr("color"))

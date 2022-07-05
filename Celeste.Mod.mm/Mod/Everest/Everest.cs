@@ -728,7 +728,6 @@ namespace Celeste.Mod {
                             continue;
                         }
                         patch_MapData.BackdropLoaders[id] = loader;
-                        Console.WriteLine(patch_MapData.BackdropLoaders.Count);
                     }
                 }
             }
