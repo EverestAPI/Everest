@@ -653,7 +653,7 @@ namespace Celeste.Mod {
                         genName = genName.Trim();
 
                         patch_EventTrigger.CutsceneLoader loader = null;
-                        
+
                         ConstructorInfo ctor;
                         MethodInfo gen;
 
