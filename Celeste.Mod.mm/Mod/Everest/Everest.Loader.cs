@@ -40,9 +40,10 @@ namespace Celeste.Mod {
             internal static string NameTemporaryBlacklist;
             internal static List<string> _TemporaryBlacklist;
             /// <summary>
-            /// The currently loaded mod whitelist.
+            /// The currently loaded mod temporary blacklist.
             /// </summary>
             public static ReadOnlyCollection<string> TemporaryBlacklist => _TemporaryBlacklist?.AsReadOnly();
+
             /// <summary>
             /// The path to the Everest /Mods/whitelist.txt file.
             /// </summary>
@@ -119,8 +120,13 @@ namespace Celeste.Mod {
 
             public static bool AutoLoadNewMods { get; internal set; }
 
-            public static bool ShouldLoadFile(string file)
-                => !Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)) && (Whitelist == null || Whitelist.Contains(file));
+            public static bool ShouldLoadFile(string file) {
+                if (CoreModule.Settings.WhitelistFullOverride ?? false) {
+                    return Whitelist != null ? Whitelist.Contains(file) : (!Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)));
+                } else {
+                    return (Whitelist != null && Whitelist.Contains(file)) || (!Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)));
+                }
+            }
 
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));

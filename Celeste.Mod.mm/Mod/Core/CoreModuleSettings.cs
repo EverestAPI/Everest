@@ -206,6 +206,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? SaveDataFlush { get; set; } = null;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool? WhitelistFullOverride { get; set; } = null;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
