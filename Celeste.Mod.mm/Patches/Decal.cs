@@ -28,6 +28,10 @@ namespace Celeste {
         private float hideRange;
         private float showRange;
 
+        private Solid solid;
+        
+        private StaticMover staticMover;
+
         public bool Overlay { get; private set; }
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
@@ -82,23 +86,50 @@ namespace Celeste {
         [MakeMethodPublic]
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
-        [MonoModIgnore]
+        [MonoModReplace]
         [MakeMethodPublic]
-        public extern void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true);
+        public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true) {
+            solid = new Solid(Position + new Vector2(x, y), w, h, true);
+            solid.BlockWaterfalls = blockWaterfalls;
+            solid.SurfaceSoundIndex = surfaceSoundIndex;
+            Scene.Add(solid);
+        }
 
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
         }
 
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
-            StaticMover sm = new StaticMover {
+            staticMover = new StaticMover {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
-                OnMove = v => { X += v.X; Y += v.Y; },
-                OnShake = v => { X += v.X; Y += v.Y; },
+                OnDestroy = () => {
+                    RemoveSelf();
+                    solid?.RemoveSelf();
+                },
+                OnDisable = () => {
+                    Active = Visible = Collidable = false;
+                    if (solid != null) 
+                        solid.Collidable = false; 
+                },
+                OnEnable = () => {
+                    Active = Visible = Collidable = true;
+                    if (solid != null)
+                        solid.Collidable = true;
+                },
+                OnMove = v => {
+                    Position += v;
+                    if (solid != null) {
+                        if (staticMover.Platform != null)
+                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
+                        solid.MoveHExact((int) v.X);
+                        solid.MoveVExact((int) v.Y);
+                    }
+                },
+                OnShake = v => { Position += v; },
             };
             if (jumpThrus)
-                sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
-            Add(sm);
+                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
+            Add(staticMover);
         }
 
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
