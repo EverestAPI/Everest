@@ -362,7 +362,7 @@ namespace Celeste.Mod {
                     return null;
 
                 foreach (ModContent mod in Content.Mods) {
-                    if (mod is not ZipModContent or FileSystemModContent)
+                    if (mod is not (ZipModContent or FileSystemModContent))
                         continue;
 
                     EverestModuleMetadata meta = mod.Mod;
