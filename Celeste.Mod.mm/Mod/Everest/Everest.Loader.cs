@@ -498,9 +498,6 @@ namespace Celeste.Mod {
 
                 using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
 
-                // Add an AssemblyResolve handler for all bundled libraries.
-                AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
-
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
@@ -772,39 +769,6 @@ namespace Celeste.Mod {
 
                 return true;
             }
-
-            private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
-                => (sender, args) => {
-                    AssemblyName name = args?.Name == null ? null : new AssemblyName(args.Name);
-                    if (string.IsNullOrEmpty(name?.Name))
-                        return null;
-
-                    string path = name.Name + ".dll";
-                    if (!string.IsNullOrEmpty(meta.DLL))
-                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
-
-                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                        string zipPath = path.Replace('\\', '/');
-                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                            foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName == zipPath)
-                                    using (MemoryStream stream = entry.ExtractStream())
-                                        return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
-                            }
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                        string filePath = path;
-                        if (!File.Exists(filePath))
-                            filePath = Path.Combine(meta.PathDirectory, filePath);
-                        if (File.Exists(filePath))
-                            using (FileStream stream = File.OpenRead(filePath))
-                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
-                    }
-
-                    return null;
-                };
 
             private static void ApplyModHackfixes(EverestModuleMetadata meta, Assembly asm) {
                 // Feel free to keep this as a reminder on mod hackfixes or whatever. -jade

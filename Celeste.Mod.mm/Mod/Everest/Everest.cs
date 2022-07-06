@@ -355,6 +355,48 @@ namespace Celeste.Mod {
                 return null;
             };
 
+            // Handle failed resolution for unregistered assemblies
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
+
+                if (string.IsNullOrEmpty(name?.Name))
+                    return null;
+
+                string path = name.Name + ".dll";
+                foreach (ModContent mod in Content.Mods) {
+                    EverestModuleMetadata meta = mod.Mod;
+                    if (meta == null)
+                        continue;
+                    
+                    if (!string.IsNullOrEmpty(meta.DLL)) {
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+                    }
+
+                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
+                        string zipPath = path.Replace('\\', '/');
+                        if (mod.Map.TryGetValue(zipPath, out ModAsset asm)) {
+                            using Stream stream = asm.Stream;
+                            if (stream != null)
+                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(meta.PathDirectory)) {
+                        string filePath = path;
+                        if (!File.Exists(filePath))
+                            filePath = Path.Combine(meta.PathDirectory, filePath);
+                        if (File.Exists(filePath) && mod.Map.TryGetValue(filePath, out ModAsset asm)) {
+                            using Stream stream = asm.Stream;
+                            if (stream != null)
+                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
+                        }
+                            
+                    }
+                }
+
+                return null;
+            };
+
             // Preload some basic dependencies.
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
