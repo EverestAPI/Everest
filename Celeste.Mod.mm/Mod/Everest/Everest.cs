@@ -362,6 +362,9 @@ namespace Celeste.Mod {
                     return null;
 
                 foreach (ModContent mod in Content.Mods) {
+                    if (mod is not ZipModContent or FileSystemModContent)
+                        continue;
+
                     EverestModuleMetadata meta = mod.Mod;
                     if (meta == null)
                         continue;
@@ -369,26 +372,14 @@ namespace Celeste.Mod {
                     string path = name.Name + ".dll";
                     if (!string.IsNullOrEmpty(meta.DLL)) {
                         path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+                        if (!string.IsNullOrEmpty(meta.PathDirectory))
+                            path = path.Substring(meta.PathDirectory.Length + 1).Replace(Path.DirectorySeparatorChar, '/');
                     }
 
-                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                        string zipPath = path.Replace('\\', '/');
-                        if (mod.Map.TryGetValue(zipPath, out ModAsset asm)) {
-                            using Stream stream = asm.Stream;
-                            if (stream != null)
-                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                        string filePath = path;
-                        if (!File.Exists(filePath))
-                            filePath = Path.Combine(meta.PathDirectory, filePath);
-                        if (File.Exists(filePath) && mod.Map.TryGetValue(filePath, out ModAsset asm)) {
-                            using Stream stream = asm.Stream;
-                            if (stream != null)
-                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
-                        }
+                    if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
+                        using Stream stream = asm.Stream;
+                        if (stream != null)
+                            return Relinker.GetRelinkedAssembly(meta, name.Name, stream);
                     }
                 }
 
