@@ -53,7 +53,12 @@ namespace Celeste {
             DashlessGoldenberries = new List<EntityData>();
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
-            levelsByName.Clear();
+
+            if (levelsByName is null) {
+                levelsByName = new Dictionary<string, LevelData>();
+            } else {
+                levelsByName.Clear();
+            }
 
             try {
                 orig_Load();
