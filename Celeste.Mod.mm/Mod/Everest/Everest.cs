@@ -358,16 +358,15 @@ namespace Celeste.Mod {
             // Handle failed resolution for unregistered assemblies
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
                 AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
-
                 if (string.IsNullOrEmpty(name?.Name))
                     return null;
 
-                string path = name.Name + ".dll";
                 foreach (ModContent mod in Content.Mods) {
                     EverestModuleMetadata meta = mod.Mod;
                     if (meta == null)
                         continue;
-                    
+
+                    string path = name.Name + ".dll";
                     if (!string.IsNullOrEmpty(meta.DLL)) {
                         path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
                     }
@@ -390,7 +389,6 @@ namespace Celeste.Mod {
                             if (stream != null)
                                 return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
                         }
-                            
                     }
                 }
 
