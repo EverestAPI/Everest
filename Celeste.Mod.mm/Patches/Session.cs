@@ -3,13 +3,16 @@
 using MonoMod;
 
 namespace Celeste {
-    public class patch_Session {
+    public class patch_Session : Session {
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
 
-        [MonoModIgnore]
-        public string Level;
-
         private LevelData levelData;
+        private uint leveldata_cache_validity = 0;
+
+        public patch_Session(AreaKey area, string checkpoint = null, AreaStats oldStats = null)
+            : base(area, checkpoint, oldStats) {
+            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
 
         [MonoModConstructor]
         public void ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null) {
@@ -22,12 +25,15 @@ namespace Celeste {
             orig_ctor(area, checkpoint, oldStats);
         }
 
-        public extern LevelData orig_get_LevelData();
-        public LevelData get_LevelData() {
-            if (levelData is null || levelData.Name != Level) {
-                levelData = orig_get_LevelData();
+        public new LevelData LevelData {
+            [MonoModReplace]
+            get {
+                if (levelData is null || levelData.Name != Level || ((patch_MapData) MapData).session_leveldata_cache_validity != leveldata_cache_validity) {
+                    levelData = MapData.Get(Level);
+                    leveldata_cache_validity = ((patch_MapData) MapData).session_leveldata_cache_validity;
+                }
+                return levelData;
             }
-            return levelData;
         }
     }
 }

@@ -7,6 +7,7 @@ using MonoMod;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 using System.Linq;
 
 namespace Celeste {
@@ -15,6 +16,9 @@ namespace Celeste {
         public bool DetectedCassette;
         public int DetectedStrawberriesIncludingUntracked;
         public List<EntityData> DashlessGoldenberries = new List<EntityData>();
+
+        [XmlIgnore]
+        internal uint session_leveldata_cache_validity = 0;
 
         public MapMetaModeProperties Meta {
             get {
@@ -36,6 +40,9 @@ namespace Celeste {
 
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
+            // invalidate the LevelData cache
+            session_leveldata_cache_validity += 1;
+
             // reset those fields to prevent them from stacking up when reloading the map.
             DetectedStrawberries = 0;
             DetectedHeartGem = false;
