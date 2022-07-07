@@ -362,18 +362,15 @@ namespace Celeste.Mod {
                     return null;
 
                 foreach (ModContent mod in Content.Mods) {
-                    if (mod is not (ZipModContent or FileSystemModContent))
-                        continue;
-
                     EverestModuleMetadata meta = mod.Mod;
                     if (meta == null)
                         continue;
 
                     string path = name.Name + ".dll";
                     if (!string.IsNullOrEmpty(meta.DLL)) {
-                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path).Replace('\\', '/');
                         if (!string.IsNullOrEmpty(meta.PathDirectory))
-                            path = path.Substring(meta.PathDirectory.Length + 1).Replace(Path.DirectorySeparatorChar, '/');
+                            path = path.Substring(meta.PathDirectory.Length + 1);
                     }
 
                     if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
