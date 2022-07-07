@@ -2498,12 +2498,16 @@ namespace MonoMod {
         }
 
         public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
-            MethodReference m_ImageLayer_Render = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
+            MethodReference m_ImageLayer_get_ImageIndex = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
             
             ILCursor cursor = new ILCursor(context);
+            
+            // change: MTexture mTexture = Images[(int)(Frame % (float)Images.Count)];
+            // to:     MTexture mTexture = Images[ImageIndex];
+            // for new property ImageIndex
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_Render);
+            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_get_ImageIndex);
             cursor.RemoveRange(8);
         }
         
