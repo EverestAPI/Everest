@@ -427,6 +427,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to support non-looping complete screen layers.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCompleteRendererImageLayerRender))]
+    class PatchCompleteRendererImageLayerRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patches the method to update the Name and the TheoSisterName, if the file has been renamed in-game, in the file's SaveData.
@@ -2491,6 +2497,20 @@ namespace MonoMod {
             cursor.RemoveRange(3);
         }
 
+        public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
+            MethodReference m_ImageLayer_get_ImageIndex = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
+            
+            ILCursor cursor = new ILCursor(context);
+            
+            // change: MTexture mTexture = Images[(int)(Frame % (float)Images.Count)];
+            // to:     MTexture mTexture = Images[ImageIndex];
+            // for new property ImageIndex
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_get_ImageIndex);
+            cursor.RemoveRange(8);
+        }
+        
         public static void PatchOuiFileSelectSlotOnContinueSelected(ILContext context, CustomAttribute attrib) {
             FieldDefinition f_OuiFileSelectSlot_Name = context.Method.DeclaringType.FindField("Name");
             FieldDefinition f_OuiFileSelectSlot_renamed = context.Method.DeclaringType.FindField("renamed");

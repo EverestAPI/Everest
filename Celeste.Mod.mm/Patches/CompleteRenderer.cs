@@ -1,4 +1,5 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 
 using Celeste.Mod;
@@ -98,7 +99,49 @@ namespace Celeste {
 
         }
 
-        public class ImageLayerNoXML : ImageLayer {
+        public class patch_ImageLayer : ImageLayer {
+
+            public bool Loop;
+            private bool loopDone;
+            
+            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml)
+                : base(offset, atlas, xml) {
+                //no-op
+            }
+
+            public extern void orig_ctor(Vector2 offset, Atlas atlas, XmlElement xml);
+
+            [MonoModConstructor]
+            public void ctor(Vector2 offset, Atlas atlas, XmlElement xml) {
+                orig_ctor(offset, atlas, xml);
+
+                Loop = xml.AttrBool("loop", true);
+            }
+            
+            public int ImageIndex {
+                get {
+                    if (Loop) {
+                        return (int) (Frame % (float) Images.Count); // as in vanilla
+                    } else {
+                        if (loopDone) {
+                            return Images.Count - 1;
+                        } else {
+                            int index = (int) (Frame % (float) Images.Count);
+                            if (index == Images.Count - 1) {
+                                loopDone = true;
+                            }
+                            return index;
+                        }
+                    }
+                }
+            }
+
+            [MonoModIgnore]
+            [PatchCompleteRendererImageLayerRender]
+            public new extern void Render(Vector2 scroll);
+        }
+
+        public class ImageLayerNoXML : patch_ImageLayer {
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
@@ -119,6 +162,7 @@ namespace Celeste {
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
                 Scale = meta.Scale;
+                Loop = meta.Loop;
             }
         }
 
