@@ -19,9 +19,6 @@ namespace Celeste {
 
         private Dictionary<string, LevelData> levelsByName = new Dictionary<string, LevelData>();
 
-        [XmlIgnore]
-        internal uint session_leveldata_cache_validity = 0;
-
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
@@ -42,9 +39,6 @@ namespace Celeste {
 
         [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
-            // invalidate the LevelData cache
-            session_leveldata_cache_validity += 1;
-
             // reset those fields to prevent them from stacking up when reloading the map.
             DetectedStrawberries = 0;
             DetectedHeartGem = false;
