@@ -439,6 +439,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSlotOnContinueSelected))]
     class PatchOuiFileSelectSlotOnContinueSelectedAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches MoveBlock.Controller to disable static movers before resetting their position when breaking.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMoveBlockController))]
+    class PatchMoveBlockControllerAttribute : Attribute { }
 
 
     static class MonoModRules {
@@ -2556,6 +2562,33 @@ namespace MonoMod {
 
             // Target for if renamed is false
             cursor.MarkLabel(renamedTarget);
+        }
+        
+        public static void PatchMoveBlockController(MethodDefinition method, CustomAttribute attrib) {
+            MethodReference m_Platform_MoveStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void MoveStaticMovers(Microsoft.Xna.Framework.Vector2)");
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            // From:
+            //     this.MoveStaticMovers(this.startPosition - this.Position);
+            //     this.DisableStaticMovers();
+            // To:
+            //     Vector2 amount = this.startPosition - this.Position;
+            //     this.DisableStaticMovers();
+            //     this.MoveStaticMovers(amount);
+            ILCursor cursor = new ILCursor(new ILContext(method));
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
+            cursor.Remove();
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "DisableStaticMovers"));
+
+            // The argument order happens to let us emit the two function calls adjacent to each other
+            cursor.Emit(OpCodes.Callvirt, m_Platform_MoveStaticMovers);
         }
 
         public static void PostProcessor(MonoModder modder) {
