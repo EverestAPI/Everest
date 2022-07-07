@@ -28,6 +28,8 @@ namespace Celeste {
         private float hideRange;
         private float showRange;
 
+        private float frame;
+
         public bool Overlay { get; private set; }
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
@@ -97,7 +99,7 @@ namespace Celeste {
                 OnShake = v => { X += v.X; Y += v.Y; },
             };
             if (jumpThrus)
-                sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
+                sm.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
             Add(sm);
         }
 
@@ -116,10 +118,7 @@ namespace Celeste {
             scaredAnimal = true;
         }
 
-        [MonoModIgnore]
-        private float frame;
-
-        public void MakeRandomAnimationOffset() {
+        public void RandomizeStartingFrame() {
             this.frame = Calc.Random.NextFloat(textures.Count);
         }
 

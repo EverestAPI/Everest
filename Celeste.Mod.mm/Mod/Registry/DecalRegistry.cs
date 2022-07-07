@@ -18,8 +18,8 @@ namespace Celeste.Mod {
                 ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
             }},
             { "scale", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float scalex = attrs["multiplierX"] != null ? float.Parse(attrs["multiplierX"].Value) : 1f;
-                float scaley = attrs["multiplierY"] != null ? float.Parse(attrs["multiplierY"].Value) : 1f;
+                float scalex = attrs["multiplyX"] != null ? float.Parse(attrs["multiplyX"].Value) : 1f;
+                float scaley = attrs["multiplyY"] != null ? float.Parse(attrs["multiplyY"].Value) : 1f;
                 ((patch_Decal)decal).Scale *= new Vector2(scalex, scaley);
             }},
             { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -135,8 +135,8 @@ namespace Celeste.Mod {
                 int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
             }},
-            { "randomiseAnimationOffset", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).MakeRandomAnimationOffset();
+            { "randomizeFrame", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).RandomizeStartingFrame();
             }},
             { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
