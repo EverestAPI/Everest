@@ -332,7 +332,9 @@ namespace Celeste.Mod {
                 if (!asmName.Name.StartsWith("Mono.Cecil") &&
                     !asmName.Name.StartsWith("YamlDotNet") &&
                     !asmName.Name.StartsWith("NLua") &&
-                    !asmName.Name.StartsWith("DotNetZip"))
+                    !asmName.Name.StartsWith("DotNetZip") &&
+                    !asmName.Name.StartsWith("Newtonsoft.Json") &&
+                    !asmName.Name.StartsWith("Jdenticon"))
                     return null;
 
                 Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
@@ -348,6 +350,34 @@ namespace Celeste.Mod {
                 foreach (Assembly asm in _RelinkedAssemblies) {
                     if (asm.GetName().Name == asmName.Name)
                         return asm;
+                }
+
+                return null;
+            };
+
+            // Handle failed resolution for unregistered assemblies
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
+                if (string.IsNullOrEmpty(name?.Name))
+                    return null;
+
+                foreach (ModContent mod in Content.Mods) {
+                    EverestModuleMetadata meta = mod.Mod;
+                    if (meta == null)
+                        continue;
+
+                    string path = name.Name + ".dll";
+                    if (!string.IsNullOrEmpty(meta.DLL)) {
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path).Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(meta.PathDirectory))
+                            path = path.Substring(meta.PathDirectory.Length + 1);
+                    }
+
+                    if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
+                        using Stream stream = asm.Stream;
+                        if (stream != null)
+                            return Relinker.GetRelinkedAssembly(meta, name.Name, stream);
+                    }
                 }
 
                 return null;

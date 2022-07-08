@@ -33,6 +33,7 @@ namespace Celeste.Mod.UI {
 
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             TextMenu menu = new TextMenu();
+            ((patch_TextMenu) menu).CompactWidthMode = true;
             ((patch_TextMenu) menu).BatchMode = true;
 
             menu.Add(new TextMenuExt.HeaderImage("menu/everest") {

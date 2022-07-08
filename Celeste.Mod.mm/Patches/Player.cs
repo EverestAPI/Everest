@@ -195,6 +195,11 @@ namespace Celeste {
             return orig_Pickup(pickup);
         }
 
+        public override void SceneBegin(Scene scene) {
+            base.SceneBegin(scene);
+            diedInGBJ = 0;
+        }
+
         public extern void orig_SceneEnd(Scene scene);
         public override void SceneEnd(Scene scene) {
             orig_SceneEnd(scene);
