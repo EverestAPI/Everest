@@ -47,18 +47,12 @@ namespace Celeste {
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
 
-            if (levelsByName is null) {
-                levelsByName = new Dictionary<string, LevelData>();
-            } else {
-                levelsByName.Clear();
-            }
+            RegenerateLevelsByNameCache();
 
             try {
                 orig_Load();
 
                 foreach (LevelData level in Levels) {
-                    levelsByName.Add(level.Name, level);
-
                     foreach (EntityData entity in level.Entities) {
                         if (entity.Name == "memorialTextController") // aka "dashless golden"
                             DashlessGoldenberries.Add(entity);
@@ -127,10 +121,25 @@ namespace Celeste {
 
         [MonoModReplace]
         public new LevelData Get(string levelName) {
-            if (levelsByName.TryGetValue(levelName, out LevelData level)) {
+            if (levelsByName is null || levelsByName.Count != Levels.Count)
+                RegenerateLevelsByNameCache();
+
+            if (levelsByName.TryGetValue(levelName, out LevelData level))
                 return level;
-            }
+
             return null;
+        }
+
+        public void RegenerateLevelsByNameCache() {
+            if (levelsByName is null) {
+                levelsByName = new Dictionary<string, LevelData>();
+            } else {
+                levelsByName.Clear();
+            }
+
+            foreach (LevelData level in Levels) {
+                levelsByName.Add(level.Name, level);
+            }
         }
 
         private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self) {
