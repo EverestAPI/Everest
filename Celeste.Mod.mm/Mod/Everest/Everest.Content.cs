@@ -800,9 +800,9 @@ namespace Celeste.Mod {
                         break;
                     }
 
+                // Fallback types for anything inside of the Ahorn or Loenn folders.
+                // Will be ignored during collision checks.
                 } else if (file.StartsWith("Ahorn/")) {
-                    // Fallback types for anything inside of the Ahorn or Loenn folders.
-                    // Will be ignored during collision checks.
                     type = typeof(AssetTypeAhorn);
 
                 } else if (file.StartsWith("Loenn/")) {
