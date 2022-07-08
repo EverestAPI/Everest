@@ -2279,13 +2279,52 @@ namespace MonoMod {
         }
 
         public static void PatchSettingsDoNotTranslateKeys(ILContext il, CustomAttribute attrib) {
+            // Generic types are a mess
+            FieldReference f_Binding_Mouse = il.Module.GetType("Monocle.Binding").FindField("Mouse");
+            GenericInstanceType t_List_MouseButtons = (GenericInstanceType) il.Module.ImportReference(f_Binding_Mouse.FieldType);
+            MethodReference m_temp = t_List_MouseButtons.Resolve().FindProperty("Count").GetMethod;
+            MethodReference m_List_MouseButtons_get_Count = il.Module.ImportReference(
+                new MethodReference(
+                    m_temp.Name,
+                    m_temp.ReturnType) {
+                    DeclaringType = t_List_MouseButtons,
+                    HasThis = m_temp.HasThis,
+                    ExplicitThis = m_temp.ExplicitThis,
+                    CallingConvention = m_temp.CallingConvention,
+                }
+            );
+
             ILCursor c = new ILCursor(il);
+            ILCursor c_Search = c.Clone();
+
+            int n = 0;
+            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt(out MethodReference m) && m.Name == "get_Count")) {
+                /*
+                Before:
+                    if (reset || {Input}.Keyboard.Count <= 0)
+                After:
+                    if (reset || {Input}.Keyboard.Count + {Input}.Mouse.Count <= 0)
+                */
+                for (int i = 0; i < 4; i++) {
+                    // Instead of changing the offset variable, change the number of instructions by emitting :cosmicline:
+                    Instruction instr = c_Search.Goto(c.Index - 3).Prev;
+                    object operand = instr.Operand switch {
+                        FieldReference f when f.Name == "Keyboard" => f_Binding_Mouse,
+                        MethodReference m when m.Name == "get_Count" => m_List_MouseButtons_get_Count,
+                        _ => instr.Operand
+                    };
+                    c.Emit(instr.OpCode, operand);
+                }
+                c.Emit(OpCodes.Add);
+                n++;
+            }
+            if (n != 17)
+                throw new Exception("Incorrect number of matches for get_Count in Settings.SetDefaultKeyboardControls");
+
 
             // find the instruction after the group of TranslateKeys.
-            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
-            Instruction jumpTarget = c.Next;
-
-            c.Index = 0;
+            while (c_Search.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
+            Instruction jumpTarget = c_Search.Next;
 
             // go just before the first TranslateKeys call.
             if (c.TryGotoNext(MoveType.AfterLabel,
