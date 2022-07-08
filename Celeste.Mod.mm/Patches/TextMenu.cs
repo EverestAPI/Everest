@@ -430,7 +430,7 @@ namespace Celeste {
             public void Append(List<patch_MInput.patch_MouseData.MouseButtons> buttons) {
                 int max = Math.Min(Input.MaxBindings - Values.Count, buttons.Count);
                 for (int i = 0; i < max; i++) {
-                    MTexture mTexture = null; //Input.GuiMouseButton(buttons[i], Input.PrefixMode.Latest, null);
+                    MTexture mTexture = patch_Input.GuiMouseButton(buttons[i], patch_Input.PrefixMode.Latest, null);
                     if (mTexture != null) {
                         Values.Add(mTexture);
                         continue;

@@ -33,6 +33,26 @@ namespace Celeste {
             Everest.Events.Input.Deregister();
         }
 
+        [MonoModIgnore]
+        private static extern MTexture GuiTexture(string prefix, string input);
+
+        [MonoModIgnore]
+        public static extern MTexture orig_GuiButton(VirtualButton button, PrefixMode mode = PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion");
+
+        public static MTexture GuiButton(VirtualButton button, PrefixMode mode = PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
+            if (!GuiInputController() && Input.FirstKey(button) == Keys.None) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons mouseBtn in ((patch_Binding)button.Binding).Mouse)
+                    return GuiMouseButton(mouseBtn, mode, fallback);
+            }
+            return orig_GuiButton(button, mode, fallback);
+        }
+
+        public static MTexture GuiMouseButton(patch_MInput.patch_MouseData.MouseButtons button, PrefixMode mode = PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
+            string name = button.ToString();
+            MTexture mTexture = GuiTexture("mouse", name);
+            return mTexture;
+        }
+
         // Celeste 1.3.3.0 comes with a new parameter.
 
         /*
