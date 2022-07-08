@@ -252,3 +252,6 @@ result
 
 # Olympus temporary build files
 tmp-olympus/
+
+# JetBrains Rider files
+.idea/

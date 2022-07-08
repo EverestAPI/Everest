@@ -28,6 +28,11 @@ namespace Celeste {
         public List<Item> Items => items;
 
         /// <summary>
+        /// If enabled, the menu will be made narrower by adapting the size of the two "columns" for each menu section instead of for the entire menu.
+        /// </summary>
+        public bool CompactWidthMode { get; set; } = false;
+
+        /// <summary>
         /// When a menu is in batch mode, adding / removing items will not recalculate its size to improve performance.
         /// Size is recalculated immediately after batch mode is disabled.
         /// </summary>
@@ -229,8 +234,7 @@ namespace Celeste {
 
         /// <inheritdoc cref="TextMenu.Add(TextMenu.Item)"/>
         [MonoModReplace]
-        public new TextMenu Add(Item item)
-        {
+        public new TextMenu Add(Item item) {
             items.Add(item);
             item.Container = this;
             Add(item.ValueWiggler = Wiggler.Create(0.25f, 3f));
@@ -254,10 +258,48 @@ namespace Celeste {
             if (BatchMode) {
                 recalculatingSizeInBatchMode = true;
             }
-            orig_RecalculateSize();
+
+            if (CompactWidthMode) {
+                recalculateSizeForCompactWidthMode();
+            } else {
+                orig_RecalculateSize();
+            }
+
             if (BatchMode) {
                 recalculatingSizeInBatchMode = false;
             }
+        }
+
+        private void recalculateSizeForCompactWidthMode() {
+            LeftColumnWidth = RightColumnWidth = Height = 0f;
+
+            float leftColumnWidthSoFar = 0f;
+            float rightColumnWidthSoFar = 0f;
+
+            foreach (Item item in items) {
+                if (item is SubHeader && item is not TextMenuExt.EaseInSubHeaderExt) {
+                    // starting new section, save the new maximum and reset the column sizes
+                    LeftColumnWidth = Math.Max(LeftColumnWidth, leftColumnWidthSoFar + rightColumnWidthSoFar);
+                    leftColumnWidthSoFar = rightColumnWidthSoFar = 0f;
+                }
+
+                // take height into account
+                if (item.Visible) {
+                    Height += item.Height() + ItemSpacing;
+                }
+
+                // take width into account
+                if (item.IncludeWidthInMeasurement) {
+                    leftColumnWidthSoFar = Math.Max(leftColumnWidthSoFar, item.LeftWidth());
+                    rightColumnWidthSoFar = Math.Max(rightColumnWidthSoFar, item.RightWidth());
+                }
+            }
+
+            Height -= ItemSpacing;
+
+            // take the last section into account by saving the maximum one last time
+            LeftColumnWidth = Math.Max(LeftColumnWidth, leftColumnWidthSoFar + rightColumnWidthSoFar);
+            Width = Math.Max(MinWidth, LeftColumnWidth);
         }
 
         public class patch_LanguageButton : LanguageButton {
@@ -360,12 +402,16 @@ namespace Celeste {
             [MonoModIgnore]
             public extern void ctor(string label, bool topPadding = true);
 
-            [MonoModIfFlag("V2:SubHeader")]
+            // Legacy Support
             [MonoModConstructor]
             public void ctor(string label) {
                 ctor(label, true);
             }
 
+            [MonoModReplace]
+            public override float Height() {
+                return (Title.Length > 0 ? (ActiveFont.HeightOf(Title) * 0.6f) : 0f) + (TopPadding ? 48 : 0);
+            }
         }
 
         public class patch_Setting : Setting {
@@ -430,7 +476,7 @@ namespace Celeste {
             public void Append(List<patch_MInput.patch_MouseData.MouseButtons> buttons) {
                 int max = Math.Min(Input.MaxBindings - Values.Count, buttons.Count);
                 for (int i = 0; i < max; i++) {
-                    MTexture mTexture = patch_Input.GuiMouseButton(buttons[i], patch_Input.PrefixMode.Latest, null);
+                    MTexture mTexture = patch_Input.GuiMouseButton(buttons[i], Input.PrefixMode.Latest, null);
                     if (mTexture != null) {
                         Values.Add(mTexture);
                         continue;

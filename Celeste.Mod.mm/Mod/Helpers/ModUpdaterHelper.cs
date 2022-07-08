@@ -7,6 +7,18 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public class ModUpdaterHelper {
+        private class CompressedWebClient : WebClient {
+            protected override WebRequest GetWebRequest(Uri address) {
+                // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
+                // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
+                HttpWebRequest request = (HttpWebRequest) base.GetWebRequest(address);
+                request.AutomaticDecompression = DecompressionMethods.GZip;
+                request.UserAgent = "Everest/" + Everest.VersionString + "; gzip";
+
+                return request;
+            }
+        }
+
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
                 if (x.LastUpdate != y.LastUpdate) {
@@ -29,7 +41,7 @@ namespace Celeste.Mod.Helpers {
 
                 Logger.Log("ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (WebClient wc = new WebClient()) {
+                using (WebClient wc = new CompressedWebClient()) {
                     string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
@@ -64,7 +76,7 @@ namespace Celeste.Mod.Helpers {
                     string xxHashStringInstalled = BitConverter.ToString(metadata.Hash).Replace("-", "").ToLowerInvariant();
                     Logger.Log("ModUpdaterHelper", $"Mod {metadata.Name}: installed hash {xxHashStringInstalled}, latest hash(es) {string.Join(", ", updateCatalog[metadata.Name].xxHash)}");
                     if (!updateCatalog[metadata.Name].xxHash.Contains(xxHashStringInstalled)) {
-                        availableUpdatesCatalog.Add(updateCatalog[metadata.Name], metadata);
+                        availableUpdatesCatalog[updateCatalog[metadata.Name]] = metadata;
                     }
                 }
             }

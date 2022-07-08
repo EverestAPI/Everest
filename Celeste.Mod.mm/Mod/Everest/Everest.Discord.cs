@@ -40,6 +40,8 @@ namespace Celeste.Mod {
             public static void Disable() {
                 OnGameExit();
 
+                DiscordHandlers = new DiscordRpc.EventHandlers();
+
                 Events.Celeste.OnExiting -= OnGameExit;
                 Events.MainMenu.OnCreateButtons -= OnMainMenu;
                 Events.Level.OnLoadLevel -= OnLoadLevel;
@@ -50,29 +52,30 @@ namespace Celeste.Mod {
                 string lib = null;
                 if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordLib))
                     lib = CoreModule.Settings.DiscordLib;
-                else if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+                else if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows))
                     lib = "discord-rpc.dll";
-                else if (Environment.OSVersion.Platform == PlatformID.MacOSX) {
+                else if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))
                     lib = "libdiscord-rpc.dylib";
-                    // FIXME: macOS doesn't see libdiscord-rpc.dylib wherever Celeste.exe is.
-                } else if (Environment.OSVersion.Platform == PlatformID.Unix)
+                else if (PlatformHelper.Is(MonoMod.Utils.Platform.Unix))
                     lib = "libdiscord-rpc.so";
 
                 if (!string.IsNullOrEmpty(lib))
                     DynDll.Mappings["discord-rpc"] = new List<DynDllMapping>() { lib };
 
-                string discordID = "430794114037055489";
-                if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))
-                    discordID = CoreModule.Settings.DiscordID;
-
                 try {
                     typeof(DiscordRpc).ResolveDynDllImports();
                 } catch {
+
                 }
+
                 if (DiscordRpc.Initialize == null) {
                     Logger.Log(LogLevel.Info, "discord", "Discord_Initialize not found - skipping Discord Rich Presence.");
                     return;
                 }
+
+                string discordID = "430794114037055489";
+                if (!string.IsNullOrEmpty(CoreModule.Settings.DiscordID))
+                    discordID = CoreModule.Settings.DiscordID;
 
                 Logger.Log(LogLevel.Verbose, "discord", $"Discord_Initialize found - initializing Discord Rich Presence, app ID {discordID}");
 

@@ -1,0 +1,31 @@
+name: Feature Request
+description: Suggest an idea for Everest.
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Thanks for suggesting your idea!
+        Please keep in mind that adding new entities or features to the game is almost always better suited for a separate mod.
+  - type: dropdown
+    attributes:
+      label: I am planning on implementing this myself
+      options: ['Yes', 'No']
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Describe your request
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: |
+        Add any other details, screenshots or concept art about the feature request here.
+
+        **Tip: You can attach images or files by clicking this area to highlight it and then dragging files in.**
+    validations:
+      required: false
+

@@ -18,7 +18,7 @@ namespace Celeste {
         private extern void CheckVariantsPostcardAtLaunch();
 
         [MonoModIgnore] // don't change anything in the method...
-        [PatchTotalHeartGemChecksInRoutine] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
+        [PatchTotalHeartGemCSidePostcard] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
         private extern IEnumerator Routine(Session session);
     }
 }

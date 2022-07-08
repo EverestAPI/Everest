@@ -10,6 +10,7 @@ using System;
 using System.Collections;
 
 namespace Celeste {
+    // LevelEnter has a private .ctor
     class patch_LevelEnter : Scene {
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace Celeste {
                     ;
 
                     LevelEnterExt.ErrorMessage = message;
-                    LevelEnter.Go(new Session(session.Area), false);
+                    LevelEnter.Go(new Session(AreaData.Get(session) == null ? new AreaKey(1) : session.Area), false);
                 }
             }
         }

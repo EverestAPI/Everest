@@ -1,4 +1,5 @@
-﻿using Monocle;
+﻿using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
@@ -205,6 +206,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? SaveDataFlush { get; set; } = null;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool? WhitelistFullOverride { get; set; } = null;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
@@ -298,6 +303,46 @@ namespace Celeste.Mod.Core {
 
         [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.OemPeriod)]
+        public ButtonBinding DebugConsole { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.W)]
+        public ButtonBinding CameraForward { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.S)]
+        public ButtonBinding CameraBackward { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.D)]
+        public ButtonBinding CameraRight { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.A)]
+        public ButtonBinding CameraLeft { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.Q)]
+        public ButtonBinding CameraUp { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.Z)]
+        public ButtonBinding CameraDown { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.LeftShift)]
+        public ButtonBinding CameraSlow { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.P)]
+        public ButtonBinding CameraPrint { get; set; }
+
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.Space)]
+        public ButtonBinding ToggleMountainFreeCam { get; set; }
 
         /*
         [SettingRange(0, 10)]

@@ -191,8 +191,8 @@ namespace Celeste.Mod.UI {
                     // remove the "loading..." message
                     menu.Remove(loading);
 
-                    // if there is a whitelist, warn the user that it will break those settings.
-                    if (Everest.Loader.Whitelist != null) {
+                    // if there is a whitelist or temporary blacklist, warn the user that it will break those settings.
+                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {
                         menu.Add(restartMessage1 = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_WHITELISTWARN")) { TextColor = Color.OrangeRed });
                     }
 
@@ -202,7 +202,7 @@ namespace Celeste.Mod.UI {
                     menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("MODOPTIONS_MODTOGGLE_MESSAGE_3")) { HeightExtra = 20f, TextColor = Color.Goldenrod });
 
                     // reduce spacing between the whitelist warning and the blacklist overwrite warning
-                    if (Everest.Loader.Whitelist != null) {
+                    if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {
                         restartMessage1.HeightExtra = 30f;
                     }
 
@@ -246,6 +246,7 @@ namespace Celeste.Mod.UI {
 
                     // crawl directories
                     files = Directory.GetDirectories(Everest.Loader.PathMods);
+                    Array.Sort(files, (a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
                     headerInserted = false;
                     for (int i = 0; i < files.Length; i++) {
                         string file = Path.GetFileName(files[i]);
@@ -260,6 +261,7 @@ namespace Celeste.Mod.UI {
 
                     // crawl zips
                     files = Directory.GetFiles(Everest.Loader.PathMods);
+                    Array.Sort(files, (a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
                     headerInserted = false;
                     for (int i = 0; i < files.Length; i++) {
                         string file = Path.GetFileName(files[i]);
@@ -274,6 +276,7 @@ namespace Celeste.Mod.UI {
 
                     // crawl map bins
                     files = Directory.GetFiles(Everest.Loader.PathMods);
+                    Array.Sort(files, (a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
                     headerInserted = false;
                     for (int i = 0; i < files.Length; i++) {
                         string file = Path.GetFileName(files[i]);
@@ -287,7 +290,7 @@ namespace Celeste.Mod.UI {
                     }
 
                     // sort the mods list alphabetically, for output in the blacklist.txt file later.
-                    allMods.Sort();
+                    allMods.Sort((a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
 
                     // adjust the mods' color if they are required dependencies for other mods
                     foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
@@ -312,7 +315,7 @@ namespace Celeste.Mod.UI {
         private void addFileToMenu(TextMenu menu, string file) {
             TextMenu.OnOff option;
 
-            bool enabled = !Everest.Loader._Blacklist.Contains(file);
+            bool enabled = !Everest.Loader.Blacklist.Contains(file);
             menu.Add(option = (TextMenu.OnOff) new TextMenu.OnOff(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled)
                 .Change(b => {
                     if (b) {

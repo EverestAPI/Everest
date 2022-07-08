@@ -5,8 +5,7 @@ using Monocle;
 using MonoMod;
 
 namespace Celeste {
-    // : Solid because base.Added
-    class patch_BounceBlock : Solid {
+    class patch_BounceBlock : BounceBlock {
 
         // We're effectively in BounceBlock, but still need to "expose" private fields to our mod.
         private bool iceMode;
@@ -14,22 +13,22 @@ namespace Celeste {
 
         private bool notCoreMode;
 
-        public patch_BounceBlock(EntityData data, Vector2 offset) 
-            : base(data.Position + offset, data.Width, data.Height, false) {
-            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
-        }
+        [MonoModIgnore]
+        public extern patch_BounceBlock(Vector2 position, float width, float height);
 
-        public extern void orig_ctor(EntityData data, Vector2 offset);
         [MonoModConstructor]
-        public void ctor(EntityData data, Vector2 offset) {
-            orig_ctor(data, offset);
-
+        [MonoModReplace]
+        public patch_BounceBlock(EntityData data, Vector2 offset)
+            : this(data.Position + offset, data.Width, data.Height) {
             notCoreMode = data.Bool("notCoreMode");
         }
 
+        [MonoModLinkTo("Monocle.Entity", "Added")]
+        [MonoModIgnore]
+        public extern void base_Added(Scene scene);
         [MonoModReplace]
         public override void Added(Scene scene) {
-            base.Added(scene);
+            base_Added(scene);
             iceModeNext = iceMode = SceneAs<Level>().CoreMode == Session.CoreModes.Cold || notCoreMode;
             ToggleSprite();
         }

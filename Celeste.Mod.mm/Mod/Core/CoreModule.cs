@@ -63,14 +63,10 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Load() {
+            Everest.Events.Celeste.OnExiting += FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
-
-            if (Everest.Flags.IsMobile) {
-                // It shouldn't look that bad on mobile screens...
-                Environment.SetEnvironmentVariable("FNA_OPENGL_BACKBUFFER_SCALE_NEAREST", "1");
-            }
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
                 Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
@@ -119,17 +115,6 @@ namespace Celeste.Mod.Core {
                 Engine.Scene = new MapEditor(level.Session.Area);
                 Engine.Commands.Open = false;
             };
-
-            // Set up the touch input regions.
-            TouchRegion touchTitleScreen = new TouchRegion {
-                Position = new Vector2(1920f, 1080f) * 0.5f,
-                Size = new Vector2(1920f, 1080f),
-                Condition = _ =>
-                    ((Engine.Scene as Overworld)?.IsCurrent<OuiTitleScreen>() ?? false) ||
-                    (Engine.Scene is GameLoader)
-                ,
-                Button = (patch_VirtualButton) Input.MenuConfirm
-            };
         }
 
         public override void OnInputInitialize() {
@@ -171,6 +156,7 @@ namespace Celeste.Mod.Core {
         }
 
         public override void Unload() {
+            Everest.Events.Celeste.OnExiting -= FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();

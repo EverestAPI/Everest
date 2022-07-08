@@ -66,6 +66,9 @@ namespace Celeste {
                 { 'o', 43 }
             };
 
+            // Clear any custom tileset sound paths
+            patch_SurfaceIndex.IndexToCustomPath.Clear();
+
             AreaData area = AreaData.Get(session);
             MapMeta meta = area.GetMeta();
             string path;
@@ -84,7 +87,7 @@ namespace Celeste {
             if (string.IsNullOrEmpty(path))
                 path = Path.Combine("Graphics", "AnimatedTiles.xml");
             GFX.AnimatedTilesBank = new AnimatedTilesBank();
-            XmlElement animatedData = Calc.LoadContentXML(path)["Data"];
+            XmlNodeList animatedData = Calc.LoadContentXML(path).GetElementsByTagName("sprite");
             foreach (XmlElement el in animatedData)
                 if (el != null)
                     GFX.AnimatedTilesBank.Add(

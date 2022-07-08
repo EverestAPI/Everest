@@ -15,10 +15,7 @@ Using [MonoMod](https://github.com/MonoMod/MonoMod), an open-source C# modding u
 [![Discord invite](github/invite.png)](https://discord.gg/6qjaePQ)
 
 ### Mod Development:
-Use [Fabeline](https://github.com/EverestAPI/RainbowMod) as an example mod. It already contains:
-- Everest as a submodule
-- The required references (`lib/`, `lib-stripped/`) with "Copy Local" set to "False"
-- The mod `metadata.yaml`
+For information about mod development, check out the [Everest Wiki](https://github.com/EverestAPI/Resources/wiki) or ask questions in the `#modding_help` channel on discord.
 
 ## Compiling Everest yourself
 - ***If you just want to install Everest, go to the [Everest website](https://everestapi.github.io/).***
@@ -33,18 +30,19 @@ Use [Fabeline](https://github.com/EverestAPI/RainbowMod) as an example mod. It a
 - Copy everything in `MiniInstaller\bin\Debug` and `Celeste.Mod.mm\bin\Debug` to your Celeste directory
 - Run MiniInstaller.exe
 
-### macOS / Linux (no Nix)
+### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
 - Build all
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
-    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `xbuild`
+    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet build`
 - Copy everything in `MiniInstaller/bin/Debug` and `Celeste.Mod.mm/bin/Debug` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
 - Run `mono MiniInstaller.exe`
 
-### Nix
-**Note:** At the time of writing, no member of the Everest Team is using Nix.
-- Run `nix-env -f . -iA everest` in the Everest repo
-- Wait for it to install
-- Run `miniinstaller ~/Celeste`, where `~/Celeste` is your Celeste path.
-    - **`miniinstaller` is a *wrapper* over the MiniInstaller.exe in the other methods.**
+## Contributing
+Contributions of any kind are welcome, and a guide on how to contribute effectively to the Everest project is available [here](./CONTRIBUTING.md).
+Make sure to join the discussion in the [Celeste Discord](https://discord.gg/6qjaePQ), and feel free to ask any questions you have there as well.
+
+### Other Ways To Contribute
+This project is created, improved, and maintained entirely by volunteers.
+If you would like to show your support for this project, consider donating to one or more of its contributors.

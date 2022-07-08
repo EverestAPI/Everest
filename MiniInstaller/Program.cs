@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Xml;
@@ -14,6 +15,7 @@ namespace MiniInstaller {
         public static string PathCelesteExe;
         public static string PathEverestExe;
         public static string PathOrig;
+        public static string PathDylibs;
         public static string PathLog;
 
         public static Assembly AsmMonoMod;
@@ -26,6 +28,11 @@ namespace MiniInstaller {
             Console.WriteLine(line);
         }
 
+        public static void LogErr(string line) {
+            LineLogger?.Invoke(line);
+            Console.Error.WriteLine(line);
+        }
+
         public static int Main(string[] args) {
             Console.WriteLine("Everest MiniInstaller");
 
@@ -33,6 +40,19 @@ namespace MiniInstaller {
                 // setting up paths failed (Celeste.exe was not found).
                 return 1;
             }
+
+            // .NET hates it when strong-named dependencies get updated.
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName asmName = new AssemblyName(asmArgs.Name);
+                if (!asmName.Name.StartsWith("Mono.Cecil"))
+                    return null;
+
+                Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
+                if (asm != null)
+                    return asm;
+
+                return Assembly.LoadFrom(Path.Combine(Path.GetDirectoryName(PathUpdate), asmName.Name + ".dll"));
+            };
 
             if (File.Exists(PathLog))
                 File.Delete(PathLog);
@@ -47,8 +67,8 @@ namespace MiniInstaller {
                 try {
 
                     if (!IsMonoVersionCompatible()) {
-                        LogLine("Everest installer only works with Mono 5 and higher.");
-                        LogLine("Please upgrade Mono and run the installer again.");
+                        LogErr("Everest installer only works with Mono 5 and higher.");
+                        LogErr("Please upgrade Mono and run the installer again.");
                         throw new Exception("Incompatible Mono version");
                     }
 
@@ -57,6 +77,8 @@ namespace MiniInstaller {
                     Backup();
 
                     MoveFilesFromUpdate();
+
+                    MoveDylibs();
 
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
@@ -75,21 +97,28 @@ namespace MiniInstaller {
                 } catch (Exception e) {
                     string msg = e.ToString();
                     LogLine("");
-                    LogLine(msg);
-                    LogLine("");
-                    LogLine("Installing Everest failed.");
-                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework")) {
-                        LogLine("Please run the game at least once to install missing dependencies.");
+                    LogErr(msg);
+                    LogErr("");
+                    LogErr("Installing Everest failed.");
+                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework") ||
+                        msg.Contains("MonoModRules failed resolving Microsoft.Xna.Framework.Game")) {
+                        LogErr("Please run the game at least once to install missing dependencies.");
                     } else {
                         if (msg.Contains("--->")) {
-                            LogLine("Please review the error after the '--->' to see if you can fix it on your end.");
+                            LogErr("Please review the error after the '--->' to see if you can fix it on your end.");
                         }
-                        LogLine("");
-                        LogLine("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
-                        LogLine("or join the #modding_help channel on Discord (invite in the repo).");
-                        LogLine("Make sure to upload your log file.");
+                        LogErr("");
+                        LogErr("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                        LogErr("or join the #modding_help channel on Discord (invite in the repo).");
+                        LogErr("Make sure to upload your log file.");
                     }
                     return 1;
+
+                } finally {
+                    // Let's not pollute <insert installer name here>.
+                    Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", "");
+                    Environment.SetEnvironmentVariable("MONOMOD_MODS", "");
+                    Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "");
                 }
 
                 Console.SetOut(logWriter.STDOUT);
@@ -143,8 +172,8 @@ namespace MiniInstaller {
 
             PathCelesteExe = Path.Combine(PathGame, "Celeste.exe");
             if (!File.Exists(PathCelesteExe)) {
-                LogLine("Celeste.exe not found!");
-                LogLine("Did you extract the .zip into the same place as Celeste?");
+                LogErr("Celeste.exe not found!");
+                LogErr("Did you extract the .zip into the same place as Celeste?");
                 return false;
             }
 
@@ -159,12 +188,20 @@ namespace MiniInstaller {
                 LogLine("Creating Mods directory");
                 Directory.CreateDirectory(Path.Combine(PathGame, "Mods"));
             }
+
+            // Can't check for platform as some morons^Wuninformed people could be running MiniInstaller via wine.
+            if (PathGame.Replace(Path.DirectorySeparatorChar, '/').Trim('/').EndsWith(".app/Contents/Resources")) {
+                PathDylibs = Path.Combine(Path.GetDirectoryName(PathGame), "MacOS", "osx");
+                if (!Directory.Exists(PathDylibs))
+                    PathDylibs = null;
+            }
+
             return true;
         }
 
         public static void WaitForGameExit() {
             if (!CanReadWrite(PathEverestExe)) {
-                LogLine("Celeste not read-writeable - waiting");
+                LogErr("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(5000);
             }
@@ -204,6 +241,20 @@ namespace MiniInstaller {
             }
         }
 
+        public static void MoveDylibs() {
+            if (PathDylibs != null) {
+                LogLine("Moving native libraries");
+                foreach (string fileGame in Directory.GetFiles(PathGame)) {
+                    if (!fileGame.EndsWith(".dylib"))
+                        continue;
+                    string fileRelative = fileGame.Substring(PathGame.Length + 1);
+                    string fileDylibs = Path.Combine(PathDylibs, fileRelative);
+                    LogLine($"Copying {fileGame} +> {fileDylibs}");
+                    File.Copy(fileGame, fileDylibs, true);
+                }
+            }
+        }
+
         public static void LoadMonoMod() {
             // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
             // Instead, load it dynamically and invoke the entry point.
@@ -233,7 +284,10 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_MODS", string.Join(Path.PathSeparator.ToString(), dllPaths));
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+
+            if (returnCode != 0 && File.Exists(asmTo + ".tmp"))
+                File.Delete(asmTo + ".tmp");
 
             if (!File.Exists(asmTo + ".tmp"))
                 throw new Exception("MonoMod failed creating a patched assembly!");
@@ -287,6 +341,12 @@ namespace MiniInstaller {
 
         public static void StartGame() {
             LogLine("Restarting Celeste");
+
+            // Let's not pollute the game with our MonoMod env vars.
+            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", "");
+            Environment.SetEnvironmentVariable("MONOMOD_MODS", "");
+            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "");
+
             Process game = new Process();
             // If the game was installed via Steam, it should restart in a Steam context on its own.
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
@@ -347,7 +407,7 @@ namespace MiniInstaller {
                 to.Load(xmlTo);
             } catch (FileNotFoundException e) {
                 LogLine(e.Message);
-                LogLine("Documentation combining aborted.");
+                LogErr("Documentation combining aborted.");
                 return;
             }
 

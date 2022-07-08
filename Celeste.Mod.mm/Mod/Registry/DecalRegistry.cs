@@ -17,6 +17,11 @@ namespace Celeste.Mod {
             { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
                 ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
             }},
+            { "scale", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float scaleX = attrs["multiplyX"] != null ? float.Parse(attrs["multiplyX"].Value) : 1f;
+                float scaleY = attrs["multiplyY"] != null ? float.Parse(attrs["multiplyY"].Value) : 1f;
+                ((patch_Decal)decal).Scale *= new Vector2(scaleX, scaleY);
+            }},
             { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
                 float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
@@ -98,7 +103,8 @@ namespace Celeste.Mod {
                 if (attrs["index"] != null)
                     index = int.Parse(attrs["index"].Value);
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
-                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls);
+                bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
+                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
             { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int x = 0;
@@ -130,6 +136,9 @@ namespace Celeste.Mod {
                 int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
             }},
+            { "randomizeFrame", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).RandomizeStartingFrame();
+            }},
             { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
                 float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
@@ -139,6 +148,17 @@ namespace Celeste.Mod {
                 int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
                 int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
                 decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
+            }},
+            { "lightOcclude", delegate(Decal decal, XmlAttributeCollection attrs) {
+                int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
+                int y = attrs["y"] != null ? int.Parse(attrs["y"].Value) : 0;
+                int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
+                int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
+                float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
+                decal.Add(new LightOcclude(new Rectangle(x, y, width, height), alpha));
+            }},
+            { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).MakeOverlay();
             }},
         };
 
@@ -247,7 +267,7 @@ namespace Celeste.Mod {
                         GFX.Game.GetTextures().Keys
                         .GroupBy(
                             s => s.StartsWith("decals/") ?
-                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9') :
+                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9').ToLower() :
                                 null,
                             (s, matches) => s
                         )

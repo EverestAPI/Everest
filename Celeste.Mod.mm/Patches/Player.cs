@@ -144,6 +144,16 @@ namespace Celeste {
                 orig_WindMove(move);
         }
 
+        [MonoModIgnore]
+        [PatchPlayerOnCollideV]
+        private extern void OnCollideV(CollisionData data);
+
+        [MonoModIgnore]
+        [PatchPlayerClimbBegin]
+        private extern void ClimbBegin();
+
+        [MonoModIgnore]
+        [PatchPlayerOrigWallJump]
         private extern void orig_WallJump(int dir);
         private void WallJump(int dir) {
             if ((Scene as Level).Session.Area.GetLevelSet() != "Celeste") {
@@ -185,6 +195,11 @@ namespace Celeste {
             return orig_Pickup(pickup);
         }
 
+        public override void SceneBegin(Scene scene) {
+            base.SceneBegin(scene);
+            diedInGBJ = 0;
+        }
+
         public extern void orig_SceneEnd(Scene scene);
         public override void SceneEnd(Scene scene) {
             orig_SceneEnd(scene);
@@ -197,6 +212,14 @@ namespace Celeste {
                 level = null;
             }
         }
+
+        [MonoModIgnore]
+        [PatchPlayerBeforeUpTransition]
+        public new extern void BeforeUpTransition();
+
+        [MonoModIgnore]
+        [PatchPlayerStarFlyReturnToNormalHitbox]
+        private extern void StarFlyReturnToNormalHitbox();
     }
     public static class PlayerExt {
 

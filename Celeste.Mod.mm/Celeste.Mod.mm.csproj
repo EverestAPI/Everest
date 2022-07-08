@@ -52,16 +52,16 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
-    <PackageReference Include="Mono.Cecil" Version="0.11.3" />
-    <PackageReference Include="MonoMod" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="21.04.29.01" />
-    <PackageReference Include="MonoMod.Utils" Version="21.04.29.01" />
-    <PackageReference Include="DotNetZip" Version="1.13.8" />
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" />
+    <PackageReference Include="MonoMod" Version="22.01.04.03" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="22.01.04.03" />
+    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.01.04.03" />
+    <PackageReference Include="MonoMod.Utils" Version="22.01.04.03" />
+    <PackageReference Include="DotNetZip" Version="1.15.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="KeraLua" Version="1.0.22" />
     <PackageReference Include="NLua" Version="1.4.25" />
   </ItemGroup>
@@ -71,146 +71,19 @@
     otherwise special chars (f.e. \) are replaced by dots.
   -->
   <ItemGroup>
-    <EmbeddedResource Include="Content\Dialog\English.txt">
-      <LogicalName>Content\Dialog\English.txt</LogicalName>
+    <EmbeddedResource Include="Content\**\*">
+      <LogicalName>%(EmbeddedResource.Identity)</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="Content\Dialog\French.txt">
-      <LogicalName>Content\Dialog\French.txt</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Dialog\Simplified Chinese.txt">
-      <LogicalName>Content\Dialog\Simplified Chinese.txt</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Dialog\Fonts\chinese.fnt">
-      <LogicalName>Content\Dialog\Fonts\chinese.fnt</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Dialog\Fonts\chinese_everest_0.png">
-      <LogicalName>Content\Dialog\Fonts\chinese_everest_0.png</LogicalName>
-    </EmbeddedResource>
-	  <EmbeddedResource Include="Content\Graphics\Atlases\Gui\__fallback.png">
-        <LogicalName>Content\Graphics\Atlases\Gui\__fallback.png</LogicalName>
-	  </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\logo_everest.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\logo_everest.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\title_everest.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\title_everest.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\thinking.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\thinking.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\thinkingbw.m.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\thinkingbw.m.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\glad.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\glad.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\gladbw.m.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\gladbw.m.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\checkpoint.m.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\emoji\everest.m.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\emoji\everest.m.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\everest.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\everest.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\modoptions_new.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\modoptions_new.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\maplist.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\mapsearch.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\mapsearch.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\menu\langnoicon.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\menu\langnoicon.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\reloader\cogwheel.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\reloader\cogwheel.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\steam.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\steam.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam_back.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\steam_back.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\steam_back.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\steam_back.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\null.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\null.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null_back.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\null_back.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\null_back.meta.yaml</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Gui\areas\new-yellow.png">
-      <LogicalName>Content\Graphics\Atlases\Gui\areas\new-yellow.png</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png">
-      <LogicalName>Content\Graphics\Atlases\Portraits\textbox\madeline_mini.png</LogicalName>
-    </EmbeddedResource>
-	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\__fallback.png">
-        <LogicalName>Content\Graphics\Atlases\Gameplay\__fallback.png</LogicalName>
-	  </EmbeddedResource>
-	  <EmbeddedResource Include="Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png">
-        <LogicalName>Content\Graphics\Atlases\Gameplay\tilesets\subFolder\betterTemplate.png</LogicalName>
-	  </EmbeddedResource>
-    <EmbeddedResource Include="Content\Lua\boot.lua">
-      <LogicalName>Content\Lua\boot.lua</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Content\Lua\typebuilder.lua">
-      <LogicalName>Content\Lua\typebuilder.lua</LogicalName>
-    </EmbeddedResource>
+    <EmbeddedResource Remove="Content\Dialog\Fonts\chinese-noto.bmfc" />
+    <EmbeddedResource Remove="Content\Dialog\Fonts\chinese_additional_characters.txt" />
+    <EmbeddedResource Remove="Content\**\*.xcf" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\lib-ext\discord-rpc.dll">
-      <Link>discord-rpc.dll</Link>
+    <Content Include="..\lib-ext\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\lib-ext\libdiscord-rpc.dylib">
-      <Link>libdiscord-rpc.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-ext\libdiscord-rpc.so">
-      <Link>libdiscord-rpc.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.so">
-      <Link>libMonoPosixHelper.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libmono-btls-shared.so">
-      <Link>libmono-btls-shared.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libMonoPosixHelper.dylib">
-      <Link>libMonoPosixHelper.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="..\lib-mono\libmono-btls-shared.dylib">
-      <Link>libmono-btls-shared.dylib</Link>
+    <Content Include="..\lib-mono\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">

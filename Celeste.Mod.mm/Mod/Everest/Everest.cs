@@ -65,6 +65,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// The currently present Celeste version combined with the currently installed Everest build.
         /// </summary>
+        // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet when it's used for the first time in log
         public static string VersionCelesteString => $"{Celeste.Instance.Version}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")} [Everest: {BuildString}]";
 
         /// <summary>
@@ -301,6 +302,9 @@ namespace Celeste.Mod {
                 else if (arg == "--whitelist" && queue.Count >= 1)
                     Loader.NameWhitelist = queue.Dequeue();
 
+                else if (arg == "--blacklist" && queue.Count >= 1)
+                    Loader.NameTemporaryBlacklist = queue.Dequeue();
+
             }
         }
 
@@ -327,7 +331,10 @@ namespace Celeste.Mod {
                 AssemblyName asmName = new AssemblyName(asmArgs.Name);
                 if (!asmName.Name.StartsWith("Mono.Cecil") &&
                     !asmName.Name.StartsWith("YamlDotNet") &&
-                    !asmName.Name.StartsWith("NLua"))
+                    !asmName.Name.StartsWith("NLua") &&
+                    !asmName.Name.StartsWith("DotNetZip") &&
+                    !asmName.Name.StartsWith("Newtonsoft.Json") &&
+                    !asmName.Name.StartsWith("Jdenticon"))
                     return null;
 
                 Assembly asm = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(other => other.GetName().Name == asmName.Name);
@@ -343,6 +350,34 @@ namespace Celeste.Mod {
                 foreach (Assembly asm in _RelinkedAssemblies) {
                     if (asm.GetName().Name == asmName.Name)
                         return asm;
+                }
+
+                return null;
+            };
+
+            // Handle failed resolution for unregistered assemblies
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
+                if (string.IsNullOrEmpty(name?.Name))
+                    return null;
+
+                foreach (ModContent mod in Content.Mods) {
+                    EverestModuleMetadata meta = mod.Mod;
+                    if (meta == null)
+                        continue;
+
+                    string path = name.Name + ".dll";
+                    if (!string.IsNullOrEmpty(meta.DLL)) {
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path).Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(meta.PathDirectory))
+                            path = path.Substring(meta.PathDirectory.Length + 1);
+                    }
+
+                    if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
+                        using Stream stream = asm.Stream;
+                        if (stream != null)
+                            return Relinker.GetRelinkedAssembly(meta, name.Name, stream);
+                    }
                 }
 
                 return null;
@@ -414,10 +449,6 @@ namespace Celeste.Mod {
             if (!Flags.IsHeadless) {
                 // Initialize the content helper.
                 Content.Initialize();
-
-                // Initialize all main managers before loading any mods.
-                TouchInputManager.Instance = new TouchInputManager(Celeste.Instance);
-                // Don't add it yet, though - add it in Initialize.
             }
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
@@ -429,7 +460,7 @@ namespace Celeste.Mod {
             // Note: Everest fulfills some mod dependencies by itself.
             new NullModule(new EverestModuleMetadata() {
                 Name = "Celeste",
-                VersionString = $"{Celeste.Instance.Version.ToString()}-{(typeof(Game).Assembly.FullName.Contains("FNA") ? "fna" : "xna")}"
+                VersionString = $"{Celeste.Instance.Version.ToString()}-{(Flags.IsFNA ? "fna" : "xna")}"
             }).Register();
             new NullModule(new EverestModuleMetadata() {
                 Name = "DialogCutscene",
@@ -438,6 +469,18 @@ namespace Celeste.Mod {
             new NullModule(new EverestModuleMetadata() {
                 Name = "UpdateChecker",
                 VersionString = "1.0.2"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "InfiniteSaves",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "DebugRebind",
+                VersionString = "1.0.0"
+            }).Register();
+            new NullModule(new EverestModuleMetadata() {
+                Name = "RebindPeriod",
+                VersionString = "1.0.0"
             }).Register();
 
             LuaLoader.Initialize();
@@ -475,8 +518,6 @@ namespace Celeste.Mod {
             TextInput.Initialize(Celeste.Instance);
 
             // Add the previously created managers.
-            if (TouchInputManager.Instance != null)
-                Celeste.Instance.Components.Add(TouchInputManager.Instance);
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
             Celeste.Instance.Components.Add(STAThreadHelper.Instance);
 
@@ -740,6 +781,7 @@ namespace Celeste.Mod {
             }
 
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
+            Events.Everest.RegisterModule(module);
 
             CheckDependenciesOfDelayedMods();
         }
@@ -898,12 +940,12 @@ namespace Celeste.Mod {
                 return;
             }
 
-            Scene scene = new Scene();
-            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld)));
+            BlackScreen scene = new BlackScreen();
+            scene.HelperEntity.Add(new Coroutine(_QuickFullRestart(Engine.Scene is Overworld, scene)));
             Engine.Scene = scene;
         }
 
-        private static IEnumerator _QuickFullRestart(bool fromOverworld) {
+        private static IEnumerator _QuickFullRestart(bool fromOverworld, BlackScreen scene) {
             SaveData save = SaveData.Instance;
             if (save != null && save.FileSlot == patch_SaveData.LoadedModSaveDataIndex) {
                 if (!fromOverworld) {
@@ -918,7 +960,12 @@ namespace Celeste.Mod {
             }
 
             AppDomain.CurrentDomain.SetData("EverestRestart", true);
-            Engine.Instance.Exit();
+            scene.RunAfterRender = () => {
+                if (Flags.IsXNA && Engine.Graphics.IsFullScreen) {
+                    Engine.SetWindowed(320 * (Settings.Instance?.WindowScale ?? 1), 180 * (Settings.Instance?.WindowScale ?? 1));
+                }
+                Engine.Instance.Exit();
+            };
             yield break;
         }
 

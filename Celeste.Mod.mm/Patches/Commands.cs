@@ -94,7 +94,6 @@ namespace Celeste {
         }
 
         [Command("load", "test a level")]
-        [RemoveCommandAttributeFromVanillaLoadMethod]
         private static void CmdLoadIDorSID(string idOrSID = "0", string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdLoad(id, level);
@@ -104,7 +103,6 @@ namespace Celeste {
         }
 
         [Command("hard", "test a hard level")]
-        [RemoveCommandAttributeFromVanillaLoadMethod]
         private static void CmdHardIDorSID(string idOrSID = null, string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdHard(id, level);
@@ -114,7 +112,6 @@ namespace Celeste {
         }
 
         [Command("rmx2", "test a RMX2 level")]
-        [RemoveCommandAttributeFromVanillaLoadMethod]
         private static void CmdRMX2IDorSID(string idOrSID = null, string level = null) {
             if (int.TryParse(idOrSID, out int id)) {
                 CmdRMX2(id, level);
@@ -246,6 +243,20 @@ namespace Celeste {
         private static void CmdMainMenu() {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
         }
+        
+        [Command("returntomap", "return to map")]
+        private static void ReturnToMap() {
+            if (SaveData.Instance == null) {
+                SaveData.InitializeDebugMode();
+                SaveData.Instance.CurrentSession = new Session(AreaKey.Default);
+            }
+
+            Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
+        }
+
+        [MonoModIgnore]
+        [RemoveCommandAttribute]
+        private static extern void CmdHearts(int amount);
 
         [MonoModReplace]
         [Command("hearts", "sets the amount of obtained hearts for the specified level set to a given number (default all hearts and current level set)")]
@@ -254,14 +265,16 @@ namespace Celeste {
             if (saveData == null)
                 return;
 
-            amount = Calc.Clamp(amount, 0, saveData.LevelSetStats.MaxHeartGems);
-
             if (string.IsNullOrEmpty(levelSet))
                 levelSet = saveData.GetLevelSet();
 
             int num = 0;
             foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {
-                foreach (AreaModeStats areaModeStats in areaStats.Modes) {
+                for (int i = 0; i < areaStats.Modes.Length; i++) {
+                    if (AreaData.Get(areaStats.ID).Mode is not {} mode || mode.Length <= i || mode[i]?.MapData == null)
+                        continue;
+
+                    AreaModeStats areaModeStats = areaStats.Modes[i];
                     if (num < amount) {
                         areaModeStats.HeartGem = true;
                         num++;

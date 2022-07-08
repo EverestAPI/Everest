@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod;
 
 namespace Celeste {
@@ -19,5 +20,8 @@ namespace Celeste {
             ctor(data, offset, new EntityID(data.Level.Name, data.ID));
         }
 
+        [MonoModIgnore]
+        [PatchCassetteBlockAwake]
+        public override extern void Awake(Scene scene);
     }
 }

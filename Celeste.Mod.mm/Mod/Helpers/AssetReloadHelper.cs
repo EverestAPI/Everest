@@ -133,15 +133,17 @@ namespace Celeste.Mod {
                         LevelLoader loader = new LevelLoader(level.Session, level.Session.RespawnPoint);
 
                         Player player = level.Tracker?.GetEntity<Player>();
-                        if (player != null) {
+                        if (player is {Dead: false}) {
                             patch_Level.SkipScreenWipes++;
 
                             patch_Level.NextLoadedPlayer = player;
 
-                            player.Remove(player.Light);
-                            VertexLight light = player.Light;
-                            player.Add(light = player.Light = new VertexLight(light.Position, light.Color, light.Alpha, (int) light.StartRadius, (int) light.EndRadius));
+                            // Fix player dummy or invisible on F5 reload
+                            player.StateMachine.Locked = false;
+                            player.StateMachine.State = Player.StNormal;
+                            player.Sprite.Visible = player.Hair.Visible = true;
 
+                            player.Light.Index = -1;
                             player.Leader.LoseFollowers();
                             player.Holding?.Release(Vector2.Zero);
                             player.Holding = null;

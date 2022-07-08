@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using System.Collections.Generic;
+using MonoMod;
 
 namespace Monocle {
     // No public constructors.
@@ -18,6 +19,10 @@ namespace Monocle {
         internal void ClearEntities() {
             entities.Clear();
         }
+
+        [MonoModIgnore]
+        [PatchEntityListUpdate]
+        internal extern void Update();
     }
     public static class EntityListExt {
 

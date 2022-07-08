@@ -28,6 +28,8 @@ namespace Celeste {
         private static Dictionary<IntPtr, ModAsset> modBankAssets = new Dictionary<IntPtr, ModAsset>();
         private static Dictionary<IntPtr, Stream> modBankStreams = new Dictionary<IntPtr, Stream>();
 
+        private static Dictionary<string, HashSet<Guid>> usedGuids = new Dictionary<string, HashSet<Guid>>();
+
         private static HashSet<string> ingestedModBankPaths = new HashSet<string>();
         public static bool AudioInitialized { get; private set; } = false;
 
@@ -51,7 +53,7 @@ namespace Celeste {
             Audio.Banks.DlcMusic = Audio.Banks.Load("dlc_music", false);
             Audio.Banks.DlcSfxs = Audio.Banks.Load("dlc_sfx", false);
 
-            // Prepopulate cachedPaths, as it's being used directly.
+            // Prepopulate cachedPaths and usedGuids as both are being used directly.
             foreach (Bank bank in patch_Banks.Banks.Values) {
                 bank.getEventList(out EventDescription[] descs);
                 foreach (EventDescription desc in descs) {
@@ -60,13 +62,19 @@ namespace Celeste {
                     desc.getID(out Guid id);
                     desc.getPath(out string path);
                     cachedPaths[id] = path;
+                    usedGuids[path] = new HashSet<Guid>() {
+                        id
+                    };
                 }
             }
 
             // Load any additional banks.
             lock (Everest.Content.Map) {
-                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank)))
-                    IngestBank(asset);
+                foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeBank))) {
+                    if (!ingestedModBankPaths.Contains(asset.PathVirtual)) {
+                        IngestBank(asset);
+                    }
+                }
             }
 
             AudioInitialized = true;
@@ -164,13 +172,21 @@ namespace Celeste {
                     if (!Guid.TryParse(line.Substring(0, indexOfSpace), out Guid id) ||
                         cachedPaths.ContainsKey(id))
                         continue;
-                    string path = line.Substring(indexOfSpace + 1);
 
-                    if (system.getEventByID(id, out EventDescription _event) <= RESULT.OK) {
-                        _event.unloadSampleData();
-                        cachedPaths[id] = path;
-                        cachedModEvents[path] = _event;
-                    }
+                    // only ingest the GUID if the corresponding event exists.
+                    if (system.getEventByID(id, out EventDescription _event) > RESULT.OK)
+                        continue;
+
+                    string path = line.Substring(indexOfSpace + 1);
+                    if (!usedGuids.TryGetValue(path, out HashSet<Guid> used))
+                        usedGuids[path] = used = new HashSet<Guid>();
+                    if (!used.Add(id))
+                        continue;
+
+                    _event.unloadSampleData();
+                    cachedPaths[id] = path;
+                    cachedModEvents[path] = _event;
+
                     // TODO: Ingest buses and vcas
                 }
             }
