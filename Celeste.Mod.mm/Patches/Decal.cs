@@ -31,7 +31,7 @@ namespace Celeste {
         private float frame;
 
         private Solid solid;
-        
+
         private StaticMover staticMover;
 
         public bool Overlay { get; private set; }
@@ -97,6 +97,13 @@ namespace Celeste {
             Scene.Add(solid);
         }
 
+        public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true, bool safe = true) {
+            solid = new Solid(Position + new Vector2(x, y), w, h, safe);
+            solid.BlockWaterfalls = blockWaterfalls;
+            solid.SurfaceSoundIndex = surfaceSoundIndex;
+            Scene.Add(solid);
+        }
+
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
         }
@@ -110,8 +117,8 @@ namespace Celeste {
                 },
                 OnDisable = () => {
                     Active = Visible = Collidable = false;
-                    if (solid != null) 
-                        solid.Collidable = false; 
+                    if (solid != null)
+                        solid.Collidable = false;
                 },
                 OnEnable = () => {
                     Active = Visible = Collidable = true;

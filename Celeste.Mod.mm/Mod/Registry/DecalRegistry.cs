@@ -103,7 +103,8 @@ namespace Celeste.Mod {
                 if (attrs["index"] != null)
                     index = int.Parse(attrs["index"].Value);
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
-                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls);
+                bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
+                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
             { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int x = 0;
