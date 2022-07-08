@@ -34,8 +34,6 @@ namespace Celeste {
 
         private StaticMover staticMover;
 
-        public bool Overlay { get; private set; }
-
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -161,7 +159,7 @@ namespace Celeste {
         }
 
         public void MakeOverlay() {
-            Overlay = true;
+            Add(new BeforeRenderHook(new Action(CreateOverlay)));
         }
 
         [MonoModIgnore]
@@ -196,9 +194,6 @@ namespace Celeste {
                     Add(image = new DecalImage());
                 }
 
-            }
-            if (Overlay) {
-                Add(new BeforeRenderHook(new Action(CreateOverlay)));
             }
         }
 

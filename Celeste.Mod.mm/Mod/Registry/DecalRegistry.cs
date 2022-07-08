@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml;
 
 namespace Celeste.Mod {
@@ -15,7 +16,8 @@ namespace Celeste.Mod {
         // string is propertyName
         public static Dictionary<string, Action<Decal, XmlAttributeCollection>> PropertyHandlers = new Dictionary<string, Action<Decal, XmlAttributeCollection>>() {
             { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
-                ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
+                if (attrs["amount"] != null)
+                    ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
             }},
             { "scale", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float scaleX = attrs["multiplyX"] != null ? float.Parse(attrs["multiplyX"].Value) : 1f;
@@ -23,11 +25,10 @@ namespace Celeste.Mod {
                 ((patch_Decal)decal).Scale *= new Vector2(scaleX, scaleY);
             }},
             { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                Vector2 offset = new Vector2(offx, offy);
+                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 bool inbg = attrs["inbg"] != null ? bool.Parse(attrs["inbg"].Value) : false;
-                ((patch_Decal)decal).CreateSmoke(offset, inbg);
+                ((patch_Decal)decal).CreateSmoke(new Vector2(offX, offY), inbg);
             }},
             { "depth", delegate(Decal decal, XmlAttributeCollection attrs) {
                 if (attrs["value"] != null)
@@ -42,83 +43,51 @@ namespace Celeste.Mod {
             }},
             { "sound", delegate(Decal decal, XmlAttributeCollection attrs) {
                 if (attrs["event"] != null)
-                decal.Add(new SoundSource(attrs["event"].Value));
+                    decal.Add(new SoundSource(attrs["event"].Value));
             }},
             { "bloom", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                Vector2 offset = new Vector2(offx, offy);
+                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 float radius = attrs["radius"] != null ? float.Parse(attrs["radius"].Value) : 1f;
-                decal.Add(new BloomPoint(offset, alpha, radius));
+                decal.Add(new BloomPoint(new Vector2(offX, offY), alpha, radius));
             }},
             { "coreSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["coldPath"] != null && attrs["hotPath"] != null) {
+                if (attrs["coldPath"] != null && attrs["hotPath"] != null)
                     ((patch_Decal)decal).MakeCoreSwap(attrs["coldPath"].Value, attrs["hotPath"].Value);
-                }
             }},
             { "mirror", delegate(Decal decal, XmlAttributeCollection attrs) {
                 string text = decal.Name.ToLower();
                 if (text.StartsWith("decals/"))
-                {
                     text = text.Substring(7);
-                }
                 bool keepOffsetsClose = attrs["keepOffsetsClose"] != null ? bool.Parse(attrs["keepOffsetsClose"].Value) : false;
-                ((patch_Decal)decal).MakeMirror(text,keepOffsetsClose );
+                ((patch_Decal)decal).MakeMirror(text, keepOffsetsClose);
             }},
             { "banner", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offset = 0f;
-                if (attrs["offset"] != null)
-                    offset = float.Parse(attrs["offset"].Value);
-                float speed = 1f;
-                if (attrs["speed"] != null)
-                    speed = float.Parse(attrs["speed"].Value);
-                float amplitude = 1f;
-                if (attrs["amplitude"] != null)
-                    amplitude = float.Parse(attrs["amplitude"].Value);
-                int sliceSize = 1;
-                if (attrs["sliceSize"] != null)
-                    sliceSize = int.Parse(attrs["sliceSize"].Value);
-                float sliceSinIncrement = 1f;
-                if (attrs["sliceSinIncrement"] != null)
-                    sliceSinIncrement = float.Parse(attrs["sliceSinIncrement"].Value);
+                float offset = attrs["offset"] != null ? float.Parse(attrs["offset"].Value) : 0f;
+                float speed = attrs["speed"] != null ? float.Parse(attrs["speed"].Value) : 1f;
+                float amplitude = attrs["amplitude"] != null ? float.Parse(attrs["amplitude"].Value) : 1f;
+                int sliceSize = attrs["sliceSize"] != null ? int.Parse(attrs["sliceSize"].Value) : 1;
+                float sliceSinIncrement = attrs["sliceSinIncrement"] != null ? float.Parse(attrs["sliceSinIncrement"].Value) : 1f;
                 bool easeDown = attrs["easeDown"] != null ? bool.Parse(attrs["easeDown"].Value) : false;
                 bool onlyIfWindy = attrs["onlyIfWindy"] != null ? bool.Parse(attrs["onlyIfWindy"].Value): false;
                 ((patch_Decal)decal).MakeBanner(speed, amplitude, sliceSize, sliceSinIncrement, easeDown, offset, onlyIfWindy);
             }},
             { "solid", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float x = 0;
-                if (attrs["x"] != null)
-                    x = float.Parse(attrs["x"].Value);
-                float y = 0;
-                if (attrs["y"] != null)
-                    y = float.Parse(attrs["y"].Value);
-                float width = 16;
-                if (attrs["width"] != null)
-                    width = float.Parse(attrs["width"].Value);
-                float height = 16;
-                if (attrs["height"] != null)
-                    height = float.Parse(attrs["height"].Value);
-                int index = SurfaceIndex.ResortRoof;
-                if (attrs["index"] != null)
-                    index = int.Parse(attrs["index"].Value);
+                float x = attrs["x"] != null ? float.Parse(attrs["x"].Value) : 0f;
+                float y = attrs["y"] != null ? float.Parse(attrs["y"].Value) : 0f;
+                float width = attrs["width"] != null ? float.Parse(attrs["width"].Value) : 16f;
+                float height = attrs["height"] != null ? float.Parse(attrs["height"].Value) : 16f;
+                int index = attrs["index"] != null ? int.Parse(attrs["index"].Value) : SurfaceIndex.ResortRoof;
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
                 bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
                 ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
             { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
-                int x = 0;
-                if (attrs["x"] != null)
-                    x = int.Parse(attrs["x"].Value);
-                int y = 0;
-                if (attrs["y"] != null)
-                    y = int.Parse(attrs["y"].Value);
-                int width = 16;
-                if (attrs["width"] != null)
-                    width = int.Parse(attrs["width"].Value);
-                int height = 16;
-                if (attrs["height"] != null)
-                    height = int.Parse(attrs["height"].Value);
+                int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
+                int y = attrs["y"] != null ? int.Parse(attrs["y"].Value) : 0;
+                int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
+                int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
                 ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
             }},
             { "scared", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -140,14 +109,13 @@ namespace Celeste.Mod {
                 ((patch_Decal)decal).RandomizeStartingFrame();
             }},
             { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
-                float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
-                Vector2 offset = new Vector2(offx, offy);
+                float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
+                float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 Color color = attrs["color"] != null ? Calc.HexToColor(attrs["color"].Value) : Color.White;
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
                 int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
-                decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
+                decal.Add(new VertexLight(new Vector2(offX, offY), color, alpha, startFade, endFade));
             }},
             { "lightOcclude", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
@@ -166,7 +134,12 @@ namespace Celeste.Mod {
 
         public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
             if (PropertyHandlers.ContainsKey(propertyName)) {
-                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for {propertyName} already exists! Replacing...");
+                string asmName = Assembly.GetCallingAssembly().GetName().Name;
+                string modName = Everest.Content.Mods
+                                 .Where(mod => mod is AssemblyModContent && mod.DefaultName == asmName)
+                                 .FirstOrDefault()?.Name;
+                string conflictSource = !string.IsNullOrEmpty(modName) ? modName : asmName;
+                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for '{propertyName}' already exists! Replacing with new handler from {conflictSource}.");
                 PropertyHandlers[propertyName] = action;
             } else {
                 PropertyHandlers.Add(propertyName, action);
