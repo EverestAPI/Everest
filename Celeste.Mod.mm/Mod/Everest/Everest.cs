@@ -355,6 +355,34 @@ namespace Celeste.Mod {
                 return null;
             };
 
+            // Handle failed resolution for unregistered assemblies
+            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
+                AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
+                if (string.IsNullOrEmpty(name?.Name))
+                    return null;
+
+                foreach (ModContent mod in Content.Mods) {
+                    EverestModuleMetadata meta = mod.Mod;
+                    if (meta == null)
+                        continue;
+
+                    string path = name.Name + ".dll";
+                    if (!string.IsNullOrEmpty(meta.DLL)) {
+                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path).Replace('\\', '/');
+                        if (!string.IsNullOrEmpty(meta.PathDirectory))
+                            path = path.Substring(meta.PathDirectory.Length + 1);
+                    }
+
+                    if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
+                        using Stream stream = asm.Stream;
+                        if (stream != null)
+                            return Relinker.GetRelinkedAssembly(meta, name.Name, stream);
+                    }
+                }
+
+                return null;
+            };
+
             // Preload some basic dependencies.
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
