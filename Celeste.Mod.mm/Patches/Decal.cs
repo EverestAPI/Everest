@@ -2,6 +2,7 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -97,7 +98,7 @@ namespace Celeste {
                 OnShake = v => { X += v.X; Y += v.Y; },
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => RemoveSelf()));
-                    (Scene as Level).Session.SetFlag($"Everest_Decal_texture:{Name}_X:{Position.X}_Y:{Position.Y}_WasAttached");
+                    CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
                 }
             };
             if (jumpThrus)
@@ -127,8 +128,9 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && (scene as Level).Session.GetFlag($"Everest_Decal_texture:{Name}_X:{Position.X}_Y:{Position.Y}_WasAttached"))
+            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains($"{Name}||{Position.X}||{Position.Y}")) {
                 RemoveSelf();
+            }
         }
 
         public extern void orig_Added(Scene scene);
