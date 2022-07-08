@@ -125,6 +125,7 @@ namespace Celeste {
             return orig_StartLevel() ?? Levels[0];
         }
 
+        [MonoModReplace]
         public new LevelData Get(string levelName) {
             if (levelsByName.TryGetValue(levelName, out LevelData level)) {
                 return level;
