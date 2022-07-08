@@ -17,6 +17,11 @@ namespace Celeste.Mod {
             { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
                 ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
             }},
+            { "scale", delegate(Decal decal, XmlAttributeCollection attrs) {
+                float scaleX = attrs["multiplyX"] != null ? float.Parse(attrs["multiplyX"].Value) : 1f;
+                float scaleY = attrs["multiplyY"] != null ? float.Parse(attrs["multiplyY"].Value) : 1f;
+                ((patch_Decal)decal).Scale *= new Vector2(scaleX, scaleY);
+            }},
             { "smoke", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
                 float offy = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
@@ -98,7 +103,8 @@ namespace Celeste.Mod {
                 if (attrs["index"] != null)
                     index = int.Parse(attrs["index"].Value);
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
-                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls);
+                bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
+                ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
             { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int x = 0;
@@ -129,6 +135,9 @@ namespace Celeste.Mod {
                 int[] idleFrames = Calc.ReadCSVIntWithTricks(attrs["idleFrames"]?.Value ?? "0");
                 int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
+            }},
+            { "randomizeFrame", delegate(Decal decal, XmlAttributeCollection attrs) {
+                ((patch_Decal)decal).RandomizeStartingFrame();
             }},
             { "light", delegate(Decal decal, XmlAttributeCollection attrs) {
                 float offx = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
