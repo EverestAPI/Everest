@@ -155,7 +155,7 @@ namespace Celeste {
         }
 
         public void RandomizeStartingFrame() {
-            this.frame = Calc.Random.NextFloat(textures.Count);
+            frame = Calc.Random.NextFloat(textures.Count);
         }
 
         public void MakeOverlay() {
