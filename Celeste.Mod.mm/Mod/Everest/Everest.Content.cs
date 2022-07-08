@@ -30,6 +30,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
     public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
     public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
+    public sealed class AssetTypeLoenn { private AssetTypeLoenn() { } }
     public sealed class AssetTypeSpriteBank { private AssetTypeSpriteBank() { } }
     public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
     public sealed class AssetTypeFont { private AssetTypeFont() { } }
@@ -500,7 +501,9 @@ namespace Celeste.Mod {
                 typeof(AssetTypeDialog),
                 typeof(AssetTypeDialogExport),
                 typeof(AssetTypeAhorn),
-                typeof(AssetTypeSpriteBank)
+                typeof(AssetTypeLoenn),
+                typeof(AssetTypeSpriteBank),
+                typeof(AssetTypeDecalRegistry)
             };
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
@@ -796,11 +799,12 @@ namespace Celeste.Mod {
                         format = formatMod;
                         break;
                     }
-
                 } else if (file.StartsWith("Ahorn/")) {
-                    // Special case: Fallback type for anything inside of the Ahorn folder.
+                    // Fallback types for anything inside of the Ahorn or Loenn folders.
                     // Will be ignored during collision checks.
                     type = typeof(AssetTypeAhorn);
+                } else if (file.StartsWith("Loenn/")) {
+                    type = typeof(AssetTypeLoenn);
                 }
 
                 return file;
