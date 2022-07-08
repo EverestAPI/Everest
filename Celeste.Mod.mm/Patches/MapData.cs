@@ -16,6 +16,8 @@ namespace Celeste {
         public int DetectedStrawberriesIncludingUntracked;
         public List<EntityData> DashlessGoldenberries = new List<EntityData>();
 
+        private Dictionary<string, LevelData> levelsByName = new Dictionary<string, LevelData>();
+
         public MapMetaModeProperties Meta {
             get {
                 MapMeta metaAll = AreaData.Get(Area).GetMeta();
@@ -44,6 +46,8 @@ namespace Celeste {
             DashlessGoldenberries = new List<EntityData>();
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
+
+            RegenerateLevelsByNameCache();
 
             try {
                 orig_Load();
@@ -113,6 +117,29 @@ namespace Celeste {
             }
 
             return orig_StartLevel() ?? Levels[0];
+        }
+
+        [MonoModReplace]
+        public new LevelData Get(string levelName) {
+            if (levelsByName is null || levelsByName.Count != Levels.Count)
+                RegenerateLevelsByNameCache();
+
+            if (levelsByName.TryGetValue(levelName, out LevelData level))
+                return level;
+
+            return null;
+        }
+
+        public void RegenerateLevelsByNameCache() {
+            if (levelsByName is null) {
+                levelsByName = new Dictionary<string, LevelData>();
+            } else {
+                levelsByName.Clear();
+            }
+
+            foreach (LevelData level in Levels) {
+                levelsByName.Add(level.Name, level);
+            }
         }
 
         private static BinaryPacker.Element _Process(BinaryPacker.Element root, MapData self) {

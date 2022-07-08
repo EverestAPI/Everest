@@ -7,6 +7,7 @@ using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -29,7 +30,11 @@ namespace Celeste {
         private float hideRange;
         private float showRange;
 
+        private Solid solid;
+        
         private StaticMover staticMover;
+
+        public bool Overlay { get; private set; }
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
@@ -83,9 +88,14 @@ namespace Celeste {
         [MakeMethodPublic]
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
-        [MonoModIgnore]
+        [MonoModReplace]
         [MakeMethodPublic]
-        public extern void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true);
+        public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true) {
+            solid = new Solid(Position + new Vector2(x, y), w, h, true);
+            solid.BlockWaterfalls = blockWaterfalls;
+            solid.SurfaceSoundIndex = surfaceSoundIndex;
+            Scene.Add(solid);
+        }
 
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
@@ -94,15 +104,37 @@ namespace Celeste {
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
             staticMover = new StaticMover {
                 SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
-                OnMove = v => { X += v.X; Y += v.Y; },
-                OnShake = v => { X += v.X; Y += v.Y; },
+                OnDestroy = () => {
+                    RemoveSelf();
+                    solid?.RemoveSelf();
+                },
+                OnDisable = () => {
+                    Active = Visible = Collidable = false;
+                    if (solid != null) 
+                        solid.Collidable = false; 
+                },
+                OnEnable = () => {
+                    Active = Visible = Collidable = true;
+                    if (solid != null)
+                        solid.Collidable = true;
+                },
+                OnMove = v => {
+                    Position += v;
+                    if (solid != null) {
+                        if (staticMover.Platform != null)
+                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
+                        solid.MoveHExact((int) v.X);
+                        solid.MoveVExact((int) v.Y);
+                    }
+                },
+                OnShake = v => { Position += v; },
                 OnAttach = p => {
                     p.Add(new EntityRemovedListener(() => RemoveSelf()));
                     CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
                 }
             };
             if (jumpThrus)
-                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int)X + x, (int)X + y, w, h));
+                staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
             Add(staticMover);
         }
 
@@ -119,6 +151,10 @@ namespace Celeste {
             this.hideRange = hideRange;
             this.showRange = showRange;
             scaredAnimal = true;
+        }
+
+        public void MakeOverlay() {
+            Overlay = true;
         }
 
         [MonoModIgnore]
@@ -161,11 +197,20 @@ namespace Celeste {
                 }
 
             }
+            if (Overlay) {
+                Add(new BeforeRenderHook(new Action(CreateOverlay)));
+            }
         }
 
-        [MonoModIgnore]
-        [PatchDecalUpdate]
-        public extern override void Update();
+        private void CreateOverlay() {
+            Tileset tileset = new Tileset(textures[0], 8, 8);
+            for (int i = 0; i < textures[0].Width / 8; i++) {
+                for (int j = 0; j < textures[0].Height / 8; j++) {
+                    TileInterceptor.TileCheck(Scene, tileset[i, j], new Vector2(Position.X - textures[0].Center.X + i * 8, Position.Y - textures[0].Center.Y + j * 8));
+                }
+            }
+            RemoveSelf();
+        }
     }
     public static class DecalExt {
 

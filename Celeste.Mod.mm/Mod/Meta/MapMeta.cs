@@ -498,6 +498,7 @@ namespace Celeste.Mod.Meta {
         [YamlIgnore] public Vector2 Speed => SpeedArray.ToVector2() ?? Vector2.Zero;
         [YamlMember(Alias = "Speed")] public float[] SpeedArray { get; set; }
         public float Scale { get; set; } = 1f;
+        public bool Loop { get; set; } = true;
     }
 
     public class MapMetaCompleteScreenTitle {

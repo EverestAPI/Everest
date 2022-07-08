@@ -30,6 +30,7 @@ namespace Celeste.Mod.UI {
 
         private TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
             menu = new TextMenu();
+            ((patch_TextMenu) menu).CompactWidthMode = true;
             items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));
