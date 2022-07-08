@@ -162,12 +162,13 @@ namespace Celeste {
 
         #endregion
 
+        [MonoModIgnore]
         public static extern void orig_Initialize();
-        public static void Initialize() {
+        public new static void Initialize() {
             orig_Initialize();
             // Load Mouse Button Bindings, which are applied to the already-loaded settings.
             if (UserIO.Open(UserIO.Mode.Read)) {
-                UserIO.Load<VanillaMouseBindings>("modsettings-Everest_MouseBindings").Apply();
+                (UserIO.Load<VanillaMouseBindings>("modsettings-Everest_MouseBindings") ?? new VanillaMouseBindings().Init()).Apply();
                 UserIO.Close();
             }
         }
