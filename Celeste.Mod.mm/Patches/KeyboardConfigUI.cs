@@ -39,7 +39,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [PatchInputConfigReset]
+        [PatchConfigUIUpdate]
         public new extern void Update();
 
         #region Legacy Input
@@ -190,6 +190,7 @@ namespace Celeste {
             }));
         }
 
+        // Invoked by the KeyboardConfigUI.Update MonoModRules patch
         public void RemapMouse() {
             for (int i = 0; i < 5; i++) {
                 if (patch_MInput.Mouse.Pressed((patch_MInput.patch_MouseData.MouseButtons) i))

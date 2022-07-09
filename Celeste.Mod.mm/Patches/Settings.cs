@@ -10,7 +10,7 @@ namespace Celeste {
     class patch_Settings : Settings {
 
         [MonoModIgnore]
-        [PatchSettingsDoNotTranslateKeys]
+        [PatchSettingsSetDefaultKeyboardControls]
         public extern new void SetDefaultKeyboardControls(bool reset);
 
         #region Legacy Input

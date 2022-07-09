@@ -50,8 +50,11 @@ namespace Celeste {
         }
 
         public static MTexture GuiMouseButton(patch_MInput.patch_MouseData.MouseButtons button, Input.PrefixMode mode = Input.PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
+            // GuiKey uses a keyNameLookup to cache the Key: string values, but implementing one here would also require initializing it somewhere.
             string name = button.ToString();
             MTexture mTexture = GuiTexture("mouse", name);
+            if (mTexture is null && fallback is not null)
+                return GFX.Gui[fallback];
             return mTexture;
         }
 

@@ -480,6 +480,7 @@ namespace Celeste {
             [MonoModIgnore]
             public extern override void Update();
 
+            // Invoked by the TextMenu.Setting.Update MonoModRules patch
             public void Append(List<patch_MInput.patch_MouseData.MouseButtons> buttons) {
                 int max = Math.Min(Input.MaxBindings - Values.Count, buttons.Count);
                 for (int i = 0; i < max; i++) {

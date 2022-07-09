@@ -15,7 +15,7 @@ namespace Celeste {
                 UserIO.Save<VanillaMouseBindings>("modsettings-Everest_MouseBindings", data);
                 UserIO.Close();
             }
-            yield return new SwapImmediately(orig_Leave(next));
+            return orig_Leave(next);
         }
     }
 }

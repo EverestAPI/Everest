@@ -339,9 +339,10 @@ namespace MonoMod {
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
+    /// Also implments mouse button remapping.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInputConfigReset))]
-    class PatchInputConfigResetAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchConfigUIUpdate))]
+    class PatchConfigUIUpdate : Attribute { };
 
     /// <summary>
     /// Patches AscendManager.Routine to fix gameplay RNG in custom maps.
@@ -356,10 +357,11 @@ namespace MonoMod {
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
     /// <summary>
-    /// Patches SettingS.SetDefaultKeyboardControls so that TranslateKeys only gets called when reset = true.
+    /// Patches Settings.SetDefaultKeyboardControls to take mouse bindings into account
+    /// and ensure that TranslateKeys only gets called when reset = true.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsDoNotTranslateKeys))]
-    class PatchSettingsDoNotTranslateKeysAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsSetDefaultKeyboardControls))]
+    class PatchSettingsSetDefaultKeyboardControls : Attribute { }
 
     /// <summary>
     /// Forcibly changes a given member's name.
@@ -2173,7 +2175,7 @@ namespace MonoMod {
             c.Emit(OpCodes.Add);
         }
 
-        public static void PatchInputConfigReset(ILContext il, CustomAttribute attrib) {
+        public static void PatchConfigUIUpdate(ILContext il, CustomAttribute attrib) {
             ILCursor c = new ILCursor(il);
 
             c.GotoNext(MoveType.AfterLabel, i =>
@@ -2189,7 +2191,8 @@ namespace MonoMod {
             c.Remove();
 
             // Add handler for Mouse Buttons on KeyboardConfigUI
-            if (c.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"))) {
+            if (il.Method.DeclaringType.Name == "KeyboardConfigUI") {
+                c.GotoNext(MoveType.AfterLabel, instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"));
                 c.Emit(OpCodes.Ldarg_0);
                 c.Emit(OpCodes.Call, il.Method.DeclaringType.FindMethod("System.Void RemapMouse()"));
             }
@@ -2261,7 +2264,7 @@ namespace MonoMod {
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
-        public static void PatchSettingsDoNotTranslateKeys(ILContext il, CustomAttribute attrib) {
+        public static void PatchSettingsSetDefaultKeyboardControls(ILContext il, CustomAttribute attrib) {
             // Generic types are a mess
             FieldReference f_Binding_Mouse = il.Module.GetType("Monocle.Binding").FindField("Mouse");
             GenericInstanceType t_List_MouseButtons = (GenericInstanceType) il.Module.ImportReference(f_Binding_Mouse.FieldType);
