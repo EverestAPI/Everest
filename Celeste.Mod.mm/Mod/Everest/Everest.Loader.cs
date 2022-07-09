@@ -34,6 +34,17 @@ namespace Celeste.Mod {
             public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
 
             /// <summary>
+            /// The path to the Everest /Mods/temporaryblacklist.txt file.
+            /// </summary>
+            public static string PathTemporaryBlacklist { get; internal set; }
+            internal static string NameTemporaryBlacklist;
+            internal static List<string> _TemporaryBlacklist;
+            /// <summary>
+            /// The currently loaded mod temporary blacklist.
+            /// </summary>
+            public static ReadOnlyCollection<string> TemporaryBlacklist => _TemporaryBlacklist?.AsReadOnly();
+
+            /// <summary>
             /// The path to the Everest /Mods/whitelist.txt file.
             /// </summary>
             public static string PathWhitelist { get; internal set; }
@@ -109,6 +120,14 @@ namespace Celeste.Mod {
 
             public static bool AutoLoadNewMods { get; internal set; }
 
+            public static bool ShouldLoadFile(string file) {
+                if (CoreModule.Settings.WhitelistFullOverride ?? false) {
+                    return Whitelist != null ? Whitelist.Contains(file) : (!Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)));
+                } else {
+                    return (Whitelist != null && Whitelist.Contains(file)) || (!Blacklist.Contains(file) && (TemporaryBlacklist == null || !TemporaryBlacklist.Contains(file)));
+                }
+            }
+
             internal static void LoadAuto() {
                 Directory.CreateDirectory(PathMods = Path.Combine(PathEverest, "Mods"));
                 Directory.CreateDirectory(PathCache = Path.Combine(PathMods, "Cache"));
@@ -121,6 +140,12 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("ExampleFolder");
                         writer.WriteLine("SomeMod.zip");
+                    }
+                }
+                if (!string.IsNullOrEmpty(NameTemporaryBlacklist)) {
+                    PathTemporaryBlacklist = Path.Combine(PathMods, NameTemporaryBlacklist);
+                    if (File.Exists(PathTemporaryBlacklist)) {
+                        _TemporaryBlacklist = File.ReadAllLines(PathTemporaryBlacklist).Select(l => (l.StartsWith("#") ? "" : l).Trim()).ToList();
                     }
                 }
 
@@ -161,9 +186,7 @@ namespace Celeste.Mod {
                 string[] files = Directory.GetFiles(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
-                    if (!file.EndsWith(".zip") || _Blacklist.Contains(file))
-                        continue;
-                    if (_Whitelist != null && !_Whitelist.Contains(file))
+                    if (!file.EndsWith(".zip") || !ShouldLoadFile(file))
                         continue;
                     LoadZip(Path.Combine(PathMods, file));
                 }
@@ -171,9 +194,7 @@ namespace Celeste.Mod {
                 files = Directory.GetDirectories(PathMods);
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
-                    if (file == "Cache" || _Blacklist.Contains(file))
-                        continue;
-                    if (_Whitelist != null && !_Whitelist.Contains(file))
+                    if (file == "Cache" || !ShouldLoadFile(file))
                         continue;
                     LoadDir(Path.Combine(PathMods, file));
                 }
@@ -477,9 +498,6 @@ namespace Celeste.Mod {
 
                 using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
 
-                // Add an AssemblyResolve handler for all bundled libraries.
-                AppDomain.CurrentDomain.AssemblyResolve += GenerateModAssemblyResolver(meta);
-
                 // Load the actual assembly.
                 Assembly asm = null;
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
@@ -577,14 +595,23 @@ namespace Celeste.Mod {
                 for (int i = 0; i < types.Length; i++) {
                     Type type = types[i];
 
-                    if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
-                        foundModule = true;
-                        if (!typeof(NullModule).IsAssignableFrom(type)) {
-                            EverestModule mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
-                            mod.Metadata = meta;
-                            mod.Register();
+                    EverestModule mod = null;
+                    try {
+                        if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
+                            foundModule = true;
+                            if (!typeof(NullModule).IsAssignableFrom(type)) {
+                                mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+                            }
                         }
+                    } catch (TypeLoadException e) {
+                        // The type likely depends on a base class from a missing optional dependency
+                        Logger.Log(LogLevel.Warn, "loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
                     }
+
+                   if (mod != null) {
+                        mod.Metadata = meta;
+                        mod.Register();
+                   }
                 }
 
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
@@ -742,39 +769,6 @@ namespace Celeste.Mod {
 
                 return true;
             }
-
-            private static ResolveEventHandler GenerateModAssemblyResolver(EverestModuleMetadata meta)
-                => (sender, args) => {
-                    AssemblyName name = args?.Name == null ? null : new AssemblyName(args.Name);
-                    if (string.IsNullOrEmpty(name?.Name))
-                        return null;
-
-                    string path = name.Name + ".dll";
-                    if (!string.IsNullOrEmpty(meta.DLL))
-                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
-
-                    if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                        string zipPath = path.Replace('\\', '/');
-                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                            foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName == zipPath)
-                                    using (MemoryStream stream = entry.ExtractStream())
-                                        return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(zipPath), stream);
-                            }
-                        }
-                    }
-
-                    if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                        string filePath = path;
-                        if (!File.Exists(filePath))
-                            filePath = Path.Combine(meta.PathDirectory, filePath);
-                        if (File.Exists(filePath))
-                            using (FileStream stream = File.OpenRead(filePath))
-                                return Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(filePath), stream);
-                    }
-
-                    return null;
-                };
 
             private static void ApplyModHackfixes(EverestModuleMetadata meta, Assembly asm) {
                 // Feel free to keep this as a reminder on mod hackfixes or whatever. -jade

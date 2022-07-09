@@ -533,7 +533,7 @@ header {
                             session.Area.Mode != (AreaMode) side ||
                             data["forcenew"]?.ToLowerInvariant() == "true"
                         ) {
-                            session = new Session(area.ToKey(), level.Name);
+                            session = new Session(area.ToKey((AreaMode) side), level.Name);
                         }
                         session.Level = levelName;
 

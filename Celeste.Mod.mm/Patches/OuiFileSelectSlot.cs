@@ -1,5 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+#pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
@@ -55,6 +56,8 @@ namespace Celeste {
         private int totalGoldenStrawberries;
         private int totalHeartGems;
         private int totalCassettes;
+
+        private bool renamed;
 
         private bool Golden => !Corrupted && Exists && SaveData.TotalStrawberries >= maxStrawberryCountIncludingUntracked;
 
@@ -159,11 +162,32 @@ namespace Celeste {
                     }
                     buttons.Add(newGameLevelSetPicker);
                 }
+            } else if (!Corrupted) {
+                buttons.Insert(buttons.FindIndex(button => button.Label == Dialog.Clean("file_delete")), // Insert immediately before "Delete"
+                    new Button {
+                        Label = Dialog.Clean("file_rename"),
+                        Action = OnExistingFileRenameSelected,
+                        Scale = 0.7f
+                    }
+                );
             }
 
             patch_SaveData.LoadModSaveData(FileSlot);
             Everest.Events.FileSelectSlot.HandleCreateButtons(buttons, this, Exists);
         }
+
+        private void OnExistingFileRenameSelected() {
+            renamed = true;
+            Renaming = true;
+            OuiFileNaming ouiFileNaming = fileSelect.Overworld.Goto<OuiFileNaming>();
+            ouiFileNaming.FileSlot = this;
+            ouiFileNaming.StartingName = Name;
+            Audio.Play("event:/ui/main/savefile_rename_start");
+        }
+
+        [MonoModIgnore]
+        [PatchOuiFileSelectSlotOnContinueSelected]
+        private extern void OnContinueSelected();
 
         public extern void orig_OnNewGameSelected();
         public void OnNewGameSelected() {

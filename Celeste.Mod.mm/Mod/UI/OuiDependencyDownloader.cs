@@ -196,9 +196,7 @@ namespace Celeste.Mod.UI {
                             LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), modFilename));
 
                             // remove the mod from the loaded blacklist
-                            while (Everest.Loader._Blacklist.Contains(modFilename)) {
-                                Everest.Loader._Blacklist.Remove(modFilename);
-                            }
+                            Everest.Loader._Blacklist.RemoveAll(item => item == modFilename);
 
                             // hot load the mod
                             if (modFilename.EndsWith(".zip")) {

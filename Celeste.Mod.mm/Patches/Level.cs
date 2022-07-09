@@ -37,6 +37,8 @@ namespace Celeste {
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
+        
+        private float unpauseTimer;
 
         /// <summary>
         /// If in vanilla levels, gets the spawnpoint closest to the bottom left of the level.<br/>
@@ -482,6 +484,22 @@ namespace Celeste {
             }
             return position;
         }
+
+        private void FixChaserStatesTimeStamp() {
+            if (unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
+                float offset = Engine.DeltaTime;
+
+                // add one more frame at the end
+                if (unpauseTimer - Engine.RawDeltaTime <= 0f)
+                    offset *= 2;
+
+                for (int i = 0; i < chaserStates.Count; i++) {
+                    Player.ChaserState chaserState = chaserStates[i];
+                    chaserState.TimeStamp += offset;
+                    chaserStates[i] = chaserState;
+                }
+            }
+        }
     }
 
     public static class LevelExt {
@@ -628,6 +646,13 @@ namespace MonoMod {
         }
 
         public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+
+            ILCursor cursor = new ILCursor(context);
+
+            // insert FixChaserStatesTimeStamp() at the begin
+            cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
+
             /* We expect something similar enough to the following:
             call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard() // We're here
             ldc.i4.s 9
@@ -639,7 +664,6 @@ namespace MonoMod {
             false
             */
 
-            ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
                 instr => instr.GetIntOrNull() == 9,
                 instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"));

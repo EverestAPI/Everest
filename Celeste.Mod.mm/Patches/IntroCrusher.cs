@@ -27,9 +27,11 @@ namespace Celeste {
 
             string tiletype = data.Attr("tiletype");
             if (!string.IsNullOrEmpty(tiletype)) {
+                SurfaceSoundIndex = SurfaceIndex.TileToIndex[tiletype[0]];
                 Remove(tilegrid);
                 Add(tilegrid = GFX.FGAutotiler.GenerateBox(tiletype[0], data.Width / 8, data.Height / 8).TileGrid);
             }
+            Add(new TileInterceptor(tilegrid, highPriority: false));
         }
 
         [MonoModLinkTo("Monocle.Entity", "Added")]
