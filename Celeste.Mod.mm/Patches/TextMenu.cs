@@ -469,6 +469,13 @@ namespace Celeste {
                 Set(buttons);
             }
 
+            private int _MouseButtonsHash(int hash) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons btn in ((patch_Binding)Binding).Mouse) {
+                    hash = hash * 31 + btn.GetHashCode();
+                }
+                return hash;
+            }
+
             [PatchTextMenuSettingUpdate]
             [MonoModIgnore]
             public extern override void Update();

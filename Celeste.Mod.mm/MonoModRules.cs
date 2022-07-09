@@ -2326,89 +2326,34 @@ namespace MonoMod {
         }
 
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
+            MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
+            FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");
+
             ILCursor c = new ILCursor(il);
 
-            FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");
-            TypeReference t_MouseButtons = ((GenericInstanceType) f_Binding_Mouse.FieldType).GenericArguments[0];
-            GenericInstanceType t_ref = il.Body.Variables.First(t => t.VariableType is GenericInstanceType).VariableType as GenericInstanceType;
-            GenericInstanceType t_Enumerable_MouseButtons = new GenericInstanceType(t_ref.ElementType);
-            t_Enumerable_MouseButtons.GenericArguments.Add(t_MouseButtons);
-
-            // foreach loops are messy
-            VariableDefinition mouseBtnList, mouseBtn;
-            il.Body.Variables.Add(mouseBtnList = new VariableDefinition(t_Enumerable_MouseButtons));
-            il.Body.Variables.Add(mouseBtn = new VariableDefinition(t_MouseButtons));
-
+            /*
+            Inject:
+                num = _MouseButtonsHash(num);
+            Before the Keyboard hash calculation
+            */
             c.GotoNext(MoveType.After, instr => instr.MatchEndfinally());
-            ILCursor c2 = c.Clone().GotoNext(MoveType.After, instr => instr.MatchEndfinally()).MoveAfterLabels();
+            // repurpose the existing ldarg_0 so we don't have to deal with try/catch nonsense
+            c.Goto(c.Next, MoveType.After);
+            c.Emit(OpCodes.Ldloc_0);
+            c.Emit(OpCodes.Call, m_MouseButtonsHash);
+            c.Emit(OpCodes.Stloc_0);
+            // re-emit cannibalized instruction
+            c.Emit(OpCodes.Ldarg_0);
 
-            int start = c2.Index;
-            do {
-                object operand = c.Next.Operand;
-
-                if (operand is FieldReference field && field.Name == "Keyboard")
-                    operand = f_Binding_Mouse;
-
-                if (operand is MethodReference method && method.DeclaringType is GenericInstanceType declType) {
-                    GenericInstanceType typeCopy = new GenericInstanceType(declType.ElementType);
-                    typeCopy.GenericArguments.Add(t_MouseButtons);
-                    operand = new MethodReference(method.Name, method.ReturnType, typeCopy) {
-                        CallingConvention = method.CallingConvention,
-                        HasThis = method.HasThis,
-                    };
-                }
-
-                if (c.Next.MatchConstrained(out TypeReference constrained))
-                    operand = (constrained is GenericInstanceType) ? t_Enumerable_MouseButtons : t_MouseButtons;
-
-                if (c.Next.MatchLeaveS(out ILLabel label))
-                    operand = c2.Next;
-
-                // Patch variable references
-                int loc = -1;
-                OpCode? code = null;
-                if (c.Next.MatchStloc(out loc))
-                    code = OpCodes.Stloc_S;
-                else if (c.Next.MatchLdloca(out loc))
-                    code = OpCodes.Ldloca_S;
-
-                VariableReference variable = loc == 3 ? mouseBtnList : loc == 4 ? mouseBtn : null;
-                if (code != null && variable != null)
-                    c2.Emit(code.Value, variable);
-                else
-                    c2.Emit(c.Next.OpCode, operand);
-
-                c.Goto(c.Next, MoveType.After);
-            } while (!c.Prev.MatchEndfinally());
-
-            c.Goto(start);
-
-            // Fix if/else block and previous try/finally block
-            c.IncomingLabels.First().Branches.First().Operand = c2.Next;
-            il.Body.ExceptionHandlers.Last().HandlerEnd = c.Next;
-
-            // Add our own try/finally block
-            ExceptionHandler handler = new ExceptionHandler(ExceptionHandlerType.Finally) {
-                TryStart = c.GotoNext(instr => instr.MatchBr(out ILLabel _)).Next,
-                TryEnd = c.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Leave_S).Next,
-                HandlerStart = c.Next,
-                HandlerEnd = c2.Next,
-            };
-            il.Body.ExceptionHandlers.Add(handler);
-
-            // Fix Break targets
-            c.Goto(start);
-            c.GotoNext(MoveType.After, instr => instr.MatchBr(out ILLabel _));
-            Instruction breakInstr = c.Prev;
-            Instruction endTarget = c.Next;
-            c.GotoNext(MoveType.After, instr => instr.MatchStloc(0));
-            // BeginTarget
-            breakInstr.Operand = c.Next;
-            c.GotoNext(instr => instr.MatchBrtrue(out ILLabel _));
-            c.Next.Operand = endTarget;
-
-
-            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.TextMenu/Setting", "Set"))) { }
+            /*
+            Append:
+                Set(Binding.Mouse);
+            After:
+                Set(Binding.Keyboard);
+            */
+            c.GotoNext(MoveType.After,
+                instr => instr.MatchLdfld("Monocle.Binding", "Keyboard"),
+                instr => instr.MatchCallvirt("Celeste.TextMenu/Setting", "Set"));
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldarg_0);
             c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Binding"));
