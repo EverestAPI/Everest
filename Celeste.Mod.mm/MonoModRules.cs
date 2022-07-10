@@ -427,12 +427,42 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
     class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to support non-looping complete screen layers.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCompleteRendererImageLayerRender))]
+    class PatchCompleteRendererImageLayerRenderAttribute : Attribute { }
 
     /// <summary>
     /// Patches the method to update the Name and the TheoSisterName, if the file has been renamed in-game, in the file's SaveData.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileSelectSlotOnContinueSelected))]
     class PatchOuiFileSelectSlotOnContinueSelectedAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches MoveBlock.Controller to disable static movers before resetting their position when breaking.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMoveBlockController))]
+    class PatchMoveBlockControllerAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the footstep/landing sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOnCollideV))]
+    class PatchPlayerOnCollideV : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the grab sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerClimbBegin))]
+    class PatchPlayerClimbBegin : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the walljump sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigWallJump))]
+    class PatchPlayerOrigWallJumpAttribute: Attribute { }
 
 
     static class MonoModRules {
@@ -2485,6 +2515,142 @@ namespace MonoMod {
             cursor.RemoveRange(3);
         }
 
+        private static void PatchPlaySurfaceIndex(ILCursor cursor, string name) {
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = cursor.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
+
+            // Jump to ldstr we want to replace
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr($"event:/char/madeline{name}"));
+
+            // Retrieve references to reuse for platform.Get___SoundIndex() call
+            int loc_Platform = -1;
+            MethodReference m_Platform_GetSoundIndex = null;
+            cursor.FindNext(out ILCursor[] instrMatches,
+                instr => instr.MatchLdloc(out loc_Platform),
+                instr => (instr.MatchCallvirt(out m_Platform_GetSoundIndex) && m_Platform_GetSoundIndex.Name.EndsWith("SoundIndex")));
+
+            /*  Change:
+                    Play("event:/char/madeline{$name}", "surface_index", platformByPriority.GetStepSoundIndex(this));
+                to:
+                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetStepSoundIndex(this)) + $name, "surface_index", platformByPriority.GetStepSoundIndex(this));
+                OR Change (for walls):
+                    Play("event:/char/madeline/{$name}", "surface_index", platformByPriority.GetWallSoundIndex(this, (int)Facing));
+                to:
+                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetWallSoundIndex(this, (int)Facing)) + $name, "surface_index", 
+                         platformByPriority.GetWallSoundIndex(this, (int)Facing));
+            */
+
+            cursor.Emit(OpCodes.Ldloc, loc_Platform);
+            cursor.Emit(OpCodes.Ldarg_0);
+
+            if (name is "/handhold" or "/grab") {
+                // Player.Facing
+                cursor.Emit(OpCodes.Ldarg_0);
+                // If present, this will be the last argument to GetWallSoundIndex, so the instruction right before the call.
+                cursor.Emit(OpCodes.Ldfld, (FieldReference) instrMatches[1].Prev.Operand);
+            }
+
+            cursor.Emit(OpCodes.Callvirt, m_Platform_GetSoundIndex);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.Emit(OpCodes.Ldstr, name);
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+            // Remove hardcoded event string
+            cursor.Remove();
+        }
+
+        public static void PatchPlayerCtorOnFrameChange(ILContext context) {
+            ILCursor cursor = new ILCursor(context);
+            PatchPlaySurfaceIndex(cursor, "/footstep");
+            PatchPlaySurfaceIndex(cursor, "/handhold");
+        }
+
+        public static void PatchPlayerOnCollideV(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
+
+            ILCursor cursor = new ILCursor(context);
+
+            /*  Move cursor to after IL_040d in
+                    // num2 = platformByPriority.GetLandSoundIndex(this)
+                    IL_040a: ldloc.s 4
+	                IL_040c: ldarg.0
+	                IL_040d: callvirt instance int32 Celeste.Platform::GetLandSoundIndex(class Monocle.Entity)
+	                IL_0412: stloc.s 5
+                and get the variable index of num2  
+            */
+            int loc_landSoundIdx = -1;
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
+                instr => instr.MatchStloc(out loc_landSoundIdx));
+
+            /*  Change
+                    Play((playFootstepOnLand > 0f) ? "event:/char/madeline/footstep" : "event:/char/madeline/landing", "surface_index", num2);
+                to
+                    Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", num2);
+            */
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "playFootstepOnLand"));
+            cursor.Emit(OpCodes.Ldloc, loc_landSoundIdx);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/landing"))
+                .Next.Operand = "/landing";
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/footstep"))
+                .Next.Operand = "/footstep";
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("surface_index"));
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+        }
+
+        public static void PatchPlayerClimbBegin(ILContext context, CustomAttribute attrib) {
+            PatchPlaySurfaceIndex(new ILCursor(context), "/grab");
+        }
+
+        public static void PatchPlayerOrigWallJump(ILContext context, CustomAttribute attrib) {
+            // Doesn't use PatchPlaySurfaceIndex because index, not platform, is stored in the local variable
+
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
+            
+            ILCursor cursor = new ILCursor(context);
+
+            /*  Change:
+                    Play("event:/char/madeline/landing", "surface_index", num);
+                to:
+                    Play(SurfaceIndex.GetPathFromIndex(num) + "/landing", "surface_index", num);
+            */
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/landing"));
+            cursor.Emit(OpCodes.Ldloc_0);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.Emit(OpCodes.Ldstr, "/landing");
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+            cursor.Remove();
+        }
+
+        public static void PatchNPCSetupSpriteSoundsOnFrameChange(ILContext context) {
+            PatchPlaySurfaceIndex(new ILCursor(context), "/footstep");
+        }
+
+        public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
+            MethodReference m_ImageLayer_get_ImageIndex = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
+            
+            ILCursor cursor = new ILCursor(context);
+            
+            // change: MTexture mTexture = Images[(int)(Frame % (float)Images.Count)];
+            // to:     MTexture mTexture = Images[ImageIndex];
+            // for new property ImageIndex
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_get_ImageIndex);
+            cursor.RemoveRange(8);
+        }
+        
         public static void PatchOuiFileSelectSlotOnContinueSelected(ILContext context, CustomAttribute attrib) {
             FieldDefinition f_OuiFileSelectSlot_Name = context.Method.DeclaringType.FindField("Name");
             FieldDefinition f_OuiFileSelectSlot_renamed = context.Method.DeclaringType.FindField("renamed");
@@ -2541,10 +2707,47 @@ namespace MonoMod {
             // Target for if renamed is false
             cursor.MarkLabel(renamedTarget);
         }
+        
+        public static void PatchMoveBlockController(MethodDefinition method, CustomAttribute attrib) {
+            MethodReference m_Platform_MoveStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void MoveStaticMovers(Microsoft.Xna.Framework.Vector2)");
+
+            // The routine is stored in a compiler-generated method.
+            foreach (TypeDefinition nest in method.DeclaringType.NestedTypes) {
+                if (!nest.Name.StartsWith("<" + method.Name + ">d__"))
+                    continue;
+                method = nest.FindMethod("System.Boolean MoveNext()") ?? method;
+                break;
+            }
+
+            // From:
+            //     this.MoveStaticMovers(this.startPosition - this.Position);
+            //     this.DisableStaticMovers();
+            // To:
+            //     Vector2 amount = this.startPosition - this.Position;
+            //     this.DisableStaticMovers();
+            //     this.MoveStaticMovers(amount);
+            ILCursor cursor = new ILCursor(new ILContext(method));
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCallvirt("Celeste.Platform", "MoveStaticMovers"));
+            cursor.Remove();
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.Platform", "DisableStaticMovers"));
+
+            // The argument order happens to let us emit the two function calls adjacent to each other
+            cursor.Emit(OpCodes.Callvirt, m_Platform_MoveStaticMovers);
+        }
 
         public static void PostProcessor(MonoModder modder) {
             // Patch CrushBlock::AttackSequence's first alarm delegate manually because how would you even annotate it?
             PatchCrushBlockFirstAlarm(modder.Module.GetType("Celeste.CrushBlock/<>c__DisplayClass41_0").FindMethod("<AttackSequence>b__1"));
+            
+            // Patch Player::ctor's OnFrameChange delegate manually because see above
+            new ILContext(modder.Module.GetType("Celeste.Player").FindMethod("<.ctor>b__280_1"))
+                .Invoke(PatchPlayerCtorOnFrameChange);
+            // Patch NPC::SetupTheoSpriteSounds's OnFrameChange delegate manually because see above
+            // We can also re-use the same patch code for NPC::SetupGrannySpriteSounds's OnFrameChange delegate
+            new ILContext(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupTheoSpriteSounds>b__19_0"))
+                .Invoke(PatchNPCSetupSpriteSoundsOnFrameChange);
+            new ILContext(modder.Module.GetType("Celeste.NPC").FindMethod("<SetupGrannySpriteSounds>b__20_0"))
+                .Invoke(PatchNPCSetupSpriteSoundsOnFrameChange);
 
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
