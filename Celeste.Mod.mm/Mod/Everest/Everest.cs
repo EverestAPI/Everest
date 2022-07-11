@@ -1042,7 +1042,7 @@ namespace Celeste.Mod {
             yield break;
         }
 
-        public static void LogDetours() {
+        public static void LogDetours(LogLevel level = LogLevel.Debug) {
             List<string> detours = _DetourLog;
             if (detours.Count == 0)
                 return;
@@ -1050,7 +1050,7 @@ namespace Celeste.Mod {
             _DetourLog = new List<string>();
 
             foreach (string line in detours)
-                Logger.Log(LogLevel.Debug, "detours", line);
+                Logger.Log(level, "detours", line);
         }
 
         // A shared object a day keeps the GC away!

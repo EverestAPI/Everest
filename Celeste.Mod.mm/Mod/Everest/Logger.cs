@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Celeste.Mod.Core;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -55,8 +56,8 @@ namespace Celeste.Mod {
                 }
 
                 // cache and return it.
-                minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Info;
-                return wantedLogLevel ?? LogLevel.Info;
+                minimumLevelsCache[tag] = wantedLogLevel ?? CoreModule.Settings.DefaultMinimumLogLevel;
+                return wantedLogLevel ?? CoreModule.Settings.DefaultMinimumLogLevel;
             }
         }
 

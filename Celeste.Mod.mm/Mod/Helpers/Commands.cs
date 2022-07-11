@@ -1,4 +1,5 @@
-﻿using Monocle;
+﻿using Celeste.Mod.Core;
+using Monocle;
 
 namespace Celeste.Mod.Helpers {
     internal static class Commands {
@@ -17,7 +18,7 @@ namespace Celeste.Mod.Helpers {
 
         [Command("logdetours", "log all detours / hooks to output")]
         public static void LogDetours() {
-            Everest.LogDetours();
+            Everest.LogDetours(CoreModule.Settings.DefaultMinimumLogLevel);
         }
     }
 }

@@ -296,6 +296,9 @@ namespace Celeste.Mod.Core {
         public string CurrentBranch { get; set; }
 
         [SettingIgnore]
+        public LogLevel DefaultMinimumLogLevel { get; set; } = LogLevel.Info;
+
+        [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
 
         [SettingInGame(false)]
