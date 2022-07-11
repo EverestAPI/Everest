@@ -55,8 +55,8 @@ namespace Celeste.Mod {
                 }
 
                 // cache and return it.
-                minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Verbose;
-                return wantedLogLevel ?? LogLevel.Verbose;
+                minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Info;
+                return wantedLogLevel ?? LogLevel.Info;
             }
         }
 

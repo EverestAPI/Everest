@@ -1050,7 +1050,7 @@ namespace Celeste.Mod {
             _DetourLog = new List<string>();
 
             foreach (string line in detours)
-                Logger.Log(LogLevel.Info, "detours", line);
+                Logger.Log(LogLevel.Debug, "detours", line);
         }
 
         // A shared object a day keeps the GC away!
