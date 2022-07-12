@@ -1401,6 +1401,7 @@ namespace MonoMod {
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_SerializeModSettings = method.DeclaringType.FindMethod("System.Void _SerializeModSettings()");
             MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
 
             // The routine is stored in a compiler-generated method.
@@ -1418,6 +1419,11 @@ namespace MonoMod {
                 // savingFileData = Serialize(SaveData.Instance);
                 c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingFileData"));
                 c.Emit(OpCodes.Call, m_SerializeModSave);
+
+                // Insert After:
+                // savingSettingsData = Serialize(Settings.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingSettingsData"));
+                c.Emit(OpCodes.Call, m_SerializeModSettings);
 
                 // Insert at the end of the coroutine method
                 c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.Celeste", "SaveRoutine"));
