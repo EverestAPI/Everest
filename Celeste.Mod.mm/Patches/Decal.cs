@@ -2,6 +2,8 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -135,6 +137,10 @@ namespace Celeste {
                     }
                 },
                 OnShake = v => { Position += v; },
+                OnAttach = p => {
+                    p.Add(new EntityRemovedListener(() => RemoveSelf()));
+                    CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
+                }
             };
             if (jumpThrus)
                 staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
@@ -168,6 +174,13 @@ namespace Celeste {
         private Component image;
 
         public Component Image { get { return image; } set { image = value; } }
+
+        public override void Awake(Scene scene) {
+            base.Awake(scene);
+            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains($"{Name}||{Position.X}||{Position.Y}")) {
+                RemoveSelf();
+            }
+        }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
