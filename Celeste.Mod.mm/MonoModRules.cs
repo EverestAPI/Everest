@@ -1411,25 +1411,18 @@ namespace MonoMod {
                 break;
             }
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            new ILContext(method).Invoke(context => {
+                ILCursor c = new ILCursor(context);
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
-                    instri++;
+                // Insert After:
+                // savingFileData = Serialize(SaveData.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingFileData"));
+                c.Emit(OpCodes.Call, m_SerializeModSave);
 
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
-                    instri++;
-                }
-
-                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
-                    instri++;
-                }
-            }
+                // Insert at the end of the coroutine method
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.Celeste", "SaveRoutine"));
+                c.Emit(OpCodes.Call, m_OnSaveRoutineEnd);
+            });
         }
 
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
