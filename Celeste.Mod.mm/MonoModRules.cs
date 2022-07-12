@@ -339,7 +339,7 @@ namespace MonoMod {
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
-    /// Also implments mouse button remapping.
+    /// Also implements mouse button remapping.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchConfigUIUpdate))]
     class PatchConfigUIUpdate : Attribute { };

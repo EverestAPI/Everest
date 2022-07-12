@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
 using System.Collections;
@@ -53,6 +54,13 @@ namespace Celeste {
 
             if (Saving)
                 QueuedSaves.Enqueue(Tuple.Create(file, settings));
+
+            if (settings && UserIO.Open(UserIO.Mode.Write)) {
+                // VanillaMouseBindings extracts the data from the Settings class
+                byte[] data = UserIO.Serialize(new VanillaMouseBindings().Init());
+                UserIO.Save<VanillaMouseBindings>("modsettings-Everest_MouseBindings", data);
+                UserIO.Close();
+            }
 
             orig_SaveHandler(file, settings);
         }
