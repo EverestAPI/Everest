@@ -50,10 +50,10 @@ namespace Celeste {
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
 
-            RegenerateLevelsByNameCache();
-
             try {
                 orig_Load();
+
+                RegenerateLevelsByNameCache();
 
                 foreach (LevelData level in Levels) {
                     foreach (EntityData entity in level.Entities) {
