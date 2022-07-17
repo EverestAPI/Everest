@@ -145,7 +145,7 @@ namespace Celeste {
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
-                Position = meta.Position;
+                Position = meta.Position + offset;
                 ScrollFactor = meta.Scroll;
 
                 Images.Clear();
