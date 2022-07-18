@@ -215,6 +215,10 @@ namespace Celeste {
             }
         }
 
+        [MonoModIgnore]
+        [PatchDecalUpdate]
+        public extern override void Update();
+
         private void CreateOverlay() {
             Tileset tileset = new Tileset(textures[0], 8, 8);
             for (int i = 0; i < textures[0].Width / 8; i++) {
