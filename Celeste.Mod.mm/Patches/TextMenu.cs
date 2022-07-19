@@ -12,6 +12,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using MonoMod.InlineRT;
 
 namespace Celeste {
     public class patch_TextMenu : TextMenu {
@@ -473,6 +474,40 @@ namespace Celeste {
                 Set(buttons);
             }
 
+            private int _MouseButtonsHash(int hash) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons btn in ((patch_Binding)Binding).Mouse) {
+                    hash = hash * 31 + btn.GetHashCode();
+                }
+                return hash;
+            }
+
+            [PatchTextMenuSettingUpdate]
+            [MonoModIgnore]
+            public extern override void Update();
+
+            // Invoked by the TextMenu.Setting.Update MonoModRules patch
+            public void Append(List<patch_MInput.patch_MouseData.MouseButtons> buttons) {
+                int max = Math.Min(Input.MaxBindings - Values.Count, buttons.Count);
+                for (int i = 0; i < max; i++) {
+                    MTexture mTexture = patch_Input.GuiMouseButton(buttons[i], Input.PrefixMode.Latest, null);
+                    if (mTexture != null) {
+                        Values.Add(mTexture);
+                        continue;
+                    }
+
+                    string buttonStr = buttons[i].ToString();
+                    string displayStr = "";
+                    for (int j = 0; j < buttonStr.Length; j++) {
+                        if (j > 0 && char.IsUpper(buttonStr[j])) {
+                            displayStr += " ";
+                        }
+                        displayStr += buttonStr[j];
+                    }
+
+                    Values.Add(displayStr);
+                }
+            }
+
         }
 
     }
@@ -506,6 +541,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuOptionColor))]
     class PatchTextMenuOptionColorAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches TextMenu.Setting.Update to handle MouseButtons
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuSettingUpdate))]
+    class PatchTextMenuSettingUpdateAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
@@ -516,6 +557,42 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
+        }
+    
+        public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
+            MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
+            FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");
+
+            ILCursor c = new ILCursor(il);
+
+            /*
+            Inject:
+                num = _MouseButtonsHash(num);
+            Before the Keyboard hash calculation
+            */
+            c.GotoNext(MoveType.After, instr => instr.MatchEndfinally());
+            // repurpose the existing ldarg_0 so we don't have to deal with try/catch nonsense
+            c.Goto(c.Next, MoveType.After);
+            c.Emit(OpCodes.Ldloc_0);
+            c.Emit(OpCodes.Call, m_MouseButtonsHash);
+            c.Emit(OpCodes.Stloc_0);
+            // re-emit cannibalized instruction
+            c.Emit(OpCodes.Ldarg_0);
+
+            /*
+            Append:
+                Set(Binding.Mouse);
+            After:
+                Set(Binding.Keyboard);
+            */
+            c.GotoNext(MoveType.After,
+                instr => instr.MatchLdfld("Monocle.Binding", "Keyboard"),
+                instr => instr.MatchCallvirt("Celeste.TextMenu/Setting", "Set"));
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Binding"));
+            c.Emit(OpCodes.Ldfld, f_Binding_Mouse);
+            c.Emit(OpCodes.Callvirt, il.Method.DeclaringType.FindMethod("Append"));
         }
 
     }

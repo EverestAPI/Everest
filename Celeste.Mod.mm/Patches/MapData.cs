@@ -19,6 +19,9 @@ namespace Celeste {
         public int DetectedStrawberriesIncludingUntracked;
         public List<EntityData> DashlessGoldenberries = new List<EntityData>();
 
+        public delegate Backdrop BackdropLoader(BinaryPacker.Element data);
+        public static readonly Dictionary<string, BackdropLoader> BackdropLoaders = new Dictionary<string, BackdropLoader>();
+
         private Dictionary<string, LevelData> levelsByName = new Dictionary<string, LevelData>();
 
         public MapMetaModeProperties Meta {
@@ -50,10 +53,10 @@ namespace Celeste {
             DetectedCassette = false;
             DetectedStrawberriesIncludingUntracked = 0;
 
-            RegenerateLevelsByNameCache();
-
             try {
                 orig_Load();
+
+                RegenerateLevelsByNameCache();
 
                 foreach (LevelData level in Levels) {
                     foreach (EntityData entity in level.Entities) {
@@ -227,6 +230,12 @@ namespace Celeste {
             Backdrop backdropFromMod = Everest.Events.Level.LoadBackdrop(map, child, above);
             if (backdropFromMod != null)
                 return backdropFromMod;
+
+            if (BackdropLoaders.TryGetValue(child.Name, out BackdropLoader loader)) {
+                Backdrop loaded = loader(child);
+                if (loaded != null)
+                    return loaded;
+            }
 
             if (child.Name.Equals("rain", StringComparison.OrdinalIgnoreCase)) {
                 patch_RainFG rain = new patch_RainFG();

@@ -53,9 +53,10 @@ namespace MonoMod {
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
+    /// Also implements mouse button remapping.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInputConfigReset))]
-    class PatchInputConfigResetAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchConfigUIUpdate))]
+    class PatchConfigUIUpdate : Attribute { };
 
     /// <summary>
     /// Forcibly changes a given member's name.
@@ -295,7 +296,7 @@ namespace MonoMod {
             }
         }
 
-        public static void PatchInputConfigReset(ILContext il, CustomAttribute attrib) {
+        public static void PatchConfigUIUpdate(ILContext il, CustomAttribute attrib) {
             ILCursor c = new ILCursor(il);
 
             c.GotoNext(MoveType.AfterLabel, i =>
@@ -309,6 +310,13 @@ namespace MonoMod {
 
             c.GotoNext(i => i.MatchCall("Celeste.Input", "Initialize"));
             c.Remove();
+
+            // Add handler for Mouse Buttons on KeyboardConfigUI
+            if (il.Method.DeclaringType.Name == "KeyboardConfigUI") {
+                c.GotoNext(MoveType.AfterLabel, instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"));
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Call, il.Method.DeclaringType.FindMethod("System.Void RemapMouse()"));
+            }
         }
 
         public static void ForceName(ICustomAttributeProvider cap, CustomAttribute attrib) {
@@ -316,6 +324,8 @@ namespace MonoMod {
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
+        
+        
         public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
             ILCursor c = new ILCursor(il);
             while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
