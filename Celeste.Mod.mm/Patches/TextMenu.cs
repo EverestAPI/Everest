@@ -469,6 +469,40 @@ namespace Celeste {
                 Set(buttons);
             }
 
+            private int _MouseButtonsHash(int hash) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons btn in ((patch_Binding)Binding).Mouse) {
+                    hash = hash * 31 + btn.GetHashCode();
+                }
+                return hash;
+            }
+
+            [PatchTextMenuSettingUpdate]
+            [MonoModIgnore]
+            public extern override void Update();
+
+            // Invoked by the TextMenu.Setting.Update MonoModRules patch
+            public void Append(List<patch_MInput.patch_MouseData.MouseButtons> buttons) {
+                int max = Math.Min(Input.MaxBindings - Values.Count, buttons.Count);
+                for (int i = 0; i < max; i++) {
+                    MTexture mTexture = patch_Input.GuiMouseButton(buttons[i], Input.PrefixMode.Latest, null);
+                    if (mTexture != null) {
+                        Values.Add(mTexture);
+                        continue;
+                    }
+
+                    string buttonStr = buttons[i].ToString();
+                    string displayStr = "";
+                    for (int j = 0; j < buttonStr.Length; j++) {
+                        if (j > 0 && char.IsUpper(buttonStr[j])) {
+                            displayStr += " ";
+                        }
+                        displayStr += buttonStr[j];
+                    }
+
+                    Values.Add(displayStr);
+                }
+            }
+
         }
 
     }

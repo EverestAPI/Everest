@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework.Input;
+using Monocle;
 using MonoMod;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ namespace Celeste {
     class patch_Settings : Settings {
 
         [MonoModIgnore]
-        [PatchSettingsDoNotTranslateKeys]
+        [PatchSettingsSetDefaultKeyboardControls]
         public extern new void SetDefaultKeyboardControls(bool reset);
 
         #region Legacy Input
@@ -156,6 +158,46 @@ namespace Celeste {
         }
 
         #endregion
+
+        [MonoModIgnore]
+        public static extern void orig_Initialize();
+        public new static void Initialize() {
+            orig_Initialize();
+            // Load Mouse Button Bindings, which are applied to the already-loaded settings.
+            if (UserIO.Open(UserIO.Mode.Read)) {
+                (UserIO.Load<VanillaMouseBindings>("modsettings-Everest_MouseBindings") ?? new VanillaMouseBindings().Init()).Apply();
+                UserIO.Close();
+            }
+        }
+
+        public void ClearMouseControls() {
+            ((patch_Binding) Left).Mouse.Clear();
+            ((patch_Binding) Right).Mouse.Clear();
+            ((patch_Binding) Down).Mouse.Clear();
+            ((patch_Binding) Up).Mouse.Clear();
+            ((patch_Binding) MenuLeft).Mouse.Clear();
+            ((patch_Binding) MenuRight).Mouse.Clear();
+            ((patch_Binding) MenuDown).Mouse.Clear();
+            ((patch_Binding) MenuUp).Mouse.Clear();
+            ((patch_Binding) Grab).Mouse.Clear();
+            ((patch_Binding) Jump).Mouse.Clear();
+            ((patch_Binding) Dash).Mouse.Clear();
+            ((patch_Binding) Talk).Mouse.Clear();
+            ((patch_Binding) Pause).Mouse.Clear();
+            ((patch_Binding) Confirm).Mouse.Clear();
+            ((patch_Binding) Cancel).Mouse.Clear();
+            ((patch_Binding) Journal).Mouse.Clear();
+            ((patch_Binding) QuickRestart).Mouse.Clear();
+            ((patch_Binding) DemoDash).Mouse.Clear();
+            ((patch_Binding) LeftMoveOnly).Mouse.Clear();
+            ((patch_Binding) RightMoveOnly).Mouse.Clear();
+            ((patch_Binding) DownMoveOnly).Mouse.Clear();
+            ((patch_Binding) UpMoveOnly).Mouse.Clear();
+            ((patch_Binding) LeftDashOnly).Mouse.Clear();
+            ((patch_Binding) RightDashOnly).Mouse.Clear();
+            ((patch_Binding) DownDashOnly).Mouse.Clear();
+            ((patch_Binding) UpDashOnly).Mouse.Clear();
+        }
 
     }
 }

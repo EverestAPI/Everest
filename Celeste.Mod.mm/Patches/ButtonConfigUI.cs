@@ -38,7 +38,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [PatchInputConfigReset]
+        [PatchConfigUIUpdate]
         public new extern void Update();
 
         #region Legacy Input

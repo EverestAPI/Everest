@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using MonoMod;
 using System;
 using System.Collections;
@@ -15,6 +16,7 @@ namespace Celeste {
     static class patch_UserIO {
 
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
+        private static byte[] savingMouseBindingsData;
 
         private static Queue<Tuple<bool, bool>> QueuedSaves;
         public static bool SaveQueued => (QueuedSaves?.Count ?? 0) > 0;
@@ -86,6 +88,11 @@ namespace Celeste {
                 savingModFileData = null;
             }
 
+            if (savingMouseBindingsData != null) {
+                Save<VanillaMouseBindings>("modsettings-Everest_MouseBindings", savingMouseBindingsData);
+                savingMouseBindingsData = null;
+            }
+
             orig_SaveThread();
         }
 
@@ -153,6 +160,10 @@ namespace Celeste {
             }
 
             SaveData.Instance.AfterInitialize();
+        }
+
+        private static void _SerializeMouseBindings() {
+            savingMouseBindingsData = UserIO.Serialize(new VanillaMouseBindings().Init());
         }
 
         // Used where BeforeSave was previously used to enforce mod saving.

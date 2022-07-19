@@ -339,9 +339,10 @@ namespace MonoMod {
 
     /// <summary>
     /// Patches {Button,Keyboard}ConfigUI.Update (InputV2) to call a new Reset method instead of the vanilla one.
+    /// Also implements mouse button remapping.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchInputConfigReset))]
-    class PatchInputConfigResetAttribute : Attribute { };
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchConfigUIUpdate))]
+    class PatchConfigUIUpdate : Attribute { };
 
     /// <summary>
     /// Patches AscendManager.Routine to fix gameplay RNG in custom maps.
@@ -356,10 +357,11 @@ namespace MonoMod {
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
     /// <summary>
-    /// Patches SettingS.SetDefaultKeyboardControls so that TranslateKeys only gets called when reset = true.
+    /// Patches Settings.SetDefaultKeyboardControls to take mouse bindings into account
+    /// and ensure that TranslateKeys only gets called when reset = true.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsDoNotTranslateKeys))]
-    class PatchSettingsDoNotTranslateKeysAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsSetDefaultKeyboardControls))]
+    class PatchSettingsSetDefaultKeyboardControls : Attribute { }
 
     /// <summary>
     /// Forcibly changes a given member's name.
@@ -375,6 +377,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches TextMenu.Setting.Update to handle MouseButtons
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuSettingUpdate))]
+    class PatchTextMenuSettingUpdateAttribute : Attribute { }
 
     /// <summary>
     /// Patches the attributed method to replace _initblk calls with the initblk opcode.
@@ -1393,6 +1401,7 @@ namespace MonoMod {
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_SerializeMouseBindings = method.DeclaringType.FindMethod("System.Void _SerializeMouseBindings()");
             MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
 
             // The routine is stored in a compiler-generated method.
@@ -1403,25 +1412,23 @@ namespace MonoMod {
                 break;
             }
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            new ILContext(method).Invoke(context => {
+                ILCursor c = new ILCursor(context);
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
-                    instri++;
+                // Insert After:
+                // savingFileData = Serialize(SaveData.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingFileData"));
+                c.Emit(OpCodes.Call, m_SerializeModSave);
 
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
-                    instri++;
-                }
+                // Insert After:
+                // savingSettingsData = Serialize(Settings.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingSettingsData"));
+                c.Emit(OpCodes.Call, m_SerializeMouseBindings);
 
-                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
-                    instri++;
-                }
-            }
+                // Insert at the end of the coroutine method
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.Celeste", "SaveRoutine"));
+                c.Emit(OpCodes.Call, m_OnSaveRoutineEnd);
+            });
         }
 
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
@@ -2167,7 +2174,7 @@ namespace MonoMod {
             c.Emit(OpCodes.Add);
         }
 
-        public static void PatchInputConfigReset(ILContext il, CustomAttribute attrib) {
+        public static void PatchConfigUIUpdate(ILContext il, CustomAttribute attrib) {
             ILCursor c = new ILCursor(il);
 
             c.GotoNext(MoveType.AfterLabel, i =>
@@ -2181,6 +2188,13 @@ namespace MonoMod {
 
             c.GotoNext(i => i.MatchCall("Celeste.Input", "Initialize"));
             c.Remove();
+
+            // Add handler for Mouse Buttons on KeyboardConfigUI
+            if (il.Method.DeclaringType.Name == "KeyboardConfigUI") {
+                c.GotoNext(MoveType.AfterLabel, instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"));
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Call, il.Method.DeclaringType.FindMethod("System.Void RemapMouse()"));
+            }
         }
 
         public static void PatchAscendManagerRoutine(MethodDefinition method, CustomAttribute attrib) {
@@ -2249,14 +2263,53 @@ namespace MonoMod {
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
-        public static void PatchSettingsDoNotTranslateKeys(ILContext il, CustomAttribute attrib) {
+        public static void PatchSettingsSetDefaultKeyboardControls(ILContext il, CustomAttribute attrib) {
+            // Generic types are a mess
+            FieldReference f_Binding_Mouse = il.Module.GetType("Monocle.Binding").FindField("Mouse");
+            GenericInstanceType t_List_MouseButtons = (GenericInstanceType) il.Module.ImportReference(f_Binding_Mouse.FieldType);
+            MethodReference m_temp = t_List_MouseButtons.Resolve().FindProperty("Count").GetMethod;
+            MethodReference m_List_MouseButtons_get_Count = il.Module.ImportReference(
+                new MethodReference(
+                    m_temp.Name,
+                    m_temp.ReturnType) {
+                    DeclaringType = t_List_MouseButtons,
+                    HasThis = m_temp.HasThis,
+                    ExplicitThis = m_temp.ExplicitThis,
+                    CallingConvention = m_temp.CallingConvention,
+                }
+            );
+
             ILCursor c = new ILCursor(il);
+            ILCursor c_Search = c.Clone();
+
+            int n = 0;
+            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt(out MethodReference m) && m.Name == "get_Count")) {
+                /*
+                Before:
+                    if (reset || {Input}.Keyboard.Count <= 0)
+                After:
+                    if (reset || {Input}.Keyboard.Count + {Input}.Mouse.Count <= 0)
+                */
+                for (int i = 0; i < 4; i++) {
+                    // Instead of changing the offset variable, change the number of instructions by emitting :cosmicline:
+                    Instruction instr = c_Search.Goto(c.Index - 3).Prev;
+                    object operand = instr.Operand switch {
+                        FieldReference f when f.Name == "Keyboard" => f_Binding_Mouse,
+                        MethodReference m when m.Name == "get_Count" => m_List_MouseButtons_get_Count,
+                        _ => instr.Operand
+                    };
+                    c.Emit(instr.OpCode, operand);
+                }
+                c.Emit(OpCodes.Add);
+                n++;
+            }
+            if (n != 17)
+                throw new Exception("Incorrect number of matches for get_Count in Settings.SetDefaultKeyboardControls");
+
 
             // find the instruction after the group of TranslateKeys.
-            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
-            Instruction jumpTarget = c.Next;
-
-            c.Index = 0;
+            while (c_Search.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
+            Instruction jumpTarget = c_Search.Next;
 
             // go just before the first TranslateKeys call.
             if (c.TryGotoNext(MoveType.AfterLabel,
@@ -2272,6 +2325,42 @@ namespace MonoMod {
                 c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Existed"));
                 c.Emit(OpCodes.Brtrue, jumpTarget);
             }
+        }
+
+        public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
+            MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
+            FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");
+
+            ILCursor c = new ILCursor(il);
+
+            /*
+            Inject:
+                num = _MouseButtonsHash(num);
+            Before the Keyboard hash calculation
+            */
+            c.GotoNext(MoveType.After, instr => instr.MatchEndfinally());
+            // repurpose the existing ldarg_0 so we don't have to deal with try/catch nonsense
+            c.Goto(c.Next, MoveType.After);
+            c.Emit(OpCodes.Ldloc_0);
+            c.Emit(OpCodes.Call, m_MouseButtonsHash);
+            c.Emit(OpCodes.Stloc_0);
+            // re-emit cannibalized instruction
+            c.Emit(OpCodes.Ldarg_0);
+
+            /*
+            Append:
+                Set(Binding.Mouse);
+            After:
+                Set(Binding.Keyboard);
+            */
+            c.GotoNext(MoveType.After,
+                instr => instr.MatchLdfld("Monocle.Binding", "Keyboard"),
+                instr => instr.MatchCallvirt("Celeste.TextMenu/Setting", "Set"));
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Binding"));
+            c.Emit(OpCodes.Ldfld, f_Binding_Mouse);
+            c.Emit(OpCodes.Callvirt, il.Method.DeclaringType.FindMethod("Append"));
         }
 
         public static void PatchSaveDataFlushSaves(ILContext il, CustomAttribute attrib) {
