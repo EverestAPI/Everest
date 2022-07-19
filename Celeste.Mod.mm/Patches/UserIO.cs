@@ -16,7 +16,7 @@ namespace Celeste {
     static class patch_UserIO {
 
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
-        private static List<byte[]> savingModSettingData;
+        private static byte[] savingMouseBindingsData;
 
         private static Queue<Tuple<bool, bool>> QueuedSaves;
         public static bool SaveQueued => (QueuedSaves?.Count ?? 0) > 0;
@@ -88,11 +88,9 @@ namespace Celeste {
                 savingModFileData = null;
             }
 
-            if (savingModSettingData != null) {
-                foreach (byte[] data in savingModSettingData) {
-                    Save<VanillaMouseBindings>("modsettings-Everest_MouseBindings", data);
-                }
-                savingModSettingData = null;
+            if (savingMouseBindingsData != null) {
+                Save<VanillaMouseBindings>("modsettings-Everest_MouseBindings", savingMouseBindingsData);
+                savingMouseBindingsData = null;
             }
 
             orig_SaveThread();
@@ -164,13 +162,8 @@ namespace Celeste {
             SaveData.Instance.AfterInitialize();
         }
 
-        /// <summary>
-        /// NOT FOR USE BY EXTERNAL MODS!
-        /// Use <see cref="EverestModuleSettings"/> instead.
-        /// </summary>
-        private static void _SerializeModSettings() {
-            savingModSettingData = new List<byte[]>();
-            savingModSettingData.Add(UserIO.Serialize(new VanillaMouseBindings().Init()));
+        private static void _SerializeMouseBindings() {
+            savingMouseBindingsData = UserIO.Serialize(new VanillaMouseBindings().Init());
         }
 
         // Used where BeforeSave was previously used to enforce mod saving.
