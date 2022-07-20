@@ -215,8 +215,7 @@ namespace Celeste {
         [MonoModPublic]
         public extern void Remap(Binding binding);
 
-        [MonoModIgnore]
-        [MonoModPublic]
+        [MonoModReplace]
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
         public void Clear(Binding binding) {
             // Always evaluate both
