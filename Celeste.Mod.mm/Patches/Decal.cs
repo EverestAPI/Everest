@@ -180,8 +180,8 @@ namespace Celeste {
                 image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
 
-                // Handle properties
-                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
+                // Handle properties. Apply "scale" first since it affects other properties.
+                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties.OrderByDescending(p => p.Equals("scale"))) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
                         DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                     } else {

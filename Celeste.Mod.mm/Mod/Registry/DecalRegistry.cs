@@ -28,7 +28,10 @@ namespace Celeste.Mod {
                 float offX = attrs["offsetX"] != null ? float.Parse(attrs["offsetX"].Value) : 0f;
                 float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 bool inbg = attrs["inbg"] != null ? bool.Parse(attrs["inbg"].Value) : false;
-                ((patch_Decal)decal).CreateSmoke(new Vector2(offX, offY), inbg);
+
+                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
+
+                ((patch_Decal)decal).CreateSmoke(offset, inbg);
             }},
             { "depth", delegate(Decal decal, XmlAttributeCollection attrs) {
                 if (attrs["value"] != null)
@@ -50,7 +53,11 @@ namespace Celeste.Mod {
                 float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 float radius = attrs["radius"] != null ? float.Parse(attrs["radius"].Value) : 1f;
-                decal.Add(new BloomPoint(new Vector2(offX, offY), alpha, radius));
+
+                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
+                radius = ScaleRadius(((patch_Decal)decal).Scale, radius);
+
+                decal.Add(new BloomPoint(offset, alpha, radius));
             }},
             { "coreSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
                 if (attrs["coldPath"] != null && attrs["hotPath"] != null)
@@ -64,13 +71,17 @@ namespace Celeste.Mod {
                 ((patch_Decal)decal).MakeMirror(text, keepOffsetsClose);
             }},
             { "banner", delegate(Decal decal, XmlAttributeCollection attrs) {
-                float offset = attrs["offset"] != null ? float.Parse(attrs["offset"].Value) : 0f;
                 float speed = attrs["speed"] != null ? float.Parse(attrs["speed"].Value) : 1f;
                 float amplitude = attrs["amplitude"] != null ? float.Parse(attrs["amplitude"].Value) : 1f;
                 int sliceSize = attrs["sliceSize"] != null ? int.Parse(attrs["sliceSize"].Value) : 1;
                 float sliceSinIncrement = attrs["sliceSinIncrement"] != null ? float.Parse(attrs["sliceSinIncrement"].Value) : 1f;
                 bool easeDown = attrs["easeDown"] != null ? bool.Parse(attrs["easeDown"].Value) : false;
+                float offset = attrs["offset"] != null ? float.Parse(attrs["offset"].Value) : 0f;
                 bool onlyIfWindy = attrs["onlyIfWindy"] != null ? bool.Parse(attrs["onlyIfWindy"].Value): false;
+
+                amplitude *= ((patch_Decal)decal).Scale.X;
+                offset *= Math.Sign(((patch_Decal)decal).Scale.X) * Math.Abs(((patch_Decal)decal).Scale.Y);
+
                 ((patch_Decal)decal).MakeBanner(speed, amplitude, sliceSize, sliceSinIncrement, easeDown, offset, onlyIfWindy);
             }},
             { "solid", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -81,6 +92,9 @@ namespace Celeste.Mod {
                 int index = attrs["index"] != null ? int.Parse(attrs["index"].Value) : SurfaceIndex.ResortRoof;
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
                 bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
+
+                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+
                 ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
             { "staticMover", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -88,6 +102,9 @@ namespace Celeste.Mod {
                 int y = attrs["y"] != null ? int.Parse(attrs["y"].Value) : 0;
                 int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
                 int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
+
+                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+
                 ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
             }},
             { "scared", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -99,10 +116,14 @@ namespace Celeste.Mod {
                     hideRange = int.Parse(attrs["hideRange"].Value);
                 if (attrs["showRange"] != null)
                     showRange = int.Parse(attrs["showRange"].Value);
-                int[] hideFrames = Calc.ReadCSVIntWithTricks(attrs["hideFrames"]?.Value ?? "0");
-                int[] showFrames = Calc.ReadCSVIntWithTricks(attrs["showFrames"]?.Value ?? "0");
                 int[] idleFrames = Calc.ReadCSVIntWithTricks(attrs["idleFrames"]?.Value ?? "0");
                 int[] hiddenFrames = Calc.ReadCSVIntWithTricks(attrs["hiddenFrames"]?.Value ?? "0");
+                int[] hideFrames = Calc.ReadCSVIntWithTricks(attrs["hideFrames"]?.Value ?? "0");
+                int[] showFrames = Calc.ReadCSVIntWithTricks(attrs["showFrames"]?.Value ?? "0");
+
+                hideRange = (int) ScaleRadius(((patch_Decal)decal).Scale, hideRange);
+                showRange = (int) ScaleRadius(((patch_Decal)decal).Scale, showRange);
+
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
             }},
             { "randomizeFrame", delegate(Decal decal, XmlAttributeCollection attrs) {
@@ -115,7 +136,12 @@ namespace Celeste.Mod {
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
                 int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
-                decal.Add(new VertexLight(new Vector2(offX, offY), color, alpha, startFade, endFade));
+
+                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
+                startFade = (int) ScaleRadius(((patch_Decal)decal).Scale, startFade);
+                endFade = (int) ScaleRadius(((patch_Decal)decal).Scale, endFade);
+
+                decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
             }},
             { "lightOcclude", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int x = attrs["x"] != null ? int.Parse(attrs["x"].Value) : 0;
@@ -123,12 +149,43 @@ namespace Celeste.Mod {
                 int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
                 int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
+
+                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+
                 decal.Add(new LightOcclude(new Rectangle(x, y, width, height), alpha));
             }},
             { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
                 ((patch_Decal)decal).MakeOverlay();
             }},
         };
+
+        public static Vector2 ScaleOffset(Vector2 scale, float x, float y) {
+            return new Vector2(x * scale.X, y * scale.Y);
+        }
+
+        public static float ScaleRadius(Vector2 scale, float radius) { 
+            return radius * ((Math.Abs(scale.X) + Math.Abs(scale.Y)) / 2f);
+        }
+
+        public static void ScaleRectangle(Vector2 scale, ref float x, ref float y, ref float width, ref float height) {
+            x *= Math.Abs(scale.X);
+            y *= Math.Abs(scale.Y);
+            width *= Math.Abs(scale.X);
+            height *= Math.Abs(scale.Y);
+
+            x = (scale.X < 0) ? -x - width : x;
+            y = (scale.Y < 0) ? -y - height : y;
+        }
+
+        public static void ScaleRectangle(Vector2 scale, ref int x, ref int y, ref int width, ref int height) {
+            x = (int) (x * Math.Abs(scale.X));
+            y = (int) (y * Math.Abs(scale.Y));
+            width = (int) (width * Math.Abs(scale.X));
+            height = (int) (height * Math.Abs(scale.Y));
+
+            x = (scale.X < 0) ? -x - width : x;
+            y = (scale.Y < 0) ? -y - height : y;
+        }
 
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
 
