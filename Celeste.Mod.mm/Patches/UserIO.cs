@@ -219,30 +219,29 @@ namespace MonoMod {
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_SerializeMouseBindings = method.DeclaringType.FindMethod("System.Void _SerializeMouseBindings()");
             MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
 
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
+            new ILContext(method).Invoke(context => {
+                ILCursor c = new ILCursor(context);
 
-                if (instr.OpCode == OpCodes.Call && (instr.Operand as MethodReference)?.GetID() == "System.Byte[] Celeste.UserIO::Serialize<Celeste.SaveData>(T)") {
-                    instri++;
+                // Insert After:
+                // savingFileData = Serialize(SaveData.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingFileData"));
+                c.Emit(OpCodes.Call, m_SerializeModSave);
 
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_SerializeModSave));
-                    instri++;
-                }
+                // Insert After:
+                // savingSettingsData = Serialize(Settings.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingSettingsData"));
+                c.Emit(OpCodes.Call, m_SerializeMouseBindings);
 
-                if (instr.OpCode == OpCodes.Stsfld && (instr.Operand as FieldReference)?.FullName == "Monocle.Coroutine Celeste.Celeste::SaveRoutine") {
-                    instri++;
-
-                    instrs.Insert(instri, il.Create(OpCodes.Call, m_OnSaveRoutineEnd));
-                    instri++;
-                }
-            }
+                // Insert at the end of the coroutine method
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.Celeste", "SaveRoutine"));
+                c.Emit(OpCodes.Call, m_OnSaveRoutineEnd);
+            });
         }
 
         public static void PatchSaveDataFlushSaves(ILContext il, CustomAttribute attrib) {
