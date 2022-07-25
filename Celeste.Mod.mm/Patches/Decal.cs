@@ -12,6 +12,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -71,27 +75,27 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeParallax(float amount);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeFloaty();
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
         [MonoModReplace]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true) {
             solid = new Solid(Position + new Vector2(x, y), w, h, true);
             solid.BlockWaterfalls = blockWaterfalls;
@@ -235,5 +239,33 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Un-hardcode the range of the "Scared" decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
+    class PatchDecalUpdateAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchDecalUpdate(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_hideRange = context.Method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = context.Method.DeclaringType.FindField("showRange");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchLdcR4(32f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_hideRange);
+
+            cursor.GotoNext(instr => instr.MatchLdcR4(48f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_showRange);
+        }
+
     }
 }

@@ -1,8 +1,13 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using System;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_CrystalStaticSpinner : CrystalStaticSpinner {
@@ -71,6 +76,49 @@ namespace Celeste {
                 : base(true, false) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the CrystalStaticSpinner.AddSprites method to make it more efficient.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSpinnerCreateSprites))]
+    class PatchSpinnerCreateSpritesAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchSpinnerCreateSprites(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_ID = context.Method.DeclaringType.FindField("ID");
+
+            ILCursor cursor = new ILCursor(context);
+
+            // instead of comparing the X positions for spinners, compare their IDs.
+            // this way, we are sure spinner 1 will connect to spinner 2, but spinner 2 won't connect to spinner 1.
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldloc_S,
+                instr => instr.OpCode == OpCodes.Ldarg_0,
+                instr => instr.OpCode == OpCodes.Beq_S);
+            // Move after `ldloc_s`
+            cursor.Goto(cursor.Next, MoveType.After);
+            cursor.Emit(OpCodes.Ldfld, f_ID);
+            // Move after `ldarg_0`
+            cursor.Goto(cursor.Next, MoveType.After);
+            cursor.Emit(OpCodes.Ldfld, f_ID);
+            // Replace `beq_s`(!=) with `ble_s`(>)
+            cursor.Next.OpCode = OpCodes.Ble_S;
+
+            // the other.X >= this.X check is made redundant by the patch above. Remove it.
+            cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldloc_S,
+                instr => instr.MatchCallvirt("Monocle.Entity", "get_X"));
+            cursor.RemoveRange(5);
+
+            // replace `(item.Position - Position).Length() < 24f` with `.LengthSquared() < 576f`.
+            // this is equivalent, except it skips a square root calculation, which helps with performance.
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Microsoft.Xna.Framework.Vector2", "Length"));
+            ((MethodReference) cursor.Prev.Operand).Name = "LengthSquared";
+            cursor.Next.Operand = 576f;
         }
 
     }

@@ -8,6 +8,9 @@ using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 
 namespace Celeste {
     class patch_MapData : MapData {
@@ -37,9 +40,9 @@ namespace Celeste {
         }
 
         [PatchTrackableStrawberryCheck]
+        [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private extern void orig_Load();
 
-        [PatchMapDataLoader] // Manually manipulate the method via MonoModRules
         private void Load() {
             // reset those fields to prevent them from stacking up when reloading the map.
             DetectedStrawberries = 0;
@@ -292,5 +295,115 @@ namespace Celeste {
         /// </summary>
         public static List<EntityData> GetDashlessGoldenberries(this MapData self)
             => ((patch_MapData) self).DashlessGoldenberries;
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Check for ldstr "Corrupted Level Data" and pop the throw after that.
+    /// Also manually execute ProxyFileCalls rule.
+    /// Also includes a patch for the strawberry tracker.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMapDataLoader))]
+    class PatchMapDataLoaderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchMapDataLoader(MethodDefinition method, CustomAttribute attrib) {
+            ProxyFileCalls(method, attrib);
+
+            MethodDefinition m_Process = method.DeclaringType.FindMethod("Celeste.BinaryPacker/Element _Process(Celeste.BinaryPacker/Element,Celeste.MapData)");
+            MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[0...,0...]&,System.Int32,System.Int32)");
+
+            bool pop = false;
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.MatchLdstr("Corrupted Level Data")) {
+                    pop = true;
+                }
+
+                if (pop && instr.OpCode == OpCodes.Throw) {
+                    instr.OpCode = OpCodes.Pop;
+                    pop = false;
+                }
+
+                if (instr.MatchCall("Celeste.BinaryPacker", "FromBinary")) {
+                    instri++;
+
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_Process));
+                }
+
+                if (instri > 2 &&
+                    instrs[instri - 3].MatchLdfld("Celeste.ModeProperties", "StrawberriesByCheckpoint") &&
+                    instr.MatchCallvirt("Celeste.EntityData[0...,0...]", "Celeste.EntityData Get(System.Int32,System.Int32)")
+                ) {
+                    instrs[instri - 3].OpCode = OpCodes.Ldflda;
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_GrowAndGet;
+                    instri++;
+                }
+            }
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Godzilla-sized backdrop parsing method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropParser))]
+    class PatchBackdropParserAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchBackdropParser(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_LoadCustomBackdrop = context.Method.DeclaringType.FindMethod("Celeste.Backdrop LoadCustomBackdrop(Celeste.BinaryPacker/Element,Celeste.BinaryPacker/Element,Celeste.MapData)");
+            MethodDefinition m_ParseTags = context.Method.DeclaringType.FindMethod("System.Void ParseTags(Celeste.BinaryPacker/Element,Celeste.Backdrop)");
+
+            ILCursor cursor = new ILCursor(context);
+            // Remove soon-to-be-unneeded instructions
+            cursor.RemoveRange(2);
+
+            // Load custom backdrop at the beginning of the method.
+            // If it's been loaded, skip to backdrop setup.
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Ldarg_2);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_LoadCustomBackdrop);
+            cursor.Emit(OpCodes.Stloc_0);
+            cursor.Emit(OpCodes.Ldloc_0);
+
+            // Get the branch target for if a custom backdrop is found
+            cursor.FindNext(out ILCursor[] cursors, instr => instr.MatchLdstr("tag"));
+            Instruction branchCustomToSetup = cursors[0].Prev;
+            cursor.Emit(OpCodes.Brtrue, branchCustomToSetup);
+
+            // Allow multiple comma separated tags
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdstr("tag"), instr => instr.MatchCallvirt("Celeste.BinaryPacker/Element", "HasAttr"))) {
+                cursor.Index++; // move past the branch
+                cursor.RemoveRange(8); // remove old code
+
+                cursor.Emit(matches switch {
+                    0 => OpCodes.Ldarg_1, // child
+                    1 => OpCodes.Ldarg_2, // above
+                    _ => throw new Exception($"Too many matches for HasAttr(\"tag\"): {matches}")
+                }); // child
+                cursor.Emit(OpCodes.Ldloc_0); // backdrop
+
+                cursor.Emit(OpCodes.Call, m_ParseTags);
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
+        }
+
     }
 }

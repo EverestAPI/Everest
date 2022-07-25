@@ -14,6 +14,9 @@ using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -286,6 +289,27 @@ https://discord.gg/6qjaePQ");
         protected override void OnExiting(object sender, EventArgs args) {
             base.OnExiting(sender, args);
             Everest.Events.Celeste.Exiting();
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the original Celeste entry point instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCelesteMain))]
+    class PatchCelesteMainAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchCelesteMain(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            // TryGotoNext used because SDL_GetPlatform does not exist on XNA
+            if (cursor.TryGotoNext(instr => instr.MatchCall("SDL2.SDL", "SDL_GetPlatform"))) {
+                cursor.Next.OpCode = OpCodes.Ldstr;
+                cursor.Next.Operand = "Windows";
+            }
         }
 
     }

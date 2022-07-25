@@ -1,10 +1,15 @@
-﻿using Celeste.Mod.Helpers;
+﻿﻿using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Serialization;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Settings : Settings {
@@ -198,6 +203,84 @@ namespace Celeste {
             ((patch_Binding) DownDashOnly).Mouse.Clear();
             ((patch_Binding) UpDashOnly).Mouse.Clear();
         }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches Settings.SetDefaultKeyboardControls to take mouse bindings into account
+    /// and ensure that TranslateKeys only gets called when reset = true.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsSetDefaultKeyboardControls))]
+    class PatchSettingsSetDefaultKeyboardControls : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchSettingsSetDefaultKeyboardControls(ILContext il, CustomAttribute attrib) {
+            // Generic types are a mess
+            FieldReference f_Binding_Mouse = il.Module.GetType("Monocle.Binding").FindField("Mouse");
+            GenericInstanceType t_List_MouseButtons = (GenericInstanceType) il.Module.ImportReference(f_Binding_Mouse.FieldType);
+            MethodReference m_temp = t_List_MouseButtons.Resolve().FindProperty("Count").GetMethod;
+            MethodReference m_List_MouseButtons_get_Count = il.Module.ImportReference(
+                new MethodReference(
+                    m_temp.Name,
+                    m_temp.ReturnType) {
+                    DeclaringType = t_List_MouseButtons,
+                    HasThis = m_temp.HasThis,
+                    ExplicitThis = m_temp.ExplicitThis,
+                    CallingConvention = m_temp.CallingConvention,
+                }
+            );
+
+            ILCursor c = new ILCursor(il);
+            ILCursor c_Search = c.Clone();
+
+            int n = 0;
+            while (c.TryGotoNext(MoveType.After, instr => instr.MatchCallvirt(out MethodReference m) && m.Name == "get_Count")) {
+                /*
+                Before:
+                    if (reset || {Input}.Keyboard.Count <= 0)
+                After:
+                    if (reset || {Input}.Keyboard.Count + {Input}.Mouse.Count <= 0)
+                */
+                for (int i = 0; i < 4; i++) {
+                    // Instead of changing the offset variable, change the number of instructions by emitting :cosmicline:
+                    Instruction instr = c_Search.Goto(c.Index - 3).Prev;
+                    object operand = instr.Operand switch {
+                        FieldReference f when f.Name == "Keyboard" => f_Binding_Mouse,
+                        MethodReference m when m.Name == "get_Count" => m_List_MouseButtons_get_Count,
+                        _ => instr.Operand
+                    };
+                    c.Emit(instr.OpCode, operand);
+                }
+                c.Emit(OpCodes.Add);
+                n++;
+            }
+            if (n != 17)
+                throw new Exception("Incorrect number of matches for get_Count in Settings.SetDefaultKeyboardControls");
+
+
+            // find the instruction after the group of TranslateKeys.
+            while (c_Search.TryGotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) { }
+            Instruction jumpTarget = c_Search.Next;
+
+            // go just before the first TranslateKeys call.
+            if (c.TryGotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.OpCode == OpCodes.Ldfld,
+                instr => instr.OpCode == OpCodes.Ldfld,
+                instr => instr.MatchCall("Celeste.Settings", "TranslateKeys"))) {
+
+                // enclose all TranslateKeys inside a if (reset || !Existed).
+                c.Emit(OpCodes.Ldarg_1);
+                c.Emit(OpCodes.Brtrue, c.Next);
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Existed"));
+                c.Emit(OpCodes.Brtrue, jumpTarget);
+            }
+        }
+
 
     }
 }

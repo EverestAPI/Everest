@@ -8,6 +8,11 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
+using MonoMod.InlineRT;
 
 namespace Celeste {
     public class patch_TextMenu : TextMenu {
@@ -525,6 +530,70 @@ namespace Celeste {
         /// <inheritdoc cref="patch_TextMenu.Remove(TextMenu.Item)"/>
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the unselected color in TextMenu.Option to make it customizable.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuOptionColor))]
+    class PatchTextMenuOptionColorAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches TextMenu.Setting.Update to handle MouseButtons
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTextMenuSettingUpdate))]
+    class PatchTextMenuSettingUpdateAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
+            FieldReference f_UnselectedColor = context.Method.DeclaringType.FindField("UnselectedColor");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Next.OpCode = OpCodes.Ldfld;
+            cursor.Next.Operand = f_UnselectedColor;
+        }
+    
+        public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
+            MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
+            FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");
+
+            ILCursor c = new ILCursor(il);
+
+            /*
+            Inject:
+                num = _MouseButtonsHash(num);
+            Before the Keyboard hash calculation
+            */
+            c.GotoNext(MoveType.After, instr => instr.MatchEndfinally());
+            // repurpose the existing ldarg_0 so we don't have to deal with try/catch nonsense
+            c.Goto(c.Next, MoveType.After);
+            c.Emit(OpCodes.Ldloc_0);
+            c.Emit(OpCodes.Call, m_MouseButtonsHash);
+            c.Emit(OpCodes.Stloc_0);
+            // re-emit cannibalized instruction
+            c.Emit(OpCodes.Ldarg_0);
+
+            /*
+            Append:
+                Set(Binding.Mouse);
+            After:
+                Set(Binding.Keyboard);
+            */
+            c.GotoNext(MoveType.After,
+                instr => instr.MatchLdfld("Monocle.Binding", "Keyboard"),
+                instr => instr.MatchCallvirt("Celeste.TextMenu/Setting", "Set"));
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Binding"));
+            c.Emit(OpCodes.Ldfld, f_Binding_Mouse);
+            c.Emit(OpCodes.Callvirt, il.Method.DeclaringType.FindMethod("Append"));
+        }
 
     }
 }

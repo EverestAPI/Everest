@@ -1,6 +1,12 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_CassetteBlock : CassetteBlock {
@@ -23,5 +29,37 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchCassetteBlockAwake]
         public override extern void Awake(Scene scene);
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches <see cref="Celeste.CassetteBlock.Awake(Monocle.Scene)" /> to fix issue #334.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCassetteBlockAwake))]
+    class PatchCassetteBlockAwakeAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchCassetteBlockAwake(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            FieldReference f_Entity_Collidable = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindField("Collidable");
+            MethodReference m_Platform_DisableStaticMovers = MonoModRule.Modder.Module.GetType("Celeste.Platform").FindMethod("System.Void DisableStaticMovers()");
+
+            cursor.GotoNext(MoveType.AfterLabel,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchCallOrCallvirt("Celeste.CassetteBlock", "System.Void UpdateVisualState()"));
+
+            Instruction target = cursor.Next;
+
+            // add if (!Collidable) { DisableStaticMovers(); } before UpdateVisualState()
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Entity_Collidable);
+            cursor.Emit(OpCodes.Brtrue, target);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Platform_DisableStaticMovers);
+        }
+
     }
 }

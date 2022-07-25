@@ -9,6 +9,11 @@ using MonoMod;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Player : Player {
@@ -46,6 +51,11 @@ namespace Celeste {
             : base(position, spriteMode) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
+
+        [MonoModIgnore]
+        [MonoModConstructor]
+        [PatchPlayerCtorOnFrameChange]
+        public extern void ctor(Vector2 position, PlayerSpriteMode spriteMode);
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -235,6 +245,189 @@ namespace Celeste {
         /// </summary>
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the orig_Update method in Player instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigUpdate))]
+    class PatchPlayerOrigUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to only set the player Speed.X if not in the RedDash state.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerBeforeUpTransition))]
+    class PatchPlayerBeforeUpTransition : Attribute { }
+
+    /// <summary>
+    /// Patches the method to kill the player instead of crashing when exiting a feather in a solid.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerStarFlyReturnToNormalHitbox))]
+    class PatchPlayerStarFlyReturnToNormalHitboxAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the footstep/landing sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOnCollideV))]
+    class PatchPlayerOnCollideV : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the grab sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerClimbBegin))]
+    class PatchPlayerClimbBegin : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the walljump sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerOrigWallJump))]
+    class PatchPlayerOrigWallJumpAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to un-hardcode the FMOD event string used to play the footstep and grab sound effect.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
+    class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
+            ILProcessor il = context.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count - 4; instri++) {
+                // turn "if (Speed.Y < 0f && Speed.Y >= -60f)" into "if (Speed.Y < 0f && Speed.Y >= -60f && _IsOverWater())"
+
+                // 0: ldarg.0
+                // 1: ldflda Celeste.Player::Speed
+                // 2: ldfld Vector2::Y
+                // 3: ldc.r4 -60
+                // 4: blt.un [instruction after if]
+                // 5: ldarg.0
+                // 6: call Player::_IsOverWater
+                // 7: brfalse [instruction after if]
+                if (instrs[instri].OpCode == OpCodes.Ldarg_0
+                    && instrs[instri + 1].MatchLdflda("Celeste.Player", "Speed")
+                    && instrs[instri + 2].MatchLdfld("Microsoft.Xna.Framework.Vector2", "Y")
+                    && instrs[instri + 3].MatchLdcR4(-60f)
+                    && instrs[instri + 4].OpCode == OpCodes.Blt_Un
+                ) {
+                    instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
+                    instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
+                }
+            }
+        }
+
+        public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_Player_StateMachine = context.Method.DeclaringType.FindField("StateMachine");
+            MethodDefinition m_StateMachine_get_State = f_Player_StateMachine.FieldType.Resolve().FindMethod("System.Int32 get_State()");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_Player_StateMachine);
+            cursor.Emit(OpCodes.Callvirt, m_StateMachine_get_State);
+            cursor.Emit(OpCodes.Ldc_I4_5);
+            Instruction target = cursor.Clone().GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0, instr => instr.MatchLdfld("Celeste.Player", "StateMachine")).Next;
+            cursor.Emit(OpCodes.Beq_S, target);
+        }
+
+        public static void PatchPlayerStarFlyReturnToNormalHitbox(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+            MethodReference m_Vector2_get_Zero = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindProperty("Zero").GetMethod);
+            MethodReference m_Player_Die = MonoModRule.Modder.FindType("Celeste.Player").Resolve().FindMethod("Die");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("Could not get out of solids when exiting Star Fly State!"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_Vector2_get_Zero);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ldc_I4_1);
+            cursor.Emit(OpCodes.Callvirt, m_Player_Die);
+            cursor.Emit(OpCodes.Pop);
+            cursor.RemoveRange(3);
+        }
+
+        public static void PatchPlayerOnCollideV(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
+
+            ILCursor cursor = new ILCursor(context);
+
+            /*  Move cursor to after IL_040d in
+                    // num2 = platformByPriority.GetLandSoundIndex(this)
+                    IL_040a: ldloc.s 4
+                    IL_040c: ldarg.0
+                    IL_040d: callvirt instance int32 Celeste.Platform::GetLandSoundIndex(class Monocle.Entity)
+                    IL_0412: stloc.s 5
+                and get the variable index of num2  
+            */
+            int loc_landSoundIdx = -1;
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchCallvirt("Celeste.Platform", "System.Int32 GetLandSoundIndex(Monocle.Entity)"),
+                instr => instr.MatchStloc(out loc_landSoundIdx));
+
+            /*  Change
+                    Play((playFootstepOnLand > 0f) ? "event:/char/madeline/footstep" : "event:/char/madeline/landing", "surface_index", num2);
+                to
+                    Play(SurfaceIndex.GetPathFromIndex(num2) + ((playFootstepOnLand > 0f) ? "/footstep" : "/landing"), "surface_index", num2);
+            */
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "playFootstepOnLand"));
+            cursor.Emit(OpCodes.Ldloc, loc_landSoundIdx);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/landing"))
+                .Next.Operand = "/landing";
+            cursor.GotoNext(instr => instr.MatchLdstr("event:/char/madeline/footstep"))
+                .Next.Operand = "/footstep";
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("surface_index"));
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+        }
+
+        public static void PatchPlayerClimbBegin(ILContext context, CustomAttribute attrib) {
+            PatchPlaySurfaceIndex(new ILCursor(context), "/grab");
+        }
+
+        public static void PatchPlayerOrigWallJump(ILContext context, CustomAttribute attrib) {
+            // Doesn't use PatchPlaySurfaceIndex because index, not platform, is stored in the local variable
+
+            MethodDefinition m_SurfaceIndex_GetPathFromIndex = context.Module.GetType("Celeste.SurfaceIndex").FindMethod("System.String GetPathFromIndex(System.Int32)");
+            MethodReference m_String_Concat = MonoModRule.Modder.Module.ImportReference(
+                MonoModRule.Modder.FindType("System.String").Resolve()
+                    .FindMethod("System.String Concat(System.String,System.String)")
+            );
+
+            ILCursor cursor = new ILCursor(context);
+
+            /*  Change:
+                    Play("event:/char/madeline/landing", "surface_index", num);
+                to:
+                    Play(SurfaceIndex.GetPathFromIndex(num) + "/landing", "surface_index", num);
+            */
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr("event:/char/madeline/landing"));
+            cursor.Emit(OpCodes.Ldloc_0);
+            cursor.Emit(OpCodes.Call, m_SurfaceIndex_GetPathFromIndex);
+            cursor.Emit(OpCodes.Ldstr, "/landing");
+            cursor.Emit(OpCodes.Call, m_String_Concat);
+            cursor.Remove();
+        }
+
+        public static void PatchPlayerCtorOnFrameChange(MethodDefinition method, CustomAttribute attrib) {
+            method = method.DeclaringType.FindMethod("<.ctor>b__280_1");
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                PatchPlaySurfaceIndex(cursor, "/footstep");
+                PatchPlaySurfaceIndex(cursor, "/handhold");
+            });
+        }
 
     }
 }

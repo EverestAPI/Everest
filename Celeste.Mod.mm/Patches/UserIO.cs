@@ -11,6 +11,10 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Xml.Serialization;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     static class patch_UserIO {
@@ -194,6 +198,72 @@ namespace Celeste {
 
         public static T Load<T>(string path) where T : class
             => UserIO.Load<T>(path, false);
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the UserIO.SaveRoutine method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveRoutine))]
+    class PatchSaveRoutineAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches UserIO.Save to flush save data to disk after writing it.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
+    class PatchSaveDataFlushSavesAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_SerializeModSave = method.DeclaringType.FindMethod("System.Void _SerializeModSave()");
+            MethodDefinition m_SerializeMouseBindings = method.DeclaringType.FindMethod("System.Void _SerializeMouseBindings()");
+            MethodDefinition m_OnSaveRoutineEnd = method.DeclaringType.FindMethod("System.Void _OnSaveRoutineEnd()");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            new ILContext(method).Invoke(context => {
+                ILCursor c = new ILCursor(context);
+
+                // Insert After:
+                // savingFileData = Serialize(SaveData.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingFileData"));
+                c.Emit(OpCodes.Call, m_SerializeModSave);
+
+                // Insert After:
+                // savingSettingsData = Serialize(Settings.Instance);
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.UserIO", "savingSettingsData"));
+                c.Emit(OpCodes.Call, m_SerializeMouseBindings);
+
+                // Insert at the end of the coroutine method
+                c.GotoNext(MoveType.After, instr => instr.MatchStsfld("Celeste.Celeste", "SaveRoutine"));
+                c.Emit(OpCodes.Call, m_OnSaveRoutineEnd);
+            });
+        }
+
+        public static void PatchSaveDataFlushSaves(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+
+            c.GotoNext(instr => instr.MatchCallvirt<Stream>("Write"));
+            c.Next.OpCode = OpCodes.Call;
+            c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlush");
+
+            // File.Copy(from, to, overwrite: true) => _saveAndFlushToFile(data, to)
+            c.GotoNext(instr => instr.MatchCall(typeof(File), "Copy"));
+            c.Index -= 3;
+
+            // replace "from" with "data"
+            c.Next.OpCode = OpCodes.Ldarg_1;
+            // skip to "overwrite: true" and remove it
+            c.Index += 2;
+            c.Remove();
+            // replace Files.Copy with _saveAndFlushToFile
+            c.Next.OpCode = OpCodes.Call;
+            c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlushToFile");
+        }
 
     }
 }

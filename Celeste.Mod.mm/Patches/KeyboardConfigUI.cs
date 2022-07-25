@@ -178,7 +178,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void AddMap(string label, Binding binding);
 
         public void AddMapForceLabel(string label, Binding binding) {
@@ -212,10 +212,10 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void Remap(Binding binding);
 
-        [MakeMethodPublic]
+        [MonoModReplace]
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
         public void Clear(Binding binding) {
             // Always evaluate both
