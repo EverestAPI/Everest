@@ -91,17 +91,20 @@ There are a few attributes that can be applied to members of the class with diff
 - `[MonoModReplace]` replace this method entirely, do not generate an `orig_` method.
 
 ### MonoModRules
-Everest uses MonoModRules to directly modify the IL code of vanilla methods.  
-Please see the existing [MonoModRules](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/MonoModRules.cs) for reference.
+:information_source: **The recommended practices for MonoModRules have recently been changed as described in [this PR](https://github.com/EverestAPI/Everest/pull/351).**
 
-:warning: **Be aware that there is [an open PR](https://github.com/EverestAPI/Everest/pull/351) to overhaul how MonoModRules are currently handled, and some recommended practices will likely change following it's merge.**
+Everest uses MonoModRules to directly modify the IL code of vanilla methods.  
+Some guidelines for using them are as follows:
+
+- Patches and Attribute definitions should be located in the `Celeste.Mod.mm/Patches/` folder alongside their associated [`patch_`](#patch_-classes) class.
+  - If a patch is used across multiple files, it can be moved into the main [MonoModRules](https://github.com/EverestAPI/Everest/blob/dev/Celeste.Mod.mm/MonoModRules.cs) file.
 
 - When using types or methods in an IL patch, they must be imported as a reference through `MonoModRule.Modder` or by association with an already imported type.
 
 - While in code mods it is often preferred to fail safe when patching, if an Everest patch does not work it should fail hard to prevent broken builds from reaching end-users.  
 This means using `ILCursor.GotoNext` instead of `TryGotoNext` where possible, and implementing additional checks when `TryGotoNext` is necessary.
 
-- Primitive arrays and switch statements with more than 6 cases are not usable due to compiler optimizations 
+- Primitive arrays and switch statements with more than 6 cases are not usable due to compiler optimizations.
 
 ## Miscellaneous
 
