@@ -40,8 +40,6 @@ namespace Celeste {
 
         private StaticMover staticMover;
 
-        public bool Overlay { get; private set; }
-
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -167,11 +165,11 @@ namespace Celeste {
         }
 
         public void RandomizeStartingFrame() {
-            this.frame = Calc.Random.NextFloat(textures.Count);
+            frame = Calc.Random.NextFloat(textures.Count);
         }
 
         public void MakeOverlay() {
-            Overlay = true;
+            Add(new BeforeRenderHook(new Action(CreateOverlay)));
         }
 
         [MonoModIgnore]
@@ -199,8 +197,8 @@ namespace Celeste {
                 image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
 
-                // Handle properties
-                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
+                // Handle properties. Apply "scale" first since it affects other properties.
+                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties.OrderByDescending(p => p.Equals("scale"))) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
                         DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                     } else {
@@ -213,9 +211,6 @@ namespace Celeste {
                     Add(image = new DecalImage());
                 }
 
-            }
-            if (Overlay) {
-                Add(new BeforeRenderHook(new Action(CreateOverlay)));
             }
         }
 
