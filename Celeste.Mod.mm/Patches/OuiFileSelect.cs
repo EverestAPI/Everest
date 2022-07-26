@@ -89,6 +89,22 @@ namespace Celeste {
 
             orig_Update();
 
+            if (Focused && !SlotSelected) {
+                if (CoreModule.Settings.MenuPageUp.Pressed && SlotIndex > 0) {
+                    float startY = Slots[SlotIndex].Y;
+                    while (Slots[SlotIndex].Y > startY - 1080f && SlotIndex > 0) {
+                        SlotIndex--;
+                    }
+                    Audio.Play("event:/ui/main/savefile_rollover_up");
+                } else if (CoreModule.Settings.MenuPageDown.Pressed && SlotIndex < Slots.Length - 1) {
+                    float startY = Slots[SlotIndex].Y;
+                    while (Slots[SlotIndex].Y < startY + 1080f && SlotIndex < Slots.Length - 1) {
+                        SlotIndex++;
+                    }
+                    Audio.Play("event:/ui/main/savefile_rollover_down");
+                }
+            }
+
             if (SlotIndex != initialFileIndex) {
                 // selection moved, so update the Y position of all file slots.
                 foreach (OuiFileSelectSlot slot in Slots) {
