@@ -51,6 +51,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="MonoMod" Version="22.01.04.03" />

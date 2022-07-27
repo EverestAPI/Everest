@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Ionic.Zip;
+using MAB.DotIgnore;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
@@ -22,6 +23,7 @@ namespace Celeste.Mod {
     public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
     public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
+    public sealed class AssetTypeEverestIgnore { private AssetTypeEverestIgnore() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
     public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
@@ -47,6 +49,8 @@ namespace Celeste.Mod {
         }
 
         public EverestModuleMetadata Mod;
+
+        public IgnoreList Ignore;
 
         public readonly List<ModAsset> List = new List<ModAsset>();
         public readonly Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
@@ -497,6 +501,7 @@ namespace Celeste.Mod {
             public readonly static HashSet<Type> NonConflictTypes = new HashSet<Type>() {
                 typeof(AssetTypeDirectory),
                 typeof(AssetTypeMetadataYaml),
+                typeof(AssetTypeEverestIgnore),
                 typeof(AssetTypeDialog),
                 typeof(AssetTypeDialogExport),
                 typeof(AssetTypeAhorn),
@@ -605,6 +610,11 @@ namespace Celeste.Mod {
                 if (path.Contains("/.git/") || path.Contains("/__MACOSX/") ||
                     Path.GetFileName(path).StartsWith("._"))
                     return false;
+
+                if(Loader.GlobalEverestIgnore.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ||
+                    (metadata?.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
+                    return false;
+                }
 
                 if (metadata != null) {
                     if (metadata.Type == null)
@@ -720,6 +730,8 @@ namespace Celeste.Mod {
                     file = file.Substring(0, file.Length - (file.EndsWith(".yaml") ? 5 : 4));
                     format = ".yml";
 
+                } else if (file == ".everestignore") {
+                    type = typeof(AssetTypeEverestIgnore);
                 } else if (file == "DecalRegistry.xml") {
                     Logger.Log("Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);

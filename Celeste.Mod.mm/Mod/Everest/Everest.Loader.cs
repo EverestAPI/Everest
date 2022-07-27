@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
+using MAB.DotIgnore;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -114,6 +115,16 @@ namespace Celeste.Mod {
                 Tuple.Create("Nameguy's D-Sides", _VersionMax, "Monika's D-Sides", _VersionMax),
             };
 
+            /// <summary>
+            /// The path to the Everest /Mods/.everestignore file.
+            /// </summary>
+            public static string PathGlobalEverestIgnore { get; internal set; }
+            internal static IgnoreList _GlobalEverestIgnore = new();
+            /// <summary>
+            /// The currently loaded everest ignore list.
+            /// </summary>
+            public static IgnoreList GlobalEverestIgnore => _GlobalEverestIgnore;
+
             internal static FileSystemWatcher Watcher;
 
             internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
@@ -176,6 +187,17 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
+                    }
+                }
+
+                PathGlobalEverestIgnore = Path.Combine(PathMods, ".everestignore");
+                if (File.Exists(PathGlobalEverestIgnore)) {
+                    _GlobalEverestIgnore = new IgnoreList(PathGlobalEverestIgnore);
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathGlobalEverestIgnore)) {
+                        writer.WriteLine("# This is the global .everestignore. Lines starting with # are ignored.");
+                        writer.WriteLine("# If you put a file path in this file, it won't be loaded from any mods containing that file.");
+                        writer.WriteLine("# This file follows the .gitignore format, detailed here: https://git-scm.com/docs/gitignore");
                     }
                 }
 
@@ -258,6 +280,8 @@ namespace Celeste.Mod {
                 EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
+                IgnoreList ignoreList = null;
+
                 using (ZipFile zip = new ZipFile(archive)) {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
@@ -295,10 +319,21 @@ namespace Celeste.Mod {
                             continue;
                         }
                     }
+                    if(zip.ContainsEntry(".everestignore")) {
+                        List<string> lines = new();
+                        using (var reader = new StreamReader(zip[".everestignore"].InputStream)) {
+                            while (!reader.EndOfStream) {
+                                lines.Add(reader.ReadLine());
+                            }
+                        }
+                        ignoreList = new IgnoreList(lines);
+                    }
                 }
 
                 ZipModContent contentMeta = new ZipModContent(archive);
                 EverestModuleMetadata contentMetaParent = null;
+
+                contentMeta.Ignore = ignoreList;
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -389,6 +424,11 @@ namespace Celeste.Mod {
 
                 FileSystemModContent contentMeta = new FileSystemModContent(dir);
                 EverestModuleMetadata contentMetaParent = null;
+
+                string ignorePath = Path.Combine(dir, ".everestignore");
+                if(File.Exists(ignorePath)) {
+                    contentMeta.Ignore = new IgnoreList(ignorePath);
+                }
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
