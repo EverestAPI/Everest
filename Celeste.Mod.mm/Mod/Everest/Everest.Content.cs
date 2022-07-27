@@ -502,7 +502,8 @@ namespace Celeste.Mod {
                 typeof(AssetTypeDialogExport),
                 typeof(AssetTypeAhorn),
                 typeof(AssetTypeLoenn),
-                typeof(AssetTypeSpriteBank)
+                typeof(AssetTypeSpriteBank),
+                typeof(AssetTypeDecalRegistry)
             };
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
