@@ -647,6 +647,9 @@ namespace MonoMod {
 
         public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+            MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
+            TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+            MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
 
             ILCursor cursor = new ILCursor(context);
 
@@ -661,15 +664,17 @@ namespace MonoMod {
             We're replacing
             MInput.Keyboard.Pressed(Keys.Tab)
             with
-            false
+            CoreModule.Settings.DebugMap.Pressed
             */
 
             cursor.GotoNext(instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
                 instr => instr.GetIntOrNull() == 9,
                 instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"));
-            // Remove the offending instructions, and replace them with 0 (false)
+            // Remove the offending instructions, and replace them with property getter
             cursor.RemoveRange(3);
-            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
+            cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty("DebugMap").GetMethod);
+            cursor.Emit(OpCodes.Call, m_ButtonBinding_Pressed);
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {

@@ -1,5 +1,4 @@
-﻿using Celeste.Editor;
-using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
@@ -106,14 +105,6 @@ namespace Celeste.Mod.Core {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
                 });
                 AssetReloadHelper.ReloadLevel();
-            };
-
-            // F6: Open map editor for current level.
-            Engine.Commands.FunctionKeyActions[5] = () => {
-                if (!(Engine.Scene is Level level))
-                    return;
-                Engine.Scene = new MapEditor(level.Session.Area);
-                Engine.Commands.Open = false;
             };
         }
 
