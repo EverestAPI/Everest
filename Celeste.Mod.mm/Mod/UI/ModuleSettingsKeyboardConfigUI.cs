@@ -58,6 +58,11 @@ namespace Celeste.Mod {
                     DefaultButtonBindingAttribute defaults = prop.GetCustomAttribute<DefaultButtonBindingAttribute>();
 
                     Bindings.Add(new ButtonBindingEntry(binding, defaults));
+                    
+                    string subheader = prop.GetCustomAttribute<SettingSubHeaderAttribute>()?.SubHeader;
+                    if (subheader != null)
+                        Add(new SubHeader(subheader.DialogCleanOrNull() ?? subheader));
+                    
                     AddMapForceLabel(name, binding.Binding);
                 }
             }

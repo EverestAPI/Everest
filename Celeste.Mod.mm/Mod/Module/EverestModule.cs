@@ -837,6 +837,10 @@ namespace Celeste.Mod {
                     headerCreated = true;
                 }
 
+                string subheader = prop.GetCustomAttribute<SettingSubHeaderAttribute>()?.SubHeader;
+                if (subheader != null)
+                    menu.Add(new TextMenu.SubHeader(subheader.DialogCleanOrNull() ?? subheader));
+
                 menu.Add(item);
 
                 if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
