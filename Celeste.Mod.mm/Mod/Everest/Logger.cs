@@ -97,8 +97,8 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                // desprite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing
-                // On modern runtimes string interpolation is much smarter and omiting that call reduces allocations, but not on Framework
+                // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
+                // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
                 Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
             }
         }
