@@ -210,6 +210,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? WhitelistFullOverride { get; set; } = null;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool OpenErrorLogOnCrash { get; set; } = true;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
