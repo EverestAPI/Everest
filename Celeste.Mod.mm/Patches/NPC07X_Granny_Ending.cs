@@ -44,10 +44,7 @@ namespace MonoMod {
             new ILContext(routine).Invoke(ctx => {
                 ILCursor cursor = new ILCursor(ctx);
 
-                if (!cursor.TryGotoNext(MoveType.After, instr => instr.MatchLdstr("{portrait GRANNY right mock} I see you have discovered Debug Mode."))) {
-                    return;
-                }
-
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("{portrait GRANNY right mock} I see you have discovered Debug Mode."));
                 cursor.Emit(OpCodes.Call, method.DeclaringType.FindMethod("System.String _GetDebugModeDialog(System.String)"));
             });
         }
