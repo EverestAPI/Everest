@@ -97,14 +97,9 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                Console.Write("(");
-                Console.Write(DateTime.Now);
-                Console.Write(") [Everest] [");
-                Console.Write(level.ToString());
-                Console.Write("] [");
-                Console.Write(tag);
-                Console.Write("] ");
-                Console.WriteLine(str);
+                // desprite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing
+                // On modern runtimes string interpolation is much smarter and omiting that call reduces allocations, but not on Framework
+                Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
             }
         }
 
@@ -165,5 +160,21 @@ namespace Celeste.Mod {
         Info,
         Warn,
         Error
+    }
+
+    public static class LogLevelExtensions {
+        /// <summary>
+        /// Converts this <see cref="LogLevel"/> to its string representation, in a way more performant than <see cref="Enum.ToString()"/>
+        /// </summary>
+        public static string FastToString(this LogLevel level) {
+            return level switch {
+                LogLevel.Verbose => nameof(LogLevel.Verbose),
+                LogLevel.Debug => nameof(LogLevel.Debug),
+                LogLevel.Info => nameof(LogLevel.Info),
+                LogLevel.Warn => nameof(LogLevel.Warn),
+                LogLevel.Error => nameof(LogLevel.Error),
+                _ => level.ToString(),
+            };
+        }
     }
 }
