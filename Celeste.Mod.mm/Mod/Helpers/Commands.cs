@@ -1,10 +1,12 @@
-﻿using Monocle;
+﻿using Microsoft.Xna.Framework.Input;
+using Monocle;
 
 namespace Celeste.Mod.Helpers {
     internal static class Commands {
 
         [Command("q", "hides the command line")]
         public static void Hide() {
+            MInput.Keyboard.CurrentState = new KeyboardState(Keys.Enter);
             Engine.Commands.Open = false;
         }
 
