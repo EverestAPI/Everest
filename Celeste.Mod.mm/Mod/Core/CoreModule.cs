@@ -69,7 +69,7 @@ namespace Celeste.Mod.Core {
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
-                Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
+                Logger.SetLogLevelFromSettings(logLevel.Key, logLevel.Value);
             }
 
             if (Directory.Exists("LogHistory")) {

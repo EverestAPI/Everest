@@ -1,5 +1,4 @@
-﻿using Celeste.Mod.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -30,7 +29,7 @@ namespace Celeste.Mod {
         }
 
         // same as above, but for internal Everest use
-        internal static void SetLogLevelFromYaml(string tagPrefix, LogLevel minimumLevel) {
+        internal static void SetLogLevelFromSettings(string tagPrefix, LogLevel minimumLevel) {
             minimumLevelsFromEverestSettings[tagPrefix] = minimumLevel;
 
             lock (minimumLevelsCache)
@@ -56,8 +55,8 @@ namespace Celeste.Mod {
                 }
 
                 // cache and return it.
-                minimumLevelsCache[tag] = wantedLogLevel ?? CoreModule.Settings.DefaultMinimumLogLevel;
-                return wantedLogLevel ?? CoreModule.Settings.DefaultMinimumLogLevel;
+                minimumLevelsCache[tag] = wantedLogLevel ?? LogLevel.Info;
+                return wantedLogLevel ?? LogLevel.Info;
             }
         }
 
