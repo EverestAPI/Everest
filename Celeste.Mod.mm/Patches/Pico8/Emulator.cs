@@ -27,7 +27,7 @@ namespace Celeste.Pico8 {
             orig_ctor(returnTo, levelX, levelY);
 
             // If a custom tilemap is present, reparse it.
-            if (Everest.Content.TryGet<AssetTypeText>("Pico8Tilemap", out ModAsset asset)) {
+            if (Everest.Content.TryGet<AssetTypePico8Tilemap>("Pico8Tilemap", out ModAsset asset)) {
                 string text;
                 using (StreamReader reader = new StreamReader(asset.Stream))
                     text = reader.ReadToEnd();

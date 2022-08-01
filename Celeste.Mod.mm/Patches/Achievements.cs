@@ -14,7 +14,7 @@ namespace Celeste {
                 Achievement.ONEUP or Achievement.WOW or Achievement.FAREWELL or Achievement.CSIDES
                     => (Engine.Scene as Level ?? (Engine.Scene as LevelLoader)?.Level)?.Session.Area.GetLevelSet() == "Celeste",
                 Achievement.PICO8
-                    => !Everest.Content.TryGet<AssetTypeText>("Pico8Tilemap", out _),
+                    => !Everest.Content.TryGet<AssetTypePico8Tilemap>("Pico8Tilemap", out _),
                 _ => true
             };
             if (shouldRegister) {

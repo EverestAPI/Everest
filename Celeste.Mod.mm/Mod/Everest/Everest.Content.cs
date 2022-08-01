@@ -33,13 +33,15 @@ namespace Celeste.Mod {
     public sealed class AssetTypeBank : AssetTypeConflict { private AssetTypeBank() { } }
     public sealed class AssetTypeFont : AssetTypeConflict { private AssetTypeFont() { } }
     public sealed class AssetTypeGUIDs : AssetTypeConflict { private AssetTypeGUIDs() { } }
+    public sealed class AssetTypeLuaCore : AssetTypeConflict { private AssetTypeLuaCore() { } }
     public sealed class AssetTypeMap : AssetTypeConflict { private AssetTypeMap() { } }
     public sealed class AssetTypeObjModelExport : AssetTypeConflict { private AssetTypeObjModelExport() { } }
+    public sealed class AssetTypePico8Tilemap : AssetTypeConflict { private AssetTypePico8Tilemap() { } }
     public sealed class AssetTypeTutorial : AssetTypeConflict { private AssetTypeTutorial() { } }
 
     // Generic asset types
-    public sealed class AssetTypeLua : AssetTypeConflict { private AssetTypeLua() { } }
-    public sealed class AssetTypeText : AssetTypeConflict { private AssetTypeText() { } }
+    public sealed class AssetTypeLua { private AssetTypeLua() { } }
+    public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeXml : AssetTypeConflict { private AssetTypeXml() { } }
     public sealed class AssetTypeYaml : AssetTypeConflict { private AssetTypeYaml() { } }
 
@@ -755,6 +757,14 @@ namespace Celeste.Mod {
 
                 } else if (format == "fnt") {
                     type = typeof(AssetTypeFont);
+                    file = file.Substring(0, file.Length - 4);
+
+                } else if (file == "Pico8Tilemap.txt") {
+                    type = typeof(AssetTypePico8Tilemap);
+                    file = file.Substring(0, file.Length - 4);
+
+                } else if (file == "Lua/boot.lua" || file == "Lua/typebuilder.lua") {
+                    type = typeof(AssetTypeLuaCore);
                     file = file.Substring(0, file.Length - 4);
 
                 // Parse custom types from mods
