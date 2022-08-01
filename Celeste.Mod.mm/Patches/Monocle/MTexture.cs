@@ -68,7 +68,7 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Override the given MTexutre with the given VirtualTexture and parameters.
+        /// Override the given MTexture with the given VirtualTexture and parameters.
         /// </summary>
         public void SetOverride(VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight) {
             if (!_HasOrig) {
@@ -89,7 +89,7 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Override the given MTexutre with the given mod asset.
+        /// Override the given MTexture with the given mod asset.
         /// </summary>
         public void SetOverride(ModAsset asset) {
             if (!_HasOrig && Texture.GetMetadata() == asset) {
@@ -289,6 +289,11 @@ namespace Monocle {
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, Rectangle clip) {
             float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
+        }
+
+        public void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip, Rectangle absoluteClip) {
+            float scaleFix = ScaleFix;
+            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, absoluteClip, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         #endregion
