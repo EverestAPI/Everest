@@ -75,7 +75,7 @@ namespace Celeste {
             } else if (xml.HasAttr("sound")) {
                 SurfaceIndex.TileToIndex[xml.AttrChar("id")] = xml.AttrInt("sound");
             } else if (!SurfaceIndex.TileToIndex.ContainsKey(xml.AttrChar("id"))) {
-                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = SurfaceIndex.Brick; // 8 as fallback instead of 0 to match vanilla's default index
+                SurfaceIndex.TileToIndex[xml.AttrChar("id")] = 0; // fall back to no sound
             }
 
             if (xml.HasAttr("debris"))
