@@ -563,7 +563,7 @@ header {
                             WriteHTMLStart(c, commandList);
                             commandList.AppendLine(@"<ul>");
                             commandList.AppendLine(@"<h2>Commands</h2>");
-                            foreach (var command in ((Monocle.patch_Commands) (Engine.Commands)).GetCommands().OrderBy(comm => comm.Name))
+                            foreach (var command in ((Monocle.patch_Commands) Engine.Commands).GetCommands().OrderBy(comm => comm.Name))
                             {
                                 commandList.AppendLine(@"<li>");
                                 commandList.AppendLine($@"<h3>{command.Name}</h3>");
