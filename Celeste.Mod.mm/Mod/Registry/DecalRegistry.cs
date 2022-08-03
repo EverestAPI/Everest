@@ -215,7 +215,7 @@ namespace Celeste.Mod {
             List<KeyValuePair<string, DecalInfo>> elements = new();
             foreach (XmlNode node in file) {
                 if (node is XmlElement decal) {
-                    string decalPath = decal.Attr("path", null).ToLower();
+                    string decalPath = decal.Attr("path", null)?.ToLower();
                     if (decalPath == null) {
                         Logger.Log(LogLevel.Warn, "Decal Registry", "Decal didn't have a path attribute!");
                         continue;
