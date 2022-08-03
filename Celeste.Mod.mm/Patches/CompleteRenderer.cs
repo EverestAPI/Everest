@@ -1,4 +1,5 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 
 using Celeste.Mod;
@@ -9,6 +10,10 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_CompleteRenderer : CompleteRenderer {
@@ -98,11 +103,53 @@ namespace Celeste {
 
         }
 
-        public class ImageLayerNoXML : ImageLayer {
+        public class patch_ImageLayer : ImageLayer {
+
+            public bool Loop;
+            private bool loopDone;
+            
+            public patch_ImageLayer(Vector2 offset, Atlas atlas, XmlElement xml)
+                : base(offset, atlas, xml) {
+                //no-op
+            }
+
+            public extern void orig_ctor(Vector2 offset, Atlas atlas, XmlElement xml);
+
+            [MonoModConstructor]
+            public void ctor(Vector2 offset, Atlas atlas, XmlElement xml) {
+                orig_ctor(offset, atlas, xml);
+
+                Loop = xml.AttrBool("loop", true);
+            }
+            
+            public int ImageIndex {
+                get {
+                    if (Loop) {
+                        return (int) (Frame % (float) Images.Count); // as in vanilla
+                    } else {
+                        if (loopDone) {
+                            return Images.Count - 1;
+                        } else {
+                            int index = (int) (Frame % (float) Images.Count);
+                            if (index == Images.Count - 1) {
+                                loopDone = true;
+                            }
+                            return index;
+                        }
+                    }
+                }
+            }
+
+            [MonoModIgnore]
+            [PatchCompleteRendererImageLayerRender]
+            public new extern void Render(Vector2 scroll);
+        }
+
+        public class ImageLayerNoXML : patch_ImageLayer {
 
             public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
-                Position = meta.Position;
+                Position = meta.Position + offset;
                 ScrollFactor = meta.Scroll;
 
                 Images.Clear();
@@ -119,7 +166,34 @@ namespace Celeste {
                 Alpha = meta.Alpha;
                 Speed = meta.Speed;
                 Scale = meta.Scale;
+                Loop = meta.Loop;
             }
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the method to support non-looping complete screen layers.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCompleteRendererImageLayerRender))]
+    class PatchCompleteRendererImageLayerRenderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchCompleteRendererImageLayerRender(ILContext context, CustomAttribute attrib) {
+            MethodReference m_ImageLayer_get_ImageIndex = context.Method.DeclaringType.FindProperty("ImageIndex").GetMethod;
+
+            ILCursor cursor = new ILCursor(context);
+
+            // change: MTexture mTexture = Images[(int)(Frame % (float)Images.Count)];
+            // to:     MTexture mTexture = Images[ImageIndex];
+            // for new property ImageIndex
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.CompleteRenderer/ImageLayer", "Images"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_ImageLayer_get_ImageIndex);
+            cursor.RemoveRange(8);
         }
 
     }

@@ -38,7 +38,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [PatchInputConfigReset]
+        [PatchConfigUIUpdate]
         public new extern void Update();
 
         #region Legacy Input
@@ -185,7 +185,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void AddMap(string label, Binding binding);
 
         public void AddMapForceLabel(string label, Binding binding) {
@@ -198,11 +198,11 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void Remap(Binding binding);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         [MonoModLinkFrom("System.Void Celeste.ButtonConfigUI::ClearRemap(Monocle.Binding)")]
         public extern void Clear(Binding binding);
 

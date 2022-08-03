@@ -1,7 +1,12 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using System;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_FinalBoss : FinalBoss {
@@ -31,6 +36,38 @@ namespace Celeste {
                 return value;
 
             return canChangeMusic;
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Badeline boss OnPlayer method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineBossOnPlayer))]
+    class PatchBadelineBossOnPlayerAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchBadelineBossOnPlayer(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_CanChangeMusic = context.Method.DeclaringType.FindMethod("System.Boolean Celeste.FinalBoss::CanChangeMusic(System.Boolean)");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
+            // Insert `== 0`
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ceq);
+            // Replace brtrue with brfalse
+            cursor.Next.OpCode = OpCodes.Brfalse_S;
+
+            // Process.
+            cursor.Emit(OpCodes.Call, m_CanChangeMusic);
+
+            // Go back to the start of this "line" and add `this` to be used by CanChangeMusic()
+            cursor.GotoPrev(instr => instr.OpCode == OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldarg_0);
         }
 
     }

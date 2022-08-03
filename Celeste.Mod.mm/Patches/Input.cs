@@ -35,6 +35,29 @@ namespace Celeste {
             Everest.Events.Input.Deregister();
         }
 
+        [MonoModIgnore]
+        private static extern MTexture GuiTexture(string prefix, string input);
+
+        [MonoModIgnore]
+        public static extern MTexture orig_GuiButton(VirtualButton button, Input.PrefixMode mode = Input.PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion");
+
+        public static MTexture GuiButton(VirtualButton button, Input.PrefixMode mode = Input.PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
+            if (!GuiInputController() && Input.FirstKey(button) == Keys.None) {
+                foreach (patch_MInput.patch_MouseData.MouseButtons mouseBtn in ((patch_Binding)button.Binding).Mouse)
+                    return GuiMouseButton(mouseBtn, mode, fallback);
+            }
+            return orig_GuiButton(button, mode, fallback);
+        }
+
+        public static MTexture GuiMouseButton(patch_MInput.patch_MouseData.MouseButtons button, Input.PrefixMode mode = Input.PrefixMode.Latest, string fallback = "controls/keyboard/oemquestion") {
+            // GuiKey uses a keyNameLookup to cache the Key: string values, but implementing one here would also require initializing it somewhere.
+            string name = button.ToString();
+            MTexture mTexture = GuiTexture("mouse", name);
+            if (mTexture is null && fallback is not null)
+                return GFX.Gui[fallback];
+            return mTexture;
+        }
+
         #region Legacy Support
 
         public static bool GuiInputController() {
