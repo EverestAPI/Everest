@@ -16,6 +16,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -135,8 +139,8 @@ namespace Celeste {
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
 
-        private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         [PatchTransitionRoutine]
+        private extern IEnumerator orig_TransitionRoutine(LevelData next, Vector2 direction);
         private IEnumerator TransitionRoutine(LevelData next, Vector2 direction) {
             Player player = Tracker.GetEntity<Player>();
             if (player == null) {
@@ -182,8 +186,8 @@ namespace Celeste {
             }
         }
 
-        public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
@@ -509,6 +513,216 @@ namespace Celeste {
             => ((patch_Level) self).SubHudRenderer;
         public static void SetSubHudRenderer(this Level self, SubHudRenderer value)
             => ((patch_Level) self).SubHudRenderer = value;
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoader))]
+    class PatchLevelLoaderAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
+    class PatchLevelUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the Godzilla-sized level rendering method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelRender))]
+    class PatchLevelRenderAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch the Godzilla-sized level transition method instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTransitionRoutine))]
+    class PatchTransitionRoutineAttribute : Attribute { }
+
+    /// <summary>
+    /// A patch for the CanPause getter that skips the saving check.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelCanPause))]
+    class PatchLevelCanPauseAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchLevelLoader(MethodDefinition method, CustomAttribute attrib) {
+            // We also need to do special work in the cctor.
+            MethodDefinition m_cctor = method.DeclaringType.FindMethod(".cctor");
+
+            MethodDefinition m_LoadNewPlayer = method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
+            MethodDefinition m_LoadCustomEntity = method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
+
+            FieldDefinition f_LoadStrings = method.DeclaringType.FindField("_LoadStrings");
+
+            Mono.Collections.Generic.Collection<Instruction> cctor_instrs = m_cctor.Body.Instructions;
+            ILProcessor cctor_il = m_cctor.Body.GetILProcessor();
+
+            // Remove cctor ret for simplicity. Re-add later.
+            cctor_instrs.RemoveAt(cctor_instrs.Count - 1);
+
+            TypeDefinition td_LoadStrings = f_LoadStrings.FieldType.Resolve();
+            MethodReference m_LoadStrings_Add = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("Add"));
+            m_LoadStrings_Add.DeclaringType = f_LoadStrings.FieldType;
+            MethodReference m_LoadStrings_ctor = MonoModRule.Modder.Module.ImportReference(td_LoadStrings.FindMethod("System.Void .ctor()"));
+            m_LoadStrings_ctor.DeclaringType = f_LoadStrings.FieldType;
+            cctor_il.Emit(OpCodes.Newobj, m_LoadStrings_ctor);
+
+            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
+            ILProcessor il = method.Body.GetILProcessor();
+            for (int instri = 0; instri < instrs.Count; instri++) {
+                Instruction instr = instrs[instri];
+
+                if (instr.MatchNewobj("Celeste.Player")) {
+                    instr.OpCode = OpCodes.Call;
+                    instr.Operand = m_LoadNewPlayer;
+                }
+
+                /* We expect something similar enough to the following:
+                ldwhatever the entityData into stack
+                ldfld     string Celeste.EntityData::Name // We're here
+                stloc*
+                ldloc*
+                call      uint32 '<PrivateImplementationDetails>'::ComputeStringHash(string)
+
+                Note that MonoMod requires the full type names (System.UInt32 instead of uint32) and skips escaping 's
+                */
+
+                if (instri > 0 &&
+                    instri < instrs.Count - 3 &&
+                    instr.MatchLdfld("Celeste.EntityData", "Name") &&
+                    instrs[instri + 1].MatchStloc(out int _) &&
+                    instrs[instri + 2].MatchLdloc(out int _) &&
+                    instrs[instri + 3].MatchCall("<PrivateImplementationDetails>", "System.UInt32 ComputeStringHash(System.String)")
+                ) {
+                    // Insert a call to our own entity handler here.
+                    // If it returns true, replace the name with ""
+
+                    // Avoid loading entityData again.
+                    // Instead, duplicate already loaded existing value.
+                    instrs.Insert(instri++, il.Create(OpCodes.Dup));
+                    // Load "this" onto stack - we're too lazy to shift this to the beginning of the stack.
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
+
+                    // Call our static custom entity handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Call, m_LoadCustomEntity));
+
+                    // If we returned false, branch to ldfld. We still have the entity name on stack.
+                    // This basically translates to if (result) { pop; ldstr ""; }; ldfld ...
+                    instrs.Insert(instri, il.Create(OpCodes.Brfalse_S, instrs[instri]));
+                    instri++;
+                    // Otherwise, pop the entityData, load "" and jump to stloc to skip any original entity handler.
+                    instrs.Insert(instri++, il.Create(OpCodes.Pop));
+                    instrs.Insert(instri++, il.Create(OpCodes.Ldstr, ""));
+                    instrs.Insert(instri, il.Create(OpCodes.Br_S, instrs[instri + 1]));
+                    instri++;
+                }
+
+                if (instr.OpCode == OpCodes.Ldstr) {
+                    cctor_il.Emit(OpCodes.Dup);
+                    cctor_il.Emit(OpCodes.Ldstr, instr.Operand);
+                    cctor_il.Emit(OpCodes.Callvirt, m_LoadStrings_Add);
+                    cctor_il.Emit(OpCodes.Pop); // HashSet.Add returns a bool.
+                }
+
+                if (instri > 0 &&
+                    instri < instrs.Count - 4 &&
+                    instr.MatchLdfld("Celeste.Level", "Session") &&
+                    instrs[instri + 1].MatchLdflda("Celeste.Session", "Area") &&
+                    instrs[instri + 2].MatchLdfld("Celeste.AreaKey", "Mode") &&
+                    instrs[instri + 3].OpCode == OpCodes.Brfalse
+                ) {
+                    instrs.Insert(instri, il.Create(OpCodes.Ldarg_0));
+                    instrs.Insert(instri + 4, il.Create(OpCodes.Call, method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)")));
+                }
+            }
+
+            cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
+            cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+            MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
+            TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+            MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
+
+            ILCursor cursor = new ILCursor(context);
+
+            // insert FixChaserStatesTimeStamp() at the begin
+            cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
+
+            /* We expect something similar enough to the following:
+            call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard() // We're here
+            ldc.i4.s 9
+            callvirt instance bool Monocle.MInput/KeyboardData::Pressed(valuetype [FNA]Microsoft.Xna.Framework.Input.Keys)
+
+            We're replacing
+            MInput.Keyboard.Pressed(Keys.Tab)
+            with
+            CoreModule.Settings.DebugMap.Pressed
+            */
+
+            cursor.GotoNext(instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
+                instr => instr.GetIntOrNull() == 9,
+                instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"));
+            // Remove the offending instructions, and replace them with property getter
+            cursor.RemoveRange(3);
+            cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
+            cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty("DebugMap").GetMethod);
+            cursor.Emit(OpCodes.Call, m_ButtonBinding_Pressed);
+        }
+
+        public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_SubHudRenderer = context.Method.DeclaringType.FindField("SubHudRenderer");
+
+            /* We expect something similar enough to the following:
+            if (!this.Paused || !this.PauseMainMenuOpen || !Input.MenuJournal.Check || !this.AllowHudHide)
+            {
+                this.HudRenderer.Render(this);
+            }
+            and we want to prepend it with:
+            this.SubHudRenderer.Render(this);
+            */
+
+            ILCursor cursor = new ILCursor(context);
+            // Make use of the pre-existing Ldarg_0
+            cursor.GotoNext(instr => instr.MatchLdfld("Monocle.Scene", "Paused"));
+            // Retrieve a reference to Renderer.Render(Scene) from the following this.HudRenderer.Render(this)
+            cursor.FindNext(out ILCursor[] render, instr => instr.MatchCallvirt("Monocle.Renderer", "Render"));
+            MethodReference m_Renderer_Render = (MethodReference) render[0].Next.Operand;
+
+            cursor.Emit(OpCodes.Ldfld, f_SubHudRenderer);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_Renderer_Render);
+            // Re-add the Ldarg_0 we cannibalized
+            cursor.Emit(OpCodes.Ldarg_0);
+        }
+
+        public static void PatchTransitionRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_GCCollect = method.DeclaringType.FindMethod("System.Void _GCCollect()");
+
+            // The level transition routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+                cursor.GotoNext(instr => instr.MatchCall("System.GC", "Collect"));
+                // Replace the method call.
+                cursor.Next.Operand = m_GCCollect;
+            });
+        }
+
+        public static void PatchLevelCanPause(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            c.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.UserIO", "get_Saving"));
+            c.Emit(OpCodes.Pop);
+            c.Emit(OpCodes.Ldc_I4_0);
+        }
 
     }
 }

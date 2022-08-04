@@ -26,6 +26,11 @@ namespace Celeste.Mod {
             set => Binding.Keyboard = value;
         }
 
+        public List<patch_MInput.patch_MouseData.MouseButtons> MouseButtons {
+            get => ((patch_Binding) Binding).Mouse;
+            set => ((patch_Binding) Binding).Mouse = value;
+        }
+
         private Binding _Binding;
 
         [YamlIgnore] // Binding uses XmlIgnores and migrating old mappings is hard.

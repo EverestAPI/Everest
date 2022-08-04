@@ -2,6 +2,8 @@
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
 using Celeste.Mod;
+using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -10,6 +12,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -33,8 +39,6 @@ namespace Celeste {
         private Solid solid;
 
         private StaticMover staticMover;
-
-        public bool Overlay { get; private set; }
 
         public patch_Decal(string texture, Vector2 position, Vector2 scale, int depth)
             : base(texture, position, scale, depth) {
@@ -69,27 +73,27 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeParallax(float amount);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeFloaty();
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void MakeBanner(float speed, float amplitude, int sliceSize, float sliceSinIncrement, bool easeDown, float offset = 0f, bool onlyIfWindy = false);
 
         [MonoModReplace]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true) {
             solid = new Solid(Position + new Vector2(x, y), w, h, true);
             solid.BlockWaterfalls = blockWaterfalls;
@@ -135,6 +139,10 @@ namespace Celeste {
                     }
                 },
                 OnShake = v => { Position += v; },
+                OnAttach = p => {
+                    p.Add(new EntityRemovedListener(() => RemoveSelf()));
+                    CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
+                }
             };
             if (jumpThrus)
                 staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
@@ -157,17 +165,24 @@ namespace Celeste {
         }
 
         public void RandomizeStartingFrame() {
-            this.frame = Calc.Random.NextFloat(textures.Count);
+            frame = Calc.Random.NextFloat(textures.Count);
         }
 
         public void MakeOverlay() {
-            Overlay = true;
+            Add(new BeforeRenderHook(new Action(CreateOverlay)));
         }
 
         [MonoModIgnore]
         private Component image;
 
         public Component Image { get { return image; } set { image = value; } }
+
+        public override void Awake(Scene scene) {
+            base.Awake(scene);
+            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains($"{Name}||{Position.X}||{Position.Y}")) {
+                RemoveSelf();
+            }
+        }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -182,8 +197,8 @@ namespace Celeste {
                 image = null;
                 DecalRegistry.DecalInfo info = DecalRegistry.RegisteredDecals[text];
 
-                // Handle properties
-                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties) {
+                // Handle properties. Apply "scale" first since it affects other properties.
+                foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties.OrderByDescending(p => p.Equals("scale"))) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
                         DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                     } else {
@@ -197,10 +212,11 @@ namespace Celeste {
                 }
 
             }
-            if (Overlay) {
-                Add(new BeforeRenderHook(new Action(CreateOverlay)));
-            }
         }
+
+        [MonoModIgnore]
+        [PatchDecalUpdate]
+        public extern override void Update();
 
         private void CreateOverlay() {
             Tileset tileset = new Tileset(textures[0], 8, 8);
@@ -218,5 +234,33 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Un-hardcode the range of the "Scared" decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
+    class PatchDecalUpdateAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchDecalUpdate(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_hideRange = context.Method.DeclaringType.FindField("hideRange");
+            FieldDefinition f_showRange = context.Method.DeclaringType.FindField("showRange");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchLdcR4(32f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_hideRange);
+
+            cursor.GotoNext(instr => instr.MatchLdcR4(48f));
+            cursor.Remove();
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_showRange);
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Core;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 
@@ -7,6 +7,7 @@ namespace Celeste.Mod.Helpers {
 
         [Command("q", "hides the command line")]
         public static void Hide() {
+            MInput.Keyboard.CurrentState = new KeyboardState(Keys.Enter); // trick MInput into thinking Enter was already pressed on previous frame to prevent registering new press
             Engine.Commands.Open = false;
         }
 

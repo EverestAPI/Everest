@@ -5,6 +5,10 @@ using Microsoft.Xna.Framework;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_Pathfinder : Pathfinder {
@@ -46,5 +50,31 @@ namespace Celeste {
         [MonoModIgnore] // we don't want to change anything in the method...
         [PatchPathfinderRender] // ... except manipulating it manually via MonoModRules
         public extern new void Render();
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the pathfinder debug rendering to make it aware of the array size being unhardcoded.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPathfinderRender))]
+    class PatchPathfinderRenderAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchPathfinderRender(ILContext context, CustomAttribute attrib) {
+            FieldDefinition f_map = context.Method.DeclaringType.FindField("map");
+
+            ILCursor cursor = new ILCursor(context);
+            for (int i = 0; i < 2; i++) {
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdcI4(200));
+                cursor.Prev.OpCode = OpCodes.Ldarg_0;
+                cursor.Emit(OpCodes.Ldfld, f_map);
+                // if `i == 0` we are accessing the first dimension, `1` we are accessing the second
+                cursor.Emit(i == 0 ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Callvirt, typeof(Array).GetMethod("GetLength"));
+            }
+        }
+
     }
 }

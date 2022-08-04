@@ -1,11 +1,14 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using System;
 using Celeste.Mod;
 using Monocle;
 using MonoMod;
 using System.Globalization;
 using System.IO;
 using System.Text.RegularExpressions;
+using Mono.Cecil;
+using MonoMod.Cil;
 
 namespace Celeste.Pico8 {
     class patch_Emulator : Emulator {
@@ -44,6 +47,30 @@ namespace Celeste.Pico8 {
                     );
                 }
             }
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches the method to fix "$" not printed in PICO-8.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEmulatorConstructor))]
+    class PatchEmulatorConstructorAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchEmulatorConstructor(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            string fontMap = null;
+            cursor.GotoNext(MoveType.Before,
+                instr => instr.MatchLdstr(out fontMap),
+                instr => instr.MatchStfld("Celeste.Pico8.Emulator", "fontMap"));
+            // devs forgot to press shift when typing "$" for some reason
+            fontMap = fontMap.Replace("#4%", "#$%");
+            cursor.Next.Operand = fontMap;
         }
 
     }

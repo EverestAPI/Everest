@@ -1,11 +1,16 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0414 // The field is assigned but its value is never used
 
+using System;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System.Collections;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_BadelineOldsite : BadelineOldsite {
@@ -92,6 +97,61 @@ namespace Celeste {
                 return value;
 
             return canChangeMusic;
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the Badeline chase routine instead of reimplementing it in Everest.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBadelineChaseRoutine))]
+    class PatchBadelineChaseRoutineAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchBadelineChaseRoutine(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_CanChangeMusic = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::CanChangeMusic(System.Boolean)");
+            MethodDefinition m_IsChaseEnd = method.DeclaringType.FindMethod("System.Boolean Celeste.BadelineOldsite::IsChaseEnd(System.Boolean)");
+
+            // The routine is stored in a compiler-generated method.
+            method = method.GetEnumeratorMoveNext();
+            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                // Add this.CanChangeMusic()
+                cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                    instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level");
+                // Push this and grab this from this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"));
+                // Insert `== 0`
+                cursor.Emit(OpCodes.Ldc_I4_0);
+                cursor.Emit(OpCodes.Ceq);
+                // Replace brtrue with brfalse
+                cursor.Next.OpCode = OpCodes.Brfalse_S;
+
+                // Process.
+                cursor.Emit(OpCodes.Call, m_CanChangeMusic);
+
+                // Add this.IsChaseEnd()
+                cursor.GotoNext(instr => instr.OpCode == OpCodes.Ldarg_0,
+                    instr => instr.MatchLdfld(out FieldReference f) && f.Name == "level",
+                    instr => true, instr => true, instr => instr.MatchLdstr("2"));
+                // Push this and grab this from this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+
+                cursor.GotoNext(MoveType.After, instr => instr.MatchLdstr("2"),
+                    instr => instr.MatchCall<string>("op_Equality"));
+                // Process.
+                cursor.Emit(OpCodes.Call, m_IsChaseEnd);
+            });
         }
 
     }

@@ -1,11 +1,16 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using System;
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System.Collections;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.Utils;
 
 namespace Celeste {
     class patch_OuiFileNaming : OuiFileNaming {
@@ -132,5 +137,26 @@ namespace Celeste {
         private bool _shouldDisplaySwitchAlphabetPrompt() {
             return Japanese && !UseKeyboardInput;
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patch the file naming rendering to hide the "switch between katakana and hiragana" prompt when the menu is not focused.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiFileNamingRendering))]
+    class PatchOuiFileNamingRenderingAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchOuiFileNamingRendering(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_shouldDisplaySwitchAlphabetPrompt = context.Method.DeclaringType.FindMethod("System.Boolean _shouldDisplaySwitchAlphabetPrompt()");
+
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(instr => instr.MatchCallvirt("Celeste.OuiFileNaming", "get_Japanese"));
+            cursor.Next.OpCode = OpCodes.Call;
+            cursor.Next.Operand = m_shouldDisplaySwitchAlphabetPrompt;
+        }
+
     }
 }

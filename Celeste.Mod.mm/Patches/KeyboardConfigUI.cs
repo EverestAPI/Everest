@@ -39,7 +39,7 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [PatchInputConfigReset]
+        [PatchConfigUIUpdate]
         public new extern void Update();
 
         #region Legacy Input
@@ -172,12 +172,13 @@ namespace Celeste {
         }
 
         public virtual void Reset() {
+            ((patch_Settings) Settings.Instance).ClearMouseControls();
             Settings.Instance.SetDefaultKeyboardControls(true);
             Input.Initialize();
         }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
         public extern void AddMap(string label, Binding binding);
 
         public void AddMapForceLabel(string label, Binding binding) {
@@ -189,14 +190,38 @@ namespace Celeste {
             }));
         }
 
-        [MonoModIgnore]
-        [MakeMethodPublic]
-        public extern void Remap(Binding binding);
+        // Invoked by the KeyboardConfigUI.Update MonoModRules patch
+        public void RemapMouse() {
+            for (int i = 0; i < 5; i++) {
+                if (patch_MInput.Mouse.Pressed((patch_MInput.patch_MouseData.MouseButtons) i))
+                    AddRemap((patch_MInput.patch_MouseData.MouseButtons) i);
+            }
+        }
+
+        private void AddRemap(patch_MInput.patch_MouseData.MouseButtons button) {
+            // Keyboard bindings take priority over Mouse bindings
+            while (((patch_Binding) remappingBinding).Mouse.Count + remappingBinding.Keyboard.Count >= Input.MaxBindings) {
+                ((patch_Binding) remappingBinding).Mouse.RemoveAt(0);
+            }
+            remapping = false;
+            inputDelay = 0.25f;
+            if (!((patch_Binding) remappingBinding).Add(button)) {
+                Audio.Play(SFX.ui_main_button_invalid);
+            }
+            Input.Initialize();
+        }
 
         [MonoModIgnore]
-        [MakeMethodPublic]
+        [MonoModPublic]
+        public extern void Remap(Binding binding);
+
+        [MonoModReplace]
         [MonoModLinkFrom("System.Void Celeste.KeyboardConfigUI::ClearRemap(Monocle.Binding)")]
-        public extern void Clear(Binding binding);
+        public void Clear(Binding binding) {
+            // Always evaluate both
+            if (!((patch_Binding) binding).ClearMouse() & !binding.ClearKeyboard())
+                Audio.Play(SFX.ui_main_button_invalid);
+        }
 
         [MonoModReplace]
         public void AddRemap(Keys key) {
