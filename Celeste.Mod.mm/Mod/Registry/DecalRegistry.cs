@@ -159,6 +159,37 @@ namespace Celeste.Mod {
             }},
         };
 
+        // Helper functions for scaling Decal Registry fields
+        public static Vector2 GetScaledOffset(this Decal self, float x, float y) {
+            return new Vector2(x * ((patch_Decal) self).Scale.X, y * ((patch_Decal) self).Scale.Y);
+        }
+
+        public static float GetScaledRadius(this Decal self, float radius) {
+            return radius * ((Math.Abs(((patch_Decal) self).Scale.X) + Math.Abs(((patch_Decal) self).Scale.Y)) / 2f);
+        }
+
+        public static void ScaleRectangle(this Decal self, ref float x, ref float y, ref float width, ref float height) {
+            Vector2 scale = ((patch_Decal) self).Scale;
+            x *= Math.Abs(scale.X);
+            y *= Math.Abs(scale.Y);
+            width *= Math.Abs(scale.X);
+            height *= Math.Abs(scale.Y);
+
+            x = (scale.X < 0) ? -x - width : x;
+            y = (scale.Y < 0) ? -y - height : y;
+        }
+
+        public static void ScaleRectangle(this Decal self, ref int x, ref int y, ref int width, ref int height) {
+            Vector2 scale = ((patch_Decal) self).Scale;
+            x = (int) (x * Math.Abs(scale.X));
+            y = (int) (y * Math.Abs(scale.Y));
+            width = (int) (width * Math.Abs(scale.X));
+            height = (int) (height * Math.Abs(scale.Y));
+
+            x = (scale.X < 0) ? -x - width : x;
+            y = (scale.Y < 0) ? -y - height : y;
+        }
+
         public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
 
         public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
