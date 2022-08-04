@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Mono.Cecil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
@@ -45,6 +46,9 @@ namespace Monocle {
         private int firstLineIndexToDraw;
 
         private static readonly Lazy<bool> celesteTASInstalled = new Lazy<bool>(() => Everest.Modules.Any(module => module.Metadata?.Name == "CelesteTAS"));
+
+        // redirects command logs to the StringBuilder when not null, only set this from main thread
+        internal StringBuilder debugRClog;
 
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
@@ -436,6 +440,10 @@ namespace Monocle {
         [MonoModReplace]
         public new void Log(object obj, Color color) {
             string text = obj.ToString();
+            if (debugRClog != null) {
+                debugRClog.AppendLine(text);
+                return;
+            }
             if (text.Contains("\n")) {
                 foreach (string obj2 in text.Split('\n')) {
                     Log(obj2, color);
@@ -487,6 +495,18 @@ namespace Monocle {
             public Action<string[]> Action;
             public string Help;
             public string Usage;
+        }
+
+        public struct CommandData {
+            public string Name;
+            public string Help;
+            public string Usage;
+        }
+
+        public IEnumerable<CommandData> GetCommands() {
+            foreach (var command in commands) {
+                yield return new CommandData {Name = command.Key, Help = command.Value.Help, Usage = command.Value.Usage};
+            }
         }
 
     }
