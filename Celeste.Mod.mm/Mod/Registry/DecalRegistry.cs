@@ -157,6 +157,10 @@ namespace Celeste.Mod {
             { "overlay", delegate(Decal decal, XmlAttributeCollection attrs) {
                 ((patch_Decal)decal).MakeOverlay();
             }},
+            { "flagSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
+                if (attrs["flag"] != null)
+                    ((patch_Decal)decal).MakeFlagSwap(attrs["flag"].Value, attrs["offPath"]?.Value, attrs["onPath"]?.Value);
+            }},
         };
 
         public static Vector2 ScaleOffset(Vector2 scale, float x, float y) {
