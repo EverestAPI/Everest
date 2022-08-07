@@ -1,111 +1,153 @@
-# .NET Desktop
-# Build and run tests for .NET Desktop or Windows classic desktop solutions.
-# Add steps that publish symbols, save build artifacts, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/apps/windows/dot-net
+# Trigger for main repo branches, and non-draft PRs
+trigger:
+  branches:
+    include:
+    - dev
+    - beta
+    - stable
+pr:
+  branches:
+    include:
+    - dev
+  drafts: false
 
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  solution: '**/*.sln'
-  buildPlatform: 'Any CPU'
-  buildConfiguration: 'Release'
-  VANILLA_CACHE: $(Pipeline.Workspace)/vanilla
 
 name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
-steps:
-# Pre-build steps.
-- task: DotNetCoreCLI@2
-  displayName: 'Restore NuGet packages'
-  inputs:
-    command: 'restore'
+
+stages:
+- stage: Build
+  pool:
+    vmImage: 'ubuntu-latest'
+  variables:
     projects: '**/*.csproj'
-- task: PowerShell@2
-  displayName: 'Run azure-pipelines-prebuild.ps1'
-  inputs:
-    filePath: 'azure-pipelines-prebuild.ps1'
+    buildConfiguration: 'Release'
 
-# Build.
-- task: DotNetCoreCLI@2
-  displayName: 'Build'
-  inputs:
-    command: 'build'
-    projects: '**/*.csproj'
-    arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)"'
+  jobs:
+  - job: Build
+    steps:
+    # Pre-Build
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        projects: $(projects)
 
-# Create and "publish" main artifact.
-- task: CopyFiles@2
-  displayName: 'Pack main artifact'
-  continueOnError: true
-  inputs:
-    sourceFolder: '$(Agent.BuildDirectory)'
-    contents: '**/bin/**/*'
-    targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
-    cleanTargetFolder: true
-    overWrite: true
-    flattenFolders: true
-- task: PublishBuildArtifacts@1
-  displayName: 'Publish main artifact'
-  continueOnError: true
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)/main/'
-    artifactName: 'main'
-    publishLocation: 'Container'
+    # Add Everest version to source files
+    - task: PowerShell@2
+      displayName: 'Run prebuild script'
+      inputs:
+        filePath: '.azure-pipelines/prebuild.ps1'
 
-# Verify patches.
-- task: Cache@2
-  displayName: Cache Vanilla files
-  continueOnError: true
-  inputs:
-    key: '"lib-stripped" | "$(BIN_USERNAME)" | "$(BIN_PASSWORD)"'
-    path: $(VANILLA_CACHE)
-    cacheHitVar: CACHE_RESTORED
-- task: PowerShell@2
-  condition: succeeded()
-  displayName: 'Verify patches'
-  inputs:
-    filePath: 'azure-pipelines-verify.ps1'
-  env:
-    BIN_URL: $(BIN_URL)
-    BIN_USERNAME: $(BIN_USERNAME)
-    BIN_PASSWORD: $(BIN_PASSWORD)
+    # Build
+    - task: DotNetCoreCLI@2
+      displayName: 'Build'
+      inputs:
+        command: 'build'
+        projects: $(projects)
+        arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)"'
 
-# Post-build steps.
-- task: PowerShell@2
-  name: PostBuild
-  condition: succeeded()
-  displayName: 'Run azure-pipelines-postbuild.ps1'
-  continueOnError: true
-  inputs:
-    filePath: 'azure-pipelines-postbuild.ps1'
-  env:
-    BIN_URL: $(BIN_URL)
+    # Create and publish main artifact.
+    - task: CopyFiles@2
+      displayName: 'Create main build artifact'
+      inputs:
+        sourceFolder: '$(Agent.BuildDirectory)'
+        contents: '**/bin/**/*'
+        targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
+        cleanTargetFolder: true
+        overWrite: true
+        flattenFolders: true
 
-# Create and "publish" Olympus artifacts.
-- task: PublishBuildArtifacts@1
-  condition: eq(variables['olympus'], 'True')
-  displayName: 'Publish olympus-meta artifact'
-  continueOnError: true
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)/olympus/meta/'
-    artifactName: 'olympus-meta'
-    publishLocation: 'Container'
-- task: PublishBuildArtifacts@1
-  condition: eq(variables['olympus'], 'True')
-  displayName: 'Publish olympus-build artifact'
-  continueOnError: true
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)/olympus/build/'
-    artifactName: 'olympus-build'
-    publishLocation: 'Container'
+    - publish: '$(Build.ArtifactStagingDirectory)/main/'
+      displayName: 'Publish main build artifact'
+      artifact: main
 
-# Create and "publish" mono-cil-strip binary artifacts
-- task: PublishBuildArtifacts@1
-  condition: eq(variables['lib_stripped'], 'True')
-  displayName: 'Publish lib-stripped artifact'
-  continueOnError: true
-  inputs:
-    pathtoPublish: '$(Build.ArtifactStagingDirectory)/lib-stripped/build/'
-    artifactName: 'lib-stripped'
-    publishLocation: 'Container'
+
+- stage: Test
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  jobs:
+  - job: Patch
+    displayName: 'Verify patch success'
+    steps:
+    - checkout: none
+
+    # Download vanilla Celeste files
+    - task: DownloadSecureFile@1
+      displayName: 'Download Celeste files'
+      inputs:
+        secureFile: 'Celeste_Linux.7z'
+
+    # Download Everest build artifacts
+    - download: current
+      displayName: 'Download Everest artifacts'
+      artifact: main
+
+    # Extract and move all files to working directory
+    # Everest artifacts are moved last to overwrite vanilla files
+    - script: |
+        7z e -bb $AGENT_TEMPDIRECTORY/Celeste_Linux.7z
+        mv -f main/* . && rmdir main
+      displayName: 'Consolidate build files'
+      workingDirectory: $(Pipeline.Workspace)
+
+    # Run MiniInstaller
+    - script: mono MiniInstaller.exe || echo "##vso[task.logissue type=error]Patch verification step failed."
+      displayName: 'Verify patches'
+      workingDirectory: $(Pipeline.Workspace)
+
+    # Run mono-cil-strip on build artifacts
+    - script: |
+        for dll in *.{exe,dll}; do
+          echo "Running mono-cil-strip for $dll"
+          # failed strips are likely native libraries, which can be removed
+          mono-cil-strip -q $dll || rm -f $dll
+        done
+        shopt -s extglob
+        rm -rfv !(*@(.exe|.dll))
+        shopt -u extglob
+      displayName: 'Generate lib-stripped artifact'
+      workingDirectory: $(Pipeline.Workspace)
+
+    - publish: $(Pipeline.Workspace)
+      displayName: 'Publish lib-stripped artifact'
+      artifact: lib-stripped
+
+- stage: Publish
+  pool:
+    vmImage: 'ubuntu-latest'
+  dependsOn: Build
+
+  jobs:
+  - job: Olympus
+    displayName: 'Publish Olympus artifacts'
+    steps:
+    - checkout: none
+
+    - download: current
+      displayName: 'Download Everest artifacts'
+      artifact: main
+
+    # Olympus expects a nested zip
+    - task: ArchiveFiles@2
+      displayName: 'Create Olympus build artifact'
+      inputs:
+        rootFolderOrFile: $(Pipeline.Workspace)/main
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/build/build.zip
+
+    # Create Olympus "Content-Length" metadata artifact
+    - script: |
+        mkdir meta
+        echo $(wc -c <build/build.zip) > meta/size.txt
+      displayName: 'Create Olympus metadata artifact'
+      workingDirectory: $(Build.ArtifactStagingDirectory)
+
+    - publish: $(Build.ArtifactStagingDirectory)/build
+      displayName: 'Publish Olympus build artifact'
+      artifact: olympus-build
+    - publish: $(Build.ArtifactStagingDirectory)/meta/size.txt
+      displayName: 'Publish Olympus metadata artifact'
+      artifact: olympus-meta
