@@ -1,5 +1,5 @@
-pool:
-  vmImage: 'ubuntu-latest'
+variables:
+- group: 'Common Variables'
 
 # Only run when main build pipeline completes, and only for stable branch builds
 trigger: none
@@ -12,48 +12,60 @@ resources:
           include:
             - stable
 
-steps:
-# Download artifacts from build pipeline
-- task: DownloadBuildArtifacts@1
-  inputs:
-    buildType: specific
-    project: Everest
-    pipeline: EverestAPI.Everest
-    specificBuildWithTriggering: true
-    downloadType: specific
-    downloadPath: $(Build.ArtifactStagingDirectory)
+name: '$(Build.BuildId)+$(BuildIdOffset)'
 
-# Define build_number variable and zip build artifacts
-- script: |
-    declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(Build.BuildIdOffset)
-    echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
+pool:
+  vmImage: 'ubuntu-latest'
 
-    cd $(Build.ArtifactStagingDirectory)
-    zip -9r main.zip ./main/
-    zip -9r olympus-meta.zip olympus-meta
-    zip -9r olympus-build.zip olympus-build
-    zip -9r lib-stripped.zip lib-stripped
+jobs:
+- deployment: Stable
+  displayName: 'Publish stable release'
 
-# Create GitHub release for new stable versions.
-- task: GitHubRelease@1
-  displayName: 'Create GitHub Release'
-  condition: succeeded()
-  inputs:
-    githubConnection: 0x0ade-bot
-    repositoryName: EverestAPI/Everest
-    action: 'create'
-    target: '$(Build.SourceVersion)'
-    tagSource: 'userSpecifiedTag'
-    tag: 'stable-1.$(build_number).0'
-    title: 'Stable Build $(build_number)'
-    assets: |
-      $(Build.ArtifactStagingDirectory)/main.zip
-      $(Build.ArtifactStagingDirectory)/olympus-meta.zip
-      $(Build.ArtifactStagingDirectory)/olympus-build.zip
-      $(Build.ArtifactStagingDirectory)/lib-stripped.zip
+  environment: 'release-stable'
 
-# Announce new stable versions on Discord (#modding_updates).
-- script: |
-    curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$(build_number)**.\"}" $(WEBHOOK_URL)
-  displayName: 'Celeste Discord webhook'
-  condition: succeeded()
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        # Build artifacts are automatically downloaded as part of deployment job
+
+        # Define build_number variable and zip build artifacts
+        - script: |
+            declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(BuildIdOffset)
+            echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
+
+            zip -9r ../main.zip main
+            zip -9r ../olympus-meta.zip olympus-meta
+            zip -9r ../olympus-build.zip olympus-build
+            zip -9r ../lib-stripped.zip lib-stripped
+          displayName: 'Prepare release artifacts'
+          workingDirectory: $(Pipeline.Workspace)/build
+
+        # Create GitHub release for new stable versions.
+        - task: GitHubRelease@1
+          displayName: 'Create GitHub Release'
+          inputs:
+            githubConnection: 0x0ade-bot
+            repositoryName: EverestAPI/Everest
+            action: 'create'
+            target: '$(Build.SourceVersion)'
+            tagSource: 'userSpecifiedTag'
+            tag: 'stable-1.$(build_number).0'
+            title: 'Stable Build $(build_number)'
+            assets: |
+              $(Pipeline.Workspace)/main.zip
+              $(Pipeline.Workspace)/olympus-meta.zip
+              $(Pipeline.Workspace)/olympus-build.zip
+              $(Pipeline.Workspace)/lib-stripped.zip
+
+      on:
+        success:
+          steps:
+          # Announce new stable versions on Discord (#modding_updates).
+          - script: |
+              # recalculated because sharing variables between stages is messy
+              declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(BuildIdOffset)
+              curl -H "Content-Type: application/json" \
+                -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$BUILD_NUMBER**.\"}" \
+                $(WEBHOOK_URL)
+            displayName: 'Celeste Discord webhook'
