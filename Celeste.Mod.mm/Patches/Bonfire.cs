@@ -4,6 +4,7 @@
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System.Collections.Generic;
 
 namespace Celeste {
     class patch_Bonfire : Bonfire {
@@ -20,7 +21,9 @@ namespace Celeste {
         public void ctor(Vector2 position, Mode mode) {
             orig_ctor(position, mode);
 
-            ((patch_Sprite) sprite).Animations["startDream"].Goto = new Chooser<string>("burnDream"); // replace non-existent goto animation "dreamy" with correct animation
+            Dictionary<string, patch_Sprite.Animation> animations = ((patch_Sprite) sprite).Animations;
+            if (animations.ContainsKey("startDream") && animations["startDream"].Goto[0].Equals("dreamy") && !animations.ContainsKey("dreamy"))
+                animations["startDream"].Goto = new Chooser<string>("burnDream"); // replace non-existent goto animation "dreamy" with correct animation
         }
     }
 }
