@@ -71,7 +71,7 @@ namespace Celeste {
                 if (parentMode != null) {
                     MapData parentMapData = parentMode.MapData;
                     if (parentMapData == null) {
-                        Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed auto-assigning data from {Area} to its unloaded parent");
+                        Logger.Log(LogLevel.Warn, "MapData", $"Failed auto-assigning data from {Area} to its unloaded parent");
                         return;
                     }
 
@@ -105,7 +105,7 @@ namespace Celeste {
                 }
 
             } catch (Exception e) when (e is not OutOfMemoryException) { // OOM errors are currently unrecoverable
-                Mod.Logger.Log(LogLevel.Warn, "misc", $"Failed loading MapData {Area}");
+                Logger.Log(LogLevel.Warn, "MapData", $"Failed loading MapData {Area}");
                 e.LogDetailed();
             }
         }
@@ -127,7 +127,7 @@ namespace Celeste {
 
         [MonoModReplace]
         public new LevelData Get(string levelName) {
-            if (levelsByName is null || levelsByName.Count != Levels.Count)
+            if (levelsByName is null)
                 RegenerateLevelsByNameCache();
 
             if (levelsByName.TryGetValue(levelName, out LevelData level))
@@ -144,7 +144,11 @@ namespace Celeste {
             }
 
             foreach (LevelData level in Levels) {
-                levelsByName.Add(level.Name, level);
+                if (!levelsByName.ContainsKey(level.Name)) {
+                    levelsByName.Add(level.Name, level);
+                } else {
+                    Logger.Log(LogLevel.Warn, "MapData", $"Failed to load duplicate room name {level.Name}");
+                }
             }
         }
 
