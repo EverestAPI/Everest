@@ -60,8 +60,7 @@ namespace Celeste.Mod {
                 decal.Add(new BloomPoint(offset, alpha, radius));
             }},
             { "coreSwap", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["coldPath"] != null && attrs["hotPath"] != null)
-                    ((patch_Decal)decal).MakeCoreSwap(attrs["coldPath"].Value, attrs["hotPath"].Value);
+                ((patch_Decal)decal).MakeFlagSwap("cold", attrs["hotPath"]?.Value, attrs["coldPath"]?.Value);
             }},
             { "mirror", delegate(Decal decal, XmlAttributeCollection attrs) {
                 string text = decal.Name.ToLower();

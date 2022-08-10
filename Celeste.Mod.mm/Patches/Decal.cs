@@ -73,7 +73,7 @@ namespace Celeste {
                 this.flag = flag;
                 this.off = off;
                 this.on = on;
-                loopCount = (Math.Max(off.Count, 1)) * (Math.Max(on.Count, 1));
+                loopCount = Math.Max(off.Count, 1) * Math.Max(on.Count, 1);
             }
 
             public override void Update() {
@@ -135,6 +135,7 @@ namespace Celeste {
             Scene.Add(solid);
         }
 
+        [Obsolete("Use MakeFlagSwap with the cold flag instead.")]
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
         }
