@@ -1,0 +1,91 @@
+schedules:
+- cron: "0 0 1,15 * *"
+  displayName: Fallback beta release
+  branches:
+    include:
+      - dev
+
+trigger:
+- beta
+
+variables:
+  isScheduled: $[eq(variables['Build.Reason'], 'Schedule')]
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: Scheduled
+  displayName: Scheduled build checks
+  condition: eq(variables.isScheduled, 'true')
+  # check time since last beta
+  steps:
+  - script: |
+      LATEST_BETA=$(curl https://api.github.com/repos/$(Build.Repository.Name)/releases | jq --raw-output 'map(select(.prerelease)) | first | .created_at // "@0"')
+      LATEST_BETA=$(date -d "$LATEST_BETA" +"%Y%m" --utc)
+      CURRENT_DATE=$(date +"%Y%m" --utc)
+      echo "LATEST_BETA: $LATEST_BETA"
+      echo "CURRENT_DATE: $CURRENT_DATE"
+
+      if [[ $CURRENT_DATE > $LATEST_BETA ]]; then
+        # Cancel build
+        curl -X POST https://dev.azure.com/$(Build.Repository.Name)/_apis/build/builds/$(Build.BuildNumber) \
+          -H "Authorization: Bearer $(System.AccessToken)" \
+          -d '{ "status": "Cancelling" }'
+        sleep 60
+      fi
+    displayName: Time since last beta
+
+- deployment: Beta
+  displayName: Publish beta pre-release
+
+  environment: 'Release-Beta'
+
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - script: |
+            curl "https://dev.azure.com/$(Build.Repository.Name)/_apis/build/builds?definitions=3&resultFilter=succeeded"
+            TARGET_BUILD=$(curl "https://dev.azure.com/$(Build.Repository.Name)/_apis/build/builds?definitions=3&resultFilter=succeeded" | \
+              jq --raw-output '.value | map(select(.sourceVersion=="$(Build.SourceVersion)")) | first | .id')
+            echo "##vso[task.setvariable variable=target_build;]$TARGET_BUILD"
+          displayName: Retrieve target build number
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            source: 'specific'
+            project: 'Everest'
+            pipeline: '3'
+            runVersion: 'specific'
+            runID: $(targetbuild)
+            path: $(Pipeline.Workspace)
+
+        # Zip build artifacts
+        - script: |
+            zip -9r ../main.zip main
+            zip -9r ../olympus-meta.zip olympus-meta
+            zip -9r ../olympus-build.zip olympus-build
+            zip -9r ../lib-stripped.zip lib-stripped
+          displayName: 'Prepare release artifacts'
+          workingDirectory: $(Pipeline.Workspace)/build
+
+        # Create GitHub release for new stable versions.
+        - task: GitHubRelease@1
+          displayName: 'Create GitHub Pre-Release'
+          inputs:
+            githubConnection: 0x0ade-bot
+            repositoryName: $(Build.Repository.Name)
+            action: 'create'
+            target: '$(Build.SourceVersion)'
+            tagSource: 'userSpecifiedTag'
+            tag: 'beta-1.$(target_build).0'
+            title: 'Beta Build $(target_build)'
+            isPreRelease: true
+            changeLogCompareToRelease: 'lastNonDraftRelease'
+            changeLogType: 'issueBased'
+            assets: |
+              $(Pipeline.Workspace)/main.zip
+              $(Pipeline.Workspace)/olympus-meta.zip
+              $(Pipeline.Workspace)/olympus-build.zip
+              $(Pipeline.Workspace)/lib-stripped.zip
