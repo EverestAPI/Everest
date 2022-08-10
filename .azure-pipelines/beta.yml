@@ -9,7 +9,9 @@ trigger:
 - beta
 
 variables:
-  isScheduled: $[eq(variables['Build.Reason'], 'Schedule')]
+- group: Common Variables
+- name: isScheduled
+  value: $[eq(variables['Build.Reason'], 'Schedule')]
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -50,6 +52,10 @@ jobs:
             TARGET_BUILD=$(curl "https://dev.azure.com/$(Build.Repository.Name)/_apis/build/builds?definitions=3&resultFilter=succeeded" | \
               jq --raw-output '.value | map(select(.sourceVersion=="$(Build.SourceVersion)")) | first | .id')
             echo "##vso[task.setvariable variable=target_build;]$TARGET_BUILD"
+
+            # Compute build offset for release
+            RELEASE_BUILD=$(($TARGET_BUILD+$(BuildIdOffset)))
+            echo "##vso[task.setvariable variable=release_build;]$RELEASE_BUILD"
           displayName: Retrieve target build number
 
         - task: DownloadPipelineArtifact@2
@@ -58,7 +64,7 @@ jobs:
             project: 'Everest'
             pipeline: '3'
             runVersion: 'specific'
-            runID: $(targetbuild)
+            runID: $(target_build)
             path: $(Pipeline.Workspace)
 
         # Zip build artifacts
@@ -79,8 +85,8 @@ jobs:
             action: 'create'
             target: '$(Build.SourceVersion)'
             tagSource: 'userSpecifiedTag'
-            tag: 'beta-1.$(target_build).0'
-            title: 'Beta Build $(target_build)'
+            tag: 'beta-1.$(release_build).0'
+            title: 'Beta Build $(release_build)'
             isPreRelease: true
             changeLogCompareToRelease: 'lastNonDraftRelease'
             changeLogType: 'issueBased'

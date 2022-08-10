@@ -38,7 +38,6 @@ jobs:
             version: $(beta_tag_name)
             itemPattern: '**'
             downloadPath: $(Pipeline.Workspace)
-          enabled: false
 
         # Create GitHub release for new stable versions.
         - task: GitHubRelease@1
@@ -56,7 +55,6 @@ jobs:
               $(Pipeline.Workspace)/olympus-meta.zip
               $(Pipeline.Workspace)/olympus-build.zip
               $(Pipeline.Workspace)/lib-stripped.zip
-          enabled: false
 
       on:
         success:
