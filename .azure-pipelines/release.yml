@@ -1,18 +1,5 @@
-variables:
-- group: 'Common Variables'
-
-# Only run when main build pipeline completes, and only for stable branch builds
-trigger: none
-resources:
-  pipelines:
-    - pipeline: build
-      source: EverestAPI.Everest
-      trigger:
-        branches:
-          include:
-            - stable
-
-name: '$(Build.BuildId)+$(BuildIdOffset)'
+trigger:
+- stable
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -21,25 +8,37 @@ jobs:
 - deployment: Stable
   displayName: 'Publish stable release'
 
-  environment: 'release-stable'
+  environment: 'Release-Stable'
 
   strategy:
     runOnce:
       deploy:
         steps:
-        # Build artifacts are automatically downloaded as part of deployment job
+        - checkout: self
 
-        # Define build_number variable and zip build artifacts
+        # Get tag name for the commit
         - script: |
-            declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(BuildIdOffset)
+            TAG_NAME=$(git describe --contains HEAD | sed 's/~.*//')
+            echo "##vso[task.setvariable variable=beta_tag_name]$TAG_NAME"
+
+            BUILD_NUMBER=$(echo $TAG_NAME | grep -Po '\d{4,}')
             echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
 
-            zip -9r ../main.zip main
-            zip -9r ../olympus-meta.zip olympus-meta
-            zip -9r ../olympus-build.zip olympus-build
-            zip -9r ../lib-stripped.zip lib-stripped
-          displayName: 'Prepare release artifacts'
-          workingDirectory: $(Pipeline.Workspace)/build
+            # Sharing variables between lifecycle hooks sucks
+            echo "$BUILD_NUMBER" > $(Pipeline.Workspace)/buildNumber
+          displayName: Get tag and build
+          name: version
+
+        - task: DownloadGitHubRelease@0
+          displayName: Retrieve artifacts for build
+          inputs:
+            connection: 0x0ade-bot
+            userRepository: 'Everest'
+            defaultVersionType: 'specificTag'
+            version: $(beta_tag_name)
+            itemPattern: '**'
+            downloadPath: $(Pipeline.Workspace)
+          enabled: false
 
         # Create GitHub release for new stable versions.
         - task: GitHubRelease@1
@@ -57,15 +56,15 @@ jobs:
               $(Pipeline.Workspace)/olympus-meta.zip
               $(Pipeline.Workspace)/olympus-build.zip
               $(Pipeline.Workspace)/lib-stripped.zip
+          enabled: false
 
       on:
         success:
           steps:
           # Announce new stable versions on Discord (#modding_updates).
           - script: |
-              # recalculated because sharing variables between stages is messy
-              declare -i BUILD_NUMBER=$(resources.pipeline.build.runID)+$(BuildIdOffset)
+              BUILD_NUMBER=$(< $(Pipeline.Workspace)/buildNumber)
               curl -H "Content-Type: application/json" \
                 -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$BUILD_NUMBER**.\"}" \
                 $(WEBHOOK_URL)
-            displayName: 'Celeste Discord webhook'
+            displayName: 'Publish Discord webhook'

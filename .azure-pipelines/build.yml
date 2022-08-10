@@ -6,8 +6,6 @@ trigger:
   branches:
     include:
     - dev
-    - beta
-    - stable
 pr:
   branches:
     include:
