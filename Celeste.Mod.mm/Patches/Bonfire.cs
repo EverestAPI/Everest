@@ -22,7 +22,7 @@ namespace Celeste {
             orig_ctor(position, mode);
 
             Dictionary<string, patch_Sprite.Animation> animations = ((patch_Sprite) sprite).Animations;
-            if (animations.ContainsKey("startDream") && animations["startDream"].Goto[0].Equals("dreamy") && !animations.ContainsKey("dreamy"))
+            if (animations.ContainsKey("startDream") && (animations["startDream"].Goto?[0].Equals("dreamy") ?? false) && !animations.ContainsKey("dreamy"))
                 animations["startDream"].Goto = new Chooser<string>("burnDream"); // replace non-existent goto animation "dreamy" with correct animation
         }
     }
