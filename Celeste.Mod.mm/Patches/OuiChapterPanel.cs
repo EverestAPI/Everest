@@ -204,16 +204,16 @@ namespace Celeste {
         [PatchOuiChapterPanelRender] // ... except for manually manipulating the method via MonoModRules
         public new extern void Render();
 
-        private string _ModCardTexture(string textureName) {
-            // First, check for area (chapter) specific card textures.
+        private string _ModAreaselectTexture(string textureName) {
+            // First, check for area (chapter) specific textures.
             string area = AreaData.Areas[Area.ID].Name;
-            string areaTextureName = textureName.Replace("areaselect/card", $"areaselect/{area}_card");
+            string areaTextureName = textureName.Replace("areaselect/", $"areaselect/{area}_");
             if (GFX.Gui.Has(areaTextureName)) {
                 textureName = areaTextureName;
                 return textureName;
             }
 
-            // If none are found, fall back to levelset card textures.
+            // If none are found, fall back to levelset textures.
             string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
             string levelSetTextureName = textureName.Replace("areaselect/", $"areaselect/{levelSet}/");
             if (GFX.Gui.Has(levelSetTextureName)) {
@@ -240,7 +240,7 @@ namespace MonoMod {
     class PatchChapterPanelSwapRoutineAttribute : Attribute { }
 
     /// <summary>
-    /// Patches chapter panel rendering to allow for custom chapter cards.
+    /// Patches chapter panel rendering to allow for custom chapter cards and banners.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelRender))]
     class PatchOuiChapterPanelRenderAttribute : Attribute { }
@@ -272,23 +272,23 @@ namespace MonoMod {
         }
 
         public static void PatchOuiChapterPanelRender(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_ModCardTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModCardTexture(System.String)");
+            MethodDefinition m_ModAreaselectTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModAreaselectTexture(System.String)");
             MethodDefinition m_FixTitleLength = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::_FixTitleLength(System.Single)");
 
             ILCursor cursor = new ILCursor(context);
             int matches = 0;
-            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("areaselect/card"))) {
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("areaselect/"))) {
                 // Move to before the string is loaded, but before the labels, so we can redirect break targets to a new instruction.
                 // Push this.
                 cursor.Emit(OpCodes.Ldarg_0);
                 // Move after ldstr
                 cursor.Goto(cursor.Next, MoveType.After);
                 // Insert method call to modify the string.
-                cursor.Emit(OpCodes.Call, m_ModCardTexture);
+                cursor.Emit(OpCodes.Call, m_ModAreaselectTexture);
                 matches++;
             }
-            if (matches != 4) {
-                throw new Exception("Incorrect number of matches for string starting with \"areaselect/card\".");
+            if (matches != 6) {
+                throw new Exception("Incorrect number of matches for string starting with \"areaselect/\".");
             }
 
             cursor.Index = 0;
