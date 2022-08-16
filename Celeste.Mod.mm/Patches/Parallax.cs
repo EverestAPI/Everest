@@ -1,60 +1,53 @@
-﻿using Microsoft.Xna.Framework;
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
-using MonoMod.Cil;
-using MonoMod.Utils;
 using System;
 
 namespace Celeste {
     class patch_Parallax : Parallax {
+
+        private float fadeIn;
         
         public patch_Parallax(MTexture texture) : base(texture) {
             // no-op, ignored by MonoMod
         }
 
-        private void DrawParallax(Vector2 position, Color color, SpriteEffects flip) {
-            Rectangle rect = new Rectangle(0, 0, LoopX ? Celeste.GameWidth : Texture.Width, LoopY ? Celeste.GameHeight : Texture.Height);
+        [MonoModReplace]
+        public override void Render(Scene scene) {
+            Vector2 camera = ((scene as Level).Camera.Position + CameraOffset).Floor();
+            Vector2 position = (Position - camera * Scroll).Floor();
+            float alpha = fadeIn * Alpha * FadeAlphaMultiplier;
+            if (FadeX != null) {
+                alpha *= FadeX.Value(camera.X + 160f);
+            }
+            if (FadeY != null) {
+                alpha *= FadeY.Value(camera.Y + 90f);
+            }
+            Color color = Color;
+            if (alpha < 1f) {
+                color *= alpha;
+            }
+            if (color.A <= 1) {
+                return;
+            }
+            if (LoopX) {
+                position.X = (position.X % Texture.Width - Texture.Width) % Texture.Width;
+            }
+            if (LoopY) {
+                position.Y = (position.Y % Texture.Height - Texture.Height) % Texture.Height;
+            }
+            SpriteEffects flip = SpriteEffects.None;
+            if (FlipX) {
+                flip |= SpriteEffects.FlipHorizontally;
+            }
+            if (FlipY) {
+                flip |= SpriteEffects.FlipVertically;
+            }
+            Rectangle rect = new Rectangle(0, 0, LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width, LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height);
             ((patch_MTexture) Texture).DrawWithWrappingSupport(position, Vector2.Zero, color, 1f, 0f, flip, rect);
-        }
-
-        [MonoModIgnore]
-        [PatchParallaxRender]
-        public override extern void Render(Scene scene);
-    }
-}
-
-namespace MonoMod {
-    /// <summary>
-    /// Patches the method to replace looped Draw calls with single call.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchParallaxRender))]
-    class PatchParallaxRenderAttribute : Attribute { }
-
-    static partial class MonoModRules {
-
-        public static void PatchParallaxRender(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_Parallax_DrawParallax = context.Method.DeclaringType.FindMethod("DrawParallax");
-
-            ILCursor cursor = new ILCursor(context);
-
-            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.Backdrop", "FlipY"),
-                                            instr => instr.MatchBrfalse(out _),
-                                            instr => instr.MatchLdcI4(2),
-                                            instr => instr.MatchStloc(4),
-                                            instr => instr.MatchLdloc(1),
-                                            instr => instr.MatchLdfld("Microsoft.Xna.Framework.Vector2", "X"));
-            cursor.Index -= 2;
-            cursor.MoveAfterLabels();
-            cursor.RemoveRange(cursor.Instrs.Count - cursor.Index - 1); // delete rest of method except ret instruction
-            cursor.MoveAfterLabels();
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldloc_1); // position
-            cursor.Emit(OpCodes.Ldloc_3); // color
-            cursor.Emit(OpCodes.Ldloc_S, (byte) 4); // flip
-            cursor.Emit(OpCodes.Callvirt, m_Parallax_DrawParallax);
         }
     }
 }
