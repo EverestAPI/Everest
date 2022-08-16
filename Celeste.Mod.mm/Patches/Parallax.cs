@@ -17,7 +17,7 @@ namespace Celeste {
 
         private void DrawParallax(Vector2 position, Color color, SpriteEffects flip) {
             Rectangle rect = new Rectangle(0, 0, LoopX ? Celeste.GameWidth : Texture.Width, LoopY ? Celeste.GameHeight : Texture.Height);
-            ((patch_MTexture) Texture).Draw(position, Vector2.Zero, color, 1f, 0f, flip, rect);
+            ((patch_MTexture) Texture).DrawWithWrappingSupport(position, Vector2.Zero, color, 1f, 0f, flip, rect);
         }
 
         [MonoModIgnore]

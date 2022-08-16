@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Monocle {
     class patch_MTexture : MTexture {
@@ -43,6 +44,8 @@ namespace Monocle {
         private int _OrigHeight;
 
         private List<ModAsset> _ModAssets;
+
+        private Texture2D unpacked;
 
         // Patching constructors is ugly.
         public extern void orig_ctor(patch_MTexture parent, int x, int y, int width, int height);
@@ -210,6 +213,23 @@ namespace Monocle {
             return new Rectangle(x, y, w, h);
         }
 
+        private static Texture2D CreateUnpackedTexture(Texture2D src, Rectangle rect)
+        {
+            Texture2D tex = new Texture2D(src.GraphicsDevice, rect.Width, rect.Height);
+            int count = rect.Width * rect.Height;
+            Color[] data = new Color[count];
+            src.GetData(0, rect, data, 0, count);
+            tex.SetData(data);
+            return tex;
+        }
+
+        private Texture2D Unpacked {
+            get {
+                unpacked ??= CreateUnpackedTexture(Texture.Texture, ClipRect);
+                return unpacked;
+            }
+        }
+
         #region Drawing Methods
 
         #region Draw-related fixes
@@ -289,11 +309,6 @@ namespace Monocle {
         public new void Draw(Vector2 position, Vector2 origin, Color color, Vector2 scale, float rotation, Rectangle clip) {
             float scaleFix = ScaleFix;
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
-        }
-
-        public void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip, Rectangle absoluteClip) {
-            float scaleFix = ScaleFix;
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, absoluteClip, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         #endregion
@@ -803,6 +818,16 @@ namespace Monocle {
                 }
             }
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, clip, color, rotation, offset, scale, flip, 0f);
+        }
+
+        #endregion
+
+        #region DrawWithWrappingSupport
+
+        public void DrawWithWrappingSupport(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip, Rectangle absoluteClip) {
+            float scaleFix = ScaleFix;
+            // TODO does this have to use reflection?
+            Monocle.Draw.SpriteBatch.Draw(typeof(SpriteBatch).GetField("samplerState", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(Monocle.Draw.SpriteBatch) != SamplerState.PointWrap ? Texture.Texture : Unpacked, position, absoluteClip, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
         }
 
         #endregion
