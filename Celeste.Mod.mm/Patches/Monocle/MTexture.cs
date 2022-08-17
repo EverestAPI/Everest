@@ -225,7 +225,7 @@ namespace Monocle {
 
         private Texture2D Unpacked {
             get {
-                unpacked ??= CreateUnpackedTexture(Texture.Texture, ClipRect);
+                unpacked ??= Width == Texture.Width && Height == Texture.Height ? Texture.Texture : CreateUnpackedTexture(Texture.Texture, ClipRect);
                 return unpacked;
             }
         }
