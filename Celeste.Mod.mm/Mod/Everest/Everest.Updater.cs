@@ -432,7 +432,7 @@ namespace Celeste.Mod {
                     File.Delete(destPath);
 
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                request.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
+                request.UserAgent = "Everest/" + Everest.VersionString;
                 request.Timeout = 10000;
                 request.ReadWriteTimeout = 10000;
 
@@ -483,7 +483,7 @@ namespace Celeste.Mod {
             private static long _ContentLength(string url) {
                 try {
                     HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                    request.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
+                    request.UserAgent = "Everest/" + Everest.VersionString;
                     request.Method = "HEAD";
                     request.Timeout = 10000;
                     request.ReadWriteTimeout = 10000;
