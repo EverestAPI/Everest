@@ -242,14 +242,14 @@ namespace Celeste.Mod {
                         int id = build["id"].ToObject<int>();
                         string url = string.Format(artifactFormat, id);
                         Entry entry = new Entry((id + offset).ToString(), url, id + offset, source);
-                        try { entry.Description = build.SelectToken("triggerInfo['ci.message']").ToString().Split('\n')[0]; } catch {}
+                        try { entry.Description = build.SelectToken("triggerInfo['ci.message']").ToString().Split('\n')[0]; } catch { }
                         entries.Add(entry);
                     }
 
                     return entries;
                 };
 
-            private static Func<Source, string, List<Entry>> GitHubDataParser(int offset, bool prerelease=false)
+            private static Func<Source, string, List<Entry>> GitHubDataParser(int offset, bool prerelease = false)
                 => (source, dataRaw) => {
                     List<Entry> entries = new List<Entry>();
 

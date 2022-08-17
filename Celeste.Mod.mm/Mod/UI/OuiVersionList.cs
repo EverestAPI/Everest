@@ -113,7 +113,7 @@ namespace Celeste.Mod.UI {
                     string description = entry.Description;
                     // Recommended commit title max length
                     if (description.Length > 50)
-                        description = description.Substring(0, 50)+"...";
+                        description = description.Substring(0, 50) + "...";
                     var info = new TextMenuExt.SubHeaderExt(description) {
                         Alpha = 0f,
                         HeightExtra = 0f,
