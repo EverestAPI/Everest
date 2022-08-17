@@ -433,6 +433,7 @@ namespace Celeste.Mod {
 
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
                 request.UserAgent = "Everest/" + Everest.VersionString;
+                request.Accept = "application/octet-stream";
                 request.Timeout = 10000;
                 request.ReadWriteTimeout = 10000;
 
