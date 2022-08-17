@@ -432,8 +432,10 @@ namespace Celeste.Mod {
                     File.Delete(destPath);
 
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                request.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
                 request.Timeout = 10000;
                 request.ReadWriteTimeout = 10000;
+
 
                 // Manual buffered copy from web input to file output.
                 // Allows us to measure speed and progress.
@@ -481,6 +483,7 @@ namespace Celeste.Mod {
             private static long _ContentLength(string url) {
                 try {
                     HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                    request.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
                     request.Method = "HEAD";
                     request.Timeout = 10000;
                     request.ReadWriteTimeout = 10000;
