@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Ionic.Zip;
 using MonoMod.Utils;
@@ -6,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -18,32 +20,38 @@ namespace Celeste.Mod {
         // TODO: General purpose updater for both Everest itself and any runtime mods.
         internal static class Updater {
 
+            public enum UpdatePriority {
+                High, Low, None
+            }
+
             public class Entry {
                 public readonly string Name;
-                public readonly string Branch;
+                public string Description;
                 public readonly string URL;
                 public readonly int Build;
-                public Entry(string name, string branch, string url, int version) {
+                public readonly Source Source;
+                public Entry(string name, string url, int version, Source source) {
                     Name = name;
-                    Branch = branch ?? "";
                     URL = url;
                     Build = version;
+                    Source = source;
                 }
             }
 
             public class Source {
 
+                public string DisplayName;
+
                 public string NameDialog;
+
+                public UpdatePriority UpdatePriority = UpdatePriority.Low;
 
                 public string Index;
 
-                public Func<bool> IsCurrent;
-
-                public Func<string, List<Entry>> ParseData;
+                public Func<Source, string, List<Entry>> ParseData;
 #pragma warning disable CS0649
                 public Func<string, Entry> ParseLine;
 #pragma warning restore CS0649
-
                 public virtual ReadOnlyCollection<Entry> Entries { get; protected set; }
 
                 public string ErrorDialog { get; protected set; }
@@ -57,7 +65,7 @@ namespace Celeste.Mod {
                             return _RequestStart();
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_download";
-                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading Everest version list");
+                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading version list");
                             Logger.LogDetailed(e);
                             return this;
                         }
@@ -71,8 +79,11 @@ namespace Celeste.Mod {
 
                     string data;
                     try {
-                        using (WebClient wc = new WebClient())
+                        Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
+                        using (WebClient wc = new WebClient()) {
+                            wc.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
                             data = wc.DownloadString(Index);
+                        }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
@@ -82,7 +93,7 @@ namespace Celeste.Mod {
                     List<Entry> entries = new List<Entry>();
                     if (ParseData != null) {
                         try {
-                            entries.AddRange(ParseData(data));
+                            entries.AddRange(ParseData(this, data));
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_format";
                             Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
@@ -107,40 +118,6 @@ namespace Celeste.Mod {
                         }
                     }
 
-                    // Highly convoluted scientific method to determine the entry order:
-                    // - Order by first occurence of branch
-                    // - Order by version inside branch
-                    Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
-                    // Force stable, then beta, then dev branches to appear first.
-                    branchFirsts["stable"] = int.MaxValue;
-                    branchFirsts["beta"] = int.MaxValue - 3;
-                    branchFirsts["dev"] = int.MaxValue - 4;
-
-                    // Make sure that the branch we're on appears between stable and beta.
-                    // This ensures that people don't miss out on important stability updates,
-                    // but don't get dragged onto another branch by accident.
-                    foreach (Entry entry in entries) {
-                        if (entry.Build == Build) {
-                            CoreModule.Settings.CurrentBranch = entry.Branch;
-                            break;
-                        }
-                    }
-
-                    if (CoreModule.Settings.CurrentBranch != null) {
-                        branchFirsts[CoreModule.Settings.CurrentBranch] = int.MaxValue - 2;
-                    }
-
-                    for (int i = 0; i < entries.Count; i++) {
-                        Entry entry = entries[i];
-                        if (!branchFirsts.ContainsKey(entry.Branch))
-                            branchFirsts[entry.Branch] = i;
-                    }
-
-                    entries.Sort((a, b) => {
-                        if (a.Branch != b.Branch)
-                            return -(branchFirsts[a.Branch].CompareTo(branchFirsts[b.Branch]));
-                        return -a.Build.CompareTo(b.Build);
-                    });
                     Entries = new ReadOnlyCollection<Entry>(entries);
                     return this;
                 }
@@ -159,14 +136,34 @@ namespace Celeste.Mod {
 
             public static List<Source> Sources = new List<Source>() {
                 new Source {
-                    NameDialog = "updater_src_buildbot",
+                    DisplayName = "updater_src_stable",
+                    NameDialog = "updater_src_release_github",
 
-                    Index = "https://dev.azure.com/EverestAPI/Everest/_apis/build/builds?definitions=3&api-version=5.0",
+                    UpdatePriority = UpdatePriority.High,
 
-                    IsCurrent = () => VersionSuffix.StartsWith("azure-"),
+                    Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
+                    ParseData = GitHubDataParser(offset: 700)
+                },
+                new Source {
+                    DisplayName = "updater_src_beta",
+                    NameDialog = "updater_src_release_github",
 
-                    ParseData = AzureDataParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", 700)
-                }
+                    Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
+                    ParseData = GitHubDataParser(offset: 700, prerelease: true)
+                },
+                new Source {
+                    DisplayName = "updater_src_dev",
+                    NameDialog = "updater_src_buildbot_azure",
+
+                    Index = new URIHelper("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds", new NameValueCollection() {
+                            {"definitions", "3"},
+                            {"branchName", "refs/heads/dev"},
+                            {"statusFilter", "completed"},
+                            {"resultsFilter", "succeeded"},
+                            {"api-version", "5.0"},
+                        }).ToString(),
+                    ParseData = AzureDataParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", offset: 700)
+                },
             };
 
             public static Task RequestAll() {
@@ -180,7 +177,7 @@ namespace Celeste.Mod {
                 return Task.Factory.ContinueWhenAll(tasks, finished => {
                     List<Entry> all = new List<Entry>();
                     foreach (Source source in Sources) {
-                        if (source.Entries == null || !source.IsCurrent())
+                        if (source.Entries == null || source.DisplayName != CoreModule.Settings.CurrentBranch)
                             continue;
                         all.AddRange(source.Entries);
                     }
@@ -203,8 +200,8 @@ namespace Celeste.Mod {
                 });
             }
 
-            private static Func<string, Entry> CommonLineParser(string root)
-                => (line) => {
+            private static Func<Source, string, Entry> CommonLineParser(string root)
+                => (source, line) => {
                     string[] split = line.Split(' ');
                     if (split.Length < 2 || split.Length > 3)
                         throw new Exception("Version list format incompatible!");
@@ -232,27 +229,47 @@ namespace Celeste.Mod {
                         name = name.Substring(0, indexOfBranch);
                     }
 
-                    return new Entry(name, branch, url, int.Parse(Regex.Match(split[1], @"\d+").Value));
+                    return new Entry(name, url, int.Parse(Regex.Match(split[1], @"\d+").Value), source);
                 };
 
-            private static Func<string, List<Entry>> AzureDataParser(string artifactFormat, int offset)
-                => (dataRaw) => {
+            private static Func<Source, string, List<Entry>> AzureDataParser(string artifactFormat, int offset)
+                => (source, dataRaw) => {
                     List<Entry> entries = new List<Entry>();
 
                     JObject root = JObject.Parse(dataRaw);
                     JArray list = root["value"] as JArray;
                     foreach (JObject build in list) {
-                        if (build["status"].ToObject<string>() != "completed" || build["result"].ToObject<string>() != "succeeded")
-                            continue;
-
-                        string reason = build["reason"].ToObject<string>();
-                        if (reason != "manual" && reason != "individualCI")
-                            continue;
-
                         int id = build["id"].ToObject<int>();
-                        string branch = build["sourceBranch"].ToObject<string>().Replace("refs/heads/", "");
                         string url = string.Format(artifactFormat, id);
-                        entries.Add(new Entry((id + offset).ToString(), branch, url, id + offset));
+                        Entry entry = new Entry((id + offset).ToString(), url, id + offset, source);
+                        try { entry.Description = build.SelectToken("triggerInfo['ci.message']").ToString().Split('\n')[0]; } catch {}
+                        entries.Add(entry);
+                    }
+
+                    return entries;
+                };
+
+            private static Func<Source, string, List<Entry>> GitHubDataParser(int offset, bool prerelease=false)
+                => (source, dataRaw) => {
+                    List<Entry> entries = new List<Entry>();
+
+                    JArray list = JArray.Parse(dataRaw);
+                    foreach (JObject release in list) {
+                        if (prerelease != release["prerelease"].ToObject<bool>())
+                            continue;
+
+                        string build = Regex.Match(release["name"].ToString(), @"\d+$").Value;
+                        string url = null;
+                        foreach (JObject asset in release["assets"] as JArray) {
+                            if (asset["name"].ToString() == "main.zip") {
+                                url = asset["url"].ToString();
+                                break;
+                            }
+                        }
+                        if (url is null)
+                            throw new Exception("main.zip asset not found for release");
+
+                        entries.Add(new Entry(build, url, int.Parse(build), source));
                     }
 
                     return entries;
@@ -277,6 +294,7 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                CoreModule.Settings.CurrentBranch = version.Source.DisplayName;
                 progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
@@ -286,7 +304,7 @@ namespace Celeste.Mod {
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
 
-                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Branch, version.URL));
+                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Source.DisplayName.DialogClean(), version.URL));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADING"));
                 try {
