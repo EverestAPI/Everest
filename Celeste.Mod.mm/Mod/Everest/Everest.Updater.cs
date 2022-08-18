@@ -18,7 +18,7 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static partial class Everest {
         // TODO: General purpose updater for both Everest itself and any runtime mods.
-        internal static class Updater {
+        public static class Updater {
 
             public enum UpdatePriority {
                 High, Low, None
@@ -142,14 +142,14 @@ namespace Celeste.Mod {
                     UpdatePriority = UpdatePriority.High,
 
                     Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
-                    ParseData = GitHubDataParser(offset: 700)
+                    ParseData = GitHubReleasesParser(offset: 700)
                 },
                 new Source {
                     DisplayName = "updater_src_beta",
                     NameDialog = "updater_src_release_github",
 
                     Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
-                    ParseData = GitHubDataParser(offset: 700, prerelease: true)
+                    ParseData = GitHubReleasesParser(offset: 700, prerelease: true)
                 },
                 new Source {
                     DisplayName = "updater_src_dev",
@@ -162,7 +162,7 @@ namespace Celeste.Mod {
                             {"resultsFilter", "succeeded"},
                             {"api-version", "5.0"},
                         }).ToString(),
-                    ParseData = AzureDataParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", offset: 700)
+                    ParseData = AzureBuildsParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", offset: 700)
                 },
             };
 
@@ -232,7 +232,7 @@ namespace Celeste.Mod {
                     return new Entry(name, url, int.Parse(Regex.Match(split[1], @"\d+").Value), source);
                 };
 
-            private static Func<Source, string, List<Entry>> AzureDataParser(string artifactFormat, int offset)
+            public static Func<Source, string, List<Entry>> AzureBuildsParser(string artifactFormat, int offset)
                 => (source, dataRaw) => {
                     List<Entry> entries = new List<Entry>();
 
@@ -249,7 +249,7 @@ namespace Celeste.Mod {
                     return entries;
                 };
 
-            private static Func<Source, string, List<Entry>> GitHubDataParser(int offset, bool prerelease = false)
+            public static Func<Source, string, List<Entry>> GitHubReleasesParser(int offset, bool prerelease = false)
                 => (source, dataRaw) => {
                     List<Entry> entries = new List<Entry>();
 
