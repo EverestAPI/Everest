@@ -40,9 +40,9 @@ namespace Celeste.Mod {
 
             public class Source {
 
-                public string DisplayName;
+                public string Name;
 
-                public string NameDialog;
+                public string Description;
 
                 public UpdatePriority UpdatePriority = UpdatePriority.Low;
 
@@ -136,8 +136,8 @@ namespace Celeste.Mod {
 
             public static List<Source> Sources = new List<Source>() {
                 new Source {
-                    DisplayName = "updater_src_stable",
-                    NameDialog = "updater_src_release_github",
+                    Name = "updater_src_stable",
+                    Description = "updater_src_release_github",
 
                     UpdatePriority = UpdatePriority.High,
 
@@ -145,15 +145,15 @@ namespace Celeste.Mod {
                     ParseData = GitHubReleasesParser(offset: 700)
                 },
                 new Source {
-                    DisplayName = "updater_src_beta",
-                    NameDialog = "updater_src_release_github",
+                    Name = "updater_src_beta",
+                    Description = "updater_src_release_github",
 
                     Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
                     ParseData = GitHubReleasesParser(offset: 700, prerelease: true)
                 },
                 new Source {
-                    DisplayName = "updater_src_dev",
-                    NameDialog = "updater_src_buildbot_azure",
+                    Name = "updater_src_dev",
+                    Description = "updater_src_buildbot_azure",
 
                     Index = new URIHelper("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds", new NameValueCollection() {
                             {"definitions", "3"},
@@ -177,7 +177,7 @@ namespace Celeste.Mod {
                 return Task.Factory.ContinueWhenAll(tasks, finished => {
                     List<Entry> all = new List<Entry>();
                     foreach (Source source in Sources) {
-                        if (source.Entries == null || source.DisplayName != CoreModule.Settings.CurrentBranch)
+                        if (source.Entries == null || source.Name != CoreModule.Settings.CurrentBranch)
                             continue;
                         all.AddRange(source.Entries);
                     }
@@ -294,7 +294,7 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                CoreModule.Settings.CurrentBranch = version.Source.DisplayName;
+                CoreModule.Settings.CurrentBranch = version.Source.Name;
                 progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
@@ -304,7 +304,7 @@ namespace Celeste.Mod {
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
 
-                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Source.DisplayName.DialogClean(), version.URL));
+                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Source.Name.DialogClean(), version.URL));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADING"));
                 try {
