@@ -66,7 +66,7 @@ namespace Celeste.Mod {
                                 } catch (ThreadInterruptedException) {
                                     throw;
                                 } catch (Exception e) {
-                                    Logger.Log("debugrc", $"DebugRC failed responding: {e}");
+                                    Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed responding: {e}");
                                 }
                             }, Listener.GetContext());
                         }
@@ -79,10 +79,10 @@ namespace Celeste.Mod {
                         // 995 = I/O abort due to thread abort or application shutdown.
                         if (e.ErrorCode != 500 &&
                             e.ErrorCode != 995) {
-                            Logger.Log("debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
+                            Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
                         }
                     } catch (Exception e) {
-                        Logger.Log("debugrc", $"DebugRC failed listening: {e}");
+                        Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening: {e}");
                     }
                 });
             }

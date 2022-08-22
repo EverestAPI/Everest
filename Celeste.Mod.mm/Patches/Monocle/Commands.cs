@@ -415,7 +415,7 @@ namespace Monocle {
 
                 if (ContainCantDrawChar(innerException.Message + innerException.StackTrace)) {
                     Engine.Commands.Log("Please check log.txt for full exception log, because it contains characters that can't be displayed.", Color.Yellow);
-                    Logger.Log("Commands", innerException.ToString());
+                    Logger.LogDetailed(innerException, "Commands");
                 }
             }
         }

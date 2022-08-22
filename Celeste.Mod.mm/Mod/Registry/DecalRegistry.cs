@@ -247,10 +247,10 @@ namespace Celeste.Mod {
 
         public static void RegisterDecal(string decalPath, DecalInfo info) {
             if (RegisteredDecals.ContainsKey(decalPath)) {
-                Logger.Log("Decal Registry", $"Replaced decal {decalPath}");
+                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Replaced decal {decalPath}");
                 RegisteredDecals[decalPath] = info;
             } else {
-                Logger.Log("Decal Registry", $"Registered decal {decalPath}");
+                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Registered decal {decalPath}");
                 RegisteredDecals.Add(decalPath, info);
             }
         }
