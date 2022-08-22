@@ -59,6 +59,33 @@ namespace Celeste {
             }
         }
 
+        private class FlagSwapImage : Component {
+
+            private string flag;
+            private List<MTexture> off;
+            private List<MTexture> on;
+            private List<MTexture> activeTextures => (Scene as Level).Session.GetFlag(flag) ? on : off;
+            private int loopCount;
+            private float frame;
+            public patch_Decal Decal => (patch_Decal) Entity;
+
+            public FlagSwapImage(string flag, List<MTexture> off, List<MTexture> on) : base(active: true, visible: true) {
+                this.flag = flag;
+                this.off = off;
+                this.on = on;
+                loopCount = Math.Max(off.Count, 1) * Math.Max(on.Count, 1);
+            }
+
+            public override void Update() {
+                frame = (frame + Decal.AnimationSpeed * Engine.DeltaTime) % loopCount;
+            }
+
+            public override void Render() {
+                if (activeTextures.Count > 0)
+                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale);
+            }
+        }
+
         public extern void orig_ctor(string texture, Vector2 position, Vector2 scale, int depth);
         [MonoModConstructor]
         public void ctor(string texture, Vector2 position, Vector2 scale, int depth) {
@@ -108,8 +135,14 @@ namespace Celeste {
             Scene.Add(solid);
         }
 
+        [Obsolete("Use MakeFlagSwap with the cold flag instead.")]
         public void MakeCoreSwap(string coldPath, string hotPath) {
             Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+        }
+
+        public void MakeFlagSwap(string flag, string offPath, string onPath) {
+            Add(image = new FlagSwapImage(flag, offPath != null ? GFX.Game.GetAtlasSubtextures(offPath) : new List<MTexture>(),
+                                                onPath != null ? GFX.Game.GetAtlasSubtextures(onPath) : new List<MTexture>()));
         }
 
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
