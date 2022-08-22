@@ -132,10 +132,9 @@ namespace Celeste {
                 OnMove = v => {
                     Position += v;
                     if (solid != null) {
-                        if (staticMover.Platform != null)
-                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
-                        solid.MoveHExact((int) v.X);
-                        solid.MoveVExact((int) v.Y);
+                        Vector2 liftSpeed = (staticMover.Platform != null) ? staticMover.Platform.LiftSpeed : Vector2.Zero;
+                        solid.MoveH(v.X, liftSpeed.X);
+                        solid.MoveV(v.Y, liftSpeed.Y);
                     }
                 },
                 OnShake = v => { Position += v; },
@@ -228,6 +227,7 @@ namespace Celeste {
             RemoveSelf();
         }
     }
+
     public static class DecalExt {
 
         public static Vector2 GetScale(this Decal self)

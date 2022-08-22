@@ -29,7 +29,7 @@ namespace Celeste.Mod {
                 float offY = attrs["offsetY"] != null ? float.Parse(attrs["offsetY"].Value) : 0f;
                 bool inbg = attrs["inbg"] != null ? bool.Parse(attrs["inbg"].Value) : false;
 
-                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
+                Vector2 offset = decal.GetScaledOffset(offX, offY);
 
                 ((patch_Decal)decal).CreateSmoke(offset, inbg);
             }},
@@ -54,8 +54,8 @@ namespace Celeste.Mod {
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
                 float radius = attrs["radius"] != null ? float.Parse(attrs["radius"].Value) : 1f;
 
-                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
-                radius = ScaleRadius(((patch_Decal)decal).Scale, radius);
+                Vector2 offset = decal.GetScaledOffset(offX, offY);
+                radius = decal.GetScaledRadius(radius);
 
                 decal.Add(new BloomPoint(offset, alpha, radius));
             }},
@@ -93,7 +93,7 @@ namespace Celeste.Mod {
                 bool blockWaterfalls = attrs["blockWaterfalls"] != null ? bool.Parse(attrs["blockWaterfalls"].Value) : true;
                 bool safe = attrs["safe"] != null ? bool.Parse(attrs["safe"].Value) : true;
 
-                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
 
                 ((patch_Decal)decal).MakeSolid(x, y, width, height, index, blockWaterfalls, safe);
             }},
@@ -103,7 +103,7 @@ namespace Celeste.Mod {
                 int width = attrs["width"] != null ? int.Parse(attrs["width"].Value) : 16;
                 int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
 
-                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
 
                 ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
             }},
@@ -121,8 +121,8 @@ namespace Celeste.Mod {
                 int[] hideFrames = Calc.ReadCSVIntWithTricks(attrs["hideFrames"]?.Value ?? "0");
                 int[] showFrames = Calc.ReadCSVIntWithTricks(attrs["showFrames"]?.Value ?? "0");
 
-                hideRange = (int) ScaleRadius(((patch_Decal)decal).Scale, hideRange);
-                showRange = (int) ScaleRadius(((patch_Decal)decal).Scale, showRange);
+                hideRange = (int) decal.GetScaledRadius(hideRange);
+                showRange = (int) decal.GetScaledRadius(showRange);
 
                 ((patch_Decal)decal).MakeScaredAnimation(hideRange, showRange, idleFrames, hiddenFrames, showFrames, hideFrames);
             }},
@@ -137,9 +137,9 @@ namespace Celeste.Mod {
                 int startFade = attrs["startFade"] != null ? int.Parse(attrs["startFade"].Value) : 16;
                 int endFade = attrs["endFade"] != null ? int.Parse(attrs["endFade"].Value) : 24;
 
-                Vector2 offset = ScaleOffset(((patch_Decal)decal).Scale, offX, offY);
-                startFade = (int) ScaleRadius(((patch_Decal)decal).Scale, startFade);
-                endFade = (int) ScaleRadius(((patch_Decal)decal).Scale, endFade);
+                Vector2 offset = decal.GetScaledOffset(offX, offY);
+                startFade = (int) decal.GetScaledRadius(startFade);
+                endFade = (int) decal.GetScaledRadius(endFade);
 
                 decal.Add(new VertexLight(offset, color, alpha, startFade, endFade));
             }},
@@ -150,7 +150,7 @@ namespace Celeste.Mod {
                 int height = attrs["height"] != null ? int.Parse(attrs["height"].Value) : 16;
                 float alpha = attrs["alpha"] != null ? float.Parse(attrs["alpha"].Value) : 1f;
 
-                ScaleRectangle(((patch_Decal)decal).Scale, ref x, ref y, ref width, ref height);
+                decal.ScaleRectangle(ref x, ref y, ref width, ref height);
 
                 decal.Add(new LightOcclude(new Rectangle(x, y, width, height), alpha));
             }},
@@ -159,15 +159,17 @@ namespace Celeste.Mod {
             }},
         };
 
-        public static Vector2 ScaleOffset(Vector2 scale, float x, float y) {
-            return new Vector2(x * scale.X, y * scale.Y);
+        // Helper functions for scaling Decal Registry fields
+        public static Vector2 GetScaledOffset(this Decal self, float x, float y) {
+            return new Vector2(x * ((patch_Decal) self).Scale.X, y * ((patch_Decal) self).Scale.Y);
         }
 
-        public static float ScaleRadius(Vector2 scale, float radius) { 
-            return radius * ((Math.Abs(scale.X) + Math.Abs(scale.Y)) / 2f);
+        public static float GetScaledRadius(this Decal self, float radius) {
+            return radius * ((Math.Abs(((patch_Decal) self).Scale.X) + Math.Abs(((patch_Decal) self).Scale.Y)) / 2f);
         }
 
-        public static void ScaleRectangle(Vector2 scale, ref float x, ref float y, ref float width, ref float height) {
+        public static void ScaleRectangle(this Decal self, ref float x, ref float y, ref float width, ref float height) {
+            Vector2 scale = ((patch_Decal) self).Scale;
             x *= Math.Abs(scale.X);
             y *= Math.Abs(scale.Y);
             width *= Math.Abs(scale.X);
@@ -177,7 +179,8 @@ namespace Celeste.Mod {
             y = (scale.Y < 0) ? -y - height : y;
         }
 
-        public static void ScaleRectangle(Vector2 scale, ref int x, ref int y, ref int width, ref int height) {
+        public static void ScaleRectangle(this Decal self, ref int x, ref int y, ref int width, ref int height) {
+            Vector2 scale = ((patch_Decal) self).Scale;
             x = (int) (x * Math.Abs(scale.X));
             y = (int) (y * Math.Abs(scale.Y));
             width = (int) (width * Math.Abs(scale.X));
