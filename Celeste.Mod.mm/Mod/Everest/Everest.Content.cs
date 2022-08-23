@@ -269,12 +269,12 @@ namespace Celeste.Mod {
             if (e.ChangeType == WatcherChangeTypes.Changed && Directory.Exists(e.FullPath))
                 return;
 
-            Logger.Log("content", $"File updated: {e.FullPath} - {e.ChangeType}");
+            Logger.Log(LogLevel.Verbose, "content", $"File updated: {e.FullPath} - {e.ChangeType}");
             QueuedTaskHelper.Do(e.FullPath, () => Update(e.FullPath, e.FullPath));
         }
 
         private void FileRenamed(object source, RenamedEventArgs e) {
-            Logger.Log("content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
+            Logger.Log(LogLevel.Verbose, "content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
             QueuedTaskHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
         }
 
@@ -721,7 +721,7 @@ namespace Celeste.Mod {
                     format = ".yml";
 
                 } else if (file == "DecalRegistry.xml") {
-                    Logger.Log("Decal Registry", "found DecalRegistry.xml");
+                    Logger.Log(LogLevel.Verbose, "Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
 
@@ -941,7 +941,7 @@ namespace Celeste.Mod {
 
                 if (_ContentLoaded) {
                     // We're late-loading this mod and thus need to manually ingest new assets.
-                    Logger.Log(LogLevel.Info, "content", $"Late ingest via update for {meta.Name}");
+                    Logger.Log(LogLevel.Verbose, "content", $"Late ingest via update for {meta.Name}");
 
                     Stopwatch loadTimerPrev = Celeste.LoadTimer; // Trick AssetReloadHelper into insta-running callbacks.
                     Stopwatch loadTimer = Stopwatch.StartNew();
@@ -1011,7 +1011,7 @@ namespace Celeste.Mod {
                     if (Emoji.IsInitialized()) {
                         if (refreshEmojis(mapping)) {
                             MainThreadHelper.Do(() => {
-                                Logger.Log("content", "Reloading fonts after late emoji registration");
+                                Logger.Log(LogLevel.Verbose, "content", "Reloading fonts after late emoji registration");
                                 Fonts.Reload();
                             });
                         }
@@ -1042,7 +1042,7 @@ namespace Celeste.Mod {
                     }
                 } else if (mapping.PathVirtual.StartsWith("Graphics/Atlases/Gui/emoji/")) {
                     string emojiName = mapping.PathVirtual.Substring(27);
-                    Logger.Log("content", $"Late registering emoji: {emojiName}");
+                    Logger.Log(LogLevel.Verbose, "content", $"Late registering emoji: {emojiName}");
                     Emoji.Register(emojiName, GFX.Gui["emoji/" + emojiName]);
                     return true;
                 }

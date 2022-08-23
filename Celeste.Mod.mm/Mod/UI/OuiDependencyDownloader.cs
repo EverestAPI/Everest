@@ -85,7 +85,7 @@ namespace Celeste.Mod.UI {
                 }
                 Lines[Lines.Count - 1] = $"{Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS")} {Dialog.Clean("DEPENDENCYDOWNLOADER_DONE")}";
 
-                Logger.Log("OuiDependencyDownloader", "Computing dependencies to download...");
+                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", "Computing dependencies to download...");
 
                 // these mods are not installed currently, we will install them
                 Dictionary<string, ModUpdateInfo> modsToInstall = new Dictionary<string, ModUpdateInfo>();
@@ -112,10 +112,10 @@ namespace Celeste.Mod.UI {
 
                 foreach (EverestModuleMetadata dependency in MissingDependencies) {
                     if (Everest.Loader.Delayed.Any(delayedMod => dependency.Name == delayedMod.Item1.Name)) {
-                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is installed but failed to load, skipping");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is installed but load is delayed, skipping");
 
                     } else if (dependency.Name == "Everest") {
-                        Logger.Log("OuiDependencyDownloader", $"Everest should be updated");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"Everest should be updated");
                         shouldAutoExit = false;
 
                         if (dependency.Version.Major != 1 || dependency.Version.Build > 0 || dependency.Version.Revision > 0) {
@@ -130,20 +130,20 @@ namespace Celeste.Mod.UI {
                             }
                         }
                     } else if (tryUnblacklist(dependency, allModsInformation, modFilenamesToUnblacklist)) {
-                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
 
                     } else if (!availableDownloads.ContainsKey(dependency.Name)) {
-                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} was not found in the database");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} was not found in the database");
                         modsNotFound.Add(dependency.Name);
                         shouldAutoExit = false;
 
                     } else if (availableDownloads[dependency.Name].xxHash.Count > 1) {
-                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} has multiple versions and cannot be installed automatically");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} has multiple versions and cannot be installed automatically");
                         modsNotInstallableAutomatically.Add(dependency.Name);
                         shouldAutoExit = false;
 
                     } else if (!isVersionCompatible(dependency.Version, availableDownloads[dependency.Name].Version)) {
-                        Logger.Log("OuiDependencyDownloader", $"{dependency.Name} has a version in database ({availableDownloads[dependency.Name].Version}) that would not satisfy dependency ({dependency.Version})");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} has a version in database ({availableDownloads[dependency.Name].Version}) that would not satisfy dependency ({dependency.Version})");
 
                         // add the required version to the list of versions for this mod
                         HashSet<Version> requiredVersions = modsWithIncompatibleVersionInDatabase.TryGetValue(dependency.Name, out HashSet<Version> result) ? result : new HashSet<Version>();
@@ -164,12 +164,12 @@ namespace Celeste.Mod.UI {
                         }
 
                         if (installedVersion != null) {
-                            Logger.Log("OuiDependencyDownloader", $"{dependency.Name} is already installed and will be updated");
+                            Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is already installed and will be updated");
                             modsToUpdate[dependency.Name] = availableDownloads[dependency.Name];
                             modsToUpdateCurrentVersions[dependency.Name] = installedVersion;
 
                         } else {
-                            Logger.Log("OuiDependencyDownloader", $"{dependency.Name} will be installed");
+                            Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} will be installed");
                             modsToInstall[dependency.Name] = availableDownloads[dependency.Name];
                         }
                     }
@@ -316,7 +316,7 @@ namespace Celeste.Mod.UI {
                             // comment this line to unblacklist this mod.
                             blacklistTxt.WriteLine("# " + line);
                             modsLeftToUnblacklist.Remove(line);
-                            Logger.Log("OuiDependencyDownloader", "Commented out line from blacklist.txt: " + line);
+                            Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", "Commented out line from blacklist.txt: " + line);
                         } else {
                             // copy the line as is.
                             blacklistTxt.WriteLine(line);
@@ -328,7 +328,7 @@ namespace Celeste.Mod.UI {
                     // some mods we are supposed to unblacklist aren't in the blacklist.txt file...?
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED"));
                     foreach (string mod in modsLeftToUnblacklist) {
-                        Logger.Log("OuiDependencyDownloader", "This mod could not be found in blacklist.txt: " + mod);
+                        Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", "This mod could not be found in blacklist.txt: " + mod);
                     }
                     return false;
                 }
@@ -349,7 +349,7 @@ namespace Celeste.Mod.UI {
             try {
                 databaseVersion = new Version(databaseVersionString);
             } catch (Exception e) {
-                Logger.Log("OuiDependencyDownloader", $"Could not parse version number: {databaseVersionString}");
+                Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", $"Could not parse version number: {databaseVersionString}");
                 Logger.LogDetailed(e);
                 return false;
             }
@@ -435,10 +435,10 @@ namespace Celeste.Mod.UI {
                 // try to delete the file if it still exists.
                 if (File.Exists(downloadDestination)) {
                     try {
-                        Logger.Log("OuiDependencyDownloader", $"Deleting temp file {downloadDestination}");
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"Deleting temp file {downloadDestination}");
                         File.Delete(downloadDestination);
                     } catch (Exception) {
-                        Logger.Log("OuiDependencyDownloader", $"Removing {downloadDestination} failed");
+                        Logger.Log(LogLevel.Warn, "OuiDependencyDownloader", $"Removing {downloadDestination} failed");
                     }
                 }
             }

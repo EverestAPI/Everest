@@ -77,7 +77,7 @@ namespace Celeste.Mod.Core {
                 files.Sort(new LogRotationHelper.OldestFirst());
                 int historyToDelete = files.Count - historyToKeep;
                 foreach (string file in files.Take(historyToDelete)) {
-                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
+                    Logger.Log(LogLevel.Verbose, "core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
                     File.Delete(file);
                 }
             }
@@ -140,7 +140,7 @@ namespace Celeste.Mod.Core {
             ILCursor cursor = new ILCursor(il);
 
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
-                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
                 cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
             }
