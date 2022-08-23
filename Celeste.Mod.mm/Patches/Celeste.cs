@@ -130,7 +130,7 @@ namespace Celeste {
             // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
             if (logfile == "log.txt" && File.Exists("log.txt")) {
                 if (new FileInfo("log.txt").Length > 0) {
-                    // move the old log file to the LogHistory folder.
+                    // move the old log.txt to the LogHistory folder.
                     // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
                     // so we don't know how many files we should keep.
                     if (!Directory.Exists("LogHistory")) {
