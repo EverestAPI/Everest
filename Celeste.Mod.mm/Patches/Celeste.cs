@@ -124,23 +124,27 @@ namespace Celeste {
                 return;
             }
 
-            if (File.Exists("log.txt")) {
-                if (new FileInfo("log.txt").Length > 0) {
-                    // move the old log.txt to the LogHistory folder.
+            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOGFILE") ?? "log.txt";
+            string log_abspath = Path.Combine(Directory.GetCurrentDirectory(), logfile);
+
+            // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
+            if (logfile == "log.txt" && File.Exists(logfile)) {
+                if (new FileInfo(logfile).Length > 0) {
+                    // move the old log file to the LogHistory folder.
                     // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
                     // so we don't know how many files we should keep.
                     if (!Directory.Exists("LogHistory")) {
                         Directory.CreateDirectory("LogHistory");
                     }
-                    File.Move("log.txt", Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime("log.txt"))));
+                    File.Move(logfile, Path.Combine("LogHistory", LogRotationHelper.GetFileNameByDate(File.GetLastWriteTime(logfile))));
                 } else {
                     // log is empty! (this actually happens more often than you'd think, because of Steam re-opening Celeste)
                     // just delete it.
-                    File.Delete("log.txt");
+                    File.Delete(logfile);
                 }
             }
 
-            using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (Stream fileStream = new FileStream(log_abspath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter {
                 STDOUT = Console.Out,
