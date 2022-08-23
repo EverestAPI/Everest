@@ -125,7 +125,6 @@ namespace Celeste {
             }
 
             string logfile = Environment.GetEnvironmentVariable("EVEREST_LOGFILE") ?? "log.txt";
-            string log_abspath = Path.Combine(Directory.GetCurrentDirectory(), logfile);
 
             // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
             if (logfile == "log.txt" && File.Exists("log.txt")) {
@@ -144,7 +143,7 @@ namespace Celeste {
                 }
             }
 
-            using (Stream fileStream = new FileStream(log_abspath, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter {
                 STDOUT = Console.Out,
