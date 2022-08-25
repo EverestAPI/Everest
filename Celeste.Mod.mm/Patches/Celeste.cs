@@ -17,6 +17,8 @@ using System.Threading;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -124,7 +126,7 @@ namespace Celeste {
                 return;
             }
 
-            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOGFILE") ?? "log.txt";
+            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
 
             // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
             if (logfile == "log.txt" && File.Exists("log.txt")) {
@@ -141,6 +143,28 @@ namespace Celeste {
                     // just delete it.
                     File.Delete("log.txt");
                 }
+            } else {
+                // check if log filename is allowed
+                Regex regexBadCharacter = new Regex("[" + Regex.Escape(new string(Path.GetInvalidFileNameChars())) + "]");
+                Match match = regexBadCharacter.Match(logfile);
+
+                if (match.Success) {
+                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME contains invalid character(s): ", 100);
+
+                    while (match.Success) {
+                        foreach (Capture c in match.Groups[0].Captures)
+                            errorText.Append(c);
+
+                        match = match.NextMatch();
+                        if (match.Success)
+                            errorText.Append(" ");
+                    }
+
+                    throw new ArgumentException(errorText.ToString());
+                }
+
+                if (!logfile.EndsWith(".txt"))
+                    logfile += ".txt";
             }
 
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
