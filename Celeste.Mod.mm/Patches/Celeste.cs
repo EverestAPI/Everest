@@ -149,7 +149,7 @@ namespace Celeste {
                 Match match = regexBadCharacter.Match(logfile);
 
                 if (match.Success) {
-                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME contains invalid character(s): ", 100);
+                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME=\"{logfile}\" contains invalid character(s): ", 100);
 
                     while (match.Success) {
                         foreach (Capture c in match.Groups[0].Captures)
