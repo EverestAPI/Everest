@@ -197,6 +197,8 @@ namespace Celeste {
                 playerIntro = introType;
 
             try {
+                Logger.Log(LogLevel.Verbose, "LoadLevel", $"Loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
+
                 orig_LoadLevel(playerIntro, isFromLoader);
 
                 if (ShouldAutoPause) {
@@ -204,19 +206,14 @@ namespace Celeste {
                     Pause();
                 }
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading level {Session.Area}");
+                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint")) {
+                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelnospawn");
+                } else {
+                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", Session.Area.GetSID());
+                }
+
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
                 e.LogDetailed();
-
-                string message = Dialog.Get("postcard_levelloadfailed");
-                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint"))
-                    message = Dialog.Get("postcard_levelnospawn");
-                message = message
-                    .Replace("((player))", SaveData.Instance.Name)
-                    .Replace("((sid))", Session.Area.GetSID());
-
-                Entity helperEntity = new Entity();
-                helperEntity.Add(new Coroutine(ErrorRoutine(message)));
-                Add(helperEntity);
                 return;
             }
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
@@ -238,15 +235,6 @@ namespace Celeste {
                 // the heart will disappear after it is collected.
                 return AreaMode.Normal;
             }
-        }
-
-        private IEnumerator ErrorRoutine(string message) {
-            yield return null;
-
-            Audio.SetMusic(null);
-
-            LevelEnterExt.ErrorMessage = message;
-            LevelEnter.Go(new Session(Session?.Area ?? new AreaKey(1).SetSID("")), false);
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
@@ -500,6 +488,12 @@ namespace Celeste {
                 }
             }
         }
+
+        private void CheckForErrors() {
+            if (patch_LevelEnter.ErrorMessage != null) {
+                LevelEnter.Go(Session, false);
+            }
+        }
     }
 
     public static class LevelExt {
@@ -647,13 +641,17 @@ namespace MonoMod {
 
         public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+            MethodDefinition m_CheckForErrors = context.Method.DeclaringType.FindMethod("CheckForErrors");
             MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
             TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
             MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
 
             ILCursor cursor = new ILCursor(context);
 
-            // insert FixChaserStatesTimeStamp() at the begin
+            // Insert CheckForErrors() at the beginning so we can display an error screen if needed
+            cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
+
+            // insert FixChaserStatesTimeStamp()
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
 
             /* We expect something similar enough to the following:

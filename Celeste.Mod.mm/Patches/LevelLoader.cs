@@ -1,4 +1,5 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+﻿#pragma warning disable CS0108 // Member hides inherited member; missing new keyword
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
@@ -21,6 +22,10 @@ using MonoMod.Utils;
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
 
+        private bool started;
+        private Session session;
+        public bool Loaded { get; private set; }
+
         private static WeakReference<Thread> LastLoadingThread;
 
         public patch_LevelLoader(Session session, Vector2? startPosition = default)
@@ -28,10 +33,11 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        [PatchLevelLoaderOrigCtor]
         public extern void orig_ctor(Session session, Vector2? startPosition = default);
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default) {
-            Logger.Log(LogLevel.Info, "LevelLoader", "Loading level " + session?.Area.GetSID());
+            Logger.Log(LogLevel.Info, "LevelLoader", $"Loading map {session?.Area.GetSID() ?? "NULL"}");
 
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
@@ -74,86 +80,98 @@ namespace Celeste {
             // Clear any custom tileset sound paths
             patch_SurfaceIndex.IndexToCustomPath.Clear();
 
-            AreaData area = AreaData.Get(session);
-            MapMeta meta = area.GetMeta();
-            string path;
+            try {
+                AreaData area = AreaData.Get(session);
+                MapMeta meta = area.GetMeta();
+                string path;
 
-            path = meta?.BackgroundTiles;
-            if (string.IsNullOrEmpty(path))
-                path = Path.Combine("Graphics", "BackgroundTiles.xml");
-            GFX.BGAutotiler = new Autotiler(path);
+                path = meta?.BackgroundTiles;
+                if (string.IsNullOrEmpty(path))
+                    path = Path.Combine("Graphics", "BackgroundTiles.xml");
+                GFX.BGAutotiler = new Autotiler(path);
 
-            path = meta?.ForegroundTiles;
-            if (string.IsNullOrEmpty(path))
-                path = Path.Combine("Graphics", "ForegroundTiles.xml");
-            GFX.FGAutotiler = new Autotiler(path);
+                path = meta?.ForegroundTiles;
+                if (string.IsNullOrEmpty(path))
+                    path = Path.Combine("Graphics", "ForegroundTiles.xml");
+                GFX.FGAutotiler = new Autotiler(path);
 
-            path = meta?.AnimatedTiles;
-            if (string.IsNullOrEmpty(path))
-                path = Path.Combine("Graphics", "AnimatedTiles.xml");
-            GFX.AnimatedTilesBank = new AnimatedTilesBank();
-            XmlNodeList animatedData = Calc.LoadContentXML(path).GetElementsByTagName("sprite");
-            foreach (XmlElement el in animatedData)
-                if (el != null)
-                    GFX.AnimatedTilesBank.Add(
-                        el.Attr("name"),
-                        el.AttrFloat("delay", 0f),
-                        el.AttrVector2("posX", "posY", Vector2.Zero),
-                        el.AttrVector2("origX", "origY", Vector2.Zero),
-                        GFX.Game.GetAtlasSubtextures(el.Attr("path"))
-                    );
+                path = meta?.AnimatedTiles;
+                if (string.IsNullOrEmpty(path))
+                    path = Path.Combine("Graphics", "AnimatedTiles.xml");
+                GFX.AnimatedTilesBank = new AnimatedTilesBank();
+                XmlNodeList animatedData = Calc.LoadContentXML(path).GetElementsByTagName("sprite");
+                foreach (XmlElement el in animatedData)
+                    if (el != null)
+                        GFX.AnimatedTilesBank.Add(
+                            el.Attr("name"),
+                            el.AttrFloat("delay", 0f),
+                            el.AttrVector2("posX", "posY", Vector2.Zero),
+                            el.AttrVector2("origX", "origY", Vector2.Zero),
+                            GFX.Game.GetAtlasSubtextures(el.Attr("path"))
+                        );
 
-            GFX.SpriteBank = new SpriteBank(GFX.Game, Path.Combine("Graphics", "Sprites.xml"));
+                GFX.SpriteBank = new SpriteBank(GFX.Game, Path.Combine("Graphics", "Sprites.xml"));
 
-            path = meta?.Sprites;
-            if (!string.IsNullOrEmpty(path)) {
-                SpriteBank bankOrig = GFX.SpriteBank;
-                SpriteBank bankMod = new SpriteBank(GFX.Game, getModdedSpritesXml(path));
+                path = meta?.Sprites;
+                if (!string.IsNullOrEmpty(path)) {
+                    SpriteBank bankOrig = GFX.SpriteBank;
+                    SpriteBank bankMod = new SpriteBank(GFX.Game, getModdedSpritesXml(path));
 
-                foreach (KeyValuePair<string, SpriteData> kvpBank in bankMod.SpriteData) {
-                    string key = kvpBank.Key;
-                    SpriteData valueMod = kvpBank.Value;
+                    foreach (KeyValuePair<string, SpriteData> kvpBank in bankMod.SpriteData) {
+                        string key = kvpBank.Key;
+                        SpriteData valueMod = kvpBank.Value;
 
-                    if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
-                        IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
-                        IDictionary animsMod = valueMod.Sprite.GetAnimations();
-                        foreach (DictionaryEntry kvpAnim in animsMod) {
-                            animsOrig[kvpAnim.Key] = kvpAnim.Value;
+                        if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
+                            IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
+                            IDictionary animsMod = valueMod.Sprite.GetAnimations();
+                            foreach (DictionaryEntry kvpAnim in animsMod) {
+                                animsOrig[kvpAnim.Key] = kvpAnim.Value;
+                            }
+
+                            valueOrig.Sources.AddRange(valueMod.Sources);
+
+                            // replay the starting animation to be sure it is referring to the new sprite.
+                            valueOrig.Sprite.Stop();
+                            if (valueMod.Sprite.CurrentAnimationID != "") {
+                                valueOrig.Sprite.Play(valueMod.Sprite.CurrentAnimationID);
+                            }
+                        } else {
+                            bankOrig.SpriteData[key] = valueMod;
                         }
-
-                        valueOrig.Sources.AddRange(valueMod.Sources);
-
-                        // replay the starting animation to be sure it is referring to the new sprite.
-                        valueOrig.Sprite.Stop();
-                        if (valueMod.Sprite.CurrentAnimationID != "") {
-                            valueOrig.Sprite.Play(valueMod.Sprite.CurrentAnimationID);
-                        }
-                    } else {
-                        bankOrig.SpriteData[key] = valueMod;
                     }
                 }
+
+                // This is done exactly once in the vanilla GFX.LoadData method.
+                PlayerSprite.ClearFramesMetadata();
+                PlayerSprite.CreateFramesMetadata("player");
+                PlayerSprite.CreateFramesMetadata("player_no_backpack");
+                PlayerSprite.CreateFramesMetadata("badeline");
+                PlayerSprite.CreateFramesMetadata("player_badeline");
+                PlayerSprite.CreateFramesMetadata("player_playback");
+
+                path = meta?.Portraits;
+                if (string.IsNullOrEmpty(path))
+                    path = Path.Combine("Graphics", "Portraits.xml");
+                GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
+            } catch (Exception e) {
+                string sid = session?.Area.GetSID() ?? "NULL";
+                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading map {sid}");
+                e.LogDetailed();
             }
-
-            // This is done exactly once in the vanilla GFX.LoadData method.
-            PlayerSprite.ClearFramesMetadata();
-            PlayerSprite.CreateFramesMetadata("player");
-            PlayerSprite.CreateFramesMetadata("player_no_backpack");
-            PlayerSprite.CreateFramesMetadata("badeline");
-            PlayerSprite.CreateFramesMetadata("player_badeline");
-            PlayerSprite.CreateFramesMetadata("player_playback");
-
-            path = meta?.Portraits;
-            if (string.IsNullOrEmpty(path))
-                path = Path.Combine("Graphics", "Portraits.xml");
-            GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
 
             orig_ctor(session, startPosition);
 
-            LastLoadingThread = patch_RunThread.Current;
+            if (patch_LevelEnter.ErrorMessage == null) {
+                RunThread.Start(new Action(StartLoadingThread), "LEVEL_LOADER");
+                LastLoadingThread = patch_RunThread.Current;
 
-            // get rid of all entities in the pooler to make sure they don't keep references to the previous level.
-            foreach (Queue<Entity> entities in ((patch_Pooler) Engine.Pooler).Pools.Values) {
-                entities.Clear();
+                // get rid of all entities in the pooler to make sure they don't keep references to the previous level.
+                foreach (Queue<Entity> entities in ((patch_Pooler) Engine.Pooler).Pools.Values) {
+                    entities.Clear();
+                }
+            } else {
+                Loaded = true; // We encountered an error, so skip the loading screen
             }
         }
 
@@ -167,10 +185,49 @@ namespace Celeste {
         [PatchLevelLoaderThread] // ... except for manually manipulating the method via MonoModRules
         private extern void LoadingThread();
 
+        private void StartLoadingThread() {
+            try {
+                LoadingThread();
+            } catch (Exception e) {
+                string sid = session?.Area.GetSID() ?? "NULL";
+                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading map {sid}");
+                e.LogDetailed();
+                Loaded = true;
+            }
+        }
+
+        [MonoModIgnore]
+        [MonoModLinkTo("Monocle.Scene", "System.Void Update()")]
+        public extern void base_Update();
+
+        [MonoModIgnore]
+        private extern void StartLevel();
+
+        [MonoModReplace]
+        public override void Update() {
+            base_Update();
+            if (Loaded && !started) {
+                if (patch_LevelEnter.ErrorMessage == null) {
+                    StartLevel();
+                }
+                else {
+                    LevelEnter.Go(session, false); // We encountered an error, so display the error screen
+                }
+            }
+        }
+
     }
 }
 
 namespace MonoMod {
+
+    /// <summary>
+    /// Removes the level loading thread call so we can create it in the new constructor instead.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderOrigCtor))]
+    class PatchLevelLoaderOrigCtorAttribute : Attribute { }
+
     /// <summary>
     /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
     /// </summary>
@@ -178,6 +235,13 @@ namespace MonoMod {
     class PatchLevelLoaderThreadAttribute : Attribute { }
 
     static partial class MonoModRules {
+
+        public static void PatchLevelLoaderOrigCtor(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.LevelLoader", "set_Level"));
+            // removes RunThread.Start(new Action(this.StartLoadingThread), "LEVEL_LOADER", false);
+            cursor.RemoveRange(6);
+        }
 
         public static void PatchLevelLoaderThread(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
