@@ -165,24 +165,16 @@ namespace Celeste.Mod.Meta {
             if (!string.IsNullOrEmpty(Sprites )) { other.Sprites = Sprites; }
             if (!string.IsNullOrEmpty(Portraits )) { other.Portraits = Portraits; }
             if (OverrideASideMeta != null) { other.OverrideASideMeta = OverrideASideMeta; }
-            Logger.Log(LogLevel.Warn, "DEBUG", "flag -1");
             if (Modes != null) {
-                Logger.Log(LogLevel.Warn, "DEBUG", "flag -2");
                 if (other.Modes == null) {
                     other.Modes = Modes;
                 } else {
-                    Logger.Log(LogLevel.Warn, "DEBUG", "flag -3");
                     for (var i = 0; i < Modes.Length && i < other.Modes.Length; i++) {
-                        Logger.Log(LogLevel.Warn, "DEBUG", "flag -4");
                         if (other.Modes[i] == null) {
-                            Logger.Log(LogLevel.Warn, "DEBUG", "flag -5.1");
-                            Logger.Log(LogLevel.Warn, "DEBUG", $"{Modes[i]?.AudioState.Music}");
                             other.Modes[i] = Modes[i];
                         } else if (Modes[i] != null) {
-                            Logger.Log(LogLevel.Warn, "DEBUG", "flag -5.2");
                             Modes[i].AddTo(other.Modes[i]);
                         } else {
-                            Logger.Log(LogLevel.Warn, "DEBUG", "flag -5.3");
                         }
                     }
                 }
@@ -415,13 +407,10 @@ namespace Celeste.Mod.Meta {
         }
 
         public void AddTo(MapMetaModeProperties other) {
-            Logger.Log(LogLevel.Warn, "DEBUG", "flag 0");
             if (AudioState != null) {
-                Logger.Log(LogLevel.Warn, "DEBUG", "flag 1");
                 if (other.AudioState == null) {
                     other.AudioState = AudioState;
                 } else {
-                    Logger.Log(LogLevel.Warn, "DEBUG", "flag 2");
                     AudioState.AddTo(other.AudioState);
                 }
             }
@@ -468,7 +457,6 @@ namespace Celeste.Mod.Meta {
         }
 
         public void AddTo(MapMetaAudioState other) {
-            Logger.Log(LogLevel.Warn, "DEBUG", $"flag 3 {Music}, {other.Music}");
             if (!string.IsNullOrEmpty(Music)) { other.Music = Music; }
             if (!string.IsNullOrEmpty(Ambience)) { other.Ambience = Ambience; }
         }

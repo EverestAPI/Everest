@@ -183,14 +183,22 @@ namespace Celeste {
             MapMeta metaParsedFromFile = null;
             MapMeta metaParsed = null;
 
-            if (Everest.Content.TryGet($"Maps/{area.Mode[(int)mode].Path}", out var asset)) {
+            var path = $"Maps/{area.Mode[(int)mode].Path}";
+            if (Everest.Content.TryGet(path, out var asset)) {
                 metaParsedFromFile = asset.GetMeta<MapMeta>();
-                metaParsedFromFile.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsedFromFile.Mode, metaParsedFromFile.Modes[(int)mode]);
-                metaParsedFromFile.Mode = null;
+                if (metaParsedFromFile != null) {
+                    if (metaParsedFromFile.Modes == null) {
+                        metaParsedFromFile.Modes = new MapMetaModeProperties[3];
+                    }
+                    if (metaParsedFromFile.Modes.Length < 3) {
+                        metaParsedFromFile.Modes = metaParsedFromFile.Modes.Concat(new MapMetaModeProperties[3 - metaParsedFromFile.Modes.Length]).ToArray();
+                    }
+                    metaParsedFromFile.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsedFromFile.Mode, metaParsedFromFile.Modes[(int)mode]);
+                    metaParsedFromFile.Mode = null;
+                }
             }
 
             if (meta != null) {
-                Logger.Log(LogLevel.Warn, "DEBUG", "flag a");
                 metaParsed = new MapMeta(meta);
                 metaParsed.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsed.Mode, metaParsed.Modes[(int)mode]);
                 metaParsed.Mode = null;
