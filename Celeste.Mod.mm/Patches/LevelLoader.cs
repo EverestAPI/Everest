@@ -172,7 +172,7 @@ namespace Celeste {
 
 namespace MonoMod {
     /// <summary>
-    /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
+    /// Adds a SubHudRenderer to the level and invokes the OnLoadingThread event at the end of the loading thread.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderThread))]
     class PatchLevelLoaderThreadAttribute : Attribute { }
@@ -220,6 +220,14 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+            /* ---------------------------------------------------- */
+            MethodDefinition m_Everest_Events_LevelLoader_LoadingThread = MonoModRule.Modder.Module.GetType("Celeste.Mod.Everest/Events/LevelLoader").FindMethod("System.Void LoadingThread(Celeste.Level)");
+
+            // Now we want to move to just before the end of the loading thread and invoke an event for mods to hook
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.Level", "Pathfinder"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+            cursor.Emit(OpCodes.Call, m_Everest_Events_LevelLoader_LoadingThread);
         }
 
     }
