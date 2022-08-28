@@ -163,7 +163,7 @@ namespace Celeste {
             orig_ctor(session, startPosition);
 
             if (patch_LevelEnter.ErrorMessage == null) {
-                RunThread.Start(new Action(StartLoadingThread), "LEVEL_LOADER");
+                RunThread.Start(new Action(LoadingThread_Safe), "LEVEL_LOADER");
                 LastLoadingThread = patch_RunThread.Current;
 
                 // get rid of all entities in the pooler to make sure they don't keep references to the previous level.
@@ -185,7 +185,7 @@ namespace Celeste {
         [PatchLevelLoaderThread] // ... except for manually manipulating the method via MonoModRules
         private extern void LoadingThread();
 
-        private void StartLoadingThread() {
+        private void LoadingThread_Safe() {
             try {
                 LoadingThread();
             } catch (Exception e) {
@@ -239,7 +239,7 @@ namespace MonoMod {
         public static void PatchLevelLoaderOrigCtor(ILContext context, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Celeste.LevelLoader", "set_Level"));
-            // removes RunThread.Start(new Action(this.StartLoadingThread), "LEVEL_LOADER", false);
+            // removes RunThread.Start(new Action(this.LoadingThread), "LEVEL_LOADER", false);
             cursor.RemoveRange(6);
         }
 
