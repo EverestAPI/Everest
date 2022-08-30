@@ -7,7 +7,8 @@ namespace Celeste.Mod.Core {
     public class CoreMapDataProcessor : EverestMapDataProcessor {
 
         public int Checkpoint;
-        public int StrawberryInCheckpoint;
+        public Dictionary<int, HashSet<int>> UsedBerryIndicesPerCheckpoint;
+        public Dictionary<int, List<BinaryPacker.Element>> AutomaticBerriesPerCheckpoint;
         public List<CheckpointData> CheckpointsAuto;
         public string[] LevelTags;
         public string LevelName;
@@ -15,7 +16,8 @@ namespace Celeste.Mod.Core {
 
         public override void Reset() {
             Checkpoint = 0;
-            StrawberryInCheckpoint = 0;
+            UsedBerryIndicesPerCheckpoint = new Dictionary<int, HashSet<int>>();
+            AutomaticBerriesPerCheckpoint = new Dictionary<int, List<BinaryPacker.Element>>();
             CheckpointsAuto = new List<CheckpointData>();
             TotalStrawberriesIncludingUntracked = 0;
         }
@@ -165,13 +167,24 @@ namespace Celeste.Mod.Core {
                                 }
                             }
                             Checkpoint++;
-                            StrawberryInCheckpoint = 0;
                         }
                     }
 
                     // then, auto-assign strawberries and cassettes to checkpoints.
                     foreach (BinaryPacker.Element entity in levelChild.Children)
                         Context.Run("entity:" + entity.Name, entity);
+
+                    foreach (var checkpoint in AutomaticBerriesPerCheckpoint) {
+                        int strawberryInCheckpoint = 0;
+                        UsedBerryIndicesPerCheckpoint.TryGetValue(checkpoint.Key, out var usedIndices);
+                        foreach (BinaryPacker.Element berry in checkpoint.Value) {
+                            while (usedIndices?.Contains(strawberryInCheckpoint) ?? false) {
+                                    strawberryInCheckpoint++;
+                            }
+                            berry.SetAttr("order", strawberryInCheckpoint);
+                            strawberryInCheckpoint++;
+                        }
+                    }
                 } },
 
                 { "entity:cassette", entity => {
@@ -189,10 +202,23 @@ namespace Celeste.Mod.Core {
                     {
                         if (entity.AttrInt("checkpointID", -1) == -1)
                             entity.SetAttr("checkpointID", Checkpoint);
-                        if (entity.AttrInt("order", -1) == -1)
-                            entity.SetAttr("order", StrawberryInCheckpoint);
-                        entity.SetAttr("checkpointIDParented", Checkpoint + (ParentMode.Checkpoints?.Length ?? 0));
-                        StrawberryInCheckpoint++;
+                        int checkpoint = entity.AttrInt("checkpointID", -1);
+                        int order = entity.AttrInt("order", -1);
+                        if (order == -1) {
+                            if (!AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
+                                AutomaticBerriesPerCheckpoint[checkpoint] = new List<BinaryPacker.Element>();
+                            }
+                            AutomaticBerriesPerCheckpoint[checkpoint].Add(entity);
+                        } else {
+                            if (!UsedBerryIndicesPerCheckpoint.ContainsKey(checkpoint)) {
+                                UsedBerryIndicesPerCheckpoint[checkpoint] = new HashSet<int>();
+                            }
+                            if (UsedBerryIndicesPerCheckpoint[checkpoint].Contains(order)) {
+                                Logger.Log(LogLevel.Warn, "core", $"Duplicate berry order {order} in checkpoint {checkpoint} of map {Mode.Path}.");
+                            }
+                            UsedBerryIndicesPerCheckpoint[checkpoint].Add(order);
+                        }
+                        entity.SetAttr("checkpointIDParented", checkpoint + (ParentMode.Checkpoints?.Length ?? 0));
                     }
                 } }
             };
