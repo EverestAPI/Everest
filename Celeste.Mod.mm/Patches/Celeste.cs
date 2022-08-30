@@ -66,6 +66,8 @@ namespace Celeste {
                     writer.WriteLine("# FNA only: force OpenGL (might be necessary to bypass a load crash on some PCs).");
                     writer.WriteLine("#--graphics OpenGL");
                     writer.WriteLine();
+                    writer.WriteLine("# Change default log level (verbose will print all logs).");
+                    writer.WriteLine("#--loglevel verbose");
 
                     if (File.Exists("launch.txt")) {
                         using (StreamReader reader = File.OpenText("launch.txt")) {
