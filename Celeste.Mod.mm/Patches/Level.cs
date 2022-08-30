@@ -197,7 +197,7 @@ namespace Celeste {
                 playerIntro = introType;
 
             try {
-                Logger.Log(LogLevel.Verbose, "LoadLevel", $"Loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
+                Logger.Log(LogLevel.Verbose, "LoadLevel", $"Loading room {Session.LevelData.Name} of {Session.Area.GetSID()}");
 
                 orig_LoadLevel(playerIntro, isFromLoader);
 
@@ -206,13 +206,15 @@ namespace Celeste {
                     Pause();
                 }
             } catch (Exception e) {
-                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint")) {
-                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelnospawn");
-                } else {
-                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", Session.Area.GetSID());
+                if (patch_LevelEnter.ErrorMessage == null) {
+                    if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint")) {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelnospawn");
+                    } else {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", Session.Area.GetSID());
+                    }
                 }
 
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of {Session.Area.GetSID()}");
                 e.LogDetailed();
                 return;
             }
@@ -393,7 +395,7 @@ namespace Celeste {
             }
 
             if (!_LoadStrings.Contains(entityData.Name)) {
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading entity {entityData.Name}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading entity {entityData.Name}. Room: {entityData.Level.Name} Position: {entityData.Position}");
             }
 
             return false;

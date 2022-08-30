@@ -38,7 +38,7 @@ namespace Celeste {
             if (xml.HasAttr("scanWidth")) {
                 int scanWidth = xml.AttrInt("scanWidth");
                 if (scanWidth <= 0 || scanWidth % 2 == 0)
-                    throw new Exception("Tileset scan width must be a positive, odd integer.");
+                    throw new ArgumentException($"Invalid scan width for tileset with id '{data.ID}'. Scan width must be a positive, odd integer.");
 
                 data.ScanWidth = scanWidth;
             } else
@@ -48,7 +48,7 @@ namespace Celeste {
                 int scanHeight = xml.AttrInt("scanHeight");
 
                 if (scanHeight <= 0 || scanHeight % 2 == 0)
-                    throw new Exception("Tileset scan height must be a positive, odd integer.");
+                    throw new ArgumentException($"Invalid scan height for tileset with id '{data.ID}'. Tileset scan height must be a positive, odd integer.");
 
                 data.ScanHeight = scanHeight;
             } else
@@ -65,7 +65,7 @@ namespace Celeste {
             if (data.CustomFills == null && data.ScanWidth == 3 && data.ScanHeight == 3 && !xml.HasChild("define")) // ReadIntoCustomTemplate can handle vanilla templates but meh
                 orig_ReadInto(data, tileset, xml);
             else {
-                Logger.Log(LogLevel.Debug, "Autotiler", $"Reading Tileset width scan height {data.ScanHeight} and scan width {data.ScanWidth}.");
+                Logger.Log(LogLevel.Debug, "Autotiler", $"Reading template for tileset with id '{data.ID}', scan height {data.ScanHeight}, and scan width {data.ScanWidth}.");
                 ReadIntoCustomTemplate(data, tileset, xml);
             }
 
@@ -90,12 +90,12 @@ namespace Celeste {
                         patch_Tiles tiles;
                         if (text == "center") {
                             if (data.CustomFills != null)
-                                Logger.Log(LogLevel.Warn, "Autotiler", "\"Center\" tiles will not be used if Custom Fills are present.");
+                                Logger.Log(LogLevel.Warn, "Autotiler", $"\"Center\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Center;
                         } else if (text == "padding") {
                             if (data.CustomFills != null)
-                                Logger.Log(LogLevel.Warn, "Autotiler", "\"Padding\" tiles will not be used if Custom Fills are present.");
+                                Logger.Log(LogLevel.Warn, "Autotiler", $"\"Padding\" tiles for tileset with id '{data.ID}' will not be used if custom fills are present.");
 
                             tiles = data.Padded;
                         } else if (text.StartsWith("fill")) {
@@ -221,7 +221,7 @@ namespace Celeste {
             else if (char.IsUpper(c))
                 // Take the letter, convert it into a number from 37 to 63
                 return (byte) ((c - 'A') + 37);
-            throw new ArgumentException("Parameter 'c' must be an uppercase or lowercase letter.");
+            throw new ArgumentException("Custom tileset mask filter must be an uppercase or lowercase letter.");
         }
 
         [MonoModIgnore]
@@ -241,11 +241,16 @@ namespace Celeste {
             char tile = GetTile(mapData, x, y, forceFill, forceID, behaviour);
             if (IsEmpty(tile))
                 return null;
-            patch_TerrainType terrainType;
-            try { // Satisfies error handling for the orig_ method too.
-                terrainType = lookup[tile];
-            } catch (KeyNotFoundException e) {
-                throw new KeyNotFoundException($"Level contains a tileset with an id of '{tile}' that is not defined.", e);
+
+            // Satisfies error handling for the orig_ method too.
+            if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
+                throw new KeyNotFoundException { 
+                    Data = { 
+                        { "x", x },
+                        { "y", y },
+                        { "id", tile }
+                    } 
+                };
             }
 
             int width = terrainType.ScanWidth;
