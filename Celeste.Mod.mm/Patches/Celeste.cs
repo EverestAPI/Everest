@@ -59,6 +59,7 @@ namespace Celeste {
                     writer.WriteLine("# Add any Everest launch flags here.");
                     writer.WriteLine("# Lines starting with # are ignored.");
                     writer.WriteLine("# All options here are disabled by default.");
+                    writer.WriteLine("# Full list: https://github.com/EverestAPI/Resources/wiki/Command-Line-Arguments");
                     writer.WriteLine();
                     writer.WriteLine("# Windows only: open a separate log console window.");
                     writer.WriteLine("#--console");
