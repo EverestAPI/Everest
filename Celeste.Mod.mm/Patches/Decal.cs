@@ -29,6 +29,9 @@ namespace Celeste {
 #pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
         private List<MTexture> textures;
 #pragma warning restore CS0649
+
+        public float Rotation = 0f;
+
         private bool scaredAnimal;
 
         private float hideRange;
@@ -45,22 +48,43 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        [MonoModIgnore]
-        private class CoreSwapImage : Component {
-            public CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
-                // no-op
+        private class patch_CoreSwapImage : Component {
+            #pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
+            private MTexture hot;
+            private MTexture cold;
+            #pragma warning restore CS0649
+
+            public patch_CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public extern void orig_Render();
+            public override void Render() {
+                (((base.Scene as Level).CoreMode == Session.CoreModes.Cold) ? cold : hot).DrawCentered(
+                    ((patch_Decal) Entity).Position,
+                    Color.White,
+                    ((patch_Decal) Entity).scale,
+                    ((patch_Decal) Entity).Rotation);
             }
         }
 
-        [MonoModIgnore]
-        private class DecalImage : Component {
-            public DecalImage() : base(active: false, visible: true) {
+        private class patch_DecalImage : Component {
+            public patch_DecalImage()
+                : base(active: false, visible: true) {
                 // no-op
+            }
+
+            public extern void orig_Render();
+            public override void Render() {
+                ((patch_Decal) Entity).textures[(int) ((patch_Decal) Entity).frame].DrawCentered(
+                    ((patch_Decal) Entity).Position,
+                    Color.White,
+                    ((patch_Decal) Entity).scale,
+                    ((patch_Decal) Entity).Rotation);
             }
         }
 
         private class FlagSwapImage : Component {
-
             private string flag;
             private List<MTexture> off;
             private List<MTexture> on;
@@ -82,7 +106,11 @@ namespace Celeste {
 
             public override void Render() {
                 if (activeTextures.Count > 0)
-                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale);
+                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(
+                        Decal.Position,
+                        Color.White,
+                        Decal.scale,
+                        Decal.Rotation);
             }
         }
 
@@ -137,7 +165,7 @@ namespace Celeste {
 
         [Obsolete("Use MakeFlagSwap with the cold flag instead.")]
         public void MakeCoreSwap(string coldPath, string hotPath) {
-            Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+            Add(image = new patch_CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
         }
 
         public void MakeFlagSwap(string flag, string offPath, string onPath) {
@@ -240,7 +268,7 @@ namespace Celeste {
 
                 Everest.Events.Decal.HandleDecalRegistry(this, info);
                 if (image == null) {
-                    Add(image = new DecalImage());
+                    Add(image = new patch_DecalImage());
                 }
 
             }
@@ -262,7 +290,6 @@ namespace Celeste {
     }
 
     public static class DecalExt {
-
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)

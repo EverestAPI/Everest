@@ -17,6 +17,7 @@ namespace Celeste {
 
         [MonoModIgnore]
         [PatchLevelDataBerryTracker]
+        [PatchLevelDataDecalLoader]
         public extern void orig_ctor(BinaryPacker.Element data);
 
         [MonoModConstructor]
@@ -32,6 +33,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataBerryTracker))]
     class PatchLevelDataBerryTracker : Attribute { }
+
+    /// <summary>
+    /// A patch for the decal loading, allowing for rotated decals.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataDecalLoader))]
+    class PatchLevelDataDecalLoader : Attribute { }
 
     static partial class MonoModRules {
 
@@ -63,5 +70,61 @@ namespace MonoMod {
             }
         }
 
+
+        public static void PatchLevelDataDecalLoader(ILContext context, CustomAttribute attrib) {
+            TypeDefinition DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
+            TypeDefinition BinaryPackerElement = MonoModRule.Modder.FindType("Celeste.BinaryPacker/Element").Resolve();
+
+            FieldDefinition f_DecalDataRotation = DecalData.FindField("Rotation");
+            MethodDefinition m_BinaryPackerElementAttrFloat = BinaryPackerElement.FindMethod("AttrFloat");
+
+            ILCursor cursor = new ILCursor(context);
+
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCallvirt("System.Collections.Generic.List`1<Celeste.DecalData>", "Add"))) {
+                /*
+                we are inserting:
+
+                IL_0a5f: dup
+                IL_0a60: ldloc.s 11
+                IL_0a62: ldfld class [mscorlib]System.Collections.Generic.Dictionary`2<string, object> Celeste.BinaryPacker/Element::Attributes
+                IL_0a67: ldstr "texture"
+                IL_0a6c: callvirt instance !1 class [mscorlib]System.Collections.Generic.Dictionary`2<string, object>::get_Item(!0)
+                IL_0a71: castclass [mscorlib]System.String
+                IL_0a76: stfld string Celeste.DecalData::Texture
+                     ->  dup
+                         ldloc.s 11
+                         ldstr "rotation"
+                         ldc_r4 0.0
+                         callvirt instance float32 Celeste.BinaryPacker/Element::AttrFloat(string, float32)
+                         stfld float32 Celeste.DecalData::Rotation
+                IL_0a7b: callvirt instance void class [mscorlib]System.Collections.Generic.List`1<class Celeste.DecalData>::Add(!0)
+
+                in both places where a DecalData instance is added to a List
+                */
+
+                // first we find the binarypacker element representing the decal:
+                cursor.FindPrev(out ILCursor[] packer_element_loc_cursors, instr => instr.MatchLdloc(out int _));
+                packer_element_loc_cursors[0].Next.MatchLdloc(out int packer_element_loc);
+
+                // now, we duplicate the DecalData reference
+                cursor.Emit(OpCodes.Dup);
+                // ask for the rotation field from the packer element, or a default of 0.0f
+                cursor.Emit(OpCodes.Ldloc, packer_element_loc);
+                cursor.Emit(OpCodes.Ldstr, "rotation");
+                cursor.Emit(OpCodes.Ldc_R4, 0.0f);
+                cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
+                // store the rotation in the decaldata
+                cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
+
+                // make sure we won't find this location the next time we TryGotoNext
+                cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("System.Collections.Generic.List`1<Celeste.DecalData>", "Add"));
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
+        }
     }
 }
