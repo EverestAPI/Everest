@@ -48,11 +48,27 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        private class patch_DecalImage : Component {
+            public patch_DecalImage()
+                : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            public extern void orig_Render();
+            public override void Render() {
+                ((patch_Decal) Entity).textures[(int) ((patch_Decal) Entity).frame].DrawCentered(
+                    ((patch_Decal) Entity).Position,
+                    Color.White,
+                    ((patch_Decal) Entity).scale,
+                    ((patch_Decal) Entity).Rotation);
+            }
+        }
+
         private class patch_CoreSwapImage : Component {
-            #pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
+#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
             private MTexture hot;
             private MTexture cold;
-            #pragma warning restore CS0649
+#pragma warning restore CS0649
 
             public patch_CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -61,22 +77,6 @@ namespace Celeste {
             public extern void orig_Render();
             public override void Render() {
                 (((base.Scene as Level).CoreMode == Session.CoreModes.Cold) ? cold : hot).DrawCentered(
-                    ((patch_Decal) Entity).Position,
-                    Color.White,
-                    ((patch_Decal) Entity).scale,
-                    ((patch_Decal) Entity).Rotation);
-            }
-        }
-
-        private class patch_DecalImage : Component {
-            public patch_DecalImage()
-                : base(active: false, visible: true) {
-                // no-op
-            }
-
-            public extern void orig_Render();
-            public override void Render() {
-                ((patch_Decal) Entity).textures[(int) ((patch_Decal) Entity).frame].DrawCentered(
                     ((patch_Decal) Entity).Position,
                     Color.White,
                     ((patch_Decal) Entity).scale,
@@ -135,9 +135,70 @@ namespace Celeste {
         [MonoModPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
 
-        [MonoModIgnore]
+        [MonoModReplace]
         [MonoModPublic]
-        public extern void MakeMirror(string path, bool keepOffsetsClose);
+        public void MakeMirror(string path, bool keepOffsetsClose) {
+            if (keepOffsetsClose) {
+                MakeMirror(path, GetMirrorOffset());
+                return;
+            }
+
+            Depth = 9500;
+            foreach (MTexture mask in GFX.Game.GetAtlasSubtextures("mirrormasks/" + path)) {
+                MirrorSurface surface = new MirrorSurface();
+                surface.ReflectionOffset = GetMirrorOffset();
+                surface.OnRender = delegate {
+                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
+                };
+                Add(surface);
+            }
+        }
+
+        [MonoModReplace]
+        [MonoModPublic]
+        public void MakeMirror(string path, Vector2 offset) {
+            Depth = 9500;
+            foreach (MTexture mask in GFX.Game.GetAtlasSubtextures("mirrormasks/" + path)) {
+                MirrorSurface surface = new MirrorSurface();
+                surface.ReflectionOffset = offset + new Vector2(-2f + Calc.Random.NextFloat(4f), -2f + Calc.Random.NextFloat(4f));
+                surface.OnRender = delegate {
+                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
+                };
+                Add(surface);
+            }
+        }
+
+        [MonoModReplace]
+        [MonoModPublic]
+        // only used for that one big crystal in reflection
+        public void MakeMirrorSpecialCase(string path, Vector2 offset) {
+            Depth = 9500;
+            List<MTexture> masks = GFX.Game.GetAtlasSubtextures("mirrormasks/" + path);
+            for (int mask_num = 0; mask_num < masks.Count; mask_num++) {
+                Vector2 mini_offset;
+                switch (mask_num) {
+                    case 2:
+                        mini_offset = new Vector2(4f, 2f);
+                        break;
+                    case 6:
+                        mini_offset = new Vector2(-2f, 0f);
+                        break;
+                    default:
+                        mini_offset = new Vector2(-2f + Calc.Random.NextFloat(4f), -2f + Calc.Random.NextFloat(4f));
+                        break;
+                }
+                MTexture mask = masks[mask_num];
+                MirrorSurface surface = new MirrorSurface();
+                surface.ReflectionOffset = offset + mini_offset;
+                surface.OnRender = delegate {
+                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
+                };
+                Add(surface);
+            }
+        }
+
+        [MonoModIgnore]
+        private extern Vector2 GetMirrorOffset();
 
         [MonoModIgnore]
         [MonoModPublic]
