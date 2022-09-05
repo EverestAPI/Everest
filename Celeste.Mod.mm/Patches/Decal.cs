@@ -48,6 +48,42 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        private class patch_Banner : Component {
+#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
+            public float WaveSpeed;
+            public float WaveAmplitude;
+            public int SliceSize;
+            public float SliceSinIncrement;
+            public bool EaseDown;
+            public float Offset;
+            public float WindMultiplier;
+            private float sineTimer;
+            public List<List<MTexture>> Segments;
+#pragma warning restore CS0649
+
+            private patch_Decal decal => (patch_Decal) base.Entity;
+
+            public patch_Banner()
+                : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModReplace]
+            public override void Render() {
+                MTexture tex = decal.textures[(int) decal.frame];
+                List<MTexture> segments = Segments[(int) decal.frame];
+                for (int i = 0; i < segments.Count; i++) {
+                    float num = (EaseDown ? ((float) i / (float) segments.Count) : (1f - (float) i / (float) segments.Count)) * WindMultiplier;
+                    float x = (float) (Math.Sin(sineTimer * WaveSpeed + (float) i * SliceSinIncrement) * (double) num * (double) WaveAmplitude + (double) (num * Offset));
+                    segments[i].Draw(position: decal.Position + new Vector2(x, 0f),
+                                 origin: new Vector2(tex.Width / 2, tex.Height / 2 - i * SliceSize),
+                                 Color.White,
+                                 decal.scale,
+                                 decal.Rotation);
+                }
+            }
+        }
+
         private class patch_DecalImage : Component {
             public patch_DecalImage()
                 : base(active: false, visible: true) {
@@ -278,6 +314,7 @@ namespace Celeste {
             sprite.Add("hide", 0.1f, "hidden", hideFrames.Select(i => textures[i]).ToArray());
             sprite.Play("idle", restart: true);
             sprite.Scale = scale;
+            sprite.Rotation = Rotation;
             sprite.CenterOrigin();
             Add(sprite);
             this.hideRange = hideRange;
