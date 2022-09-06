@@ -26,7 +26,7 @@ namespace Celeste {
 
 namespace MonoMod {
     /// <summary>
-    /// Patches the method to begin a wrapping spritebatch for parallaxes.
+    /// Patches the method to render parallaxes using a wrapping SamplerState.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchBackdropRendererRender))]
     class PatchBackdropRendererRenderAttribute : Attribute { }
@@ -36,6 +36,7 @@ namespace MonoMod {
         public static void PatchBackdropRendererRender(ILContext context, CustomAttribute attrib) {
             MethodReference m_BackDropRenderer_StartSpritebatchLooping = context.Method.DeclaringType.FindMethod("StartSpritebatchLooping");
             TypeReference t_Parallax = context.Module.GetType("Celeste.Parallax");
+            MethodReference n_Parallax_ImprovedRender = t_Parallax.Resolve().FindMethod("ImprovedRender");
             
             ILCursor cursor = new ILCursor(context);
 
@@ -53,6 +54,22 @@ namespace MonoMod {
             cursor.MarkLabel(nextIf);
             cursor.Index--;
             cursor.Emit(OpCodes.Br, nextIf);
+
+            // call ImprovedRender instead of Render for Parallax
+            cursor.GotoNext(instr => instr.MatchLdarg(1), instr => instr.MatchCallvirt("Celeste.Backdrop", "Render"));
+            cursor.Emit(OpCodes.Isinst, t_Parallax);
+            cursor.Emit(OpCodes.Dup);
+            ILLabel parallaxRender = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brtrue_S, parallaxRender);
+            cursor.Emit(OpCodes.Pop);
+            cursor.Emit(OpCodes.Ldloc_2);
+            cursor.Index += 2;
+            ILLabel continueLoop = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Br, continueLoop);
+            cursor.MarkLabel(parallaxRender);
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Callvirt, n_Parallax_ImprovedRender);
+            cursor.MarkLabel(continueLoop);
         }
     }
 }

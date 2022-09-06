@@ -3,7 +3,6 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod;
 using System;
 
 namespace Celeste {
@@ -15,8 +14,11 @@ namespace Celeste {
             // no-op, ignored by MonoMod
         }
 
-        [MonoModReplace]
-        public override void Render(Scene scene) {
+        /// <summary>
+        /// An optimized version of the vanilla Render method. Only works if the SamplerState is set to PointWrap.
+        /// </summary>
+        /// <param name="scene">The Level to render the Parallax to.</param>
+        public void ImprovedRender(Scene scene) {
             Vector2 camera = ((scene as Level).Camera.Position + CameraOffset).Floor();
             Vector2 position = (Position - camera * Scroll).Floor();
             float alpha = fadeIn * Alpha * FadeAlphaMultiplier;
