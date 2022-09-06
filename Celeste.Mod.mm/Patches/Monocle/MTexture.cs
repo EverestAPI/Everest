@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Monocle {
     class patch_MTexture : MTexture {
@@ -44,8 +43,6 @@ namespace Monocle {
         private int _OrigHeight;
 
         private List<ModAsset> _ModAssets;
-
-        private Texture2D unpacked;
 
         // Patching constructors is ugly.
         public extern void orig_ctor(patch_MTexture parent, int x, int y, int width, int height);
@@ -214,23 +211,6 @@ namespace Monocle {
         }
 
         public bool IsPacked => Width != Texture.Width || Height != Texture.Height;
-
-        private static Texture2D CreateUnpackedTexture(Texture2D src, Rectangle rect)
-        {
-            Texture2D tex = new Texture2D(src.GraphicsDevice, rect.Width, rect.Height);
-            int count = rect.Width * rect.Height;
-            Color[] data = new Color[count];
-            src.GetData(0, rect, data, 0, count);
-            tex.SetData(data);
-            return tex;
-        }
-
-        private Texture2D Unpacked {
-            get {
-                unpacked ??= Width == Texture.Width && Height == Texture.Height ? Texture.Texture : CreateUnpackedTexture(Texture.Texture, ClipRect);
-                return unpacked;
-            }
-        }
 
         #region Drawing Methods
 
