@@ -52,7 +52,9 @@ namespace Celeste {
             if (FlipY) {
                 flip |= SpriteEffects.FlipVertically;
             }
-            Rectangle rect = new Rectangle(0, 0, LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width, LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height);
+            Rectangle rect = new Rectangle(0, 0,
+                                           LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width,
+                                           LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height);
             ((patch_MTexture) Texture).Draw(position, Vector2.Zero, color, 1f, 0f, flip, rect);
         }
     }
