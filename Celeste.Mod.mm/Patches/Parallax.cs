@@ -19,6 +19,10 @@ namespace Celeste {
         /// </summary>
         /// <param name="scene">The Level to render the Parallax to.</param>
         public void ImprovedRender(Scene scene) {
+            if (((patch_MTexture) Texture).IsPacked) {
+                Render(scene);
+                return;
+            }
             Vector2 camera = ((scene as Level).Camera.Position + CameraOffset).Floor();
             Vector2 position = (Position - camera * Scroll).Floor();
             float alpha = fadeIn * Alpha * FadeAlphaMultiplier;
@@ -49,7 +53,7 @@ namespace Celeste {
                 flip |= SpriteEffects.FlipVertically;
             }
             Rectangle rect = new Rectangle(0, 0, LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width, LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height);
-            ((patch_MTexture) Texture).DrawWithWrappingSupport(position, Vector2.Zero, color, 1f, 0f, flip, rect);
+            ((patch_MTexture) Texture).Draw(position, Vector2.Zero, color, 1f, 0f, flip, rect);
         }
     }
 }
