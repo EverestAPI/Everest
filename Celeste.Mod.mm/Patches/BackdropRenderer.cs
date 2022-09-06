@@ -36,8 +36,8 @@ namespace MonoMod {
         public static void PatchBackdropRendererRender(ILContext context, CustomAttribute attrib) {
             MethodReference m_BackDropRenderer_StartSpritebatchLooping = context.Method.DeclaringType.FindMethod("StartSpritebatchLooping");
             TypeReference t_Parallax = context.Module.GetType("Celeste.Parallax");
-            MethodReference n_Parallax_ImprovedRender = t_Parallax.Resolve().FindMethod("ImprovedRender");
-            
+            MethodReference m_Parallax_ImprovedRender = t_Parallax.Resolve().FindMethod("ImprovedRender");
+
             ILCursor cursor = new ILCursor(context);
 
             /* Change: StartSpritebatch(blendState);
@@ -68,7 +68,7 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Br, continueLoop);
             cursor.MarkLabel(parallaxRender);
             cursor.Emit(OpCodes.Ldarg_1);
-            cursor.Emit(OpCodes.Callvirt, n_Parallax_ImprovedRender);
+            cursor.Emit(OpCodes.Callvirt, m_Parallax_ImprovedRender);
             cursor.MarkLabel(continueLoop);
         }
     }
