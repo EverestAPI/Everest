@@ -115,7 +115,7 @@ namespace MonoMod {
                 // ask for the rotation field from the packer element, or a default of 0.0f
                 cursor.Emit(OpCodes.Ldloc, packer_element_loc);
                 cursor.Emit(OpCodes.Ldstr, "rotation");
-                cursor.Emit(OpCodes.Ldc_R4, (float)Math.PI / 2f);
+                cursor.Emit(OpCodes.Ldc_R4, 0.0f);
                 cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
                 // store the rotation in the decaldata
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
