@@ -126,6 +126,12 @@ namespace Celeste {
             orig_ctor(texture, position, scale, depth);
         }
 
+        [MonoModConstructor]
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation) {
+            ctor(texture, position, scale, depth);
+            Rotation = rotation;
+        }
+
         [MonoModIgnore]
         [MonoModPublic]
         public extern void MakeParallax(float amount);
@@ -406,8 +412,10 @@ namespace MonoMod {
 
             // now, out of the MTexture methods, find the one to replace it with:
             MethodReference m_Draw = MTexture.Methods.Where((m_new) => (
-                // the new method has one more parameter;
-                m_new.Parameters.Count == m_orig.Parameters.Count + 1
+                // the new method has the same name;
+                m_new.Name == m_orig.Name
+                // it has one more parameter;
+                && m_new.Parameters.Count == m_orig.Parameters.Count + 1
                 // the rest are the same;
                 && m_new.Parameters.Zip(m_orig.Parameters, (p_new, p_orig) => p_new.ParameterType == p_orig.ParameterType).All(b => b)
                 // and the new parameter is rotation

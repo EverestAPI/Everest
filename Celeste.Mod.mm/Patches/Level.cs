@@ -651,8 +651,6 @@ namespace MonoMod {
             TypeDefinition Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
 
             FieldDefinition f_DecalData_Rotation = DecalData.FindField("Rotation");
-            FieldDefinition f_Decal_Rotation = Decal.FindField("Rotation");
-            MethodReference m_Decal_ctor = Decal.FindMethod(".ctor");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -668,16 +666,32 @@ namespace MonoMod {
                 cursor.FindPrev(out ILCursor[] decaldata_loc_cursors, instr => instr.MatchLdloc(out int _));
                 decaldata_loc_cursors.First().Next.MatchLdloc(out int decaldata_loc);
 
-                // when we have just made a Decal:
-                cursor.GotoNext(MoveType.After, instr => instr.MatchNewobj("Celeste.Decal"));
-                // copy the reference
-                cursor.Emit(OpCodes.Dup);
+                // find the constructor call, and save its MethodReference:
+                cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Decal"))
+                      .Next.MatchNewobj(out MethodReference m_ctor_orig);
+
+                // now, out of the Decal methods, find the one to replace it with:
+                MethodReference m_ctor_new = Decal.Methods.Where((m_new) => (
+                    // the new method is a constructor;
+                    m_new.Name == ".ctor"
+                    // it has one more parameter;
+                    && m_new.Parameters.Count == m_ctor_orig.Parameters.Count + 1
+                    // the rest are the same;
+                    && m_new.Parameters.Zip(m_ctor_orig.Parameters,
+                                            (p_new, p_orig) => p_new.ParameterType.Name == p_orig.ParameterType.Name)
+                                        .All(b => b)
+                    // and the new parameter is rotation
+                    && m_new.Parameters.Last().Name == "rotation"
+                )).First();
+
                 // get the rotation float from the DecalData...
                 cursor.Emit(OpCodes.Ldloc_S, (byte) decaldata_loc);
                 cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
-                // ...and put it into the Decal
-                cursor.Emit(OpCodes.Stfld, f_Decal_Rotation);
+                // ...and replace the Decal constructor call to accept it
+                cursor.Emit(OpCodes.Newobj, m_ctor_new);
+                cursor.Remove();
 
+                cursor.Index++;
                 matches++;
             }
             if (matches != 2) {
