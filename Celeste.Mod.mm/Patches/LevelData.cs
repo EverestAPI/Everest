@@ -85,20 +85,23 @@ namespace MonoMod {
                 /*
                 we are inserting:
 
-                IL_0a5f: dup
-                IL_0a60: ldloc.s 11
-                IL_0a62: ldfld class [mscorlib]System.Collections.Generic.Dictionary`2<string, object> Celeste.BinaryPacker/Element::Attributes
-                IL_0a67: ldstr "texture"
-                IL_0a6c: callvirt instance !1 class [mscorlib]System.Collections.Generic.Dictionary`2<string, object>::get_Item(!0)
-                IL_0a71: castclass [mscorlib]System.String
-                IL_0a76: stfld string Celeste.DecalData::Texture
-                     ->  dup
-                         ldloc.s 11
-                         ldstr "rotation"
-                         ldc_r4 0.0
-                         callvirt instance float32 Celeste.BinaryPacker/Element::AttrFloat(string, float32)
-                         stfld float32 Celeste.DecalData::Rotation
-                IL_0a7b: callvirt instance void class [mscorlib]System.Collections.Generic.List`1<class Celeste.DecalData>::Add(!0)
+                // decaldata.Texture = (string)element.Attributes["texture"];
+                   IL_0a5f: dup
+                   IL_0a60: ldloc.s 11
+                   IL_0a62: ldfld class [mscorlib]System.Collections.Generic.Dictionary`2<string, object> Celeste.BinaryPacker/Element::Attributes
+                   IL_0a67: ldstr "texture"
+                   IL_0a6c: callvirt instance !1 class [mscorlib]System.Collections.Generic.Dictionary`2<string, object>::get_Item(!0)
+                   IL_0a71: castclass [mscorlib]System.String
+                   IL_0a76: stfld string Celeste.DecalData::Texture
+                // decaldata.Rotation = element.AttrFloat("rotation", 0.0f);
+                        ->  dup
+                            ldloc.s 11
+                            ldstr "rotation"
+                            ldc_r4 0.0
+                            callvirt instance float32 Celeste.BinaryPacker/Element::AttrFloat(string, float32)
+                            stfld float32 Celeste.DecalData::Rotation
+                // BgDecals.Add(decaldata); // or FgDecals
+                   IL_0a7b: callvirt instance void class [mscorlib]System.Collections.Generic.List`1<class Celeste.DecalData>::Add(!0)
 
                 in both places where a DecalData instance is added to a List
                 */
@@ -112,14 +115,12 @@ namespace MonoMod {
                 // ask for the rotation field from the packer element, or a default of 0.0f
                 cursor.Emit(OpCodes.Ldloc, packer_element_loc);
                 cursor.Emit(OpCodes.Ldstr, "rotation");
-                cursor.Emit(OpCodes.Ldc_R4, 0.0f);
+                cursor.Emit(OpCodes.Ldc_R4, (float)Math.PI / 2f);
                 cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
                 // store the rotation in the decaldata
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
 
-                // make sure we won't find this location the next time we TryGotoNext
-                cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("System.Collections.Generic.List`1<Celeste.DecalData>", "Add"));
-
+                cursor.Index++;
                 matches++;
             }
             if (matches != 2) {

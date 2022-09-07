@@ -16,6 +16,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using MonoMod.InlineRT;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -49,75 +50,41 @@ namespace Celeste {
         }
 
         private class patch_Banner : Component {
-#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
-            public float WaveSpeed;
-            public float WaveAmplitude;
-            public int SliceSize;
-            public float SliceSinIncrement;
-            public bool EaseDown;
-            public float Offset;
-            public float WindMultiplier;
-            private float sineTimer;
-            public List<List<MTexture>> Segments;
-#pragma warning restore CS0649
-
-            private patch_Decal decal => (patch_Decal) base.Entity;
 
             public patch_Banner()
                 : base(active: false, visible: true) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            [MonoModReplace]
-            public override void Render() {
-                MTexture tex = decal.textures[(int) decal.frame];
-                List<MTexture> segments = Segments[(int) decal.frame];
-                for (int i = 0; i < segments.Count; i++) {
-                    float num = (EaseDown ? ((float) i / (float) segments.Count) : (1f - (float) i / (float) segments.Count)) * WindMultiplier;
-                    float x = (float) (Math.Sin(sineTimer * WaveSpeed + (float) i * SliceSinIncrement) * (double) num * (double) WaveAmplitude + (double) (num * Offset));
-                    segments[i].Draw(position: decal.Position + new Vector2(x, 0f),
-                                 origin: new Vector2(tex.Width / 2, tex.Height / 2 - i * SliceSize),
-                                 Color.White,
-                                 decal.scale,
-                                 decal.Rotation);
-                }
-            }
+            [MonoModIgnore] // We don't want to change anything about the method...
+            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            public extern override void Render();
+
         }
 
         private class patch_DecalImage : Component {
+
             public patch_DecalImage()
                 : base(active: false, visible: true) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public extern void orig_Render();
-            public override void Render() {
-                ((patch_Decal) Entity).textures[(int) ((patch_Decal) Entity).frame].DrawCentered(
-                    ((patch_Decal) Entity).Position,
-                    Color.White,
-                    ((patch_Decal) Entity).scale,
-                    ((patch_Decal) Entity).Rotation);
-            }
+            [MonoModIgnore] // We don't want to change anything about the method...
+            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            public extern override void Render();
+
         }
 
         private class patch_CoreSwapImage : Component {
-#pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
-            private MTexture hot;
-            private MTexture cold;
-#pragma warning restore CS0649
 
             public patch_CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            public extern void orig_Render();
-            public override void Render() {
-                (((base.Scene as Level).CoreMode == Session.CoreModes.Cold) ? cold : hot).DrawCentered(
-                    ((patch_Decal) Entity).Position,
-                    Color.White,
-                    ((patch_Decal) Entity).scale,
-                    ((patch_Decal) Entity).Rotation);
-            }
+            [MonoModIgnore] // We don't want to change anything about the method...
+            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            public extern override void Render();
+
         }
 
         private class FlagSwapImage : Component {
@@ -142,11 +109,7 @@ namespace Celeste {
 
             public override void Render() {
                 if (activeTextures.Count > 0)
-                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(
-                        Decal.Position,
-                        Color.White,
-                        Decal.scale,
-                        Decal.Rotation);
+                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale, Decal.Rotation);
             }
         }
 
@@ -388,10 +351,12 @@ namespace Celeste {
     }
 
     public static class DecalExt {
+
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+
     }
 }
 
@@ -401,6 +366,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
     class PatchDecalUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Allow decal images to be rotated.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRotation))]
+    class PatchDecalImageRotationAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -418,6 +389,43 @@ namespace MonoMod {
             cursor.Remove();
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, f_showRange);
+        }
+
+        public static void PatchDecalImageRotation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            TypeDefinition MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+
+            FieldReference f_Decal_Rotation = Decal.FindField("Rotation");
+
+            ILCursor cursor = new ILCursor(context);
+
+            // first, find the draw call to replace, and save its MethodReference:
+            cursor.GotoNext(instr => instr.MatchCallOrCallvirt("Monocle.MTexture", "Draw")
+                                  || instr.MatchCallOrCallvirt("Monocle.MTexture", "DrawCentered"))
+                  .Next.MatchCallOrCallvirt(out MethodReference m_orig);
+
+            // now, out of the MTexture methods, find the one to replace it with:
+            MethodReference m_Draw = MTexture.Methods.Where((m_new) => (
+                // the new method has one more parameter;
+                m_new.Parameters.Count == m_orig.Parameters.Count + 1
+                // the rest are the same;
+                && m_new.Parameters.Zip(m_orig.Parameters, (p_new, p_orig) => p_new.ParameterType == p_orig.ParameterType).All(b => b)
+                // and the new parameter is rotation
+                && m_new.Parameters.Last().Name == "rotation"
+            )).First();
+
+            // the draw call is immediately after the scale is obtained from the decal, so if we go back one instruction...
+            cursor.Index--;
+            // we can get the method used to do that...
+            cursor.Prev.MatchCallOrCallvirt(out MethodReference m_get_Decal);
+            cursor.Index++;
+            // and call it so we can retrieve the rotation!
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+            // now, replace the draw call with one that takes a rotation:
+            cursor.Remove();
+            cursor.Emit(OpCodes.Callvirt, m_Draw);
         }
 
     }

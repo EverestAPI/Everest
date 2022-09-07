@@ -520,7 +520,7 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
-    /// Patch the Godzilla-sized level loading method instead of reimplementing it in Everest.
+    /// Patch leevel loading method to copy decal rotations from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderDecalCreation))]
     class PatchLevelLoaderDecalCreationAttribute : Attribute { }
@@ -650,17 +650,17 @@ namespace MonoMod {
             TypeDefinition DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
             TypeDefinition Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
 
-            FieldDefinition f_DecalDataRotation = DecalData.FindField("Rotation");
-            FieldDefinition f_DecalRotation = Decal.FindField("Rotation");
+            FieldDefinition f_DecalData_Rotation = DecalData.FindField("Rotation");
+            FieldDefinition f_Decal_Rotation = Decal.FindField("Rotation");
             MethodReference m_Decal_ctor = Decal.FindMethod(".ctor");
 
             ILCursor cursor = new ILCursor(context);
 
             int matches = 0;
             while (cursor.TryGotoNext(MoveType.Before,
-                                      // we are looking for one of the possible decal depths (fg or bg)...
-                                      instr => instr.MatchLdcI4(-10500)
-                                            || instr.MatchLdcI4(9000),
+                                      // we are looking for one of the possible decal depths...
+                                      instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
+                                            || instr.MatchLdcI4(Celeste.Depths.BGDecals),
                                       // ...followed by the creation of a decal
                                       instr => instr.MatchNewobj("Celeste.Decal"))) {
 
@@ -674,9 +674,9 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Dup);
                 // get the rotation float from the DecalData...
                 cursor.Emit(OpCodes.Ldloc_S, (byte) decaldata_loc);
-                cursor.Emit(OpCodes.Ldfld, f_DecalDataRotation);
+                cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
                 // ...and put it into the Decal
-                cursor.Emit(OpCodes.Stfld, f_DecalRotation);
+                cursor.Emit(OpCodes.Stfld, f_Decal_Rotation);
 
                 matches++;
             }
