@@ -2,7 +2,6 @@
 using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using MonoMod;
-using System;
 using System.Collections.Generic;
 
 namespace Celeste {

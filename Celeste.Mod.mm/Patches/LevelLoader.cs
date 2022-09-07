@@ -5,20 +5,20 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
-using System.Text.RegularExpressions;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
@@ -204,7 +204,7 @@ namespace Celeste {
             } catch (Exception e) {
                 string sid = session?.Area.GetSID() ?? "NULL";
                 if (patch_LevelEnter.ErrorMessage == null) {
-                    if (e is KeyNotFoundException && e.StackTrace.Contains("TileHandler") && e.Data.Count != 0) {
+                    if (e is KeyNotFoundException && e.StackTrace.Contains("TileHandler") && e.Data.Count == 3) {
                         int x = (int)e.Data["x"];
                         int y = (int)e.Data["y"];
                         char id = (char)e.Data["id"];
