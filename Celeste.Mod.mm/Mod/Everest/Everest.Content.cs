@@ -502,7 +502,7 @@ namespace Celeste.Mod {
             public readonly static Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
             // Used to blacklists assets for ingest
-            internal readonly static HashSet<string> BlacklistFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            internal readonly static HashSet<string> BlacklistRootFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
                 "changelog", "credits", "documentation", "FAQ", "LICENSE", "README"
             };
 
@@ -510,7 +510,7 @@ namespace Celeste.Mod {
                 ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup"
             };
 
-            internal readonly static HashSet<string> BlacklistRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            internal readonly static HashSet<string> BlacklistRootFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
                 "Ahorn", "Loenn"
             };
 
@@ -618,12 +618,13 @@ namespace Celeste.Mod {
                 path = path.Replace('\\', '/');
 
                 string filename = Path.GetFileNameWithoutExtension(path);
-                if (filename.StartsWith(".") || BlacklistFilenames.Contains(filename) || BlacklistExtensions.Contains(Path.GetExtension(path)))
+                if (filename.StartsWith(".") || BlacklistExtensions.Contains(Path.GetExtension(path)))
                     return false;
 
                 string[] pathSplit = path.Split('/');
                 for (int i = 0; i < pathSplit.Length - 1; i++) {
-                    if (pathSplit[i].StartsWith(".") || (i == 0 && BlacklistRoots.Contains(pathSplit[i])) || BlacklistFolders.Contains(pathSplit[i]))
+                    if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) ||
+                        (i == 0 && (BlacklistRootFiles.Contains(filename) || BlacklistRootFolders.Contains(pathSplit[0]))))
                         return false;
                 }
 
