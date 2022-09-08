@@ -318,15 +318,16 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
-                    }
-                    if(zip.ContainsEntry(".everestignore")) {
-                        List<string> lines = new();
-                        using (var reader = new StreamReader(zip[".everestignore"].InputStream)) {
-                            while (!reader.EndOfStream) {
-                                lines.Add(reader.ReadLine());
+                        if (entry.FileName == ".everestignore") {
+                            List<string> lines = new();
+                            using (var reader = new StreamReader(entry.InputStream)) {
+                                while (!reader.EndOfStream) {
+                                    lines.Add(reader.ReadLine());
+                                }
                             }
+                            ignoreList = new IgnoreList(lines);
+                            continue;
                         }
-                        ignoreList = new IgnoreList(lines);
                     }
                 }
 
