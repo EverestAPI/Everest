@@ -23,7 +23,6 @@ namespace Celeste.Mod {
     public sealed class AssetTypeText { private AssetTypeText() { } }
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
     public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
-    public sealed class AssetTypeEverestIgnore { private AssetTypeEverestIgnore() { } }
     public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
     public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
     public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
@@ -501,7 +500,6 @@ namespace Celeste.Mod {
             public readonly static HashSet<Type> NonConflictTypes = new HashSet<Type>() {
                 typeof(AssetTypeDirectory),
                 typeof(AssetTypeMetadataYaml),
-                typeof(AssetTypeEverestIgnore),
                 typeof(AssetTypeDialog),
                 typeof(AssetTypeDialogExport),
                 typeof(AssetTypeAhorn),
@@ -730,8 +728,6 @@ namespace Celeste.Mod {
                     file = file.Substring(0, file.Length - (file.EndsWith(".yaml") ? 5 : 4));
                     format = ".yml";
 
-                } else if (file == ".everestignore") {
-                    type = typeof(AssetTypeEverestIgnore);
                 } else if (file == "DecalRegistry.xml") {
                     Logger.Log("Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);
