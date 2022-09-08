@@ -32,7 +32,7 @@ namespace Celeste.Mod {
                         Logger.Log("Everest.LuaLoader", "Found external Lua boot script.");
                         stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
 
-                    } else if (Content.TryGet<AssetTypeLuaCore>("Lua/boot", out ModAsset asset)) {
+                    } else if (Content.TryGet<AssetTypeLua>("Lua/boot", out ModAsset asset)) {
                         Logger.Log("Everest.LuaLoader", "Found built-in Lua boot script.");
                         stream = asset.Stream;
                     }

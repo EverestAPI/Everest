@@ -14,36 +14,35 @@ using System.Reflection;
 using System.Threading;
 
 namespace Celeste.Mod {
+
     /// <summary>
     /// Special meta type for assets. 
-    /// A ModAsset with a Type field that subclasses from this will log path conflicts.
+    /// A ModAsset with a Type field that subclasses from this will not log path conflicts.
     /// </summary>
-    public abstract class AssetTypeConflict { }
+    public abstract class AssetTypeNonConflict { }
+
+    // Asset types for which we want to log conflicts (we also log for Texture2D and ObjModel)
+    public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
+    public sealed class AssetTypeBank { private AssetTypeBank() { } }
+    public sealed class AssetTypeFont { private AssetTypeFont() { } }
+    public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
+    public sealed class AssetTypeMap { private AssetTypeMap() { } }
+    public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
+    public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
 
     // Asset types for which conflicts are not important
-    public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
-    public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
-    public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
-    public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
-    public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
-    public sealed class AssetTypeSpriteBank { private AssetTypeSpriteBank() { } }
-
-    // Asset types for which we want to log conflicts (we also check Texture2D and ObjModel)
-    public sealed class AssetTypeAssembly : AssetTypeConflict { private AssetTypeAssembly() { } }
-    public sealed class AssetTypeBank : AssetTypeConflict { private AssetTypeBank() { } }
-    public sealed class AssetTypeFont : AssetTypeConflict { private AssetTypeFont() { } }
-    public sealed class AssetTypeGUIDs : AssetTypeConflict { private AssetTypeGUIDs() { } }
-    public sealed class AssetTypeLuaCore : AssetTypeConflict { private AssetTypeLuaCore() { } }
-    public sealed class AssetTypeMap : AssetTypeConflict { private AssetTypeMap() { } }
-    public sealed class AssetTypeObjModelExport : AssetTypeConflict { private AssetTypeObjModelExport() { } }
-    public sealed class AssetTypePico8Tilemap : AssetTypeConflict { private AssetTypePico8Tilemap() { } }
-    public sealed class AssetTypeTutorial : AssetTypeConflict { private AssetTypeTutorial() { } }
+    public sealed class AssetTypeDecalRegistry : AssetTypeNonConflict { private AssetTypeDecalRegistry() { } }
+    public sealed class AssetTypeDialog : AssetTypeNonConflict { private AssetTypeDialog() { } }
+    public sealed class AssetTypeDialogExport : AssetTypeNonConflict { private AssetTypeDialogExport() { } }
+    public sealed class AssetTypeDirectory : AssetTypeNonConflict { private AssetTypeDirectory() { } }
+    public sealed class AssetTypeMetadataYaml : AssetTypeNonConflict { private AssetTypeMetadataYaml() { } }
+    public sealed class AssetTypeSpriteBank : AssetTypeNonConflict { private AssetTypeSpriteBank() { } }
 
     // Generic asset types
     public sealed class AssetTypeLua { private AssetTypeLua() { } }
     public sealed class AssetTypeText { private AssetTypeText() { } }
-    public sealed class AssetTypeXml : AssetTypeConflict { private AssetTypeXml() { } }
-    public sealed class AssetTypeYaml : AssetTypeConflict { private AssetTypeYaml() { } }
+    public sealed class AssetTypeXml { private AssetTypeXml() { } }
+    public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -502,6 +501,23 @@ namespace Celeste.Mod {
             /// </summary>
             public readonly static Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
+            // Used to blacklists assets for ingest
+            internal readonly static HashSet<string> BlacklistFilenames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "changelog", "credits", "documentation", "FAQ", "LICENSE", "README"
+            };
+
+            internal readonly static HashSet<string> BlacklistExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup"
+            };
+
+            internal readonly static HashSet<string> BlacklistRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "Ahorn", "Loenn"
+            };
+
+            internal readonly static HashSet<string> BlacklistFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "lib-stripped", "__MACOSX", "obj"
+            };
+
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
             internal readonly static List<string> LoadedAssetFullPaths = new List<string>();
             internal readonly static List<WeakReference> LoadedAssets = new List<WeakReference>();
@@ -601,9 +617,15 @@ namespace Celeste.Mod {
             public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
 
-                if (path.Contains("/.git/") || path.Contains("/__MACOSX/") ||
-                    Path.GetFileName(path).StartsWith("."))
+                string filename = Path.GetFileNameWithoutExtension(path);
+                if (filename.StartsWith(".") || BlacklistFilenames.Contains(filename) || BlacklistExtensions.Contains(Path.GetExtension(path)))
                     return false;
+
+                string[] pathSplit = path.Split('/');
+                for (int i = 0; i < pathSplit.Length - 1; i++) {
+                    if (pathSplit[i].StartsWith(".") || (i == 0 && BlacklistRoots.Contains(pathSplit[i])) || BlacklistFolders.Contains(pathSplit[i]))
+                        return false;
+                }
 
                 if (metadata != null) {
                     if (metadata.Type == null)
@@ -629,8 +651,7 @@ namespace Celeste.Mod {
                             Map.Remove($"{prefix}:/{path}");
 
                     } else {
-                        if (Map.TryGetValue(path, out ModAsset existing) && existing != null && existing.Source != metadata.Source && 
-                            (existing.Type == typeof(Texture2D) || existing.Type == typeof(ObjModel) || existing.Type.IsSubclassOf(typeof(AssetTypeConflict)))) {
+                        if (Map.TryGetValue(path, out ModAsset existing) && existing != null && existing.Source != metadata.Source && !existing.Type.IsSubclassOf(typeof(AssetTypeNonConflict))) {
                             Logger.Log(LogLevel.Warn, "content", $"CONFLICT for asset path {path} ({existing?.Source?.Name ?? "???"} vs {metadata?.Source?.Name ?? "???"})");
                         }
 
@@ -757,14 +778,6 @@ namespace Celeste.Mod {
 
                 } else if (format == "fnt") {
                     type = typeof(AssetTypeFont);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file == "Pico8Tilemap.txt") {
-                    type = typeof(AssetTypePico8Tilemap);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file == "Lua/boot.lua" || file == "Lua/typebuilder.lua") {
-                    type = typeof(AssetTypeLuaCore);
                     file = file.Substring(0, file.Length - 4);
 
                 // Parse custom types from mods

@@ -27,7 +27,7 @@ namespace Celeste.Mod {
                     Logger.Log("Everest.LuaTypeBuilder", "Found external Lua typebuilder script.");
                     stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
 
-                } else if (Content.TryGet<AssetTypeLuaCore>("Lua/typebuilder", out ModAsset asset)) {
+                } else if (Content.TryGet<AssetTypeLua>("Lua/typebuilder", out ModAsset asset)) {
                     Logger.Log("Everest.LuaTypeBuilder", "Found built-in Lua typebuilder script.");
                     stream = asset.Stream;
                 }
