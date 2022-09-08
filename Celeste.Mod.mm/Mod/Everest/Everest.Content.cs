@@ -611,8 +611,9 @@ namespace Celeste.Mod {
                     Path.GetFileName(path).StartsWith("._"))
                     return false;
 
-                if(Loader.GlobalEverestIgnore.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ||
-                    (metadata?.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
+                if (metadata != null &&
+                    (Loader.GlobalEverestIgnore.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ||
+                    (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false))) {
                     return false;
                 }
 
