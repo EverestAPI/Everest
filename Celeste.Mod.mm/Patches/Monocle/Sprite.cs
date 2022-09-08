@@ -5,6 +5,7 @@ using System.Collections.Generic;
 
 namespace Monocle {
     // The only patch_ that needs to be made public to allow accessing .Animation
+    [Tracked]
     public class patch_Sprite : Sprite {
 
         private Dictionary<string, Animation> animations;
