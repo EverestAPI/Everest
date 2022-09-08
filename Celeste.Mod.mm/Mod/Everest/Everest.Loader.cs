@@ -427,7 +427,7 @@ namespace Celeste.Mod {
                 EverestModuleMetadata contentMetaParent = null;
 
                 string ignorePath = Path.Combine(dir, ".everestignore");
-                if(File.Exists(ignorePath)) {
+                if (File.Exists(ignorePath)) {
                     contentMeta.Ignore = new IgnoreList(ignorePath);
                 }
 
