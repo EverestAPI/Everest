@@ -186,8 +186,8 @@ namespace Celeste {
             }
         }
 
-        [PatchLevelLoaderDecalCreation] // Manually manipulate the method via MonoModRules
-        [PatchLevelLoader]
+        [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        [PatchLevelLoaderDecalCreation]
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
@@ -647,53 +647,28 @@ namespace MonoMod {
         }
 
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
-            TypeDefinition DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
-            TypeDefinition Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
-
-            FieldDefinition f_DecalData_Rotation = DecalData.FindField("Rotation");
+            TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            FieldDefinition f_DecalData_Rotation = t_DecalData.FindField("Rotation");
+            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single)");
 
             ILCursor cursor = new ILCursor(context);
 
+            int local = -1;
             int matches = 0;
-            while (cursor.TryGotoNext(MoveType.Before,
-                                      // we are looking for one of the possible decal depths...
-                                      instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
-                                            || instr.MatchLdcI4(Celeste.Depths.BGDecals),
-                                      // ...followed by the creation of a decal
-                                      instr => instr.MatchNewobj("Celeste.Decal"))) {
-
-                // we first find out what local variable the DecalData is in:
-                cursor.FindPrev(out ILCursor[] decaldata_loc_cursors, instr => instr.MatchLdloc(out int _));
-                decaldata_loc_cursors.First().Next.MatchLdloc(out int decaldata_loc);
-
-                // find the constructor call, and save its MethodReference:
-                cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Decal"))
-                      .Next.MatchNewobj(out MethodReference m_ctor_orig);
-
-                // now, out of the Decal methods, find the one to replace it with:
-                MethodReference m_ctor_new = Decal.Methods.Where((m_new) => (
-                    // the new method is a constructor;
-                    m_new.Name == ".ctor"
-                    // it has one more parameter;
-                    && m_new.Parameters.Count == m_ctor_orig.Parameters.Count + 1
-                    // the rest are the same;
-                    && m_new.Parameters.Zip(m_ctor_orig.Parameters,
-                                            (p_new, p_orig) => p_new.ParameterType.Name == p_orig.ParameterType.Name)
-                                        .All(b => b)
-                    // and the new parameter is rotation
-                    && m_new.Parameters.Last().Name == "rotation"
-                )).First();
-
-                // get the rotation float from the DecalData...
-                cursor.Emit(OpCodes.Ldloc_S, (byte) decaldata_loc);
+            // Grab the local variable holding the DecalData structure and move to just before the decal creation
+            while (cursor.TryGotoNext(MoveType.After, 
+                instr => instr.MatchLdloc(out local), 
+                instr => instr.MatchLdfld("Celeste.DecalData", "Scale"), 
+                instr => instr.OpCode == OpCodes.Ldc_I4)) {
+                // Load in the rotation field, call our new constructor that accepts it, and remove the old one
+                cursor.Emit(OpCodes.Ldloc_S, (byte) local);
                 cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
-                // ...and replace the Decal constructor call to accept it
-                cursor.Emit(OpCodes.Newobj, m_ctor_new);
+                cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
                 cursor.Remove();
-
-                cursor.Index++;
                 matches++;
             }
+            // We need to run this patch on FG and BG decals, so look for two matches
             if (matches != 2) {
                 throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
             }

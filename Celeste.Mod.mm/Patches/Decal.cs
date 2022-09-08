@@ -56,8 +56,8 @@ namespace Celeste {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            [MonoModIgnore] // We don't want to change anything about the method...
-            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
             public extern override void Render();
 
         }
@@ -69,8 +69,8 @@ namespace Celeste {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            [MonoModIgnore] // We don't want to change anything about the method...
-            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
             public extern override void Render();
 
         }
@@ -81,8 +81,8 @@ namespace Celeste {
                 // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
 
-            [MonoModIgnore] // We don't want to change anything about the method...
-            [PatchDecalImageRotation] // ... except for manually manipulating the method via MonoModRules
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
             public extern override void Render();
 
         }
@@ -140,70 +140,18 @@ namespace Celeste {
         [MonoModPublic]
         public extern void CreateSmoke(Vector2 offset, bool inbg);
 
-        [MonoModReplace]
+        [MonoModIgnore]
         [MonoModPublic]
-        public void MakeMirror(string path, bool keepOffsetsClose) {
-            if (keepOffsetsClose) {
-                MakeMirror(path, GetMirrorOffset());
-                return;
-            }
-
-            Depth = 9500;
-            foreach (MTexture mask in GFX.Game.GetAtlasSubtextures("mirrormasks/" + path)) {
-                MirrorSurface surface = new MirrorSurface();
-                surface.ReflectionOffset = GetMirrorOffset();
-                surface.OnRender = delegate {
-                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
-                };
-                Add(surface);
-            }
-        }
-
-        [MonoModReplace]
-        [MonoModPublic]
-        public void MakeMirror(string path, Vector2 offset) {
-            Depth = 9500;
-            foreach (MTexture mask in GFX.Game.GetAtlasSubtextures("mirrormasks/" + path)) {
-                MirrorSurface surface = new MirrorSurface();
-                surface.ReflectionOffset = offset + new Vector2(-2f + Calc.Random.NextFloat(4f), -2f + Calc.Random.NextFloat(4f));
-                surface.OnRender = delegate {
-                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
-                };
-                Add(surface);
-            }
-        }
-
-        [MonoModReplace]
-        [MonoModPublic]
-        // only used for that one big crystal in reflection
-        public void MakeMirrorSpecialCase(string path, Vector2 offset) {
-            Depth = 9500;
-            List<MTexture> masks = GFX.Game.GetAtlasSubtextures("mirrormasks/" + path);
-            for (int mask_num = 0; mask_num < masks.Count; mask_num++) {
-                Vector2 mini_offset;
-                switch (mask_num) {
-                    case 2:
-                        mini_offset = new Vector2(4f, 2f);
-                        break;
-                    case 6:
-                        mini_offset = new Vector2(-2f, 0f);
-                        break;
-                    default:
-                        mini_offset = new Vector2(-2f + Calc.Random.NextFloat(4f), -2f + Calc.Random.NextFloat(4f));
-                        break;
-                }
-                MTexture mask = masks[mask_num];
-                MirrorSurface surface = new MirrorSurface();
-                surface.ReflectionOffset = offset + mini_offset;
-                surface.OnRender = delegate {
-                    mask.DrawCentered(Position, surface.ReflectionColor, scale, Rotation);
-                };
-                Add(surface);
-            }
-        }
+        [PatchMirrorMaskRotation]
+        public extern void MakeMirror(string path, bool keepOffsetsClose);
 
         [MonoModIgnore]
-        private extern Vector2 GetMirrorOffset();
+        [PatchMirrorMaskRotation]
+        private extern void MakeMirror(string path, Vector2 offset);
+
+        [MonoModIgnore]
+        [PatchMirrorMaskRotation]
+        private extern void MakeMirrorSpecialCase(string path, Vector2 offset);
 
         [MonoModIgnore]
         [MonoModPublic]
@@ -362,7 +310,6 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
-
     }
 }
 
@@ -378,6 +325,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRotation))]
     class PatchDecalImageRotationAttribute : Attribute { }
+
+    /// <summary>
+    /// Allow mirror masks to be rotated.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMirrorMaskRotation))]
+    class PatchMirrorMaskRotationAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -398,43 +351,63 @@ namespace MonoMod {
         }
 
         public static void PatchDecalImageRotation(ILContext context, CustomAttribute attrib) {
-            TypeDefinition Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
-            TypeDefinition MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
-
-            FieldReference f_Decal_Rotation = Decal.FindField("Rotation");
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+            FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
+            MethodReference m_get_Decal = null;
 
             ILCursor cursor = new ILCursor(context);
 
-            // first, find the draw call to replace, and save its MethodReference:
-            cursor.GotoNext(instr => instr.MatchCallOrCallvirt("Monocle.MTexture", "Draw")
-                                  || instr.MatchCallOrCallvirt("Monocle.MTexture", "DrawCentered"))
-                  .Next.MatchCallOrCallvirt(out MethodReference m_orig);
+            // Grab the component's decal getter and move to just before the draw call
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchCallvirt(out m_get_Decal),
+                instr => instr.MatchLdfld("Celeste.Decal", "scale"));
 
-            // now, out of the MTexture methods, find the one to replace it with:
-            MethodReference m_Draw = MTexture.Methods.Where((m_new) => (
-                // the new method has the same name;
-                m_new.Name == m_orig.Name
-                // it has one more parameter;
-                && m_new.Parameters.Count == m_orig.Parameters.Count + 1
-                // the rest are the same;
-                && m_new.Parameters.Zip(m_orig.Parameters, (p_new, p_orig) => p_new.ParameterType == p_orig.ParameterType).All(b => b)
-                // and the new parameter is rotation
-                && m_new.Parameters.Last().Name == "rotation"
-            )).First();
+            // The patched methods use draw functions with different signatures, so just add the rotation parameter to the current method
+            MethodReference m_oldDraw = (MethodReference) cursor.Next.Operand;
+            MethodDefinition m_NewDraw = t_MTexture.FindMethod($"{m_oldDraw.FullName.Trim(')')},System.Single)");
 
-            // the draw call is immediately after the scale is obtained from the decal, so if we go back one instruction...
-            cursor.Index--;
-            // we can get the method used to do that...
-            cursor.Prev.MatchCallOrCallvirt(out MethodReference m_get_Decal);
-            cursor.Index++;
-            // and call it so we can retrieve the rotation!
+            // Load the rotation field, call our new draw function, and then remove the old one
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_get_Decal);
             cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
-            // now, replace the draw call with one that takes a rotation:
+            cursor.Emit(OpCodes.Callvirt, m_NewDraw);
             cursor.Remove();
-            cursor.Emit(OpCodes.Callvirt, m_Draw);
         }
 
+        public static void PatchMirrorMaskRotation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+            FieldDefinition f_Decal_Rotation = context.Method.DeclaringType.FindField("Rotation");
+            MethodDefinition m_DrawCentered = t_MTexture.FindMethod("System.Void DrawCentered(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,Microsoft.Xna.Framework.Vector2,System.Single)");
+            MethodReference r_OnRender = null;
+
+            ILCursor cursor = new ILCursor(context);
+            
+            // The mirror mask is drawn in a compiler-generated function, so we need to start a new context with it
+            cursor.GotoNext(instr => instr.MatchLdftn(out r_OnRender));
+
+            MethodDefinition m_OnRender = r_OnRender.Resolve();
+            new ILContext(m_OnRender).Invoke(il => {
+                // Some of the patched methods use closure locals so search for those
+                FieldDefinition f_locals = m_OnRender.DeclaringType.FindField("CS$<>8__locals1");
+                FieldReference f_this = null;
+
+                ILCursor cursor = new ILCursor(il);
+
+                // Grab the function's decal reference and move to just before the draw call
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld(out f_this),
+                    instr => instr.MatchLdfld("Celeste.Decal", "scale"));
+
+                // Load the rotation field (use closure locals if found), call our new draw function, and then remove the old one
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+                cursor.Emit(OpCodes.Callvirt, m_DrawCentered);
+                cursor.Remove();
+            });
+        }
     }
 }
