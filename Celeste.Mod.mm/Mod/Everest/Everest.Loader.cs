@@ -115,16 +115,6 @@ namespace Celeste.Mod {
                 Tuple.Create("Nameguy's D-Sides", _VersionMax, "Monika's D-Sides", _VersionMax),
             };
 
-            /// <summary>
-            /// The path to the Everest /Mods/.everestignore file.
-            /// </summary>
-            public static string PathGlobalEverestIgnore { get; internal set; }
-            internal static IgnoreList _GlobalEverestIgnore = new();
-            /// <summary>
-            /// The currently loaded everest ignore list.
-            /// </summary>
-            public static IgnoreList GlobalEverestIgnore => _GlobalEverestIgnore;
-
             internal static FileSystemWatcher Watcher;
 
             internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
@@ -187,17 +177,6 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
-                    }
-                }
-
-                PathGlobalEverestIgnore = Path.Combine(PathMods, ".everestignore");
-                if (File.Exists(PathGlobalEverestIgnore)) {
-                    _GlobalEverestIgnore = new IgnoreList(PathGlobalEverestIgnore);
-                } else {
-                    using (StreamWriter writer = File.CreateText(PathGlobalEverestIgnore)) {
-                        writer.WriteLine("# This is the global .everestignore. Lines starting with # are ignored.");
-                        writer.WriteLine("# If you put a file path in this file, it won't be loaded from any mods containing that file.");
-                        writer.WriteLine("# This file follows the .gitignore format, detailed here: https://git-scm.com/docs/gitignore");
                     }
                 }
 
