@@ -91,7 +91,7 @@ namespace MonoMod {
                 // Load in the rotation attribute from the BinaryPacker Element and set the DecalData field
                 cursor.Emit(OpCodes.Ldloc, local);
                 cursor.Emit(OpCodes.Ldstr, "rotation");
-                // cursor.Emit(OpCodes.Ldc_R4, 1.6f);
+                cursor.Emit(OpCodes.Ldc_R4, 0.0f);
                 cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
                 matches++;
