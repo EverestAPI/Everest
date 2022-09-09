@@ -306,6 +306,10 @@ namespace Celeste.Mod {
                 else if (arg == "--blacklist" && queue.Count >= 1)
                     Loader.NameTemporaryBlacklist = queue.Dequeue();
 
+                else if (arg == "--loglevel" && queue.Count >= 1) {
+                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level)) 
+                        Logger.SetLogLevelFromSettings("", level);
+                }
             }
         }
 
