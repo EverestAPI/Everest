@@ -129,7 +129,7 @@ namespace Celeste {
         [MonoModConstructor]
         public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation) {
             ctor(texture, position, scale, depth);
-            Rotation = rotation;
+            Rotation = MathHelper.ToRadians(rotation);
         }
 
         [MonoModIgnore]
