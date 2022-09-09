@@ -298,9 +298,9 @@ namespace Celeste.Mod {
                             continue;
                         }
                         if (entry.FileName == ".everestignore") {
-                            List<string> lines = new();
+                            List<string> lines = new List<string>();
                             using (MemoryStream stream = entry.ExtractStream())
-                            using (var reader = new StreamReader(stream)) {
+                            using (StreamReader reader = new StreamReader(stream)) {
                                 while (!reader.EndOfStream) {
                                     lines.Add(reader.ReadLine());
                                 }
