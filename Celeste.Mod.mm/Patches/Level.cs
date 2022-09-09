@@ -654,21 +654,26 @@ namespace MonoMod {
 
             ILCursor cursor = new ILCursor(context);
 
-            int local = -1;
+            int loc_decaldata = -1;
             int matches = 0;
-            // Grab the local variable holding the DecalData structure and move to just before the decal creation
-            while (cursor.TryGotoNext(MoveType.After, 
-                instr => instr.MatchLdloc(out local), 
-                instr => instr.MatchLdfld("Celeste.DecalData", "Scale"), 
-                instr => instr.OpCode == OpCodes.Ldc_I4)) {
-                // Load in the rotation field, call our new constructor that accepts it, and remove the old one
-                cursor.Emit(OpCodes.Ldloc_S, (byte) local);
+            // move to just before each of the two Decal constructor calls (one for FGDecals and one for BGDecals), and obtain a reference to the DecalData local
+            while (cursor.TryGotoNext(MoveType.After,
+                                      instr => instr.MatchLdloc(out loc_decaldata),
+                                      instr => instr.MatchLdfld("Celeste.DecalData", "Scale"),
+                                      instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
+                                            || instr.MatchLdcI4(Celeste.Depths.BGDecals))) {
+                // we are trying to get:
+                //   decal = new Decal()
+
+                // load the rotation from the DecalData
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
                 cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
+                // and replace the Decal constructor to accept it
                 cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
                 cursor.Remove();
+
                 matches++;
             }
-            // We need to run this patch on FG and BG decals, so look for two matches
             if (matches != 2) {
                 throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
             }

@@ -78,25 +78,32 @@ namespace MonoMod {
             FieldDefinition f_DecalDataRotation = t_DecalData.FindField("Rotation");
             MethodDefinition m_BinaryPackerElementAttrFloat = t_BinaryPackerElement.FindMethod("AttrFloat");
 
-            // Goal is to set: decaldata.Rotation = element.AttrFloat("rotation")
             ILCursor cursor = new ILCursor(context);
 
-            int local = -1;
+            int loc_element = -1;
             int matches = 0;
-            // Grab the local variable holding the BinaryPacker Element and move to just before the DecalData is finished
-            while (cursor.TryGotoNext(instr => instr.MatchLdloc(out local), instr => instr.OpCode == OpCodes.Ldfld, instr => instr.MatchLdstr("texture"))) {
+            // for each of the two places DecalData instances are created (one for FGDecals and one for BGDecals), move to just after the texture is stored;
+            // also obtain a reference to the BinaryPacker.Element that holds the decal's map data
+            while (cursor.TryGotoNext(instr => instr.MatchLdloc(out loc_element),
+                                      instr => instr.MatchLdfld(out FieldReference _),
+                                      instr => instr.MatchLdstr("texture"))) {
                 cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.DecalData", "Texture"));
-                // Duplicate the DecalData reference so we can add one more field
+
+                // we are trying to add:
+                //   decaldata.Rotation = element.AttrFloat("rotation", 0.0f);
+
+                // copy the reference to the DecalData
                 cursor.Emit(OpCodes.Dup);
-                // Load in the rotation attribute from the BinaryPacker Element and set the DecalData field
-                cursor.Emit(OpCodes.Ldloc, local);
+                // load the rotation from the BinaryPacker.Element, with a default of 0.0f
+                cursor.Emit(OpCodes.Ldloc, loc_element);
                 cursor.Emit(OpCodes.Ldstr, "rotation");
                 cursor.Emit(OpCodes.Ldc_R4, 0.0f);
                 cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
+                // put the rotation into the DecalData
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
+
                 matches++;
             }
-            // We need to run this patch on FG and BG decals, so look for two matches
             if (matches != 2) {
                 throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
             }

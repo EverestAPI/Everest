@@ -310,6 +310,7 @@ namespace Celeste {
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+
     }
 }
 
@@ -355,23 +356,27 @@ namespace MonoMod {
             TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
             FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
             MethodReference m_get_Decal = null;
+            MethodReference m_Draw_old = null;
 
             ILCursor cursor = new ILCursor(context);
 
-            // Grab the component's decal getter and move to just before the draw call
+            // move to just after the decal's scale is obtained, but just before the draw call.
+            // also get references to the Decal getter and to the draw call itself
             cursor.GotoNext(MoveType.After,
-                instr => instr.MatchCallvirt(out m_get_Decal),
-                instr => instr.MatchLdfld("Celeste.Decal", "scale"));
+                            instr => instr.MatchCallvirt(out m_get_Decal),
+                            instr => instr.MatchLdfld("Celeste.Decal", "scale"),
+                            instr => instr.MatchCallvirt(out m_Draw_old));
+            cursor.Index--;
 
-            // The patched methods use draw functions with different signatures, so just add the rotation parameter to the current method
-            MethodReference m_oldDraw = (MethodReference) cursor.Next.Operand;
-            MethodDefinition m_NewDraw = t_MTexture.FindMethod($"{m_oldDraw.FullName.Trim(')')},System.Single)");
+            // find an appropriate draw method; it should have the same signature, but also take a float for the rotation as its last argument
+            MethodReference m_Draw_new = t_MTexture.FindMethod($"{m_Draw_old.FullName.TrimEnd(')')},System.Single)");
 
-            // Load the rotation field, call our new draw function, and then remove the old one
+            // load the rotation from the decal
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_get_Decal);
             cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
-            cursor.Emit(OpCodes.Callvirt, m_NewDraw);
+            // ...and replace the draw call to accept it
+            cursor.Emit(OpCodes.Callvirt, m_Draw_new);
             cursor.Remove();
         }
 
@@ -382,7 +387,7 @@ namespace MonoMod {
             MethodReference r_OnRender = null;
 
             ILCursor cursor = new ILCursor(context);
-            
+
             // The mirror mask is drawn in a compiler-generated function, so we need to start a new context with it
             cursor.GotoNext(instr => instr.MatchLdftn(out r_OnRender));
 
