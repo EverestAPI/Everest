@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Core;
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Ionic.Zip;
@@ -262,7 +262,7 @@ namespace Celeste.Mod {
                         string url = null;
                         foreach (JObject asset in release["assets"] as JArray) {
                             if (asset["name"].ToString() == "main.zip") {
-                                url = asset["url"].ToString();
+                                url = asset["browser_download_url"].ToString();
                                 break;
                             }
                         }
