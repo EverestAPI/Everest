@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
+using MAB.DotIgnore;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -258,6 +259,8 @@ namespace Celeste.Mod {
                 EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
+                IgnoreList ignoreList = null;
+
                 using (ZipFile zip = new ZipFile(archive)) {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName == "metadata.yaml") {
@@ -294,11 +297,24 @@ namespace Celeste.Mod {
                             }
                             continue;
                         }
+                        if (entry.FileName == ".everestignore") {
+                            List<string> lines = new List<string>();
+                            using (MemoryStream stream = entry.ExtractStream())
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                while (!reader.EndOfStream) {
+                                    lines.Add(reader.ReadLine());
+                                }
+                            }
+                            ignoreList = new IgnoreList(lines);
+                            continue;
+                        }
                     }
                 }
 
                 ZipModContent contentMeta = new ZipModContent(archive);
                 EverestModuleMetadata contentMetaParent = null;
+
+                contentMeta.Ignore = ignoreList;
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -389,6 +405,11 @@ namespace Celeste.Mod {
 
                 FileSystemModContent contentMeta = new FileSystemModContent(dir);
                 EverestModuleMetadata contentMetaParent = null;
+
+                string ignorePath = Path.Combine(dir, ".everestignore");
+                if (File.Exists(ignorePath)) {
+                    contentMeta.Ignore = new IgnoreList(ignorePath);
+                }
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)

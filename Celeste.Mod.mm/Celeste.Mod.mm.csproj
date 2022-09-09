@@ -68,6 +68,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="KeraLua" Version="1.0.22" />
     <PackageReference Include="NLua" Version="1.4.25" />
+    <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
   </ItemGroup>
 
   <!--

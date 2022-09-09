@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Ionic.Zip;
+using MAB.DotIgnore;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
 using MonoMod.Utils;
@@ -57,6 +58,8 @@ namespace Celeste.Mod {
         }
 
         public EverestModuleMetadata Mod;
+
+        public IgnoreList Ignore;
 
         public readonly List<ModAsset> List = new List<ModAsset>();
         public readonly Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
@@ -626,6 +629,11 @@ namespace Celeste.Mod {
                     if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) ||
                         (i == 0 && (BlacklistRootFiles.Contains(filename) || BlacklistRootFolders.Contains(pathSplit[0]))))
                         return false;
+                }
+                
+                if (metadata != null &&
+                    (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
+                    return false;
                 }
 
                 if (metadata != null) {
