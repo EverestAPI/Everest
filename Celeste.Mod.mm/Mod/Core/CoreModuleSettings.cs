@@ -210,6 +210,10 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? WhitelistFullOverride { get; set; } = null;
 
+        [SettingInGame(false)]
+        [SettingIgnore] // TODO: Show as advanced setting.
+        public bool OpenErrorLogOnCrash { get; set; } = true;
+
         public string InputGui { get; set; } = "";
 
         private string _MainMenuMode = "";
@@ -298,16 +302,23 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
 
+        [SettingSubHeader("MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER")]
         [SettingInGame(false)]
         public ButtonBinding MenuPageUp { get; set; }
 
         [SettingInGame(false)]
         public ButtonBinding MenuPageDown { get; set; }
 
+        [SettingSubHeader("MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER")]
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemPeriod)]
         public ButtonBinding DebugConsole { get; set; }
+        
+        [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.F6)]
+        public ButtonBinding DebugMap { get; set; }
 
+        [SettingSubHeader("MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER")]
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.W)]
         public ButtonBinding CameraForward { get; set; }

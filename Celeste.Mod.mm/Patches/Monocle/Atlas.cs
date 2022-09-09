@@ -385,7 +385,7 @@ namespace Monocle {
                 vtex = VirtualContentExt.CreateTexture(asset);
             } catch {
                 // The game is going to crash from this. Log the offending texture to make debugging easier.
-                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");
+                Logger.Log(LogLevel.Error, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");
                 throw;
             }
             MTextureMeta meta = asset.GetMeta<MTextureMeta>();

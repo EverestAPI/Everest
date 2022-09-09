@@ -66,7 +66,7 @@ namespace Celeste.Mod {
                                 } catch (ThreadInterruptedException) {
                                     throw;
                                 } catch (Exception e) {
-                                    Logger.Log("debugrc", $"DebugRC failed responding: {e}");
+                                    Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed responding: {e}");
                                 }
                             }, Listener.GetContext());
                         }
@@ -79,10 +79,10 @@ namespace Celeste.Mod {
                         // 995 = I/O abort due to thread abort or application shutdown.
                         if (e.ErrorCode != 500 &&
                             e.ErrorCode != 995) {
-                            Logger.Log("debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
+                            Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening ({e.ErrorCode}): {e}");
                         }
                     } catch (Exception e) {
-                        Logger.Log("debugrc", $"DebugRC failed listening: {e}");
+                        Logger.Log(LogLevel.Error, "debugrc", $"DebugRC failed listening: {e}");
                     }
                 });
             }
@@ -545,6 +545,59 @@ header {
 
                         Engine.Scene = new LevelLoader(session, session.RespawnPoint);
                         Write(c, "OK");
+                    }
+                },
+                
+                new RCEndPoint {
+                    Path = "/console",
+                    Name = "Console",
+                    PathHelp = "/console?command={*|COMMAND} (Example: ?command=berries)",
+                    PathExample = "/console?command=berries",
+                    InfoHTML = "Execute a console command and show the output. If no command is given, list the available commands.",
+                    Handle = c => {
+                        NameValueCollection data = ParseQueryString(c.Request.RawUrl);
+                        
+                        string rawCommand = WebUtility.UrlDecode(data["command"]);
+                        if (string.IsNullOrWhiteSpace(rawCommand) || string.IsNullOrWhiteSpace(rawCommand.Replace(",", ""))) {
+                            StringBuilder commandList = new StringBuilder();
+                            WriteHTMLStart(c, commandList);
+                            commandList.AppendLine(@"<ul>");
+                            commandList.AppendLine(@"<h2>Commands</h2>");
+                            foreach (var command in ((Monocle.patch_Commands) Engine.Commands).GetCommands().OrderBy(comm => comm.Name))
+                            {
+                                commandList.AppendLine(@"<li>");
+                                commandList.AppendLine($@"<h3>{command.Name}</h3>");
+                                commandList.AppendLine(@"<p>");
+                                if (string.IsNullOrEmpty(command.Usage)) {
+                                    commandList.AppendLine($@"<a href=""{Listener.Prefixes.First()}console?command={command.Name}""><code>/console?command={command.Name}</code></a>");
+                                } else {
+                                    commandList.AppendLine($@"<code>Usage: {command.Usage}</code>");
+                                }
+                                commandList.AppendLine(@"<br>");
+                                commandList.AppendLine(command.Help);
+                                commandList.AppendLine(@"</p>");
+                                commandList.AppendLine(@"</li>");
+                            }
+                            commandList.AppendLine(@"</ul>");
+                            WriteHTMLEnd(c, commandList);
+                            Write(c, commandList.ToString());
+                        } else {
+                            string[] commandAndArgs = rawCommand.Split(new[] {' ', ','}, StringSplitOptions.RemoveEmptyEntries);
+                            string[] args = new string[commandAndArgs.Length - 1];
+                            Array.Copy(commandAndArgs, 1, args, 0, args.Length);
+
+                            StringBuilder output = new StringBuilder();
+                            MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
+                                try {
+                                    ((Monocle.patch_Commands) Engine.Commands).debugRClog = output;
+                                    Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
+                                } finally {
+                                    ((Monocle.patch_Commands) Engine.Commands).debugRClog = null;
+                                }
+                                return null;
+                            }).GetResult(); // wait for command to finish before writing output
+                            Write(c, output.ToString());
+                        }
                     }
                 },
 

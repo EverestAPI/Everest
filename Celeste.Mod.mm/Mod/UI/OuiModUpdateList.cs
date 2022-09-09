@@ -124,7 +124,7 @@ namespace Celeste.Mod.UI {
                     // This means fetching the updates just finished. We have to remove the "Checking for updates" button
                     // and put the actual update list instead.
 
-                    Logger.Log("OuiModUpdateList", "Rendering updates");
+                    Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
 
                     menu.Remove(fetchingButton);
                     fetchingButton = null;
@@ -263,7 +263,7 @@ namespace Celeste.Mod.UI {
                 downloadMod(update, button, zipPath);
 
                 if (ongoingUpdateCancelled) {
-                    Logger.Log("OuiModUpdateList", "Update was cancelled");
+                    Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Update was cancelled");
 
                     // try to delete mod-update.zip if it still exists.
                     ModUpdaterHelper.TryDelete(zipPath);
@@ -290,7 +290,7 @@ namespace Celeste.Mod.UI {
             } catch (Exception e) {
                 // update failed
                 button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
-                Logger.Log("OuiModUpdateList", $"Updating {update.Name} failed");
+                Logger.Log(LogLevel.Warn, "OuiModUpdateList", $"Updating {update.Name} failed");
                 Logger.LogDetailed(e);
 
                 // try to delete mod-update.zip if it still exists.
@@ -306,7 +306,7 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         /// <param name="zipPath">The path to the zip the update will be downloaded to</param>
         private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
-            Logger.Log("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
+            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
             Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                 if (ongoingUpdateCancelled) {

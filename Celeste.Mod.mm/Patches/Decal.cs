@@ -16,6 +16,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using MonoMod.InlineRT;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -29,6 +30,9 @@ namespace Celeste {
 #pragma warning disable CS0649 // field is never assigned and will always be null: it is initialized in vanilla code
         private List<MTexture> textures;
 #pragma warning restore CS0649
+
+        public float Rotation = 0f;
+
         private bool scaredAnimal;
 
         private float hideRange;
@@ -45,17 +49,67 @@ namespace Celeste {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
-        [MonoModIgnore]
-        private class CoreSwapImage : Component {
-            public CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
-                // no-op
+        private class patch_Banner : Component {
+
+            public patch_Banner()
+                : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
             }
+
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
+            public extern override void Render();
+
         }
 
-        [MonoModIgnore]
-        private class DecalImage : Component {
-            public DecalImage() : base(active: false, visible: true) {
-                // no-op
+        private class patch_DecalImage : Component {
+
+            public patch_DecalImage()
+                : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
+            public extern override void Render();
+
+        }
+
+        private class patch_CoreSwapImage : Component {
+
+            public patch_CoreSwapImage(MTexture hot, MTexture cold) : base(active: false, visible: true) {
+                // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+            }
+
+            [MonoModIgnore]
+            [PatchDecalImageRotation]
+            public extern override void Render();
+
+        }
+
+        private class FlagSwapImage : Component {
+            private string flag;
+            private List<MTexture> off;
+            private List<MTexture> on;
+            private List<MTexture> activeTextures => (Scene as Level).Session.GetFlag(flag) ? on : off;
+            private int loopCount;
+            private float frame;
+            public patch_Decal Decal => (patch_Decal) Entity;
+
+            public FlagSwapImage(string flag, List<MTexture> off, List<MTexture> on) : base(active: true, visible: true) {
+                this.flag = flag;
+                this.off = off;
+                this.on = on;
+                loopCount = Math.Max(off.Count, 1) * Math.Max(on.Count, 1);
+            }
+
+            public override void Update() {
+                frame = (frame + Decal.AnimationSpeed * Engine.DeltaTime) % loopCount;
+            }
+
+            public override void Render() {
+                if (activeTextures.Count > 0)
+                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale, Decal.Rotation);
             }
         }
 
@@ -72,6 +126,12 @@ namespace Celeste {
             orig_ctor(texture, position, scale, depth);
         }
 
+        [MonoModConstructor]
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation) {
+            ctor(texture, position, scale, depth);
+            Rotation = rotation;
+        }
+
         [MonoModIgnore]
         [MonoModPublic]
         public extern void MakeParallax(float amount);
@@ -82,7 +142,16 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MonoModPublic]
+        [PatchMirrorMaskRotation]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
+
+        [MonoModIgnore]
+        [PatchMirrorMaskRotation]
+        private extern void MakeMirror(string path, Vector2 offset);
+
+        [MonoModIgnore]
+        [PatchMirrorMaskRotation]
+        private extern void MakeMirrorSpecialCase(string path, Vector2 offset);
 
         [MonoModIgnore]
         [MonoModPublic]
@@ -108,8 +177,14 @@ namespace Celeste {
             Scene.Add(solid);
         }
 
+        [Obsolete("Use MakeFlagSwap with the cold flag instead.")]
         public void MakeCoreSwap(string coldPath, string hotPath) {
-            Add(image = new CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+            Add(image = new patch_CoreSwapImage(GFX.Game[coldPath], GFX.Game[hotPath]));
+        }
+
+        public void MakeFlagSwap(string flag, string offPath, string onPath) {
+            Add(image = new FlagSwapImage(flag, offPath != null ? GFX.Game.GetAtlasSubtextures(offPath) : new List<MTexture>(),
+                                                onPath != null ? GFX.Game.GetAtlasSubtextures(onPath) : new List<MTexture>()));
         }
 
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
@@ -132,10 +207,9 @@ namespace Celeste {
                 OnMove = v => {
                     Position += v;
                     if (solid != null) {
-                        if (staticMover.Platform != null)
-                            solid.LiftSpeed = staticMover.Platform.LiftSpeed;
-                        solid.MoveHExact((int) v.X);
-                        solid.MoveVExact((int) v.Y);
+                        Vector2 liftSpeed = (staticMover.Platform != null) ? staticMover.Platform.LiftSpeed : Vector2.Zero;
+                        solid.MoveH(v.X, liftSpeed.X);
+                        solid.MoveV(v.Y, liftSpeed.Y);
                     }
                 },
                 OnShake = v => { Position += v; },
@@ -157,6 +231,7 @@ namespace Celeste {
             sprite.Add("hide", 0.1f, "hidden", hideFrames.Select(i => textures[i]).ToArray());
             sprite.Play("idle", restart: true);
             sprite.Scale = scale;
+            sprite.Rotation = Rotation;
             sprite.CenterOrigin();
             Add(sprite);
             this.hideRange = hideRange;
@@ -208,7 +283,7 @@ namespace Celeste {
 
                 Everest.Events.Decal.HandleDecalRegistry(this, info);
                 if (image == null) {
-                    Add(image = new DecalImage());
+                    Add(image = new patch_DecalImage());
                 }
 
             }
@@ -228,12 +303,14 @@ namespace Celeste {
             RemoveSelf();
         }
     }
+
     public static class DecalExt {
 
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
+
     }
 }
 
@@ -243,6 +320,18 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalUpdate))]
     class PatchDecalUpdateAttribute : Attribute { }
+
+    /// <summary>
+    /// Allow decal images to be rotated.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRotation))]
+    class PatchDecalImageRotationAttribute : Attribute { }
+
+    /// <summary>
+    /// Allow mirror masks to be rotated.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMirrorMaskRotation))]
+    class PatchMirrorMaskRotationAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -262,5 +351,68 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_showRange);
         }
 
+        public static void PatchDecalImageRotation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+            FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
+            MethodReference m_get_Decal = null;
+            MethodReference m_Draw_old = null;
+
+            ILCursor cursor = new ILCursor(context);
+
+            // move to just after the decal's scale is obtained, but just before the draw call.
+            // also get references to the Decal getter and to the draw call itself
+            cursor.GotoNext(MoveType.After,
+                            instr => instr.MatchCallvirt(out m_get_Decal),
+                            instr => instr.MatchLdfld("Celeste.Decal", "scale"),
+                            instr => instr.MatchCallvirt(out m_Draw_old));
+            cursor.Index--;
+
+            // find an appropriate draw method; it should have the same signature, but also take a float for the rotation as its last argument
+            MethodReference m_Draw_new = t_MTexture.FindMethod($"{m_Draw_old.FullName.TrimEnd(')')},System.Single)");
+
+            // load the rotation from the decal
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+            // ...and replace the draw call to accept it
+            cursor.Emit(OpCodes.Callvirt, m_Draw_new);
+            cursor.Remove();
+        }
+
+        public static void PatchMirrorMaskRotation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+            FieldDefinition f_Decal_Rotation = context.Method.DeclaringType.FindField("Rotation");
+            MethodDefinition m_DrawCentered = t_MTexture.FindMethod("System.Void DrawCentered(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,Microsoft.Xna.Framework.Vector2,System.Single)");
+            MethodReference r_OnRender = null;
+
+            ILCursor cursor = new ILCursor(context);
+
+            // The mirror mask is drawn in a compiler-generated function, so we need to start a new context with it
+            cursor.GotoNext(instr => instr.MatchLdftn(out r_OnRender));
+
+            MethodDefinition m_OnRender = r_OnRender.Resolve();
+            new ILContext(m_OnRender).Invoke(il => {
+                // Some of the patched methods use closure locals so search for those
+                FieldDefinition f_locals = m_OnRender.DeclaringType.FindField("CS$<>8__locals1");
+                FieldReference f_this = null;
+
+                ILCursor cursor = new ILCursor(il);
+
+                // Grab the function's decal reference and move to just before the draw call
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld(out f_this),
+                    instr => instr.MatchLdfld("Celeste.Decal", "scale"));
+
+                // Load the rotation field (use closure locals if found), call our new draw function, and then remove the old one
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+                cursor.Emit(OpCodes.Callvirt, m_DrawCentered);
+                cursor.Remove();
+            });
+        }
     }
 }

@@ -306,6 +306,10 @@ namespace Celeste.Mod {
                 else if (arg == "--blacklist" && queue.Count >= 1)
                     Loader.NameTemporaryBlacklist = queue.Dequeue();
 
+                else if (arg == "--loglevel" && queue.Count >= 1) {
+                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level)) 
+                        Logger.SetLogLevelFromSettings("", level);
+                }
             }
         }
 
@@ -773,7 +777,7 @@ namespace Celeste.Mod {
 
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
-                    Logger.Log("core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                    Logger.Log(LogLevel.Verbose, "core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
                     if (module.SaveDataAsync) {
                         module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
                     } else {
@@ -784,7 +788,7 @@ namespace Celeste.Mod {
 
                     if (SaveData.Instance.CurrentSession?.InArea ?? false) {
                         // we are in a level. we are expecting the session to already be loaded at this point
-                        Logger.Log("core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                        Logger.Log(LogLevel.Verbose, "core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
                         if (module.SaveDataAsync) {
                             module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
                         } else {
@@ -798,7 +802,7 @@ namespace Celeste.Mod {
                 // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
                 // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
                 if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log("core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
+                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
                     AssetReloadHelper.ReloadAllMaps();
                 }
             }
@@ -808,7 +812,7 @@ namespace Celeste.Mod {
                 Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
                 foreach (Type type in types) {
                     if (typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract && !overworld.UIs.Any(ui => ui.GetType() == type)) {
-                        Logger.Log("core", $"Instanciating UI from {module.Metadata}: {type.FullName}");
+                        Logger.Log(LogLevel.Verbose, "core", $"Instantiating UI from {module.Metadata}: {type.FullName}");
 
                         Oui oui = (Oui) Activator.CreateInstance(type);
                         oui.Visible = false;
@@ -1042,7 +1046,7 @@ namespace Celeste.Mod {
             yield break;
         }
 
-        public static void LogDetours() {
+        public static void LogDetours(LogLevel level = LogLevel.Debug) {
             List<string> detours = _DetourLog;
             if (detours.Count == 0)
                 return;
@@ -1050,7 +1054,7 @@ namespace Celeste.Mod {
             _DetourLog = new List<string>();
 
             foreach (string line in detours)
-                Logger.Log(LogLevel.Info, "detours", line);
+                Logger.Log(level, "detours", line);
         }
 
         // A shared object a day keeps the GC away!

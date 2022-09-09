@@ -357,7 +357,7 @@ namespace Celeste {
                 }
                 Array.Resize(ref area.Mode, modei);
 
-                Logger.Log("AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
+                Logger.Log(LogLevel.Verbose, "AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
 
                 // Update old MapData areas and load any new areas.
 

@@ -1,5 +1,4 @@
-﻿using Celeste.Editor;
-using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
@@ -69,7 +68,7 @@ namespace Celeste.Mod.Core {
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
-                Logger.SetLogLevelFromYaml(logLevel.Key, logLevel.Value);
+                Logger.SetLogLevelFromSettings(logLevel.Key, logLevel.Value);
             }
 
             if (Directory.Exists("LogHistory")) {
@@ -78,7 +77,7 @@ namespace Celeste.Mod.Core {
                 files.Sort(new LogRotationHelper.OldestFirst());
                 int historyToDelete = files.Count - historyToKeep;
                 foreach (string file in files.Take(historyToDelete)) {
-                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
+                    Logger.Log(LogLevel.Verbose, "core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
                     File.Delete(file);
                 }
             }
@@ -106,14 +105,6 @@ namespace Celeste.Mod.Core {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
                 });
                 AssetReloadHelper.ReloadLevel();
-            };
-
-            // F6: Open map editor for current level.
-            Engine.Commands.FunctionKeyActions[5] = () => {
-                if (!(Engine.Scene is Level level))
-                    return;
-                Engine.Scene = new MapEditor(level.Session.Area);
-                Engine.Commands.Open = false;
             };
         }
 
@@ -149,7 +140,7 @@ namespace Celeste.Mod.Core {
             ILCursor cursor = new ILCursor(il);
 
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
-                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
                 cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
             }

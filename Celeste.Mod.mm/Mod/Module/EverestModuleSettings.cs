@@ -115,6 +115,18 @@ namespace Celeste.Mod {
         public SettingIgnoreAttribute() {
         }
     }
+    
+    /// <summary>
+    /// Insert a subheader before the setting.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Property)]
+    public class SettingSubHeaderAttribute : Attribute {
+        public string SubHeader;
+
+        public SettingSubHeaderAttribute(string subheader) {
+            SubHeader = subheader;
+        }
+    }
 
     /// <summary>
     /// When used as a <see cref="EverestModuleSettings"/> property type, create a submenu based on this type.

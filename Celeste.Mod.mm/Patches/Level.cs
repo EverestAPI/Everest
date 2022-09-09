@@ -37,7 +37,7 @@ namespace Celeste {
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
-        
+
         private float unpauseTimer;
 
         /// <summary>
@@ -187,6 +187,7 @@ namespace Celeste {
         }
 
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        [PatchLevelLoaderDecalCreation]
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
@@ -197,6 +198,8 @@ namespace Celeste {
                 playerIntro = introType;
 
             try {
+                Logger.Log(LogLevel.Verbose, "LoadLevel", $"Loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
+
                 orig_LoadLevel(playerIntro, isFromLoader);
 
                 if (ShouldAutoPause) {
@@ -204,19 +207,14 @@ namespace Celeste {
                     Pause();
                 }
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading level {Session.Area}");
+                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint")) {
+                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelnospawn");
+                } else {
+                    patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", Session.Area.GetSID());
+                }
+
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of map {Session.Area.GetSID()}");
                 e.LogDetailed();
-
-                string message = Dialog.Get("postcard_levelloadfailed");
-                if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint"))
-                    message = Dialog.Get("postcard_levelnospawn");
-                message = message
-                    .Replace("((player))", SaveData.Instance.Name)
-                    .Replace("((sid))", Session.Area.GetSID());
-
-                Entity helperEntity = new Entity();
-                helperEntity.Add(new Coroutine(ErrorRoutine(message)));
-                Add(helperEntity);
                 return;
             }
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);
@@ -238,15 +236,6 @@ namespace Celeste {
                 // the heart will disappear after it is collected.
                 return AreaMode.Normal;
             }
-        }
-
-        private IEnumerator ErrorRoutine(string message) {
-            yield return null;
-
-            Audio.SetMusic(null);
-
-            LevelEnterExt.ErrorMessage = message;
-            LevelEnter.Go(new Session(Session?.Area ?? new AreaKey(1).SetSID("")), false);
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
@@ -500,6 +489,12 @@ namespace Celeste {
                 }
             }
         }
+
+        private void CheckForErrors() {
+            if (patch_LevelEnter.ErrorMessage != null) {
+                LevelEnter.Go(Session, false);
+            }
+        }
     }
 
     public static class LevelExt {
@@ -523,6 +518,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoader))]
     class PatchLevelLoaderAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch leevel loading method to copy decal rotations from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderDecalCreation))]
+    class PatchLevelLoaderDecalCreationAttribute : Attribute { }
 
     /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
@@ -645,12 +646,52 @@ namespace MonoMod {
             cctor_il.Emit(OpCodes.Ret);
         }
 
-        public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+        public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            FieldDefinition f_DecalData_Rotation = t_DecalData.FindField("Rotation");
+            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single)");
 
             ILCursor cursor = new ILCursor(context);
 
-            // insert FixChaserStatesTimeStamp() at the begin
+            int loc_decaldata = -1;
+            int matches = 0;
+            // move to just before each of the two Decal constructor calls (one for FGDecals and one for BGDecals), and obtain a reference to the DecalData local
+            while (cursor.TryGotoNext(MoveType.After,
+                                      instr => instr.MatchLdloc(out loc_decaldata),
+                                      instr => instr.MatchLdfld("Celeste.DecalData", "Scale"),
+                                      instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
+                                            || instr.MatchLdcI4(Celeste.Depths.BGDecals))) {
+                // we are trying to get:
+                //   decal = new Decal()
+
+                // load the rotation from the DecalData
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
+                cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
+                // and replace the Decal constructor to accept it
+                cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
+                cursor.Remove();
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
+        }
+
+        public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_FixChaserStatesTimeStamp = context.Method.DeclaringType.FindMethod("FixChaserStatesTimeStamp");
+            MethodDefinition m_CheckForErrors = context.Method.DeclaringType.FindMethod("CheckForErrors");
+            MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
+            TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
+            MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
+
+            ILCursor cursor = new ILCursor(context);
+
+            // Insert CheckForErrors() at the beginning so we can display an error screen if needed
+            cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
+
+            // insert FixChaserStatesTimeStamp()
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
 
             /* We expect something similar enough to the following:
@@ -661,15 +702,17 @@ namespace MonoMod {
             We're replacing
             MInput.Keyboard.Pressed(Keys.Tab)
             with
-            false
+            CoreModule.Settings.DebugMap.Pressed
             */
 
             cursor.GotoNext(instr => instr.MatchCall("Monocle.MInput", "get_Keyboard"),
                 instr => instr.GetIntOrNull() == 9,
                 instr => instr.MatchCallvirt("Monocle.MInput/KeyboardData", "Pressed"));
-            // Remove the offending instructions, and replace them with 0 (false)
+            // Remove the offending instructions, and replace them with property getter
             cursor.RemoveRange(3);
-            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Call, m_Everest_CoreModule_Settings);
+            cursor.Emit(OpCodes.Call, t_Everest_CoreModuleSettings.FindProperty("DebugMap").GetMethod);
+            cursor.Emit(OpCodes.Call, m_ButtonBinding_Pressed);
         }
 
         public static void PatchLevelRender(ILContext context, CustomAttribute attrib) {

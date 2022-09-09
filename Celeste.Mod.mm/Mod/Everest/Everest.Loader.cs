@@ -669,7 +669,7 @@ namespace Celeste.Mod {
 
                         // be sure to save this module's save data and session before reloading it, so that they are not lost.
                         if (SaveData.Instance != null) {
-                            Logger.Log("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                             if (module.SaveDataAsync) {
                                 module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                             } else {
@@ -681,7 +681,7 @@ namespace Celeste.Mod {
                             }
 
                             if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                                 if (module.SaveDataAsync) {
                                     module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
                                 } else {

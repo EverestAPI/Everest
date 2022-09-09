@@ -159,21 +159,17 @@ namespace Celeste.Mod {
                             Thread.Yield();
 
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading area {level.Session?.Area.ToString() ?? "NULL"}");
+                        string sid = level.Session?.Area.GetSID() ?? "NULL";
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading map {sid}");
                         e.LogDetailed();
-
-                        string message = Dialog.Get("postcard_levelloadfailed")
-                            .Replace("((player))", SaveData.Instance.Name)
-                            .Replace("((sid))", level.Session?.Area.GetSID() ?? "NULL")
-                        ;
 
                         if (patch_Level.NextLoadedPlayer != null) {
                             patch_Level.NextLoadedPlayer = null;
                             patch_Level.SkipScreenWipes--;
                         }
 
-                        LevelEnterExt.ErrorMessage = message;
-                        ReturnToScene = patch_LevelEnter.ForceCreate(new Session(level.Session?.Area ?? new AreaKey(1).SetSID("")), false);
+                        ReturnToScene = patch_LevelEnter.ForceCreate(level.Session, false);
                         ReloadingLevel = false;
                         patch_Level.ShouldAutoPause = false;
                     }

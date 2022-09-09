@@ -263,7 +263,7 @@ namespace Celeste {
                 Audio.cachedEventDescriptions.Add(path, desc);
 
             } else if (status == RESULT.ERR_EVENT_NOTFOUND) {
-                Logger.Log("Audio", $"Event not found: {path}");
+                Logger.Log(LogLevel.Warn, "Audio", $"Event not found: {path}");
 
             } else {
                 throw new Exception("FMOD getEvent failed: " + status);

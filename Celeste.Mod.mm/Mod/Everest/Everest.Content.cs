@@ -15,25 +15,35 @@ using System.Reflection;
 using System.Threading;
 
 namespace Celeste.Mod {
-    // Special meta types.
-    public sealed class AssetTypeDirectory { private AssetTypeDirectory() { } }
+
+    /// <summary>
+    /// Special meta type for assets. 
+    /// A ModAsset with a Type field that subclasses from this will not log path conflicts.
+    /// </summary>
+    public abstract class AssetTypeNonConflict { }
+
+    // Asset types for which we want to log conflicts (we also log for Texture2D and ObjModel)
     public sealed class AssetTypeAssembly { private AssetTypeAssembly() { } }
-    public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
-    public sealed class AssetTypeXml { private AssetTypeXml() { } }
-    public sealed class AssetTypeText { private AssetTypeText() { } }
-    public sealed class AssetTypeLua { private AssetTypeLua() { } }
-    public sealed class AssetTypeMetadataYaml { private AssetTypeMetadataYaml() { } }
-    public sealed class AssetTypeDialog { private AssetTypeDialog() { } }
-    public sealed class AssetTypeDialogExport { private AssetTypeDialogExport() { } }
-    public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
-    public sealed class AssetTypeMap { private AssetTypeMap() { } }
-    public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
     public sealed class AssetTypeBank { private AssetTypeBank() { } }
-    public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
-    public sealed class AssetTypeAhorn { private AssetTypeAhorn() { } }
-    public sealed class AssetTypeSpriteBank { private AssetTypeSpriteBank() { } }
-    public sealed class AssetTypeDecalRegistry { private AssetTypeDecalRegistry() { } }
     public sealed class AssetTypeFont { private AssetTypeFont() { } }
+    public sealed class AssetTypeGUIDs { private AssetTypeGUIDs() { } }
+    public sealed class AssetTypeMap { private AssetTypeMap() { } }
+    public sealed class AssetTypeObjModelExport { private AssetTypeObjModelExport() { } }
+    public sealed class AssetTypeTutorial { private AssetTypeTutorial() { } }
+
+    // Asset types for which conflicts are not important
+    public sealed class AssetTypeDecalRegistry : AssetTypeNonConflict { private AssetTypeDecalRegistry() { } }
+    public sealed class AssetTypeDialog : AssetTypeNonConflict { private AssetTypeDialog() { } }
+    public sealed class AssetTypeDialogExport : AssetTypeNonConflict { private AssetTypeDialogExport() { } }
+    public sealed class AssetTypeDirectory : AssetTypeNonConflict { private AssetTypeDirectory() { } }
+    public sealed class AssetTypeMetadataYaml : AssetTypeNonConflict { private AssetTypeMetadataYaml() { } }
+    public sealed class AssetTypeSpriteBank : AssetTypeNonConflict { private AssetTypeSpriteBank() { } }
+
+    // Generic asset types
+    public sealed class AssetTypeLua { private AssetTypeLua() { } }
+    public sealed class AssetTypeText { private AssetTypeText() { } }
+    public sealed class AssetTypeXml { private AssetTypeXml() { } }
+    public sealed class AssetTypeYaml { private AssetTypeYaml() { } }
 
     // Delegate types.
     public delegate string TypeGuesser(string file, out Type type, out string format);
@@ -272,12 +282,12 @@ namespace Celeste.Mod {
             if (e.ChangeType == WatcherChangeTypes.Changed && Directory.Exists(e.FullPath))
                 return;
 
-            Logger.Log("content", $"File updated: {e.FullPath} - {e.ChangeType}");
+            Logger.Log(LogLevel.Verbose, "content", $"File updated: {e.FullPath} - {e.ChangeType}");
             QueuedTaskHelper.Do(e.FullPath, () => Update(e.FullPath, e.FullPath));
         }
 
         private void FileRenamed(object source, RenamedEventArgs e) {
-            Logger.Log("content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
+            Logger.Log(LogLevel.Verbose, "content", $"File renamed: {e.OldFullPath} - {e.FullPath}");
             QueuedTaskHelper.Do(Tuple.Create(e.OldFullPath, e.FullPath), () => Update(e.OldFullPath, e.FullPath));
         }
 
@@ -494,16 +504,21 @@ namespace Celeste.Mod {
             /// </summary>
             public readonly static Dictionary<string, ModAsset> Map = new Dictionary<string, ModAsset>();
 
-            /// <summary>
-            /// List of all types for which asset path conflicts don't matter.
-            /// </summary>
-            public readonly static HashSet<Type> NonConflictTypes = new HashSet<Type>() {
-                typeof(AssetTypeDirectory),
-                typeof(AssetTypeMetadataYaml),
-                typeof(AssetTypeDialog),
-                typeof(AssetTypeDialogExport),
-                typeof(AssetTypeAhorn),
-                typeof(AssetTypeSpriteBank)
+            // Used to blacklists assets for ingest
+            internal readonly static HashSet<string> BlacklistRootFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "changelog", "credits", "documentation", "FAQ", "LICENSE", "README"
+            };
+
+            internal readonly static HashSet<string> BlacklistExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                ".cs", ".csproj", ".md", ".pdb", ".sln", ".yaml-backup"
+            };
+
+            internal readonly static HashSet<string> BlacklistRootFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "Ahorn", "Loenn"
+            };
+
+            internal readonly static HashSet<string> BlacklistFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+                "lib-stripped", "__MACOSX", "obj"
             };
 
             internal readonly static List<string> LoadedAssetPaths = new List<string>();
@@ -605,10 +620,17 @@ namespace Celeste.Mod {
             public static bool TryAdd(string path, ModAsset metadata) {
                 path = path.Replace('\\', '/');
 
-                if (path.Contains("/.git/") || path.Contains("/__MACOSX/") ||
-                    Path.GetFileName(path).StartsWith("._"))
+                string filename = Path.GetFileNameWithoutExtension(path);
+                if (filename.StartsWith(".") || BlacklistExtensions.Contains(Path.GetExtension(path)))
                     return false;
 
+                string[] pathSplit = path.Split('/');
+                for (int i = 0; i < pathSplit.Length - 1; i++) {
+                    if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) ||
+                        (i == 0 && (BlacklistRootFiles.Contains(filename) || BlacklistRootFolders.Contains(pathSplit[0]))))
+                        return false;
+                }
+                
                 if (metadata != null &&
                     (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
                     return false;
@@ -638,8 +660,7 @@ namespace Celeste.Mod {
                             Map.Remove($"{prefix}:/{path}");
 
                     } else {
-                        if (Map.TryGetValue(path, out ModAsset existing) && existing != null &&
-                            existing.Source != metadata.Source && !NonConflictTypes.Contains(existing.Type)) {
+                        if (Map.TryGetValue(path, out ModAsset existing) && existing != null && existing.Source != metadata.Source && !existing.Type.IsSubclassOf(typeof(AssetTypeNonConflict))) {
                             Logger.Log(LogLevel.Warn, "content", $"CONFLICT for asset path {path} ({existing?.Source?.Name ?? "???"} vs {metadata?.Source?.Name ?? "???"})");
                         }
 
@@ -687,7 +708,8 @@ namespace Celeste.Mod {
                 => TryAdd(path, metadata);
 
             /// <summary>
-            /// Invoked when GuessType can't guess the asset format / type.
+            /// Invoked when GuessType can't guess the asset type.
+            /// Subscribe to this event to register your own custom types.
             /// </summary>
             public static event TypeGuesser OnGuessType;
             /// <summary>
@@ -703,14 +725,15 @@ namespace Celeste.Mod {
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
-                if (file.EndsWith(".dll")) {
+                // Assign game asset types 
+                if (format == "dll") {
                     type = typeof(AssetTypeAssembly);
 
-                } else if (file.EndsWith(".png")) {
+                } else if (format == "png") {
                     type = typeof(Texture2D);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".obj")) {
+                } else if (format == "obj") {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
@@ -718,82 +741,56 @@ namespace Celeste.Mod {
                     type = typeof(AssetTypeObjModelExport);
                     file = file.Substring(0, file.Length - 7);
 
-                } else if (
-                    file == "metadata.yaml" ||
-                    file == "multimetadata.yaml" ||
-                    file == "everest.yaml" ||
-                    file == "everest.yml"
-                ) {
+                } else if (file == "metadata.yaml" || file == "multimetadata.yaml" || file == "everest.yaml" || file == "everest.yml") {
                     type = typeof(AssetTypeMetadataYaml);
-                    file = file.Substring(0, file.Length - (file.EndsWith(".yaml") ? 5 : 4));
-                    format = ".yml";
+                    file = file.Substring(0, file.Length - format.Length - 1);
+                    format = "yml";
 
                 } else if (file == "DecalRegistry.xml") {
-                    Logger.Log("Decal Registry", "found DecalRegistry.xml");
+                    Logger.Log(LogLevel.Verbose, "Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (
-                    file == "Graphics/Sprites.xml" ||
-                    file == "Graphics/SpritesGui.xml" ||
-                    file == "Graphics/Portraits.xml"
-                ) {
+                } else if (file == "Graphics/Sprites.xml" || file == "Graphics/SpritesGui.xml" || file == "Graphics/Portraits.xml") {
                     type = typeof(AssetTypeSpriteBank);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".yaml")) {
-                    type = typeof(AssetTypeYaml);
-                    file = file.Substring(0, file.Length - 5);
-                    format = ".yml";
-                } else if (file.EndsWith(".yml")) {
-                    type = typeof(AssetTypeYaml);
-                    file = file.Substring(0, file.Length - 4);
+                } else if (file.StartsWith("Dialog/")) {
+                    if (format == "txt") {
+                        type = typeof(AssetTypeDialog);
+                        file = file.Substring(0, file.Length - 4);
+                    } else if (file.EndsWith(".txt.export")) {
+                        type = typeof(AssetTypeDialogExport);
+                        file = file.Substring(0, file.Length - 7);
+                    }
 
-                } else if (file.EndsWith(".xml")) {
-                    type = typeof(AssetTypeXml);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt")) {
-                    type = typeof(AssetTypeDialog);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.StartsWith("Dialog/") && file.EndsWith(".txt.export")) {
-                    type = typeof(AssetTypeDialogExport);
-                    file = file.Substring(0, file.Length - 7);
-
-                } else if (file.StartsWith("Maps/") && file.EndsWith(".bin")) {
+                } else if (file.StartsWith("Maps/") && format == "bin") {
                     type = typeof(AssetTypeMap);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.StartsWith("Tutorials/") && file.EndsWith(".bin")) {
+                } else if (file.StartsWith("Tutorials/") && format == "bin") {
                     type = typeof(AssetTypeTutorial);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.StartsWith("Audio/") && file.EndsWith(".bank")) {
-                    type = typeof(AssetTypeBank);
-                    file = file.Substring(0, file.Length - 5);
-                } else if (file.StartsWith("Audio/") && file.EndsWith(".guids.txt")) {
-                    type = typeof(AssetTypeGUIDs);
-                    file = file.Substring(0, file.Length - 4);
-                } else if (file.StartsWith("Audio/") && file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
-                    type = typeof(AssetTypeGUIDs);
-                    file = file.Substring(0, file.Length - 4 - 6);
-                    file += ".guids";
+                } else if (file.StartsWith("Audio/")) {
+                    if (format == "bank") {
+                        type = typeof(AssetTypeBank);
+                        file = file.Substring(0, file.Length - 5);
+                    } else if (file.EndsWith(".guids.txt")) {
+                        type = typeof(AssetTypeGUIDs);
+                        file = file.Substring(0, file.Length - 4);
+                    } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                        type = typeof(AssetTypeGUIDs);
+                        file = file.Substring(0, file.Length - 4 - 6);
+                        file += ".guids";
+                    }
 
-                } else if (file.EndsWith(".txt")) {
-                    type = typeof(AssetTypeText);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.EndsWith(".lua")) {
-                    type = typeof(AssetTypeLua);
-                    file = file.Substring(0, file.Length - 4);
-
-                } else if (file.EndsWith(".fnt")) {
+                } else if (format == "fnt") {
                     type = typeof(AssetTypeFont);
                     file = file.Substring(0, file.Length - 4);
 
+                // Parse custom types from mods
                 } else if (OnGuessType != null) {
-                    // Allow mods to parse custom types.
                     Delegate[] ds = OnGuessType.GetInvocationList();
                     for (int i = 0; i < ds.Length; i++) {
                         string fileMod = ((TypeGuesser) ds[i])(file, out Type typeMod, out string formatMod);
@@ -804,11 +801,24 @@ namespace Celeste.Mod {
                         format = formatMod;
                         break;
                     }
+                }
 
-                } else if (file.StartsWith("Ahorn/")) {
-                    // Special case: Fallback type for anything inside of the Ahorn folder.
-                    // Will be ignored during collision checks.
-                    type = typeof(AssetTypeAhorn);
+                // Assign supported generic types if we haven't found a more specific one
+                if (type == typeof(object)) {
+                    if (format == "lua") {
+                        type = typeof(AssetTypeLua);
+                        file = file.Substring(0, file.Length - 4);
+                    } else if (format == "txt") {
+                        type = typeof(AssetTypeText);
+                        file = file.Substring(0, file.Length - 4);
+                    } else if (format == "xml") {
+                        type = typeof(AssetTypeXml);
+                        file = file.Substring(0, file.Length - 4);
+                    } else if (format == "yml" || format == "yaml") {
+                        type = typeof(AssetTypeYaml);
+                        file = file.Substring(0, file.Length - format.Length - 1);
+                        format = "yml";
+                    }
                 }
 
                 return file;
@@ -949,7 +959,7 @@ namespace Celeste.Mod {
 
                 if (_ContentLoaded) {
                     // We're late-loading this mod and thus need to manually ingest new assets.
-                    Logger.Log(LogLevel.Info, "content", $"Late ingest via update for {meta.Name}");
+                    Logger.Log(LogLevel.Verbose, "content", $"Late ingest via update for {meta.Name}");
 
                     Stopwatch loadTimerPrev = Celeste.LoadTimer; // Trick AssetReloadHelper into insta-running callbacks.
                     Stopwatch loadTimer = Stopwatch.StartNew();
@@ -1019,7 +1029,7 @@ namespace Celeste.Mod {
                     if (Emoji.IsInitialized()) {
                         if (refreshEmojis(mapping)) {
                             MainThreadHelper.Do(() => {
-                                Logger.Log("content", "Reloading fonts after late emoji registration");
+                                Logger.Log(LogLevel.Verbose, "content", "Reloading fonts after late emoji registration");
                                 Fonts.Reload();
                             });
                         }
@@ -1050,7 +1060,7 @@ namespace Celeste.Mod {
                     }
                 } else if (mapping.PathVirtual.StartsWith("Graphics/Atlases/Gui/emoji/")) {
                     string emojiName = mapping.PathVirtual.Substring(27);
-                    Logger.Log("content", $"Late registering emoji: {emojiName}");
+                    Logger.Log(LogLevel.Verbose, "content", $"Late registering emoji: {emojiName}");
                     Emoji.Register(emojiName, GFX.Gui["emoji/" + emojiName]);
                     return true;
                 }
