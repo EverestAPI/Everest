@@ -37,7 +37,7 @@ namespace Celeste {
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
-        
+
         private float unpauseTimer;
 
         /// <summary>
@@ -187,6 +187,7 @@ namespace Celeste {
         }
 
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
+        [PatchLevelLoaderDecalCreation]
         public extern void orig_LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false);
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
@@ -519,6 +520,12 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
+    /// Patch leevel loading method to copy decal rotations from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderDecalCreation))]
+    class PatchLevelLoaderDecalCreationAttribute : Attribute { }
+
+    /// <summary>
     /// Patch the Godzilla-sized level updating method instead of reimplementing it in Everest.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelUpdate))]
@@ -637,6 +644,39 @@ namespace MonoMod {
 
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
             cctor_il.Emit(OpCodes.Ret);
+        }
+
+        public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+            FieldDefinition f_DecalData_Rotation = t_DecalData.FindField("Rotation");
+            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single)");
+
+            ILCursor cursor = new ILCursor(context);
+
+            int loc_decaldata = -1;
+            int matches = 0;
+            // move to just before each of the two Decal constructor calls (one for FGDecals and one for BGDecals), and obtain a reference to the DecalData local
+            while (cursor.TryGotoNext(MoveType.After,
+                                      instr => instr.MatchLdloc(out loc_decaldata),
+                                      instr => instr.MatchLdfld("Celeste.DecalData", "Scale"),
+                                      instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
+                                            || instr.MatchLdcI4(Celeste.Depths.BGDecals))) {
+                // we are trying to get:
+                //   decal = new Decal()
+
+                // load the rotation from the DecalData
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
+                cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
+                // and replace the Decal constructor to accept it
+                cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
+                cursor.Remove();
+
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
+            }
         }
 
         public static void PatchLevelUpdate(ILContext context, CustomAttribute attrib) {
