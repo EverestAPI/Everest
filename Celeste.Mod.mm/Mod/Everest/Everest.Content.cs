@@ -762,6 +762,9 @@ namespace Celeste.Mod {
                     } else if (file.EndsWith(".txt.export")) {
                         type = typeof(AssetTypeDialogExport);
                         file = file.Substring(0, file.Length - 7);
+                    } else if (format == "fnt") {
+                        type = typeof(AssetTypeFont);
+                        file = file.Substring(0, file.Length - 4);
                     }
 
                 } else if (file.StartsWith("Maps/") && format == "bin") {
@@ -785,12 +788,8 @@ namespace Celeste.Mod {
                         file += ".guids";
                     }
 
-                } else if (format == "fnt") {
-                    type = typeof(AssetTypeFont);
-                    file = file.Substring(0, file.Length - 4);
-
-                // Parse custom types from mods
                 } else if (OnGuessType != null) {
+                    // Parse custom types from mods
                     Delegate[] ds = OnGuessType.GetInvocationList();
                     for (int i = 0; i < ds.Length; i++) {
                         string fileMod = ((TypeGuesser) ds[i])(file, out Type typeMod, out string formatMod);
