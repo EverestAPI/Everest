@@ -20,7 +20,7 @@ namespace Celeste.Mod.UI {
 
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
 
-        private int buildsPerBranch = 4;
+        private int buildsPerBranch = 12;
 
         public OuiVersionList() {
         }
