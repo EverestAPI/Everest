@@ -624,10 +624,12 @@ namespace Celeste.Mod {
                 if (filename.StartsWith(".") || BlacklistExtensions.Contains(Path.GetExtension(path)))
                     return false;
 
-                string[] pathSplit = path.Split('/');
+                string[] pathSplit = path.Split(DirSplit, StringSplitOptions.RemoveEmptyEntries);
+                if (pathSplit.Length == 1 && BlacklistRootFiles.Contains(filename))
+                    return false;
+
                 for (int i = 0; i < pathSplit.Length - 1; i++) {
-                    if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) ||
-                        (i == 0 && (BlacklistRootFiles.Contains(filename) || BlacklistRootFolders.Contains(pathSplit[0]))))
+                    if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) || (i == 0 && BlacklistRootFolders.Contains(pathSplit[0])))
                         return false;
                 }
                 
