@@ -1,16 +1,11 @@
 variables:
 - group: 'Common Variables'
 
-# Trigger for main repo branches, and non-draft PRs
+# Trigger for main repo branches
 trigger:
   branches:
     include:
     - dev
-pr:
-  branches:
-    include:
-    - dev
-  drafts: false
 
 
 name: '$(Build.BuildId)+$(BuildIdOffset)'
