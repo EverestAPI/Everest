@@ -141,28 +141,22 @@ namespace Celeste.Mod {
 
                     UpdatePriority = UpdatePriority.High,
 
-                    Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
-                    ParseData = GitHubReleasesParser(offset: 700)
+                    Index = GetEverestUpdaterDatabaseURL(),
+                    ParseData = UpdateListParser("stable")
                 },
                 new Source {
                     Name = "updater_src_beta",
                     Description = "updater_src_release_github",
 
-                    Index = "https://api.github.com/repos/EverestAPI/Everest/releases",
-                    ParseData = GitHubReleasesParser(offset: 700, prerelease: true)
+                    Index = GetEverestUpdaterDatabaseURL(),
+                    ParseData = UpdateListParser("beta")
                 },
                 new Source {
                     Name = "updater_src_dev",
                     Description = "updater_src_buildbot_azure",
 
-                    Index = new URIHelper("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds", new NameValueCollection() {
-                            {"definitions", "3"},
-                            {"branchName", "refs/heads/dev"},
-                            {"statusFilter", "completed"},
-                            {"resultsFilter", "succeeded"},
-                            {"api-version", "5.0"},
-                        }).ToString(),
-                    ParseData = AzureBuildsParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", offset: 700)
+                    Index = GetEverestUpdaterDatabaseURL(),
+                    ParseData = UpdateListParser("dev")
                 },
             };
 
@@ -200,6 +194,17 @@ namespace Celeste.Mod {
                 });
             }
 
+            private static string _everestUpdaterDatabaseURL;
+            private static string GetEverestUpdaterDatabaseURL() {
+                if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
+                    using (WebClient wc = new WebClient()) {
+                        Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
+                        _everestUpdaterDatabaseURL = wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim();
+                    }
+                }
+                return _everestUpdaterDatabaseURL;
+            }
+
             private static Func<Source, string, Entry> CommonLineParser(string root)
                 => (source, line) => {
                     string[] split = line.Split(' ');
@@ -230,6 +235,21 @@ namespace Celeste.Mod {
                     }
 
                     return new Entry(name, url, int.Parse(Regex.Match(split[1], @"\d+").Value), source);
+                };
+
+            public static Func<Source, string, List<Entry>> UpdateListParser(string branch)
+                => (source, dataRaw) => {
+                    List<Entry> entries = new List<Entry>();
+
+                    JArray list = JArray.Parse(dataRaw);
+                    foreach (JObject release in list) {
+                        if (release["branch"].ToString() == branch) {
+                            int build = release["version"].ToObject<int>();
+                            string url = release["mainDownload"].ToString();
+                            entries.Add(new Entry(build.ToString(), url, build, source));
+                        }
+                    }
+                    return entries;
                 };
 
             public static Func<Source, string, List<Entry>> AzureBuildsParser(string artifactFormat, int offset)
