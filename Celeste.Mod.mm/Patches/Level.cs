@@ -635,6 +635,10 @@ namespace MonoMod {
                 }
             }
 
+            cctor_il.Emit(OpCodes.Dup);
+            cctor_il.Emit(OpCodes.Ldstr, "theoCrystalHoldingBarrier"); // theoCrystalHoldingBarrier is an unused entity appearing in chapter 5
+            cctor_il.Emit(OpCodes.Callvirt, m_LoadStrings_Add);
+            cctor_il.Emit(OpCodes.Pop);
             cctor_il.Emit(OpCodes.Stsfld, f_LoadStrings);
             cctor_il.Emit(OpCodes.Ret);
         }
