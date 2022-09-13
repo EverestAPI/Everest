@@ -72,6 +72,16 @@ namespace Celeste.Mod {
                     => OnCreateButtons?.Invoke(menu, buttons);
             }
 
+            public static class LevelLoader {
+                public delegate void LoadingThreadHandler(_Level level);
+                /// <summary>
+                /// Called at the end of the map loading thread.
+                /// </summary>
+                public static event LoadingThreadHandler OnLoadingThread;
+                internal static void LoadingThread(_Level level)
+                    => OnLoadingThread?.Invoke(level);
+            }
+
             public static class Level {
                 public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
                 /// <summary>

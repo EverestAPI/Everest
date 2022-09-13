@@ -182,7 +182,8 @@ namespace Celeste {
         }
 
         [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLevelLoaderThread] // ... except for manually manipulating the method via MonoModRules
+        [PatchLoadingThreadAddEvent] // ... except for manually manipulating the method via MonoModRules
+        [PatchLoadingThreadAddSubHudRenderer] 
         private extern void LoadingThread();
 
         private void LoadingThread_Safe() {
@@ -229,10 +230,16 @@ namespace MonoMod {
     class PatchLevelLoaderOrigCtorAttribute : Attribute { }
 
     /// <summary>
-    /// Patch the Godzilla-sized level loading thread method instead of reimplementing it in Everest.
+    /// Adds a SubHudRenderer to the level in the loader thread.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderThread))]
-    class PatchLevelLoaderThreadAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadingThreadAddSubHudRenderer))]
+    class PatchLoadingThreadAddSubHudRendererAttribute : Attribute { }
+
+    /// <summary>
+    /// Invokes the OnLoadingThread event at the end of the loading thread.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLoadingThreadAddEvent))]
+    class PatchLoadingThreadAddEventAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -243,7 +250,7 @@ namespace MonoMod {
             cursor.RemoveRange(6);
         }
 
-        public static void PatchLevelLoaderThread(ILContext context, CustomAttribute attrib) {
+        public static void PatchLoadingThreadAddSubHudRenderer(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Level = MonoModRule.Modder.FindType("Celeste.Level").Resolve();
             FieldDefinition f_SubHudRenderer = t_Level.FindField("SubHudRenderer");
             MethodDefinition ctor_SubHudRenderer = f_SubHudRenderer.FieldType.Resolve().FindMethod("System.Void .ctor()");
@@ -284,6 +291,19 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+        }
+
+        public static void PatchLoadingThreadAddEvent(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_LevelLoader_get_Level = context.Method.DeclaringType.FindMethod("Celeste.Level get_Level()");
+            MethodDefinition m_Everest_Events_LevelLoader_LoadingThread = MonoModRule.Modder.Module.GetType("Celeste.Mod.Everest/Events/LevelLoader").FindMethod("System.Void LoadingThread(Celeste.Level)");
+
+            ILCursor cursor = new ILCursor(context);
+
+            // We want to move to just before the end of the loading thread and invoke an event for mods to hook
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.Level", "Pathfinder"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_LevelLoader_get_Level);
+            cursor.Emit(OpCodes.Call, m_Everest_Events_LevelLoader_LoadingThread);
         }
 
     }
