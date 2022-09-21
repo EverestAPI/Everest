@@ -88,7 +88,8 @@ namespace Celeste {
             get {
                 if (LevelSet == "Celeste")
                     return UnlockedAreas_Unsafe;
-                return LevelSetStats.AreaOffset + LevelSetStats.UnlockedAreas;
+                var stats = LevelSetStats;
+                return stats.AreaOffset + stats.UnlockedAreas;
             }
             set {
                 if (LevelSets == null || LevelSet == "Celeste") {
@@ -179,14 +180,16 @@ namespace Celeste {
         public new int MaxArea {
             [MonoModReplace]
             get {
-                return LevelSetStats.AreaOffset + LevelSetStats.MaxArea;
+                var stats = LevelSetStats;
+                return stats.AreaOffset + stats.MaxArea;
             }
         }
 
         public new int MaxAssistArea {
             [MonoModReplace]
             get {
-                return LevelSetStats.AreaOffset + LevelSetStats.MaxAssistArea;
+                var stats = LevelSetStats;
+                return stats.AreaOffset + stats.MaxAssistArea;
             }
         }
 
@@ -210,6 +213,21 @@ namespace Celeste {
                     return;
                 }
                 LevelSetStats.Poem = value;
+            }
+        }
+
+        public new int TotalCassettes {
+            [MonoModReplace] // optimise the method
+            get {
+                int totalCassettes = 0;
+                var areas = Areas_Safe; // this getter hides extremely expensive calculations. Evil!
+                var maxArea = MaxArea;
+
+                for (int i = 0; i <= maxArea; ++i) {
+                    if (areas[i].Cassette && !AreaData.Get(i).Interlude)
+                        totalCassettes++;
+                }
+                return totalCassettes;
             }
         }
 
