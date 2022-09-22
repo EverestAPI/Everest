@@ -88,7 +88,7 @@ namespace Celeste {
             get {
                 if (LevelSet == "Celeste")
                     return UnlockedAreas_Unsafe;
-                var stats = LevelSetStats;
+                LevelSetStats stats = LevelSetStats;
                 return stats.AreaOffset + stats.UnlockedAreas;
             }
             set {
@@ -96,7 +96,8 @@ namespace Celeste {
                     UnlockedAreas_Unsafe = value;
                     return;
                 }
-                LevelSetStats.UnlockedAreas = value - LevelSetStats.AreaOffset;
+                LevelSetStats stats = LevelSetStats;
+                stats.UnlockedAreas = value - stats.AreaOffset;
             }
         }
 
@@ -180,7 +181,7 @@ namespace Celeste {
         public new int MaxArea {
             [MonoModReplace]
             get {
-                var stats = LevelSetStats;
+                LevelSetStats stats = LevelSetStats;
                 return stats.AreaOffset + stats.MaxArea;
             }
         }
@@ -188,7 +189,7 @@ namespace Celeste {
         public new int MaxAssistArea {
             [MonoModReplace]
             get {
-                var stats = LevelSetStats;
+                LevelSetStats stats = LevelSetStats;
                 return stats.AreaOffset + stats.MaxAssistArea;
             }
         }
@@ -220,8 +221,8 @@ namespace Celeste {
             [MonoModReplace] // optimise the method
             get {
                 int totalCassettes = 0;
-                var areas = Areas_Safe; // this getter hides extremely expensive calculations. Evil!
-                var maxArea = MaxArea;
+                List<AreaStats> areas = Areas_Safe; // this getter hides extremely expensive calculations. Evil!
+                int maxArea = MaxArea;
 
                 for (int i = 0; i <= maxArea; ++i) {
                     if (areas[i].Cassette && !AreaData.Get(i).Interlude)
