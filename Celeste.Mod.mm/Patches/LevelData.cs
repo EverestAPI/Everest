@@ -1,5 +1,6 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using Microsoft.Xna.Framework;
 using System;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -7,9 +8,12 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using System.Globalization;
 
 namespace Celeste {
     public class patch_LevelData : LevelData {
+
+        public Vector2? DefaultSpawn;
 
         public patch_LevelData(BinaryPacker.Element data) : base(data) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
@@ -18,11 +22,18 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchLevelDataBerryTracker]
         [PatchLevelDataDecalLoader]
+        [PatchLevelDataSpawnpointLoader]
         public extern void orig_ctor(BinaryPacker.Element data);
 
         [MonoModConstructor]
         public void ctor(BinaryPacker.Element data) {
             orig_ctor(data);
+        }
+
+        private void CheckForDefaultSpawn(BinaryPacker.Element spawn, Vector2 coords) {
+            if (DefaultSpawn == null && spawn.Attributes.TryGetValue("isDefaultSpawn", out object isDefaultSpawn) && Convert.ToBoolean(isDefaultSpawn, CultureInfo.InvariantCulture)) {
+                DefaultSpawn = coords;
+            }
         }
     }
 }
@@ -39,6 +50,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataDecalLoader))]
     class PatchLevelDataDecalLoader : Attribute { }
+
+    /// <summary>
+    /// Patch the constructor to recognize the default spawnpoint.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelDataSpawnpointLoader))]
+    class PatchLevelDataSpawnpointLoaderAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -107,6 +124,27 @@ namespace MonoMod {
             if (matches != 2) {
                 throw new Exception($"Too few matches for HasAttr(\"tag\"): {matches}");
             }
+        }
+
+        public static void PatchLevelDataSpawnpointLoader(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_LevelDataCheckForDefaultSpawn = context.Method.DeclaringType.FindMethod("CheckForDefaultSpawn");
+            TypeReference t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+            t_Vector2 = MonoModRule.Modder.Module.ImportReference(t_Vector2);
+            VariableDefinition v_spawnCoords = new VariableDefinition(t_Vector2);
+            context.Body.Variables.Add(v_spawnCoords);
+
+            ILCursor cursor = new ILCursor(context);
+
+            int element = -1;
+            // call CheckForDefaultSpawn with checkpoint element and coordinates
+            cursor.GotoNext(instr => instr.MatchLdloc(out element), instr => instr.MatchLdfld("Celeste.BinaryPacker/Element", "Name"), instr => instr.MatchLdstr("player"));
+            cursor.GotoNext(MoveType.After, instr => instr.MatchNewobj("Microsoft.Xna.Framework.Vector2"));
+            cursor.Emit(OpCodes.Stloc, v_spawnCoords);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldloc, element);
+            cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
+            cursor.Emit(OpCodes.Callvirt, m_LevelDataCheckForDefaultSpawn);
+            cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
         }
     }
 }

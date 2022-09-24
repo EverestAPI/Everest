@@ -42,7 +42,8 @@ namespace Celeste {
 
         /// <summary>
         /// If in vanilla levels, gets the spawnpoint closest to the bottom left of the level.<br/>
-        /// Otherwise, get the first spawnpoint defined in the level data.
+        /// Otherwise, get the default spawnpoint from the level data if present, falling back to
+        /// the first spawnpoint defined in the level data.
         /// </summary>
         public new Vector2 DefaultSpawnPoint {
             [MonoModReplace]
@@ -50,7 +51,8 @@ namespace Celeste {
                 if (Session.Area.GetLevelSet() == "Celeste")
                     return GetSpawnPoint(new Vector2(Bounds.Left, Bounds.Bottom));
 
-                return Session.LevelData.Spawns[0];
+                patch_LevelData levelData = (patch_LevelData) Session.LevelData;
+                return levelData.DefaultSpawn ?? levelData.Spawns[0];
             }
         }
 
