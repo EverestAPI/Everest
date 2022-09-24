@@ -135,12 +135,13 @@ namespace MonoMod {
 
             ILCursor cursor = new ILCursor(context);
 
+            int element = -1;
             // call CheckForDefaultSpawn with checkpoint element and coordinates
-            cursor.GotoNext(instr => instr.MatchLdstr("player"));
+            cursor.GotoNext(instr => instr.MatchLdloc(out element), instr => instr.MatchLdfld("Celeste.BinaryPacker/Element", "Name"), instr => instr.MatchLdstr("player"));
             cursor.GotoNext(MoveType.After, instr => instr.MatchNewobj("Microsoft.Xna.Framework.Vector2"));
             cursor.Emit(OpCodes.Stloc, v_spawnCoords);
             cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldloc, 9);
+            cursor.Emit(OpCodes.Ldloc, element);
             cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
             cursor.Emit(OpCodes.Callvirt, m_LevelDataCheckForDefaultSpawn);
             cursor.Emit(OpCodes.Ldloc, v_spawnCoords);
