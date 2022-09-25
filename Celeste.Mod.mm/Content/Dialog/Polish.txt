@@ -78,7 +78,6 @@
     MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=                Szczegółowy widok na Discordzie
     MODOPTIONS_COREMODULE_MENUPAGEUP=                        Strona w górę
     MODOPTIONS_COREMODULE_MENUPAGEDOWN=                        Strona w dół
-    MODOPTIONS_COREMODULE_KEYCONFIG=                        Nawigacja Menu -
 
     MODOPTIONS_COREMODULE_SOUNDTEST=                         Test Dźwięku
     MODOPTIONS_COREMODULE_OOBE=                             Ponów konfigurację wstępną

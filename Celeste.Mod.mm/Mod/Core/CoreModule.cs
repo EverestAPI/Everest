@@ -244,11 +244,6 @@ namespace Celeste.Mod.Core {
             if (!inGame) {
                 List<TextMenu.Item> items = menu.GetItems();
 
-                // change the "key config" labels
-
-                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
-                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
-
                 // insert extra options before the "key config" options
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiOOBE>();

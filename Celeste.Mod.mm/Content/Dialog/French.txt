@@ -59,7 +59,6 @@
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Utile pour les créateurs de mods
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page précédente (menus)
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page suivante (menus)
-	MODOPTIONS_COREMODULE_KEYCONFIG=						Touches des menus -
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
