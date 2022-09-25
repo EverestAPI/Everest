@@ -263,7 +263,7 @@ namespace Celeste {
                 Audio.cachedEventDescriptions.Add(path, desc);
 
             } else if (status == RESULT.ERR_EVENT_NOTFOUND) {
-                if (path is not ("null" or "event:/none" or "event:/null")) {
+                if (path is not ("null" or "event:/none")) {
                     Logger.Log(LogLevel.Warn, "Audio", $"Event not found: {path}");
                 }
 
