@@ -100,7 +100,7 @@ namespace Celeste.Mod.UI {
         }
 
         public OuiModOptionString Init(string value, Action<string> onValueChange, Action<bool> exit, int maxValueLength, int minValueLength) {
-            _Value = StartingValue = value;
+            _Value = StartingValue = value ?? "";
             OnValueChange = onValueChange;
 
             MaxValueLength = maxValueLength;
