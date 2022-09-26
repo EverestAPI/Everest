@@ -64,14 +64,11 @@ namespace Celeste {
                 Engine.Scene = new CustomScreenVignette(session, meta: screen);
                 return true;
             } else if (playVignette && (text = area.GetMeta()?.LoadingVignetteText) != null && text.Dialog != null) {
-                HiresSnow snow = null;
-                if (Engine.Scene is Overworld)
-                    snow = (Engine.Scene as Overworld).Snow;
+                if (Engine.Scene is not Overworld {Snow: HiresSnow snow}) {
+                    snow = null;
+                }
 
-                if (snow != null && text.SnowDirection != null)
-                    snow.Direction = text.SnowDirection;
-
-                Engine.Scene = new CustomTextVignette(session, text.Dialog, snow);
+                Engine.Scene = new CustomTextVignette(session, text, snow);
                 return true;
             }
 

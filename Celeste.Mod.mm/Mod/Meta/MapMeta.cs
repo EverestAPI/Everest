@@ -510,6 +510,9 @@ namespace Celeste.Mod.Meta {
 
     public class MapMetaTextVignette {
         public string Dialog { get; set; }
+        public string Audio { get; set; } = SFX.music_prologue_intro_vignette; // for backwards compatibility reasons, default to prologue audio if not specified
+        public float InitialDelay { get; set; } = 3;
+        public float FinalDelay { get; set; }
         [YamlIgnore] public Vector2 SnowDirection => SnowDirectionArray.ToVector2() ?? Vector2.UnitY; //Snowing downwards by default
         [YamlMember(Alias = "SnowDirection")] public float[] SnowDirectionArray { get; set; }
     }
