@@ -40,7 +40,7 @@ namespace Celeste {
 
         private float frame;
 
-        private Solid solid;
+        private List<Solid> solids;
 
         private StaticMover staticMover;
 
@@ -122,6 +122,7 @@ namespace Celeste {
             }
             hideRange = 32f;
             showRange = 48f;
+            solids = new List<Solid>();
 
             orig_ctor(texture, position, scale, depth);
         }
@@ -164,16 +165,20 @@ namespace Celeste {
         [MonoModReplace]
         [MonoModPublic]
         public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true) {
-            solid = new Solid(Position + new Vector2(x, y), w, h, true);
-            solid.BlockWaterfalls = blockWaterfalls;
-            solid.SurfaceSoundIndex = surfaceSoundIndex;
+            Solid solid = new Solid(Position + new Vector2(x, y), w, h, safe: true) {
+                BlockWaterfalls = blockWaterfalls,
+                SurfaceSoundIndex = surfaceSoundIndex,
+            };
+            solids.Add(solid);
             Scene.Add(solid);
         }
 
         public void MakeSolid(float x, float y, float w, float h, int surfaceSoundIndex, bool blockWaterfalls = true, bool safe = true) {
-            solid = new Solid(Position + new Vector2(x, y), w, h, safe);
-            solid.BlockWaterfalls = blockWaterfalls;
-            solid.SurfaceSoundIndex = surfaceSoundIndex;
+            Solid solid = new Solid(Position + new Vector2(x, y), w, h, safe) {
+                BlockWaterfalls = blockWaterfalls,
+                SurfaceSoundIndex = surfaceSoundIndex,
+            };
+            solids.Add(solid);
             Scene.Add(solid);
         }
 
@@ -189,32 +194,33 @@ namespace Celeste {
 
         public void MakeStaticMover(int x, int y, int w, int h, bool jumpThrus = false) {
             staticMover = new StaticMover {
-                SolidChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
+                SolidChecker = s => !solids.Contains(s) && s.CollideRect(new Rectangle((int) X + x, (int) Y + y, w, h)),
                 OnDestroy = () => {
                     RemoveSelf();
-                    solid?.RemoveSelf();
+                    solids.ForEach(s => s.RemoveSelf());
                 },
                 OnDisable = () => {
                     Active = Visible = Collidable = false;
-                    if (solid != null)
-                        solid.Collidable = false;
+                    solids.ForEach(s => s.Collidable = false);
                 },
                 OnEnable = () => {
                     Active = Visible = Collidable = true;
-                    if (solid != null)
-                        solid.Collidable = true;
+                    solids.ForEach(s => s.Collidable = true);
                 },
                 OnMove = v => {
                     Position += v;
-                    if (solid != null) {
-                        Vector2 liftSpeed = (staticMover.Platform != null) ? staticMover.Platform.LiftSpeed : Vector2.Zero;
-                        solid.MoveH(v.X, liftSpeed.X);
-                        solid.MoveV(v.Y, liftSpeed.Y);
-                    }
+                    Vector2 liftSpeed = staticMover.Platform.LiftSpeed;
+                    solids.ForEach(s => {
+                        s.MoveH(v.X, liftSpeed.X);
+                        s.MoveV(v.Y, liftSpeed.Y);
+                    });
                 },
-                OnShake = v => { Position += v; },
+                OnShake = v => Position += v,
                 OnAttach = p => {
-                    p.Add(new EntityRemovedListener(() => RemoveSelf()));
+                    p.Add(new EntityRemovedListener(() => { 
+                        RemoveSelf();
+                        solids.ForEach(s => s.RemoveSelf());
+                    }));
                     CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
                 }
             };
