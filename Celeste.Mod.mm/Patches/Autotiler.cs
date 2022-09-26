@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
@@ -244,12 +245,11 @@ namespace Celeste {
 
             // Satisfies error handling for the orig_ method too.
             if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
-                throw new KeyNotFoundException { 
-                    Data = { 
-                        { "x", x },
-                        { "y", y },
-                        { "id", tile }
-                    } 
+                throw new AutotilerException($"Level contains a tileset with an id of '{tile}' that is not defined.") {
+                    Source = "TileHandler",
+                    ID = tile,
+                    X = x,
+                    Y = y
                 };
             }
 

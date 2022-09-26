@@ -3,6 +3,7 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
@@ -16,7 +17,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 
@@ -159,10 +159,9 @@ namespace Celeste {
                 string sid = session?.Area.GetSID() ?? "NULL";
                 if (patch_LevelEnter.ErrorMessage == null) {
                     if (e is XmlException) {
-                        string lineNum = Regex.Match(e.Message, @"Line (\d+)").Groups[1].Value;
-                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_xmlerror").Replace("((path))", path).Replace("((line))", lineNum);
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_xmlerror").Replace("((path))", path);
                         Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing {path}");
-                    } else if (e.StackTrace.Contains("Autotiler")) {
+                    } else if (e.TypeInStacktrace(typeof(Autotiler))) {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_tilexmlerror").Replace("((path))", path);
                         Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing tileset tag in {path}");
                     } else {
@@ -204,32 +203,28 @@ namespace Celeste {
             } catch (Exception e) {
                 string sid = session?.Area.GetSID() ?? "NULL";
                 if (patch_LevelEnter.ErrorMessage == null) {
-                    if (e is KeyNotFoundException && e.StackTrace.Contains("TileHandler") && e.Data.Count == 3) {
-                        int x = (int)e.Data["x"];
-                        int y = (int)e.Data["y"];
-                        char id = (char)e.Data["id"];
-
-                        string room = "";
+                    if (e is AutotilerException ex && e.Source == "TileHandler") {
+                        string room = "???";
                         for (int i = 0; i < GFX.FGAutotiler.LevelBounds.Count; i++) {
-                            if (GFX.FGAutotiler.LevelBounds[i].Contains(x, y)) {
+                            if (GFX.FGAutotiler.LevelBounds[i].Contains(ex.X, ex.Y)) {
+                                ex.X -= GFX.FGAutotiler.LevelBounds[i].X;
+                                ex.Y -= GFX.FGAutotiler.LevelBounds[i].Y;
                                 room = session.MapData.Levels[i].Name;
-                                x -= GFX.FGAutotiler.LevelBounds[i].X;
-                                y -= GFX.FGAutotiler.LevelBounds[i].Y;
                                 break;
                             }
                         }
-
+                        
                         string type = "";
-                        if (e.StackTrace.Contains("SolidTiles")) {
+                        if (e.TypeInStacktrace(typeof(SolidTiles))) {
                             type = "fg";
-                        } else if (e.StackTrace.Contains("BackgroundTiles")) {
+                        } else if (e.TypeInStacktrace(typeof(BackgroundTiles))) {
                             type = "bg";
                         }
                         
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_badtileid")
-                            .Replace("((type))", type).Replace("((id))", id.ToString()).Replace("((x))", x.ToString())
-                            .Replace("((y))", y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
-                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Undefined {type}tile id '{id}' at ({x}, {y}) in room {room}");
+                            .Replace("((type))", type).Replace("((id))", ex.ID.ToString()).Replace("((x))", ex.X.ToString())
+                            .Replace("((y))", ex.Y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
+                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Undefined tile id '{ex.ID}' at ({ex.X}, {ex.Y}) in room {room}");
                     } else {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
                     }

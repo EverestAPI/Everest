@@ -20,6 +20,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
+using Celeste.Mod.Helpers;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -207,7 +208,7 @@ namespace Celeste {
                 }
             } catch (Exception e) {
                 if (patch_LevelEnter.ErrorMessage == null) {
-                    if (e is ArgumentOutOfRangeException && e.StackTrace.Contains("get_DefaultSpawnPoint")) {
+                    if (e is ArgumentOutOfRangeException && e.MethodInStacktrace(typeof(Level), "get_DefaultSpawnPoint")) {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelnospawn");
                     } else {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", Session.Area.GetSID());
