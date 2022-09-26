@@ -8,7 +8,6 @@ using System.Collections;
 
 namespace Celeste.Mod.Entities {
     public class CustomTextVignette : Scene {
-
         public bool CanPause => menu == null;
 
         private Session session;
@@ -33,7 +32,7 @@ namespace Celeste.Mod.Entities {
         private HudRenderer renderer;
         private HiresSnow snow;
 
-        public CustomTextVignette(Session session, MapMetaTextVignette meta, HiresSnow snow = null)  {
+        public CustomTextVignette(Session session, MapMetaTextVignette meta, HiresSnow snow = null) {
             this.session = session;
             areaMusic = session.Audio.Music.Event;
             session.Audio.Music.Event = null;
