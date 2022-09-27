@@ -749,7 +749,6 @@ namespace Celeste.Mod {
                     format = "yml";
 
                 } else if (file == "DecalRegistry.xml") {
-                    Logger.Log(LogLevel.Verbose, "Decal Registry", "found DecalRegistry.xml");
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
 
@@ -889,12 +888,7 @@ namespace Celeste.Mod {
                         AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDecalRegistry)) {
-                        string fileContents;
-                        using (StreamReader reader = new StreamReader(next.Stream)) {
-                            fileContents = reader.ReadToEnd();
-                        }
-                        // Reload decal registry entirely, from every mod, so that decal attributes apply in the same order than on startup consistenly
-                        DecalRegistry.LoadDecalRegistry();
+                        DecalRegistry.LoadModDecalRegistry(next);
                         AssetReloadHelper.ReloadLevel();
 
                     } else if (next.Type == typeof(AssetTypeDialog) || next.Type == typeof(AssetTypeDialogExport)) {

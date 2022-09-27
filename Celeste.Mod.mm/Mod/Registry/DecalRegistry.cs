@@ -2,7 +2,6 @@
 using Monocle;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Xml;
@@ -12,9 +11,15 @@ namespace Celeste.Mod {
     /// Allows custom decals to have properties that are otherwise hardcoded, such as reflections, parallax, etc.
     /// </summary>
     public static class DecalRegistry {
+        /// <summary>
+        /// Mapping of decal paths to decal registry properties.
+        /// </summary>
+        public static readonly Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
 
-        // string is propertyName
-        public static Dictionary<string, Action<Decal, XmlAttributeCollection>> PropertyHandlers = new Dictionary<string, Action<Decal, XmlAttributeCollection>>() {
+        /// <summary>
+        /// Everest-defined decal registry properties. See <see cref="AddPropertyHandler"/> to add a custom property.
+        /// </summary>
+        internal static Dictionary<string, Action<Decal, XmlAttributeCollection>> PropertyHandlers = new Dictionary<string, Action<Decal, XmlAttributeCollection>>() {
             { "parallax", delegate(Decal decal, XmlAttributeCollection attrs) {
                 if (attrs["amount"] != null)
                     ((patch_Decal)decal).MakeParallax(float.Parse(attrs["amount"].Value));
@@ -162,15 +167,39 @@ namespace Celeste.Mod {
             }},
         };
 
-        // Helper functions for scaling Decal Registry fields
+        /// <summary>
+        /// Adds a custom property to the decal registry. See <see cref="PropertyHandlers"/> for the list of Everest-defined properties.
+        /// </summary>
+        public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
+            if (PropertyHandlers.ContainsKey(propertyName)) {
+                string asmName = Assembly.GetCallingAssembly().GetName().Name;
+                string modName = Everest.Content.Mods
+                                 .FirstOrDefault(mod => mod is AssemblyModContent && mod.DefaultName == asmName)?.Name;
+                string conflictSource = !string.IsNullOrEmpty(modName) ? modName : asmName;
+                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for '{propertyName}' already exists! Replacing with new handler from {conflictSource}.");
+                PropertyHandlers[propertyName] = action;
+            } else {
+                PropertyHandlers.Add(propertyName, action);
+            }
+        }
+
+        /// <summary>
+        /// Returns a vector offset scaled relative to a decal.
+        /// </summary>
         public static Vector2 GetScaledOffset(this Decal self, float x, float y) {
             return new Vector2(x * ((patch_Decal) self).Scale.X, y * ((patch_Decal) self).Scale.Y);
         }
 
+        /// <summary>
+        /// Returns a radius scaled relative to a decal.
+        /// </summary>
         public static float GetScaledRadius(this Decal self, float radius) {
             return radius * ((Math.Abs(((patch_Decal) self).Scale.X) + Math.Abs(((patch_Decal) self).Scale.Y)) / 2f);
         }
 
+        /// <summary>
+        /// Returns the components of a rectangle scaled relative to a decal (float).
+        /// </summary>
         public static void ScaleRectangle(this Decal self, ref float x, ref float y, ref float width, ref float height) {
             Vector2 scale = ((patch_Decal) self).Scale;
             x *= Math.Abs(scale.X);
@@ -182,6 +211,9 @@ namespace Celeste.Mod {
             y = (scale.Y < 0) ? -y - height : y;
         }
 
+        /// <summary>
+        /// Returns the components of a rectangle scaled relative to a decal (int).
+        /// </summary>
         public static void ScaleRectangle(this Decal self, ref int x, ref int y, ref int width, ref int height) {
             Vector2 scale = ((patch_Decal) self).Scale;
             x = (int) (x * Math.Abs(scale.X));
@@ -193,47 +225,86 @@ namespace Celeste.Mod {
             y = (scale.Y < 0) ? -y - height : y;
         }
 
-        public static Dictionary<string, DecalInfo> RegisteredDecals = new Dictionary<string, DecalInfo>();
-
-        public static void AddPropertyHandler(string propertyName, Action<Decal, XmlAttributeCollection> action) {
-            if (PropertyHandlers.ContainsKey(propertyName)) {
-                string asmName = Assembly.GetCallingAssembly().GetName().Name;
-                string modName = Everest.Content.Mods
-                                 .Where(mod => mod is AssemblyModContent && mod.DefaultName == asmName)
-                                 .FirstOrDefault()?.Name;
-                string conflictSource = !string.IsNullOrEmpty(modName) ? modName : asmName;
-                Logger.Log(LogLevel.Warn, "Decal Registry", $"Property handler for '{propertyName}' already exists! Replacing with new handler from {conflictSource}.");
-                PropertyHandlers[propertyName] = action;
-            } else {
-                PropertyHandlers.Add(propertyName, action);
+        /// <summary>
+        /// Loads the decal registry for every enabled mod.
+        /// </summary>
+        internal static void LoadDecalRegistry() {
+            foreach (ModContent mod in Everest.Content.Mods) {
+                if (mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) && asset.Type == typeof(AssetTypeDecalRegistry)) {
+                    LoadModDecalRegistry(asset);
+                }
             }
         }
 
         /// <summary>
-        /// Reads a DecalRegistry.xml file's contents
+        /// Loads a mod's decal registry file.
         /// </summary>
-        public static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(string fileContents) {
-            // XmlElement file = Calc.LoadXML(path)["decals"];
+        internal static void LoadModDecalRegistry(ModAsset decalRegistry) {
+            Logger.Log(LogLevel.Debug, "Decal Registry", $"Loading registry for {decalRegistry.Source.Name}");
+
+            char[] digits = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            string basePath = ((patch_Atlas) GFX.Game).RelativeDataPath + "decals/";
+            List<string> localDecals = decalRegistry.Source.Map.Keys
+                .Where(s => s.StartsWith(basePath))
+                .Select(s => s.Substring(basePath.Length).TrimEnd(digits).ToLower())
+                .Distinct()
+                .ToList();
+
+            foreach (KeyValuePair<string, DecalInfo> decalRegistration in ReadDecalRegistryXml(decalRegistry)) {
+                string registeredPath = decalRegistration.Key;
+                DecalInfo info = decalRegistration.Value;
+
+                bool found = false;
+                if (registeredPath.EndsWith("*") || registeredPath.EndsWith("/")) {
+                    registeredPath = registeredPath.TrimEnd('*');
+                    foreach (string decalPath in localDecals) {
+                        // Wildcard matches must be longer than the subpath, and don't match on decals in subfolders
+                        if (decalPath.StartsWith(registeredPath) && decalPath.Length > registeredPath.Length 
+                            && decalPath.LastIndexOf('/') <= registeredPath.Length - 1) {
+                            RegisterDecal(decalPath, info);
+                            found = true;
+                        }
+                    }
+                } else if (localDecals.Contains(registeredPath)) {
+                    RegisterDecal(registeredPath, info);
+                    found = true;
+                } 
+                
+                if (!found) {
+                    Logger.Log(LogLevel.Warn, "Decal Registry", $"Could not find any decals in {decalRegistry.Source.Name} under path {decalRegistration.Key}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// Reads a decal registry file and returns a sorted list of properties per decal path.
+        /// </summary>
+        private static List<KeyValuePair<string, DecalInfo>> ReadDecalRegistryXml(ModAsset decalRegistry) {
             XmlDocument doc = new XmlDocument();
-            doc.LoadXml(fileContents);
-            XmlElement file = doc["decals"];
+            doc.Load(decalRegistry.Stream);
 
             List<KeyValuePair<string, DecalInfo>> elements = new();
-            foreach (XmlNode node in file) {
+
+            XmlElement decalElement = doc["decals"];
+            if (decalElement == null) {
+                Logger.Log(LogLevel.Warn, "Decal Registry", $"Could not parse the 'decals' tag for the {decalRegistry.Source.Name} registry.");
+                return elements;
+            }
+
+            foreach (XmlNode node in decalElement) {
                 if (node is XmlElement decal) {
                     string decalPath = decal.Attr("path", null)?.ToLower();
                     if (decalPath == null) {
-                        Logger.Log(LogLevel.Warn, "Decal Registry", "Decal didn't have a path attribute!");
+                        Logger.Log(LogLevel.Warn, "Decal Registry", $"Decal in the {decalRegistry.Source.Name} registry is missing a 'path' attribute!");
                         continue;
                     }
-                    DecalInfo info = new DecalInfo();
-                    info.CustomProperties = new List<KeyValuePair<string, XmlAttributeCollection>>();
-                    // Read all the properties
+
+                    DecalInfo info = new DecalInfo { 
+                        CustomProperties = new List<KeyValuePair<string, XmlAttributeCollection>>() 
+                    };
+
                     foreach (XmlNode node2 in decal.ChildNodes) {
                         if (node2 is XmlElement property) {
-                            if (property.Attributes == null) {
-                                property.SetAttribute("a", "only here to prevent crashes");
-                            }
                             info.CustomProperties.Add(new KeyValuePair<string, XmlAttributeCollection>(property.Name, property.Attributes));
                         }
                     }
@@ -242,39 +313,6 @@ namespace Celeste.Mod {
                 }
             }
 
-            return elements;
-        }
-
-        public static void RegisterDecal(string decalPath, DecalInfo info) {
-            if (RegisteredDecals.ContainsKey(decalPath)) {
-                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Replaced decal {decalPath}");
-                RegisteredDecals[decalPath] = info;
-            } else {
-                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Registered decal {decalPath}");
-                RegisteredDecals.Add(decalPath, info);
-            }
-        }
-
-        public static void LoadDecalRegistry() {
-            List<KeyValuePair<string, DecalInfo>> completeDecalRegistry = new();
-
-            foreach (ModAsset asset in
-                Everest.Content.Mods
-                .Select(mod => mod.Map.TryGetValue("DecalRegistry", out ModAsset asset) ? asset : null)
-                .Where(asset => asset != null && asset.Type == typeof(AssetTypeDecalRegistry))
-            ) {
-                string fileContents;
-                using (StreamReader reader = new StreamReader(asset.Stream)) {
-                    fileContents = reader.ReadToEnd();
-                }
-                completeDecalRegistry.AddRange(ReadDecalRegistryXml(fileContents));
-            }
-
-            // We can treat this as if we only had a single, full decal registry, to keep consistency between files
-            ApplyDecalRegistry(completeDecalRegistry);
-        }
-
-        public static void ApplyDecalRegistry(List<KeyValuePair<string, DecalInfo>> elements) {
             // Sort by priority in this order: folders -> matching paths -> single decal
             elements.Sort((a, b) => {
                 int scoreA = a.Key[a.Key.Length - 1] switch {
@@ -291,32 +329,16 @@ namespace Celeste.Mod {
                 return (scoreA == scoreB && scoreA == 1) ? a.Key.Length - b.Key.Length : scoreB - scoreA;
             });
 
-            foreach (KeyValuePair<string, DecalInfo> pair in elements) {
-                string decalPath = pair.Key;
-                DecalInfo info = pair.Value;
-                if (decalPath.EndsWith("*") || decalPath.EndsWith("/")) {
-                    // Removing the '/' made the path wrong
-                    decalPath = decalPath.TrimEnd('*');
-                    int pathLength = decalPath.Length;
+            return elements;
+        }
 
-                    foreach (string subDecalPath in
-                        GFX.Game.GetTextures().Keys
-                        .GroupBy(
-                            s => s.StartsWith("decals/") ?
-                                s.Substring(7).TrimEnd('0','1','2','3','4','5','6','7','8','9').ToLower() :
-                                null,
-                            (s, matches) => s
-                        )
-                        .Where(str => str != null && str.StartsWith(decalPath) && str.Length > pathLength)
-                    ) {
-                        // Decals in subfolders are considered as unmatched
-                        if (!subDecalPath.Remove(0, pathLength).Contains("/"))
-                            RegisterDecal(subDecalPath, info);
-                    }
-                } else {
-                    // Single decal registered
-                    RegisterDecal(decalPath, info);
-                }
+        private static void RegisterDecal(string decalPath, DecalInfo info) {
+            if (RegisteredDecals.ContainsKey(decalPath)) {
+                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Replaced decal {decalPath}");
+                RegisteredDecals[decalPath] = info;
+            } else {
+                Logger.Log(LogLevel.Verbose, "Decal Registry", $"Registered decal {decalPath}");
+                RegisteredDecals.Add(decalPath, info);
             }
         }
 
