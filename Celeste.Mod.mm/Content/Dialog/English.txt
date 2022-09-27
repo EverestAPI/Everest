@@ -22,6 +22,11 @@
 	POSTCARD_LEVELGONE= 		{big}Thank you ((player))!{/big}{n}But our {#ff1144}((sid)){#} is on another mountain.
 	POSTCARD_LEVELLOADFAILED= 	{big}Sorry!{/big}{n}But {#ff1144}((sid)){#} has failed loading.{n}Please send your {#44adf7}log.txt{#}{n}to the map builder.
 	POSTCARD_LEVELNOSPAWN= 		{big}Oops!{/big}{n}Someone misplaced your {#44adf7}starting point!{#}{n}Please check if your map{n}contains a {#44adf7}Player{#} entity.
+	POSTCARD_BADTILEID=			{big}Oops!{/big}{n}There is an undefined ((type))tile id {#ff1144}((id)){#} at{n}{#ff1144}(((x)), ((y))){#} in room {#ff1144}((room)){#}{n}Check your {#44adf7}log.txt{#} for more info.
+	POSTCARD_DECALREGERROR=		{big}Oops!{/big}{n}There was an error applying the{n}{#ff1144}((property)){#} property to {#ff1144}((decal)){#}{n}You may have a missing or invalid attribute in your {#44adf7}Decal Registry{#}.
+	POSTCARD_MISSINGTUTORIAL=	{big}Oops!{/big}{n}The playback tutorial {#ff1144}((tutorial)){#} could not be found.{n}Check your {#44adf7}log.txt{#} for more info.
+	POSTCARD_TILEXMLERROR=		{big}Oops!{/big}{n}There was an error parsing a tileset in {#ff1144}((path)){#}{n}Check your {#44adf7}log.txt{#} for more info.
+	POSTCARD_XMLERROR=			{big}Oops!{/big}{n}{#ff1144}((path)){#} has a syntax error.{n}Check your {#44adf7}log.txt{#} for more info.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH

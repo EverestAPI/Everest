@@ -3,21 +3,22 @@
 
 using Celeste.Mod;
 using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Xml;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
 
 namespace Celeste {
     class patch_LevelLoader : LevelLoader {
@@ -37,7 +38,7 @@ namespace Celeste {
         public extern void orig_ctor(Session session, Vector2? startPosition = default);
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default) {
-            Logger.Log(LogLevel.Info, "LevelLoader", $"Loading map {session?.Area.GetSID() ?? "NULL"}");
+            Logger.Log(LogLevel.Info, "LevelLoader", $"Loading {session?.Area.GetSID() ?? "NULL"}");
 
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
@@ -80,10 +81,11 @@ namespace Celeste {
             // Clear any custom tileset sound paths
             patch_SurfaceIndex.IndexToCustomPath.Clear();
 
+            string path = "";
+
             try {
                 AreaData area = AreaData.Get(session);
                 MapMeta meta = area.GetMeta();
-                string path;
 
                 path = meta?.BackgroundTiles;
                 if (string.IsNullOrEmpty(path))
@@ -155,8 +157,18 @@ namespace Celeste {
                 GFX.PortraitsSpriteBank = new SpriteBank(GFX.Portraits, path);
             } catch (Exception e) {
                 string sid = session?.Area.GetSID() ?? "NULL";
-                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
-                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading map {sid}");
+                if (patch_LevelEnter.ErrorMessage == null) {
+                    if (e is XmlException) {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_xmlerror").Replace("((path))", path);
+                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing {path}");
+                    } else if (e.TypeInStacktrace(typeof(Autotiler))) {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_tilexmlerror").Replace("((path))", path);
+                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing tileset tag in {path}");
+                    } else {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                    }
+                }
+                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
                 e.LogDetailed();
             }
 
@@ -191,8 +203,34 @@ namespace Celeste {
                 LoadingThread();
             } catch (Exception e) {
                 string sid = session?.Area.GetSID() ?? "NULL";
-                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
-                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading map {sid}");
+                if (patch_LevelEnter.ErrorMessage == null) {
+                    if (e is AutotilerException ex && e.Source == "TileHandler") {
+                        string room = "???";
+                        for (int i = 0; i < GFX.FGAutotiler.LevelBounds.Count; i++) {
+                            if (GFX.FGAutotiler.LevelBounds[i].Contains(ex.X, ex.Y)) {
+                                ex.X -= GFX.FGAutotiler.LevelBounds[i].X;
+                                ex.Y -= GFX.FGAutotiler.LevelBounds[i].Y;
+                                room = session.MapData.Levels[i].Name;
+                                break;
+                            }
+                        }
+                        
+                        string type = "";
+                        if (e.TypeInStacktrace(typeof(SolidTiles))) {
+                            type = "fg";
+                        } else if (e.TypeInStacktrace(typeof(BackgroundTiles))) {
+                            type = "bg";
+                        }
+                        
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_badtileid")
+                            .Replace("((type))", type).Replace("((id))", ex.ID.ToString()).Replace("((x))", ex.X.ToString())
+                            .Replace("((y))", ex.Y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
+                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Undefined tile id '{ex.ID}' at ({ex.X}, {ex.Y}) in room {room}");
+                    } else {
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                    }
+                }
+                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
                 e.LogDetailed();
                 Loaded = true;
             }

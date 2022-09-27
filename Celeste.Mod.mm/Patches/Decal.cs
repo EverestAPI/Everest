@@ -281,7 +281,14 @@ namespace Celeste {
                 // Handle properties. Apply "scale" first since it affects other properties.
                 foreach (KeyValuePair<string, XmlAttributeCollection> property in info.CustomProperties.OrderByDescending(p => p.Equals("scale"))) {
                     if (DecalRegistry.PropertyHandlers.ContainsKey(property.Key)) {
-                        DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
+                        try {
+                            DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
+                        } catch (Exception e) {
+                            patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_decalregerror").Replace("((property))", property.Key).Replace("((decal))", text);
+                            Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
+                            e.LogDetailed();
+                        }
+                        
                     } else {
                         Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
                     }
