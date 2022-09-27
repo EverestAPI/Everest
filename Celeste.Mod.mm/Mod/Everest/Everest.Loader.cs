@@ -86,35 +86,6 @@ namespace Celeste.Mod {
             /// </summary>
             public static ReadOnlyCollection<string> UpdaterBlacklist => _UpdaterBlacklist?.AsReadOnly();
 
-            /// <summary>
-            /// All mods on this list with a version lower than the specified version will never load.
-            /// </summary>
-            internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
-
-                // Note: Most, if not all mods use Major.Minor.Build
-                // Revision is thus set to -1 and < 0
-                // Entries with a revision of 0 are there because there is no update / fix for those mods.
-
-                // Versions of the mods older than on this list no longer work with Celeste 1.3.0.0
-                { "SpeedrunTool", new Version(1, 5, 7) },
-                { "CrystalValley", new Version(1, 1, 3) },
-                { "IsaGrabBag", new Version(1, 3, 2) },
-                { "testroom", new Version(1, 0, 1, 0) },
-                { "Elemental Chaos", new Version(1, 0, 0, 0) },
-                { "BGswitch", new Version(0, 1, 0, 0) },
-            };
-
-            /// <summary>
-            /// When both mods in the same row with versions lower than in the row are present, yell at the user.
-            /// </summary>
-            internal static HashSet<Tuple<string, Version, string, Version>> PermanentConflictlist = new HashSet<Tuple<string, Version, string, Version>>() {
-
-                // See above versioning note.
-
-                // I'm sorry. -ade
-                Tuple.Create("Nameguy's D-Sides", _VersionMax, "Monika's D-Sides", _VersionMax),
-            };
-
             internal static FileSystemWatcher Watcher;
 
             internal static event Action<string, EverestModuleMetadata> OnCrawlMod;
@@ -465,20 +436,6 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
-
-                if (PermanentBlacklist.TryGetValue(meta.Name, out Version minver) && meta.Version < minver) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} permanently blacklisted by Everest!");
-                    return;
-                }
-
-                Tuple<string, Version, string, Version> conflictRow = PermanentConflictlist.FirstOrDefault(row =>
-                    (meta.Name == row.Item1 && meta.Version < row.Item2 && (_Modules.FirstOrDefault(other => other.Metadata.Name == row.Item3)?.Metadata.Version ?? _VersionInvalid) < row.Item4) ||
-                    (meta.Name == row.Item3 && meta.Version < row.Item4 && (_Modules.FirstOrDefault(other => other.Metadata.Name == row.Item1)?.Metadata.Version ?? _VersionInvalid) < row.Item2)
-                );
-                if (conflictRow != null) {
-                    throw new Exception($"CONFLICTING MODS: {conflictRow.Item1} VS {conflictRow.Item3}");
-                }
-
 
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep)) {
