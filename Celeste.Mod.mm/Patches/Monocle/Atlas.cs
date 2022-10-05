@@ -407,6 +407,18 @@ namespace Monocle {
             Sources.Add(vtex);
         }
 
+        public bool HasAtlasSubtextures(string key) {
+            return HasAtlasSubtexturesAt(key, 0);
+        }
+
+        public bool HasAtlasSubtexturesAt(string key, int index) {
+            if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
+                return index >= 0 && index < list.Count;
+            } else {
+                return GetAtlasSubtextureFromAtlasAt(key, index) != null;
+            }
+        }
+
         // log missing subtextures when getting an animation (for example, decals)
         public extern List<MTexture> orig_GetAtlasSubtextures(string key);
         public new List<MTexture> GetAtlasSubtextures(string key) {
