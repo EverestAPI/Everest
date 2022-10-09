@@ -88,7 +88,9 @@ namespace Celeste {
 
             if (AreaData.Get(session) == null) {
                 Logger.Log(LogLevel.Warn, "LevelEnter", $"Failed to find map");
-                return ErrorRoutine(Dialog.Get("postcard_levelgone").Replace("((player))", SaveData.Instance.Name));
+                return ErrorRoutine(Dialog.Get("postcard_levelgone")
+                    .Replace("((player))", SaveData.Instance.Name)
+                    .Replace("((sid))", session.Area.GetSID()));
             }
 
             AreaData areaData = AreaData.Get(session);
