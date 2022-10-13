@@ -15,16 +15,16 @@ namespace Celeste.Mod {
         /// <summary>
         /// A list of all registered emoji names, in order of their IDs.
         /// </summary>
-        public static ReadOnlyCollection<string> Registered => new ReadOnlyCollection<string>(_Registered);
+        public static ReadOnlyCollection<string> Registered => new(_Registered);
         public static char Last => (char) ('\uE000' + _Registered.Count - 1);
 
-        private static List<string> _Registered = new List<string>();
-        private static Dictionary<string, int> _IDs = new Dictionary<string, int>();
-        private static List<bool> _IsMonochrome = new List<bool>();
-        private static List<PixelFontCharacter> _Chars = new List<PixelFontCharacter>();
+        private static List<string> _Registered = new();
+        private static Dictionary<string, int> _IDs = new();
+        private static List<bool> _IsMonochrome = new();
+        private static List<PixelFontCharacter> _Chars = new();
 
         private static bool Initialized = false;
-        private static Queue<KeyValuePair<string, MTexture>> Queue = new Queue<KeyValuePair<string, MTexture>>();
+        private static Queue<KeyValuePair<string, MTexture>> Queue = new();
         private static XmlElement _FakeXML;
         public static XmlElement FakeXML {
             get {
@@ -137,8 +137,10 @@ namespace Celeste.Mod {
         /// <param name="font">The font to fill.</param>
         public static void Fill(PixelFont font) {
             Auto();
-            foreach (PixelFontSize size in font.Sizes) {
-                foreach (PixelFontCharacter c in _Chars) {
+            for (int i = 0; i < font.Sizes.Count; i++) {
+                PixelFontSize size = font.Sizes[i];
+                for (int j = 0; j < _Chars.Count; j++) {
+                    PixelFontCharacter c = _Chars[j];
                     size.Characters[c.Character] = c;
                 }
             }
