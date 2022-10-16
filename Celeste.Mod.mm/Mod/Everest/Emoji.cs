@@ -1,5 +1,6 @@
 ﻿using Monocle;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace Celeste.Mod {
         private static List<string> _Registered = new();
         private static Dictionary<string, int> _IDs = new();
         private static List<bool> _IsMonochrome = new();
-        private static List<PixelFontCharacter> _Chars = new();
+        private static ConcurrentBag<PixelFontCharacter> _Chars = new();
 
         private static bool Initialized = false;
         private static Queue<KeyValuePair<string, MTexture>> Queue = new();
@@ -139,8 +140,7 @@ namespace Celeste.Mod {
             Auto();
             for (int i = 0; i < font.Sizes.Count; i++) {
                 PixelFontSize size = font.Sizes[i];
-                for (int j = 0; j < _Chars.Count; j++) {
-                    PixelFontCharacter c = _Chars[j];
+                foreach (PixelFontCharacter c in _Chars) {
                     size.Characters[c.Character] = c;
                 }
             }
