@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net452</TargetFrameworks>
+    <AssemblyName>DiscordGameSDK</AssemblyName>
+    <RootNamespace>Discord</RootNamespace>
+    <LangVersion>9</LangVersion>
+  </PropertyGroup>
+</Project>
