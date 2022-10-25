@@ -78,15 +78,5 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ret);
             cursor.MarkLabel(label);
         }
-
-        public static void PatchFlaglineCtor(ILContext il, CustomAttribute attrib) {
-            ILCursor cursor = new ILCursor(il);
-
-            // move right before the ret opcode
-            cursor.Index = cursor.Instrs.Count - 2;
-
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Call, il.Method.DeclaringType.FindMethod("System.Void CacheMaxHeight()"));
-        }
     }
 }
