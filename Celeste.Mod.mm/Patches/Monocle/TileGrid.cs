@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste;
+using Microsoft.Xna.Framework;
 
 namespace Monocle {
     class patch_TileGrid : TileGrid {
@@ -11,6 +12,12 @@ namespace Monocle {
         public new void RenderAt(Vector2 position) {
             if (Alpha <= 0f) {
                 return;
+            }
+
+            // Many entities (both vanilla and modded) don't set this field, which gets rid of culling.
+            // Let's just set this to the most obvious value...
+            if (ClipCamera is null && Scene is Level lvl) {
+                ClipCamera = lvl.Camera;
             }
 
             Rectangle clippedRenderTiles = GetClippedRenderTiles();
