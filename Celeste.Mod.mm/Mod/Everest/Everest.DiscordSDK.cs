@@ -1,8 +1,11 @@
 ﻿using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
-using Monocle;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -11,7 +14,9 @@ namespace Celeste.Mod {
 
             private Discord.Discord DiscordInstance;
 
-            private const string IconBaseURL = "https://max480-random-stuff.appspot.com/celeste/rich-presence-icons/";
+            private static HashSet<string> RichPresenceIcons = new HashSet<string>();
+
+            private const string IconBaseURL = "https://celestemodupdater.0x0a.de";
 
             private Dictionary<string, string> IconURLCache = new Dictionary<string, string>();
             private Discord.Activity NextPresence;
@@ -25,6 +30,16 @@ namespace Celeste.Mod {
                 { Discord.LogLevel.Info, LogLevel.Info },
                 { Discord.LogLevel.Debug, LogLevel.Debug }
             };
+
+            internal static void LoadRichPresenceIcons() {
+                new Task(() => {
+                    JArray list = JsonConvert.DeserializeObject<JArray>(new WebClient().DownloadString(IconBaseURL + "/rich-presence-icons/list.json"));
+                    foreach (string element in list.Children<JValue>()) {
+                        RichPresenceIcons.Add(element);
+                    }
+                    Logger.Log(LogLevel.Debug, "discord-game-sdk", $"Retrieved {RichPresenceIcons.Count} existing icon hashes.");
+                }).Start();
+            }
 
             public static DiscordSDK CreateInstance() {
                 if (Instance != null) {
@@ -144,9 +159,9 @@ namespace Celeste.Mod {
 
                     if (CoreModule.Settings.DiscordShowIcon) {
                         NextPresence.Assets = new Discord.ActivityAssets() {
-                            LargeImage = IconBaseURL + "everest.png",
+                            LargeImage = IconBaseURL + "/rich-presence-icons-static/everest.png",
                             LargeText = "Everest",
-                            SmallImage = IconBaseURL + "celeste.png",
+                            SmallImage = IconBaseURL + "/rich-presence-icons-static/celeste.png",
                             SmallText = "Celeste"
                         };
                     }
@@ -157,7 +172,7 @@ namespace Celeste.Mod {
                     // the displayed info if "show map" was disabled: just "Playing a map"
                     string mapName = "a map";
                     string fullName = "Everest";
-                    string icon = IconBaseURL + "everest.png";
+                    string icon = IconBaseURL + "/rich-presence-icons-static/everest.png";
                     string side = "";
                     string room = "";
 
@@ -208,7 +223,7 @@ namespace Celeste.Mod {
                         NextPresence.Assets = new Discord.ActivityAssets() {
                             LargeImage = icon,
                             LargeText = fullName,
-                            SmallImage = IconBaseURL + "celeste.png",
+                            SmallImage = IconBaseURL + "/rich-presence-icons-static/celeste.png",
                             SmallText = "Celeste"
                         };
                     }
@@ -243,14 +258,18 @@ namespace Celeste.Mod {
             private string GetMapIconURL(AreaData areaData) {
                 if (areaData.Icon == "areas/null" || !Content.Map.TryGetValue("Graphics/Atlases/Gui/" + areaData.Icon, out ModAsset icon)) {
                     if (areaData.Icon.StartsWith("areas/")) {
-                        return IconBaseURL + areaData.Icon.Substring(6) + ".png";
+                        return IconBaseURL + "/rich-presence-icons-static/" + areaData.Icon.Substring(6).ToLowerInvariant() + ".png";
                     } else {
-                        return IconBaseURL + "null.png";
+                        return IconBaseURL + "/rich-presence-icons-static/null.png";
                     }
                 } else {
                     byte[] hash = ChecksumHasher.ComputeHash(icon.Data);
                     string hashString = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
-                    return IconBaseURL + hashString + ".png";
+                    if (RichPresenceIcons.Contains(hashString)) {
+                        return IconBaseURL + "/rich-presence-icons/" + hashString + ".png";
+                    } else {
+                        return IconBaseURL + "/rich-presence-icons-static/everest.png";
+                    }
                 }
             }
 
