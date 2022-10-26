@@ -46,7 +46,7 @@ namespace Celeste.Mod {
                 try {
                     DiscordInstance = new Discord.Discord(430794114037055489L, (ulong) Discord.CreateFlags.NoRequireDiscord);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Error, "discord-game-sdk", "Could not initialize Discord Game SDK!");
+                    Logger.Log(LogLevel.Warn, "discord-game-sdk", "Could not initialize Discord Game SDK!");
                     Logger.LogDetailed(e, "discord-game-sdk");
                     return;
                 }
@@ -64,7 +64,7 @@ namespace Celeste.Mod {
 
                 Celeste.Instance.Components.Add(this);
 
-                Logger.Log(LogLevel.Debug, "discord-game-sdk", "Game SDK initialized!");
+                Logger.Log(LogLevel.Info, "discord-game-sdk", "Discord Game SDK initialized!");
             }
 
             protected override void Dispose(bool disposing) {
@@ -80,7 +80,7 @@ namespace Celeste.Mod {
                 Instance = null;
                 Celeste.Instance.Components.Remove(this);
 
-                Logger.Log(LogLevel.Debug, "discord-game-sdk", "Game SDK disposed");
+                Logger.Log(LogLevel.Info, "discord-game-sdk", "Discord Game SDK disposed");
             }
 
             public override void Update(GameTime gameTime) {
@@ -99,7 +99,16 @@ namespace Celeste.Mod {
                     MustUpdatePresence = false;
                 }
 
-                DiscordInstance.RunCallbacks();
+                try {
+                    DiscordInstance.RunCallbacks();
+                } catch (Discord.ResultException e) {
+                    if (e.Message == nameof(Discord.Result.NotRunning)) {
+                        Logger.Log(LogLevel.Warn, "discord-game-sdk", "Discord was shut down! Disposing Game SDK.");
+                        Dispose();
+                    } else {
+                        throw e;
+                    }
+                }
             }
 
             private void LogHandler(Discord.LogLevel level, string message) {

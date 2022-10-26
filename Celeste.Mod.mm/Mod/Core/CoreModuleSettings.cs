@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -468,16 +469,32 @@ namespace Celeste.Mod.Core {
                 .Add(showDeaths)
                 .Add(showBerries);
 
-            menu.Add(new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordrichpresence"), DiscordRichPresence)
+            TextMenuExt.EaseInSubHeaderExt failureWarning = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("modoptions_coremodule_discordfailed"), false, menu) {
+                TextColor = Color.Goldenrod,
+                HeightExtra = 0f
+            };
+
+            TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordrichpresence"), DiscordRichPresence)
                 .Change(value => {
                     DiscordRichPresence = value;
                     if (DiscordRichPresence) {
-                        Everest.DiscordSDK.CreateInstance().UpdatePresence(session);
+                        Everest.DiscordSDK.CreateInstance()?.UpdatePresence(session);
                     } else {
                         Everest.DiscordSDK.Instance?.Dispose();
                     }
                     submenu.Disabled = !value;
-                }));
+                    failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+                });
+
+            masterSwitch.OnEnter += delegate {
+                failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+            };
+            masterSwitch.OnLeave += delegate {
+                failureWarning.FadeVisible = false;
+            };
+
+            menu.Add(masterSwitch);
+            menu.Add(failureWarning);
 
             submenu.Disabled = !DiscordRichPresence;
             showSide.Disabled = !DiscordShowMap;

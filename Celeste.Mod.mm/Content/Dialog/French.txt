@@ -72,6 +72,7 @@
 	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					Montrer le nom de la salle
 	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				Montrer le nombre de fraises
 	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				Montrer le nombre de morts
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					La connexion à Discord a échoué. Désactiver et réactiver pour réessayer.
 	
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
