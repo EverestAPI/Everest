@@ -221,6 +221,15 @@ namespace Celeste.Mod {
                     try {
                         Assembly asm = Assembly.LoadFrom(cachedPath);
                         _RelinkedAssemblies.Add(asm);
+
+                        ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
+                        if (!_RelinkedModules.ContainsKey(mod.Assembly.Name.Name))
+                            _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
+                        else {
+                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {mod.Assembly.Name}");
+                            mod.Dispose();
+                        }
+
                         return asm;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
