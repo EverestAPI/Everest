@@ -231,7 +231,7 @@ namespace Celeste.Mod {
                             _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
                             mod = null;
                         } else
-                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {mod.Assembly.Name}");
+                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
 
                         return asm;
                     } catch (Exception e) {
