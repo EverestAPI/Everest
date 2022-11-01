@@ -341,8 +341,8 @@ namespace Celeste.Mod.UI {
                 ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
             }
 
-            // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
-            if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
+            // turn the warning text about restarting/overwriting blacklist.txt orange/red if a mod was disabled (so pressing Back will trigger a restart).
+            if (blacklistedModsOriginal.IsSupersetOf(blacklistedMods)) {
                 restartMessage1.TextColor = Color.Gray;
                 restartMessage2.TextColor = Color.Gray;
             } else {
