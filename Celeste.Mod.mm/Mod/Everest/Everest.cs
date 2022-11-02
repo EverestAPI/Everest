@@ -925,6 +925,7 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="module"></param>
         internal static void Unregister(this EverestModule module) {
+            module.OnInputDeregister();
             module.Unload();
 
             Assembly asm = module.GetType().Assembly;
