@@ -121,6 +121,7 @@ namespace Celeste {
             PlayerDeadBody body = orig_Die(direction, evenIfInvincible, registerDeathInStats);
 
             if (body != null) {
+                Everest.Events.Player.Die(this);
                 // 2 catches spawn-blade-kill GBJs.
                 // 4 catches spawn-OOB-kill GBJs.
                 if (framesAlive < 6 && level != null) {
@@ -132,7 +133,6 @@ namespace Celeste {
                 }
             }
 
-            Everest.Events.Player.Die(this);
             return body;
         }
 
