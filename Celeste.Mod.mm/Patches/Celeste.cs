@@ -17,6 +17,8 @@ using System.Threading;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -127,7 +129,10 @@ namespace Celeste {
                 return;
             }
 
-            if (File.Exists("log.txt")) {
+            string logfile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
+
+            // Only applying log rotation on default name, feel free to improve LogRotationHelper to deal with custom log file names...
+            if (logfile == "log.txt" && File.Exists("log.txt")) {
                 if (new FileInfo("log.txt").Length > 0) {
                     // move the old log.txt to the LogHistory folder.
                     // note that the cleanup will only be done when the core module is loaded: the settings aren't even loaded right now,
@@ -141,9 +146,31 @@ namespace Celeste {
                     // just delete it.
                     File.Delete("log.txt");
                 }
+            } else {
+                // check if log filename is allowed
+                Regex regexBadCharacter = new Regex("[" + Regex.Escape(new string(Path.GetInvalidFileNameChars())) + "]");
+                Match match = regexBadCharacter.Match(logfile);
+
+                if (match.Success) {
+                    StringBuilder errorText = new StringBuilder($"Custom log filename set in EVEREST_LOG_FILENAME=\"{logfile}\" contains invalid character(s): ", 100);
+
+                    while (match.Success) {
+                        foreach (Capture c in match.Groups[0].Captures)
+                            errorText.Append(c);
+
+                        match = match.NextMatch();
+                        if (match.Success)
+                            errorText.Append(" ");
+                    }
+
+                    throw new ArgumentException(errorText.ToString());
+                }
+
+                if (!logfile.EndsWith(".txt"))
+                    logfile += ".txt";
             }
 
-            using (Stream fileStream = new FileStream("log.txt", FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
+            using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter {
                 STDOUT = Console.Out,
