@@ -440,7 +440,7 @@ namespace Celeste.Mod.UI {
                     if (Everest.Flags.SupportRuntimeMods && blacklistedMods.IsSubsetOf(blacklistedModsOriginal)) {
                         foreach (string mod in blacklistedModsOriginal.Except(blacklistedMods)) {
                             try {
-                                Logger.Log("OuiModToggler", $"Attempting to load {mod} after enabling");
+                                Logger.Log(LogLevel.Info, "OuiModToggler", $"Attempting to load {mod} after enabling");
                                 
                                 // remove the mod from the loaded blacklist & attempt to load mod
                                 Everest.Loader._Blacklist.RemoveAll(item => item == mod);
@@ -458,7 +458,7 @@ namespace Celeste.Mod.UI {
                     }
                         
                     // some mods disabled -- restart the game
-                    Logger.Log("OuiModToggler", "New blacklist contains disabled mods (or runtime mod loading is unsupported) -- restarting");
+                    Logger.Log(LogLevel.Info, "OuiModToggler", "New blacklist contains disabled mods (or runtime mod loading is unsupported) -- restarting");
                     Everest.QuickFullRestart();
                 }
             }
