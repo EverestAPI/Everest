@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod {
@@ -177,7 +178,7 @@ namespace Celeste.Mod {
                     string room = "";
 
                     if (CoreModule.Settings.DiscordShowMap) {
-                        mapName = area.Name.DialogCleanOrNull(english) ?? area.Name;
+                        mapName = FilterEmojiFrom(area.Name.DialogCleanOrNull(english) ?? area.Name);
 
                         if (CoreModule.Settings.DiscordShowIcon) {
                             icon = GetMapIconURLCached(area);
@@ -192,7 +193,7 @@ namespace Celeste.Mod {
                         }
 
                         if (!IsOnlyMapInLevelSet(area)) {
-                            fullName = (area.GetLevelSet().DialogCleanOrNull(english) ?? area.GetLevelSet())
+                            fullName = FilterEmojiFrom(area.GetLevelSet().DialogCleanOrNull(english) ?? area.GetLevelSet())
                                 + " | " + (session.Area.ChapterIndex >= 0 ? "Chapter " + session.Area.ChapterIndex + " - " : "") + mapName;
                         } else {
                             fullName = mapName;
@@ -230,6 +231,10 @@ namespace Celeste.Mod {
                 }
 
                 MustUpdatePresence = true;
+            }
+
+            private string FilterEmojiFrom(string s) {
+                return Regex.Replace(Emoji.Apply(s), "[" + Emoji.Start + "-" + Emoji.End + "]", "").Trim();
             }
 
             private bool IsOnlyMapInLevelSet(AreaData area) {
