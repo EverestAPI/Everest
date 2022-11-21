@@ -49,7 +49,7 @@ namespace Celeste.Mod.UI {
                 }
             }
             
-            LogLine(Dialog.Clean("MODOTPIONS_MODTOGGLE_PROGRESS_OPTIONAL"));
+            LogLine(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_OPTIONAL"));
             Everest.Loader.EnforceOptionalDependencies = false;
             Everest.CheckDependenciesOfDelayedMods();
 
@@ -57,11 +57,12 @@ namespace Celeste.Mod.UI {
                 LogLine(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_FAILED_LOAD"));
             }
 
-            LogLine(Dialog.Clean(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU")));
+            LogLine(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU"));
             for (int i = 3; i > 0; --i) {
                 Lines[Lines.Count - 1] = string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU_COUNTDOWN"), i);
                 Thread.Sleep(1000);
             }
+            Lines[Lines.Count - 1] = Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU");
         }
         
         private void logCrawlMod(string filePath, EverestModuleMetadata meta) {
