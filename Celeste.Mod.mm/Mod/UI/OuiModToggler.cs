@@ -15,9 +15,9 @@ namespace Celeste.Mod.UI {
         // list of all mods in the Mods folder
         private List<string> allMods;
         // list of currently blacklisted mods
-        private HashSet<string> blacklistedMods;
+        internal HashSet<string> blacklistedMods;
         // list of blacklisted mods when the menu was open
-        private HashSet<string> blacklistedModsOriginal;
+        internal HashSet<string> blacklistedModsOriginal;
 
         private bool toggleDependencies = true;
 
@@ -438,22 +438,9 @@ namespace Celeste.Mod.UI {
 
                     // does the modified blacklist contain strictly un-blacklisted mods?
                     if (Everest.Flags.SupportRuntimeMods && blacklistedMods.IsSubsetOf(blacklistedModsOriginal)) {
-                        foreach (string mod in blacklistedModsOriginal.Except(blacklistedMods)) {
-                            try {
-                                Logger.Log(LogLevel.Info, "OuiModToggler", $"Attempting to load {mod} after enabling");
-                                
-                                // remove the mod from the loaded blacklist & attempt to load mod
-                                Everest.Loader._Blacklist.RemoveAll(item => item == mod);
-                                Everest.Loader.LoadZip(Path.Combine(Everest.Loader.PathMods, mod));
-                            } catch (Exception e) {
-                                Logger.Log(LogLevel.Error, "OuiModToggler", $"Failed to load {mod} after enabling!");
-                                Logger.LogDetailed(e);
-                                
-                                Everest.QuickFullRestart();
-                            }
-                        }
-
-                        overworld.Goto<OuiModOptions>();
+                        Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis =
+                            blacklistedModsOriginal.Except(blacklistedMods);
+                        overworld.Goto<OuiModTogglerProgress>();
                         return;
                     }
                         
