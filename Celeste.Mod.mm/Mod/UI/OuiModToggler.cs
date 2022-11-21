@@ -452,7 +452,7 @@ namespace Celeste.Mod.UI {
                             return;
                         }
 
-                        Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis = newMods;
+                        Everest.Loader.NewlyUnblacklistedMods = newMods;
                         overworld.Goto<OuiModTogglerProgress>();
                         return;
                     }

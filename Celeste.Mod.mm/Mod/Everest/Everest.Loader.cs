@@ -1,5 +1,6 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.UI;
 using Ionic.Zip;
 using MAB.DotIgnore;
 using MonoMod.Utils;
@@ -92,7 +93,10 @@ namespace Celeste.Mod {
 
             public static bool AutoLoadNewMods { get; internal set; }
 
-            internal static List<string> TemporaryUntilIFigureOutWhereToPutThis;
+            /// <summary>
+            /// Used by <see cref="OuiModTogglerProgress"/>
+            /// </summary>
+            internal static List<string> NewlyUnblacklistedMods;
 
             public static bool ShouldLoadFile(string file) {
                 if (CoreModule.Settings.WhitelistFullOverride ?? false) {

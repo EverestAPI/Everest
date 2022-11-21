@@ -11,14 +11,14 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.OnCrawlMod += logCrawlMod;
             Init<OuiMainMenu>(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS"), new Task(toggleMods),
-                Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis.Count());
+                Everest.Loader.NewlyUnblacklistedMods.Count());
             
             return base.Enter(from);
         }
 
         public override IEnumerator Leave(Oui next) {
             Everest.Loader.OnCrawlMod -= logCrawlMod;
-            Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis = null;
+            Everest.Loader.NewlyUnblacklistedMods = null;
             MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
             
             return base.Leave(next);
@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
             Thread.Sleep(1000);
             int oldDelayedMods = Everest.Loader.Delayed.Count;
             Everest.Loader.EnforceOptionalDependencies = true;
-            foreach (string mod in Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis) {
+            foreach (string mod in Everest.Loader.NewlyUnblacklistedMods) {
                 try {
                     // remove the mod from the loaded blacklist & attempt to load mod
                     LogLine($"Removing mod {mod} from the blacklist...");
