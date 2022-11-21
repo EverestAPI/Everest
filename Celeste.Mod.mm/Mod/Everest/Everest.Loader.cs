@@ -92,7 +92,7 @@ namespace Celeste.Mod {
 
             public static bool AutoLoadNewMods { get; internal set; }
 
-            internal static IEnumerable<string> TemporaryUntilIFigureOutWhereToPutThis;
+            internal static List<string> TemporaryUntilIFigureOutWhereToPutThis;
 
             public static bool ShouldLoadFile(string file) {
                 if (CoreModule.Settings.WhitelistFullOverride ?? false) {

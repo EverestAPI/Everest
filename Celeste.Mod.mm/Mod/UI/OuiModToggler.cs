@@ -15,9 +15,9 @@ namespace Celeste.Mod.UI {
         // list of all mods in the Mods folder
         private List<string> allMods;
         // list of currently blacklisted mods
-        internal HashSet<string> blacklistedMods;
+        private HashSet<string> blacklistedMods;
         // list of blacklisted mods when the menu was open
-        internal HashSet<string> blacklistedModsOriginal;
+        private HashSet<string> blacklistedModsOriginal;
 
         private bool toggleDependencies = true;
 
@@ -438,8 +438,21 @@ namespace Celeste.Mod.UI {
 
                     // does the modified blacklist contain strictly un-blacklisted mods?
                     if (Everest.Flags.SupportRuntimeMods && blacklistedMods.IsSubsetOf(blacklistedModsOriginal)) {
-                        Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis =
-                            blacklistedModsOriginal.Except(blacklistedMods);
+                        var newMods = blacklistedModsOriginal.Except(blacklistedMods).ToList();
+
+                        foreach (string mod in newMods) {
+                            // If any enabled mod has this mod as an optional dependency,
+                            // we need to restart Everest, since properly satisfying this would involve unloading
+                            // the original mod and reloading it (with the optional dependency).
+                            if (!modHasDependencies(mod, true, true)) 
+                                continue;
+                            
+                            Logger.Log(LogLevel.Info, "OuiModToggler", $"Mod {mod} has newly satisfied optional dependency -- restarting to reload all mods");
+                            Everest.QuickFullRestart();
+                            return;
+                        }
+
+                        Everest.Loader.TemporaryUntilIFigureOutWhereToPutThis = newMods;
                         overworld.Goto<OuiModTogglerProgress>();
                         return;
                     }
@@ -451,15 +464,20 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private bool modHasDependencies(string modFilename) {
+        private bool modHasDependencies(string modFilename, bool optional=false, bool onlyPreviouslyEnabledMods=false) {
             if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
                 // this mod has a yaml, check all of the metadata entries (99% of the time there is one only).
                 return metadatas.Any(metadata => {
                     string modName = metadata.Name;
 
                     // we want to check if a non-blacklisted mod has this mod as a dependency (by name).
-                    return modYamls.Any(mod => !blacklistedMods.Contains(mod.Key) && modFilename != mod.Key
-                        && mod.Value.Any(yaml => yaml.Dependencies.Any(dependency => dependency.Name == modName)));
+                    return modYamls.Any(mod => 
+                            (onlyPreviouslyEnabledMods ? !blacklistedModsOriginal.Contains(mod.Key)
+                                                      : !blacklistedMods.Contains(mod.Key))
+                        && modFilename != mod.Key
+                        && mod.Value.Any(yaml => 
+                            optional ? yaml.OptionalDependencies.Any(dependency => dependency.Name == modName)
+                                     : yaml.Dependencies.Any(dependency => dependency.Name == modName)));
                 });
 
             }
