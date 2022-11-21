@@ -10,7 +10,7 @@ namespace Celeste.Mod.UI {
     public class OuiModTogglerProgress : OuiLoggedProgress {
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.OnCrawlMod += logCrawlMod;
-            Init<OuiMainMenu>(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS"), new Task(toggleMods),
+            Init<OuiMainMenu>(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_TITLE"), new Task(toggleMods),
                 Everest.Loader.NewlyUnblacklistedMods.Count());
             
             return base.Enter(from);
@@ -20,19 +20,20 @@ namespace Celeste.Mod.UI {
             Everest.Loader.OnCrawlMod -= logCrawlMod;
             Everest.Loader.NewlyUnblacklistedMods = null;
             MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
+            Audio.Play(SFX.ui_main_button_back);
             
             return base.Leave(next);
         }
 
         private void toggleMods() {
-            // give it a second
+            // give it a second to transition
             Thread.Sleep(1000);
             int oldDelayedMods = Everest.Loader.Delayed.Count;
             Everest.Loader.EnforceOptionalDependencies = true;
             foreach (string mod in Everest.Loader.NewlyUnblacklistedMods) {
                 try {
                     // remove the mod from the loaded blacklist & attempt to load mod
-                    LogLine($"Removing mod {mod} from the blacklist...");
+                    LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), mod));
                     Everest.Loader._Blacklist.RemoveAll(item => item == mod);
                     
                     if (mod.EndsWith(".zip")) {
@@ -48,17 +49,17 @@ namespace Celeste.Mod.UI {
                 }
             }
             
-            LogLine("Loading mods with unsatisfied optional dependencies (if any)...");
+            LogLine(Dialog.Clean("MODOTPIONS_MODTOGGLE_PROGRESS_OPTIONAL"));
             Everest.Loader.EnforceOptionalDependencies = false;
             Everest.CheckDependenciesOfDelayedMods();
 
             if (Everest.Loader.Delayed.Count > oldDelayedMods) {
-                LogLine("Failed to load some mods! Check Mod Options menu for more info.");
+                LogLine(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_FAILED_LOAD"));
             }
 
-            LogLine(Dialog.Clean("Going to main menu"));
+            LogLine(Dialog.Clean(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU")));
             for (int i = 3; i > 0; --i) {
-                Lines[Lines.Count - 1] = $"Going to main menu in {i}";
+                Lines[Lines.Count - 1] = string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU_COUNTDOWN"), i);
                 Thread.Sleep(1000);
             }
         }
