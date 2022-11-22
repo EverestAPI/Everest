@@ -8,17 +8,19 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.UI {
     public class OuiModTogglerProgress : OuiLoggedProgress {
-        public override IEnumerator Enter(Oui from) {
+
+        private List<string> newlyUnblacklistedMods;
+
+        public void Init(List<string> mods) {
             Everest.Loader.OnCrawlMod += logCrawlMod;
+            newlyUnblacklistedMods = mods;
             Init<OuiMainMenu>(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROGRESS_TITLE"), new Task(toggleMods),
-                Everest.Loader.NewlyUnblacklistedMods.Count());
-            
-            return base.Enter(from);
+                newlyUnblacklistedMods.Count);
         }
 
         public override IEnumerator Leave(Oui next) {
             Everest.Loader.OnCrawlMod -= logCrawlMod;
-            Everest.Loader.NewlyUnblacklistedMods = null;
+            newlyUnblacklistedMods = null;
             MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
             Audio.Play(SFX.ui_main_button_back);
             
@@ -26,11 +28,14 @@ namespace Celeste.Mod.UI {
         }
 
         private void toggleMods() {
+            if (newlyUnblacklistedMods == null)
+                return;
+            
             // give it a second to transition
             Thread.Sleep(1000);
             int oldDelayedMods = Everest.Loader.Delayed.Count;
             Everest.Loader.EnforceOptionalDependencies = true;
-            foreach (string mod in Everest.Loader.NewlyUnblacklistedMods) {
+            foreach (string mod in newlyUnblacklistedMods) {
                 try {
                     // remove the mod from the loaded blacklist & attempt to load mod
                     LogLine(string.Format(Dialog.Get("DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST"), mod));

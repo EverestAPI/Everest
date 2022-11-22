@@ -452,8 +452,7 @@ namespace Celeste.Mod.UI {
                             return;
                         }
 
-                        Everest.Loader.NewlyUnblacklistedMods = newMods;
-                        overworld.Goto<OuiModTogglerProgress>();
+                        overworld.Goto<OuiModTogglerProgress>().Init(newMods);
                         return;
                     }
                         
