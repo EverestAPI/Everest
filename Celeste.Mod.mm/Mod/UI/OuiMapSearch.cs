@@ -120,7 +120,6 @@ namespace Celeste.Mod.UI {
 
         private void clearSearch() {
             search = "";
-            searchPrev = "";
         }
 
         private void cleanExit() {
