@@ -8,25 +8,22 @@ namespace Celeste {
         public float AmbienceVolume;
 
         [MonoModConstructor]
-        public patch_AudioState() {
+        [MonoModReplace]
+        public void ctor() {
             AmbienceVolume = 1f;
         }
 
+        public extern void orig_ctor(AudioTrackState music, AudioTrackState ambience);
         [MonoModConstructor]
-        public patch_AudioState(AudioTrackState music, AudioTrackState ambience) {
-            if (music != null) {
-                Music = music.Clone();
-            }
-            if (ambience != null) {
-                Ambience = ambience.Clone();
-            }
+        public void ctor(AudioTrackState music, AudioTrackState ambience) {
+            orig_ctor(music, ambience);
             AmbienceVolume = 1f;
         }
 
+        public extern void orig_ctor(string music, string ambience);
         [MonoModConstructor]
-        public patch_AudioState(string music, string ambience) {
-            Music.Event = music;
-            Ambience.Event = ambience;
+        public void ctor(string music, string ambience) {
+            orig_ctor(music, ambience);
             AmbienceVolume = 1f;
         }
 
