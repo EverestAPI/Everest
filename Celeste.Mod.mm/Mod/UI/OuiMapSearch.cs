@@ -1,5 +1,6 @@
 ﻿using FMOD.Studio;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections;
@@ -179,15 +180,7 @@ namespace Celeste.Mod.UI {
 
             } else if (c == (char) 127) {
                 // Delete - clear.
-                if (search.Length > 0) {
-                    clearSearch();
-                    Audio.Play(SFX.ui_main_rename_entry_backspace);
-                    goto ValidButton;
-                } else {
-                    Audio.Play(SFX.ui_main_button_invalid);
-                    cleanExit();
-                    goto ValidButton;
-                }
+                // Handled in Update().
 
             } else if (c == ' ') {
                 // Space - append.
@@ -511,6 +504,17 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Searching) {
+                if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                    if (search.Length > 0) {
+                        clearSearch();
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    } else {
+                        Audio.Play(SFX.ui_main_button_invalid);
+                        cleanExit();
+                    }
+                    searchConsumedButton = true;
+                    MInput.UpdateNull();
+                }
                 MInput.Disabled = searchConsumedButton;
             }
             searchConsumedButton = false;
