@@ -508,7 +508,7 @@ namespace Celeste.Mod.UI {
                         clearSearch();
                         Audio.Play(SFX.ui_main_rename_entry_backspace);
                     } else {
-                        Audio.Play(SFX.ui_main_button_invalid);
+                        Audio.Play(SFX.ui_main_button_back);
                         cleanExit();
                     }
                     searchConsumedButton = true;
