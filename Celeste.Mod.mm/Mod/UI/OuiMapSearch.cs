@@ -177,10 +177,6 @@ namespace Celeste.Mod.UI {
                     return;
                 }
 
-            } else if (c == (char) 127) {
-                // Delete - clear.
-                // Handled in Update().
-
             } else if (c == ' ') {
                 // Space - append.
                 if (search.Length > 0) {
