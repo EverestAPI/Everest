@@ -91,6 +91,13 @@ namespace Celeste.Mod {
                 internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
                     => OnPause?.Invoke(level, startIndex, minimal, quickReset);
 
+                public delegate void UnpauseHandler(_Level level);
+                /// <summary>
+                /// Called after unpausing the Level.
+                /// </summary>
+                public static event UnpauseHandler OnUnpause;
+                internal static void Unpause(_Level level) => OnUnpause?.Invoke(level);
+
                 public delegate void CreatePauseMenuButtonsHandler(_Level level, TextMenu menu, bool minimal);
                 /// <summary>
                 /// Called when the Level's pause menu is created.

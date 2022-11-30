@@ -127,10 +127,16 @@ namespace Celeste {
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
 
-            if (!quickReset) {
-                TextMenu menu = Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) as TextMenu;
-                if (menu != null)
+            if (Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) is TextMenu menu) {
+                void Unpause() {
+                    Everest.Events.Level.Unpause(this);
+                }
+                menu.OnPause += Unpause;
+                menu.OnESC += Unpause;
+                if (!quickReset) {
+                    menu.OnCancel += Unpause; // the normal pause menu unpauses for all three of these, the quick reset menu does not
                     Everest.Events.Level.CreatePauseMenuButtons(this, menu, minimal);
+                }
             }
 
             Everest.Events.Level.Pause(this, startIndex, minimal, quickReset);
