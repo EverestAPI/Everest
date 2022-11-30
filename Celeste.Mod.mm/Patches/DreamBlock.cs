@@ -1,6 +1,10 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste;
+using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
 using System;
 using System.Collections;
 
@@ -27,6 +31,10 @@ namespace Celeste {
         public void ctor(Vector2 position, float width, float height, Vector2? node, bool fastMoving, bool oneUse) {
             ctor(position, width, height, node, fastMoving, oneUse, false);
         }
+
+        [MonoModIgnore]
+        [PatchDreamBlockSetup]
+        public new extern void Setup();
 
         public void DeactivateNoRoutine() {
             if (playerHasDreamDash) {
@@ -185,5 +193,31 @@ namespace Celeste {
             }
             return pos;
         }
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches <see cref="DreamBlock.Setup()" /> to fix issue #556.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDreamBlockSetup))]
+    class PatchDreamBlockSetupAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchDreamBlockSetup(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            // find the (int) cast that's used as the particles array length
+            cursor.GotoNext(
+                instr => instr.MatchConvI4(),
+                instr => instr.MatchNewarr(out _),
+                instr => instr.MatchStfld(out _));
+
+            // insert a tiny subtraction to ensure that values slightly less than a whole number will be floored 
+            cursor.Emit(OpCodes.Ldc_R4, 0.0001f);
+            cursor.Emit(OpCodes.Sub);
+        }
+
     }
 }
