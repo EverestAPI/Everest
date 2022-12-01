@@ -199,6 +199,23 @@ namespace Celeste {
 namespace MonoMod {
     /// <summary>
     /// Patches <see cref="DreamBlock.Setup()" /> to fix issue #556.
+    /// 
+    /// When Celeste calculates the required number of particles for the dream block,
+    /// there is a rounding error for values near whole numbers.
+    /// 
+    /// The calculation is (int)((width / 8f) * (height / 8f) * 0.7f)
+    /// 
+    /// For example, a 120x32 dream block should theoretically give 42 particles.
+    /// Due to single precision floating point calculations, this actually comes out
+    /// to 41.999 and is truncated to 41.
+    /// 
+    /// On macOS however, this is still calculated as 42.  This means that it consumes an
+    /// extra 5 random numbers in the sequence and desyncs other things in the room.
+    ///
+    /// Regardless of which value is "correct", the following fix makes macOS consistent
+    /// with Windows/Linux by subtracting a small value (0.001f) before truncating to int.
+    /// This should only affect values close to whole numbers, which happens only when
+    /// the total number of tiles in a dream block is a multiple of 10.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDreamBlockSetup))]
     class PatchDreamBlockSetupAttribute : Attribute { }
