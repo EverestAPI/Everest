@@ -227,30 +227,19 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
-                EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
                 IgnoreList ignoreList = null;
 
+                bool metaParsed = false;
+
                 using (ZipFile zip = new ZipFile(archive)) {
                     foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName == "metadata.yaml") {
-                            using (MemoryStream stream = entry.ExtractStream())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                try {
-                                    meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
-                                    meta.PathArchive = archive;
-                                    meta.PostParse();
-                                } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
-                                    FilesWithMetadataLoadFailures.Add(archive);
-                                }
+                        if (entry.FileName is "everest.yaml" or "everest.yml") {
+                            if (metaParsed) {
+                                Logger.Log(LogLevel.Warn, "loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FileName}.");
+                                continue;
                             }
-                            continue;
-                        }
-                        if (entry.FileName == "multimetadata.yaml" ||
-                            entry.FileName == "everest.yaml" ||
-                            entry.FileName == "everest.yml") {
                             using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 try {
@@ -262,10 +251,11 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {archive}: {e}");
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing {entry.FileName} in {archive}: {e}");
                                     FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
+                            metaParsed = true;
                             continue;
                         }
                         if (entry.FileName == ".everestignore") {
@@ -307,14 +297,12 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
-                    if (meta == null) {
-                        meta = new EverestModuleMetadata() {
-                            Name = "_zip_" + Path.GetFileNameWithoutExtension(archive),
-                            VersionString = "0.0.0-dummy",
-                            PathArchive = archive
-                        };
-                        meta.PostParse();
-                    }
+                    EverestModuleMetadata meta = new EverestModuleMetadata() {
+                        Name = "_zip_" + Path.GetFileNameWithoutExtension(archive),
+                        VersionString = "0.0.0-dummy",
+                        PathArchive = archive
+                    };
+                    meta.PostParse();
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
@@ -337,27 +325,14 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
-                EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
-                string metaPath = Path.Combine(dir, "metadata.yaml");
-                if (File.Exists(metaPath))
-                    using (StreamReader reader = new StreamReader(metaPath)) {
-                        try {
-                            meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
-                            meta.PathDirectory = dir;
-                            meta.PostParse();
-                        } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
-                            FilesWithMetadataLoadFailures.Add(dir);
-                        }
-                    }
-
-                metaPath = Path.Combine(dir, "multimetadata.yaml");
-                if (!File.Exists(metaPath))
-                    metaPath = Path.Combine(dir, "everest.yaml");
-                if (!File.Exists(metaPath))
+                string metaPath = Path.Combine(dir, "everest.yaml");
+                if (!File.Exists(metaPath)) {
                     metaPath = Path.Combine(dir, "everest.yml");
+                } else if (File.Exists(Path.Combine(dir, "everest.yml"))) {
+                    Logger.Log(LogLevel.Warn, "loader", $"{dir} has both everest.yaml and everest.yml. Ignoring everest.yml.");
+                }
                 if (File.Exists(metaPath))
                     using (StreamReader reader = new StreamReader(metaPath)) {
                         try {
@@ -402,14 +377,12 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
-                    if (meta == null) {
-                        meta = new EverestModuleMetadata() {
-                            Name = "_dir_" + Path.GetFileName(dir),
-                            VersionString = "0.0.0-dummy",
-                            PathDirectory = dir
-                        };
-                        meta.PostParse();
-                    }
+                    EverestModuleMetadata meta = new EverestModuleMetadata() {
+                        Name = "_dir_" + Path.GetFileName(dir),
+                        VersionString = "0.0.0-dummy",
+                        PathDirectory = dir
+                    };
+                    meta.PostParse();
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
