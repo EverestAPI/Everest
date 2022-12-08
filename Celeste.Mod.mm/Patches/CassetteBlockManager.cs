@@ -56,6 +56,30 @@ namespace Celeste {
             }
         }
 
+        [MonoModLinkTo("Monocle.Entity", "Update")]
+        [MonoModIgnore]
+        public extern void base_Update();
+        [MonoModReplace]
+        public override void Update() {
+            base_Update();
+            if (isLevelMusic) {
+                sfx = Audio.CurrentMusicEventInstance;
+            }
+
+            if (sfx == null && !isLevelMusic) {
+                string cassetteSong = AreaData.Areas[SceneAs<Level>().Session.Area.ID].CassetteSong;
+                sfx = Audio.CreateInstance(cassetteSong);
+                Audio.Play(SFX.game_gen_cassetteblock_switch_2);
+
+                if (leadBeats == 0) {
+                    beatIndex = 0;
+                    sfx?.start();
+                }
+            } else {
+                AdvanceMusic(Engine.DeltaTime * tempoMult);
+            }
+        }
+
         [MonoModReplace]
         public new void AdvanceMusic(float time) {
             beatTimer += time;
