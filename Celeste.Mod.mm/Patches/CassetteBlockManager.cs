@@ -69,7 +69,7 @@ namespace Celeste {
             if (sfx == null && !isLevelMusic) {
                 string cassetteSong = AreaData.Areas[SceneAs<Level>().Session.Area.ID].CassetteSong;
                 sfx = Audio.CreateInstance(cassetteSong);
-                Audio.Play("event:/game/general/cassette_block_switch_2");
+                Audio.Play(SFX.game_gen_cassetteblock_switch_2);
 
                 if (leadBeats == 0) {
                     beatIndex = 0;
