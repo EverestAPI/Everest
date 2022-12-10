@@ -246,6 +246,9 @@ namespace Celeste.Mod.Core {
                             }
                             if (PlacedBerriesPerCheckpoint[checkpoint].ContainsKey(order)) {
                                 Logger.Log(LogLevel.Warn, "core", $"Duplicate berry order {order} in checkpoint {checkpoint} of map {Mode.Path}. Reassigning berry order.");
+                                if (!AutomaticBerriesPerCheckpoint.ContainsKey(checkpoint)) {
+                                    AutomaticBerriesPerCheckpoint[checkpoint] = new List<BinaryPacker.Element>();
+                                }
                                 AutomaticBerriesPerCheckpoint[checkpoint].Add(entity); // treat duplicate order as -1
                             } else {
                                 PlacedBerriesPerCheckpoint[checkpoint][order] = entity;
