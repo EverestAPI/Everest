@@ -531,7 +531,7 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
-    /// Patch leevel loading method to copy decal rotations from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
+    /// Patch level loading method to copy decal rotation and color from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderDecalCreation))]
     class PatchLevelLoaderDecalCreationAttribute : Attribute { }
@@ -660,8 +660,11 @@ namespace MonoMod {
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
             TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+
             FieldDefinition f_DecalData_Rotation = t_DecalData.FindField("Rotation");
-            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single)");
+            FieldDefinition f_DecalData_ColorHex = t_DecalData.FindField("ColorHex");
+
+            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single,System.String)");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -673,12 +676,11 @@ namespace MonoMod {
                                       instr => instr.MatchLdfld("Celeste.DecalData", "Scale"),
                                       instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
                                             || instr.MatchLdcI4(Celeste.Depths.BGDecals))) {
-                // we are trying to get:
-                //   decal = new Decal()
-
                 // load the rotation from the DecalData
                 cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
                 cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
+                cursor.Emit(OpCodes.Ldfld, f_DecalData_ColorHex);
                 // and replace the Decal constructor to accept it
                 cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
                 cursor.Remove();

@@ -92,8 +92,11 @@ namespace MonoMod {
             TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
             TypeDefinition t_BinaryPackerElement = MonoModRule.Modder.FindType("Celeste.BinaryPacker/Element").Resolve();
 
-            FieldDefinition f_DecalDataRotation = t_DecalData.FindField("Rotation");
+            MethodDefinition m_BinaryPackerElementAttr = t_BinaryPackerElement.FindMethod("Attr");
             MethodDefinition m_BinaryPackerElementAttrFloat = t_BinaryPackerElement.FindMethod("AttrFloat");
+
+            FieldDefinition f_DecalDataRotation = t_DecalData.FindField("Rotation");
+            FieldDefinition f_DecalDataColorHex = t_DecalData.FindField("ColorHex");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -108,6 +111,7 @@ namespace MonoMod {
 
                 // we are trying to add:
                 //   decaldata.Rotation = element.AttrFloat("rotation", 0.0f);
+                //   decaldata.ColorHex = element.AttrString("color", "");
 
                 // copy the reference to the DecalData
                 cursor.Emit(OpCodes.Dup);
@@ -118,6 +122,16 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttrFloat);
                 // put the rotation into the DecalData
                 cursor.Emit(OpCodes.Stfld, f_DecalDataRotation);
+
+                // copy the reference to the DecalData again
+                cursor.Emit(OpCodes.Dup);
+                // load the hex color from the BinaryPacker.Element
+                cursor.Emit(OpCodes.Ldloc, loc_element);
+                cursor.Emit(OpCodes.Ldstr, "color");
+                cursor.Emit(OpCodes.Ldstr, "");
+                cursor.Emit(OpCodes.Callvirt, m_BinaryPackerElementAttr);
+                // put the color into the DecalData
+                cursor.Emit(OpCodes.Stfld, f_DecalDataColorHex);
 
                 matches++;
             }
