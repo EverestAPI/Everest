@@ -75,5 +75,47 @@ namespace Monocle {
             return new Vector3((float) (v.X + (double) delta.X * amount), (float) (v.Y + (double) delta.Y * amount), (float) (v.Z + (double) delta.Z * amount)); // Patch in XNA float jank
         }
 
+        /// <summary>
+        /// Convert a hex color, possibly including an alpha value, into an XNA Color.
+        /// </summary>
+        /// <param name="hex">a hex color, in either <c>RRGGBB</c>, <c>RRGGBBAA</c>, or <c>AA</c> form.</param>
+        /// <returns>an XNA color, defaulting to white.</returns>
+        public static Color HexToColorWithAlpha(string hex) {
+            int consumed = 0;
+
+            if (hex.Length >= 1 && hex[0] == '#') {
+                consumed = 1;
+            }
+
+            int r, g, b, a;
+
+            switch (hex.Length - consumed) {
+                case 2:
+                    // one byte of data, for the alpha channel
+                    a = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    // the other channels are fixed at white
+                    return new Color(255, 255, 255, a);
+
+                case 6:
+                    // three bytes, for RGB and no alpha
+                    r = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    g = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    b = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    return new Color(r, g, b);
+
+                case 8:
+                    // four bytes, filling all four channels
+                    r = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    g = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    b = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    a = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
+                    return new Color(r, g, b, a);
+
+                default:
+                    // some invalid data, so return a sensible default
+                    return Color.White;
+            }
+        }
+
     }
 }
