@@ -11,8 +11,8 @@ namespace Celeste.Mod.Entities {
     [CustomEntity("everest/ambienceTrigger", "Sardine7/AmbienceTrigger")]
     public class AmbienceTrigger : Trigger {
 
-        public string Track;
-        public bool ResetOnLeave;
+        private string Track;
+        private bool ResetOnLeave;
 
         private string oldTrack;
 
