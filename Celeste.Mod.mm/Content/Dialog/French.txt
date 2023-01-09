@@ -63,6 +63,16 @@
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
 	MODOPTIONS_COREMODULE_TOGGLEMODS= 						Activer ou désactiver des mods
+
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Options Rich Presence
+	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					Montrer le logo
+	MODOPTIONS_COREMODULE_DISCORDSHOWMAP=					Montrer la map
+	MODOPTIONS_COREMODULE_DISCORDSHOWSIDE=					Montrer la face (A, B...)
+	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					Montrer le nom de la salle
+	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				Montrer le nombre de fraises
+	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				Montrer le nombre de morts
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					La connexion à Discord a échoué. Désactiver et réactiver pour réessayer.
 	
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
