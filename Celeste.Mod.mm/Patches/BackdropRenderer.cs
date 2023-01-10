@@ -6,7 +6,18 @@ namespace Celeste {
     class patch_BackdropRenderer : BackdropRenderer {
         private bool usingSpritebatch;
         private bool usingLoopingSpritebatch;
-        
+
+        [MonoModReplace]
+        public override void BeforeRender(Scene scene) {
+            foreach (Backdrop backdrop in Backdrops) {
+                // Only call BeforeRender if the backdrop is visible.
+                // This method should not be used for state changes, so this shouldn't have any impact on existing backdrops,
+                // while providing a massive performance boost in maps with many effects that are not visible most of the time.
+                if (backdrop.Visible)
+                    backdrop.BeforeRender(scene);
+            }
+        }
+
         /// <summary>
         /// Start a new spritebatch for backdrop rendering that uses SamplerState.PointWrap, but is otherwise identical to the one started by StartSpritebatch.
         /// </summary>
