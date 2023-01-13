@@ -29,7 +29,7 @@ namespace Celeste {
 
         public extern void orig_Apply(bool forceSixteenthNoteHack = false);
         public new void Apply(bool forceSixteenthNoteHack = false) {
-            orig_Apply();
+            orig_Apply(forceSixteenthNoteHack);
             Audio.CurrentAmbienceEventInstance?.setVolume(AmbienceVolume);
         }
 
