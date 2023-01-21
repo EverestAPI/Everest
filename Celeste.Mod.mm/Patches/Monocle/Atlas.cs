@@ -334,6 +334,9 @@ namespace Monocle {
             if (DefaultFallback != null || textures.TryGetValue("__fallback", out DefaultFallback))
                 return DefaultFallback;
 
+            if (!this.RelativeDataPath.EndsWith("Gui")) // no stackoverflow thanks
+                return ((patch_Atlas) Celeste.GFX.Gui).GetFallback();
+
             return null;
         }
 
