@@ -61,7 +61,7 @@
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		FMOD Live Updateを有効にして起動する
 	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				起動時のイントロ画面表示
 	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				ポーズ画面の「MOD設定」表示
-	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			タイトル画面をEverestにする
+	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			タイトル画面をEVERESTにする
 	MODOPTIONS_COREMODULE_INPUTGUI= 						ボタン表示
 	MODOPTIONS_COREMODULE_INPUTGUI_= 						自動
 	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				キーボード
@@ -175,7 +175,7 @@
 	MODUPDATECHECKER_FAILED=		アップデートに失敗しました！
 	MODUPDATECHECKER_CANCELLING=	アップデートをキャンセルしています…
 	MODUPDATECHECKER_CANCELLED=		アップデートがキャンセルされました
-	MODUPDATECHECKER_WILLRESTART=	もどるボタンを押すとCelesteを再起動します
+	MODUPDATECHECKER_WILLRESTART=	もどるボタンを押して、Celesteを再起動してください
 	MODUPDATECHECKER_UPDATE_ALL=	すべてのMODをアップデートする
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	すべてのMODをアップデートしています…
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	すべてのMODをアップデートしました。
@@ -188,7 +188,7 @@
 	AUTOUPDATECHECKER_INSTALLING=	インストールしています
 	AUTOUPDATECHECKER_FAILED=		MODのアップデートに失敗しました。詳細はlog.txtを確認してください。
 	AUTOUPDATECHECKER_CONTINUE=		OKボタンを押してください
-	AUTOUPDATECHECKER_REBOOT=		OKボタンを押すとCelesteを再起動します
+	AUTOUPDATECHECKER_REBOOT=		OKボタンを押して、Celesteを再起動してください
 	AUTOUPDATECHECKER_SKIP=			スキップ
 	AUTOUPDATECHECKER_SKIPPING=		アップデートをスキップします…
 
@@ -206,8 +206,8 @@
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			エラー： {0}のバージョン{1}が必要ですが、バージョン{2}しか見つかりませんでした。新しいバージョンを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_RESTARTING=				Celesteを再起動します。
 	DEPENDENCYDOWNLOADER_RESTARTING_IN=				再起動します… {0}
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		もどるボタンを押すとCelesteを再起動します。
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		もどるボタンを押すとMOD設定画面に戻ります。
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		もどるボタンを押して、Celesteを再起動してください。
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		もどるボタンを押すと、MOD設定画面に戻ります。
 	DEPENDENCYDOWNLOADER_DOWNLOADING=				{1}から{0}をダウンロードしています…
 	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		ダウンロードに失敗しました。ミラーサイト{0}に接続します…
 	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			ダウンロードが完了しました。
@@ -228,9 +228,9 @@
 	OOBE_WELCOME_CREATE=		カスタムマップを制作したいです。
 	OOBE_WELCOME_SKIP=			あなたの助けなんか、いらない。
 
-	OOBE_SETTINGS_PLAY=			GameBananaでMODを探したりインストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}プレイ情報がDiscordのアクティビティで共有することができます。{n}F6で新しいマップをデバッグ画面で表示することができます。
-	OOBE_SETTINGS_SPEEDRUN=		タイトル画面で右ボタンを押し続けるとオリジナルのCeleste.exeを起動できます。{n}GameBananaでMODを探したりインストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。
-	OOBE_SETTINGS_CREATE=		GameBananaでMODを検索したり配布することができます。{n}カスタムマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。{n}F5で現在のマップをリロードし、CTRL+F5でCelesteを再起動してマップをリロードすることができます。{n}QWERTY配列でないキーボードの場合は、コンソール画面を「.」で開き「q」で閉じます。
+	OOBE_SETTINGS_PLAY=			GameBananaでMODを探したり、インストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}プレイ情報をDiscordのアクティビティで共有することができます。{n}F6で新しいマップをデバッグ画面で表示することができます。
+	OOBE_SETTINGS_SPEEDRUN=		タイトル画面で右ボタンを押し続けると、オリジナルのCeleste.exeを起動できます。{n}GameBananaでMODを探したり、インストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。
+	OOBE_SETTINGS_CREATE=		GameBananaでMODを検索したり、配布することができます。{n}カスタムマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。{n}F5で現在のマップをリロードし、CTRL+F5でCelesteを再起動してマップをリロードすることができます。{n}QWERTY配列でないキーボードの場合は、コンソール画面を「.」で開き「q」で閉じることができます。
 	OOBE_SETTINGS_SUBHEADER=	以下の設定を確認してみてください。
 	OOBE_SETTINGS_MORE=			ほかの設定をMOD設定から変更することができます。
 	OOBE_SETTINGS_OK=			OK
@@ -239,14 +239,14 @@
 	MODOPTIONS_MODTOGGLE=				ロードするMODの管理
 	MODOPTIONS_MODTOGGLE_LOADING=		MODの情報をロードしています…
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	必要なMODを自動的に切り替える
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	あるMODを有効にすると、必要なすべてのMODも有効になります。
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	あるMODを無効にすると、そのMODに依存しているすべてのMODも無効になります。
-	MODOPTIONS_MODTOGGLE_MESSAGE_1=		MODを有効・無効にすると、blacklist.txtが上書きされ、
-	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するためにCelesteが再起動されます。
-	MODOPTIONS_MODTOGGLE_MESSAGE_3=		色がついているMODはほかに有効なMODを動かすのに必要です。
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	あるMODをロードすると、必要なすべてのMODもロードされます。
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	あるMODをアンロードすると、そのMODに依存しているすべてのMODもアンロードされます。
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		MODをロード・アンロードすると、blacklist.txtが上書きされ、
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するため、Celesteが再起動されます。
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=		色がついているMODは、ほかにロードされているMODを動かすのに必要です。
 	MODOPTIONS_MODTOGGLE_WHITELISTWARN= これらの設定を正しく適用するためには、ホワイトリストを無効にしてください。
-	MODOPTIONS_MODTOGGLE_ENABLEALL=		すべて有効にする
-	MODOPTIONS_MODTOGGLE_DISABLEALL=	すべて無効にする
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		すべてロードする
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	すべてアンロードする
 	MODOPTIONS_MODTOGGLE_CANCEL=		キャンセル
 	MODOPTIONS_MODTOGGLE_ZIPS=			ZIPファイル
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	ディレクトリ/フォルダ
