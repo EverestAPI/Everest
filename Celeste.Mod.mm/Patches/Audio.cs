@@ -274,6 +274,18 @@ namespace Celeste {
             return desc;
         }
 
+        [MonoModIgnore]
+        public static extern EventInstance orig_CreateSnapshot(string name, bool start);
+        public static EventInstance CreateSnapshot(string name, bool start) {
+            try {
+                return orig_CreateSnapshot(name, start);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Error, "Audio", "Failed to create snapshot: " + name);
+                Logger.LogDetailed(e);
+                return null;
+            }
+        }
+
         public static class patch_Banks {
 
             public static Dictionary<string, Bank> Banks = new Dictionary<string, Bank>();
