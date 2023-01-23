@@ -103,7 +103,15 @@ namespace Celeste {
                     Logger.Log(LogLevel.Error, "GFX", "Failed loading AnimatedTiles.xml: " +
                         "File is likely missing or does not contain a <Data> root element.");
                     Logger.LogDetailed(e);
+                } else {
+                    throw;
                 }
+            } catch (KeyNotFoundException e) {
+                // This isn't worth attempting to recover from due to how integrated PlayerSprite is with gameplay
+                // We'll just re-throw with a more helpful exception for now.
+                if (e.TypeInStacktrace(typeof(PlayerSprite)))
+                    throw new Exception("Failed loading player sprite metadata.", e);
+                throw;
             }
 
             MTN.LoadData();
