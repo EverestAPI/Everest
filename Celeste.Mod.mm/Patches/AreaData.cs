@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
 
 namespace Celeste {
     class patch_AreaData : AreaData {
@@ -181,7 +183,17 @@ namespace Celeste {
 
         public static extern void orig_Load();
         public static new void Load() {
-            orig_Load();
+            try {
+                orig_Load();
+            } catch (NullReferenceException e) {
+                if (e.MethodInStacktrace(typeof(AreaData), "ReloadMountainViews")) {
+                    Logger.Log(LogLevel.Error, "AreaData", "Error loading vanilla AreaViews: " +
+                        "Likely caused by an AreaViews.xml that is missing or does not contain a <Views> root element.");
+                    Logger.LogDetailed(e);
+                } else {
+                    throw;
+                }
+            }
 
             // assign SIDs and CheckpointData.Area for vanilla maps.
             foreach (AreaData area in Areas) {
@@ -467,6 +479,10 @@ namespace Celeste {
             }
             return orig_GetCheckpointName(area, level);
         }
+
+        [MonoModReplace]
+        public new XmlElement CompleteScreenXml =>
+            GFX.CompleteScreensXml["Screens"]?[CompleteScreenName];
 
     }
     public static class AreaDataExt {
