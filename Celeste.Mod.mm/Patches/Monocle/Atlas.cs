@@ -303,7 +303,15 @@ namespace Monocle {
         public static extern Atlas orig_FromDirectory(string path);
         /// <inheritdoc cref="Atlas.FromDirectory(string)"/>
         public static new Atlas FromDirectory(string path) {
-            patch_Atlas atlas = (patch_Atlas) orig_FromDirectory(path);
+            patch_Atlas atlas;
+            try {
+                atlas = (patch_Atlas) orig_FromDirectory(path);
+            } catch (DirectoryNotFoundException e) {
+                Logger.Log(LogLevel.Error, "Atlas", "FromDirectory Atlas not found. " +
+                    "Likely caused by a missing vanilla ColorGrading folder.");
+                Logger.LogDetailed(e);
+                atlas = new patch_Atlas();
+            }
             atlas.DataMethod = "FromDirectory";
             atlas.DataPath = path;
             atlas.FixDataPath();
