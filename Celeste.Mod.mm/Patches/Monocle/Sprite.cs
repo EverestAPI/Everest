@@ -1,5 +1,6 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
+using Celeste.Mod.Helpers;
 using MonoMod;
 using System.Collections.Generic;
 
@@ -22,6 +23,14 @@ namespace Monocle {
             public float Delay;
             public MTexture[] Frames;
             public Chooser<string> Goto;
+        }
+
+        internal class FallbackSprite : patch_Sprite {
+            public FallbackSprite(Atlas atlas)
+                : base(atlas, "__fallback") {
+                this.animations = new Dictionary<string, Animation>(new AlwaysEqual<string>());
+                this.Add("__fallback", "__fallback");
+            }
         }
 
     }

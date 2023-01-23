@@ -1,7 +1,9 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using Celeste.Mod;
+using Celeste.Mod.Helpers;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,7 +26,16 @@ namespace Monocle {
         public extern void orig_ctor(Atlas atlas, XmlDocument xml);
         [MonoModConstructor]
         public void ctor(Atlas atlas, XmlDocument xml) {
-            orig_ctor(atlas, xml);
+            try {
+                orig_ctor(atlas, xml);
+            } catch (NullReferenceException e) {
+                if (xml["Sprites"] is null) {
+                    Logger.Log(LogLevel.Error, "SpriteBank", "SpriteBank file missing <Sprites> root element: " + XMLPath);
+                    Logger.LogDetailed(e);
+                } else {
+                    throw;
+                }
+            }
             if (XMLPath != null) {
                 Everest.Content.ProcessLoad(this, XMLPath);
             }
@@ -34,7 +45,7 @@ namespace Monocle {
         [MonoModReplace]
         public void ctor(Atlas atlas, string xmlPath) {
             XMLPath = xmlPath;
-            orig_ctor(atlas, LoadSpriteBank(xmlPath));
+            ctor(atlas, LoadSpriteBank(xmlPath));
         }
 
         /// <summary>
@@ -192,6 +203,30 @@ namespace Monocle {
                 }
             }
             return result;
+        }
+
+        [MonoModIgnore]
+        public extern Sprite orig_Create(string id);
+        public new Sprite Create(string id) {
+            try {
+                return orig_Create(id);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Error, "SpriteBank", $"Error creating Sprite {id} from SpriteBank {XMLPath}");
+                Logger.LogDetailed(e);
+                return new patch_Sprite.FallbackSprite(Atlas);
+            }
+        }
+
+        [MonoModIgnore]
+        public extern Sprite orig_CreateOn(Sprite sprite, string id);
+        public new Sprite CreateOn(Sprite sprite, string id) {
+            try {
+                return orig_CreateOn(sprite, id);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Error, "SpriteBank", $"Error creating Sprite {id} from SpriteBank {XMLPath}");
+                Logger.LogDetailed(e);
+                return new patch_Sprite.FallbackSprite(Atlas);
+            }
         }
 
     }
