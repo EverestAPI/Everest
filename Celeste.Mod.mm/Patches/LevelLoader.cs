@@ -204,6 +204,7 @@ namespace Celeste {
             } catch (Exception e) {
                 string sid = session?.Area.GetSID() ?? "NULL";
                 if (patch_LevelEnter.ErrorMessage == null) {
+                    //TODO: Remove the AutotilerException handler as it is no longer thrown by anything.
                     if (e is AutotilerException ex && e.Source == "TileHandler") {
                         string room = "???";
                         for (int i = 0; i < GFX.FGAutotiler.LevelBounds.Count; i++) {
