@@ -13,7 +13,7 @@ namespace Celeste.Mod.Helpers {
             if (e != null && t != null) {
                 IEnumerable<MethodBase> methods = new StackTrace(e).GetFrames()?.Select(f => f.GetMethod());
                 // DMD names are in the format DMD<Type::Method>
-                return methods?.Any(m => m != null && (m.DeclaringType == t || (m.IsDynamicMethod() && Regex.Match(m.Name, @"DMD<(.*)::").Value == t.ToString()))) ?? false;
+                return methods?.Any(m => m != null && (m.DeclaringType == t || (m.IsDynamicMethod() && Regex.Match(m.Name, @"DMD<(.*)::").Groups[1].Value == t.ToString()))) ?? false;
             }
             return false;
         }
