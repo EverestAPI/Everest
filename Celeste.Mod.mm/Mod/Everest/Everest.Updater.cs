@@ -314,7 +314,9 @@ namespace Celeste.Mod {
                     return;
                 }
 
+                // The user has made their choice, so we will save the desired branch now.
                 CoreModule.Settings.CurrentBranch = version.Source.Name;
+                CoreModule.Instance.SaveSettings();
                 progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
             }
             private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
