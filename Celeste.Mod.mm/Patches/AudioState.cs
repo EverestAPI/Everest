@@ -5,32 +5,33 @@ using MonoMod;
 namespace Celeste {
     class patch_AudioState : AudioState {
 
-        public float AmbienceVolume;
+        public float? AmbienceVolume;
 
         [MonoModConstructor]
         [MonoModReplace]
         public void ctor() {
-            AmbienceVolume = 1f;
+            AmbienceVolume = null;
         }
 
         public extern void orig_ctor(AudioTrackState music, AudioTrackState ambience);
         [MonoModConstructor]
         public void ctor(AudioTrackState music, AudioTrackState ambience) {
             orig_ctor(music, ambience);
-            AmbienceVolume = 1f;
+            AmbienceVolume = null;
         }
 
         public extern void orig_ctor(string music, string ambience);
         [MonoModConstructor]
         public void ctor(string music, string ambience) {
             orig_ctor(music, ambience);
-            AmbienceVolume = 1f;
+            AmbienceVolume = null;
         }
 
         public extern void orig_Apply(bool forceSixteenthNoteHack = false);
         public new void Apply(bool forceSixteenthNoteHack = false) {
             orig_Apply();
-            Audio.CurrentAmbienceEventInstance?.setVolume(AmbienceVolume);
+            if (AmbienceVolume.HasValue)
+                Audio.CurrentAmbienceEventInstance?.setVolume(AmbienceVolume.Value);
         }
 
         public void Apply() {
