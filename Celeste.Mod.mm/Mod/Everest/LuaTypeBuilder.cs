@@ -71,7 +71,7 @@ namespace Celeste.Mod {
             string tname = rules["name"] as string ?? $"LuaType{Count}";
             string tfullName = string.IsNullOrEmpty(tns) ? tname : $"{tns}.{tname}";
 
-            AssemblyBuilder asm = AppDomain.CurrentDomain.DefineDynamicAssembly(
+            AssemblyBuilder asm = AssemblyBuilder.DefineDynamicAssembly(
                 new AssemblyName() {
                     Name = $"LuaDynAsm{Count}"
                 },

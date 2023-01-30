@@ -11,6 +11,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -81,9 +82,9 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
-                        using (WebClient wc = new WebClient()) {
-                            wc.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
-                            data = wc.DownloadString(Index());
+                        using (HttpClient hc = new HttpClient()) {
+                            hc.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
+                            data = hc.GetStringAsync(Index()).Result;
                         }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
@@ -454,74 +455,70 @@ namespace Celeste.Mod {
                 if (File.Exists(destPath))
                     File.Delete(destPath);
 
-                HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                request.UserAgent = "Everest/" + Everest.VersionString;
-                request.Accept = "application/octet-stream";
-                request.Timeout = 10000;
-                request.ReadWriteTimeout = 10000;
-
-                // disable IPv6 for this request, as it is known to cause "the request has timed out" issues for some users
-                request.ServicePoint.BindIPEndPointDelegate = delegate (ServicePoint servicePoint, IPEndPoint remoteEndPoint, int retryCount) {
-                    if (remoteEndPoint.AddressFamily != AddressFamily.InterNetwork) {
-                        throw new InvalidOperationException("no IPv4 address");
-                    }
-                    return new IPEndPoint(IPAddress.Any, 0);
-                };
-
-                // Manual buffered copy from web input to file output.
-                // Allows us to measure speed and progress.
-                using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
-                using (Stream input = response.GetResponseStream())
-                using (FileStream output = File.OpenWrite(destPath)) {
-                    long length;
-                    if (input.CanSeek) {
-                        length = input.Length;
-                    } else {
-                        length = _ContentLength(url);
-                    }
-
-                    progressCallback(0, length, 0);
-
-                    byte[] buffer = new byte[4096];
-                    DateTime timeLastSpeed = timeStart;
-                    int read = 1;
-                    int readForSpeed = 0;
-                    int pos = 0;
-                    int speed = 0;
-                    int count = 0;
-                    TimeSpan td;
-                    while (read > 0) {
-                        count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
-                        read = input.Read(buffer, 0, count);
-                        output.Write(buffer, 0, read);
-                        pos += read;
-                        readForSpeed += read;
-
-                        td = DateTime.Now - timeLastSpeed;
-                        if (td.TotalMilliseconds > 100) {
-                            speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
-                            readForSpeed = 0;
-                            timeLastSpeed = DateTime.Now;
+                using (SocketsHttpHandler handler = new SocketsHttpHandler()) {
+                    // disable IPv6 for this request, as it is known to cause "the request has timed out" issues for some users
+                    handler.ConnectCallback = async delegate (SocketsHttpConnectionContext ctx, CancellationToken token) {
+                        if (ctx.DnsEndPoint.AddressFamily != AddressFamily.Unspecified && ctx.DnsEndPoint.AddressFamily != AddressFamily.InterNetwork) {
+                            throw new InvalidOperationException("no IPv4 address");
                         }
 
-                        if (!progressCallback(pos, length, speed)) {
-                            break;
+                        Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
+                        try {
+                            await socket.ConnectAsync(new DnsEndPoint(ctx.DnsEndPoint.Host, ctx.DnsEndPoint.Port, AddressFamily.InterNetwork), token).ConfigureAwait(false);
+                            return new NetworkStream(socket, true);
+                        } catch(Exception) {
+                            socket.Dispose();
+                            throw;
+                        }
+                    };
+
+                    using (HttpClient client = new HttpClient(handler)) {
+                        client.Timeout = TimeSpan.FromMilliseconds(10000);
+                        client.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
+                        client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
+
+                        // Manual buffered copy from web input to file output.
+                        // Allows us to measure speed and progress.
+                        using (HttpResponseMessage response = client.GetAsync(url).Result)
+                        using (Stream input = response.Content.ReadAsStream())
+                        using (FileStream output = File.OpenWrite(destPath)) {
+                            long length;
+                            if (input.CanSeek) {
+                                length = input.Length;
+                            } else {
+                                length = response.Content.Headers.ContentLength ?? 0;
+                            }
+
+                            progressCallback(0, length, 0);
+
+                            byte[] buffer = new byte[4096];
+                            DateTime timeLastSpeed = timeStart;
+                            int read = 1;
+                            int readForSpeed = 0;
+                            int pos = 0;
+                            int speed = 0;
+                            int count = 0;
+                            TimeSpan td;
+                            while (read > 0) {
+                                count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
+                                read = input.Read(buffer, 0, count);
+                                output.Write(buffer, 0, read);
+                                pos += read;
+                                readForSpeed += read;
+
+                                td = DateTime.Now - timeLastSpeed;
+                                if (td.TotalMilliseconds > 100) {
+                                    speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
+                                    readForSpeed = 0;
+                                    timeLastSpeed = DateTime.Now;
+                                }
+
+                                if (!progressCallback(pos, length, speed)) {
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-            }
-
-            private static long _ContentLength(string url) {
-                try {
-                    HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
-                    request.UserAgent = "Everest/" + Everest.VersionString;
-                    request.Method = "HEAD";
-                    request.Timeout = 10000;
-                    request.ReadWriteTimeout = 10000;
-                    using (HttpWebResponse response = (HttpWebResponse) request.GetResponse())
-                        return response.ContentLength;
-                } catch (Exception) {
-                    return 0;
                 }
             }
 

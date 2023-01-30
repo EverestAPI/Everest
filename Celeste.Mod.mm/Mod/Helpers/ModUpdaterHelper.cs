@@ -3,22 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public class ModUpdaterHelper {
-        private class CompressedWebClient : WebClient {
-            protected override WebRequest GetWebRequest(Uri address) {
-                // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
-                // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
-                HttpWebRequest request = (HttpWebRequest) base.GetWebRequest(address);
-                request.AutomaticDecompression = DecompressionMethods.GZip;
-                request.UserAgent = "Everest/" + Everest.VersionString + "; gzip";
-
-                return request;
-            }
-        }
-
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
                 if (x.LastUpdate != y.LastUpdate) {
@@ -41,8 +30,14 @@ namespace Celeste.Mod.Helpers {
 
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (WebClient wc = new CompressedWebClient()) {
-                    string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
+                using (HttpClientHandler handler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip })
+                using (HttpClient hc = new HttpClient()) {               
+                    // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
+                    // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
+                    hc.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
+                    hc.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString + "; gzip");
+
+                    string yamlData = hc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
                         updateCatalog[name].Name = name;
@@ -146,9 +141,9 @@ namespace Celeste.Mod.Helpers {
         /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
         /// </summary>
         private static string getModUpdaterDatabaseUrl() {
-            using (WebClient wc = new WebClient()) {
+            using (HttpClient hc = new HttpClient()) {
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", "Fetching mod updater database URL");
-                return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
+                return hc.GetStringAsync("https://everestapi.github.io/modupdater.txt").Result.Trim();
             }
         }
 

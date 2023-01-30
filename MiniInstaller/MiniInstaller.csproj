@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452</TargetFrameworks>
+    <TargetFrameworks>net7.0</TargetFrameworks>
     <AssemblyName>MiniInstaller</AssemblyName>
     <RootNamespace>MiniInstaller</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>

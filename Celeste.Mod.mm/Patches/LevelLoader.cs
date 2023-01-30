@@ -43,7 +43,7 @@ namespace Celeste {
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
                 (lastThread?.IsAlive ?? false)) {
-                lastThread?.Abort();
+                lastThread?.Interrupt();
             }
 
             if (CoreModule.Settings.LazyLoading) {
