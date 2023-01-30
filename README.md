@@ -26,18 +26,20 @@ For information about mod development, check out the [Everest Wiki](https://gith
 
 ### Windows
 - Open the .sln in the repo with Visual Studio
-- Build all
-- Copy everything in `MiniInstaller\bin\Debug` and `Celeste.Mod.mm\bin\Debug` to your Celeste directory
+- Publish all
+    - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required depdency DLLs won't be copied!
+- Copy everything in `MiniInstaller\bin\Debug\publish` and `Celeste.Mod.mm\bin\Debug\publish` to your Celeste directory
 - Run MiniInstaller.exe
 
 ### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
-- Build all
+- Publish all
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
-    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet build`
-- Copy everything in `MiniInstaller/bin/Debug` and `Celeste.Mod.mm/bin/Debug` to your Celeste directory
+    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
+    - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required depdency DLLs won't be copied!
+- Copy everything in `MiniInstaller/bin/Debug/publish` and `Celeste.Mod.mm/bin/Debug/publish` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
-- Run `mono MiniInstaller.exe`
+- Run `./MiniInstaller`
 
 ## Contributing
 Contributions of any kind are welcome, and a guide on how to contribute effectively to the Everest project is available [here](./CONTRIBUTING.md).

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -16,10 +16,6 @@
   <PropertyGroup>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Reference Include="System.Management" />
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Celeste">
@@ -55,7 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
     <PackageReference Include="MonoMod" Version="22.01.04.03" />
     <PackageReference Include="MonoMod.RuntimeDetour" Version="22.01.04.03" />
@@ -117,5 +112,5 @@
   <ItemGroup>
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
   </ItemGroup>
-  
+
 </Project>
