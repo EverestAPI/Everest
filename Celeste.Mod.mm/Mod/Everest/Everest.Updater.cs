@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -416,6 +417,14 @@ namespace Celeste.Mod {
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
                 request.Timeout = 10000;
                 request.ReadWriteTimeout = 10000;
+
+                // disable IPv6 for this request, as it is known to cause "the request has timed out" issues for some users
+                request.ServicePoint.BindIPEndPointDelegate = delegate (ServicePoint servicePoint, IPEndPoint remoteEndPoint, int retryCount) {
+                    if (remoteEndPoint.AddressFamily != AddressFamily.InterNetwork) {
+                        throw new InvalidOperationException("no IPv4 address");
+                    }
+                    return new IPEndPoint(IPAddress.Any, 0);
+                };
 
                 // Manual buffered copy from web input to file output.
                 // Allows us to measure speed and progress.

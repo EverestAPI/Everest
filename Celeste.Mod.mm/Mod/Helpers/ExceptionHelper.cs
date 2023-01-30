@@ -11,9 +11,9 @@ namespace Celeste.Mod.Helpers {
 
         public static bool TypeInStacktrace(this Exception e, Type t) {
             if (e != null && t != null) {
-                IEnumerable<MethodBase> methods = new StackTrace(e).GetFrames().Select(f => f.GetMethod());
+                IEnumerable<MethodBase> methods = new StackTrace(e).GetFrames()?.Select(f => f.GetMethod());
                 // DMD names are in the format DMD<Type::Method>
-                return methods.Any(m => m.DeclaringType == t || (m.IsDynamicMethod() && Regex.Match(m.Name, @"DMD<(.*)::").Value == t.ToString()));
+                return methods?.Any(m => m != null && (m.DeclaringType == t || (m.IsDynamicMethod() && Regex.Match(m.Name, @"DMD<(.*)::").Groups[1].Value == t.ToString()))) ?? false;
             }
             return false;
         }
@@ -21,8 +21,8 @@ namespace Celeste.Mod.Helpers {
         public static bool MethodInStacktrace(this Exception e, Type t, string methodName) {
             MethodBase target = t?.GetMethod(methodName);
             if (e != null && target != null) {
-                IEnumerable<MethodBase> methods = new StackTrace(e).GetFrames().Select(f => f.GetMethod());
-                return methods.Any(m => m == target || (m.IsDynamicMethod() && m.Name == $"DMD<{target.GetID(simple: true)}>"));
+                IEnumerable<MethodBase> methods = new StackTrace(e).GetFrames()?.Select(f => f.GetMethod());
+                return methods?.Any(m => m != null && (m == target || (m.IsDynamicMethod() && m.Name == $"DMD<{target.GetID(simple: true)}>"))) ?? false;
             }
             return false;
         }
