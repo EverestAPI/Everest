@@ -2,8 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,7 +30,9 @@ namespace Celeste.Mod {
                 Name = "Everest STAThread Worker",
                 IsBackground = true
             };
-            Worker.SetApartmentState(ApartmentState.STA);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Worker.SetApartmentState(ApartmentState.STA);
             Worker.Start();
         }
 
