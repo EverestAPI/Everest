@@ -1,9 +1,12 @@
 ﻿using Celeste.Mod.Helpers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Threading;
 using System.Xml;
 
@@ -51,7 +54,10 @@ namespace MiniInstaller {
                 if (asm != null)
                     return asm;
 
-                return Assembly.LoadFrom(Path.Combine(Path.GetDirectoryName(PathUpdate), asmName.Name + ".dll"));
+                if (PathUpdate != null)
+                    return Assembly.LoadFrom(Path.Combine(Path.GetDirectoryName(PathUpdate), asmName.Name + ".dll"));
+
+                return null;
             };
 
             if (File.Exists(PathLog))
@@ -79,17 +85,20 @@ namespace MiniInstaller {
                     MoveFilesFromUpdate();
 
                     MoveDylibs();
+                    DeleteSystemLibs();
+                    //TODO SetupNativeLibs();
 
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
                     }
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
                     RunHookGen(PathEverestExe, PathCelesteExe);
-                    MakeLargeAddressAware(PathEverestExe);
+                    // MakeLargeAddressAware(PathEverestExe);
+                    //TODO PackageExecutable(PathEverestExe);
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
 
 
-                    // If we're updating, start the game. Otherwise, close the window. 
+                    // If we're updating, start the game. Otherwise, close the window.
                     if (PathUpdate != null) {
                         StartGame();
                     }
@@ -219,13 +228,50 @@ namespace MiniInstaller {
             Backup(PathCelesteExe + ".pdb");
             Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
             Backup(PathCelesteExe + ".config");
+
+            //Backup dependency DLLs
+            BackupPEDeps(Path.Combine(PathOrig, Path.GetFileName(PathCelesteExe)), PathGame);
+
+            //Backup native libraries
+            //TODO Windows
+            //TODO MacOS
+            Backup(Path.Combine(PathGame, "lib"));
+            Backup(Path.Combine(PathGame, "lib64"));
+
+            //Backup all system DLL files (should already have happened earlier, but do it again just in case)
+            foreach (string file in Directory.GetFiles(PathGame)) {
+                if (Path.GetExtension(file) == ".dll" && Path.GetFileName(file).StartsWith("System."))
+                    Backup(file);
+            }
         }
 
-        public static void Backup(string from) {
-            string to = Path.Combine(PathOrig, Path.GetFileName(from));
-            if (File.Exists(from) && !File.Exists(to)) {
-                LogLine($"Backing up {from} => {to}");
-                File.Copy(from, to);
+        public static void BackupPEDeps(string path, string depPath, HashSet<string> backedUpDeps = null) {
+            backedUpDeps ??= new HashSet<string>() { path };
+
+            foreach (string dep in IteratePEDependencies(path, depPath)) {
+                string asmRefPath = Path.Combine(depPath, $"{dep}.dll");
+                if (!File.Exists(asmRefPath) || backedUpDeps.Contains(asmRefPath))
+                    continue;
+
+                backedUpDeps.Add(asmRefPath);
+                Backup(asmRefPath);
+                BackupPEDeps(asmRefPath, depPath, backedUpDeps);
+            }
+        }
+
+        public static void Backup(string from, string backupDst = null) {
+            string to = Path.Combine(backupDst ?? PathOrig, Path.GetFileName(from));
+            if(Directory.Exists(from)) {
+                if (!Directory.Exists(to))
+                    Directory.CreateDirectory(to);
+
+                foreach (string entry in Directory.GetFileSystemEntries(from))
+                    Backup(entry, to);
+            } else if(File.Exists(from)) {
+                if (File.Exists(from) && !File.Exists(to)) {
+                    LogLine($"Backing up {from} => {to}");
+                    File.Copy(from, to);
+                }
             }
         }
 
@@ -252,6 +298,18 @@ namespace MiniInstaller {
                     LogLine($"Copying {fileGame} +> {fileDylibs}");
                     File.Copy(fileGame, fileDylibs, true);
                 }
+            }
+        }
+
+        public static void DeleteSystemLibs() {
+            LogLine("Deleting system libraries");
+
+            foreach (string fileGame in Directory.GetFiles(PathGame)) {
+                if (Path.GetExtension(fileGame) != ".dll" || !Path.GetFileName(fileGame).StartsWith("System."))
+                    continue;
+
+                LogLine($"Deleting {fileGame}");
+                File.Delete(fileGame);
             }
         }
 
@@ -303,40 +361,6 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
-        }
-
-        // Based on https://github.com/RomSteady/RomTerraria/blob/c017139c54b82fa86c1e645be5b51656e637d449/RTRewriter/Cecil/Rewriter.cs#L37
-        public static void MakeLargeAddressAware(string asm) {
-            // https://docs.microsoft.com/en-us/windows/desktop/debug/pe-format#characteristics
-            const ushort IMAGE_FILE_LARGE_ADDRESS_AWARE = 0x0020;
-            using (FileStream stream = File.Open(asm, FileMode.Open, FileAccess.ReadWrite))
-            using (BinaryReader reader = new BinaryReader(stream))
-            using (BinaryWriter writer = new BinaryWriter(stream)) {
-                // Check for MZ header.
-                if (reader.ReadInt16() != 0x5A4D)
-                    return;
-
-                // Skip to the PE header, then check for it.
-                reader.BaseStream.Position = 0x3C;
-                reader.BaseStream.Position = reader.ReadInt32();
-                if (reader.ReadInt32() != 0x4550)
-                    return;
-
-                // Go to the "characteristics" in the header.
-                reader.BaseStream.Position += 0x12;
-
-                // Set the IMAGE_FILE_LARGE_ADDRESS_AWARE flag if not already set.
-                long pos = reader.BaseStream.Position;
-                ushort flags = reader.ReadUInt16();
-                if ((flags & IMAGE_FILE_LARGE_ADDRESS_AWARE) == IMAGE_FILE_LARGE_ADDRESS_AWARE)
-                    return;
-
-                flags |= IMAGE_FILE_LARGE_ADDRESS_AWARE;
-
-                writer.Seek((int) pos, SeekOrigin.Begin);
-                writer.Write(flags);
-                writer.Flush();
-            }
         }
 
         public static void StartGame() {
@@ -396,6 +420,16 @@ namespace MiniInstaller {
             return asm;
         }
 
+        static IEnumerable<string> IteratePEDependencies(string path, string depPath) {
+            using (FileStream fs = File.OpenRead(path))
+            using (PEReader pe = new PEReader(fs)) {
+                MetadataReader meta = pe.GetMetadataReader();
+                foreach (AssemblyReference asmRef in meta.AssemblyReferences.Select(meta.GetAssemblyReference)) {
+                    yield return meta.GetString(asmRef.Name);
+                }
+            }
+        }
+
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
             LogLine("Combining Documentation");
             XmlDocument from = new XmlDocument();
@@ -414,7 +448,7 @@ namespace MiniInstaller {
             XmlNodeList members = from.DocumentElement.LastChild.ChildNodes;
 
             // Reverse for loop so that we can remove nodes without breaking everything
-            for (int i = members.Count - 1; i >= 0; i--) { 
+            for (int i = members.Count - 1; i >= 0; i--) {
                 XmlNode node = members[i];
                 XmlAttribute name = node.Attributes["name"];
                 string noPatch = name.Value.Replace("patch_", "");
