@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 
 namespace MonoMod {
     /// <summary>
@@ -324,8 +325,8 @@ namespace MonoMod {
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
-        
-        
+
+
         public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
             ILCursor c = new ILCursor(il);
             while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
@@ -358,7 +359,7 @@ namespace MonoMod {
                 OR Change (for walls):
                     Play("event:/char/madeline/{$name}", "surface_index", platformByPriority.GetWallSoundIndex(this, (int)Facing));
                 to:
-                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetWallSoundIndex(this, (int)Facing)) + $name, "surface_index", 
+                    Play(SurfaceIndex.GetPathFromIndex(platformByPriority.GetWallSoundIndex(this, (int)Facing)) + $name, "surface_index",
                          platformByPriority.GetWallSoundIndex(this, (int)Facing));
             */
 
@@ -399,6 +400,23 @@ namespace MonoMod {
         }
 
         public static void PostProcessor(MonoModder modder) {
+            // Clear 32 bit flag
+            modder.Module.Attributes &= ~ModuleAttributes.Required32Bit;
+
+            // Patch target framework
+            // (not required but helps compilers)
+            modder.Module.RuntimeVersion = System.Reflection.Assembly.GetCallingAssembly().ImageRuntimeVersion;
+
+            CustomAttribute targetFrameworkAttr = modder.Module.Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute).FullName);
+            if (targetFrameworkAttr != null) {
+                TargetFrameworkAttribute attr = (TargetFrameworkAttribute) System.Reflection.Assembly.GetCallingAssembly().GetCustomAttributes(typeof(TargetFrameworkAttribute), default).FirstOrDefault();
+                if (attr != null) {
+                    targetFrameworkAttr.ConstructorArguments[0] = new CustomAttributeArgument(modder.Module.ImportReference(typeof(string)), attr.FrameworkName);
+                    targetFrameworkAttr.Properties.Clear();
+                    targetFrameworkAttr.Properties.Add(new CustomAttributeNamedArgument(nameof(attr.FrameworkDisplayName), new CustomAttributeArgument(modder.Module.ImportReference(typeof(string)), attr.FrameworkDisplayName)));
+                }
+            }
+
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
                 PatchAreaCompleteCtor(method);
