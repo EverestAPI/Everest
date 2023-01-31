@@ -89,6 +89,7 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
+            MonoModRule.Modder.PostProcessors += NETCoreifier.Coreifier.ConvertToNetCore;
 
             foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)
@@ -400,23 +401,6 @@ namespace MonoMod {
         }
 
         public static void PostProcessor(MonoModder modder) {
-            // Clear 32 bit flag
-            modder.Module.Attributes &= ~ModuleAttributes.Required32Bit;
-
-            // Patch target framework
-            // (not required but helps compilers)
-            modder.Module.RuntimeVersion = System.Reflection.Assembly.GetCallingAssembly().ImageRuntimeVersion;
-
-            CustomAttribute targetFrameworkAttr = modder.Module.Assembly.GetCustomAttribute(typeof(TargetFrameworkAttribute).FullName);
-            if (targetFrameworkAttr != null) {
-                TargetFrameworkAttribute attr = (TargetFrameworkAttribute) System.Reflection.Assembly.GetCallingAssembly().GetCustomAttributes(typeof(TargetFrameworkAttribute), default).FirstOrDefault();
-                if (attr != null) {
-                    targetFrameworkAttr.ConstructorArguments[0] = new CustomAttributeArgument(modder.Module.ImportReference(typeof(string)), attr.FrameworkName);
-                    targetFrameworkAttr.Properties.Clear();
-                    targetFrameworkAttr.Properties.Add(new CustomAttributeNamedArgument(nameof(attr.FrameworkDisplayName), new CustomAttributeArgument(modder.Module.ImportReference(typeof(string)), attr.FrameworkDisplayName)));
-                }
-            }
-
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
                 PatchAreaCompleteCtor(method);

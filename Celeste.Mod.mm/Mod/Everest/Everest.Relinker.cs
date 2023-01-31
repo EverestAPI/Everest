@@ -220,7 +220,7 @@ namespace Celeste.Mod {
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
-                    
+
                     // Load the assembly and the module definition
                     ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
                     try {
@@ -332,6 +332,8 @@ namespace Celeste.Mod {
                     modder.ParseRules(modder.Module);
 
                     modder.AutoPatch();
+
+                    NETCoreifier.Coreifier.ConvertToNetCore(modder);
 
                     // Write patched assembly and debug symbols back to disk
                     ISymbolWriterProvider symbolWriterProvider = modder.WriterParameters.SymbolWriterProvider;
