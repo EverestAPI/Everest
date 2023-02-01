@@ -31,11 +31,11 @@ namespace Celeste.Mod.Helpers {
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
                 using (HttpClientHandler handler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.GZip })
-                using (HttpClient hc = new HttpClient()) {               
+                using (HttpClient hc = new HttpClient()) {
                     // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
                     // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
                     hc.DefaultRequestHeaders.Add("Accept-Encoding", "gzip");
-                    hc.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString + "; gzip");
+                    hc.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
 
                     string yamlData = hc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
