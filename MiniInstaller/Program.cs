@@ -235,25 +235,45 @@ namespace MiniInstaller {
                 Directory.CreateDirectory(PathOrig);
             }
 
+            //Backup the game executable
             Backup(PathCelesteExe);
             Backup(PathCelesteExe + ".pdb");
             Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
-            Backup(PathCelesteExe + ".config");
 
-            //Backup dependency DLLs
-            BackupPEDeps(Path.Combine(PathOrig, Path.GetFileName(PathCelesteExe)));
+            //Backup game dependencies
+            BackupPEDeps(PathCelesteExe);
+
+            //Backup all system libraries explicitly, as we'll delete those
+            foreach (string file in Directory.GetFiles(PathGame)) {
+                if(IsSystemLibrary(file))
+                    Backup(file);
+            }
+
+            //Backup MonoKickstart executable / config (for Linux + MacOS)
+            Backup(Path.Combine(PathGame, "Celeste"));
+            Backup(Path.Combine(PathGame, "Celeste.bin.x86"));
+            Backup(Path.Combine(PathGame, "Celeste.bin.x86_64"));
+            Backup(Path.Combine(PathGame, "monoconfig"));
+            Backup(Path.Combine(PathGame, "monomachineconfig"));
+            Backup(Path.Combine(PathGame, "FNA.dll.config"));
 
             //Backup native libraries
-            //TODO Windows
-            //TODO MacOS
+            Backup(Path.Combine(PathGame, "fmod.dll"));
+            Backup(Path.Combine(PathGame, "fmodstudio.dll"));
+            Backup(Path.Combine(PathGame, "steam_api.dll"));
+            Backup(Path.Combine(PathGame, "FNA3D.dll"));
+            Backup(Path.Combine(PathGame, "SDL2.dll"));
             Backup(Path.Combine(PathGame, "lib"));
             Backup(Path.Combine(PathGame, "lib64"));
 
-            //Backup all system DLL files (should already have happened earlier, but do it again just in case)
-            foreach (string file in Directory.GetFiles(PathGame)) {
-                if (Path.GetExtension(file) == ".dll" && Path.GetFileName(file).StartsWith("System."))
-                    Backup(file);
-            }
+            //Backup misc files
+            Backup(PathCelesteExe + ".config");
+            Backup("gamecontrollerdb.txt");
+            Backup("gamecontrollerdb.txt");
+
+            //Create a symlink for the contents folder
+            if (!Directory.Exists(Path.Combine(PathOrig, "Content")))
+                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
         }
 
         public static void BackupPEDeps(string path, HashSet<string> backedUpDeps = null) {
@@ -315,15 +335,12 @@ namespace MiniInstaller {
         public static void DeleteSystemLibs() {
             LogLine("Deleting system libraries");
 
-            foreach (string fileGame in Directory.GetFiles(PathGame)) {
-                if (Path.GetExtension(fileGame) != ".dll")
+            foreach (string file in Directory.GetFiles(PathGame)) {
+                if (!IsSystemLibrary(file))
                     continue;
 
-                if (!Path.GetFileName(fileGame).StartsWith("System.") && !Path.GetFileName(fileGame).Equals("mscorlib.dll", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                LogLine($"Deleting {fileGame}");
-                File.Delete(fileGame);
+                LogLine($"Deleting {file}");
+                File.Delete(file);
             }
         }
 
@@ -529,6 +546,20 @@ namespace MiniInstaller {
             } catch {
                 return false;
             }
+        }
+
+        static bool IsSystemLibrary(string file) {
+            if (Path.GetExtension(file) != ".dll")
+                return false;
+
+            if (Path.GetFileName(file).StartsWith("System."))
+                return true;
+
+            return new string[] {
+                "mscorlib.dll",
+                "Mono.Posix.dll",
+                "Mono.Security.dll"
+            }.Any(name => Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
         }
 
         static Assembly LazyLoadAssembly(string path) {
