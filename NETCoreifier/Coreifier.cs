@@ -11,6 +11,12 @@ namespace NETCoreifier {
         public static void ConvertToNetCore(MonoModder modder)
             => ConvertToNetCore(modder.Module);
 
+        public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
+            ModuleDefinition module = ModuleDefinition.ReadModule(inputAsm);
+            ConvertToNetCore(module);
+            module.Write(outputAsm ?? inputAsm);
+        }
+
         public static void ConvertToNetCore(ModuleDefinition module) {
             module.RuntimeVersion = System.Reflection.Assembly.GetCallingAssembly().ImageRuntimeVersion;
 

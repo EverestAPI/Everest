@@ -89,7 +89,6 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
-            MonoModRule.Modder.PostProcessors += NETCoreifier.Coreifier.ConvertToNetCore;
 
             foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)

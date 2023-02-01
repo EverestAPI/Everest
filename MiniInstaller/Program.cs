@@ -7,6 +7,10 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
 
@@ -16,13 +20,14 @@ namespace MiniInstaller {
         public static string PathUpdate;
         public static string PathGame;
         public static string PathCelesteExe;
-        public static string PathEverestExe;
+        public static string PathEverestExe, PathEverestDLL;
         public static string PathOrig;
         public static string PathDylibs;
         public static string PathLog;
 
         public static Assembly AsmMonoMod;
         public static Assembly AsmHookGen;
+        public static Assembly AsmNETCoreifier;
 
         // This can be set from the in-game installer via reflection.
         public static Action<string> LineLogger;
@@ -91,10 +96,15 @@ namespace MiniInstaller {
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
                     }
+                    ConvertToNETCore(PathEverestExe);
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
                     RunHookGen(PathEverestExe, PathCelesteExe);
-                    // MakeLargeAddressAware(PathEverestExe);
-                    //TODO PackageExecutable(PathEverestExe);
+
+                    File.Delete(PathEverestDLL);
+                    File.Move(PathEverestExe, PathEverestDLL);
+                    CreateRuntimeConfigFiles(PathEverestDLL);
+                    //TODO PackageExecutable(PathEverestDLL);
+
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
 
 
@@ -189,6 +199,7 @@ namespace MiniInstaller {
             // Here lies a reminder that patching into Everest.exe only caused confusion and issues.
             // RIP Everest.exe 2019 - 2020
             PathEverestExe = PathCelesteExe;
+            PathEverestDLL = Path.ChangeExtension(PathEverestExe, ".dll");
 
             PathOrig = Path.Combine(PathGame, "orig");
             PathLog = Path.Combine(PathGame, "miniinstaller-log.txt");
@@ -230,7 +241,7 @@ namespace MiniInstaller {
             Backup(PathCelesteExe + ".config");
 
             //Backup dependency DLLs
-            BackupPEDeps(Path.Combine(PathOrig, Path.GetFileName(PathCelesteExe)), PathGame);
+            BackupPEDeps(Path.Combine(PathOrig, Path.GetFileName(PathCelesteExe)));
 
             //Backup native libraries
             //TODO Windows
@@ -245,17 +256,17 @@ namespace MiniInstaller {
             }
         }
 
-        public static void BackupPEDeps(string path, string depPath, HashSet<string> backedUpDeps = null) {
+        public static void BackupPEDeps(string path, HashSet<string> backedUpDeps = null) {
             backedUpDeps ??= new HashSet<string>() { path };
 
-            foreach (string dep in IteratePEDependencies(path, depPath)) {
-                string asmRefPath = Path.Combine(depPath, $"{dep}.dll");
+            foreach (string dep in GetPEAssemblyReferences(path).Keys) {
+                string asmRefPath = Path.Combine(Path.GetDirectoryName(path), $"{dep}.dll");
                 if (!File.Exists(asmRefPath) || backedUpDeps.Contains(asmRefPath))
                     continue;
 
                 backedUpDeps.Add(asmRefPath);
                 Backup(asmRefPath);
-                BackupPEDeps(asmRefPath, depPath, backedUpDeps);
+                BackupPEDeps(asmRefPath, backedUpDeps);
             }
         }
 
@@ -305,7 +316,10 @@ namespace MiniInstaller {
             LogLine("Deleting system libraries");
 
             foreach (string fileGame in Directory.GetFiles(PathGame)) {
-                if (Path.GetExtension(fileGame) != ".dll" || !Path.GetFileName(fileGame).StartsWith("System."))
+                if (Path.GetExtension(fileGame) != ".dll")
+                    continue;
+
+                if (!Path.GetFileName(fileGame).StartsWith("System.") && !Path.GetFileName(fileGame).Equals("mscorlib.dll", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 LogLine($"Deleting {fileGame}");
@@ -331,6 +345,8 @@ namespace MiniInstaller {
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.HookGen");
             AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.exe"));
+            LogLine("Loading NETCoreifier");
+            AsmNETCoreifier = LazyLoadAssembly(Path.Combine(PathGame, "NETCoreifier.dll"));
         }
 
         public static void RunMonoMod(string asmFrom, string asmTo = null, string[] dllPaths = null) {
@@ -361,6 +377,121 @@ namespace MiniInstaller {
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
+        }
+
+        public static void ConvertToNETCore(string asm, HashSet<string> convertedAsms = null) {
+            convertedAsms ??= new HashSet<string>();
+
+            if (!convertedAsms.Add(asm))
+                return;
+
+            // Convert dependencies first
+            foreach (string dep in GetPEAssemblyReferences(asm).Keys) {
+                string depPath = Path.Combine(Path.GetDirectoryName(asm), $"{dep}.dll");
+                if (File.Exists(depPath))
+                    ConvertToNETCore(depPath, convertedAsms);
+            }
+
+            LogLine($"Converting {asm} to .NET Core");
+
+            AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
+                .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
+                .Invoke(null, new object[] { asm, asm + ".tmp" });
+
+            File.Delete(asm);
+            File.Move(asm + ".tmp", asm);
+        }
+
+        public static void CreateRuntimeConfigFiles(string execAsm) {
+            LogLine($"Creating .NET runtime configuration files for {execAsm}");
+
+            //Determine current .NET version
+            string frameworkName = Assembly.GetCallingAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
+            if(!frameworkName.StartsWith(".NETCoreApp,Version=v"))
+                throw new Exception($"Invalid target framework name! - '{frameworkName}'");
+
+            string netVer = frameworkName.Substring(".NETCoreApp,Version=v".Length);
+            if(!Regex.IsMatch(netVer, @"\d+\.\d+"))
+                throw new Exception($"Invalid target .NET version! - '{netVer}'");
+
+            //.runtimeconfig.json
+            using (FileStream fs = File.OpenWrite(Path.ChangeExtension(execAsm, ".runtimeconfig.json")))
+            using (Utf8JsonWriter writer = new Utf8JsonWriter(fs, new JsonWriterOptions() { Indented = true })) {
+                writer.WriteStartObject();
+                writer.WriteStartObject("runtimeOptions");
+                writer.WriteString("tfm", $"net{netVer}");
+                writer.WriteStartObject("framework");
+                writer.WriteString("name", "Microsoft.NETCore.App");
+                writer.WriteString("version", $"{netVer}.0");
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            }
+
+            //.deps.json
+            Dictionary<string, Dictionary<string, Version>> asms = new Dictionary<string, Dictionary<string, Version>>();
+
+            void DiscoverAssemblies(string asm) {
+                if(asms.ContainsKey(asm))
+                    return;
+
+                Dictionary<string, Version> deps = GetPEAssemblyReferences(asm);
+                asms.Add(asm, deps);
+
+                foreach((string dep, Version _) in deps) {
+                    string depPath = Path.Combine(Path.GetDirectoryName(asm), $"{dep}.dll");
+                    if (File.Exists(depPath))
+                        DiscoverAssemblies(depPath);
+                }
+            }
+            DiscoverAssemblies(execAsm);
+
+            using (FileStream fs = File.OpenWrite(Path.ChangeExtension(execAsm, ".deps.json")))
+            using (Utf8JsonWriter writer = new Utf8JsonWriter(fs, new JsonWriterOptions() { Indented = true })) {
+                writer.WriteStartObject();
+
+                writer.WriteStartObject("runtimeTarget");
+                writer.WriteString("name", frameworkName);
+                writer.WriteString("signature", "");
+                writer.WriteEndObject();
+
+                writer.WriteStartObject("compilationOptions");
+                writer.WriteEndObject();
+
+                writer.WriteStartObject("targets");
+                writer.WriteStartObject(frameworkName);
+                foreach ((string asmPath, Dictionary<string, Version> asmDeps) in asms) {
+                    writer.WriteStartObject($"{Path.GetFileNameWithoutExtension(asmPath)}/{GetPEAssemblyVersion(asmPath)}");
+
+                    writer.WriteStartObject("runtime");
+                    writer.WriteStartObject(Path.GetFileName(asmPath));
+                    writer.WriteEndObject();
+                    writer.WriteEndObject();
+
+                    if (asmDeps.Count > 0) {
+                        writer.WriteStartObject("dependencies");
+                        foreach (var dep in asmDeps)
+                            writer.WriteString(dep.Key, dep.Value.ToString());
+                        writer.WriteEndObject();
+                    }
+
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+
+                writer.WriteStartObject("libraries");
+                foreach ((string asmPath, Dictionary<string, Version> asmDeps) in asms) {
+                    writer.WriteStartObject($"{Path.GetFileNameWithoutExtension(asmPath)}/{GetPEAssemblyVersion(asmPath)}");
+                    writer.WriteString("type", (asmPath == execAsm) ? "project" : "reference");
+                    writer.WriteBoolean("servicable", false);
+                    writer.WriteString("sha512", string.Empty);
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndObject();
+
+                writer.WriteEndObject();
+            }
         }
 
         public static void StartGame() {
@@ -420,13 +551,22 @@ namespace MiniInstaller {
             return asm;
         }
 
-        static IEnumerable<string> IteratePEDependencies(string path, string depPath) {
+        static Version GetPEAssemblyVersion(string path) {
+            using (FileStream fs = File.OpenRead(path))
+            using (PEReader pe = new PEReader(fs))
+                return pe.GetMetadataReader().GetAssemblyDefinition().Version;
+        }
+
+        static Dictionary<string, Version> GetPEAssemblyReferences(string path) {
             using (FileStream fs = File.OpenRead(path))
             using (PEReader pe = new PEReader(fs)) {
                 MetadataReader meta = pe.GetMetadataReader();
-                foreach (AssemblyReference asmRef in meta.AssemblyReferences.Select(meta.GetAssemblyReference)) {
-                    yield return meta.GetString(asmRef.Name);
-                }
+
+                Dictionary<string, Version> deps = new Dictionary<string, Version>();
+                foreach (AssemblyReference asmRef in meta.AssemblyReferences.Select(meta.GetAssemblyReference))
+                    deps.TryAdd(meta.GetString(asmRef.Name), asmRef.Version);
+
+                return deps;
             }
         }
 
