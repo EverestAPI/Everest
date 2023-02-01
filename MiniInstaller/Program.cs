@@ -9,6 +9,8 @@ using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -103,7 +105,7 @@ namespace MiniInstaller {
                     File.Delete(PathEverestDLL);
                     File.Move(PathEverestExe, PathEverestDLL);
                     CreateRuntimeConfigFiles(PathEverestDLL);
-                    //TODO PackageExecutable(PathEverestDLL);
+                    SetupAppHosts(PathEverestExe, Path.GetRelativePath(Path.GetDirectoryName(PathEverestExe), PathEverestDLL));
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
 
@@ -306,15 +308,27 @@ namespace MiniInstaller {
             }
         }
 
-        public static void MoveFilesFromUpdate() {
-            if (PathUpdate != null) {
+        public static void MoveFilesFromUpdate(string srcPath = null, string dstPath = null) {
+            if (srcPath == null) {
+                if (PathUpdate == null)
+                    return;
+
                 LogLine("Moving files from update directory");
-                foreach (string fileUpdate in Directory.GetFiles(PathUpdate)) {
-                    string fileRelative = fileUpdate.Substring(PathUpdate.Length + 1);
-                    string fileGame = Path.Combine(PathGame, fileRelative);
-                    LogLine($"Copying {fileUpdate} +> {fileGame}");
-                    File.Copy(fileUpdate, fileGame, true);
-                }
+                srcPath ??= PathUpdate;
+                dstPath ??= PathGame;
+            }
+
+            if (!Directory.Exists(srcPath))
+                Directory.CreateDirectory(srcPath);
+
+            foreach (string entrySrc in Directory.GetFileSystemEntries(srcPath)) {
+                string entryDst = Path.Combine(dstPath, entrySrc.Substring(srcPath.Length + 1));
+
+                if (File.Exists(entryDst)) {
+                    LogLine($"Copying {entrySrc} +> {entryDst}");
+                    File.Copy(entrySrc, entryDst, true);
+                } else
+                    MoveFilesFromUpdate(entrySrc, entryDst);
             }
         }
 
@@ -511,6 +525,31 @@ namespace MiniInstaller {
             }
         }
 
+        public static void SetupAppHosts(string appExe, string relAppDll) {
+            // Delete MonoKickstart files
+            File.Delete(Path.ChangeExtension(appExe, ".bin.x86"));
+            File.Delete(Path.ChangeExtension(appExe, ".bin.x86_64"));
+            File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monoconfig"));
+            File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monomachineconfig"));
+            File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "FNA.dll.config"));
+
+            // Bind Windows apphost
+            LogLine($"Binding Windows apphost {appExe}");
+            BindAppHost("win.exe", appExe, relAppDll);
+
+            // Bind Linux apphost (if it exists)
+            if (File.Exists(Path.ChangeExtension(appExe, null))) {
+                LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
+                BindAppHost("linux", Path.ChangeExtension(appExe, null), relAppDll);
+            }
+
+            // Bind OS X apphost (if it exists)
+            if (PathDylibs != null) {
+                LogLine($"Binding OS X apphost {Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe))}");
+                BindAppHost("osx", Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), relAppDll);
+            }
+        }
+
         public static void StartGame() {
             LogLine("Restarting Celeste");
 
@@ -599,6 +638,23 @@ namespace MiniInstaller {
 
                 return deps;
             }
+        }
+
+        static void BindAppHost(string hostName, string outPath, string appPath) {
+            byte[] appHost = File.ReadAllBytes(Path.Combine(PathGame, "apphosts", hostName));
+
+            byte[] placeholder = Encoding.UTF8.GetBytes("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"); //SHA256 of "foobar"
+            int pathIdx = appHost.AsSpan().IndexOf(placeholder);
+            if (pathIdx < 0)
+                throw new Exception("Couldn't bind apphost!");
+
+            int appPathLen = Encoding.UTF8.GetBytes(appPath, 0, appPath.Length, appHost, pathIdx);
+            if (appPathLen > placeholder.Length)
+                throw new ArgumentException("Apphost application path is too long!");
+
+            Array.Fill<byte>(appHost, 0, pathIdx + appPathLen, placeholder.Length - appPathLen);
+
+            File.WriteAllBytes(outPath, appHost);
         }
 
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {

@@ -15,4 +15,15 @@
     </Compile>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Content Include="$(Pkgruntime_win-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x64\native\apphost.exe" TargetPath="apphosts\win.exe" CopyToOutputDirectory="always" />
+
+    <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Content Include="$(Pkgruntime_linux-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\linux-x64\native\apphost" TargetPath="apphosts\linux" CopyToOutputDirectory="always" />
+
+    <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
+    <Content Include="$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost" TargetPath="apphosts\osx" CopyToOutputDirectory="always" />
+  </ItemGroup>
+
 </Project>
