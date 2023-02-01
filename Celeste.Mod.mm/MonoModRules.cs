@@ -415,6 +415,13 @@ namespace MonoMod {
         }
 
         public static void PostProcessor(MonoModder modder) {
+            // Replace assembly name versions (fixes stubbed steam DLLs under Linux)
+            foreach (AssemblyNameReference asmRef in modder.Module.AssemblyReferences) {
+                ModuleDefinition dep = modder.DependencyMap[modder.Module].FirstOrDefault(mod => mod.Assembly.Name.Name == asmRef.Name);
+                if (dep != null)
+                    asmRef.Version = dep.Assembly.Name.Version;
+            }
+
             // Patch previously registered AreaCompleteCtors and LevelExitRoutines _in that order._
             foreach (MethodDefinition method in AreaCompleteCtors)
                 PatchAreaCompleteCtor(method);
