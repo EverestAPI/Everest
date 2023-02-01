@@ -7,6 +7,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -40,7 +42,18 @@ namespace Celeste.Mod {
                         return;
                 } catch {
                 }
-                
+
+                // Required for native libs to be picked up on Linux
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                    string[] ldPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH").Split(":");
+                    string execLdPath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+                    if (!ldPath.Any(path => Path.GetFullPath(path) == execLdPath)) {
+                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{execLdPath}:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
+                        Console.WriteLine($"Restarting with LD_LIBRARY_PATH=\"{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}\"...");
+                        StartCelesteProcess();
+                        goto Exit;
+                    }
+                }
 
                 patch_Celeste.Main(args);
 
