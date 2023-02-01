@@ -19,7 +19,7 @@ namespace Celeste.Mod {
             ?.GetMethod("ReadImageStream")
             ?.CreateDelegate<d_FNA3D_ReadImageStream>();
 
-        private delegate IntPtr d_FNA3D_Image_Free(IntPtr mem);
+        private delegate void d_FNA3D_Image_Free(IntPtr mem);
         private static d_FNA3D_Image_Free FNA3D_Image_Free =
             typeof(Game).Assembly
             .GetType("Microsoft.Xna.Framework.Graphics.FNA3D")
