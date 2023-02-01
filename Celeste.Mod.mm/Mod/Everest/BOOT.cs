@@ -45,7 +45,7 @@ namespace Celeste.Mod {
 
                 // Required for native libs to be picked up on Linux
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                    string[] ldPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH").Split(":");
+                    string[] ldPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")?.Split(":") ?? Array.Empty<string>();
                     string execLdPath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
                     if (!ldPath.Any(path => Path.GetFullPath(path) == execLdPath)) {
                         Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{execLdPath}:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
