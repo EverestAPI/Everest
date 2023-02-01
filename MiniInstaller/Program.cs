@@ -93,13 +93,13 @@ namespace MiniInstaller {
 
                     MoveDylibs();
                     DeleteSystemLibs();
-                    //TODO SetupNativeLibs();
+                    SetupNativeLibs();
 
                     if (AsmMonoMod == null) {
                         LoadMonoMod();
                     }
-                    ConvertToNETCore(PathEverestExe);
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
+                    ConvertToNETCore(PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
                     File.Delete(PathEverestDLL);
@@ -243,7 +243,7 @@ namespace MiniInstaller {
             Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
 
             //Backup game dependencies
-            BackupPEDeps(PathCelesteExe);
+            BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)));
 
             //Backup all system libraries explicitly, as we'll delete those
             foreach (string file in Directory.GetFiles(PathGame)) {
@@ -274,8 +274,20 @@ namespace MiniInstaller {
             Backup("gamecontrollerdb.txt");
 
             //Create a symlink for the contents folder
-            if (!Directory.Exists(Path.Combine(PathOrig, "Content")))
-                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+            if (!Directory.Exists(Path.Combine(PathOrig, "Content"))) {
+                try {
+                    Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+                } catch (IOException) {
+                    static void CopyDirectory(string src, string dst) {
+                        foreach (string file in Directory.GetFiles(src))
+                            File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
+
+                        foreach (string dir in Directory.GetDirectories(src))
+                            CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
+                    }
+                    CopyDirectory(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+                }
+            }
         }
 
         public static void BackupPEDeps(string path, HashSet<string> backedUpDeps = null) {
@@ -322,7 +334,7 @@ namespace MiniInstaller {
                 Directory.CreateDirectory(srcPath);
 
             foreach (string entrySrc in Directory.GetFileSystemEntries(srcPath)) {
-                string entryDst = Path.Combine(dstPath, entrySrc.Substring(srcPath.Length + 1));
+                string entryDst = Path.Combine(dstPath, Path.GetRelativePath(srcPath, entrySrc));
 
                 if (File.Exists(entryDst)) {
                     LogLine($"Copying {entrySrc} +> {entryDst}");
@@ -338,11 +350,16 @@ namespace MiniInstaller {
                 foreach (string fileGame in Directory.GetFiles(PathGame)) {
                     if (!fileGame.EndsWith(".dylib"))
                         continue;
-                    string fileRelative = fileGame.Substring(PathGame.Length + 1);
-                    string fileDylibs = Path.Combine(PathDylibs, fileRelative);
+                    string fileDylibs = Path.Combine(PathDylibs, Path.GetRelativePath(PathGame, fileGame));
                     LogLine($"Copying {fileGame} +> {fileDylibs}");
                     File.Copy(fileGame, fileDylibs, true);
                 }
+            }
+
+            foreach (string fileGame in Directory.GetFiles(PathGame)) {
+                if (!fileGame.EndsWith(".dylib"))
+                    continue;
+                File.Delete(fileGame);
             }
         }
 
@@ -352,10 +369,57 @@ namespace MiniInstaller {
             foreach (string file in Directory.GetFiles(PathGame)) {
                 if (!IsSystemLibrary(file))
                     continue;
-
                 LogLine($"Deleting {file}");
                 File.Delete(file);
             }
+        }
+
+        public static void SetupNativeLibs() {
+            string osRuntimeName;
+            if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
+                // Setup Linux native libs
+                osRuntimeName = "linux-x64";
+
+                foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathOrig, "lib64"))) {
+                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathOrig, "lib64"), fileLibs));
+                    File.Copy(fileLibs, fileGame, true);
+
+                    int soIdx = fileGame.LastIndexOf(".so");
+                    if (soIdx < fileGame.Length - 3) {
+                        File.Delete(fileGame.Substring(0, soIdx + 3));
+                        File.CreateSymbolicLink(fileGame.Substring(0, soIdx + 3), fileGame);
+                    }
+                }
+            } else {
+                // Setup Windows native libs
+                osRuntimeName = "win-x64";
+
+                foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64-win"))) {
+                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64-win"), fileLibs));
+                    if (fileGame.EndsWith("64.dll"))
+                        fileGame = fileGame.Substring(fileGame.Length - 6) + ".dll";
+                    File.Copy(fileLibs, fileGame, true);
+                }
+            }
+
+            // Copy native libraries for the OS
+            string osRuntimeLibs = Path.Combine(PathGame, "runtimes", osRuntimeName, "native");
+            if (Directory.Exists(osRuntimeLibs)) {
+                foreach (string fileLibs in Directory.GetFiles(osRuntimeLibs)) {
+                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(osRuntimeLibs, fileLibs));
+                    File.Copy(fileLibs, fileGame, true);
+                }
+            }
+
+            // Delete library folders
+            if (Directory.Exists(Path.Combine(PathGame, "lib")))
+                Directory.Delete(Path.Combine(PathGame, "lib"), true);
+            if (Directory.Exists(Path.Combine(PathGame, "lib64")))
+                Directory.Delete(Path.Combine(PathGame, "lib64"), true);
+            if (Directory.Exists(Path.Combine(PathGame, "lib64-win")))
+                Directory.Delete(Path.Combine(PathGame, "lib64-win"), true);
+            if (Directory.Exists(Path.Combine(PathGame, "runtimes")))
+                Directory.Delete(Path.Combine(PathGame, "runtimes"), true);
         }
 
         public static void LoadMonoMod() {
