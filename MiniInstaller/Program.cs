@@ -423,7 +423,7 @@ namespace MiniInstaller {
             LogLine($"Creating .NET runtime configuration files for {execAsm}");
 
             //Determine current .NET version
-            string frameworkName = Assembly.GetCallingAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
+            string frameworkName = Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName;
             if(!frameworkName.StartsWith(".NETCoreApp,Version=v"))
                 throw new Exception($"Invalid target framework name! - '{frameworkName}'");
 

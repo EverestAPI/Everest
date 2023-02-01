@@ -18,13 +18,13 @@ namespace NETCoreifier {
         }
 
         public static void ConvertToNetCore(ModuleDefinition module) {
-            module.RuntimeVersion = System.Reflection.Assembly.GetCallingAssembly().ImageRuntimeVersion;
+            module.RuntimeVersion = System.Reflection.Assembly.GetExecutingAssembly().ImageRuntimeVersion;
 
             // Clear 32 bit flag
             module.Attributes &= ~ModuleAttributes.Required32Bit;
 
             // Patch target framework attribute
-            TargetFrameworkAttribute attr = System.Reflection.Assembly.GetCallingAssembly().GetCustomAttribute<TargetFrameworkAttribute>();
+            TargetFrameworkAttribute attr = System.Reflection.Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>();
             CustomAttribute moduleAttr = module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == typeof(TargetFrameworkAttribute).FullName);
             if (moduleAttr != null) {
                 if (((string) moduleAttr.ConstructorArguments[0].Value).StartsWith(".NETFramework"))

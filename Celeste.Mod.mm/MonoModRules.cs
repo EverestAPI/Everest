@@ -89,22 +89,20 @@ namespace MonoMod {
         static MonoModRules() {
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
+            MonoModRule.Modder.PostProcessors += ForceFNAPostProcessor;
 
             foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)
                     if (dep.Name == "MonoMod" && MonoModder.Version < dep.Version)
                         throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {dep.Version}+)");
 
-            bool isFNA = false;
             bool isSteamworks = false;
             foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences) {
-                if (name.Name.Contains("FNA"))
-                    isFNA = true;
-                else if (name.Name.Contains("Steamworks"))
+                if (name.Name.Contains("Steamworks"))
                     isSteamworks = true;
             }
-            MonoModRule.Flag.Set("FNA", isFNA);
-            MonoModRule.Flag.Set("XNA", !isFNA);
+            MonoModRule.Flag.Set("FNA", true); //Keep FNA/XNA flags around for legacy code
+            MonoModRule.Flag.Set("XNA", false);
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
             MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
 
@@ -396,6 +394,23 @@ namespace MonoMod {
                         cursor.Next.OpCode = OpCodes.Call;
                     }
                 });
+            }
+        }
+
+        public static void ForceFNAPostProcessor(MonoModder modder) {
+            // Replace XNA assembly references with FNA ones
+            bool isFna = false;
+            for (int i = 0; i < modder.Module.AssemblyReferences.Count; i++) {
+                AssemblyNameReference asmRef = modder.Module.AssemblyReferences[i];
+                if (asmRef.Name.Equals("FNA"))
+                    isFna = true;
+                else if(asmRef.Name.StartsWith("Microsoft.Xna.Framework"))
+                    modder.Module.AssemblyReferences.RemoveAt(i--);
+            }
+
+            if (!isFna) {
+                var fnaName = System.Reflection.Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals("FNA"));
+                modder.Module.AssemblyReferences.Add(new AssemblyNameReference(fnaName.Name, fnaName.Version));
             }
         }
 
