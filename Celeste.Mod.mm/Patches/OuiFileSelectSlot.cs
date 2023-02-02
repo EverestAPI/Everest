@@ -157,7 +157,7 @@ namespace Celeste {
             orig_CreateButtons();
 
             if (!Exists) {
-                if (AreaData.Areas.Select(area => area.GetLevelSet()).Distinct().Count() > 1) {
+                if (patch_AreaData.Areas.Select(area => area.LevelSet).Distinct().Count() > 1) {
                     if (newGameLevelSetPicker == null) {
                         newGameLevelSetPicker = new OuiFileSelectSlotLevelSetPicker(this);
                     }
@@ -199,7 +199,7 @@ namespace Celeste {
             string newGameLevelSet = newGameLevelSetPicker?.NewGameLevelSet;
             if (newGameLevelSet != null && newGameLevelSet != "Celeste") {
                 SaveData.Instance.LastArea =
-                    AreaData.Areas.FirstOrDefault(area => area.GetLevelSet() == newGameLevelSet)?.ToKey() ??
+                    patch_AreaData.Areas.FirstOrDefault(area => area.LevelSet == newGameLevelSet)?.ToKey() ??
                     AreaKey.Default;
             }
         }
@@ -234,8 +234,8 @@ namespace Celeste {
             // Replace ID 0 with SaveData.Instance.LastArea.ID
 
             Overworld overworld = fileSelect.Overworld;
-            AreaData area = AreaData.Areas[SaveData.Instance.LastArea.ID];
-            if (area.GetLevelSet() != "Celeste") {
+            patch_AreaData area = patch_AreaData.Areas[SaveData.Instance.LastArea.ID];
+            if (area.LevelSet != "Celeste") {
                 // Pretend that we've beaten Prologue.
                 LevelSetStats stats = SaveData.Instance.GetLevelSetStatsFor("Celeste");
                 stats.UnlockedAreas = 1;

@@ -10,7 +10,7 @@ namespace Celeste {
 
         [MonoModConstructor]
         public void ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null) {
-            AreaData areaData = AreaData.Get(area);
+            patch_AreaData areaData = patch_AreaData.Get(area);
             if (area.Mode == AreaMode.Normal) {
                 areaData.RestoreASideAreaData();
             } else {

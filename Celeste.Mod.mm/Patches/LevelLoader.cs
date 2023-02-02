@@ -84,8 +84,8 @@ namespace Celeste {
             string path = "";
 
             try {
-                AreaData area = AreaData.Get(session);
-                MapMeta meta = area.GetMeta();
+                patch_AreaData area = patch_AreaData.Get(session);
+                MapMeta meta = area.Meta;
 
                 path = meta?.BackgroundTiles;
                 if (string.IsNullOrEmpty(path))

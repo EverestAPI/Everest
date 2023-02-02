@@ -185,7 +185,7 @@ namespace Celeste.Mod.Core {
                                 MapMeta modeMeta = AreaData.GetModeMeta(AreaKey.Mode);
                                 CheckpointData c = new CheckpointData(
                                     LevelName,
-                                    (AreaData.GetSID() + "_" + LevelName).DialogKeyify(),
+                                    (AreaData.SID + "_" + LevelName).DialogKeyify(),
                                     MapMeta.GetInventory(entity.Attr("inventory")),
                                     entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? AreaData.Dreaming : entity.AttrBool("dreaming"),
                                     null

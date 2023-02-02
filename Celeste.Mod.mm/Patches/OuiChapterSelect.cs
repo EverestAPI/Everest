@@ -45,9 +45,9 @@ namespace Celeste {
             SaveData save = SaveData.Instance;
             for (int i = icons.Count - 1; i > -1; --i) {
                 OuiChapterSelectIcon icon = icons[i];
-                AreaData area = AreaData.Get(icon.Area);
+                patch_AreaData area = patch_AreaData.Get(icon.Area);
 
-                if (!string.IsNullOrEmpty(area?.GetMeta()?.Parent)) {
+                if (!string.IsNullOrEmpty(area?.Meta?.Parent)) {
                     icons[i].Area = -1;
                     icons[i].Hide();
                     continue;
@@ -74,16 +74,16 @@ namespace Celeste {
 
         [MonoModReplace]
         private void EaseCamera() {
-            AreaData areaData = AreaData.Areas[area];
-            Overworld.Mountain.EaseCamera(area, areaData.MountainIdle, null, true, areaData.GetMeta()?.Mountain?.Rotate ?? areaData.GetLevelSet() == "Celeste" && area == 10);
+            patch_AreaData areaData = patch_AreaData.Areas[area];
+            Overworld.Mountain.EaseCamera(area, areaData.MountainIdle, null, true, areaData.Meta?.Mountain?.Rotate ?? areaData.LevelSet == "Celeste" && area == 10);
             Overworld.Mountain.Model.EaseState(areaData.MountainState);
         }
 
         public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
         public override bool IsStart(Overworld overworld, Overworld.StartMode start) {
             if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
-                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
-                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                patch_AreaData area = patch_AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = patch_AreaData.Get(area?.Meta?.Parent) ?? area;
                 if (area != null)
                     SaveData.Instance.LastArea.ID = area.ID;
             }
@@ -121,8 +121,8 @@ namespace Celeste {
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
-                AreaData area = AreaData.Get(icon.Area);
-                if (area == null || area.GetLevelSet() != currentLevelSet)
+                patch_AreaData area = patch_AreaData.Get(icon.Area);
+                if (area == null || area.LevelSet != currentLevelSet)
                     continue;
 
                 int index = area.ToKey().ID;
@@ -154,8 +154,8 @@ namespace Celeste {
 
             bool isVanilla = currentLevelSet == "Celeste";
             foreach (OuiChapterSelectIcon icon in icons) {
-                AreaData area = AreaData.Get(icon.Area);
-                if (area == null || area.GetLevelSet() != currentLevelSet)
+                patch_AreaData area = patch_AreaData.Get(icon.Area);
+                if (area == null || area.LevelSet != currentLevelSet)
                     continue;
 
                 if (selected != icon)

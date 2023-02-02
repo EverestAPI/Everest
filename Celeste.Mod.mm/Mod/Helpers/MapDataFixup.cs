@@ -7,7 +7,7 @@ namespace Celeste.Mod {
         public List<EverestMapDataProcessor> Processors = new List<EverestMapDataProcessor>();
         public readonly MapData MapData;
         public readonly AreaKey AreaKey;
-        public readonly AreaData AreaData;
+        public readonly patch_AreaData AreaData;
         public readonly AreaData ParentAreaData;
         public readonly ModeProperties Mode;
         public readonly ModeProperties ParentMode;
@@ -17,8 +17,8 @@ namespace Celeste.Mod {
         public MapDataFixup(MapData map) {
             MapData = map;
             AreaKey = map.Area;
-            AreaData = AreaData.Get(AreaKey);
-            ParentAreaData = AreaDataExt.Get(AreaData.GetMeta()?.Parent) ?? AreaData;
+            AreaData = patch_AreaData.Get(AreaKey);
+            ParentAreaData = patch_AreaData.Get(AreaData.Meta?.Parent) ?? AreaData;
             Mode = AreaData.Mode[(int) AreaKey.Mode];
             ParentMode = ParentAreaData.Mode.ElementAtOrDefault((int) AreaKey.Mode) ?? Mode;
             ParentMapData = ParentMode?.MapData ?? map;

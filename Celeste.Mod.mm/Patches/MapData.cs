@@ -26,7 +26,7 @@ namespace Celeste {
 
         public MapMetaModeProperties Meta {
             get {
-                MapMeta metaAll = AreaData.Get(Area).GetMeta();
+                MapMeta metaAll = patch_AreaData.Get(Area).Meta;
                 return
                     (metaAll?.Modes?.Length ?? 0) > (int) Area.Mode ?
                     metaAll.Modes[(int) Area.Mode] :
@@ -65,8 +65,8 @@ namespace Celeste {
                     }
                 }
 
-                AreaData area = AreaData.Get(Area);
-                AreaData parentArea = AreaDataExt.Get(area.GetMeta()?.Parent);
+                patch_AreaData area = patch_AreaData.Get(Area);
+                AreaData parentArea = patch_AreaData.Get(area.Meta?.Parent);
                 ModeProperties parentMode = parentArea?.Mode?.ElementAtOrDefault((int) Area.Mode);
                 if (parentMode != null) {
                     MapData parentMapData = parentMode.MapData;
@@ -172,7 +172,7 @@ namespace Celeste {
         }
 
         private void ProcessMeta(BinaryPacker.Element meta) {
-            AreaData area = AreaData.Get(Area);
+            patch_AreaData area = patch_AreaData.Get(Area);
             AreaMode mode = Area.Mode;
 
             if (mode == AreaMode.Normal) {
@@ -180,7 +180,7 @@ namespace Celeste {
                 Area = area.ToKey();
 
                 // Backup A-Side's Metadata. Only back up useful data.
-                area.SetASideAreaDataBackup(new AreaData {
+                area.ASideAreaDataBackup = new AreaData {
                     IntroType = area.IntroType,
                     ColorGrade = area.ColorGrade,
                     DarknessAlpha = area.DarknessAlpha,
@@ -188,7 +188,7 @@ namespace Celeste {
                     BloomStrength = area.BloomStrength,
                     CoreMode = area.CoreMode,
                     Dreaming = area.Dreaming
-                });
+                };
             }
 
             BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
@@ -200,7 +200,7 @@ namespace Celeste {
             // Metadata for B-Side and C-Side are parsed and stored.
             if (mode != AreaMode.Normal) {
                 MapMeta mapMeta = new MapMeta(meta) {
-                    Modes = area.GetMeta().Modes
+                    Modes = area.Meta.Modes
                 };
                 area.Mode[(int) mode].SetMapMeta(mapMeta);
             }

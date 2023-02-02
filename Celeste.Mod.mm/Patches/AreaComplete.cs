@@ -162,7 +162,7 @@ namespace Celeste {
         }
 
         private string GetCustomCompleteScreenTitle() {
-            MapMetaCompleteScreenTitle completeScreenTitle = AreaData.Get(Session.Area)?.GetMeta()?.CompleteScreen?.Title;
+            MapMetaCompleteScreenTitle completeScreenTitle = patch_AreaData.Get(Session.Area)?.Meta?.CompleteScreen?.Title;
             if (completeScreenTitle == null) {
                 return null;
             }

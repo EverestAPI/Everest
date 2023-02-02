@@ -134,7 +134,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area) {
+        public void ApplyTo(patch_AreaData area) {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
@@ -199,9 +199,9 @@ namespace Celeste.Mod.Meta {
                     if (area.Mode[i] == null)
                         area.Mode[i] = modes[i];
 
-            MapMeta meta = area.GetMeta();
+            MapMeta meta = area.Meta;
             if (meta == null) {
-                area.SetMeta(this);
+                area.Meta = this;
             } else {
                 if (!string.IsNullOrEmpty(Parent))
                     meta.Parent = Parent;
@@ -367,8 +367,8 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area, AreaMode mode) {
-            area.GetMeta().Modes[(int) mode] = this;
+        public void ApplyTo(patch_AreaData area, AreaMode mode) {
+            area.Meta.Modes[(int) mode] = this;
             ModeProperties props = area.Mode[(int) mode];
             if (props != null) {
                 props.AudioState = AudioState?.Convert() ?? props.AudioState;

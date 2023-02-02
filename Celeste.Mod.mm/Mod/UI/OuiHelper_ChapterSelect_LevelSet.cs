@@ -22,8 +22,8 @@ namespace Celeste.Mod.UI {
             string startLevelSet = SaveData.Instance.GetLevelSet();
             int count = AreaData.Areas.Count;
             for (int i = (count + startID + Direction) % count; i != startID; i = (count + i + Direction) % count) {
-                AreaData area = AreaData.Get(i);
-                if (area == null || area.GetLevelSet() != startLevelSet) {
+                patch_AreaData area = patch_AreaData.Get(i);
+                if (area == null || area.LevelSet != startLevelSet) {
                     SaveData.Instance.LastArea = area.ToKey();
                     goto Done;
                 }

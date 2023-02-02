@@ -367,8 +367,8 @@ namespace Celeste {
                 Areas_Unsafe = new List<AreaStats>();
 
             // Add missing LevelSetStats.
-            foreach (AreaData area in AreaData.Areas) {
-                string set = area.GetLevelSet();
+            foreach (patch_AreaData area in AreaData.Areas) {
+                string set = area.LevelSet;
                 if (!LevelSets.Exists(other => other.Name == set)) {
                     LevelSetStats recycleBinLevelSet = LevelSetRecycleBin.FirstOrDefault(other => other.Name == set);
                     if (recycleBinLevelSet != null) {
@@ -415,13 +415,13 @@ namespace Celeste {
                 // Refresh all stat IDs based on their SIDs, sort, fill and remove leftovers.
                 // Temporarily use ID_Unsafe; later ID_Safe to ID_Unsafe to resync the SIDs.
                 // This keeps the stats bound to their SIDs, not their indices, while removing non-existent areas.
-                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
-                int countAll = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name);
+                int countRoots = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name && string.IsNullOrEmpty(other?.Meta?.Parent));
+                int countAll = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name);
 
                 // Fix IDs
                 for (int i = 0; i < areas.Count; i++) {
-                    AreaData area = AreaDataExt.Get(areas[i]);
-                    if (!string.IsNullOrEmpty(area?.GetMeta()?.Parent))
+                    patch_AreaData area = patch_AreaData.Get(areas[i]);
+                    if (!string.IsNullOrEmpty(area?.Meta?.Parent))
                         area = null;
                     ((patch_AreaStats) areas[i]).ID_Unsafe = area?.ID ?? int.MaxValue;
                 }
@@ -441,7 +441,7 @@ namespace Celeste {
                 // Duplicate parent stat refs into their respective children slots.
                 for (int i = countRoots; i < countAll; i++) {
                     if (i >= areas.Count) {
-                        areas.Insert(i, areas[AreaDataExt.Get(AreaData.Get(offset + i).GetMeta().Parent).ID - offset]);
+                        areas.Insert(i, areas[patch_AreaData.Get(patch_AreaData.Get(offset + i).Meta.Parent).ID - offset]);
                     }
                 }
 
@@ -550,7 +550,7 @@ namespace Celeste {
             foreach (LevelSetStats set in LevelSets) {
                 if (set.Name == "Celeste")
                     continue;
-                int countRoots = AreaData.Areas.Count(other => other.GetLevelSet() == set.Name && string.IsNullOrEmpty(other?.GetMeta()?.Parent));
+                int countRoots = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name && string.IsNullOrEmpty(other?.Meta?.Parent));
                 List<AreaStats> areas = set.Areas;
                 while (areas.Count > countRoots)
                     areas.RemoveAt(areas.Count - 1);
@@ -804,9 +804,9 @@ namespace Celeste {
         }
 
         internal void ComputeBounds() {
-            AreaOffset = AreaData.Areas.FindIndex(area => area.GetLevelSet() == Name);
+            AreaOffset = patch_AreaData.Areas.FindIndex(area => area.LevelSet == Name);
 
-            int count = AreaData.Areas.Count(area => area.GetLevelSet() == Name && string.IsNullOrEmpty(area.GetMeta()?.Parent)) - 1;
+            int count = patch_AreaData.Areas.Count(area => area.LevelSet == Name && string.IsNullOrEmpty(area.Meta?.Parent)) - 1;
             if (Celeste.PlayMode == Celeste.PlayModes.Event)
                 MaxArea = Math.Min(count, AreaOffset + 2);
             else
@@ -871,7 +871,7 @@ namespace Celeste {
                 if (Name == "Celeste")
                     return 9;
 
-                return AreaData.Areas.Count(area => area.GetLevelSet() == Name && !area.Interlude);
+                return patch_AreaData.Areas.Count(area => area.LevelSet == Name && !area.Interlude);
             }
         }
 

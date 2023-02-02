@@ -6,7 +6,7 @@ namespace Celeste.Mod {
 
         public MapDataFixup Context { get; private set; }
         public AreaKey AreaKey => Context.AreaKey;
-        public AreaData AreaData => Context.AreaData;
+        public patch_AreaData AreaData => Context.AreaData;
         public AreaData ParentAreaData => Context.ParentAreaData;
         public ModeProperties Mode => Context.Mode;
         public ModeProperties ParentMode => Context.ParentMode;

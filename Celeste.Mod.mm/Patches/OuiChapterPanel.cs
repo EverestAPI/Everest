@@ -41,7 +41,7 @@ namespace Celeste {
         internal static string _GetCheckpointPreviewName(AreaKey area, string level) {
             int split = level?.IndexOf('|') ?? -1;
             if (split >= 0) {
-                area = AreaDataExt.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
+                area = patch_AreaData.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
                 level = level.Substring(split + 1);
             }
 
@@ -66,8 +66,8 @@ namespace Celeste {
             }
 
             if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
-                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
-                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                patch_AreaData area = patch_AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = patch_AreaData.Get(area?.Meta?.Parent) ?? area;
                 if (area != null)
                     SaveData.Instance.LastArea.ID = area.ID;
             }
@@ -135,14 +135,14 @@ namespace Celeste {
 
             HashSet<string> set;
 
-            AreaData areaData = AreaData.Areas[area.ID];
+            patch_AreaData areaData = patch_AreaData.Areas[area.ID];
             ModeProperties mode = areaData.Mode[(int) area.Mode];
 
             if (save.DebugMode || save.CheatMode) {
                 set = new HashSet<string>();
                 if (mode.Checkpoints != null)
                     foreach (CheckpointData cp in mode.Checkpoints)
-                        set.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+                        set.Add($"{(patch_AreaData.Get(cp.GetArea()) ?? areaData).SID}|{cp.Level}");
                 return set;
 
             }
@@ -157,15 +157,15 @@ namespace Celeste {
             }
 
             set.RemoveWhere((string a) => !mode.Checkpoints.Any((CheckpointData b) => b.Level == a));
-            AreaData[] subs = AreaData.Areas.Where(other =>
-                other.GetMeta()?.Parent == areaData.GetSID() &&
+            AreaData[] subs = patch_AreaData.Areas.Where(other =>
+                other.Meta?.Parent == areaData.SID &&
                 other.HasMode(area.Mode)
             ).ToArray();
             return new HashSet<string>(set.Select(s => {
-                foreach (AreaData sub in subs) {
+                foreach (patch_AreaData sub in subs) {
                     foreach (CheckpointData cp in sub.Mode[(int) area.Mode].Checkpoints) {
                         if (cp.Level == s) {
-                            return $"{sub.GetSID()}|{s}";
+                            return $"{sub.SID}|{s}";
                         }
                     }
                 }
@@ -177,7 +177,7 @@ namespace Celeste {
         private IEnumerator StartRoutine(string checkpoint = null) {
             int checkpointAreaSplit = checkpoint?.IndexOf('|') ?? -1;
             if (checkpointAreaSplit >= 0) {
-                Area = AreaDataExt.Get(checkpoint.Substring(0, checkpointAreaSplit))?.ToKey(Area.Mode) ?? Area;
+                Area = patch_AreaData.Get(checkpoint.Substring(0, checkpointAreaSplit))?.ToKey(Area.Mode) ?? Area;
                 checkpoint = checkpoint.Substring(checkpointAreaSplit + 1);
             }
 

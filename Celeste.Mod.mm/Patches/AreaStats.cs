@@ -21,13 +21,13 @@ namespace Celeste {
         public int ID_Safe {
             get {
                 if (!string.IsNullOrEmpty(SID))
-                    return AreaDataExt.Get(SID)?.ID ?? ID_Unsafe;
+                    return patch_AreaData.Get(SID)?.ID ?? ID_Unsafe;
                 return ID_Unsafe;
             }
             set {
                 ID_Unsafe = value;
                 if (ID_Unsafe != -1)
-                    SID = AreaData.Areas[ID_Unsafe].GetSID();
+                    SID = patch_AreaData.Areas[ID_Unsafe].SID;
                 else
                     SID = null;
             }
