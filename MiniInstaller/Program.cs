@@ -380,25 +380,29 @@ namespace MiniInstaller {
                 // Setup Linux native libs
                 osRuntimeName = "linux-x64";
 
-                foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathOrig, "lib64"))) {
-                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathOrig, "lib64"), fileLibs));
-                    File.Copy(fileLibs, fileGame, true);
+                if (Directory.Exists(Path.Combine(PathGame, "lib64"))) {
+                    foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64"))) {
+                        string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64"), fileLibs));
+                        File.Copy(fileLibs, fileGame, true);
 
-                    int soIdx = fileGame.LastIndexOf(".so");
-                    if (soIdx < fileGame.Length - 3) {
-                        File.Delete(fileGame.Substring(0, soIdx + 3));
-                        File.CreateSymbolicLink(fileGame.Substring(0, soIdx + 3), fileGame);
+                        int soIdx = fileGame.LastIndexOf(".so");
+                        if (soIdx < fileGame.Length - 3) {
+                            File.Delete(fileGame.Substring(0, soIdx + 3));
+                            File.CreateSymbolicLink(fileGame.Substring(0, soIdx + 3), fileGame);
+                        }
                     }
                 }
             } else {
                 // Setup Windows native libs
                 osRuntimeName = "win-x64";
 
-                foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64-win"))) {
-                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64-win"), fileLibs));
-                    if (fileGame.EndsWith("64.dll"))
-                        fileGame = fileGame.Substring(fileGame.Length - 6) + ".dll";
-                    File.Copy(fileLibs, fileGame, true);
+                if (Directory.Exists(Path.Combine(PathGame, "lib64-win"))) {
+                    foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64-win"))) {
+                        string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64-win"), fileLibs));
+                        if (fileGame.EndsWith("64.dll"))
+                            fileGame = fileGame.Substring(fileGame.Length - 6) + ".dll";
+                        File.Copy(fileLibs, fileGame, true);
+                    }
                 }
             }
 
