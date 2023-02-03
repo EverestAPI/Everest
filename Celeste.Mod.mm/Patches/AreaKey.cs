@@ -120,9 +120,6 @@ namespace Celeste {
     }
     public static class AreaKeyExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get the name of the level set this area belongs to.
         /// </summary>

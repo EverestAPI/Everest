@@ -141,8 +141,8 @@ namespace Celeste {
             if (save.DebugMode || save.CheatMode) {
                 set = new HashSet<string>();
                 if (mode.Checkpoints != null)
-                    foreach (CheckpointData cp in mode.Checkpoints)
-                        set.Add($"{(patch_AreaData.Get(cp.GetArea()) ?? areaData).SID}|{cp.Level}");
+                    foreach (patch_CheckpointData cp in mode.Checkpoints)
+                        set.Add($"{(patch_AreaData.Get(cp.Area) ?? areaData).SID}|{cp.Level}");
                 return set;
 
             }

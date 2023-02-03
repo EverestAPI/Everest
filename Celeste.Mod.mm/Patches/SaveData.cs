@@ -139,13 +139,13 @@ namespace Celeste {
         public new List<AreaStats> Areas;
 
         [MonoModRemove]
-        public List<AreaStats> Areas_Unsafe;
+        public List<patch_AreaStats> Areas_Unsafe;
 
         [XmlIgnore]
         [MonoModLinkFrom("System.Collections.Generic.List`1<Celeste.AreaStats> Celeste.SaveData::Areas")]
-        public List<AreaStats> Areas_Safe {
+        public List<patch_AreaStats> Areas_Safe {
             get {
-                List<AreaStats> areasAll = new List<AreaStats>(Areas_Unsafe);
+                List<patch_AreaStats> areasAll = new List<patch_AreaStats>(Areas_Unsafe);
                 foreach (LevelSetStats set in LevelSets) {
                     areasAll.AddRange(set.Areas);
                 }
@@ -221,7 +221,7 @@ namespace Celeste {
             [MonoModReplace] // optimise the method
             get {
                 int totalCassettes = 0;
-                List<AreaStats> areas = Areas_Safe; // this getter hides extremely expensive calculations. Evil!
+                List<patch_AreaStats> areas = Areas_Safe; // this getter hides extremely expensive calculations. Evil!
                 int maxArea = MaxArea;
 
                 for (int i = 0; i <= maxArea; ++i) {
@@ -364,7 +364,7 @@ namespace Celeste {
             HasModdedSaveData = true;
 
             if (Areas_Unsafe == null)
-                Areas_Unsafe = new List<AreaStats>();
+                Areas_Unsafe = new List<patch_AreaStats>();
 
             // Add missing LevelSetStats.
             foreach (patch_AreaData area in AreaData.Areas) {
@@ -389,7 +389,7 @@ namespace Celeste {
             for (int lsi = 0; lsi < LevelSets.Count; lsi++) {
                 LevelSetStats set = LevelSets[lsi];
                 set.SaveData = this;
-                List<AreaStats> areas = set.Areas;
+                List<patch_AreaStats> areas = set.Areas;
                 if (set.Name == "Celeste")
                     areas = Areas_Unsafe;
 
@@ -436,7 +436,7 @@ namespace Celeste {
                 // Fill gaps
                 for (int i = 0; i < countRoots; i++)
                     if (i >= areas.Count || ((patch_AreaStats) areas[i]).ID_Unsafe != offset + i)
-                        areas.Insert(i, new AreaStats(offset + i));
+                        areas.Insert(i, new patch_AreaStats(offset + i));
 
                 // Duplicate parent stat refs into their respective children slots.
                 for (int i = countRoots; i < countAll; i++) {
@@ -551,7 +551,7 @@ namespace Celeste {
                 if (set.Name == "Celeste")
                     continue;
                 int countRoots = patch_AreaData.Areas.Count(other => other.LevelSet == set.Name && string.IsNullOrEmpty(other?.Meta?.Parent));
-                List<AreaStats> areas = set.Areas;
+                List<patch_AreaStats> areas = set.Areas;
                 while (areas.Count > countRoots)
                     areas.RemoveAt(areas.Count - 1);
             }
@@ -567,7 +567,7 @@ namespace Celeste {
             => LevelSets.Find(set => set.Name == name);
 
         public AreaStats GetAreaStatsFor(AreaKey key)
-            => LevelSets.Find(set => set.Name == key.GetLevelSet()).Areas.Find(area => area.GetSID() == key.GetSID());
+            => LevelSets.Find(set => set.Name == key.GetLevelSet()).Areas.Find(area => area.SID == key.GetSID());
 
         public extern HashSet<string> orig_GetCheckpoints(AreaKey area);
         public new HashSet<string> GetCheckpoints(AreaKey area) {
@@ -617,9 +617,9 @@ namespace Celeste {
             }
         }
 
-        public List<AreaStats> Areas = new List<AreaStats>();
+        public List<patch_AreaStats> Areas = new List<patch_AreaStats>();
         [XmlIgnore]
-        public List<AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
+        public List<patch_AreaStats> AreasIncludingCeleste => Name == "Celeste" ? SaveData.Areas_Unsafe : Areas;
 
         public List<string> Poem = new List<string>();
 
@@ -658,7 +658,7 @@ namespace Celeste {
 
                     for (int j = 0; j < areaData.Mode.Length && j < areaSave.Modes.Length; j++) {
                         AreaModeStats modeSave = areaSave.Modes[j];
-                        ModeProperties modeData = areaData.Mode[j];
+                        patch_ModeProperties modeData = (patch_ModeProperties) areaData.Mode[j];
 
                         if (modeSave == null || modeData == null)
                             continue;
@@ -666,7 +666,7 @@ namespace Celeste {
                         foreach (EntityID strawb in modeSave.Strawberries) {
                             if (modeData.MapData.Goldenberries.Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
                                 count++;
-                            if (modeData.MapData.GetDashlessGoldenberries().Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
+                            if (modeData.MapData.DashlessGoldenberries.Any(berry => berry.ID == strawb.ID && berry.Level.Name == strawb.Level))
                                 count++;
                         }
                     }
@@ -704,10 +704,10 @@ namespace Celeste {
                 int offset = AreaOffset;
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
-                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                    foreach (patch_ModeProperties mode in AreaData.Areas[offset + i].Mode) {
                         if (mode == null)
                             continue;
-                        count += mode.MapData.GetDetectedStrawberriesIncludingUntracked();
+                        count += mode.MapData.DetectedStrawberriesIncludingUntracked;
                     }
                 }
                 return count;
@@ -723,11 +723,11 @@ namespace Celeste {
                 int offset = AreaOffset;
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
-                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                    foreach (patch_ModeProperties mode in AreaData.Areas[offset + i].Mode) {
                         if (mode == null)
                             continue;
                         count += mode.MapData.Goldenberries.Count;
-                        count += mode.MapData.GetDashlessGoldenberries().Count;
+                        count += mode.MapData.DashlessGoldenberries.Count;
                     }
                 }
                 return count;
@@ -743,10 +743,10 @@ namespace Celeste {
                 int offset = AreaOffset;
                 int count = 0;
                 for (int i = 0; i <= MaxArea; i++) {
-                    foreach (ModeProperties mode in AreaData.Areas[offset + i].Mode) {
+                    foreach (patch_ModeProperties mode in AreaData.Areas[offset + i].Mode) {
                         if (mode == null)
                             continue;
-                        if (mode.MapData.GetDetectedCassette())
+                        if (mode.MapData.DetectedCassette)
                             count++;
                     }
                 }

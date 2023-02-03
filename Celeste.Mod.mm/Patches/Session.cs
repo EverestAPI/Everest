@@ -3,8 +3,14 @@
 using MonoMod;
 
 namespace Celeste {
-    public class patch_Session {
+    public class patch_Session : Session {
         public bool RestartedFromGolden;
+
+        public new patch_MapData MapData;
+
+        public patch_Session(AreaKey area, string checkpoint = null, AreaStats oldStats = null)
+            : base(area, checkpoint, oldStats) {
+        }
 
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
 

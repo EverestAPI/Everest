@@ -171,10 +171,8 @@ namespace Celeste {
     }
     public static class LevelEnterExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_LevelEnter.ErrorMessage"/>
+        [Obsolete("Use LevelEnter.ErrorMessage instead.")]
         public static string ErrorMessage {
             get {
                 return patch_LevelEnter.ErrorMessage;

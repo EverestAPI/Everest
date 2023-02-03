@@ -25,6 +25,8 @@ using Celeste.Mod.Helpers;
 namespace Celeste {
     class patch_Level : Level {
 
+        public new patch_Session Session;
+
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
@@ -203,7 +205,7 @@ namespace Celeste {
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
                 && (!(Engine.Scene is LevelLoader loader) || !loader.PlayerIntroTypeOverride.HasValue)
                 && Session.Area.Mode == AreaMode.CSide
-                && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && (mapMeta.OverrideASideMeta ?? false)
+                && (AreaData.GetMode(Session.Area) as patch_ModeProperties)?.MapMeta is MapMeta mapMeta && (mapMeta.OverrideASideMeta ?? false)
                 && mapMeta.IntroType is Player.IntroTypes introType)
                 playerIntro = introType;
 
@@ -238,7 +240,7 @@ namespace Celeste {
                 return levelMode;
             }
 
-            MapMetaModeProperties properties = Session.MapData.GetMeta();
+            MapMetaModeProperties properties = Session.MapData.Meta;
             if (properties != null && (properties.HeartIsEnd ?? false)) {
                 // heart ends the level: this is like B-Sides.
                 // the heart will appear even if it was collected, to avoid a softlock if we save & quit after collecting it.
@@ -511,13 +513,12 @@ namespace Celeste {
 
     public static class LevelExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         internal static EventInstance PauseSnapshot => patch_Level._PauseSnapshot;
 
+        [Obsolete("Use Level.SubHudRenderer instead.")]
         public static SubHudRenderer GetSubHudRenderer(this Level self)
             => ((patch_Level) self).SubHudRenderer;
+        [Obsolete("Use Level.SubHudRenderer instead.")]
         public static void SetSubHudRenderer(this Level self, SubHudRenderer value)
             => ((patch_Level) self).SubHudRenderer = value;
 

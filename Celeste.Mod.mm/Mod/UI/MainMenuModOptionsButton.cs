@@ -5,7 +5,7 @@ using Monocle;
 using System;
 
 namespace Celeste.Mod.UI {
-    class MainMenuModOptionsButton : MainMenuSmallButton {
+    class MainMenuModOptionsButton : patch_MainMenuSmallButton {
         private string subText;
 
         public bool SmallSubTextSpacing = false;
@@ -48,7 +48,7 @@ namespace Celeste.Mod.UI {
             base.Render();
 
             if (subText != null) {
-                Vector2 offset = new Vector2(Ease.CubeInOut(this.GetEase()) * 32f, this.GetWiggler().Value * 8f);
+                Vector2 offset = new Vector2(Monocle.Ease.CubeInOut(this.Ease) * 32f, this.Wiggler.Value * 8f);
                 ActiveFont.DrawOutline(subText, Position + offset + new Vector2(84f, SmallSubTextSpacing ? 70f : 84f),
                     new Vector2(0f, 0.5f), Vector2.One * 0.6f, Color.OrangeRed, 2f, Color.Black);
             }

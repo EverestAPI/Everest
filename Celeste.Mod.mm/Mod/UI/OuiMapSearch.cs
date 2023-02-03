@@ -276,7 +276,7 @@ namespace Celeste.Mod.UI {
                     id,
                     name,
                     levelSet,
-                    DialogExt.CleanLevelSet(levelSet)
+                    patch_Dialog.CleanLevelSet(levelSet)
                 }.Select(text => text.ToLower()).ToList();
 
                 List<string> unmatchedHunks = searchHunks.ToList();
@@ -321,7 +321,7 @@ namespace Celeste.Mod.UI {
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        string setname = patch_Dialog.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                         levelSetHeader.Alpha = 0f;
                         menu.rightMenu.Insert(1, levelSetHeader);
@@ -335,7 +335,7 @@ namespace Celeste.Mod.UI {
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                        string setname = DialogExt.CleanLevelSet(levelSet);
+                        string setname = patch_Dialog.CleanLevelSet(levelSet);
                         TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                         levelSetHeader.Alpha = 0f;
                         menu.rightMenu.Add(levelSetHeader);

@@ -138,7 +138,7 @@ namespace Celeste {
 
         private extern void orig_BoostBegin();
         private void BoostBegin() {
-            if (SceneAs<Level>()?.Session.MapData.GetMeta()?.TheoInBubble ?? false) {
+            if (SceneAs<patch_Level>()?.Session.MapData.Meta?.TheoInBubble ?? false) {
                 RefillDash();
                 RefillStamina();
             } else {

@@ -37,10 +37,10 @@ namespace Celeste {
         [PatchHeartGemCollectRoutine]
         private extern IEnumerator orig_CollectRoutine(Player player);
         private IEnumerator CollectRoutine(Player player) {
-            Level level = Scene as Level;
+            patch_Level level = Scene as patch_Level;
 
             bool heartIsEnd = false;
-            MapMetaModeProperties mapMetaModeProperties = (level != null) ? level.Session.MapData.GetMeta() : null;
+            MapMetaModeProperties mapMetaModeProperties = (level != null) ? level.Session.MapData.Meta : null;
             if (mapMetaModeProperties != null && mapMetaModeProperties.HeartIsEnd != null) {
                 heartIsEnd = mapMetaModeProperties.HeartIsEnd.Value;
             }
@@ -65,7 +65,7 @@ namespace Celeste {
         }
 
         private bool IsCompleteArea(bool value) {
-            MapMetaModeProperties meta = (Scene as Level)?.Session.MapData.GetMeta();
+            MapMetaModeProperties meta = (Scene as patch_Level)?.Session.MapData.Meta;
             if (meta?.HeartIsEnd != null)
                 return meta.HeartIsEnd.Value && !IsFake;
 

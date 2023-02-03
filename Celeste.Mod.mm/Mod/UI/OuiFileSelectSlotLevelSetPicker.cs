@@ -19,14 +19,14 @@ namespace Celeste.Mod.UI {
                 NewGameLevelSet = CoreModule.Settings.DefaultStartingLevelSet;
             }
 
-            Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
+            Label = patch_Dialog.CleanLevelSet(NewGameLevelSet ?? "Celeste");
             Scale = 0.5f;
             Action = () => changeStartingLevelSet(1);
 
             // find out what is the width of the biggest level set out there.
             float levelSetNameWidth = 0;
             foreach (patch_AreaData areaData in AreaData.Areas) {
-                levelSetNameWidth = Math.Max(levelSetNameWidth, ActiveFont.Measure(DialogExt.CleanLevelSet(areaData.LevelSet)).X);
+                levelSetNameWidth = Math.Max(levelSetNameWidth, ActiveFont.Measure(patch_Dialog.CleanLevelSet(areaData.LevelSet)).X);
             }
             arrowOffset = new Vector2(20f + levelSetNameWidth / 2 * Scale, 0f);
         }
@@ -75,7 +75,7 @@ namespace Celeste.Mod.UI {
 
             NewGameLevelSet = patch_AreaData.Areas[id].LevelSet;
 
-            Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
+            Label = patch_Dialog.CleanLevelSet(NewGameLevelSet ?? "Celeste");
             ((patch_OuiFileSelectSlot) selectSlot).WiggleMenu();
         }
     }

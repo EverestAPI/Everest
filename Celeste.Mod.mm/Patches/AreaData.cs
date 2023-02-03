@@ -18,6 +18,7 @@ namespace Celeste {
 
         // Required to reference this class in other files
         public static List<patch_AreaData> Areas;
+        public patch_ModeProperties[] Mode;
 
 # pragma warning restore CS0108
 
@@ -174,10 +175,10 @@ namespace Celeste {
             }
         }
 
-        public static patch_AreaData Get(AreaStats stats) {
-            if (stats.GetSID() == null)
+        public static patch_AreaData Get(patch_AreaStats stats) {
+            if (stats.SID == null)
                 return Get(stats.ID);
-            return Get(stats.GetSID());
+            return Get(stats.SID);
         }
 
         public static patch_AreaData Get(string sid) {
@@ -199,8 +200,8 @@ namespace Celeste {
                     if (mode?.Checkpoints == null)
                         continue;
 
-                    foreach (CheckpointData checkpoint in mode.Checkpoints) {
-                        checkpoint.SetArea(area.ToKey((AreaMode) modeId));
+                    foreach (patch_CheckpointData checkpoint in mode.Checkpoints) {
+                        checkpoint.Area = area.ToKey((AreaMode) modeId);
                     }
                 }
             }
@@ -234,8 +235,8 @@ namespace Celeste {
                     area.Dreaming = false;
                     area.ColorGrade = null;
 
-                    area.Mode = new ModeProperties[] {
-                        new ModeProperties {
+                    area.Mode = new patch_ModeProperties[] {
+                        new patch_ModeProperties {
                             Inventory = PlayerInventory.Default,
                             AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                         }
@@ -276,7 +277,7 @@ namespace Celeste {
                         meta.Modes = larger;
                     }
                     if (area.Mode.Length < 3) {
-                        ModeProperties[] larger = new ModeProperties[3];
+                        patch_ModeProperties[] larger = new patch_ModeProperties[3];
                         for (int i = 0; i < area.Mode.Length; i++)
                             larger[i] = area.Mode[i];
                         area.Mode = larger;
@@ -291,7 +292,7 @@ namespace Celeste {
                     // Some special handling.
                     area.OnLevelBegin = (level) => {
                         MapMeta levelMeta = patch_AreaData.Get(level.Session).Meta;
-                        MapMetaModeProperties levelMetaMode = level.Session.MapData.GetMeta();
+                        MapMetaModeProperties levelMetaMode = ((patch_MapData) level.Session.MapData).Meta;
 
                         if (levelMetaMode?.SeekerSlowdown ?? false)
                             level.Add(new SeekerEffectsController());
@@ -339,7 +340,7 @@ namespace Celeste {
                     if (area.LevelSet == other.LevelSet && order == otherOrder && name == otherName && side != otherSide &&
                         !other.HasMode(side)) {
                         if (other.Mode[(int) side] == null)
-                            other.Mode[(int) side] = new ModeProperties {
+                            other.Mode[(int) side] = new patch_ModeProperties {
                                 Inventory = PlayerInventory.Default,
                                 AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                             };
@@ -372,7 +373,7 @@ namespace Celeste {
                 if (area.Mode[0].MapData != null)
                     area.Mode[0].MapData.Area = area.ToKey();
                 else
-                    area.Mode[0].MapData = new MapData(area.ToKey());
+                    area.Mode[0].MapData = new patch_MapData(area.ToKey());
 
                 if (area.IsInterludeUnsafe())
                     continue;
@@ -393,7 +394,7 @@ namespace Celeste {
                     if (area.Mode[mode].MapData != null)
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
-                        area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
+                        area.Mode[mode].MapData = new patch_MapData(area.ToKey((AreaMode) mode));
                 }
             }
 
@@ -481,7 +482,7 @@ namespace Celeste {
     public static class AreaDataExt {
 
         [Obsolete("Use AreaData.Get(AreaStats) instead.")]
-        public static AreaData Get(AreaStats stats)
+        public static AreaData Get(patch_AreaStats stats)
             => patch_AreaData.Get(stats);
         [Obsolete("Use AreaData.Get(string) instead.")]
         public static AreaData Get(string sid)

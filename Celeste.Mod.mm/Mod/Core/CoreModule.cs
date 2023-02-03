@@ -160,10 +160,10 @@ namespace Celeste.Mod.Core {
 
             // Find the options button and place our button below it.
             index = buttons.FindIndex(_ => {
-                MainMenuSmallButton other = (_ as MainMenuSmallButton);
+                patch_MainMenuSmallButton other = (_ as patch_MainMenuSmallButton);
                 if (other == null)
                     return false;
-                return other.GetLabelName() == "menu_options" && other.GetIconName() == "menu/options";
+                return other.LabelName == "menu_options" && other.IconName == "menu/options";
             });
             if (index != -1)
                 index++;

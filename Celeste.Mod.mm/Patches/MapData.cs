@@ -13,7 +13,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 
 namespace Celeste {
-    class patch_MapData : MapData {
+    public class patch_MapData : MapData {
 
         public bool DetectedCassette;
         public int DetectedStrawberriesIncludingUntracked;
@@ -202,7 +202,7 @@ namespace Celeste {
                 MapMeta mapMeta = new MapMeta(meta) {
                     Modes = area.Meta.Modes
                 };
-                area.Mode[(int) mode].SetMapMeta(mapMeta);
+                area.Mode[(int) mode].MapMeta = mapMeta;
             }
         }
 
@@ -265,18 +265,21 @@ namespace Celeste {
         /// <summary>
         /// Get the mod mode metadata of the map.
         /// </summary>
+        [Obsolete("Use MapData.Meta instead.")]
         public static MapMetaModeProperties GetMeta(this MapData self)
             => ((patch_MapData) self).Meta;
 
         /// <summary>
         /// Returns whether the map contains a cassette or not.
         /// </summary>
+        [Obsolete("Use MapData.DetectedCassette instead.")]
         public static bool GetDetectedCassette(this MapData self)
             => ((patch_MapData) self).DetectedCassette;
 
         /// <summary>
         /// To be called by the CoreMapDataProcessor when a cassette is detected in a map.
         /// </summary>
+        [Obsolete("Use MapData.DetectedCassette instead.")]
         internal static void SetDetectedCassette(this MapData self) {
             ((patch_MapData) self).DetectedCassette = true;
         }
@@ -284,12 +287,14 @@ namespace Celeste {
         /// <summary>
         /// Returns the number of strawberries in the map, including untracked ones (goldens, moons).
         /// </summary>
+        [Obsolete("Use MapData.DetectedStrawberriesIncludingUntracked instead.")]
         public static int GetDetectedStrawberriesIncludingUntracked(this MapData self)
             => ((patch_MapData) self).DetectedStrawberriesIncludingUntracked;
 
         /// <summary>
         /// To be called by the CoreMapDataProcessor when processing a map is over, to register the detected berry count.
         /// </summary>
+        [Obsolete("Use MapData.DetectedStrawberriesIncludingUntracked instead.")]
         internal static void SetDetectedStrawberriesIncludingUntracked(this MapData self, int count) {
             ((patch_MapData) self).DetectedStrawberriesIncludingUntracked = count;
         }
@@ -297,6 +302,7 @@ namespace Celeste {
         /// <summary>
         /// Returns the list of dashless goldens in the map.
         /// </summary>
+        [Obsolete("Use MapData.DashlessGoldenBerries instead.")]
         public static List<EntityData> GetDashlessGoldenberries(this MapData self)
             => ((patch_MapData) self).DashlessGoldenberries;
     }

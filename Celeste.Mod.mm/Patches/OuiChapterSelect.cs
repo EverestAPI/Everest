@@ -280,7 +280,7 @@ namespace Celeste {
 
             if (levelsetEase > 0f) {
                 Vector2 pos = new Vector2(1920f - 64f * Ease.CubeOut(maplistEase), 1080f - 128f);
-                string line = DialogExt.CleanLevelSet(currentLevelSet);
+                string line = patch_Dialog.CleanLevelSet(currentLevelSet);
                 ActiveFont.DrawOutline(line, pos, new Vector2(1f, 0.5f), Vector2.One * 0.7f, Color.White * Ease.CubeOut(maplistEase), 2f, Color.Black * Ease.CubeOut(maplistEase));
                 Vector2 lineSize = ActiveFont.Measure(line) * 0.7f;
                 Input.GuiDirection(new Vector2(0f, -1f)).DrawCentered(pos + new Vector2(-lineSize.X * 0.5f, -lineSize.Y * 0.5f - 16f), Color.White * Ease.CubeOut(maplistEase), 0.5f);

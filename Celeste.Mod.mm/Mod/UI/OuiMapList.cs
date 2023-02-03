@@ -56,7 +56,7 @@ namespace Celeste.Mod.UI {
                     return Dialog.Clean("maplist_type_everything");
                 if (value == 2)
                     return Dialog.Clean("maplist_type_allmods");
-                return DialogExt.CleanLevelSet(sets[value - 3]);
+                return patch_Dialog.CleanLevelSet(sets[value - 3]);
             }, 0, 2 + sets.Count, type).Change(value => {
                 type = value;
                 ReloadItems();
@@ -124,7 +124,7 @@ namespace Celeste.Mod.UI {
                     levelSetAreaOffset = levelSetStats.AreaOffset;
                     levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                     levelSetUnlockedModes = levelSetStats.UnlockedModes;
-                    string setname = DialogExt.CleanLevelSet(levelSet);
+                    string setname = patch_Dialog.CleanLevelSet(levelSet);
                     TextMenuExt.SubHeaderExt levelSetHeader = new TextMenuExt.SubHeaderExt(setname);
                     levelSetHeader.Alpha = 0f;
                     menu.Add(levelSetHeader);

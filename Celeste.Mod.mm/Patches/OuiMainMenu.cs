@@ -52,9 +52,9 @@ namespace Celeste {
                     button.SetSelected(button is MainMenuClimb);
                 }
             } else {
-                string selectedLabel = (selected as MainMenuSmallButton)?.GetLabelName();
+                string selectedLabel = (selected as patch_MainMenuSmallButton)?.LabelName;
                 foreach (MenuButton button in buttons) {
-                    button.SetSelected((button as MainMenuSmallButton)?.GetLabelName() == selectedLabel);
+                    button.SetSelected((button as patch_MainMenuSmallButton)?.LabelName == selectedLabel);
                 }
             }
         }
@@ -193,10 +193,10 @@ namespace Celeste {
 
         private int findButtonIndex(string labelName, string iconName) {
             return buttons.FindIndex(_ => {
-                MainMenuSmallButton other = (_ as MainMenuSmallButton);
+                patch_MainMenuSmallButton other = (_ as patch_MainMenuSmallButton);
                 if (other == null)
                     return false;
-                return other.GetLabelName() == labelName && other.GetIconName() == iconName;
+                return other.LabelName == labelName && other.IconName == iconName;
             });
         }
 

@@ -183,14 +183,14 @@ namespace Celeste.Mod.Core {
                         if (entity.Name == "checkpoint") {
                             if (CheckpointsAuto != null) {
                                 MapMeta modeMeta = AreaData.GetModeMeta(AreaKey.Mode);
-                                CheckpointData c = new CheckpointData(
+                                patch_CheckpointData c = new patch_CheckpointData(
                                     LevelName,
                                     (AreaData.SID + "_" + LevelName).DialogKeyify(),
                                     MapMeta.GetInventory(entity.Attr("inventory")),
                                     entity.Attr("dreaming") == "" ? modeMeta.Dreaming ?? AreaData.Dreaming : entity.AttrBool("dreaming"),
                                     null
                                 );
-                                c.SetArea(AreaKey);
+                                c.Area = AreaKey;
                                 if (entity.Attr("coreMode") == "") {
                                     c.CoreMode = modeMeta.CoreMode ?? AreaData.CoreMode;
                                 } else {
@@ -221,8 +221,8 @@ namespace Celeste.Mod.Core {
                     if (ParentAreaData.CassetteCheckpointIndex < 0)
                         ParentAreaData.CassetteCheckpointIndex = Checkpoint + (ParentMode.Checkpoints?.Length ?? 0);
 
-                    MapData.SetDetectedCassette();
-                    ParentMapData.SetDetectedCassette();
+                    MapData.DetectedCassette = true;
+                    ParentMapData.DetectedCassette = true;
                 } },
 
                 { "entity:strawberry", entity => {
@@ -281,9 +281,9 @@ namespace Celeste.Mod.Core {
                     ParentMode.Checkpoints = ParentMode.Checkpoints.Concat(CheckpointsAuto.Where(c => c != null)).ToArray();
             }
 
-            MapData.SetDetectedStrawberriesIncludingUntracked(TotalStrawberriesIncludingUntracked);
+            MapData.DetectedStrawberriesIncludingUntracked = TotalStrawberriesIncludingUntracked;
             if (MapData != ParentMapData)
-                ParentMapData.SetDetectedStrawberriesIncludingUntracked(ParentMapData.GetDetectedStrawberriesIncludingUntracked() + TotalStrawberriesIncludingUntracked);
+                ParentMapData.DetectedStrawberriesIncludingUntracked = ParentMapData.DetectedStrawberriesIncludingUntracked + TotalStrawberriesIncludingUntracked;
         }
     }
 }
