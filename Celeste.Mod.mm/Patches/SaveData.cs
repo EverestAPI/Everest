@@ -14,6 +14,8 @@ using System.Xml.Serialization;
 namespace Celeste {
     public class patch_SaveData : SaveData {
 
+        public static new patch_SaveData Instance;
+
         public List<LevelSetStats> LevelSets = new List<LevelSetStats>();
 
         public List<LevelSetStats> LevelSetRecycleBin = new List<LevelSetStats>();
@@ -939,17 +941,16 @@ namespace Celeste {
     }
     public static class SaveDataExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get the statistics for all level sets.
         /// </summary>
+        [Obsolete("Use SaveData.LevelSets instead.")]
         public static List<LevelSetStats> GetLevelSets(this SaveData self)
             => ((patch_SaveData) self).LevelSets;
         /// <summary>
         /// Set the statistics for all level sets.
         /// </summary>
+        [Obsolete("Use SaveData.LevelSets instead.")]
         public static SaveData SetLevelSets(this SaveData self, List<LevelSetStats> value) {
             ((patch_SaveData) self).LevelSets = value;
             return self;
@@ -958,16 +959,19 @@ namespace Celeste {
         /// <summary>
         /// Get the last played level set.
         /// </summary>
+        [Obsolete("Use SaveData.LevelSet instead.")]
         public static string GetLevelSet(this SaveData self)
             => ((patch_SaveData) self).LevelSet;
 
         /// <summary>
         /// Get the statistics for the last played level set.
         /// </summary>
+        [Obsolete("Use SaveData.LevelSetStats instead.")]
         public static LevelSetStats GetLevelSetStats(this SaveData self)
             => ((patch_SaveData) self).LevelSetStats;
 
         /// <inheritdoc cref="patch_SaveData.GetLevelSetStatsFor(string)"/>
+        [Obsolete("Use SaveData.GetLevelSetStatsFor instead.")]
         public static LevelSetStats GetLevelSetStatsFor(this SaveData self, string name)
             => ((patch_SaveData) self).GetLevelSetStatsFor(name);
 

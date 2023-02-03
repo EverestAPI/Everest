@@ -28,6 +28,7 @@ namespace Celeste {
         public interface ISubmenu { }
 
         // We're effectively in OuiFileSelectSlot, but still need to "expose" private fields to our mod.
+        public new patch_SaveData SaveData;
         private OuiFileSelect fileSelect;
         private List<Button> buttons;
         private Tween tween;
@@ -84,10 +85,10 @@ namespace Celeste {
         public new void Show() {
             // Temporarily set the current save data to the file slot's save data.
             // This enables filtering the areas by the save data's current levelset.
-            SaveData prev = SaveData.Instance;
-            SaveData.Instance = SaveData;
+            patch_SaveData prev = patch_SaveData.Instance;
+            patch_SaveData.Instance = SaveData;
 
-            LevelSetStats stats = SaveData?.GetLevelSetStats();
+            LevelSetStats stats = SaveData?.LevelSetStats;
 
             if (stats != null) {
                 StrawberriesCounter strawbs = Strawberries;
@@ -147,7 +148,7 @@ namespace Celeste {
                 }
             }
 
-            SaveData.Instance = prev;
+            patch_SaveData.Instance = prev;
 
             orig_Show();
         }
@@ -198,7 +199,7 @@ namespace Celeste {
 
             string newGameLevelSet = newGameLevelSetPicker?.NewGameLevelSet;
             if (newGameLevelSet != null && newGameLevelSet != "Celeste") {
-                SaveData.Instance.LastArea =
+                patch_SaveData.Instance.LastArea =
                     patch_AreaData.Areas.FirstOrDefault(area => area.LevelSet == newGameLevelSet)?.ToKey() ??
                     AreaKey.Default;
             }
@@ -234,10 +235,10 @@ namespace Celeste {
             // Replace ID 0 with SaveData.Instance.LastArea.ID
 
             Overworld overworld = fileSelect.Overworld;
-            patch_AreaData area = patch_AreaData.Areas[SaveData.Instance.LastArea.ID];
+            patch_AreaData area = patch_AreaData.Areas[patch_SaveData.Instance.LastArea.ID];
             if (area.LevelSet != "Celeste") {
                 // Pretend that we've beaten Prologue.
-                LevelSetStats stats = SaveData.Instance.GetLevelSetStatsFor("Celeste");
+                LevelSetStats stats = patch_SaveData.Instance.GetLevelSetStatsFor("Celeste");
                 stats.UnlockedAreas = 1;
                 stats.AreasIncludingCeleste[0].Modes[0].Completed = true;
             }
@@ -257,7 +258,7 @@ namespace Celeste {
 
             yield return 0.5f;
 
-            LevelEnter.Go(new Session(SaveData.Instance.LastArea), false);
+            LevelEnter.Go(new Session(patch_SaveData.Instance.LastArea), false);
         }
 
         public extern void orig_Unselect();

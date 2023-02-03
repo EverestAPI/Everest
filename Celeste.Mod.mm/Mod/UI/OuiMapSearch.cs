@@ -13,7 +13,7 @@ namespace Celeste.Mod.UI {
         private MountainCamera cameraStart;
         private MountainCamera cameraEnd;
 
-        public List<OuiChapterSelectIcon> OuiIcons;
+        public List<patch_OuiChapterSelectIcon> OuiIcons;
 
         private SearchMenu menu;
 
@@ -317,7 +317,7 @@ namespace Celeste.Mod.UI {
 
                     if (matchCount > 1) {
                         lastLevelSet = levelSet;
-                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetStats = patch_SaveData.Instance.GetLevelSetStatsFor(levelSet);
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;
@@ -331,7 +331,7 @@ namespace Celeste.Mod.UI {
 
                     if (lastLevelSet != levelSet) {
                         lastLevelSet = levelSet;
-                        levelSetStats = SaveData.Instance.GetLevelSetStatsFor(levelSet);
+                        levelSetStats = patch_SaveData.Instance.GetLevelSetStatsFor(levelSet);
                         levelSetAreaOffset = levelSetStats.AreaOffset;
                         levelSetUnlockedAreas = levelSetStats.UnlockedAreas;
                         levelSetUnlockedModes = levelSetStats.UnlockedModes;

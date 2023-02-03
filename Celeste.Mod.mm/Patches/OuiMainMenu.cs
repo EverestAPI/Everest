@@ -222,9 +222,7 @@ namespace Celeste {
     }
     public static class OuiMainMenuExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
+        [Obsolete("Use OuiMainMenu.Buttons instead.")]
         public static List<MenuButton> GetButtons(this OuiMainMenu self)
             => ((patch_OuiMainMenu) self).Buttons;
 

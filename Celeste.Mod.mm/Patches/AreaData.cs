@@ -111,7 +111,7 @@ namespace Celeste {
             get {
                 return
                     Interlude_Unsafe ||
-                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() != LevelSet);
+                    (SaveData.Instance != null && patch_SaveData.Instance.LevelSet != LevelSet);
             }
             set {
                 Interlude_Unsafe = value;
@@ -129,7 +129,7 @@ namespace Celeste {
             get {
                 return
                     IsFinal_Unsafe &&
-                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() == LevelSet);
+                    (SaveData.Instance != null && patch_SaveData.Instance.LevelSet == LevelSet);
             }
             set {
                 IsFinal_Unsafe = value;

@@ -18,7 +18,7 @@ namespace Celeste {
         // We're effectively in OuiTitleScreen, but still need to "expose" private fields to our mod.
         [MonoModIgnore] // This property defines its own getter and setter - don't accidentally replace them.
         private int area { get; set; }
-        private List<OuiChapterSelectIcon> icons;
+        private List<patch_OuiChapterSelectIcon> icons;
         private int indexToSnap;
         private const int scarfSegmentSize = 2; // We can't change consts.
         private MTexture scarf;
@@ -56,7 +56,7 @@ namespace Celeste {
         }
 
         private void GetMinMaxArea(out int areaOffs, out int areaMax) {
-            int areaOffsRaw = SaveData.Instance.GetLevelSetStats().AreaOffset;
+            int areaOffsRaw = patch_SaveData.Instance.LevelSetStats.AreaOffset;
             int areaMaxRaw = Math.Max(areaOffsRaw, SaveData.Instance.UnlockedAreas);
 
             do {
@@ -102,7 +102,7 @@ namespace Celeste {
             EaseCamera();
             display = true;
 
-            currentLevelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            currentLevelSet = patch_SaveData.Instance?.LevelSet ?? "Celeste";
 
             journalEnabled = string.IsNullOrEmpty(currentLevelSet) || Celeste.PlayMode == Celeste.PlayModes.Debug || (SaveData.Instance?.CheatMode ?? false);
             for (int i = 0; i <= SaveData.Instance.UnlockedAreas && !journalEnabled; i++)
@@ -219,16 +219,16 @@ namespace Celeste {
                     if (area > areaMax) {
                         area = areaMax;
                     }
-                    while (area > 0 && icons[area].GetIsHidden()) {
+                    while (area > 0 && icons[area].IsHidden) {
                         area--;
                     }
                 }
 
-                if (Input.MenuLeft.Pressed && (area - 1 < 0 || icons[area - 1].GetIsHidden())) {
+                if (Input.MenuLeft.Pressed && (area - 1 < 0 || icons[area - 1].IsHidden)) {
                     return;
                 }
 
-                if (Input.MenuRight.Pressed && (area + 1 >= icons.Count || icons[area + 1].GetIsHidden())) {
+                if (Input.MenuRight.Pressed && (area + 1 >= icons.Count || icons[area + 1].IsHidden)) {
                     return;
                 }
             }

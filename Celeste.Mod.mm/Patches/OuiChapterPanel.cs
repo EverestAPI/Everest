@@ -214,7 +214,7 @@ namespace Celeste {
             }
 
             // If none are found, fall back to levelset textures.
-            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            string levelSet = patch_SaveData.Instance?.LevelSet ?? "Celeste";
             string levelSetTextureName = textureName.Replace("areaselect/", $"areaselect/{levelSet}/");
             if (GFX.Gui.Has(levelSetTextureName)) {
                 textureName = levelSetTextureName;
