@@ -178,11 +178,11 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
+        public void CreatePauseMenuButtons(Level level, patch_TextMenu menu, bool minimal) {
             if (!Settings.ShowModOptionsInGame)
                 return;
 
-            List<TextMenu.Item> items = menu.GetItems();
+            List<TextMenu.Item> items = menu.Items;
             int index;
 
             // Find the options button and place our button below it.
@@ -215,8 +215,8 @@ namespace Celeste.Mod.Core {
                         level.Pause(returnIndex, minimal, false);
 
                         // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
-                        TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as TextMenu;
-                        TextMenu.Button modOptionsButton = textMenu?.GetItems().OfType<TextMenu.Button>()
+                        patch_TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
+                        TextMenu.Button modOptionsButton = textMenu?.Items.OfType<TextMenu.Button>()
                             .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
                         if (modOptionsButton != null) {
                             textMenu.Selection = textMenu.IndexOf(modOptionsButton);
@@ -236,14 +236,14 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public override void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
             // LoadSettings();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
-                List<TextMenu.Item> items = menu.GetItems();
+                List<TextMenu.Item> items = menu.Items;
 
                 // insert extra options before the "key config" options
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {

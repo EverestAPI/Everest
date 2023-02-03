@@ -129,7 +129,7 @@ namespace Celeste {
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
 
-            if (Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) is TextMenu menu) {
+            if (Entities.GetToAdd().FirstOrDefault(e => e is TextMenu) is patch_TextMenu menu) {
                 void Unpause() {
                     Everest.Events.Level.Unpause(this);
                 }

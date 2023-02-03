@@ -15,7 +15,7 @@ namespace Celeste.Mod.UI {
         /// <summary>
         /// The text menu this screen contains.
         /// </summary>
-        protected TextMenu menu;
+        protected patch_TextMenu menu;
 
         /// <summary>
         /// The title for the menu.
@@ -42,11 +42,11 @@ namespace Celeste.Mod.UI {
         /// <summary>
         /// Adds all the submenu options to the TextMenu given in parameter.
         /// </summary>
-        protected abstract void addOptionsToMenu(TextMenu menu);
+        protected abstract void addOptionsToMenu(patch_TextMenu menu);
 
         public override IEnumerator Enter(Oui from) {
             // build the menu
-            menu = new TextMenu();
+            menu = new patch_TextMenu();
             menu.Add(new TextMenu.Header(MenuName));
             addOptionsToMenu(menu);
 

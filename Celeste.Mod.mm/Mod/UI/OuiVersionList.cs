@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace Celeste.Mod.UI {
     public class OuiVersionList : Oui, OuiModOptions.ISubmenu {
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -21,8 +21,8 @@ namespace Celeste.Mod.UI {
         public OuiVersionList() {
         }
 
-        public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new TextMenu();
+        public patch_TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
+            menu = new patch_TextMenu();
             items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("updater_versions_title")));

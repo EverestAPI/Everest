@@ -14,7 +14,7 @@ namespace Celeste.Mod.UI {
 
         public List<patch_OuiChapterSelectIcon> OuiIcons;
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
@@ -28,9 +28,9 @@ namespace Celeste.Mod.UI {
 
         private List<string> sets = new List<string>();
 
-        private TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new TextMenu();
-            ((patch_TextMenu) menu).CompactWidthMode = true;
+        private patch_TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
+            menu = new patch_TextMenu();
+            menu.CompactWidthMode = true;
             items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("maplist_title")));

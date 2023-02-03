@@ -58,8 +58,8 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            public TextMenu leftMenu;
-            public TextMenu rightMenu;
+            public patch_TextMenu leftMenu;
+            public patch_TextMenu rightMenu;
             private float leftOffset;
             private float rightOffset;
 
@@ -86,7 +86,7 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            public SearchMenu(TextMenu leftMenu, TextMenu rightMenu) {
+            public SearchMenu(patch_TextMenu leftMenu, patch_TextMenu rightMenu) {
                 Position = Vector2.Zero;
                 this.leftMenu = leftMenu;
                 this.rightMenu = rightMenu;
@@ -152,7 +152,7 @@ namespace Celeste.Mod.UI {
                             }
                         }
 
-                        int index = menu.rightMenu.GetItems().FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
+                        int index = menu.rightMenu.Items.FindIndex(item => item is TextMenuExt.ButtonExt button && button.Selectable && items.Contains(button));
                         if (index > 0) {
                             menu.rightMenu.Selection = index;
                             Audio.Play(SFX.ui_main_button_select);
@@ -212,7 +212,7 @@ namespace Celeste.Mod.UI {
         }
 
         private SearchMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new SearchMenu(new TextMenu(), new TextMenu());
+            menu = new SearchMenu(new patch_TextMenu(), new patch_TextMenu());
             items.Clear();
 
             menu.leftMenu.Add(searchTitle = new TextMenu.Header(Dialog.Clean("maplist_search")));
@@ -555,7 +555,7 @@ namespace Celeste.Mod.UI {
 
             // Don't allow pressing any buttons while searching
             if (menu != null)
-                foreach (TextMenu.Item item in menu.rightMenu.GetItems())
+                foreach (TextMenu.Item item in menu.rightMenu.Items)
                     item.Disabled = Searching;
         }
 
