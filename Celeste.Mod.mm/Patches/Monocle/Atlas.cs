@@ -383,7 +383,7 @@ namespace Monocle {
 
             VirtualTexture vtex;
             try {
-                vtex = VirtualContentExt.CreateTexture(asset);
+                vtex = patch_VirtualContent.CreateTexture(asset);
             } catch {
                 // The game is going to crash from this. Log the offending texture to make debugging easier.
                 Logger.Log(LogLevel.Error, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");

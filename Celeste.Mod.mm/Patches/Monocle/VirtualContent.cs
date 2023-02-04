@@ -4,6 +4,7 @@
 using Celeste.Mod;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -51,15 +52,13 @@ namespace Monocle {
             return virtualTexture;
         }
 
-        [MonoModIgnore]
-        internal static extern void Reload();
-        public static void _Reload()
-            => Reload();
+        [MonoModPublic]
+        [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Reload()")]
+        public static extern void Reload();
 
-        [MonoModIgnore]
-        internal static extern void Unload();
-        public static void _Unload()
-            => Unload();
+        [MonoModPublic]
+        [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Unload()")]
+        public static extern void Unload();
 
         /// <summary>
         /// Forcibly unload and reload all content.
@@ -87,33 +86,36 @@ namespace Monocle {
     }
     public static class VirtualContentExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_VirtualContent.Assets"/>
+        [Obsolete("Use VirtualContent.Assets instead.")]
         public static List<VirtualAsset> Assets => patch_VirtualContent.Assets;
 
         /// <inheritdoc cref="patch_VirtualContent.CreateTexture(ModAsset)"/>
+        [Obsolete("Use VirtualContent.CreateTexture instead.")]
         public static VirtualTexture CreateTexture(ModAsset metadata)
             => patch_VirtualContent.CreateTexture(metadata);
 
         /// <summary>
         /// Reload all content.
         /// </summary>
+        [Obsolete("Use VirtualContent.Reload instead.")]
         public static void Reload()
-            => patch_VirtualContent._Reload();
+            => patch_VirtualContent.Reload();
 
         /// <summary>
         /// Unload all content.
         /// </summary>
+        [Obsolete("Use VirtualContent.Unload instead.")]
         public static void Unload()
-            => patch_VirtualContent._Unload();
+            => patch_VirtualContent.Unload();
 
         /// <inheritdoc cref="patch_VirtualContent.ForceReload"/>
+        [Obsolete("Use VirtualContent.ForceReload instead.")]
         public static void ForceReload()
             => patch_VirtualContent.ForceReload();
 
         /// <inheritdoc cref="patch_VirtualContent.UnloadOverworld"/>
+        [Obsolete("Use VirtualContent.UnloadOverworld instead.")]
         public static void UnloadOverworld()
             => patch_VirtualContent.UnloadOverworld();
 

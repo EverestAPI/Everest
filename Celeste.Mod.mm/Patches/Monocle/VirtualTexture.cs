@@ -880,21 +880,25 @@ namespace Monocle {
                 ((data >> 24) & 0xFF);
         }
 
+        [MonoModRemove]
+        public static implicit operator patch_VirtualTexture(VirtualTexture tex) => (patch_VirtualTexture) tex;
+        [MonoModRemove]
+        public static implicit operator VirtualTexture(patch_VirtualTexture tex) => (VirtualTexture) tex;
+
     }
     public static class VirtualTextureExt {
-
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
 
         /// <summary>
         /// If the VirtualTexture originates from a mod, get the mod asset metadata.
         /// </summary>
+        [Obsolete("Use VirtualTexture.Metadata instead.")]
         public static ModAsset GetMetadata(this VirtualTexture self)
             => ((patch_VirtualTexture) (object) self).Metadata;
 
         /// <summary>
         /// Set a fallback texture in case the texture becomes unavailable on reload.
         /// </summary>
+        [Obsolete("Use VirtualTexture.Fallback instead.")]
         public static void SetFallback(this VirtualTexture self, VirtualTexture fallback)
             => ((patch_VirtualTexture) (object) self).Fallback = fallback;
 
