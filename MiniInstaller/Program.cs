@@ -330,13 +330,13 @@ namespace MiniInstaller {
                 dstPath ??= PathGame;
             }
 
-            if (!Directory.Exists(srcPath))
-                Directory.CreateDirectory(srcPath);
+            if (!Directory.Exists(dstPath))
+                Directory.CreateDirectory(dstPath);
 
             foreach (string entrySrc in Directory.GetFileSystemEntries(srcPath)) {
                 string entryDst = Path.Combine(dstPath, Path.GetRelativePath(srcPath, entrySrc));
 
-                if (File.Exists(entryDst)) {
+                if (File.Exists(entrySrc)) {
                     LogLine($"Copying {entrySrc} +> {entryDst}");
                     File.Copy(entrySrc, entryDst, true);
                 } else
