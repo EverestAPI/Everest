@@ -253,7 +253,7 @@ namespace Celeste {
             yield return 0.4f;
 
             area.Wipe(overworld, false, null);
-            overworld.RendererList.UpdateLists();
+            ((patch_RendererList) overworld.RendererList).UpdateLists();
             overworld.RendererList.MoveToFront(overworld.Snow);
 
             yield return 0.5f;

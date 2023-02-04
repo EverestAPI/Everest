@@ -73,9 +73,9 @@ namespace Monocle {
         /// Unload all overworld-related content.
         /// </summary>
         public static void UnloadOverworld() {
-            foreach (VirtualAsset asset in assets) {
+            foreach (patch_VirtualAsset asset in assets) {
                 string path = asset.Name.Replace('\\', '/');
-                if (asset is VirtualTexture && path.StartsWith("Graphics/Atlases/")) {
+                if (asset is patch_VirtualTexture && path.StartsWith("Graphics/Atlases/")) {
                     path = path.Substring(17);
                     if (path.StartsWith("Opening") || path.StartsWith("Overworld") || path.StartsWith("Mountain") || path.StartsWith("Journal")) {
                         asset.Unload();

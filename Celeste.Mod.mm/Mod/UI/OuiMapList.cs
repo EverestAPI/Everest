@@ -293,7 +293,7 @@ namespace Celeste.Mod.UI {
             Audio.SetMusic(null, true, true);
             Audio.SetAmbience(null, true);
             if ((area.ID == 0 || area.ID == 9) && checkpoint == null && mode == AreaMode.Normal) {
-                Overworld.RendererList.UpdateLists();
+                ((patch_RendererList) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

@@ -6,6 +6,7 @@ using Celeste.Mod.Meta;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
@@ -40,7 +41,7 @@ namespace Monocle {
 
             XmlDocument xmlDoc;
             VirtualTexture texV;
-            MTexture texM;
+            patch_MTexture texM;
 
             switch (format) {
                 case AtlasDataFormat.TexturePacker_Sparrow:
@@ -50,8 +51,8 @@ namespace Monocle {
                         break;
 
                     texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlTextureAtlas.Attr("imagePath", "")));
-                    texM = new MTexture(texV);
-                    texM.SetAtlas(atlas);
+                    texM = new patch_MTexture(texV);
+                    texM.Atlas = atlas;
                     atlas.Sources.Add(texV);
 
                     XmlNodeList xmlSubs = xmlTextureAtlas.GetElementsByTagName("SubTexture");
@@ -79,8 +80,8 @@ namespace Monocle {
 
                     foreach (XmlElement xmlAtlasSource in xmlAtlas) {
                         texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), xmlAtlasSource.Attr("n", "") + ".png"));
-                        texM = new MTexture(texV);
-                        texM.SetAtlas(atlas);
+                        texM = new patch_MTexture(texV);
+                        texM.Atlas = atlas;
                         atlas.Sources.Add(texV);
                         foreach (XmlElement xmlSub in xmlAtlasSource) {
                             string name = xmlSub.Attr("n");
@@ -107,8 +108,8 @@ namespace Monocle {
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadNullTerminatedString() + ".png"));
-                            texM = new MTexture(texV);
-                            texM.SetAtlas(atlas);
+                            texM = new patch_MTexture(texV);
+                            texM.Atlas = atlas;
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -160,8 +161,8 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".png"));
-                                texM = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
-                                texM.SetAtlas(atlas);
+                                atlas.textures[name] = texM = new patch_MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                texM.Atlas = atlas;
                                 atlas.Sources.Add(texV);
                             }
                         }
@@ -180,8 +181,8 @@ namespace Monocle {
                         short sources = reader.ReadInt16();
                         for (int i = 0; i < sources; i++) {
                             texV = VirtualContent.CreateTexture(Path.Combine(Path.GetDirectoryName(path), reader.ReadString() + ".data"));
-                            texM = new MTexture(texV);
-                            texM.SetAtlas(atlas);
+                            texM = new patch_MTexture(texV);
+                            texM.Atlas = atlas;
                             atlas.Sources.Add(texV);
                             short subs = reader.ReadInt16();
                             for (int j = 0; j < subs; j++) {
@@ -236,8 +237,8 @@ namespace Monocle {
                                 short width = reader.ReadInt16();
                                 short height = reader.ReadInt16();
                                 texV = VirtualContent.CreateTexture(Path.Combine(sourcePath, name + ".data"));
-                                texM = atlas.textures[name] = new MTexture(texV, new Vector2(-offsX, -offsY), width, height);
-                                texM.SetAtlas(atlas);
+                                atlas.textures[name] = texM = new patch_MTexture(texV, new Vector2(-offsX, -offsY), width, height);
+                                texM.Atlas = atlas;
                                 texM.AtlasPath = name;
                                 atlas.Sources.Add(texV);
                             }
@@ -375,7 +376,7 @@ namespace Monocle {
 
             if (textures.TryGetValue(path, out MTexture mtex)) {
                 Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"{Path.GetFileName(DataPath)} + ({asset.Source?.Name ?? "???"}) {path}");
-                mtex.SetOverride(asset);
+                ((patch_MTexture) mtex).SetOverride(asset);
                 this[path] = mtex;
                 return;
             }
@@ -401,8 +402,8 @@ namespace Monocle {
                 mtex = new MTexture(vtex);
             }
             mtex.AtlasPath = path;
-            mtex.SetAtlas(this);
-            mtex.SetOverride(asset);
+            ((patch_MTexture) mtex).Atlas = this;
+            ((patch_MTexture) mtex).SetOverride(asset);
             this[path] = mtex;
             Sources.Add(vtex);
         }
@@ -478,45 +479,49 @@ namespace Monocle {
     }
     public static class AtlasExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get the internal string-MTexture dictionary.
         /// </summary>
+        [Obsolete("Use Atlas.Textures instead.")]
         public static Dictionary<string, MTexture> GetTextures(this Atlas self)
             => ((patch_Atlas) self).Textures;
 
         /// <summary>
         /// Get the method with which this atlas was loaded.
         /// </summary>
+        [Obsolete("Use Atlas.DataMethod instead.")]
         public static string GetDataMethod(this Atlas self)
             => ((patch_Atlas) self).DataMethod;
 
         /// <summary>
         /// Get the path from which this atlas was loaded.
         /// </summary>
+        [Obsolete("Use Atlas.DataPath instead.")]
         public static string GetDataPath(this Atlas self)
             => ((patch_Atlas) self).DataPath;
 
         /// <summary>
         /// If the atlas was loaded with FromMultiAtlas, get the paths from which this atlas was loaded.
         /// </summary>
+        [Obsolete("Use Atlas.DataPaths instead.")]
         public static string[] GetDataPaths(this Atlas self)
             => ((patch_Atlas) self).DataPaths;
 
         /// <summary>
         /// Get the atlas data format, or none in case of directory atlases.
         /// </summary>
+        [Obsolete("Use Atlas.DataFormat instead.")]
         public static Atlas.AtlasDataFormat? GetDataFormat(this Atlas self)
             => ((patch_Atlas) self).DataFormat;
 
+        [Obsolete("Use Atlas.ResetCaches instead.")]
         public static void ResetCaches(this Atlas self)
             => ((patch_Atlas) self).ResetCaches();
 
         /// <summary>
         /// Feed the given ModAsset into the atlas.
         /// </summary>
+        [Obsolete("Use Atlas.Ingest instead.")]
         public static void Ingest(this Atlas self, ModAsset asset)
             => ((patch_Atlas) self).Ingest(asset);
 

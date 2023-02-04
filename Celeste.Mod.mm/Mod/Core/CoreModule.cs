@@ -121,7 +121,7 @@ namespace Celeste.Mod.Core {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
                 string inputGuiPath = $"controls/{Settings.InputGui}/";
-                if (GFX.Gui.GetTextures().Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
+                if (((patch_Atlas) GFX.Gui).Textures.Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
                     Input.OverrideInputPrefix = Settings.InputGui;
                 } else {
                     Settings.InputGui = "";
@@ -215,7 +215,7 @@ namespace Celeste.Mod.Core {
                         level.Pause(returnIndex, minimal, false);
 
                         // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
-                        patch_TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
+                        patch_TextMenu textMenu = ((patch_EntityList) level.Entities).ToAdd.FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
                         TextMenu.Button modOptionsButton = textMenu?.Items.OfType<TextMenu.Button>()
                             .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
                         if (modOptionsButton != null) {

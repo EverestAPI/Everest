@@ -837,7 +837,7 @@ namespace Celeste.Mod {
             public static void Update(ModAsset prev, ModAsset next) {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
-                        if (target is MTexture mtex) {
+                        if (target is patch_MTexture mtex) {
                             AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_UNLOADINGTEXTURE")} {Path.GetFileName(prev.PathVirtual)}", () => {
                                 mtex.UndoOverride(prev);
                             });
@@ -1013,11 +1013,11 @@ namespace Celeste.Mod {
                 if (asset == null || mapping == null)
                     return;
 
-                if (asset is Atlas atlas) {
+                if (asset is patch_Atlas atlas) {
                     string reloadingText = Dialog.Language == null ? "" : Dialog.Clean(mapping.Children.Count == 0 ? "ASSETRELOADHELPER_RELOADINGTEXTURE" : "ASSETRELOADHELPER_RELOADINGTEXTURES");
                     AssetReloadHelper.Do(load, $"{reloadingText} {Path.GetFileName(mapping.PathVirtual)}", () => {
                         atlas.ResetCaches();
-                        (atlas as patch_Atlas).Ingest(mapping);
+                        atlas.Ingest(mapping);
                     });
 
                     // if the atlas is (or contains) an emoji, register it.
@@ -1153,7 +1153,7 @@ namespace Celeste.Mod {
                     }
                     /**/
 
-                } else if (asset is Atlas atlas) {
+                } else if (asset is patch_Atlas atlas) {
 
                     /*
                     for (int i = 0; i < atlas.Sources.Count; i++) {
@@ -1171,7 +1171,7 @@ namespace Celeste.Mod {
                     }
                     */
 
-                    Dictionary<string, MTexture> textures = atlas.GetTextures();
+                    Dictionary<string, MTexture> textures = atlas.Textures;
                     foreach (KeyValuePair<string, MTexture> kvp in textures) {
                         string name = kvp.Key;
                         MTexture source = kvp.Value;

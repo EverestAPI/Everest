@@ -193,7 +193,7 @@ namespace Celeste {
             Audio.SetAmbience(null);
             // TODO: Determine if the area should keep the overworld snow.
             if ((Area.ID == 0 || Area.ID == 9) && checkpoint == null && Area.Mode == AreaMode.Normal) {
-                Overworld.RendererList.UpdateLists();
+                ((patch_RendererList) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

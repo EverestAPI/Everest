@@ -29,15 +29,16 @@ namespace Monocle {
         [MonoModIgnore]
         [PatchEntityListUpdate]
         internal extern void Update();
+
+        [MonoModRemove]
+        public static implicit operator patch_EntityList(EntityList list) => (patch_EntityList) list;
     }
     public static class EntityListExt {
-
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
 
         /// <summary>
         /// Get the list of entities which are about to get added.
         /// </summary>
+        [Obsolete("Use EntityList.ToAdd instead.")]
         public static List<Entity> GetToAdd(this EntityList self)
             => ((patch_EntityList) (object) self).ToAdd;
 

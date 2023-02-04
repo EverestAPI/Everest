@@ -95,7 +95,7 @@ namespace Celeste {
 
             if (!EnteringPico8) {
                 Remove(Snow);
-                RendererList.UpdateLists();
+                ((patch_RendererList) RendererList).UpdateLists();
                 Snow = null;
             }
         }
