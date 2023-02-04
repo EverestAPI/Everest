@@ -1,4 +1,5 @@
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
 using System.Linq;
@@ -33,6 +34,32 @@ namespace NETCoreifier {
             }
 
             return base.Relinker(mtp, context);
+        }
+
+        public override void PatchRefsInMethod(MethodDefinition method) {
+            base.PatchRefsInMethod(method);
+
+            // Resolve uninstantiated generic typeref/def tokens inside of member methods by replacing them with generic type instances
+            // CoreCLR seems to be more strict on this, because the faulty IL worked fine on .NET Framwork / Mono
+            if (method.DeclaringType.HasGenericParameters && method.Body != null) {
+                for (int i = 0; i < method.Body.Instructions.Count; i++) {
+                    Instruction instr = method.Body.Instructions[i];
+
+                    if (instr.OpCode == OpCodes.Ldtoken)
+                        //ldtoken doesn't have the strict metadata checking
+                        continue;
+
+                    if (instr.Operand is TypeReference typeRef && typeRef.SafeResolve() == method.DeclaringType && !typeRef.IsGenericInstance) {
+                        GenericInstanceType typeInst = new GenericInstanceType(typeRef);
+                        typeInst.GenericArguments.AddRange(method.DeclaringType.GenericParameters);
+                        instr.Operand = typeInst;
+                    } else if (instr.Operand is MemberReference memberRef && instr.Operand is not TypeReference && memberRef.DeclaringType.SafeResolve() == method.DeclaringType && !memberRef.DeclaringType.IsGenericInstance) {
+                        GenericInstanceType typeInst = new GenericInstanceType(memberRef.DeclaringType);
+                        typeInst.GenericArguments.AddRange(method.DeclaringType.GenericParameters);
+                        memberRef.DeclaringType = typeInst;
+                    }
+                }
+            }
         }
 
     }

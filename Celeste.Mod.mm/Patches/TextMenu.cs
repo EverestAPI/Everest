@@ -552,6 +552,11 @@ namespace MonoMod {
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
             FieldReference f_UnselectedColor = context.Method.DeclaringType.FindField("UnselectedColor");
 
+            //Explicitly instantiate the generic Option<T> type
+            GenericInstanceType genericInst = new GenericInstanceType(f_UnselectedColor.DeclaringType);
+            genericInst.GenericArguments.AddRange(f_UnselectedColor.DeclaringType.GenericParameters);
+            f_UnselectedColor.DeclaringType = genericInst;
+
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
             cursor.Emit(OpCodes.Ldarg_0);
