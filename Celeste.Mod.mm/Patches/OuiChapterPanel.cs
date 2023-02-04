@@ -2,17 +2,17 @@
 
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -193,7 +193,7 @@ namespace Celeste {
             Audio.SetAmbience(null);
             // TODO: Determine if the area should keep the overworld snow.
             if ((Area.ID == 0 || Area.ID == 9) && checkpoint == null && Area.Mode == AreaMode.Normal) {
-                ((patch_RendererList) Overworld.RendererList).UpdateLists();
+                ((patch_RendererList) (object) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

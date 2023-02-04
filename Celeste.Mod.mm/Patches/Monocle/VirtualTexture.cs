@@ -880,11 +880,6 @@ namespace Monocle {
                 ((data >> 24) & 0xFF);
         }
 
-        [MonoModRemove]
-        public static implicit operator patch_VirtualTexture(VirtualTexture tex) => (patch_VirtualTexture) tex;
-        [MonoModRemove]
-        public static implicit operator VirtualTexture(patch_VirtualTexture tex) => (VirtualTexture) tex;
-
     }
     public static class VirtualTextureExt {
 

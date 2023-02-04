@@ -6,12 +6,10 @@ namespace Monocle {
 
         // We're effectively in RendererList, but still need to "expose" private fields to our mod.
 
+        [MonoModIgnore]
         [MonoModPublic]
         [MonoModLinkFrom("System.Void Monocle.RendererList::_UpdateLists()")]
         public extern void UpdateLists();
-
-        [MonoModRemove]
-        public static implicit operator patch_RendererList(RendererList list) => (patch_RendererList) list;
 
     }
     public static class RendererListExt {

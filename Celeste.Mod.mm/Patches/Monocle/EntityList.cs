@@ -1,13 +1,13 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
-using System;
-using System.Collections.Generic;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using System;
+using System.Collections.Generic;
 
 namespace Monocle {
     // No public constructors.
@@ -30,8 +30,6 @@ namespace Monocle {
         [PatchEntityListUpdate]
         internal extern void Update();
 
-        [MonoModRemove]
-        public static implicit operator patch_EntityList(EntityList list) => (patch_EntityList) list;
     }
     public static class EntityListExt {
 

@@ -52,10 +52,12 @@ namespace Monocle {
             return virtualTexture;
         }
 
+        [MonoModIgnore]
         [MonoModPublic]
         [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Reload()")]
         public static extern void Reload();
 
+        [MonoModIgnore]
         [MonoModPublic]
         [MonoModLinkFrom("System.Void Monocle.VirtualContent::_Unload()")]
         public static extern void Unload();

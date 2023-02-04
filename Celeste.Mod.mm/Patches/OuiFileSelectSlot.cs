@@ -7,17 +7,17 @@ using Celeste.Mod.Core;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
 
 namespace Celeste {
     public class patch_OuiFileSelectSlot : OuiFileSelectSlot {
@@ -253,7 +253,7 @@ namespace Celeste {
             yield return 0.4f;
 
             area.Wipe(overworld, false, null);
-            ((patch_RendererList) overworld.RendererList).UpdateLists();
+            ((patch_RendererList) (object) overworld.RendererList).UpdateLists();
             overworld.RendererList.MoveToFront(overworld.Snow);
 
             yield return 0.5f;

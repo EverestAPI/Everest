@@ -4,23 +4,23 @@
 using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Celeste.Mod.UI;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using Celeste.Mod.Helpers;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -129,7 +129,7 @@ namespace Celeste {
         public new void Pause(int startIndex = 0, bool minimal = false, bool quickReset = false) {
             orig_Pause(startIndex, minimal, quickReset);
 
-            if (((patch_EntityList) Entities).ToAdd.FirstOrDefault(e => e is TextMenu) is patch_TextMenu menu) {
+            if (((patch_EntityList) (object) Entities).ToAdd.FirstOrDefault(e => e is TextMenu) is patch_TextMenu menu) {
                 void Unpause() {
                     Everest.Events.Level.Unpause(this);
                 }

@@ -602,7 +602,7 @@ namespace Celeste.Mod.UI {
             Audio.SetMusic(null, true, true);
             Audio.SetAmbience(null, true);
             if ((area.ID == 0 || area.ID == 9) && checkpoint == null && mode == AreaMode.Normal) {
-                ((patch_RendererList) Overworld.RendererList).UpdateLists();
+                ((patch_RendererList) (object) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;

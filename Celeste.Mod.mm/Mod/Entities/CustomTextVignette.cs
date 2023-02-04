@@ -47,7 +47,7 @@ namespace Celeste.Mod.Entities {
             snow.Direction = meta.SnowDirection;
             Add(renderer = new HudRenderer());
             Add(this.snow = snow);
-            ((patch_RendererList) RendererList).UpdateLists();
+            ((patch_RendererList) (object) RendererList).UpdateLists();
 
             initialDelay = meta.InitialDelay;
             finalDelay = meta.FinalDelay;
@@ -164,7 +164,7 @@ namespace Celeste.Mod.Entities {
                 }
             }).OnUpdate = (f) => textAlpha = Math.Min(textAlpha, 1f - f);
 
-            ((patch_RendererList) RendererList).UpdateLists();
+            ((patch_RendererList) (object) RendererList).UpdateLists();
             RendererList.MoveToFront(snow);
         }
 

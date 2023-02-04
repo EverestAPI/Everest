@@ -215,7 +215,7 @@ namespace Celeste.Mod.Core {
                         level.Pause(returnIndex, minimal, false);
 
                         // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
-                        patch_TextMenu textMenu = ((patch_EntityList) level.Entities).ToAdd.FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
+                        patch_TextMenu textMenu = ((patch_EntityList) (object) level.Entities).ToAdd.FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
                         TextMenu.Button modOptionsButton = textMenu?.Items.OfType<TextMenu.Button>()
                             .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
                         if (modOptionsButton != null) {

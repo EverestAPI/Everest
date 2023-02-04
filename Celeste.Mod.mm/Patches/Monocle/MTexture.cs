@@ -14,7 +14,7 @@ namespace Monocle {
         public patch_MTexture Parent;
 
         [MonoModIgnore]
-        public new patch_VirtualTexture Texture { get; set; }
+        public new VirtualTexture Texture { get; set; }
         [MonoModIgnore]
         public new Vector2 DrawOffset { get; set; }
         [MonoModIgnore]
@@ -44,10 +44,12 @@ namespace Monocle {
 
         private List<ModAsset> _ModAssets;
 
+        [MonoModIgnore]
         public patch_MTexture(VirtualTexture vtex)
             : base(vtex) { }
 
-        public patch_MTexture(VirtualTexture vtex, Vector2 offset, short width, short height)
+        [MonoModIgnore]
+        public patch_MTexture(VirtualTexture vtex, Vector2 offset, int width, int height)
             : base(vtex, offset, width, height) { }
 
         // Patching constructors is ugly.
@@ -98,7 +100,7 @@ namespace Monocle {
         /// Override the given MTexture with the given mod asset.
         /// </summary>
         public void SetOverride(ModAsset asset) {
-            if (!_HasOrig && Texture.Metadata == asset) {
+            if (!_HasOrig && ((patch_VirtualTexture) (object) Texture).Metadata == asset) {
                 Metadata = asset;
                 asset.Targets.Add(this);
                 return;
