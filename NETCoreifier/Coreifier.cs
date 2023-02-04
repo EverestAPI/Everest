@@ -21,6 +21,9 @@ namespace NETCoreifier {
             } catch (SymbolsNotFoundException) {
                 readerParams.ReadSymbols = false;
                 module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+            } catch (SymbolsNotMatchingException) {
+                readerParams.ReadSymbols = false;
+                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
             }
 
             // Convert the module

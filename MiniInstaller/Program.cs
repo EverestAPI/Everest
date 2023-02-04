@@ -101,7 +101,10 @@ namespace MiniInstaller {
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
                     MoveExecutable(PathEverestExe, PathEverestDLL);
-                    CreateRuntimeConfigFiles(PathEverestDLL);
+                    CreateRuntimeConfigFiles(PathEverestDLL, new string[] {
+                        Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll"),
+                        Path.Combine(Path.GetDirectoryName(PathCelesteExe), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"))
+                    });
                     SetupAppHosts(PathEverestExe, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
@@ -181,15 +184,17 @@ namespace MiniInstaller {
             PathGame = Directory.GetCurrentDirectory();
             Console.WriteLine(PathGame);
 
-            if (Path.GetFileName(PathGame) == "everest-update" &&
-                File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
+            if (Path.GetFileName(PathGame) == "everest-update" && (
+                    File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe")) ||
+                    File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.dll"))
+                )) {
                 // We're updating Everest via the in-game installler.
                 PathUpdate = PathGame;
                 PathGame = Path.GetDirectoryName(PathUpdate);
             }
 
             PathCelesteExe = Path.Combine(PathGame, "Celeste.exe");
-            if (!File.Exists(PathCelesteExe)) {
+            if (!File.Exists(PathCelesteExe) && !File.Exists(Path.ChangeExtension(PathCelesteExe, ".dll"))) {
                 LogErr("Celeste.exe not found!");
                 LogErr("Did you extract the .zip into the same place as Celeste?");
                 return false;
@@ -219,7 +224,7 @@ namespace MiniInstaller {
         }
 
         public static void WaitForGameExit() {
-            if (!CanReadWrite(PathEverestExe)) {
+            if (!CanReadWrite(PathEverestExe) && !CanReadWrite(PathEverestDLL)) {
                 LogErr("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(5000);
@@ -511,7 +516,9 @@ namespace MiniInstaller {
             }
         }
 
-        public static void CreateRuntimeConfigFiles(string execAsm) {
+        public static void CreateRuntimeConfigFiles(string execAsm, string[] manualDeps = null) {
+            manualDeps ??= Array.Empty<string>();
+
             LogLine($"Creating .NET runtime configuration files for {execAsm}");
 
             //Determine current .NET version
@@ -554,6 +561,8 @@ namespace MiniInstaller {
                 }
             }
             DiscoverAssemblies(execAsm);
+            foreach (string dep in manualDeps)
+                DiscoverAssemblies(dep);
 
             using (FileStream fs = File.OpenWrite(Path.ChangeExtension(execAsm, ".deps.json")))
             using (Utf8JsonWriter writer = new Utf8JsonWriter(fs, new JsonWriterOptions() { Indented = true })) {
