@@ -1008,7 +1008,7 @@ namespace Celeste.Mod {
                 CoreModule.Instance.SaveSettings();
             }
 
-            Events.Celeste.OnShutdown += BOOT.StartCelesteProcess;
+            Events.Celeste.OnShutdown += static () => BOOT.StartCelesteProcess();
             scene.RunAfterRender = () => Engine.Instance.Exit();
             yield break;
         }

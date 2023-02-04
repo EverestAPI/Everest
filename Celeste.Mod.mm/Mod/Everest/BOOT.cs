@@ -50,8 +50,10 @@ namespace Celeste.Mod {
                     if (!ldPath.Any(path => Path.GetFullPath(path) == execLdPath)) {
                         Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{execLdPath}:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
                         Console.WriteLine($"Restarting with LD_LIBRARY_PATH=\"{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}\"...");
-                        StartCelesteProcess();
-                        goto Exit;
+
+                        Process proc = StartCelesteProcess();
+                        proc.WaitForExit();
+                        Environment.Exit(proc.ExitCode);
                     }
                 }
 
@@ -105,7 +107,7 @@ namespace Celeste.Mod {
 
         // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
         // This is also used by Everest.SlowFullRestart
-        public static void StartCelesteProcess() {
+        public static Process StartCelesteProcess() {
             string path = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
 
             Process game = new Process();
@@ -127,6 +129,7 @@ namespace Celeste.Mod {
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
 
             game.Start();
+            return game;
         }
 
     }
