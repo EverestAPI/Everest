@@ -1,4 +1,5 @@
 ﻿using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
 using System.Linq;
 using System.Reflection;
@@ -12,16 +13,28 @@ namespace NETCoreifier {
             => ConvertToNetCore(modder.Module, modder.AssemblyResolver);
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
-            ModuleDefinition module = ModuleDefinition.ReadModule(inputAsm);
+            // Read the module
+            ReaderParameters readerParams = new ReaderParameters()  { ReadSymbols = true };
+            ModuleDefinition module;
+            try {
+                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+            } catch (SymbolsNotFoundException) {
+                readerParams.ReadSymbols = false;
+                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+            }
+
+            // Convert the module
             ConvertToNetCore(module);
-            module.Write(outputAsm ?? inputAsm);
+
+            // Write the converted module
+            module.Write(outputAsm ?? inputAsm, new WriterParameters() { WriteSymbols = readerParams.ReadSymbols });
         }
 
         public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null) {
             module.RuntimeVersion = System.Reflection.Assembly.GetExecutingAssembly().ImageRuntimeVersion;
 
-            // Clear 32 bit flag
-            module.Attributes &= ~ModuleAttributes.Required32Bit;
+            // Clear 32 bit flags
+            module.Attributes &= ~(ModuleAttributes.Required32Bit | ModuleAttributes.Preferred32Bit);
 
             // Patch target framework attribute
             bool isFrameworkModule = false;
