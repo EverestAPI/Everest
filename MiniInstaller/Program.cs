@@ -7,9 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -95,17 +93,16 @@ namespace MiniInstaller {
                     DeleteSystemLibs();
                     SetupNativeLibs();
 
-                    if (AsmMonoMod == null) {
-                        LoadMonoMod();
+                    if (AsmMonoMod == null || AsmNETCoreifier == null) {
+                        LoadModders();
                     }
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
                     ConvertToNETCore(PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
-                    File.Delete(PathEverestDLL);
-                    File.Move(PathEverestExe, PathEverestDLL);
+                    MoveExecutable(PathEverestExe, PathEverestDLL);
                     CreateRuntimeConfigFiles(PathEverestDLL);
-                    SetupAppHosts(PathEverestExe, Path.GetRelativePath(Path.GetDirectoryName(PathEverestExe), PathEverestDLL));
+                    SetupAppHosts(PathEverestExe, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
 
@@ -243,7 +240,7 @@ namespace MiniInstaller {
             Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
 
             //Backup game dependencies
-            BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)));
+            BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)), PathGame);
 
             //Backup all system libraries explicitly, as we'll delete those
             foreach (string file in Directory.GetFiles(PathGame)) {
@@ -270,8 +267,7 @@ namespace MiniInstaller {
 
             //Backup misc files
             Backup(PathCelesteExe + ".config");
-            Backup("gamecontrollerdb.txt");
-            Backup("gamecontrollerdb.txt");
+            Backup(Path.Combine(PathGame, "gamecontrollerdb.txt"));
 
             //Create a symlink for the contents folder
             if (!Directory.Exists(Path.Combine(PathOrig, "Content"))) {
@@ -290,17 +286,17 @@ namespace MiniInstaller {
             }
         }
 
-        public static void BackupPEDeps(string path, HashSet<string> backedUpDeps = null) {
+        public static void BackupPEDeps(string path, string depFolder, HashSet<string> backedUpDeps = null) {
             backedUpDeps ??= new HashSet<string>() { path };
 
             foreach (string dep in GetPEAssemblyReferences(path).Keys) {
-                string asmRefPath = Path.Combine(Path.GetDirectoryName(path), $"{dep}.dll");
+                string asmRefPath = Path.Combine(depFolder, $"{dep}.dll");
                 if (!File.Exists(asmRefPath) || backedUpDeps.Contains(asmRefPath))
                     continue;
 
                 backedUpDeps.Add(asmRefPath);
                 Backup(asmRefPath);
-                BackupPEDeps(asmRefPath, backedUpDeps);
+                BackupPEDeps(asmRefPath, depFolder, backedUpDeps);
             }
         }
 
@@ -426,7 +422,7 @@ namespace MiniInstaller {
                 Directory.Delete(Path.Combine(PathGame, "runtimes"), true);
         }
 
-        public static void LoadMonoMod() {
+        public static void LoadModders() {
             // We can't add MonoMod as a reference to MiniInstaller, as we don't want to accidentally lock the file.
             // Instead, load it dynamically and invoke the entry point.
             // We also need to lazily load any dependencies.
@@ -455,9 +451,8 @@ namespace MiniInstaller {
             LogLine($"Running MonoMod for {asmFrom}");
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
-            Environment.SetEnvironmentVariable("MONOMOD_MODS", string.Join(Path.PathSeparator.ToString(), dllPaths));
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { new string[] { asmFrom, asmTo + ".tmp" } });
+            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(asmTo + ".tmp").ToArray() });
 
             if (returnCode != 0 && File.Exists(asmTo + ".tmp"))
                 File.Delete(asmTo + ".tmp");
@@ -465,9 +460,7 @@ namespace MiniInstaller {
             if (!File.Exists(asmTo + ".tmp"))
                 throw new Exception("MonoMod failed creating a patched assembly!");
 
-            if (File.Exists(asmTo))
-                File.Delete(asmTo);
-            File.Move(asmTo + ".tmp", asmTo);
+            MoveExecutable(asmTo + ".tmp", asmTo);
         }
 
         public static void RunHookGen(string asm, string target) {
@@ -487,7 +480,7 @@ namespace MiniInstaller {
             // Convert dependencies first
             foreach (string dep in GetPEAssemblyReferences(asm).Keys) {
                 string depPath = Path.Combine(Path.GetDirectoryName(asm), $"{dep}.dll");
-                if (File.Exists(depPath))
+                if (File.Exists(depPath) && !IsSystemLibrary(depPath))
                     ConvertToNETCore(depPath, convertedAsms);
             }
 
@@ -499,6 +492,23 @@ namespace MiniInstaller {
 
             File.Delete(asm);
             File.Move(asm + ".tmp", asm);
+        }
+
+        public static void MoveExecutable(string srcPath, string dstPath) {
+            File.Delete(dstPath);
+            File.Move(srcPath, dstPath);
+
+            if (Path.GetFullPath(Path.ChangeExtension(srcPath, null)) != Path.GetFullPath(Path.ChangeExtension(dstPath, null))) {
+                if (File.Exists(Path.ChangeExtension(srcPath, ".pdb"))) {
+                    File.Delete(Path.ChangeExtension(dstPath, ".pdb"));
+                    File.Move(Path.ChangeExtension(srcPath, ".pdb"), Path.ChangeExtension(dstPath, ".pdb"));
+                }
+
+                if (File.Exists(Path.ChangeExtension(srcPath, ".mdb"))) {
+                    File.Delete(Path.ChangeExtension(dstPath, ".mdb"));
+                    File.Move(Path.ChangeExtension(srcPath, ".mdb"), Path.ChangeExtension(dstPath, ".mdb"));
+                }
+            }
         }
 
         public static void CreateRuntimeConfigFiles(string execAsm) {
@@ -593,28 +603,29 @@ namespace MiniInstaller {
             }
         }
 
-        public static void SetupAppHosts(string appExe, string relAppDll) {
+        public static void SetupAppHosts(string appExe, string appDll) {
             // Delete MonoKickstart files
             File.Delete(Path.ChangeExtension(appExe, ".bin.x86"));
             File.Delete(Path.ChangeExtension(appExe, ".bin.x86_64"));
+            File.Delete($"{appExe}.config");
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monoconfig"));
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monomachineconfig"));
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "FNA.dll.config"));
 
             // Bind Windows apphost
             LogLine($"Binding Windows apphost {appExe}");
-            BindAppHost("win.exe", appExe, relAppDll);
+            BindAppHost("win.exe", appExe, appDll);
 
             // Bind Linux apphost (if it exists)
             if (File.Exists(Path.ChangeExtension(appExe, null))) {
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
-                BindAppHost("linux", Path.ChangeExtension(appExe, null), relAppDll);
+                BindAppHost("linux", Path.ChangeExtension(appExe, null), appDll);
             }
 
             // Bind OS X apphost (if it exists)
             if (PathDylibs != null) {
                 LogLine($"Binding OS X apphost {Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe))}");
-                BindAppHost("osx", Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), relAppDll);
+                BindAppHost("osx", Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), appDll);
             }
         }
 
@@ -709,6 +720,8 @@ namespace MiniInstaller {
         }
 
         static void BindAppHost(string hostName, string outPath, string appPath) {
+            appPath = Path.GetRelativePath(Path.GetDirectoryName(outPath), appPath);
+
             byte[] appHost = File.ReadAllBytes(Path.Combine(PathGame, "apphosts", hostName));
 
             byte[] placeholder = Encoding.UTF8.GetBytes("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"); //SHA256 of "foobar"
