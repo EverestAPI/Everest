@@ -1,0 +1,3 @@
+[submodule "MonoMod"]
+	path = MonoMod
+	url = https://github.com/MonoMod/MonoMod

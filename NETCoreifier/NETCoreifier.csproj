@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>NETCoreifier</AssemblyName>
     <RootNamespace>NETCoreifier</RootNamespace>
     <LangVersion>9</LangVersion>
@@ -9,10 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-    <PackageReference Include="MonoMod" Version="22.7.31.1" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="22.7.31.1" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.7.31.1" />
-    <PackageReference Include="MonoMod.Utils" Version="22.7.31.1" />
+    <ProjectReference Include="..\MonoMod\MonoMod\MonoMod.csproj" />
+    <ProjectReference Include="..\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
   </ItemGroup>
 
 </Project>
