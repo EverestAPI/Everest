@@ -25,8 +25,6 @@ using System.Linq;
 namespace Celeste {
     class patch_Level : Level {
 
-        public new patch_Session Session;
-
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
@@ -240,7 +238,7 @@ namespace Celeste {
                 return levelMode;
             }
 
-            MapMetaModeProperties properties = Session.MapData.Meta;
+            MapMetaModeProperties properties = ((patch_MapData) Session.MapData).Meta;
             if (properties != null && (properties.HeartIsEnd ?? false)) {
                 // heart ends the level: this is like B-Sides.
                 // the heart will appear even if it was collected, to avoid a softlock if we save & quit after collecting it.
