@@ -5,9 +5,11 @@ using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Versioning;
+using System.Reflection;
+using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
 
 namespace MonoMod {
     /// <summary>
@@ -87,6 +89,10 @@ namespace MonoMod {
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
 
         static MonoModRules() {
+            // Always write portable PDBs
+            if (MonoModRule.Modder.WriterParameters.WriteSymbols)
+                MonoModRule.Modder.WriterParameters.SymbolWriterProvider = new PortablePdbWriterProvider();
+
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
             MonoModRule.Modder.PostProcessors += ForceFNAPostProcessor;
@@ -409,12 +415,20 @@ namespace MonoMod {
             }
 
             if (!isFna) {
-                var fnaName = System.Reflection.Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals("FNA"));
+                var fnaName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals("FNA"));
                 modder.Module.AssemblyReferences.Add(new AssemblyNameReference(fnaName.Name, fnaName.Version));
             }
         }
 
         public static void PostProcessor(MonoModder modder) {
+            // Patch debuggable attribute
+            // We can't get the attribute from our own assembly (because it's a temporary MonoMod one), so get it from the entry assembly (which is MiniInstaller)
+            DebuggableAttribute everestAttr = Assembly.GetEntryAssembly().GetCustomAttribute<DebuggableAttribute>();
+            CustomAttribute celesteAttr = modder.Module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == typeof(DebuggableAttribute).FullName);
+            if (celesteAttr != null && everestAttr != null) {
+                celesteAttr.ConstructorArguments[0] = new CustomAttributeArgument(modder.Module.ImportReference(typeof(DebuggableAttribute.DebuggingModes)), everestAttr.DebuggingFlags);
+            }
+
             // Replace assembly name versions (fixes stubbed steam DLLs under Linux)
             foreach (AssemblyNameReference asmRef in modder.Module.AssemblyReferences) {
                 ModuleDefinition dep = modder.DependencyMap[modder.Module].FirstOrDefault(mod => mod.Assembly.Name.Name == asmRef.Name);
