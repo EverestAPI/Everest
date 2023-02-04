@@ -470,13 +470,21 @@ namespace Celeste.Mod.UI {
                     string modName = metadata.Name;
 
                     // we want to check if a non-blacklisted mod has this mod as a dependency (by name).
-                    return modYamls.Any(mod => 
-                            (onlyPreviouslyEnabledMods ? !blacklistedModsOriginal.Contains(mod.Key)
-                                                      : !blacklistedMods.Contains(mod.Key))
-                        && modFilename != mod.Key
-                        && mod.Value.Any(yaml => 
-                            optional ? yaml.OptionalDependencies.Any(dependency => dependency.Name == modName)
-                                     : yaml.Dependencies.Any(dependency => dependency.Name == modName)));
+                    return modYamls.Any(mod => {
+                        if (modFilename == mod.Key)
+                            return false;
+                        
+                        bool nonBlacklisted = onlyPreviouslyEnabledMods
+                            ? !blacklistedModsOriginal.Contains(mod.Key)
+                            : !blacklistedMods.Contains(mod.Key);
+
+                        bool hasDependency = mod.Value.Any(yaml =>
+                            optional
+                                ? yaml.OptionalDependencies.Any(dependency => dependency.Name == modName)
+                                : yaml.Dependencies.Any(dependency => dependency.Name == modName));
+
+                        return nonBlacklisted && hasDependency;
+                    });
                 });
 
             }
