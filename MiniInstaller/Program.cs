@@ -190,7 +190,10 @@ namespace MiniInstaller {
         }
 
         public static void WaitForGameExit() {
-            if (!CanReadWrite(PathEverestExe) && !CanReadWrite(PathEverestDLL)) {
+            if (
+                (File.Exists(PathEverestExe) && !CanReadWrite(PathEverestExe)) ||
+                (File.Exists(PathEverestDLL) && !CanReadWrite(PathEverestDLL))
+             ) {
                 LogErr("Celeste not read-writeable - waiting");
                 while (!CanReadWrite(PathCelesteExe))
                     Thread.Sleep(5000);
@@ -356,7 +359,7 @@ namespace MiniInstaller {
                     string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
 
                     if (strip64NameSuffix && Path.GetFileNameWithoutExtension(fileDst).EndsWith("64")) {
-                        // Remove XYZ64.dll suffix to make the target name XYZ.dll 
+                        // Remove XYZ64.dll suffix to make the target name XYZ.dll
                         string fname = Path.GetFileNameWithoutExtension(fileDst);
                         fname = fname.Substring(0, fname.Length - 2);
                         if (Path.HasExtension(fileDst))
@@ -612,7 +615,7 @@ namespace MiniInstaller {
                 // Additionaly, the macOS apphost is outside the game files folder
                 if (PathDylibs != null)
                     game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe));
-                else 
+                else
                     game.StartInfo.FileName = Path.ChangeExtension(PathEverestExe, null);
             } else {
                 game.StartInfo.FileName = PathEverestExe;
