@@ -21,7 +21,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
-using YYProject.XXHash;
 
 namespace Celeste.Mod {
     public static partial class Everest {
