@@ -87,7 +87,6 @@ namespace MiniInstaller {
 
                     MoveFilesFromUpdate();
 
-                    MoveDylibs();
                     DeleteSystemLibs();
                     SetupNativeLibs();
 
@@ -222,6 +221,8 @@ namespace MiniInstaller {
 
             //Backup MonoKickstart executable / config (for Linux + MacOS)
             Backup(Path.Combine(PathGame, "Celeste"));
+            if (PathDylibs != null)
+                Backup(Path.Combine(Path.GetDirectoryName(PathDylibs), "Celeste"));
             Backup(Path.Combine(PathGame, "Celeste.bin.x86"));
             Backup(Path.Combine(PathGame, "Celeste.bin.x86_64"));
             Backup(Path.Combine(PathGame, "monoconfig"));
@@ -312,25 +313,6 @@ namespace MiniInstaller {
             }
         }
 
-        public static void MoveDylibs() {
-            if (PathDylibs != null) {
-                LogLine("Moving native libraries");
-                foreach (string fileGame in Directory.GetFiles(PathGame)) {
-                    if (!fileGame.EndsWith(".dylib"))
-                        continue;
-                    string fileDylibs = Path.Combine(PathDylibs, Path.GetRelativePath(PathGame, fileGame));
-                    LogLine($"Copying {fileGame} +> {fileDylibs}");
-                    File.Copy(fileGame, fileDylibs, true);
-                }
-            }
-
-            foreach (string fileGame in Directory.GetFiles(PathGame)) {
-                if (!fileGame.EndsWith(".dylib"))
-                    continue;
-                File.Delete(fileGame);
-            }
-        }
-
         public static void DeleteSystemLibs() {
             LogLine("Deleting system libraries");
 
@@ -343,55 +325,64 @@ namespace MiniInstaller {
         }
 
         public static void SetupNativeLibs() {
-            string osRuntimeName;
-            if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
+            string[] libSrcDirs;
+            string libDstDir;
+            bool strip64NameSuffix = false, stripSoVersionSuffix = false;
+
+            if (PathDylibs != null) {
+                // Setup MacOS native libs
+                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                libDstDir = PathDylibs;
+            } if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
                 // Setup Linux native libs
-                osRuntimeName = "linux-x64";
-
-                if (Directory.Exists(Path.Combine(PathGame, "lib64"))) {
-                    foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64"))) {
-                        string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64"), fileLibs));
-                        File.Copy(fileLibs, fileGame, true);
-
-                        int soIdx = fileGame.LastIndexOf(".so");
-                        if (soIdx < fileGame.Length - 3) {
-                            File.Delete(fileGame.Substring(0, soIdx + 3));
-                            File.CreateSymbolicLink(fileGame.Substring(0, soIdx + 3), fileGame);
-                        }
-                    }
-                }
+                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
+                libDstDir = PathGame;
+                stripSoVersionSuffix = true;
             } else {
                 // Setup Windows native libs
-                osRuntimeName = "win-x64";
-
-                if (Directory.Exists(Path.Combine(PathGame, "lib64-win"))) {
-                    foreach (string fileLibs in Directory.GetFiles(Path.Combine(PathGame, "lib64-win"))) {
-                        string fileGame = Path.Combine(PathGame, Path.GetRelativePath(Path.Combine(PathGame, "lib64-win"), fileLibs));
-                        if (fileGame.EndsWith("64.dll"))
-                            fileGame = fileGame.Substring(fileGame.Length - 6) + ".dll";
-                        File.Copy(fileLibs, fileGame, true);
-                    }
-                }
+                libSrcDirs = new string[] { Path.Combine("lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
+                libDstDir = PathGame;
+                strip64NameSuffix = true;
             }
 
             // Copy native libraries for the OS
-            string osRuntimeLibs = Path.Combine(PathGame, "runtimes", osRuntimeName, "native");
-            if (Directory.Exists(osRuntimeLibs)) {
-                foreach (string fileLibs in Directory.GetFiles(osRuntimeLibs)) {
-                    string fileGame = Path.Combine(PathGame, Path.GetRelativePath(osRuntimeLibs, fileLibs));
-                    File.Copy(fileLibs, fileGame, true);
+            foreach (string libSrcDir in libSrcDirs) {
+                if (!Directory.Exists(libSrcDir))
+                    continue;
+
+                LogLine($"Copying native libraries from {libSrcDir} -> {libDstDir}");
+
+                foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
+                    string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
+
+                    if (strip64NameSuffix && Path.GetFileNameWithoutExtension(fileDst).EndsWith("64")) {
+                        // Remove XYZ64.dll suffix to make the target name XYZ.dll 
+                        string fname = Path.GetFileNameWithoutExtension(fileDst);
+                        fname = fname.Substring(0, fname.Length - 2);
+                        if (Path.HasExtension(fileDst))
+                            fname += "." + Path.GetExtension(fileDst);
+
+                        fileDst = Path.Combine(Path.GetDirectoryName(fileDst), fname);
+                    }
+
+                    File.Copy(fileSrc, fileDst, true);
+
+                    if (stripSoVersionSuffix) {
+                        // Create symlinks for .so files without their suffix
+                        int soIdx = fileDst.LastIndexOf(".so");
+                        if (0 <= soIdx && soIdx < fileDst.Length - 3) {
+                            File.Delete(fileDst.Substring(0, soIdx + 3));
+                            File.CreateSymbolicLink(fileDst.Substring(0, soIdx + 3), fileDst);
+                        }
+                    }
                 }
             }
 
             // Delete library folders
-            if (Directory.Exists(Path.Combine(PathGame, "lib")))
-                Directory.Delete(Path.Combine(PathGame, "lib"), true);
-            if (Directory.Exists(Path.Combine(PathGame, "lib64")))
-                Directory.Delete(Path.Combine(PathGame, "lib64"), true);
-            if (Directory.Exists(Path.Combine(PathGame, "lib64-win")))
-                Directory.Delete(Path.Combine(PathGame, "lib64-win"), true);
-            if (Directory.Exists(Path.Combine(PathGame, "runtimes")))
-                Directory.Delete(Path.Combine(PathGame, "runtimes"), true);
+            foreach (string libDirName in new string[] { "lib", "lib64", "lib64-win", "lib64-linux", "lib64-osx", "runtimes" }) {
+                if (Directory.Exists(Path.Combine(PathGame, libDirName)))
+                    Directory.Delete(Path.Combine(PathGame, libDirName), true);
+            }
         }
 
         public static void LoadModders() {
@@ -617,13 +608,12 @@ namespace MiniInstaller {
             // If the game was installed via Steam, it should restart in a Steam context on its own.
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                // The Linux and macOS versions come with a wrapping bash script.
-                game.StartInfo.FileName = PathEverestExe.Substring(0, PathEverestExe.Length - 4);
-                if (!File.Exists(game.StartInfo.FileName))
-                    game.StartInfo.FileName = PathCelesteExe.Substring(0, PathCelesteExe.Length - 4);
-                // 1.3.3.0 splits Celeste into two, so to speak.
-                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(PathCelesteExe) == "Celeste.exe" && Path.GetFileName(Path.GetDirectoryName(PathCelesteExe)) == "Resources")
-                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(PathCelesteExe)), "MacOS", "Celeste");
+                // The Linux and macOS version apphosts don't end in ".exe"
+                // Additionaly, the macOS apphost is outside the game files folder
+                if (PathDylibs != null)
+                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe));
+                else 
+                    game.StartInfo.FileName = Path.ChangeExtension(PathEverestExe, null);
             } else {
                 game.StartInfo.FileName = PathEverestExe;
             }
