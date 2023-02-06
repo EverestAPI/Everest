@@ -1,7 +1,7 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -341,7 +341,7 @@ header {
                     InfoHTML = "Refocus the game window. Doesn't work on Windows 10.",
                     Handle = c => {
                         if (SDL_RaiseWindow != null)
-                            SDL_RaiseWindow(null, Celeste.Instance.Window.Handle);
+                            SDL_RaiseWindow(Celeste.Instance.Window.Handle);
                         else
                             SetForegroundWindow(Celeste.Instance.Window.Handle);
 
@@ -612,7 +612,7 @@ header {
             private static extern bool SetForegroundWindow(IntPtr hWnd);
 
             private static Type SDL = typeof(Game).Assembly.GetType("SDL2.SDL");
-            private static FastReflectionDelegate SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.GetFastDelegate();
+            private static Action<IntPtr> SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.CreateDelegate<Action<IntPtr>>(null);
 
             private class SessionInfo {
 

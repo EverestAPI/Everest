@@ -1,6 +1,6 @@
 [submodule "MonoMod"]
 	path = external/MonoMod
-	url = https://github.com/MonoMod/MonoMod
+	url = https://github.com/Popax21/MonoMod
 [submodule "external/NLua"]
 	path = external/NLua
 	url = https://github.com/Popax21/NLua

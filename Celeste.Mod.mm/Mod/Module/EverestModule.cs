@@ -797,7 +797,7 @@ namespace Celeste.Mod {
                         headerCreated = true;
                     }
 
-                    creator.GetFastDelegate()(settings, menu, inGame);
+                    creator.CreateDelegate<Action<TextMenu, bool>>(settings)(menu, inGame);
                     continue;
                 }
 
@@ -818,7 +818,7 @@ namespace Celeste.Mod {
                         );
 
                         if (creator != null) {
-                            creator.GetFastDelegate()(propObject, subMenu, inGame);
+                            creator.CreateDelegate<Action<TextMenuExt.SubMenu, bool>>(propObject)(subMenu, inGame);
                             continue;
                         }
 

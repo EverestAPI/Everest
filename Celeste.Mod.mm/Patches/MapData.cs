@@ -11,6 +11,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
+using Celeste.Mod.Helpers;
 
 namespace Celeste {
     class patch_MapData : MapData {

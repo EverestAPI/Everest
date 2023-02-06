@@ -9,7 +9,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
-using System.Diagnostics;
+using Celeste.Mod.Helpers;
 
 namespace Monocle {
     class patch_ErrorLog {

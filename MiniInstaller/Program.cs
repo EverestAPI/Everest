@@ -401,11 +401,11 @@ namespace MiniInstaller {
             LogLine("Loading MonoMod.Utils.dll");
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Utils.dll"));
             LogLine("Loading MonoMod");
-            AsmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.exe"));
+            AsmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Patcher.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.dll");
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.HookGen");
-            AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.exe"));
+            AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.dll"));
             LogLine("Loading NETCoreifier");
             AsmNETCoreifier = LazyLoadAssembly(Path.Combine(PathGame, "NETCoreifier.dll"));
         }

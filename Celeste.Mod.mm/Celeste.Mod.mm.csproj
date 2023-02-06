@@ -52,10 +52,10 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-    <ProjectReference Include="..\external\MonoMod\MonoMod\MonoMod.csproj" />
-    <ProjectReference Include="..\external\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="22.7.31.1" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.7.31.1" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Patcher\MonoMod.Patcher.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour\MonoMod.RuntimeDetour.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour.HookGen\MonoMod.RuntimeDetour.HookGen.csproj" />
     <PackageReference Include="DotNetZip" Version="1.16.0" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />

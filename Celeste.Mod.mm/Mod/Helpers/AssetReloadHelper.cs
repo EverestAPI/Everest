@@ -1,7 +1,7 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Reflection;

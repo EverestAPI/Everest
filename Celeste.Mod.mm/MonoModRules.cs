@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 
@@ -199,7 +200,7 @@ namespace MonoMod {
 
             // Set up flags.
 
-            bool isWindows = PlatformHelper.Is(Platform.Windows);
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             MonoModRule.Flag.Set("OS:Windows", isWindows);
             MonoModRule.Flag.Set("OS:NotWindows", !isWindows);
 

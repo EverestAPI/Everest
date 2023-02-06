@@ -17,6 +17,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using MonoMod.InlineRT;
+using Celeste.Mod.Helpers;
 
 namespace Celeste {
     class patch_Decal : Decal {

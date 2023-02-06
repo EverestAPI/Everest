@@ -2,7 +2,6 @@
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Ionic.Zip;
-using MonoMod.Utils;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;

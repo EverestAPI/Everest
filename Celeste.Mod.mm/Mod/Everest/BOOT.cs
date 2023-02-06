@@ -1,6 +1,6 @@
-﻿using Monocle;
+﻿using Celeste.Mod.Helpers;
+using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using Steamworks;
 using System;
 using System.Diagnostics;

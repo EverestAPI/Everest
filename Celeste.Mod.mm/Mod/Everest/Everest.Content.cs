@@ -4,7 +4,6 @@ using Ionic.Zip;
 using MAB.DotIgnore;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

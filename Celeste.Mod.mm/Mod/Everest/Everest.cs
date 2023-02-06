@@ -204,7 +204,6 @@ namespace Celeste.Mod {
 
         private static bool _SavingSettings;
 
-        private static DetourModManager _DetourModManager;
         private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
         internal static List<string> _DetourLog = new List<string>();
 
@@ -378,39 +377,6 @@ namespace Celeste.Mod {
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
 
-            _DetourModManager = new DetourModManager();
-            _DetourModManager.OnILHook += (owner, from, to) => {
-                _DetourOwners.Add(owner);
-                object target = to.Target;
-                _DetourLog.Add($"new ILHook by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
-            };
-            _DetourModManager.OnHook += (owner, from, to, target) => {
-                _DetourOwners.Add(owner);
-                _DetourLog.Add($"new Hook by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}" + (target == null ? "" : $" (target: {target})"));
-            };
-            _DetourModManager.OnDetour += (owner, from, to) => {
-                _DetourOwners.Add(owner);
-                _DetourLog.Add($"new Detour by {owner.GetName().Name}: {from.GetID()} -> {to.GetID()}");
-            };
-            _DetourModManager.OnNativeDetour += (owner, fromMethod, from, to) => {
-                _DetourOwners.Add(owner);
-                _DetourLog.Add($"new NativeDetour by {owner.GetName().Name}: {fromMethod?.ToString() ?? from.ToString("16X")} -> {to.ToString("16X")}");
-            };
-            HookEndpointManager.OnAdd += (from, to) => {
-                Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
-                _DetourOwners.Add(owner);
-                object target = to.Target;
-                _DetourLog.Add($"new On.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
-                return true;
-            };
-            HookEndpointManager.OnModify += (from, to) => {
-                Assembly owner = HookEndpointManager.GetOwner(to) as Assembly ?? typeof(Everest).Assembly;
-                _DetourOwners.Add(owner);
-                object target = to.Target;
-                _DetourLog.Add($"new IL.+= by {owner.GetName().Name}: {from.GetID()} -> {to.Method?.GetID() ?? "???"}" + (target == null ? "" : $" (target: {target})"));
-                return true;
-            };
-
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
@@ -512,15 +478,6 @@ namespace Celeste.Mod {
 
         internal static void Dispose(object sender, EventArgs args) {
             Audio.Unload(); // This exists but never gets called by the vanilla game.
-
-            if (_DetourModManager != null) {
-                foreach (Assembly asm in _DetourOwners)
-                    _DetourModManager.Unload(asm);
-
-                _DetourModManager.Dispose();
-                _DetourModManager = null;
-                _DetourOwners.Clear();
-            }
         }
 
         /// <summary>
@@ -894,7 +851,6 @@ namespace Celeste.Mod {
             module.Unload();
 
             Assembly asm = module.GetType().Assembly;
-            MainThreadHelper.Do(() => _DetourModManager.Unload(asm));
             _RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader

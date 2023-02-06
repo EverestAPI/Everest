@@ -280,7 +280,7 @@ namespace Celeste.Mod {
                     )) {
                         ILProcessor il = dmd.GetILProcessor();
 
-                        il.EmitReference(to);
+                        il.EmitNewReference(to, out _);
 
                         il.Emit(OpCodes.Ldc_I4, argTypes.Length);
                         il.Emit(OpCodes.Newarr, typeof(object));
