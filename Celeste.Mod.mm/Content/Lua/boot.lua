@@ -79,71 +79,13 @@ local function luaifyName(key)
     return rebuilt
 end
 
-local function _addCachedMember(cache, member)
-    local mname = member.Name
-    local mtype
-
-    local entry = cache[mname]
-    if not entry then
-        if not mtype then
-            mtype = fixnil(member.PropertyType) or fixnil(member.FieldType)
-        end
-        entry = { {}, mtype }
-        cache[mname] = entry
-    end
-    table.insert(entry[1], member)
-
-    mname = luaifyName(mname)
-    entry = cache[mname]
-    if not entry then
-        if not mtype then
-            mtype = fixnil(member.PropertyType) or fixnil(member.FieldType)
-        end
-        entry = { {}, mtype }
-        cache[mname] = entry
-    end
-    table.insert(entry[1], member)
-end
-
 local function getMembers(ctype, key)
     if not key or type(key) ~= "string" then
         return nil, nil
     end
 
     local node = ctype[_node]
-    local type = node.Type
-
-    local all = node.Members
-    local cache = node.Cache
-
-    if not cache then
-        cache = {}
-        node.Cache = cache
-
-        if not all then
-            all = {}
-            node.Members = all
-            local allr = type:GetMembers(bindingFlagsAll)
-            for i = 1, allr.Length do
-                local member = allr:GetValue(i - 1)
-                table.insert(all, member)
-                _addCachedMember(cache, member)
-
-            end
-
-        else
-            for i, member in ipairs(all) do
-                _addCachedMember(cache, member)
-            end
-        end
-    end
-
-    local cached = cache[key]
-    if cached then
-        return table.unpack(cached)
-    end
-
-    return nil, nil
+    return table.unpack(node:GetMembers(key))
 end
 
 local function toLua(value, typeName, members)
@@ -384,7 +326,7 @@ function mtNamespace:__pairs_next(nodes, key)
 
     for i = 1, nodes.Length do
         value = nodes:GetValue(i - 1)
-        
+
         if i == nodes.Length then
             if value.Name == key then
                 return nil, nil
@@ -672,7 +614,7 @@ local function init(_preload, _vfs, _hook)
 
     -- https://github.com/NLua/NLua/issues/328
     dummynil = lualoader.Global.notnil
-    
+
     bindingFlagsAll = luanet.enum(luanet.import_type("System.Reflection.BindingFlags"), "Public,NonPublic,Instance,Static")
 
     local cmod = require("cs.celeste.mod")
