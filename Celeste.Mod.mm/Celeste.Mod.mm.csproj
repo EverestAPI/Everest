@@ -52,8 +52,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-    <ProjectReference Include="..\MonoMod\MonoMod\MonoMod.csproj" />
-    <ProjectReference Include="..\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
+    <ProjectReference Include="..\external\MonoMod\MonoMod\MonoMod.csproj" />
+    <ProjectReference Include="..\external\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
     <PackageReference Include="MonoMod.RuntimeDetour" Version="22.7.31.1" />
     <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.7.31.1" />
     <PackageReference Include="DotNetZip" Version="1.16.0" />
@@ -62,8 +62,7 @@
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-    <PackageReference Include="KeraLua" Version="1.3.3" />
-    <PackageReference Include="NLua" Version="1.6.2" />
+    <ProjectReference Include="..\external\NLua\build\net6.0\NLua.net6.0.csproj" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
   </ItemGroup>
 

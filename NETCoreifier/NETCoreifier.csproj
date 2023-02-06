@@ -9,8 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-    <ProjectReference Include="..\MonoMod\MonoMod\MonoMod.csproj" />
-    <ProjectReference Include="..\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
+    <ProjectReference Include="..\external\MonoMod\MonoMod\MonoMod.csproj" />
+    <ProjectReference Include="..\external\MonoMod\MonoMod.Utils\MonoMod.Utils.csproj" />
   </ItemGroup>
 
 </Project>
