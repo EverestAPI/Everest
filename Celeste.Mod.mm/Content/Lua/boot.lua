@@ -96,18 +96,14 @@ local function toLua(value, typeName, members)
             typeName = "luaNet_function"
 
         elseif mt.__name == "luaNet_class" then
-            if not typeName then
-                typeName = tostring(value)
-                local typeNameStart = typeName:find("(", 1, true) + 1
-                local typeNameEnd = typeName:find(")", typeNameStart + 1, true) - 1
-                typeName = typeName:sub(typeNameStart, typeNameEnd)
-            end
+            typeName = tostring(value)
+            local typeNameStart = typeName:find("(", 1, true) + 1
+            local typeNameEnd = typeName:find(")", typeNameStart + 1, true) - 1
+            typeName = typeName:sub(typeNameStart, typeNameEnd)
 
         elseif mt.__name:find(", PublicKeyToken=", 1, true) then
-            if not typeName then
-                typeName = mt.__name
-                typeName = typeName:sub(1, typeName:find(",", 1, true) - 1)
-            end
+            typeName = mt.__name
+            typeName = typeName:sub(1, typeName:find(",", 1, true) - 1)
 
         else
             mt = nil

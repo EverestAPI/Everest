@@ -87,9 +87,9 @@ namespace Celeste.Mod {
 
                 public LuaTable GetMembers(string key) {
                     if (membersCache == null) {
-                        // Populate cache
+                        // Populate cache with PUBLIC members (the old code used all members but only public ones are actually accesible through NLua)
                         membersCache = new Dictionary<string, LuaTable>();
-                        foreach (MemberInfo info in Type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)) {
+                        foreach (MemberInfo info in Type.GetMembers(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)) {
                             Type mtype = (info as PropertyInfo)?.PropertyType ?? (info as FieldInfo)?.FieldType;
 
                             // Cache regular name
@@ -111,13 +111,15 @@ namespace Celeste.Mod {
                             }
                             luaName += name.Substring(luaName.Length);
 
-                            if (!membersCache.TryGetValue(luaName, out LuaTable luaEntry)) {
-                                luaEntry = NewTable();
-                                luaEntry[1] = NewTable();
-                                luaEntry[2] = mtype;
-                                membersCache.Add(luaName, luaEntry);
+                            if (name != luaName) {
+                                if (!membersCache.TryGetValue(luaName, out LuaTable luaEntry)) {
+                                    luaEntry = NewTable();
+                                    luaEntry[1] = NewTable();
+                                    luaEntry[2] = mtype;
+                                    membersCache.Add(luaName, luaEntry);
+                                }
+                                InsertIntoTable((LuaTable) luaEntry[1], info);
                             }
-                            InsertIntoTable((LuaTable) luaEntry[1], info);
                         }
                     }
 
@@ -138,15 +140,8 @@ namespace Celeste.Mod {
                     return new LuaTable(Context.State.Ref(LuaRegistry.Index), Context);
                 }
 
-                private static FieldInfo LuaBase_Reference = typeof(LuaBase).GetField("_Reference", BindingFlags.NonPublic | BindingFlags.Instance);
-                private static void InsertIntoTable(LuaTable table, object val) {
-                    Context.State.RawGetInteger(LuaRegistry.Index, (int) LuaBase_Reference.GetValue(table));
-                    Context.State.Length(-1);
-                    long len = Context.State.ToInteger(-1);
-                    Context.State.Pop(2);
-
-                    table[len + 1] = val;
-                }
+                // This could be otpimized but eh
+                private static void InsertIntoTable(LuaTable table, object val) => table[table.Keys.Count + 1] = val;
             }
 
         }
