@@ -41,7 +41,8 @@ namespace NETCoreifier {
 
             // The CoreCLR jitter is much more aggressive about inlining, so explicitly force it to not inline
             // The performance penalty isn't that bad, and it makes modding easier
-            method.ImplAttributes |= Mono.Cecil.MethodImplAttributes.NoInlining;
+            if ((method.ImplAttributes & Mono.Cecil.MethodImplAttributes.AggressiveInlining) == 0)
+                method.ImplAttributes |= Mono.Cecil.MethodImplAttributes.NoInlining;
 
             // Resolve uninstantiated generic typeref/def tokens inside of member methods by replacing them with generic type instances
             // CoreCLR seems to be more strict on this, because the faulty IL worked fine on .NET Framwork / Mono
