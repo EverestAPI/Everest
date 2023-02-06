@@ -471,7 +471,6 @@ namespace Celeste.Mod {
                             throw;
                         }
                     };
-
                     using (HttpClient client = new HttpClient(handler)) {
                         client.Timeout = TimeSpan.FromMilliseconds(10000);
                         client.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
@@ -479,9 +478,12 @@ namespace Celeste.Mod {
 
                         // Manual buffered copy from web input to file output.
                         // Allows us to measure speed and progress.
-                        using (HttpResponseMessage response = client.GetAsync(url).Result)
+                        using (HttpResponseMessage response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).Result)
                         using (Stream input = response.Content.ReadAsStream())
-                        using (FileStream output = File.OpenWrite(destPath)) {
+                        using (FileStream output = File.OpenWrite(destPath)) {                            
+                            if (input.CanTimeout)
+                                input.ReadTimeout = 10000;
+
                             long length;
                             if (input.CanSeek) {
                                 length = input.Length;
