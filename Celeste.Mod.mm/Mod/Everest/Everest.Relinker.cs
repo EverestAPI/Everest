@@ -37,6 +37,7 @@ namespace Celeste.Mod {
                 { "Celeste", ModuleDefinition.ReadModule(typeof(Celeste).Assembly.Location, new ReaderParameters(ReadingMode.Immediate)) }
             };
             internal static bool RuntimeRulesParsed = false;
+            internal static ModuleDefinition RuntimeRulesModule;
 
             private static Dictionary<string, ModuleDefinition> _SharedRelinkModuleMap;
             public static Dictionary<string, ModuleDefinition> SharedRelinkModuleMap {
@@ -248,6 +249,9 @@ namespace Celeste.Mod {
                     depResolver = GenerateModDependencyResolver(meta);
 
                 AssemblyResolveEventHandler resolver = (s, r) => {
+                    if (r.Name == RuntimeRulesModule?.Name)
+                        return RuntimeRulesModule.Assembly;
+
                     ModuleDefinition dep = depResolver(Modder, Modder.Module, r.Name, r.FullName);
                     if (dep != null)
                         return dep.Assembly;
@@ -299,13 +303,8 @@ namespace Celeste.Mod {
                         ((RelinkerSymbolReaderProvider) modder.ReaderParameters.SymbolReaderProvider).Format = DebugSymbolFormat.Auto;
                     }
 
-                    // Map assembly dependencies
-                    modder.MapDependencies();
-
-                    // Parse runtime rules if they haven't already been parsed
-                    if (!RuntimeRulesParsed) {
-                        RuntimeRulesParsed = true;
-
+                    // Try to load the runtime rules
+                    if (RuntimeRulesModule == null && !RuntimeRulesParsed) {
                         InitMMSharedData();
 
                         string rulesPath = Path.Combine(
@@ -319,11 +318,19 @@ namespace Celeste.Mod {
                                 "Celeste.Mod.mm.dll"
                             );
                         }
-                        if (File.Exists(rulesPath)) {
-                            ModuleDefinition rules = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
-                            modder.ParseRules(rules);
-                            rules.Dispose(); // Is this safe?
-                        }
+
+                        if (File.Exists(rulesPath))
+                            RuntimeRulesModule = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
+                    }
+
+                    // Map assembly dependencies
+                    modder.MapDependencies();
+
+                    // Parse runtime rules if they haven't already been parsed
+                    if (!RuntimeRulesParsed) {
+                        RuntimeRulesParsed = true;
+                        if (RuntimeRulesModule != null)
+                            modder.ParseRules(RuntimeRulesModule);
                     }
 
                     // Patch the assembly
@@ -430,6 +437,9 @@ namespace Celeste.Mod {
             private static MissingDependencyResolver GenerateModDependencyResolver(EverestModuleMetadata meta) {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
                     return (mod, main, name, fullName) => {
+                        if (main == RuntimeRulesModule)
+                            return null;
+
                         // Try to resolve cross-mod references
                         if (_RelinkedModules.TryGetValue(name, out ModuleDefinition def))
                             return def;
@@ -449,13 +459,18 @@ namespace Celeste.Mod {
                             }
                         }
 
-                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+                        if (!name.StartsWith("System."))
+                            Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+
                         return null;
                     };
                 }
 
                 if (!string.IsNullOrEmpty(meta.PathDirectory)) {
                     return (mod, main, name, fullName) => {
+                        if (main == RuntimeRulesModule)
+                            return null;
+
                         // Try to resolve cross-mod references
                         if (_RelinkedModules.TryGetValue(name, out ModuleDefinition def))
                             return def;
@@ -469,7 +484,9 @@ namespace Celeste.Mod {
                         if (File.Exists(path))
                             return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
 
-                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+                        if (!name.StartsWith("System."))
+                            Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+
                         return null;
                     };
                 }
