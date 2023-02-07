@@ -5,12 +5,11 @@ using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod;
 using MonoMod.RuntimeDetour;
-using MonoMod.RuntimeDetour.HookGen;
 using MonoMod.Utils;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -204,7 +203,8 @@ namespace Celeste.Mod {
 
         private static bool _SavingSettings;
 
-        private static HashSet<Assembly> _DetourOwners = new HashSet<Assembly>();
+        private static readonly ConcurrentDictionary<Assembly, ConcurrentDictionary<object, Action>> _ModDetours = new ConcurrentDictionary<Assembly, ConcurrentDictionary<object, Action>>();
+        private static readonly ConcurrentDictionary<object, Assembly> _DetourOwners = new ConcurrentDictionary<object, Assembly>();
         internal static List<string> _DetourLog = new List<string>();
 
         public static readonly float SystemMemoryMB;
@@ -377,6 +377,55 @@ namespace Celeste.Mod {
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
 
+            static void RegisterModDetour(Assembly owner, object detour, Action undo) {
+                _ModDetours.GetOrAdd(owner, _ => new ConcurrentDictionary<object, Action>()).TryAdd(detour, undo);
+                _DetourOwners.TryAdd(detour, owner);
+            }
+
+            static void UnregisterModDetour(object detour) {
+                if (!_DetourOwners.TryRemove(detour, out Assembly owner))
+                    return;
+
+                if (_ModDetours.TryGetValue(owner, out ConcurrentDictionary<object, Action> detours))
+                    detours.TryRemove(detour, out _);
+            }
+
+            DetourManager.DetourApplied += info => {
+                if (GetHookOwner(out bool isMMHook) is not Assembly owner)
+                    return;
+
+                if (!isMMHook)
+                    _DetourLog.Add($"new Detour by {owner.GetName().Name}: {info.Method.Method.GetID()}");
+                else
+                    _DetourLog.Add($"new On.+= by {owner.GetName().Name}: {info.Method.Method.GetID()}");
+
+                RegisterModDetour(owner, info, info.Undo);
+            };
+            DetourManager.DetourUndone += UnregisterModDetour;
+
+            DetourManager.ILHookApplied += info => {
+                if (GetHookOwner(out bool isMMHook) is not Assembly owner)
+                    return;
+
+                if (!isMMHook)
+                    _DetourLog.Add($"new ILHook by {owner.GetName().Name}: {info.Method.Method.GetID()}");
+                else
+                    _DetourLog.Add($"new IL.+= by {owner.GetName().Name}: {info.Method.Method.GetID()}");
+
+                RegisterModDetour(owner, info, info.Undo);
+            };
+            DetourManager.ILHookUndone += UnregisterModDetour;
+            
+            DetourManager.NativeDetourApplied += info => {
+                if (GetHookOwner(out _) is not Assembly owner)
+                    return;
+
+                _DetourLog.Add($"new NativeDetour by {owner.GetName().Name}: {info.Function.Function:X16}");
+
+                RegisterModDetour(owner, info, info.Undo);
+            };
+            DetourManager.NativeDetourUndone += UnregisterModDetour;
+
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
@@ -478,6 +527,11 @@ namespace Celeste.Mod {
 
         internal static void Dispose(object sender, EventArgs args) {
             Audio.Unload(); // This exists but never gets called by the vanilla game.
+            
+            foreach (ConcurrentDictionary<object, Action> detours in _ModDetours.Values)
+                foreach (Action detourUndo in detours.Values)
+                    detourUndo();
+            _ModDetours.Clear();
         }
 
         /// <summary>
@@ -851,6 +905,11 @@ namespace Celeste.Mod {
             module.Unload();
 
             Assembly asm = module.GetType().Assembly;
+
+            if (_ModDetours.TryRemove(asm, out ConcurrentDictionary<object, Action> detours))
+                foreach (Action detourUndo in detours.Values)
+                    detourUndo();
+
             _RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader
@@ -966,6 +1025,39 @@ namespace Celeste.Mod {
             Events.Celeste.OnShutdown += static () => BOOT.StartCelesteProcess();
             scene.RunAfterRender = () => Engine.Instance.Exit();
             yield break;
+        }
+
+        internal static Assembly GetHookOwner(out bool isMMHOOK, StackTrace stack = null) {
+            isMMHOOK = false;
+
+            // Stack walking is not fast, but it's the only option
+            if (stack == null)
+                stack = new StackTrace();
+
+            int frameCount = stack.FrameCount;
+            for (int i = 0; i < frameCount; i++) {
+                StackFrame frame = stack.GetFrame(i);
+                MethodBase caller = frame.GetMethod();
+
+                Assembly asm = caller?.DeclaringType?.Assembly;
+                if (asm == null)
+                    continue;
+
+                if (asm == Assembly.GetExecutingAssembly())
+                    continue;
+
+                if (asm == typeof(Hook).Assembly)
+                    continue;
+
+                if (asm.GetName().Name.StartsWith("MMHOOK_")) {
+                    isMMHOOK = true;
+                    continue;
+                }
+
+                return asm;
+            }
+
+            return null;
         }
 
         public static void LogDetours(LogLevel level = LogLevel.Debug) {
