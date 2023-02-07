@@ -5,7 +5,7 @@
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>9</LangVersion>
+    <LangVersion>11</LangVersion>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
