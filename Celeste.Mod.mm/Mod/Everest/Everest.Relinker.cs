@@ -395,13 +395,15 @@ namespace Celeste.Mod {
 
                     // Log the assembly load and dependencies
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {module.Assembly.Name}");
-                    if (Modder != null)
+                    if (Modder != null) {
+                        Assembly[] asms = AppDomain.CurrentDomain.GetAssemblies();
                         foreach(AssemblyNameReference aref in module.AssemblyReferences) {
-                            if (Modder.DependencyCache.ContainsKey(aref.FullName))
+                            if (Modder.DependencyCache.ContainsKey(aref.FullName) || asms.Any(asm => asm.GetName().Name == aref.Name))
                                 Logger.Log(LogLevel.Verbose, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) found");
                             else
                                 Logger.Log(LogLevel.Warn, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) NOT FOUND");
                         }
+                    }
 
                     try {
                         // Load the assembly and the module definition
