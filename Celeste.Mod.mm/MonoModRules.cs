@@ -100,7 +100,7 @@ namespace MonoMod {
             // Replace assembly references
             static AssemblyName GetReferencedAssembly(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));
             ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetReferencedAssembly("FNA"));
-            MonoModRule.Flag.Set("LegacyMonoMod", ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.Equals("MonoMod"), GetReferencedAssembly("MonoMod.Patcher")));
+            bool isLegacyMonoMod = ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.Equals("MonoMod"), GetReferencedAssembly("MonoMod.Patcher"));
 
             foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)
@@ -111,11 +111,17 @@ namespace MonoMod {
             foreach (AssemblyNameReference name in MonoModRule.Modder.Module.AssemblyReferences) {
                 if (name.Name.Contains("Steamworks"))
                     isSteamworks = true;
+                    
+                // MonoMod version numbers are actually time codes - safe to say no legacy build will come out post 2023
+                if (name.Name.StartsWith("MonoMod.") && name.Version.Major >= 23)
+                    isLegacyMonoMod = false;
             }
+
             MonoModRule.Flag.Set("FNA", true); //Keep FNA/XNA flags around for legacy code
             MonoModRule.Flag.Set("XNA", false);
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
             MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
+            MonoModRule.Flag.Set("LegacyMonoMod",isLegacyMonoMod);
 
             TypeDefinition t_Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
             if (t_Celeste == null)
