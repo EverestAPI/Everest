@@ -96,11 +96,15 @@ namespace MonoMod {
 
             // Note: It may actually be too late to set this to false.
             MonoModRule.Modder.MissingDependencyThrow = false;
-            MonoModRule.Modder.PostProcessors += ForceFNAPostProcessor;
+
+            // Replace assembly references
+            static AssemblyName GetReferencedAssembly(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));
+            ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetReferencedAssembly("FNA"));
+            MonoModRule.Flag.Set("LegacyMonoMod", ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.Equals("MonoMod"), GetReferencedAssembly("MonoMod.Patcher")));
 
             foreach (ModuleDefinition mod in MonoModRule.Modder.Mods)
                 foreach (AssemblyNameReference dep in mod.AssemblyReferences)
-                    if (dep.Name == "MonoMod" && MonoModder.Version < dep.Version)
+                    if (dep.Name == "MonoMod.Patcher" && MonoModder.Version < dep.Version)
                         throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {dep.Version}+)");
 
             bool isSteamworks = false;
@@ -112,9 +116,6 @@ namespace MonoMod {
             MonoModRule.Flag.Set("XNA", false);
             MonoModRule.Flag.Set("Steamworks", isSteamworks);
             MonoModRule.Flag.Set("NoLauncher", !isSteamworks);
-
-            MonoModRule.Flag.Set("PatchingWithMono", Type.GetType("Mono.Runtime") != null);
-            MonoModRule.Flag.Set("PatchingWithoutMono", Type.GetType("Mono.Runtime") == null);
 
             TypeDefinition t_Celeste = MonoModRule.Modder.FindType("Celeste.Celeste")?.Resolve();
             if (t_Celeste == null)
@@ -404,21 +405,21 @@ namespace MonoMod {
             }
         }
 
-        public static void ForceFNAPostProcessor(MonoModder modder) {
-            // Replace XNA assembly references with FNA ones
-            bool isFna = false;
+        public static bool ReplaceAssemblyRefs(MonoModder modder, Func<AssemblyNameReference, bool> filter, AssemblyName newRef) {
+            bool hasNewRef = false;
             for (int i = 0; i < modder.Module.AssemblyReferences.Count; i++) {
                 AssemblyNameReference asmRef = modder.Module.AssemblyReferences[i];
-                if (asmRef.Name.Equals("FNA"))
-                    isFna = true;
-                else if(asmRef.Name.StartsWith("Microsoft.Xna.Framework"))
+                if (asmRef.Name.Equals(newRef.Name))
+                    hasNewRef = true;
+                else if(filter(asmRef))
                     modder.Module.AssemblyReferences.RemoveAt(i--);
             }
 
-            if (!isFna) {
-                var fnaName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals("FNA"));
-                modder.Module.AssemblyReferences.Add(new AssemblyNameReference(fnaName.Name, fnaName.Version));
+            if (!hasNewRef) {
+                modder.Module.AssemblyReferences.Add(new AssemblyNameReference(newRef.Name, newRef.Version));
             }
+
+            return !hasNewRef;
         }
 
         public static void PostProcessor(MonoModder modder) {
