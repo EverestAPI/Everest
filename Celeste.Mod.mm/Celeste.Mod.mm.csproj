@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- TODO Retarget against net7.0 again -->
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>

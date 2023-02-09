@@ -18,6 +18,9 @@ namespace Celeste.Mod {
     /// </summary>
     internal static class BOOT {
 
+        // TODO Fast restarts through AssemblyLoadContexts
+        // TODO Restart into vanilla
+
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {

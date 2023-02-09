@@ -8,7 +8,7 @@ using System.Reflection;
 namespace NETCoreifier {
     public class NetFrameworkModder : MonoModder {
 
-        //TODO Patch RNG
+        // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
         public override void MapDependencies() {
             // Add reference to System.Runtime + NETCoreifier
@@ -58,6 +58,7 @@ namespace NETCoreifier {
 
             // The CoreCLR jitter is much more aggressive about inlining, so explicitly force it to not inline
             // The performance penalty isn't that bad, and it makes modding easier
+            // TODO Still find a better criteria for this
             if ((method.ImplAttributes & Mono.Cecil.MethodImplAttributes.AggressiveInlining) == 0)
                 method.ImplAttributes |= Mono.Cecil.MethodImplAttributes.NoInlining;
 

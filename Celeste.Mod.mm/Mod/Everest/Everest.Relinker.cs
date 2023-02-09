@@ -263,7 +263,7 @@ namespace Celeste.Mod {
                 modder.MissingDependencyResolver = depResolver;
 
                 // Read and setup debug symbols (if they exist)
-                //TODO Improve performance
+                //TODO Improve performance / implement per-load AssemblyLoadContexts
                 modder.ReaderParameters.ReadSymbols = true;
                 modder.ReaderParameters.SymbolStream = OpenStream(meta, out _, Path.ChangeExtension(meta.DLL, ".pdb"), Path.ChangeExtension(meta.DLL, ".mdb"));
                 try {
