@@ -1,61 +1,113 @@
 using MonoMod;
-using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourContext")]
-    public class LegacyDetourContext : EmptyDetourContext, IDisposable {
+    public sealed class LegacyDetourContext : IDisposable {
+
+        [ThreadStatic]
+        private static List<LegacyDetourContext> _Contexts;
+        private static List<LegacyDetourContext> Contexts => _Contexts ?? (_Contexts = new List<LegacyDetourContext>());
+
+        [ThreadStatic]
+        private static LegacyDetourContext Last;
+        internal static LegacyDetourContext Current {
+            get {
+                if (Last?.IsValid ?? false)
+                    return Last;
+
+                // Find the most recently added valid context, remove invalid ones after it
+                int valCtxIdx = Contexts.FindLastIndex(ctx => ctx.IsValid);
+                Contexts.RemoveRange(valCtxIdx+1, Contexts.Count - (valCtxIdx+1));
+                return Last = ((valCtxIdx >= 0) ? Contexts[valCtxIdx] : null);
+            }
+        }
 
         public int Priority;
-        private string _ID;
-        private readonly string _FallbackID;
-        private readonly MethodBase Creator;
 
+        private readonly string _FallbackID;
+        private string _ID;
         public string ID {
             get => _ID ?? _FallbackID;
             set => _ID = string.IsNullOrEmpty(value) ? null : value;
         }
 
-        public List<string> Before = new List<string>();
-        public List<string> After = new List<string>();
+        public List<string> Before = new List<string>(), After = new List<string>();
 
-        public LegacyDetourConfig DetourConfig => new LegacyDetourConfig(ID, Priority, Before, After);
-        public LegacyDetourConfig HookConfig => DetourConfig;
-        public LegacyDetourConfig ILHookConfig => DetourConfig;
-    
-        private readonly DataScope detourScope;
+        public LegacyDetourConfig DetourConfig => new LegacyDetourConfig {
+            Priority = Priority,
+            ID = ID,
+            Before = Before,
+            After = After
+        };
 
-        public LegacyDetourContext() : this(0, null) {}
-        public LegacyDetourContext(int prio) : this(prio, null) {}
-        public LegacyDetourContext(string id) : this(0, id) {}
-        public LegacyDetourContext(int prio, string id) {
-            Priority = prio;
-            _ID = id;
+        public LegacyHookConfig HookConfig => new LegacyHookConfig {
+            Priority = Priority,
+            ID = ID,
+            Before = Before,
+            After = After
+        };
 
-            // Get the creator
-            StackTrace stack = new StackTrace();
-            int frameCount = stack.FrameCount;
-            for (int i = 0; i < frameCount; i++) {
-                MethodBase caller = stack.GetFrame(i).GetMethod();
-                if (caller?.DeclaringType == typeof(DetourContext))
-                    continue;
-                Creator = caller;
-                break;
+        public LegacyILHookConfig ILHookConfig => new LegacyILHookConfig {
+            Priority = Priority,
+            ID = ID,
+            Before = Before,
+            After = After
+        };
+
+        private MethodBase Creator = null;
+        private bool IsDisposed;
+        internal bool IsValid {
+            get {
+                if (IsDisposed)
+                    return false;
+
+                if (Creator == null)
+                    return true;
+
+                // Check if the creator of this context has returned
+                // This is jank as heck (what if the method is called again), but so is the entirety of legacy MonoMod .-.
+                StackTrace stack = new StackTrace();
+                int frameCount = stack.FrameCount;
+                for (int i = 0; i < frameCount; i++)
+                    if (stack.GetFrame(i).GetMethod() == Creator)
+                        return true;
+
+                return false;
             }
-
-            // Use the detour context
-            detourScope = Use();
         }
 
-        public void Dispose() => detourScope.Dispose();
+        public LegacyDetourContext(int prio, string id) {
+            // Find the creator method
+            StackTrace stack = new StackTrace();
+            Creator = Enumerable.Range(0, stack.FrameCount).Select(i => stack.GetFrame(i).GetMethod()).FirstOrDefault(m => m?.DeclaringType != typeof(LegacyDetourContext));
+            _FallbackID = Creator?.DeclaringType?.Assembly?.GetName().Name ?? Creator?.GetID(simple: true);
 
-        protected override bool TryGetConfig(out DetourConfig config) {
-            config = DetourConfig;
-            return true;
+            // Add to the context list
+            Last = this;
+            Contexts.Add(this);
+
+            Priority = prio;
+            ID = id;
+        }
+
+        public LegacyDetourContext(string id) : this(0, id) {}
+        public LegacyDetourContext(int priority) : this(priority, null) {}
+        public LegacyDetourContext() : this(0, null) {}
+
+        public void Dispose() {
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
+
+            // Remove from the context list
+            Last = null;
+            Contexts.Remove(this);
         }
 
     }

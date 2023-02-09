@@ -37,7 +37,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         public static MethodBase GetIdentifiable(this MethodBase method) => PlatformTriple.Current.GetIdentifiable(method);
 
-        public static IntPtr GetNativeStart(this MethodBase method) => PlatformTriple.Current.Runtime.GetMethodEntryPoint(method);
+        public static IntPtr GetNativeStart(this MethodBase method) => PlatformTriple.Current.GetNativeMethodBody(method);
         public static IntPtr GetNativeStart(this Delegate method) => method.Method.GetNativeStart();
         public static IntPtr GetNativeStart(this Expression method) => ((MethodCallExpression) method).Method.GetNativeStart();
 

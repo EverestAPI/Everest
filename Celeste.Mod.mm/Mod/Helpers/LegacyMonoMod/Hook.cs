@@ -3,12 +3,20 @@ using System.Reflection;
 using System.Linq.Expressions;
 using MonoMod.Utils;
 using MonoMod;
-using MonoMod.RuntimeDetour;
 using Mono.Cecil.Cil;
+using System.Collections.Generic;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
     // Note that we could use the new Hook class directly, but we don't actually have to
     // So just remain as true to the original as possible
+
+    [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.HookConfig")]
+    public struct LegacyHookConfig {
+        public bool ManualApply;
+        public int Priority;
+        public string ID;
+        public IEnumerable<string> Before, After;
+    }
 
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.Hook")]
     public class LegacyHook : ILegacyDetour {
@@ -41,7 +49,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         [MonoModLinkFrom("System.Nullable`1<System.Int32> Celeste.Mod.Helpers.LegacyMonoMod.LegacyHook::_RefTrampolineTmp")]
         private int? _RefTrampolineTmp => _RefTrampolineTmpCell?.Data.Index;
 
-        public LegacyHook(MethodBase from, MethodInfo to, object target, ref LegacyDetourConfig config) {
+        public LegacyHook(MethodBase from, MethodInfo to, object target, ref LegacyHookConfig config) {
             from = from.GetIdentifiable();
             Method = from;
             Target = to;
@@ -157,35 +165,44 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             if (!config.ManualApply)
                 Apply();
         }
-        public LegacyHook(MethodBase from, MethodInfo to, object target, LegacyDetourConfig config) : this(from, to, target, ref config) {}
-        public LegacyHook(MethodBase from, MethodInfo to, object target) : this(from, to, target, (DetourContext.CurrentConfig as LegacyDetourConfig) ?? new LegacyDetourConfig()) {}
-        public LegacyHook(MethodBase from, MethodInfo to, ref LegacyDetourConfig config) : this(from, to, null, ref config) {}
-        public LegacyHook(MethodBase from, MethodInfo to, LegacyDetourConfig config) : this(from, to, null, ref config) {}
+
+        public LegacyHook(MethodBase from, MethodInfo to, object target, LegacyHookConfig config) : this(from, to, target, ref config) {}
+        public LegacyHook(MethodBase from, MethodInfo to, object target) : this(from, to, target, LegacyDetourContext.Current?.HookConfig ?? default) {}
+        public LegacyHook(MethodBase from, MethodInfo to, ref LegacyHookConfig config) : this(from, to, null, ref config) {}
+        public LegacyHook(MethodBase from, MethodInfo to, LegacyHookConfig config) : this(from, to, null, ref config) {}
         public LegacyHook(MethodBase from, MethodInfo to) : this(from, to, null) {}
-        public LegacyHook(MethodBase method, IntPtr to, ref LegacyDetourConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), null, ref config) {}
-        public LegacyHook(MethodBase method, IntPtr to, LegacyDetourConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), null, ref config) {}
+        public LegacyHook(MethodBase method, IntPtr to, ref LegacyHookConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), null, ref config) {}
+        public LegacyHook(MethodBase method, IntPtr to, LegacyHookConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), null, ref config) {}
         public LegacyHook(MethodBase method, IntPtr to) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), null) {}
-        public LegacyHook(MethodBase method, Delegate to, ref LegacyDetourConfig config) : this(method, to.Method, to.Target, ref config) {}
-        public LegacyHook(MethodBase method, Delegate to, LegacyDetourConfig config) : this(method, to.Method, to.Target, ref config) {}
+        public LegacyHook(MethodBase method, Delegate to, ref LegacyHookConfig config) : this(method, to.Method, to.Target, ref config) {}
+        public LegacyHook(MethodBase method, Delegate to, LegacyHookConfig config) : this(method, to.Method, to.Target, ref config) {}
         public LegacyHook(MethodBase method, Delegate to) : this(method, to.Method, to.Target) {}
-        public LegacyHook(Delegate from, IntPtr to, ref LegacyDetourConfig config) : this(from.Method, to, ref config) {}
-        public LegacyHook(Delegate from, IntPtr to, LegacyDetourConfig config) : this(from.Method, to, ref config) {}
+        public LegacyHook(Delegate from, IntPtr to, ref LegacyHookConfig config) : this(from.Method, to, ref config) {}
+        public LegacyHook(Delegate from, IntPtr to, LegacyHookConfig config) : this(from.Method, to, ref config) {}
         public LegacyHook(Delegate from, IntPtr to) : this(from.Method, to) {}
-        public LegacyHook(Delegate from, Delegate to, ref LegacyDetourConfig config) : this(from.Method, to, ref config) {}
-        public LegacyHook(Delegate from, Delegate to, LegacyDetourConfig config) : this(from.Method, to, ref config) {}
+        public LegacyHook(Delegate from, Delegate to, ref LegacyHookConfig config) : this(from.Method, to, ref config) {}
+        public LegacyHook(Delegate from, Delegate to, LegacyHookConfig config) : this(from.Method, to, ref config) {}
         public LegacyHook(Delegate from, Delegate to) : this(from.Method, to) {}
-        public LegacyHook(Expression from, IntPtr to, ref LegacyDetourConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
-        public LegacyHook(Expression from, IntPtr to, LegacyDetourConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
+        public LegacyHook(Expression from, IntPtr to, ref LegacyHookConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
+        public LegacyHook(Expression from, IntPtr to, LegacyHookConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
         public LegacyHook(Expression from, IntPtr to) : this(((MethodCallExpression) from).Method, to) {}
-        public LegacyHook(Expression from, Delegate to, ref LegacyDetourConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
-        public LegacyHook(Expression from, Delegate to, LegacyDetourConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
+        public LegacyHook(Expression from, Delegate to, ref LegacyHookConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
+        public LegacyHook(Expression from, Delegate to, LegacyHookConfig config) : this(((MethodCallExpression) from).Method, to, ref config) {}
         public LegacyHook(Expression from, Delegate to) : this(((MethodCallExpression) from).Method, to) {}
-        public LegacyHook(Expression<Action> from, IntPtr to, ref LegacyDetourConfig config) : this(from.Body, to, ref config) {}
-        public LegacyHook(Expression<Action> from, IntPtr to, LegacyDetourConfig config) : this(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Action> from, IntPtr to, ref LegacyHookConfig config) : this(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Action> from, IntPtr to, LegacyHookConfig config) : this(from.Body, to, ref config) {}
         public LegacyHook(Expression<Action> from, IntPtr to) : this(from.Body, to) {}
-        public LegacyHook(Expression<Action> from, Delegate to, ref LegacyDetourConfig config) : this(from.Body, to, ref config) {}
-        public LegacyHook(Expression<Action> from, Delegate to, LegacyDetourConfig config) : this(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Action> from, Delegate to, ref LegacyHookConfig config) : this(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Action> from, Delegate to, LegacyHookConfig config) : this(from.Body, to, ref config) {}
         public LegacyHook(Expression<Action> from, Delegate to) : this(from.Body, to) {}
+
+        public void Dispose() {
+            if (!IsValid)
+                return;
+
+            Undo();
+            Free();
+        }
 
         public void Apply() {
             if (!IsValid)
@@ -215,14 +232,6 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             _Detour.Free();
             _Free();
-        }
-
-        public void Dispose() {
-            if (!IsValid)
-                return;
-
-            Undo();
-            Free();
         }
 
         private void _Free() {
@@ -258,30 +267,30 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.Hook`1")]
     public class LegacyHook<T> : LegacyHook {
-        public LegacyHook(Expression<Action> from, T to, ref LegacyDetourConfig config) : base(from.Body, to as Delegate, ref config) {}
-        public LegacyHook(Expression<Action> from, T to, LegacyDetourConfig config) : base(from.Body, to as Delegate, ref config) {}
+        public LegacyHook(Expression<Action> from, T to, ref LegacyHookConfig config) : base(from.Body, to as Delegate, ref config) {}
+        public LegacyHook(Expression<Action> from, T to, LegacyHookConfig config) : base(from.Body, to as Delegate, ref config) {}
         public LegacyHook(Expression<Action> from, T to) : base(from.Body, to as Delegate) {}
-        public LegacyHook(Expression<Func<T>> from, IntPtr to, ref LegacyDetourConfig config) : base(from.Body, to, ref config) {}
-        public LegacyHook(Expression<Func<T>> from, IntPtr to, LegacyDetourConfig config) : base(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Func<T>> from, IntPtr to, ref LegacyHookConfig config) : base(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Func<T>> from, IntPtr to, LegacyHookConfig config) : base(from.Body, to, ref config) {}
         public LegacyHook(Expression<Func<T>> from, IntPtr to) : base(from.Body, to) {}
-        public LegacyHook(Expression<Func<T>> from, Delegate to, ref LegacyDetourConfig config) : base(from.Body, to, ref config) {}
-        public LegacyHook(Expression<Func<T>> from, Delegate to, LegacyDetourConfig config) : base(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Func<T>> from, Delegate to, ref LegacyHookConfig config) : base(from.Body, to, ref config) {}
+        public LegacyHook(Expression<Func<T>> from, Delegate to, LegacyHookConfig config) : base(from.Body, to, ref config) {}
         public LegacyHook(Expression<Func<T>> from, Delegate to) : base(from.Body, to) {}
-        public LegacyHook(T from, IntPtr to, ref LegacyDetourConfig config) : base(from as Delegate, to, ref config) {}
-        public LegacyHook(T from, IntPtr to, LegacyDetourConfig config) : base(from as Delegate, to, ref config) {}
+        public LegacyHook(T from, IntPtr to, ref LegacyHookConfig config) : base(from as Delegate, to, ref config) {}
+        public LegacyHook(T from, IntPtr to, LegacyHookConfig config) : base(from as Delegate, to, ref config) {}
         public LegacyHook(T from, IntPtr to) : base(from as Delegate, to) {}
-        public LegacyHook(T from, T to, ref LegacyDetourConfig config) : base(from as Delegate, to as Delegate, ref config) {}
-        public LegacyHook(T from, T to, LegacyDetourConfig config) : base(from as Delegate, to as Delegate, ref config) {}
+        public LegacyHook(T from, T to, ref LegacyHookConfig config) : base(from as Delegate, to as Delegate, ref config) {}
+        public LegacyHook(T from, T to, LegacyHookConfig config) : base(from as Delegate, to as Delegate, ref config) {}
         public LegacyHook(T from, T to) : base(from as Delegate, to as Delegate) {}
     }
 
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.Hook`2")]
     public class LegacyHook<TFrom, TTo> : LegacyHook {
-        public LegacyHook(Expression<Func<TFrom>> from, TTo to, ref LegacyDetourConfig config) : base(from.Body, to as Delegate) {}
-        public LegacyHook(Expression<Func<TFrom>> from, TTo to, LegacyDetourConfig config) : base(from.Body, to as Delegate) {}
+        public LegacyHook(Expression<Func<TFrom>> from, TTo to, ref LegacyHookConfig config) : base(from.Body, to as Delegate) {}
+        public LegacyHook(Expression<Func<TFrom>> from, TTo to, LegacyHookConfig config) : base(from.Body, to as Delegate) {}
         public LegacyHook(Expression<Func<TFrom>> from, TTo to) : base(from.Body, to as Delegate) {}
-        public LegacyHook(TFrom from, TTo to, ref LegacyDetourConfig config) : base(from as Delegate, to as Delegate) {}
-        public LegacyHook(TFrom from, TTo to, LegacyDetourConfig config) : base(from as Delegate, to as Delegate) {}
+        public LegacyHook(TFrom from, TTo to, ref LegacyHookConfig config) : base(from as Delegate, to as Delegate) {}
+        public LegacyHook(TFrom from, TTo to, LegacyHookConfig config) : base(from as Delegate, to as Delegate) {}
         public LegacyHook(TFrom from, TTo to) : base(from as Delegate, to as Delegate) {}
     }
 }

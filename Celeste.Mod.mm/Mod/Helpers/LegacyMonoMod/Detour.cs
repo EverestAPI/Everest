@@ -9,8 +9,17 @@ using MonoMod;
 using MonoMod.RuntimeDetour;
 using MonoMod.Core.Platforms;
 using System.Linq;
+using MonoMod.Core;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
+    [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourConfig")]
+    public struct LegacyDetourConfig {
+        public bool ManualApply;
+        public int Priority;
+        public string ID;
+        public IEnumerable<string> Before, After;
+    }
+
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.Detour")]
     public class LegacyDetour : ILegacySortableDetour {
         private static uint _GlobalIndexNext = uint.MinValue;
@@ -21,7 +30,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         private Hook actualHook;
 
-        public bool IsValid => Index != -1;
+        public bool IsValid { get; private set; } = true;
         public bool IsApplied { get; private set; }
         private bool IsTop {
             get {
@@ -115,7 +124,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         // We have to maintain our own trampoline as we'll dispose the actual hooks when not applied
         private MethodInfo _ChainedTrampoline;
-        private Hook _ChainedTrampolineHook;
+        private ICoreDetour _ChainedTrampolineDetour;
 
         public LegacyDetour(MethodBase from, MethodBase to, LegacyDetourConfig config) {
             from = from.GetIdentifiable();
@@ -158,7 +167,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         }
 
         public LegacyDetour(MethodBase from, MethodBase to, ref LegacyDetourConfig config) : this(from, to, config) {}
-        public LegacyDetour(MethodBase from, MethodBase to) : this(from, to, (DetourContext.CurrentConfig as LegacyDetourConfig) ?? new LegacyDetourConfig()) {}
+        public LegacyDetour(MethodBase from, MethodBase to) : this(from, to, LegacyDetourContext.Current?.DetourConfig ?? default) {}
         public LegacyDetour(MethodBase method, IntPtr to, ref LegacyDetourConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), ref config) {}
         public LegacyDetour(MethodBase method, IntPtr to, LegacyDetourConfig config) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method), ref config) {}
         public LegacyDetour(MethodBase method, IntPtr to) : this(method, LegacyDetourHelper.GenerateNativeProxy(to, method)) {}
@@ -216,6 +225,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 return;
 
             Undo();
+            IsValid = false;
         }
 
         private static readonly PropertyInfo IDetour_NextTrampoline
@@ -231,15 +241,12 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 actualHook = new Hook(Method, (MethodInfo) Target, new DetourConfig(ID, Priority, Before, After));
                 GC.SuppressFinalize(actualHook);
 
-                // Update the trampoline hook
-                _ChainedTrampolineHook?.Dispose();
-                _ChainedTrampolineHook = new Hook(_ChainedTrampoline, (MethodInfo) IDetour_NextTrampoline.GetValue(actualHook));
-            } else {
+                // Update the trampoline detour
+                _ChainedTrampolineDetour?.Dispose();
+                _ChainedTrampolineDetour = DetourFactory.Current.CreateDetour(_ChainedTrampoline, (MethodBase) IDetour_NextTrampoline.GetValue(actualHook));
+                GC.SuppressFinalize(_ChainedTrampolineDetour);
+            } else
                 actualHook = null;
-                
-                _ChainedTrampolineHook?.Dispose();
-                _ChainedTrampolineHook = null;
-            }
         }
 
         public MethodBase GenerateTrampoline(MethodBase signature = null) {

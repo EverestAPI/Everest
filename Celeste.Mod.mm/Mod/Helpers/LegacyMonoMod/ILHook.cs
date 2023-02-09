@@ -7,16 +7,26 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using MonoMod;
 using MonoMod.RuntimeDetour;
+using System.Linq;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
+    [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.ILHookConfig")]
+    public struct LegacyILHookConfig {
+        public bool ManualApply;
+        public int Priority;
+        public string ID;
+        public IEnumerable<string> Before;
+        public IEnumerable<string> After;
+    }
+
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.ILHook")]
     public class LegacyILHook : ILegacySortableDetour {
 
         public static Func<LegacyILHook, MethodBase, ILContext.Manipulator, bool> OnDetour;
         public static Func<LegacyILHook, bool> OnUndo;
 
-        // Still here in case any external mod tries to access it using reflection
-        private static LegacyDetourConfig ILDetourConfig = new LegacyDetourConfig(null, priority: int.MinValue / 8, before: new string[] { "*" });
+        // Still here in case a mod tries to access it using reflection
+        private static LegacyILHookConfig ILDetourConfig = new LegacyILHookConfig() { Priority = int.MinValue / 8, Before = new string[] { "*" } };
         private static uint _GlobalIndexNext = uint.MinValue;
 
         private ILHook actualHook;
@@ -24,8 +34,25 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         public bool IsValid { get; private set; } = true;
         public bool IsApplied { get; private set; }
 
-        public int Index => throw new NotSupportedException("ILHook.Index is no longer supported");
-        public int MaxIndex => throw new NotSupportedException("ILHook.MaxIndex is no longer supported");
+        // NOTE: This behaves slightly differently - legacy MonoMod kept non-applied hooks in the chain as well
+        public int Index {
+            get {
+                if (actualHook?.IsApplied ?? false)
+                    return -1;
+
+                MethodDetourInfo info = DetourManager.GetDetourInfo(Method);
+                using (info.WithLock())
+                    return info.ILHooks.TakeWhile(h => h != actualHook.HookInfo).Count();
+            }
+        }
+
+        public int MaxIndex {
+            get {
+                MethodDetourInfo info = DetourManager.GetDetourInfo(Method);
+                using (info.WithLock())
+                    return info.ILHooks.Count();
+            }
+        }
 
         private readonly uint _GlobalIndex;
         public uint GlobalIndex => _GlobalIndex;
@@ -85,7 +112,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         public readonly MethodBase Method;
         public readonly ILContext.Manipulator Manipulator;
 
-        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator, LegacyDetourConfig config) {
+        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator, LegacyILHookConfig config) {
             from = from.GetIdentifiable();
             Method = from;
             Manipulator = manipulator;
@@ -93,7 +120,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             _GlobalIndex = _GlobalIndexNext++;
 
             _Priority = config.Priority;
-            _ID = config.Id;
+            _ID = config.ID;
             if (config.Before != null)
                 _Before.AddRange(config.Before);
             if (config.After != null)
@@ -103,8 +130,8 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 Apply();
         }
 
-        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator, ref LegacyDetourConfig config) : this(from, manipulator, (LegacyDetourConfig) config) {}
-        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator) : this(from, manipulator, (DetourContext.CurrentConfig as LegacyDetourConfig) ?? new LegacyDetourConfig()) {}
+        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator, ref LegacyILHookConfig config) : this(from, manipulator, (LegacyILHookConfig) config) {}
+        public LegacyILHook(MethodBase from, ILContext.Manipulator manipulator) : this(from, manipulator, LegacyDetourContext.Current?.ILHookConfig ?? default) {}
 
         public void Dispose() {
             if (!IsValid)
