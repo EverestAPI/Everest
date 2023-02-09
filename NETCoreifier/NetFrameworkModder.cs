@@ -9,6 +9,7 @@ namespace NETCoreifier {
     public class NetFrameworkModder : MonoModder {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
+        // TODO TAS still desyncs in 6A after getting the B side tape 
 
         public override void MapDependencies() {
             // Add reference to System.Runtime + NETCoreifier
