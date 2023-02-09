@@ -6,7 +6,7 @@ namespace MonoMod {
     /// <summary>
     /// Links the specified type / method / field / property / etc. to this one if the mod is targeting legacy MonoMod
     /// </summary>
-    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface | AttributeTargets.Method | AttributeTargets.Property | AttributeTargets.Field, AllowMultiple = true)]
+    [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
     public class RelinkLegacyMonoMod : Attribute {
         public RelinkLegacyMonoMod(string linkFromName) {}
     }
@@ -53,6 +53,9 @@ namespace MonoMod {
 
                 foreach (PropertyDefinition prop in type.Properties)
                     VisitAttributes(modder, prop);
+
+                foreach (EventDefinition evt in type.Events)
+                    VisitAttributes(modder, evt);
 
                 foreach (FieldDefinition field in type.Fields)
                     VisitAttributes(modder, field);
