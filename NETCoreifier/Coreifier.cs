@@ -59,7 +59,7 @@ namespace NETCoreifier {
                 using (NetFrameworkModder modder = new NetFrameworkModder()) {
                     modder.Module = module;
                     modder.MissingDependencyThrow = false;
-                    modder.AssemblyResolver ??= asmResolver;
+                    modder.AssemblyResolver = asmResolver ?? modder.AssemblyResolver;
 
                     modder.MapDependencies();
                     modder.AutoPatch();

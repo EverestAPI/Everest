@@ -10,18 +10,35 @@ namespace NETCoreifier {
 
         //TODO Patch RNG
 
-        private ModuleDefinition runtimeMod;
-
         public override void MapDependencies() {
-            // Add reference to System.Runtime
+            // Add reference to System.Runtime + NETCoreifier
             if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "System.Runtime")) {
                 AssemblyName runtimeName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(name => name.Name == "System.Runtime");
                 Module.AssemblyReferences.Add(new AssemblyNameReference(runtimeName.Name, runtimeName.Version));
             }
 
-            runtimeMod = AssemblyResolver.Resolve(Module.AssemblyReferences.First(asmRef => asmRef.Name == "System.Runtime")).MainModule;
+            if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "NETCoreifier")) {
+                AssemblyName coreifierName = Assembly.GetExecutingAssembly().GetName();
+                Module.AssemblyReferences.Add(new AssemblyNameReference(coreifierName.Name, coreifierName.Version));
+            }
 
             base.MapDependencies();
+        }
+
+        public override ModuleDefinition DefaultMissingDependencyResolver(MonoModder mod, ModuleDefinition main, string name, string fullName) {
+            if (name == "NETCoreifier")
+                // We have to load our own module again every time because MonoMod messes with it ._.
+                if (ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location) is ModuleDefinition coreifierMod)
+                    return coreifierMod;
+
+            return base.DefaultMissingDependencyResolver(mod, main, name, fullName);
+        }
+
+        public override void AutoPatch() {
+            // Parse our own patching rules
+            ParseRules(DependencyMap[Module].First(dep => dep.Assembly.Name.Name == "NETCoreifier"));
+
+            base.AutoPatch();
         }
 
         public override IMetadataTokenProvider Relinker(IMetadataTokenProvider mtp, IGenericParameterProvider context) {

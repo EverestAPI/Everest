@@ -41,6 +41,7 @@ namespace MonoMod {
             static void VisitAttributes(MonoModder modder, ICustomAttributeProvider prov) {
                 foreach (CustomAttribute attr in prov.CustomAttributes)
                     if (attr.AttributeType.FullName == "MonoMod.RelinkLegacyMonoMod")
+                        // Note: usually MonoMod removes the attribute (which would be bad because the module is shared), but by calling the method directly it doesn't 
                         modder.ParseLinkFrom((MemberReference) prov, attr);
             }
 
