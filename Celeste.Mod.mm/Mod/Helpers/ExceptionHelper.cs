@@ -28,7 +28,7 @@ namespace Celeste.Mod.Helpers {
             return false;
         }
 
-        [RelinkLegacyMonoMod("System.Void MonoMod.Utils.Extensions::LogDetailed(System.Exception, System.String)")]
+        [RelinkLegacyMonoMod("System.Void MonoMod.Utils.Extensions::LogDetailed(System.Exception,System.String)")]
         public static void LogDetailed(this Exception e, string tag = null) {
             if (tag == null) {
                 Console.WriteLine("--------------------------------");
