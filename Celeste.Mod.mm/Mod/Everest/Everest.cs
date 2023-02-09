@@ -78,7 +78,6 @@ namespace Celeste.Mod {
         /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
-        private static List<Assembly> _RelinkedAssemblies = new List<Assembly>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -314,7 +313,7 @@ namespace Celeste.Mod {
             // .NET hates to acknowledge manually loaded assemblies.
             AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
                 AssemblyName asmName = new AssemblyName(asmArgs.Name);
-                foreach (Assembly asm in _RelinkedAssemblies) {
+                foreach (Assembly asm in Relinker.RelinkedAssemblies) {
                     if (asm.GetName().Name == asmName.Name)
                         return asm;
                 }
@@ -512,10 +511,6 @@ namespace Celeste.Mod {
 
             DecalRegistry.LoadDecalRegistry();
 
-            // If anyone's still using the relinker past this point, at least make sure that it won't grow endlessly.
-            Relinker.Modder.Dispose();
-            Relinker.Modder = null;
-            Relinker.SharedModder = false;
 
             Celeste.Instance.Disposed += Dispose;
         }
@@ -910,7 +905,7 @@ namespace Celeste.Mod {
                 foreach (Action detourUndo in detours.Values)
                     detourUndo();
 
-            _RelinkedAssemblies.Remove(asm);
+            Relinker.RelinkedAssemblies.Remove(asm);
 
             // TODO: Unload from LuaLoader
             // TODO: Unload from EntityLoaders
