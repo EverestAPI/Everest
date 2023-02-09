@@ -222,7 +222,7 @@ namespace Celeste {
                         RemoveSelf();
                         solids.ForEach(s => s.RemoveSelf());
                     }));
-                    CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
+                    CoreModule.Session.AttachedDecals.Add(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y));
                 }
             };
             if (jumpThrus)
@@ -261,7 +261,7 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains($"{Name}||{Position.X}||{Position.Y}")) {
+            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
                 RemoveSelf();
             }
         }

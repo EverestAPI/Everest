@@ -114,10 +114,10 @@ namespace Monocle {
             Level level = Engine.Scene as Level;
 
             if (level != null) {
-                mouseText += $"Area: {level.Session.Level} @ {level.Session.Area}\n";
+                mouseText += string.Format("Area: {0} @ {1}\n", level.Session.Level, level.Session.Area);
             }
 
-            mouseText += $"Cursor @\n screen: {(int) Math.Round(mousePosition.X)}, {(int) Math.Round(mousePosition.Y)}";
+            mouseText += string.Format("Cursor @\n screen: {0}, {1}", (int) Math.Round(mousePosition.X), (int) Math.Round(mousePosition.Y));
 
             if (level != null) {
                 Camera cam = level.Camera;
@@ -126,15 +126,15 @@ namespace Monocle {
                 Vector2 mouseWorldPosition = Calc.Floor(((patch_Level) level).ScreenToWorld(mousePosition / viewScale));
                 // CelesteTAS already displays world coordinates. If it is installed, leave that up to it.
                 if (!celesteTASInstalled.Value) {
-                    mouseText += $"\n world:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                    mouseText += string.Format("\n world:       {0}, {1}", (int) Math.Round(mouseWorldPosition.X), (int) Math.Round(mouseWorldPosition.Y));
                 }
                 mouseWorldPosition -= level.LevelOffset;
-                mouseText += $"\n level:       {(int) Math.Round(mouseWorldPosition.X)}, {(int) Math.Round(mouseWorldPosition.Y)}";
+                mouseText += string.Format("\n level:       {0}, {1}", (int) Math.Round(mouseWorldPosition.X), (int) Math.Round(mouseWorldPosition.Y));
                 // Convert world to world-snap position.
                 mouseSnapPosition = Calc.Floor(mouseWorldPosition / 8f);
-                mouseText += $"\n level, /8:   {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseText += string.Format("\n level, /8:   {0}, {1}", (int) Math.Round(mouseSnapPosition.Value.X), (int) Math.Round(mouseSnapPosition.Value.Y));
                 mouseSnapPosition = 8f * mouseSnapPosition;
-                mouseText += $"\n level, snap: {(int) Math.Round(mouseSnapPosition.Value.X)}, {(int) Math.Round(mouseSnapPosition.Value.Y)}";
+                mouseText += string.Format("\n level, snap: {0}, {1}", (int) Math.Round(mouseSnapPosition.Value.X), (int) Math.Round(mouseSnapPosition.Value.Y));
                 // Convert world-snap to screen-snap position.
                 mouseSnapPosition += new Vector2(4f, 4f); // Center the cursor on the tile.
                 mouseSnapPosition += level.LevelOffset;

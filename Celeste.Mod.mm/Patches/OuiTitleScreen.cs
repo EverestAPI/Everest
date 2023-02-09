@@ -67,7 +67,7 @@ namespace Celeste {
 
             arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
 
-            version += $"\nEverest v.{Everest.Version}-{Everest.VersionTag}";
+            version += string.Format("\nEverest v.{0}-{1}", Everest.Version, Everest.VersionTag);
 
             // Initialize DebugRC here, as the play mode can change during the intro.
             Everest.DebugRC.Initialize();

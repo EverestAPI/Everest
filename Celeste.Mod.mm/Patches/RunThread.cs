@@ -27,7 +27,7 @@ namespace Celeste {
             lock (threads) {
                 threads.Add(thread);
                 threadTimes.Add(DateTime.UtcNow);
-                threadInfos.Add($"Name: {name}\nAction: {method?.Method?.ToString() ?? method.ToString()}\nStarter:\n{new StackTrace(1)}");
+                threadInfos.Add(string.Format("Name: {0}\nAction: {1}\nStarter:\n{2}", name, method?.Method?.ToString() ?? method.ToString(), new StackTrace(1)));
             }
             Current = new WeakReference<Thread>(thread);
             thread.Start();

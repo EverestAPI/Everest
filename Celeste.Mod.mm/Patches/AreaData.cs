@@ -357,7 +357,7 @@ namespace Celeste {
                 }
                 Array.Resize(ref area.Mode, modei);
 
-                Logger.Log(LogLevel.Verbose, "AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
+                Logger.Log(LogLevel.Verbose, "AreaData", string.Format("{0}: {1} - {2} sides", i, area.GetSID(), area.Mode.Length));
 
                 // Update old MapData areas and load any new areas.
 
@@ -452,7 +452,7 @@ namespace Celeste {
         }
 
         public static string GetStartName(AreaKey area) {
-            string start_key = $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/start";
+            string start_key = string.Format("{0}/{1}/start", area.GetSID(), (char) ('A' + (int) area.Mode));
             if (AreaData.Get(area).GetLevelSet() == "Celeste" || !Dialog.Has(start_key))
                 return Dialog.Clean("overworld_start");
             return Dialog.Clean(start_key);

@@ -150,7 +150,7 @@ namespace Celeste {
             patch_Banks.ModCache[asset] = bank;
 
             bank.getID(out Guid id);
-            cachedBankPaths[id] = $"bank:/mods/{asset.PathVirtual.Substring("Audio/".Length)}";
+            cachedBankPaths[id] = string.Format("bank:/mods/{0}", asset.PathVirtual.Substring("Audio/".Length));
             return bank;
         }
 
@@ -291,7 +291,7 @@ namespace Celeste {
                     return bank;
 
                 ModAsset asset;
-                if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}", out asset)) {
+                if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}", name), out asset)) {
                     bank = IngestBank(asset);
 
                 } else {
@@ -302,7 +302,7 @@ namespace Celeste {
                 }
 
                 if (loadStrings) {
-                    if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}.strings", out asset)) {
+                    if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}.strings", name), out asset)) {
                         IngestBank(asset);
                     } else {
                         Bank strings;
