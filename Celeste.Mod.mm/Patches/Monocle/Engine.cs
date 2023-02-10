@@ -1,6 +1,13 @@
+using Celeste.Mod.Entities;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.Utils;
 using System;
+using System.Linq;
 
 namespace Monocle {
     class patch_Engine : Engine {
@@ -47,6 +54,19 @@ namespace Monocle {
             }
         }
 
+        [MonoModIgnore]
+        [PatchEngineUpdate]
+        protected override extern void Update(GameTime gameTime);
+
+        private static float GetTimeRateComponentMultiplier(Scene scene) {
+            return scene?.Tracker.GetComponents<TimeRateModifier>()
+                                 .Cast<TimeRateModifier>()
+                                 .Where(trm => trm.Enabled)
+                                 .Select(trm => trm.Multiplier)
+                                 .Aggregate(1f, (acc, val) => acc * val)
+                   ?? 1;
+        }
+
     }
     public static class EngineExt {
 
@@ -80,5 +100,31 @@ namespace Monocle {
             }
         }
 
+    }
+}
+
+namespace MonoMod {
+    
+    /// <summary>
+    /// Patch the method to apply TimeRateModifier multipliers.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEngineUpdate))]
+    class PatchEngineUpdateAttribute : Attribute { }
+    
+    static partial class MonoModRules {
+        public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Engine = context.Method.DeclaringType;
+            FieldReference f_scene = t_Engine.FindField("scene");
+            MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
+            
+            ILCursor cursor = new ILCursor(context);
+            // multiply time rate with GetTimeRateComponentMultiplier(scene)
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
+                                            instr => instr.MatchMul());
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, f_scene);
+            cursor.Emit(OpCodes.Call, m_GetTimeRateComponentMultiplier);
+            cursor.Emit(OpCodes.Mul);
+        }
     }
 }
