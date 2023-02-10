@@ -1,0 +1,68 @@
+trigger:
+- stable
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- deployment: Stable
+  displayName: 'Publish stable release'
+
+  environment: 'Release-Stable'
+
+  strategy:
+    runOnce:
+      deploy:
+        steps:
+        - checkout: self
+
+        # Get tag name for the commit
+        - script: |
+            TAG_NAME=$(git describe --contains HEAD | sed 's/~.*//')
+            echo "##vso[task.setvariable variable=beta_tag_name]$TAG_NAME"
+
+            BUILD_NUMBER=$(echo $TAG_NAME | grep -Po '\d{4,}')
+            echo "##vso[task.setvariable variable=build_number]$BUILD_NUMBER"
+
+            # Sharing variables between lifecycle hooks sucks
+            echo "$BUILD_NUMBER" > $(Pipeline.Workspace)/buildNumber
+          displayName: Get tag and build
+          name: version
+
+        - task: DownloadGitHubRelease@0
+          displayName: Retrieve artifacts for build
+          inputs:
+            connection: 0x0ade-bot
+            userRepository: 'Everest'
+            defaultVersionType: 'specificTag'
+            version: $(beta_tag_name)
+            itemPattern: '**'
+            downloadPath: $(Pipeline.Workspace)
+
+        # Create GitHub release for new stable versions.
+        - task: GitHubRelease@1
+          displayName: 'Create GitHub Release'
+          inputs:
+            githubConnection: 0x0ade-bot
+            repositoryName: EverestAPI/Everest
+            action: 'create'
+            target: '$(Build.SourceVersion)'
+            tagSource: 'userSpecifiedTag'
+            tag: 'stable-1.$(build_number).0'
+            title: 'Stable Build $(build_number)'
+            assets: |
+              $(Pipeline.Workspace)/main.zip
+              $(Pipeline.Workspace)/olympus-meta.zip
+              $(Pipeline.Workspace)/olympus-build.zip
+              $(Pipeline.Workspace)/lib-stripped.zip
+
+      on:
+        success:
+          steps:
+          # Announce new stable versions on Discord (#modding_updates).
+          - script: |
+              BUILD_NUMBER=$(< $(Pipeline.Workspace)/buildNumber)
+              curl -H "Content-Type: application/json" \
+                -d "{\"content\": \"**A new Everest stable was just released!**\nThe latest stable version is now **$BUILD_NUMBER**.\"}" \
+                $(WEBHOOK_URL)
+            displayName: 'Publish Discord webhook'

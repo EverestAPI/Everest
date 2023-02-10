@@ -1,0 +1,20 @@
+name: Build (Pull Request)
+
+# Trigger for PRs
+on:
+  pull_request:
+    branches:
+      - dev
+
+jobs:
+  build:
+    if: ! github.event.pull_request.draft
+    name: Call Azure Pipeline
+    runs-on: ubuntu-latest
+    steps:
+    - name: Azure Pipelines Action
+      uses: Azure/pipelines@v1
+      with:
+        azure-devops-project-url: https://dev.azure.com/EverestAPI/Everest
+        azure-pipeline-name: 'EverestAPI.Everest'
+        azure-devops-token: ${{ secrets.AZURE_DEVOPS_TOKEN }}
