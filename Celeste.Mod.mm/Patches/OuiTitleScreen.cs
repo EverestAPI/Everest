@@ -104,9 +104,9 @@ namespace Celeste {
                 }
             }
 
-            if (!updateChecked && Everest.Updater.HasUpdate && Everest.Updater.Newest != null && alpha >= 1f) {
+            if (!updateChecked && Everest.Updater.HasUpdate && Everest.Updater.Newest.Source.UpdatePriority is not Everest.Updater.UpdatePriority.None && alpha >= 1f) {
                 updateChecked = true;
-                updateTex = Everest.Updater.Newest.Branch == "stable" ? GFX.Gui["areas/new"] : GFX.Gui["areas/new-yellow"];
+                updateTex = Everest.Updater.Newest.Source.UpdatePriority is Everest.Updater.UpdatePriority.High ? GFX.Gui["areas/new"] : GFX.Gui["areas/new-yellow"];
                 Tween tween = Tween.Create(Tween.TweenMode.Oneshot, Ease.CubeInOut, 0.3f, true);
                 tween.OnUpdate = t => {
                     updateAlpha = t.Percent;

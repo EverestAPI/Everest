@@ -150,9 +150,19 @@
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
+
+	UPDATER_CURRENT_BRANCH=			Current branch
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+
+	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
+	UPDATER_SRC_BUILDBOT_AZURE=		Automatic builds (Azure)
 	
+# currently unused
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
-	
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	Updating not supported on this platform - cancelling.
 	EVERESTUPDATER_NOUPDATE=		No update - cancelling.
