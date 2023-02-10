@@ -335,11 +335,30 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
+        public static bool IsSafe(this Type type) {
+            try {
+                // "Probe" the type
+                _ = type.Name;
+                _ = type.Assembly.FullName;
+                _ = type.Module.FullyQualifiedName;
+
+                // Check declaring and base type
+                if (!type.DeclaringType?.IsSafe() ?? false)
+                    return false;
+                if (!type.BaseType?.IsSafe() ?? false)
+                    return false;
+
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
         public static Type[] GetTypesSafe(this Assembly asm) {
             try {
-                return asm.GetTypes();
+                return asm.GetTypes().Where(t => t.IsSafe()).ToArray();
             } catch (ReflectionTypeLoadException e) {
-                return e.Types.Where(t => t != null).ToArray();
+                return e.Types.Where(t => t != null && t.IsSafe()).ToArray();
             }
         }
 

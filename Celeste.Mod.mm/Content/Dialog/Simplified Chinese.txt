@@ -76,10 +76,22 @@
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yaml 错误警告
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		有助于 Mod 制作者发现错误
 	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord 丰富状态
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				菜单导航
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						向上翻页
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						向下翻页
-	MODOPTIONS_COREMODULE_KEYCONFIG=						菜单快捷键 -
-
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				调试模式
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						调试控制台
+	MODOPTIONS_COREMODULE_DEBUGMAP=							调试地图
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			选关界面镜头
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					向前移动
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					向后移动
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						向右移动
+	MODOPTIONS_COREMODULE_CAMERALEFT=						向左移动
+	MODOPTIONS_COREMODULE_CAMERAUP=							向上移动
+	MODOPTIONS_COREMODULE_CAMERADOWN=						向下移动
+	MODOPTIONS_COREMODULE_CAMERASLOW=						降低移动速度
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						输出坐标
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			切换自由视角模式
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						试听音效
 	MODOPTIONS_COREMODULE_OOBE= 							打开初始设置页面
 	MODOPTIONS_COREMODULE_TOGGLEMODS=						启用或禁用 Mod
@@ -211,8 +223,8 @@
 	OOBE_WELCOME_CREATE=		我想要制作 Mod
 	OOBE_WELCOME_SKIP=			跳过引导
 
-	OOBE_SETTINGS_PLAY=			你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}游戏进度将被同步到 Discord 游戏动态中。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。
-	OOBE_SETTINGS_SPEEDRUN=		在标题页按住右键重启进入原版 Celeste。{n}你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。
+	OOBE_SETTINGS_PLAY=			你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}游戏进度将被同步到 Discord 游戏动态中。{n}启用调试模式后在游戏中按 F6 进入地图调试界面。
+	OOBE_SETTINGS_SPEEDRUN=		在标题页按住右键重启进入原版 Celeste。{n}你可以在 GameBanana 网站上搜索安装所需的 Mod。{n}安装好的自制地图 Mod 可以在章节选择界面找到。{n}启用调试模式后在游戏中按 F6 进入地图调试界面。
 	OOBE_SETTINGS_CREATE=		你可以在 GameBanana 网站上分享你创建的 Mod。{n}自制地图 Mod 可以在章节选择界面找到。{n}启用调试模式后在游戏中按 F6 进入地图调式界面。{n}游戏中按下 F5 重新加载当前地图，按下 Ctrl+F5 快速重启游戏。{n}如果你的键盘没有 ~ 键，改用 . 键打开控制台，输入 q 并且回车关闭命令行。
 	OOBE_SETTINGS_SUBHEADER=	以下是一些你可能感兴趣的设置项
 	OOBE_SETTINGS_MORE=			你可以在 Mod 选项菜单中进行更多的修改

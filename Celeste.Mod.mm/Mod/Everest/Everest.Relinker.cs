@@ -141,8 +141,6 @@ namespace Celeste.Mod {
                         }
                     };
 
-                    Modder.PostProcessors += ApplyModHackfixes;
-
                     return _Modder;
                 }
                 set {
@@ -150,59 +148,9 @@ namespace Celeste.Mod {
                 }
             }
 
+            private static Dictionary<string, ModuleDefinition> _RelinkedModules = new Dictionary<string, ModuleDefinition>();
+
             private static EverestModuleMetadata _Relinking;
-
-            // The following methods depend on the old fallback-less Atlas behavior via try-catches or otherwise.
-            private static HashSet<string> _ModHackfixNoAtlasFallback = new HashSet<string>() {
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMover::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(string)},{typeof(float)},{typeof(string)})",
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMover/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.LinkedZipMover,{typeof(string)})",
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(string)},{typeof(float)},{typeof(string)})",
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.LinkedZipMoverNoReturn,{typeof(string)})",
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn::.ctor({typeof(Vector2)},{typeof(int)},{typeof(int)},{typeof(Vector2)},{typeof(float)},{typeof(string)})",
-                $"{typeof(void)} Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn/ZipMoverPathRenderer::.ctor(Celeste.Mod.AdventureHelper.Entities.ZipMoverNoReturn,{typeof(string)})",
-            };
-
-            private static void ApplyModHackfixes(MonoModder modder) {
-                if (_Relinking == null && !(
-                        // Some mods require additional special care.
-                        _Relinking.Name == "AdventureHelper" // Don't check the version for this mod as the hackfix is harmless.
-                    ))
-                    return; // No hackfixes necessary.
-
-                void CrawlMethod(MethodDefinition method) {
-                    string methodID = method.GetID();
-
-                    if (_ModHackfixNoAtlasFallback.Contains(methodID)) {
-                        using (ILContext ctx = new ILContext(method)) {
-                            ctx.Invoke(ctx => {
-                                ILCursor c = new ILCursor(ctx);
-
-                                c.Emit(OpCodes.Ldsfld, typeof(GFX).GetField("Game"));
-                                c.Emit(OpCodes.Ldnull);
-                                c.Emit(OpCodes.Callvirt, typeof(patch_Atlas).GetMethod("PushFallback"));
-
-                                while (c.TryGotoNext(MoveType.AfterLabel, i => i.MatchRet())) {
-                                    c.Emit(OpCodes.Ldsfld, typeof(GFX).GetField("Game"));
-                                    c.Emit(OpCodes.Callvirt, typeof(patch_Atlas).GetMethod("PopFallback"));
-                                    c.Emit(OpCodes.Pop);
-                                    c.Index++;
-                                }
-                            });
-                        }
-                    }
-                }
-
-                void CrawlType(TypeDefinition type) {
-                    foreach (MethodDefinition method in type.Methods)
-                        CrawlMethod(method);
-
-                    foreach (TypeDefinition nested in type.NestedTypes)
-                        CrawlType(nested);
-                }
-
-                foreach (TypeDefinition type in modder.Module.Types)
-                    CrawlType(type);
-            }
 
             private static AssemblyDefinition OnRelinkerResolveFailure(object sender, AssemblyNameReference reference) {
                 if (reference.FullName.ToLowerInvariant().Contains("fna") || reference.FullName.ToLowerInvariant().Contains("xna")) {
@@ -255,6 +203,7 @@ namespace Celeste.Mod {
                 string cachedPath = GetCachedPath(meta, asmname);
                 string cachedChecksumPath = cachedPath.Substring(0, cachedPath.Length - 4) + ".sum";
 
+                // Calculate checksums
                 string[] checksums = new string[2 + (checksumsExtra?.Length ?? 0)];
                 if (GameChecksum == null)
                     GameChecksum = Everest.GetChecksum(Assembly.GetAssembly(typeof(Relinker)).Location).ToHexadecimalString();
@@ -267,20 +216,34 @@ namespace Celeste.Mod {
                         checksums[i + 2] = checksumsExtra[i];
                     }
 
+                // Try to load a cached assembly if it exists and the checksums match
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
+                    
+                    // Load the assembly and the module definition
+                    ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
                     try {
                         Assembly asm = Assembly.LoadFrom(cachedPath);
                         _RelinkedAssemblies.Add(asm);
+
+                        if (!_RelinkedModules.ContainsKey(mod.Assembly.Name.Name)) {
+                            _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
+                            mod = null;
+                        } else
+                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
+
                         return asm;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
                         e.LogDetailed();
                         return null;
+                    } finally {
+                        mod?.Dispose();
                     }
                 }
 
+                // Determine the dependency and assembly resolver
                 if (depResolver == null)
                     depResolver = GenerateModDependencyResolver(meta);
 
@@ -294,9 +257,12 @@ namespace Celeste.Mod {
 
                 bool temporaryASM = false;
 
+                ModuleDefinition module = null;
+
                 try {
                     _Relinking = meta;
 
+                    // Setup the MonoModder
                     MonoModder modder = Modder;
 
                     modder.Input = stream;
@@ -305,6 +271,7 @@ namespace Celeste.Mod {
 
                     ((DefaultAssemblyResolver) modder.AssemblyResolver).ResolveFailure += resolver;
 
+                    // Read and setup debug symbols (if they exist)
                     modder.ReaderParameters.SymbolStream = OpenStream(meta, out string symbolPath, meta.DLL.Substring(0, meta.DLL.Length - 4) + ".pdb", meta.DLL + ".mdb");
                     modder.ReaderParameters.ReadSymbols = modder.ReaderParameters.SymbolStream != null;
                     if (modder.ReaderParameters.SymbolReaderProvider != null &&
@@ -332,8 +299,10 @@ namespace Celeste.Mod {
                         ((RelinkerSymbolReaderProvider) modder.ReaderParameters.SymbolReaderProvider).Format = DebugSymbolFormat.Auto;
                     }
 
+                    // Map assembly dependencies
                     modder.MapDependencies();
 
+                    // Parse runtime rules if they haven't already been parsed
                     if (!RuntimeRulesParsed) {
                         RuntimeRulesParsed = true;
 
@@ -357,12 +326,14 @@ namespace Celeste.Mod {
                         }
                     }
 
+                    // Patch the assembly
                     prePatch?.Invoke(modder);
 
                     modder.ParseRules(modder.Module);
 
                     modder.AutoPatch();
 
+                    // Write patched assembly and debug symbols back to disk
                     ISymbolWriterProvider symbolWriterProvider = modder.WriterParameters.SymbolWriterProvider;
 
                     RetryWrite:
@@ -388,46 +359,78 @@ namespace Celeste.Mod {
                     } finally {
                         modder.WriterParameters.SymbolWriterProvider = symbolWriterProvider;
                     }
+
+                    module = modder.Module;
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
                     e.LogDetailed();
                     return null;
                 } finally {
+                    // Clean up modder
                     ((DefaultAssemblyResolver) Modder.AssemblyResolver).ResolveFailure -= resolver;
                     Modder.ReaderParameters.SymbolStream?.Dispose();
+
+                    if (module != Modder.Module)
+                        Modder.Module?.Dispose();
+                    Modder.Module = null;
+
                     if (SharedModder) {
                         Modder.ClearCaches(moduleSpecific: true);
-                        Modder.Module?.Dispose();
-                        Modder.Module = null;
-
                     } else {
                         Modder.Dispose();
                         Modder = null;
                     }
                 }
 
-                if (File.Exists(cachedChecksumPath)) {
-                    File.Delete(cachedChecksumPath);
-                }
-                if (!temporaryASM) {
-                    File.WriteAllLines(cachedChecksumPath, checksums);
-                }
-
-                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname}");
                 try {
-                    Assembly asm = Assembly.LoadFrom(cachedPath);
-                    _RelinkedAssemblies.Add(asm);
-                    return asm;
-                } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
-                    e.LogDetailed();
-                    return null;
+                    // Write new checksums
+                    if (File.Exists(cachedChecksumPath)) {
+                        File.Delete(cachedChecksumPath);
+                    }
+                    if (!temporaryASM) {
+                        File.WriteAllLines(cachedChecksumPath, checksums);
+                    }
+
+                    // Log the assembly load and dependencies
+                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {module.Assembly.Name}");
+                    if (Modder != null)
+                        foreach(AssemblyNameReference aref in module.AssemblyReferences) {
+                            if (Modder.DependencyCache.ContainsKey(aref.FullName))
+                                Logger.Log(LogLevel.Verbose, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) found");
+                            else
+                                Logger.Log(LogLevel.Warn, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) NOT FOUND");
+                        }
+
+                    try {
+                        // Load the assembly and the module definition
+                        Assembly asm = Assembly.LoadFrom(cachedPath);
+                        _RelinkedAssemblies.Add(asm);
+
+                        if (!_RelinkedModules.ContainsKey(module.Assembly.Name.Name)) {
+                            _RelinkedModules.Add(module.Assembly.Name.Name, module);
+                            module = null;
+                        } else
+                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {module.Assembly.Name}");
+
+                        return asm;
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname} - {module.Assembly.Name}");
+                        e.LogDetailed();
+                        return null;
+                    }
+                } finally {
+                    module?.Dispose();
                 }
             }
 
             private static MissingDependencyResolver GenerateModDependencyResolver(EverestModuleMetadata meta) {
                 if (!string.IsNullOrEmpty(meta.PathArchive)) {
                     return (mod, main, name, fullName) => {
+                        // Try to resolve cross-mod references
+                        if (_RelinkedModules.TryGetValue(name, out ModuleDefinition def))
+                            return def;
+
+                        // Try to resolve the DLL inside of the mod ZIP
                         string path = name + ".dll";
                         if (!string.IsNullOrEmpty(meta.DLL))
                             path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
@@ -441,21 +444,29 @@ namespace Celeste.Mod {
                                     return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
                             }
                         }
+
+                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
                         return null;
                     };
                 }
 
                 if (!string.IsNullOrEmpty(meta.PathDirectory)) {
                     return (mod, main, name, fullName) => {
+                        // Try to resolve cross-mod references
+                        if (_RelinkedModules.TryGetValue(name, out ModuleDefinition def))
+                            return def;
+
+                        // Try to resolve the DLL inside of the mod folder
                         string path = name + ".dll";
                         if (!string.IsNullOrEmpty(meta.DLL))
                             path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
                         if (!File.Exists(path))
                             path = Path.Combine(meta.PathDirectory, path);
-                        if (!File.Exists(path))
-                            return null;
+                        if (File.Exists(path))
+                            return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
 
-                        return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
+                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+                        return null;
                     };
                 }
 

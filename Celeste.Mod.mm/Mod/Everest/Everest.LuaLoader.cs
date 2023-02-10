@@ -29,11 +29,11 @@ namespace Celeste.Mod {
                 try {
                     string pathOverride = Path.Combine(PathEverest, "boot.lua");
                     if (File.Exists(pathOverride)) {
-                        Logger.Log("Everest.LuaLoader", "Found external Lua boot script.");
+                        Logger.Log(LogLevel.Info, "Everest.LuaLoader", "Found external Lua boot script.");
                         stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
 
                     } else if (Content.TryGet<AssetTypeLua>("Lua/boot", out ModAsset asset)) {
-                        Logger.Log("Everest.LuaLoader", "Found built-in Lua boot script.");
+                        Logger.Log(LogLevel.Verbose, "Everest.LuaLoader", "Found built-in Lua boot script.");
                         stream = asset.Stream;
                     }
 
@@ -42,7 +42,7 @@ namespace Celeste.Mod {
                         return;
                     }
 
-                    Logger.Log("Everest.LuaLoader", "Creating Lua context and running Lua boot script.");
+                    Logger.Log(LogLevel.Verbose, "Everest.LuaLoader", "Creating Lua context and running Lua boot script.");
 
                     using (StreamReader reader = new StreamReader(stream))
                         text = reader.ReadToEnd();

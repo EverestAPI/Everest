@@ -48,8 +48,9 @@ namespace Celeste.Mod.Core {
             base.LoadSettings();
 
             // The field can be set to true by default without the setter being called by YamlDotNet.
-            if (Settings.DiscordRichPresence)
-                Everest.Discord.Initialize();
+            if (Settings.DiscordRichPresence) {
+                Everest.DiscordSDK.CreateInstance();
+            }
 
             // If we're running in an environment that prefers this flag, forcibly enable them.
             Settings.LazyLoading |= Everest.Flags.PreferLazyLoading;
@@ -77,7 +78,7 @@ namespace Celeste.Mod.Core {
                 files.Sort(new LogRotationHelper.OldestFirst());
                 int historyToDelete = files.Count - historyToKeep;
                 foreach (string file in files.Take(historyToDelete)) {
-                    Logger.Log("core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
+                    Logger.Log(LogLevel.Verbose, "core", $"log.txt history: keeping {historyToKeep} file(s) of history, deleting {file}");
                     File.Delete(file);
                 }
             }
@@ -140,7 +141,7 @@ namespace Celeste.Mod.Core {
             ILCursor cursor = new ILCursor(il);
 
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
-                Logger.Log("core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
+                Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
                 cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
             }
@@ -243,11 +244,6 @@ namespace Celeste.Mod.Core {
 
             if (!inGame) {
                 List<TextMenu.Item> items = menu.GetItems();
-
-                // change the "key config" labels
-
-                (items[items.Count - 2] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 2] as TextMenu.Button).Label;
-                (items[items.Count - 1] as TextMenu.Button).Label = Dialog.Clean("MODOPTIONS_COREMODULE_KEYCONFIG") + " " + (items[items.Count - 1] as TextMenu.Button).Label;
 
                 // insert extra options before the "key config" options
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {

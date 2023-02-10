@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
+using MAB.DotIgnore;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -84,35 +85,6 @@ namespace Celeste.Mod {
             /// The currently loaded mod updater blacklist.
             /// </summary>
             public static ReadOnlyCollection<string> UpdaterBlacklist => _UpdaterBlacklist?.AsReadOnly();
-
-            /// <summary>
-            /// All mods on this list with a version lower than the specified version will never load.
-            /// </summary>
-            internal static Dictionary<string, Version> PermanentBlacklist = new Dictionary<string, Version>() {
-
-                // Note: Most, if not all mods use Major.Minor.Build
-                // Revision is thus set to -1 and < 0
-                // Entries with a revision of 0 are there because there is no update / fix for those mods.
-
-                // Versions of the mods older than on this list no longer work with Celeste 1.3.0.0
-                { "SpeedrunTool", new Version(1, 5, 7) },
-                { "CrystalValley", new Version(1, 1, 3) },
-                { "IsaGrabBag", new Version(1, 3, 2) },
-                { "testroom", new Version(1, 0, 1, 0) },
-                { "Elemental Chaos", new Version(1, 0, 0, 0) },
-                { "BGswitch", new Version(0, 1, 0, 0) },
-            };
-
-            /// <summary>
-            /// When both mods in the same row with versions lower than in the row are present, yell at the user.
-            /// </summary>
-            internal static HashSet<Tuple<string, Version, string, Version>> PermanentConflictlist = new HashSet<Tuple<string, Version, string, Version>>() {
-
-                // See above versioning note.
-
-                // I'm sorry. -ade
-                Tuple.Create("Nameguy's D-Sides", _VersionMax, "Monika's D-Sides", _VersionMax),
-            };
 
             internal static FileSystemWatcher Watcher;
 
@@ -255,28 +227,19 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
 
-                EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
+
+                IgnoreList ignoreList = null;
+
+                bool metaParsed = false;
 
                 using (ZipFile zip = new ZipFile(archive)) {
                     foreach (ZipEntry entry in zip.Entries) {
-                        if (entry.FileName == "metadata.yaml") {
-                            using (MemoryStream stream = entry.ExtractStream())
-                            using (StreamReader reader = new StreamReader(stream)) {
-                                try {
-                                    meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
-                                    meta.PathArchive = archive;
-                                    meta.PostParse();
-                                } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {archive}: {e}");
-                                    FilesWithMetadataLoadFailures.Add(archive);
-                                }
+                        if (entry.FileName is "everest.yaml" or "everest.yml") {
+                            if (metaParsed) {
+                                Logger.Log(LogLevel.Warn, "loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FileName}.");
+                                continue;
                             }
-                            continue;
-                        }
-                        if (entry.FileName == "multimetadata.yaml" ||
-                            entry.FileName == "everest.yaml" ||
-                            entry.FileName == "everest.yml") {
                             using (MemoryStream stream = entry.ExtractStream())
                             using (StreamReader reader = new StreamReader(stream)) {
                                 try {
@@ -288,10 +251,22 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {archive}: {e}");
+                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing {entry.FileName} in {archive}: {e}");
                                     FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
+                            metaParsed = true;
+                            continue;
+                        }
+                        if (entry.FileName == ".everestignore") {
+                            List<string> lines = new List<string>();
+                            using (MemoryStream stream = entry.ExtractStream())
+                            using (StreamReader reader = new StreamReader(stream)) {
+                                while (!reader.EndOfStream) {
+                                    lines.Add(reader.ReadLine());
+                                }
+                            }
+                            ignoreList = new IgnoreList(lines);
                             continue;
                         }
                     }
@@ -299,6 +274,8 @@ namespace Celeste.Mod {
 
                 ZipModContent contentMeta = new ZipModContent(archive);
                 EverestModuleMetadata contentMetaParent = null;
+
+                contentMeta.Ignore = ignoreList;
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -320,14 +297,12 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
-                    if (meta == null) {
-                        meta = new EverestModuleMetadata() {
-                            Name = "_zip_" + Path.GetFileNameWithoutExtension(archive),
-                            VersionString = "0.0.0-dummy",
-                            PathArchive = archive
-                        };
-                        meta.PostParse();
-                    }
+                    EverestModuleMetadata meta = new EverestModuleMetadata() {
+                        Name = "_zip_" + Path.GetFileNameWithoutExtension(archive),
+                        VersionString = "0.0.0-dummy",
+                        PathArchive = archive
+                    };
+                    meta.PostParse();
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
@@ -350,27 +325,14 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
 
-                EverestModuleMetadata meta = null;
                 EverestModuleMetadata[] multimetas = null;
 
-                string metaPath = Path.Combine(dir, "metadata.yaml");
-                if (File.Exists(metaPath))
-                    using (StreamReader reader = new StreamReader(metaPath)) {
-                        try {
-                            meta = YamlHelper.Deserializer.Deserialize<EverestModuleMetadata>(reader);
-                            meta.PathDirectory = dir;
-                            meta.PostParse();
-                        } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing metadata.yaml in {dir}: {e}");
-                            FilesWithMetadataLoadFailures.Add(dir);
-                        }
-                    }
-
-                metaPath = Path.Combine(dir, "multimetadata.yaml");
-                if (!File.Exists(metaPath))
-                    metaPath = Path.Combine(dir, "everest.yaml");
-                if (!File.Exists(metaPath))
+                string metaPath = Path.Combine(dir, "everest.yaml");
+                if (!File.Exists(metaPath)) {
                     metaPath = Path.Combine(dir, "everest.yml");
+                } else if (File.Exists(Path.Combine(dir, "everest.yml"))) {
+                    Logger.Log(LogLevel.Warn, "loader", $"{dir} has both everest.yaml and everest.yml. Ignoring everest.yml.");
+                }
                 if (File.Exists(metaPath))
                     using (StreamReader reader = new StreamReader(metaPath)) {
                         try {
@@ -389,6 +351,11 @@ namespace Celeste.Mod {
 
                 FileSystemModContent contentMeta = new FileSystemModContent(dir);
                 EverestModuleMetadata contentMetaParent = null;
+
+                string ignorePath = Path.Combine(dir, ".everestignore");
+                if (File.Exists(ignorePath)) {
+                    contentMeta.Ignore = new IgnoreList(ignorePath);
+                }
 
                 Action contentCrawl = () => {
                     if (contentMeta == null)
@@ -410,14 +377,12 @@ namespace Celeste.Mod {
                         LoadModDelayed(multimeta, contentCrawl);
                     }
                 } else {
-                    if (meta == null) {
-                        meta = new EverestModuleMetadata() {
-                            Name = "_dir_" + Path.GetFileName(dir),
-                            VersionString = "0.0.0-dummy",
-                            PathDirectory = dir
-                        };
-                        meta.PostParse();
-                    }
+                    EverestModuleMetadata meta = new EverestModuleMetadata() {
+                        Name = "_dir_" + Path.GetFileName(dir),
+                        VersionString = "0.0.0-dummy",
+                        PathDirectory = dir
+                    };
+                    meta.PostParse();
                     contentMetaParent = meta;
                     LoadModDelayed(meta, contentCrawl);
                 }
@@ -444,20 +409,6 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
-
-                if (PermanentBlacklist.TryGetValue(meta.Name, out Version minver) && meta.Version < minver) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta} permanently blacklisted by Everest!");
-                    return;
-                }
-
-                Tuple<string, Version, string, Version> conflictRow = PermanentConflictlist.FirstOrDefault(row =>
-                    (meta.Name == row.Item1 && meta.Version < row.Item2 && (_Modules.FirstOrDefault(other => other.Metadata.Name == row.Item3)?.Metadata.Version ?? _VersionInvalid) < row.Item4) ||
-                    (meta.Name == row.Item3 && meta.Version < row.Item4 && (_Modules.FirstOrDefault(other => other.Metadata.Name == row.Item1)?.Metadata.Version ?? _VersionInvalid) < row.Item2)
-                );
-                if (conflictRow != null) {
-                    throw new Exception($"CONFLICTING MODS: {conflictRow.Item1} VS {conflictRow.Item3}");
-                }
-
 
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep)) {
@@ -648,7 +599,7 @@ namespace Celeste.Mod {
 
                         // be sure to save this module's save data and session before reloading it, so that they are not lost.
                         if (SaveData.Instance != null) {
-                            Logger.Log("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                             if (module.SaveDataAsync) {
                                 module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                             } else {
@@ -660,7 +611,7 @@ namespace Celeste.Mod {
                             }
 
                             if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                                 if (module.SaveDataAsync) {
                                     module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
                                 } else {

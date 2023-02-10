@@ -95,7 +95,7 @@ namespace Celeste {
             // load vanilla tutorials
             foreach (string path in Directory.GetFiles(Path.Combine(Engine.ContentDirectory, "Tutorials"))) {
                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-                Logger.Log("PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
+                Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
 
                 List<Player.ChaserState> tutorial = Import(File.ReadAllBytes(path));
                 if (tutorial != null)
@@ -121,7 +121,7 @@ namespace Celeste {
                         tutorialPath = tutorialPath.Substring("Tutorials/".Length);
 
                     // load tutorial.
-                    Logger.Log("PlaybackData", $"Loading tutorial: {tutorialPath}");
+                    Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading tutorial: {tutorialPath}");
                     List<Player.ChaserState> tutorial = Import(child.Data);
                     if (tutorial != null)
                         Tutorials[tutorialPath] = tutorial;

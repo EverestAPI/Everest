@@ -385,7 +385,7 @@ namespace Monocle {
                 vtex = VirtualContentExt.CreateTexture(asset);
             } catch {
                 // The game is going to crash from this. Log the offending texture to make debugging easier.
-                Logger.Log(LogLevel.Verbose, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");
+                Logger.Log(LogLevel.Error, "Atlas.Ingest", $"Error while loading texture {path} ({asset.Source?.Name ?? "???"}) into atlas {Path.GetFileName(DataPath)}");
                 throw;
             }
             MTextureMeta meta = asset.GetMeta<MTextureMeta>();
@@ -405,6 +405,18 @@ namespace Monocle {
             mtex.SetOverride(asset);
             this[path] = mtex;
             Sources.Add(vtex);
+        }
+
+        public bool HasAtlasSubtextures(string key) {
+            return HasAtlasSubtexturesAt(key, 0);
+        }
+
+        public bool HasAtlasSubtexturesAt(string key, int index) {
+            if (orderedTexturesCache.TryGetValue(key, out List<MTexture> list)) {
+                return index >= 0 && index < list.Count;
+            } else {
+                return GetAtlasSubtextureFromAtlasAt(key, index) != null;
+            }
         }
 
         // log missing subtextures when getting an animation (for example, decals)

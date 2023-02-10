@@ -1,4 +1,5 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Mod.Meta;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
@@ -7,8 +8,6 @@ using System.Collections;
 
 namespace Celeste.Mod.Entities {
     public class CustomTextVignette : Scene {
-        private const float SFXDuration = 18.683f;
-
         public bool CanPause => menu == null;
 
         private Session session;
@@ -20,9 +19,10 @@ namespace Celeste.Mod.Entities {
         private bool started;
         private bool exiting;
 
-        private float timer;
         private float fade;
         private float pauseFade;
+        private float initialDelay;
+        private float finalDelay;
 
         private FancyText.Text text;
         private int textStart;
@@ -32,28 +32,35 @@ namespace Celeste.Mod.Entities {
         private HudRenderer renderer;
         private HiresSnow snow;
 
-        public CustomTextVignette(Session session, string text, HiresSnow snow = null) {
+        public CustomTextVignette(Session session, MapMetaTextVignette meta, HiresSnow snow = null) {
             this.session = session;
             areaMusic = session.Audio.Music.Event;
             session.Audio.Music.Event = null;
             session.Audio.Apply();
 
-            sfx = Audio.Play(SFX.music_prologue_intro_vignette);
+            sfx = Audio.Play(meta.Audio);
 
             if (snow == null) {
                 fade = 1f;
                 snow = new HiresSnow();
             }
+            snow.Direction = meta.SnowDirection;
             Add(renderer = new HudRenderer());
             Add(this.snow = snow);
             RendererList.UpdateLists();
 
-            this.text = FancyText.Parse(Dialog.Get(text), 960, 8, 0f);
+            initialDelay = meta.InitialDelay;
+            finalDelay = meta.FinalDelay;
+
+            text = FancyText.Parse(Dialog.Get(meta.Dialog), 960, 8, 0f);
             textCoroutine = new Coroutine(TextSequence());
         }
 
+        public CustomTextVignette(Session session, string text, HiresSnow snow = null) // maintain interface for backwards compatibility
+            : this(session, new MapMetaTextVignette {Dialog = text}, snow) { }
+
         private IEnumerator TextSequence() {
-            yield return 3f;
+            yield return initialDelay;
 
             while (textStart < text.Count) {
                 textAlpha = 1f;
@@ -78,6 +85,12 @@ namespace Celeste.Mod.Entities {
                 textStart = text.GetNextPageStart(textStart);
                 yield return 0.5f;
             }
+            if (finalDelay > 0) {
+                yield return finalDelay;
+            }
+            if (!started) {
+                StartGame();
+            }
             textStart = int.MaxValue;
         }
 
@@ -88,12 +101,7 @@ namespace Celeste.Mod.Entities {
                     if (textCoroutine != null && textCoroutine.Active) {
                         textCoroutine.Update();
                     }
-
-                    timer += Engine.DeltaTime;
-                    if (timer >= SFXDuration && !started) {
-                        StartGame();
-                    }
-                    if (timer < (SFXDuration - 2f) && menu == null && (Input.Pause.Pressed || Input.ESC.Pressed)) {
+                    if (menu == null && (Input.Pause.Pressed || Input.ESC.Pressed)) {
                         Input.Pause.ConsumeBuffer();
                         Input.ESC.ConsumeBuffer();
                         OpenMenu();
@@ -175,11 +183,11 @@ namespace Celeste.Mod.Entities {
                 Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, RasterizerState.CullNone, null, Engine.ScreenMatrix);
 
                 if (fade > 0f) {
-                    Draw.Rect(-1f, -1f, 1922f, 1082f, Color.Black * fade);
+                    Draw.Rect(-1f, -1f, Celeste.TargetWidth + 2f, Celeste.TargetHeight + 2f, Color.Black * fade);
                 }
 
                 if (textStart < text.Nodes.Count && textAlpha > 0f) {
-                    text.Draw(new Vector2(1920f, 1080f) * 0.5f, new Vector2(0.5f, 0.5f), Vector2.One, textAlpha * (1f - pauseFade), textStart);
+                    text.DrawJustifyPerLine(new Vector2(Celeste.TargetWidth, Celeste.TargetHeight) * 0.5f, new Vector2(0.5f, 0.5f), Vector2.One, textAlpha * (1f - pauseFade), textStart);
                 }
 
                 Draw.SpriteBatch.End();

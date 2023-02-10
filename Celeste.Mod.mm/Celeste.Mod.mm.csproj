@@ -12,6 +12,10 @@
   <PropertyGroup>
     <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+  </PropertyGroup>
   
   <ItemGroup>
     <Reference Include="System.Management" />
@@ -64,6 +68,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="KeraLua" Version="1.0.22" />
     <PackageReference Include="NLua" Version="1.4.25" />
+    <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
   </ItemGroup>
 
   <!--
@@ -107,6 +112,10 @@
     <None Include="../lib-stripped/FNA.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
   </ItemGroup>
   
 </Project>

@@ -72,6 +72,16 @@ namespace Celeste.Mod {
                     => OnCreateButtons?.Invoke(menu, buttons);
             }
 
+            public static class LevelLoader {
+                public delegate void LoadingThreadHandler(_Level level);
+                /// <summary>
+                /// Called at the end of the map loading thread.
+                /// </summary>
+                public static event LoadingThreadHandler OnLoadingThread;
+                internal static void LoadingThread(_Level level)
+                    => OnLoadingThread?.Invoke(level);
+            }
+
             public static class Level {
                 public delegate void PauseHandler(_Level level, int startIndex, bool minimal, bool quickReset);
                 /// <summary>
@@ -80,6 +90,13 @@ namespace Celeste.Mod {
                 public static event PauseHandler OnPause;
                 internal static void Pause(_Level level, int startIndex, bool minimal, bool quickReset)
                     => OnPause?.Invoke(level, startIndex, minimal, quickReset);
+
+                public delegate void UnpauseHandler(_Level level);
+                /// <summary>
+                /// Called after unpausing the Level.
+                /// </summary>
+                public static event UnpauseHandler OnUnpause;
+                internal static void Unpause(_Level level) => OnUnpause?.Invoke(level);
 
                 public delegate void CreatePauseMenuButtonsHandler(_Level level, TextMenu menu, bool minimal);
                 /// <summary>
@@ -102,8 +119,20 @@ namespace Celeste.Mod {
                 /// Called during <see cref="patch_Level.LoadCustomEntity(EntityData, _Level)"/>.
                 /// </summary>
                 public static event LoadEntityHandler OnLoadEntity;
-                internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData)
-                    => OnLoadEntity?.InvokeWhileFalse(level, levelData, offset, entityData) ?? false;
+                internal static bool LoadEntity(_Level level, LevelData levelData, Vector2 offset, EntityData entityData) {
+                    LoadEntityHandler onLoadEntity = OnLoadEntity;
+
+                    if (onLoadEntity == null)
+                        return false;
+
+                    // replicates the InvokeWhileFalse extension method, but hardcoding the type to avoid dynamic dispatch
+                    foreach (LoadEntityHandler handler in onLoadEntity.GetInvocationList()) {
+                        if (handler(level, levelData, offset, entityData))
+                            return true;
+                    }
+
+                    return false;
+                }
 
                 public delegate Backdrop LoadBackdropHandler(MapData map, BinaryPacker.Element child, BinaryPacker.Element above);
                 public static event LoadBackdropHandler OnLoadBackdrop;

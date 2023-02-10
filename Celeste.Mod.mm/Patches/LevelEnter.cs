@@ -31,8 +31,8 @@ namespace Celeste {
         extern public static void orig_Go(Session session, bool fromSaveData);
         public static void Go(Session session, bool fromSaveData) {
             if (ErrorMessage != null) {
-                // We are entering the error screen. Invoke the original method which will display it.
-                orig_Go(session, fromSaveData);
+                // We have encountered an error, so start the scene directly to display our error screen.
+                Engine.Scene = new patch_LevelEnter(session, fromSaveData);
             } else {
                 try {
                     if (!PlayCustomVignette(session, fromSaveData))
@@ -40,16 +40,12 @@ namespace Celeste {
 
                     Everest.Events.Level.Enter(session, fromSaveData);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "misc", $"Failed entering area {session.Area}");
+                    string sid = session?.Area.GetSID() ?? "???";
+                    Logger.Log(LogLevel.Warn, "LevelEnter", $"Failed entering map {sid}");
                     Logger.LogDetailed(e);
 
-                    string message = Dialog.Get("postcard_levelloadfailed")
-                        .Replace("((player))", SaveData.Instance.Name)
-                        .Replace("((sid))", session.Area.GetSID())
-                    ;
-
-                    LevelEnterExt.ErrorMessage = message;
-                    LevelEnter.Go(new Session(AreaData.Get(session) == null ? new AreaKey(1) : session.Area), false);
+                    ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
+                    Engine.Scene = new patch_LevelEnter(session, fromSaveData);
                 }
             }
         }
@@ -68,14 +64,11 @@ namespace Celeste {
                 Engine.Scene = new CustomScreenVignette(session, meta: screen);
                 return true;
             } else if (playVignette && (text = area.GetMeta()?.LoadingVignetteText) != null && text.Dialog != null) {
-                HiresSnow snow = null;
-                if (Engine.Scene is Overworld)
-                    snow = (Engine.Scene as Overworld).Snow;
+                if (Engine.Scene is not Overworld {Snow: HiresSnow snow}) {
+                    snow = null;
+                }
 
-                if (snow != null && text.SnowDirection != null)
-                    snow.Direction = text.SnowDirection;
-
-                Engine.Scene = new CustomTextVignette(session, text.Dialog, snow);
+                Engine.Scene = new CustomTextVignette(session, text, snow);
                 return true;
             }
 
@@ -91,11 +84,10 @@ namespace Celeste {
             }
 
             if (AreaData.Get(session) == null) {
-                string message = Dialog.Get("postcard_levelgone")
+                Logger.Log(LogLevel.Warn, "LevelEnter", $"Failed to find map");
+                return ErrorRoutine(Dialog.Get("postcard_levelgone")
                     .Replace("((player))", SaveData.Instance.Name)
-                    .Replace("((sid))", session.Area.GetSID())
-                ;
-                return ErrorRoutine(message);
+                    .Replace("((sid))", session.Area.GetSID()));
             }
 
             AreaData areaData = AreaData.Get(session);
@@ -112,17 +104,18 @@ namespace Celeste {
         }
 
         private IEnumerator ErrorRoutine(string message) {
+            Audio.SetMusic(null);
+            Audio.SetAmbience(null);
+
             yield return 1f;
 
             Add(postcard = new Postcard(message, "event:/ui/main/postcard_csides_in", "event:/ui/main/postcard_csides_out"));
             yield return postcard.DisplayRoutine();
 
+            session = new Session((AreaData.Get(session) != null) ? session.Area : new AreaKey(1).SetSID(""));
+
             SaveData.Instance.CurrentSession = session;
             SaveData.Instance.LastArea = session.Area;
-            if (AreaData.Get(session.Area) == null) {
-                // the area we are returning to doesn't exist anymore. return to Prologue instead.
-                SaveData.Instance.LastArea = AreaKey.Default;
-            }
             Engine.Scene = new OverworldLoader(Overworld.StartMode.AreaQuit);
         }
 
