@@ -48,20 +48,6 @@ namespace MiniInstaller {
                 return 1;
             }
 
-            if (Path.GetFileName(Environment.ProcessPath) == "dotnet") {
-                // The .dll has been executed directly using 'dotnet MiniInstaller.dll'
-                // Bind MiniInstaller apphosts
-                Console.WriteLine("Binding MiniInstaller apphosts... ");
-
-                string dllPath = Assembly.GetExecutingAssembly().Location;
-                PathGame = Path.GetDirectoryName(dllPath); // Used to reference the apphost binaries
-
-                BindAppHost("win.exe", Path.ChangeExtension(dllPath, null) + "-win.exe", dllPath);
-                BindAppHost("linux", Path.ChangeExtension(dllPath, null) + "-linux", dllPath);
-                BindAppHost("osx", Path.ChangeExtension(dllPath, null) + "-osx", dllPath);
-                return 0;
-            }
-
             Console.WriteLine("Everest MiniInstaller");
 
             if (!SetupPaths()) {
