@@ -7,6 +7,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Exe</OutputType>
     <LangVersion>11</LangVersion>
+    <UseAppHost>false</UseAppHost> <!-- MiniInstaller will create its own AppHosts -->
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,5 +26,10 @@
     <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <Content Include="$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost" TargetPath="apphosts\osx" CopyToOutputDirectory="always" />
   </ItemGroup>
+
+  <Target Name="BindAppHosts" AfterTargets="Build">
+    <Message Importance="High" Text="Binding AppHosts..." />
+    <Exec Command="dotnet '$(TargetPath)'" /> <!-- MiniInstaller will detect that it has been run directly, and bind AppHosts for all platforms -->
+  </Target>
 
 </Project>

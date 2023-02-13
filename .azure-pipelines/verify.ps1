@@ -32,7 +32,7 @@ Copy-Item -Path "$env:VANILLA_CACHE/*" -Destination $PATCH
 
 Write-Output "Applying Everest patch"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $PATCH
-$MINIINSTALLER = Start-Process -FilePath "mono" -ArgumentList "$PATCH/MiniInstaller.exe" -WorkingDirectory $PATCH -Wait -PassThru
+$MINIINSTALLER = Start-Process -FilePath "$PATCH/MiniInstaller-linux" -WorkingDirectory $PATCH -Wait -PassThru
 if ($MINIINSTALLER.ExitCode -ne 0) {
 	Write-Output "##vso[task.logissue type=error]Patch verification step failed."
 }

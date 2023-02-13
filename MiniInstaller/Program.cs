@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Text;
 using System.Text.Json;
@@ -45,6 +46,20 @@ namespace MiniInstaller {
             if (Type.GetType("Mono.Runtime") != null) {
                 Console.WriteLine("MiniInstaller is unable to run under mono!");
                 return 1;
+            }
+
+            if (Path.GetFileName(Environment.ProcessPath) == "dotnet") {
+                // The .dll has been executed directly using 'dotnet MiniInstaller.dll'
+                // Bind MiniInstaller apphosts
+                Console.WriteLine("Binding MiniInstaller apphosts... ");
+
+                string dllPath = Assembly.GetExecutingAssembly().Location;
+                PathGame = Path.GetDirectoryName(dllPath); // Used to reference the apphost binaries
+
+                BindAppHost("win.exe", Path.ChangeExtension(dllPath, null) + "-win.exe", dllPath);
+                BindAppHost("linux", Path.ChangeExtension(dllPath, null) + "-linux", dllPath);
+                BindAppHost("osx", Path.ChangeExtension(dllPath, null) + "-osx", dllPath);
+                return 0;
             }
 
             Console.WriteLine("Everest MiniInstaller");
@@ -705,6 +720,11 @@ namespace MiniInstaller {
             Array.Fill<byte>(appHost, 0, pathIdx + appPathLen, placeholder.Length - appPathLen);
 
             File.WriteAllBytes(outPath, appHost);
+
+            // Set the executable flag
+            // TODO Check if this actually works on MacOS
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("/bin/sh", new string[] { "-c", $"chmod ug+x \"{Path.GetFullPath(outPath)}\"" }).WaitForExit();
         }
 
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
