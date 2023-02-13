@@ -249,21 +249,19 @@ namespace MonoMod {
 
         public static void PatchDreamBlockSetup(ILContext context, CustomAttribute attrib) {
             // Patch instructions before the 'conv.i4' cast to use doubles instead of floats
-            for(ILCursor cursor = new ILCursor(context); cursor.Index < cursor.Instrs.Count; cursor.Index++) {
-                Instruction instr = cursor.Instrs[cursor.Index];
+            for (int i = 0; i < context.Instrs.Count; i++) {
+                Instruction instr = context.Instrs[i];
 
                 if (instr.MatchConvI4())
                     break;
 
                 // call(virt) <method returning float>
-                if (instr.MatchCallOrCallvirt(out MethodReference method) && method.ReturnType.MetadataType == MetadataType.Single) {
-                    cursor.Index++;
-                    cursor.Emit(OpCodes.Conv_R8); // cast return value to double
-                }
+                if (instr.MatchCallOrCallvirt(out MethodReference method) && method.ReturnType.MetadataType == MetadataType.Single)
+                    context.Instrs.Insert(++i, Instruction.Create(OpCodes.Conv_R8)); // cast return value to double
 
                 // ldc.r4 <float constant>
                 if (instr.MatchLdcR4(out float val))
-                    cursor.Instrs[cursor.Index] = Instruction.Create(OpCodes.Ldc_R8, (double) val);
+                    context.Instrs[i] = Instruction.Create(OpCodes.Ldc_R8, (double) val);
             }
         }
 
