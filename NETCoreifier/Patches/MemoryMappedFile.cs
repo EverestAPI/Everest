@@ -1,6 +1,7 @@
 using MonoMod;
 using System.IO;
 using System.IO.MemoryMappedFiles;
+using System.Runtime.Versioning;
 using System.Security;
 
 namespace NETCoreifier {
@@ -25,6 +26,7 @@ namespace NETCoreifier {
             => MemoryMappedFile.CreateFromFile(stream, name, capacity, access, inherit, leaveOpen);
 
         [SecurityCritical]
+        [SupportedOSPlatform("windows")]
         [MonoModLinkFrom($"{MemoryMappedFileFName} {MemoryMappedFileFName}::CreateOrOpen(System.String,System.Int64,{MemoryMappedFileAccessFName},{MemoryMappedFileOptionsFName},{MemoryMappedFileSecurityFName},{HandleInheritabilityFName})")]
         public static MemoryMappedFile CreateOrOpen(string name, long capacity, MemoryMappedFileAccess access, MemoryMappedFileOptions options, MemoryMappedFileSecurity security, HandleInheritability inherit)
             => MemoryMappedFile.CreateOrOpen(name, capacity, access, options, inherit);
