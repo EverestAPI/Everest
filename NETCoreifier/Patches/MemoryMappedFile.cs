@@ -2,7 +2,6 @@ using MonoMod;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Security;
-using System.Security.AccessControl;
 
 namespace NETCoreifier {
     // I'm 100% sure only CelesteTas will ever run into this breaking change between net452 and net5.0+ .-.
@@ -16,8 +15,8 @@ namespace NETCoreifier {
         private const string MemoryMappedFileSecurityFName = "NETCoreifier.MemoryMappedFileShims/MemoryMappedFileSecurity"; // Relinked
 
         [MonoModLinkFrom($"{MemoryMappedFilesNSpace}.MemoryMappedFileSecurity")]
-        public class MemoryMappedFileSecurity : ObjectSecurity<MemoryMappedFileRights> {
-            public MemoryMappedFileSecurity() : base(false, ResourceType.KernelObject) {}
+        public class MemoryMappedFileSecurity {
+            internal MemoryMappedFileSecurity() {}
         }
 
         [SecurityCritical]
