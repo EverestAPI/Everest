@@ -2,9 +2,9 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
-using System;
 using System.Linq;
 using System.Reflection;
+using MethodBody = Mono.Cecil.Cil.MethodBody;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 
 namespace NETCoreifier {
@@ -60,7 +60,7 @@ namespace NETCoreifier {
 
             // The CoreCLR JIT is much more aggressive about inlining, so explicitly force it to not inline in some cases
             // The performance penalty isn't that bad, and it makes modding easier
-            if ((method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0 && !CanInlineLegacyCode(method))
+            if ((method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0 && method.Body is MethodBody body && !CanInlineLegacyCode(body))
                 method.ImplAttributes |= MethodImplAttributes.NoInlining;
 
             // Resolve uninstantiated generic typeref/def tokens inside of member methods by replacing them with generic type instances
@@ -87,11 +87,11 @@ namespace NETCoreifier {
         }
 
         // Use the mono criteria for this, as those are known (see mono_method_check_inlining)
-        private bool CanInlineLegacyCode(MethodDefinition method) {
+        private bool CanInlineLegacyCode(MethodBody body) {
             const int INLINE_LENGTH_LIMIT = 20; // mono/mini/method-to-ir.c
 
             // Methods exceeding a certain size aren't inlined
-            if (method.Body.CodeSize >= INLINE_LENGTH_LIMIT)
+            if (body.CodeSize >= INLINE_LENGTH_LIMIT)
                 return false;
 
             // There are other checks (..ctor, profiling, method attributes, etc.), but those aren't relevant for us
