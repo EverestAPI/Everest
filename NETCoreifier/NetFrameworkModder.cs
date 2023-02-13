@@ -4,12 +4,12 @@ using MonoMod;
 using MonoMod.Utils;
 using System.Linq;
 using System.Reflection;
+using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 
 namespace NETCoreifier {
     public class NetFrameworkModder : MonoModder {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
-        // TODO TAS still desyncs in 6A after getting the B side tape 
 
         public override void MapDependencies() {
             // Add reference to System.Runtime + NETCoreifier
@@ -57,11 +57,11 @@ namespace NETCoreifier {
         public override void PatchRefsInMethod(MethodDefinition method) {
             base.PatchRefsInMethod(method);
 
-            // The CoreCLR jitter is much more aggressive about inlining, so explicitly force it to not inline
+            // The CoreCLR JIT is much more aggressive about inlining, so explicitly force it to not inline
             // The performance penalty isn't that bad, and it makes modding easier
             // TODO Still find a better criteria for this
-            if ((method.ImplAttributes & Mono.Cecil.MethodImplAttributes.AggressiveInlining) == 0)
-                method.ImplAttributes |= Mono.Cecil.MethodImplAttributes.NoInlining;
+            if ((method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0)
+                method.ImplAttributes |= MethodImplAttributes.NoInlining;
 
             // Resolve uninstantiated generic typeref/def tokens inside of member methods by replacing them with generic type instances
             // CoreCLR seems to be more strict on this, because the faulty IL worked fine on .NET Framwork / Mono
