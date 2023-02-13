@@ -1,4 +1,6 @@
 using MonoMod;
+using MonoMod.Core;
+using MonoMod.RuntimeDetour;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -9,6 +11,24 @@ using System.Reflection;
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourContext")]
     public sealed class LegacyDetourContext : IDisposable {
+
+        private sealed class ReorgContext : DetourContext {
+
+            public readonly LegacyDetourContext LegacyDetourContext;
+
+            public ReorgContext(LegacyDetourContext legacyDetourCtx) => LegacyDetourContext = legacyDetourCtx;
+
+            protected override bool TryGetConfig(out DetourConfig config) {
+                config = new DetourConfig(LegacyDetourContext.ID, LegacyDetourContext.Priority, LegacyDetourContext.Before, LegacyDetourContext.After);
+                return true;
+            }
+
+            protected override bool TryGetFactory(out IDetourFactory factory) {
+                factory = null;
+                return false;
+            }
+
+        }
 
         [ThreadStatic]
         private static List<LegacyDetourContext> _Contexts;
@@ -82,6 +102,8 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             }
         }
 
+        private IDisposable contextScope;
+
         public LegacyDetourContext(int prio, string id) {
             // Find the creator method
             StackTrace stack = new StackTrace();
@@ -94,6 +116,9 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             Priority = prio;
             ID = id;
+
+            // Start the context's scope (in case a legacy)
+            contextScope = new ReorgContext(this).Use();
         }
 
         public LegacyDetourContext(string id) : this(0, id) {}
@@ -104,6 +129,10 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             if (IsDisposed)
                 return;
             IsDisposed = true;
+
+            // End the context's scope
+            contextScope?.Dispose();
+            contextScope = null;
 
             // Remove from the context list
             Last = null;
