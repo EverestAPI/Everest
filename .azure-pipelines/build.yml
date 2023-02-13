@@ -22,9 +22,9 @@ steps:
     command: 'restore'
     projects: '**/*.csproj'
 - task: PowerShell@2
-  displayName: 'Run azure-pipelines-prebuild.ps1'
+  displayName: 'Run .azure-pipelines/prebuild.ps1'
   inputs:
-    filePath: 'azure-pipelines-prebuild.ps1'
+    filePath: '.azure-pipelines/prebuild.ps1'
 
 # Build.
 - task: DotNetCoreCLI@2
@@ -65,7 +65,7 @@ steps:
   condition: succeeded()
   displayName: 'Verify patches'
   inputs:
-    filePath: 'azure-pipelines-verify.ps1'
+    filePath: '.azure-pipelines/verify.ps1'
   env:
     BIN_URL: $(BIN_URL)
     BIN_USERNAME: $(BIN_USERNAME)
@@ -75,10 +75,10 @@ steps:
 - task: PowerShell@2
   name: PostBuild
   condition: succeeded()
-  displayName: 'Run azure-pipelines-postbuild.ps1'
+  displayName: 'Run .azure-pipelines/postbuild.ps1'
   continueOnError: true
   inputs:
-    filePath: 'azure-pipelines-postbuild.ps1'
+    filePath: '.azure-pipelines/postbuild.ps1'
   env:
     BIN_URL: $(BIN_URL)
 
