@@ -413,8 +413,6 @@ namespace Celeste.Mod {
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
 
                     if (File.Exists(installerPath)) {
-                        installer.StartInfo.FileName = installerPath;
-
                         if (Type.GetType("Mono.Runtime") != null) {
                             // Start MiniInstaller using mono
                             installer.StartInfo.FileName = "mono";
@@ -442,6 +440,7 @@ namespace Celeste.Mod {
                     if (!File.Exists(installerPath))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
+                    installer.StartInfo.FileName = installerPath;
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
