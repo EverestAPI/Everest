@@ -20,7 +20,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector2FName}::Normalize()")]
         public static void Normalize(ref Vector2 v) {
-            double invLen = 1.0 / Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y);
+            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y);
             v.X = (float) (v.X * invLen);
             v.Y = (float) (v.Y * invLen);
         }
@@ -65,7 +65,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector3FName}::Normalize()")]
         public static void Normalize(ref Vector3 v) {
-            double invLen = 1.0 / Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z);
+            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z);
             v.X = (float) (v.X * invLen);
             v.Y = (float) (v.Y * invLen);
         }
@@ -110,7 +110,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector4FName}::Normalize()")]
         public static void Normalize(ref Vector4 v) {
-            double invLen = 1.0 / Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z + (double) v.W * (double) v.W);
+            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z + (double) v.W * (double) v.W);
             v.X = (float) (v.X * invLen);
             v.Y = (float) (v.Y * invLen);
         }
