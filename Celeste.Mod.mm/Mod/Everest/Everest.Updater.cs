@@ -199,9 +199,9 @@ namespace Celeste.Mod {
             private static string _everestUpdaterDatabaseURL;
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
-                    using (WebClient wc = new WebClient()) {
+                    using (HttpClient hc = new HttpClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
-                        _everestUpdaterDatabaseURL = wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim();
+                        _everestUpdaterDatabaseURL = hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim();
                     }
                 }
                 return _everestUpdaterDatabaseURL;
