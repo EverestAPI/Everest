@@ -18,9 +18,6 @@ namespace Celeste.Mod {
     /// </summary>
     internal static class BOOT {
 
-        // TODO Fast restarts through AssemblyLoadContexts
-        // TODO Restart into vanilla
-
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
@@ -60,7 +57,8 @@ namespace Celeste.Mod {
                 patch_Celeste.Main(args);
 
                 if (AppDomain.CurrentDomain.GetData("EverestRestart") as bool? ?? false) {
-                    //TODO Try to reimplement quick everest restarts
+                    // Restart the original process
+                    // This is as fast as the old "fast restarts" were
                     StartCelesteProcess();
                     goto Exit;
                 } else if (Everest.RestartVanilla) {
