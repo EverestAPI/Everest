@@ -410,6 +410,7 @@ namespace Celeste.Mod {
                 try {
                     Process installer = new Process();
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
+                    installer.StartInfo.FileName = installerPath;
 
                     if (File.Exists(installerPath)) {
                         if (Type.GetType("Mono.Runtime") != null) {
@@ -428,7 +429,7 @@ namespace Celeste.Mod {
                         }
                     } else {
                         // This build ships with native MiniInstaller binaries
-                        installerPath = Path.Combine(extractedPath,
+                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ? "MiniInstaller-win.exe" :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
@@ -439,7 +440,6 @@ namespace Celeste.Mod {
                     if (!File.Exists(installerPath))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
-                    installer.StartInfo.FileName = installerPath;
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
