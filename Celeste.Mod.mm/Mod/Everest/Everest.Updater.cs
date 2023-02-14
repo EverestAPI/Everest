@@ -410,20 +410,36 @@ namespace Celeste.Mod {
                 try {
                     Process installer = new Process();
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
-                    installer.StartInfo.FileName = installerPath;
-                    if (Type.GetType("Mono.Runtime") != null) {
-                        installer.StartInfo.FileName = "mono";
-                        installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                        if (File.Exists("/bin/sh")) {
-                            string pid = Process.GetCurrentProcess().Id.ToString();
-                            installer.StartInfo.FileName = "/bin/sh";
-                            string pathToMono = "mono";
-                            if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
-                                pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+
+                    if (File.Exists(installerPath)) {
+                        if (Type.GetType("Mono.Runtime") != null) {
+                            // Start MiniInstaller using mono
+                            installer.StartInfo.FileName = "mono";
+                            installer.StartInfo.Arguments = $"\"{installerPath}\"";
+                            if (File.Exists("/bin/sh")) {
+                                string pid = Process.GetCurrentProcess().Id.ToString();
+                                installer.StartInfo.FileName = "/bin/sh";
+                                string pathToMono = "mono";
+                                if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
+                                    pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+                                }
+                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                             }
-                            installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                         }
+                    } else {
+                        // This build ships with native MiniInstaller binaries
+                        installerPath = Path.Combine(extractedPath,
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ? "MiniInstaller-win.exe" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
+                            throw new Exception("Unknown OS platform")
+                        );
                     }
+
+                    if (!File.Exists(installerPath))
+                        throw new Exception("Couldn't find MiniInstaller executable");
+
+                    installer.StartInfo.FileName = installerPath;
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
