@@ -42,10 +42,7 @@ namespace Celeste.Mod {
             /// Does the environment (platform, ...) support loading runtime mods?
             /// </summary>
             public static bool SupportRuntimeMods { get; private set; }
-            /// <summary>
-            /// Does the environment (platform, ...) support relinking runtime mods?
-            /// </summary>
-            public static bool SupportRelinkingMods { get; private set; }
+
             /// <summary>
             /// Does the environment (platform, ...) support updating Everest?
             /// </summary>
@@ -66,7 +63,6 @@ namespace Celeste.Mod {
                 PreferThreadedGL = IsXNA;
 
                 SupportRuntimeMods = true;
-                SupportRelinkingMods = true;
                 SupportUpdatingEverest = true;
             }
 

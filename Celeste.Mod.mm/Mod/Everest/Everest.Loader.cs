@@ -450,47 +450,31 @@ namespace Celeste.Mod {
 
                 using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
 
-                // Load the actual assembly.
-                Assembly asm = null;
-                if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                    bool returnEarly = false;
-                    using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                        foreach (ZipEntry entry in zip.Entries) {
-                            string entryName = entry.FileName.Replace('\\', '/');
-                            if (entryName == meta.DLL) {
-                                using (MemoryStream stream = entry.ExtractStream())
-                                    asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
-                            }
+                // Create an assembly context
+                meta.AssemblyContext ??= new EverestModuleAssemblyContext(meta);
 
-                            if (entryName == "main.lua") {
-                                new LuaModule(meta).Register();
-                                returnEarly = true;
-                            }
-                        }
-                    }
+                // Try to load a Lua module
+                bool hasLuaModule = false;
+                if (!string.IsNullOrEmpty(meta.PathArchive))
+                    using (ZipFile zip = new ZipFile(meta.PathArchive))
+                        hasLuaModule = zip.ContainsEntry("main.lua");
+                else if (!string.IsNullOrEmpty(meta.PathDirectory))
+                    hasLuaModule = File.Exists(Path.Combine(meta.PathDirectory, "main.lua"));
 
-                    if (returnEarly)
-                        return;
-
-                } else {
-                    if (!string.IsNullOrEmpty(meta.DLL) && File.Exists(meta.DLL)) {
-                        using (FileStream stream = File.OpenRead(meta.DLL))
-                            asm = Relinker.GetRelinkedAssembly(meta, Path.GetFileNameWithoutExtension(meta.DLL), stream);
-                    }
-
-                    if (File.Exists(Path.Combine(meta.PathDirectory, "main.lua"))) {
-                        new LuaModule(meta).Register();
-                        return;
-                    }
-                }
-
-                if (asm == null) {
-                    // Register a null module for content mods.
-                    new NullModule(meta).Register();
+                if (hasLuaModule) {
+                    new LuaModule(meta).Register();
                     return;
                 }
 
-                LoadModAssembly(meta, asm);
+                // Try to load a module from a DLL
+                if (!string.IsNullOrEmpty(meta.DLL) && meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is Assembly asm) {
+                    LoadModAssembly(meta, asm);
+                    return; 
+                }
+
+                // Register a null module for content mods.
+                new NullModule(meta).Register();
+                return;
             }
 
             /// <summary>
@@ -527,13 +511,16 @@ namespace Celeste.Mod {
                     }
                 }
 
+                // Apply hackfixes
                 ApplyModHackfixes(meta, asm);
 
+                // Crawl assembly manifest content
                 Content.Crawl(new AssemblyModContent(asm) {
                     Mod = meta,
                     Name = meta.Name
                 });
 
+                // Find and register all EverestModule subtypes in the assembly
                 Type[] types;
                 try {
                     types = asm.GetTypesSafe();
@@ -582,10 +569,8 @@ namespace Celeste.Mod {
                         return;
 
                     AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
+                        //FIXME Reload entire assembly contexts
                         Assembly asm = null;
-                        using (FileStream stream = File.OpenRead(e.FullPath))
-                            asm = Relinker.GetRelinkedAssembly(module.Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
-
                         if (asm == null) {
                             if (!retrying) {
                                 // Retry.

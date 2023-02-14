@@ -28,6 +28,12 @@ namespace Celeste.Mod {
         public string PathDirectory { get; set; }
 
         /// <summary>
+        /// The mod's assembly context. Can be null if this is the metadata of a mod which isn't loaded. Set at runtime.
+        /// </summary>
+        [YamlIgnore]
+        public EverestModuleAssemblyContext AssemblyContext { get; internal set; }
+
+        /// <summary>
         /// The name of the mod.
         /// </summary>
         public string Name { get; set; }

@@ -2,15 +2,45 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
+using System;
 using System.Linq;
 using System.Reflection;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 
 namespace NETCoreifier {
-    public class NetFrameworkModder : MonoModder {
+    public class NetFrameworkModder : MonoModder, IAssemblyResolver {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
+
+        public bool SharedDependencies;
+        public IAssemblyResolver ModuleDependencyResolver;
+        private ModuleDefinition _CoreifierModule;
+
+        public override IAssemblyResolver AssemblyResolver {
+            get => this;
+            set {}
+        }
+
+        private bool _IsDisposing;
+
+        public override void Dispose() {
+            if (_IsDisposing)
+                return;
+            _IsDisposing = true;
+
+            Module = null;
+
+            // Don't dispose the dependency modules if they're shared 
+            if (SharedDependencies) {
+                DependencyMap.Clear();
+                DependencyCache.Clear();
+            }
+
+            _CoreifierModule?.Dispose();
+
+            base.Dispose();
+        }
 
         public override void MapDependencies() {
             // Add reference to System.Runtime + NETCoreifier
@@ -27,13 +57,25 @@ namespace NETCoreifier {
             base.MapDependencies();
         }
 
-        public override ModuleDefinition DefaultMissingDependencyResolver(MonoModder mod, ModuleDefinition main, string name, string fullName) {
-            if (name == "NETCoreifier")
-                // We have to load our own module again every time because MonoMod messes with it ._.
-                if (ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location) is ModuleDefinition coreifierMod)
-                    return coreifierMod;
+        private AssemblyDefinition ResolveCoreifierModule(AssemblyNameReference asmName) {
+            if (asmName.Name != "NETCoreifier")
+                return null;
 
-            return base.DefaultMissingDependencyResolver(mod, main, name, fullName);
+            // We have to load our own module again every time because MonoMod messes with it ._.
+            _CoreifierModule ??= ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location) ?? throw new Exception("Failed to load .NET Coreifier assembly");
+            return _CoreifierModule.Assembly;
+        }
+
+        public AssemblyDefinition Resolve(AssemblyNameReference name) {
+            if (ResolveCoreifierModule(name) is AssemblyDefinition asm)
+                return asm;
+            return ModuleDependencyResolver.Resolve(name);
+        }
+
+        public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters) {
+            if (ResolveCoreifierModule(name) is AssemblyDefinition asm)
+                return asm;
+            return ModuleDependencyResolver.Resolve(name, parameters);
         }
 
         public override void AutoPatch() {
@@ -99,5 +141,6 @@ namespace NETCoreifier {
             // The method might be inlined by mono, so consider it safe to inline for the modern runtime
             return true;
         }
+
     }
 }

@@ -9,8 +9,8 @@ using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 namespace NETCoreifier {
     public static class Coreifier {
 
-        public static void ConvertToNetCore(MonoModder modder)
-            => ConvertToNetCore(modder.Module, modder.AssemblyResolver);
+        public static void ConvertToNetCore(MonoModder modder, bool sharedDeps = false)
+            => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps);
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
             // Read the module
@@ -33,7 +33,7 @@ namespace NETCoreifier {
             module.Write(outputAsm ?? inputAsm, new WriterParameters() { WriteSymbols = readerParams.ReadSymbols });
         }
 
-        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null) {
+        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false) {
             module.RuntimeVersion = System.Reflection.Assembly.GetExecutingAssembly().ImageRuntimeVersion;
 
             // Clear 32 bit flags
@@ -58,13 +58,12 @@ namespace NETCoreifier {
                 // Relink legacy framework code
                 using (NetFrameworkModder modder = new NetFrameworkModder()) {
                     modder.Module = module;
+                    modder.ModuleDependencyResolver = asmResolver ?? new DefaultAssemblyResolver();
+                    modder.SharedDependencies = sharedDeps;
                     modder.MissingDependencyThrow = false;
-                    modder.AssemblyResolver = asmResolver ?? modder.AssemblyResolver;
 
                     modder.MapDependencies();
                     modder.AutoPatch();
-
-                    modder.Module = null;
                 }
             }
         }

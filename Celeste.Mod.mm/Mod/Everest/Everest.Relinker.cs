@@ -1,13 +1,8 @@
-﻿using Celeste.Mod.Core;
-using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Helpers;
 using Ionic.Zip;
-using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Monocle;
 using MonoMod;
-using MonoMod.Cil;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -101,16 +96,6 @@ namespace Celeste.Mod {
             private static Dictionary<string, object> _SharedRelinkMap;
 
             /// <summary>
-            /// All assemblies the relinker has loaded so far 
-            /// </summary>
-            public static readonly List<Assembly> RelinkedAssemblies = new List<Assembly>();
-
-            /// <summary>
-            /// All modules the relinker has loaded so far 
-            /// </summary>
-            public static readonly Dictionary<string, ModuleDefinition> RelinkedModules = new Dictionary<string, ModuleDefinition>();
-
-            /// <summary>
             /// Relink a mod .dll, then load it.
             /// </summary>
             /// <param name="meta">The mod metadata, used for caching, among other things.</param>
@@ -136,11 +121,6 @@ namespace Celeste.Mod {
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
-                if (!Flags.SupportRelinkingMods) {
-                    Logger.Log(LogLevel.Warn, "relinker", "Relinker disabled!");
-                    return null;
-                }
-
                 // Ensure the stream is seekable
                 if (!stream.CanSeek) {
                     MemoryStream ms = new MemoryStream();
@@ -154,16 +134,20 @@ namespace Celeste.Mod {
                 string cachePath = GetCachedPath(meta, asmname);
                 string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
 
+                Assembly asm = null;
+
                 // Try to load the assembly from the cache
-                if (!TryLoadCachedAssembly(meta, asmname, cachePath, cacheChecksumPath, stream, checksumsExtra, out string[] checksums, out Assembly asm, out ModuleDefinition mod)) {
+                if (TryLoadCachedAssembly(meta, asmname, cachePath, cacheChecksumPath, stream, checksumsExtra, out string[] checksums) is not Assembly cacheAsm) {
                     // Delete cached files
                     File.Delete(cachePath);
                     File.Delete(cacheChecksumPath);
 
                     try {
                         // Relink the assembly                
-                        if (!RelinkAssembly(meta, asmname, cachePath, stream, prePatch, out string tmpOutPath, out asm, out mod))
+                        if (RelinkAssembly(meta, asmname, cachePath, stream, depResolver, prePatch, out string tmpOutPath) is not Assembly relinkedAsm)
                             return null;
+                        else
+                            asm = relinkedAsm;
 
                         // Write the checksums for the cached assembly to be loaded in the future
                         // Skip this step if the relinker had to fall back to using a temporary output file
@@ -174,34 +158,24 @@ namespace Celeste.Mod {
                         e.LogDetailed();
                         return null;
                     }
-                }
+                } else
+                    asm = cacheAsm;
 
                 // Log the assembly load and dependencies
-                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {mod.Assembly.Name}");
+                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
 
-                Assembly[] loadedAsms = AppDomain.CurrentDomain.GetAssemblies();
-                foreach(AssemblyNameReference aref in mod.AssemblyReferences) {
-                    if (loadedAsms.Any(asm => asm.GetName().Name == aref.Name))
-                        Logger.Log(LogLevel.Verbose, "relinker", $"dep. {mod.Name} -> {aref.FullName} found");
+                HashSet<string> loadedAsmNames = AppDomain.CurrentDomain.GetAssemblies().Select(asm => asm.GetName().Name).ToHashSet();
+                foreach (AssemblyName asmRef in asm.GetReferencedAssemblies()) {
+                    if (loadedAsmNames.Contains(asmRef.Name))
+                        Logger.Log(LogLevel.Verbose, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} found");
                     else
-                        Logger.Log(LogLevel.Warn, "relinker", $"dep. {mod.Name} -> {aref.FullName} NOT FOUND");
-                }
-
-                // Add the assembly and module to their respective lists
-                RelinkedAssemblies.Add(asm);
-
-                if (!RelinkedModules.TryAdd(mod.Assembly.Name.Name, mod)) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {mod.Assembly.Name}");
-                    mod.Dispose();
+                        Logger.Log(LogLevel.Warn, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} NOT FOUND");
                 }
 
                 return asm;
             }
 
-            private static bool TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string cachePath, string cacheChecksumsPath, Stream stream, string[] extraChecksums, out string[] curChecksums, out Assembly asm, out ModuleDefinition mod) {
-                asm = null;
-                mod = null;
-
+            private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string cachePath, string cacheChecksumsPath, Stream stream, string[] extraChecksums, out string[] curChecksums) {
                 // Calculate checksums
                 List<string> checksums = new List<string>();
                 checksums.Add(GameChecksum);
@@ -214,131 +188,122 @@ namespace Celeste.Mod {
 
                 // Check if the cached assembly + its checksums exist on disk, and if the checksums match
                 if (!File.Exists(cachePath) || !File.Exists(cacheChecksumsPath))
-                    return false;
+                    return null;
 
                 if (!ChecksumsEqual(curChecksums, File.ReadAllLines(cacheChecksumsPath)))
-                    return false;
+                    return null;
                 
                 Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmName}");
 
                 // Try to load the assembly and the module definition
                 try {
-                    mod = ModuleDefinition.ReadModule(cachePath);
-                    asm = Assembly.LoadFrom(cachePath);
-                    return true;
+                    return meta.AssemblyContext.LoadRelinkedAssembly(cachePath);
                 } catch (Exception e) {
-                    mod?.Dispose();
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly for {meta} - {asmName}");
                     e.LogDetailed();
-                    return false;
+                    return null;
                 }
             }
 
-            private static bool RelinkAssembly(EverestModuleMetadata meta, string asmname, string outPath, Stream stream, Action<MonoModder> prePatch, out string tmpOutPath, out Assembly asm, out ModuleDefinition mod) {
+            private static Assembly RelinkAssembly(EverestModuleMetadata meta, string asmname, string outPath, Stream stream, MissingDependencyResolver depResolver, Action<MonoModder> prePatch, out string tmpOutPath) {
                 tmpOutPath = null;
-                asm = null;
-                mod = null;
 
                 // Ensure the runtime rules module is loaded
                 ModuleDefinition runtimeRulesMod = LoadRuntimeRulesModule();
 
-                // Generate a dependency resolver for the module
-                MissingDependencyResolver depResolver = GenerateModDependencyResolver(meta);
-
                 // Setup the MonoModder
-                using MonoModder modder = new MonoModder() {
+                // Don't dispose it, as it shares a ton of resources
+                MonoModder modder = new MonoModder() {
                     CleanupEnabled = false,
                     Input = stream,
                     OutputPath = outPath,
+
                     RelinkModuleMap = SharedRelinkModuleMap,
                     RelinkMap = SharedRelinkMap,
-                    MissingDependencyResolver = depResolver,
-                    DependencyDirs = { PathGame }
+
+                    AssemblyResolver = meta.AssemblyContext,
+                    MissingDependencyResolver = depResolver
                 };
-
-                InitMMFlags(modder);
-
-                modder.Input = stream;
-                modder.OutputPath = outPath;
-                modder.MissingDependencyResolver = depResolver;
-
-                // Read and setup debug symbols (if they exist)
-                //TODO Improve performance / implement per-load AssemblyLoadContexts
-                modder.ReaderParameters.ReadSymbols = true;
-                modder.ReaderParameters.SymbolStream = OpenStream(meta, out _, Path.ChangeExtension(meta.DLL, ".pdb"), Path.ChangeExtension(meta.DLL, ".mdb"));
                 try {
-                    modder.Read();
-                } catch {
-                    modder.ReaderParameters.ReadSymbols = false;
-                    modder.ReaderParameters.SymbolStream?.Dispose();
-                    modder.ReaderParameters.SymbolStream = null;
+                    InitMMFlags(modder);
 
-                    // Try again
-                    stream.Seek(0, SeekOrigin.Begin);
-                    modder.Read();
-                }
-
-                // Map assembly dependencies
-                modder.MapDependencies();
-                modder.MapDependencies(runtimeRulesMod);
-
-                // Patch the assembly
-                prePatch?.Invoke(modder);
-
-                TypeDefinition runtimeRulesType = runtimeRulesMod.GetType("MonoMod.MonoModRules");
-                modder.ParseRules(runtimeRulesMod);
-                if (runtimeRulesType != null)
-                    runtimeRulesMod.Types.Add(runtimeRulesType); // MonoMod removes the rules type from the assembly
-
-                modder.ParseRules(modder.Module);
-
-                modder.AutoPatch();
-
-                NETCoreifier.Coreifier.ConvertToNetCore(modder);
-
-                // Write patched assembly and debug symbols back to disk (always as portable PDBs though)
-                // Fall back to a temporary output path if the given one is unavailable for some reason
-                bool temporaryASM = false;
-                RetryWrite:
-                try {
-                    // Try to write with symbols
-                    modder.WriterParameters.WriteSymbols = true;
-                    modder.WriterParameters.SymbolWriterProvider = new PortablePdbWriterProvider();
-                    modder.Write();
-                } catch {
+                    // Read and setup debug symbols (if they exist)
+                    modder.ReaderParameters.ReadSymbols = true;
+                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out _, Path.ChangeExtension(meta.DLL, ".pdb"), Path.ChangeExtension(meta.DLL, ".mdb"));
                     try {
-                        // Try to write without symbols
-                        modder.WriterParameters.SymbolWriterProvider = null;
-                        modder.WriterParameters.WriteSymbols = false;
-                        modder.Write();
-                    } catch (Exception e) when (!temporaryASM) {
-                        Logger.Log(LogLevel.Warn, "relinker", "Couldn't write to intended output path - falling back to temporary file...");
-                        e.LogDetailed();
+                        modder.Read();
+                    } catch {
+                        modder.ReaderParameters.ReadSymbols = false;
+                        modder.ReaderParameters.SymbolStream?.Dispose();
+                        modder.ReaderParameters.SymbolStream = null;
 
-                        // Try writing to a temporary file
-                        temporaryASM = true;
-
-                        long stamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
-                        tmpOutPath = Path.Combine(Path.GetTempPath(), $"Everest.Relinked.{Path.GetFileNameWithoutExtension(outPath)}.{stamp}.dll");
-
-                        modder.Module.Name += "." + stamp;
-                        modder.Module.Assembly.Name.Name += "." + stamp;
-                        modder.OutputPath = tmpOutPath;
-                        modder.WriterParameters.WriteSymbols = true;
-
-                        goto RetryWrite;
+                        // Try again
+                        stream.Seek(0, SeekOrigin.Begin);
+                        modder.Read();
                     }
+
+                    // Map assembly dependencies
+                    modder.MapDependencies();
+                    modder.MapDependencies(runtimeRulesMod);
+
+                    // Patch the assembly
+                    prePatch?.Invoke(modder);
+
+                    TypeDefinition runtimeRulesType = runtimeRulesMod.GetType("MonoMod.MonoModRules");
+                    modder.ParseRules(runtimeRulesMod);
+                    if (runtimeRulesType != null)
+                        runtimeRulesMod.Types.Add(runtimeRulesType); // MonoMod removes the rules type from the assembly
+
+                    modder.ParseRules(modder.Module);
+
+                    modder.AutoPatch();
+
+                    NETCoreifier.Coreifier.ConvertToNetCore(modder, sharedDeps: true);
+
+                    // Write patched assembly and debug symbols back to disk (always as portable PDBs though)
+                    // Fall back to a temporary output path if the given one is unavailable for some reason
+                    bool temporaryASM = false;
+                    RetryWrite:
+                    try {
+                        // Try to write with symbols
+                        modder.WriterParameters.WriteSymbols = true;
+                        modder.WriterParameters.SymbolWriterProvider = new PortablePdbWriterProvider();
+                        modder.Write();
+                    } catch {
+                        try {
+                            // Try to write without symbols
+                            modder.WriterParameters.SymbolWriterProvider = null;
+                            modder.WriterParameters.WriteSymbols = false;
+                            modder.Write();
+                        } catch (Exception e) when (!temporaryASM) {
+                            Logger.Log(LogLevel.Warn, "relinker", "Couldn't write to intended output path - falling back to temporary file...");
+                            e.LogDetailed();
+
+                            // Try writing to a temporary file
+                            temporaryASM = true;
+
+                            long stamp = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
+                            tmpOutPath = Path.Combine(Path.GetTempPath(), $"Everest.Relinked.{Path.GetFileNameWithoutExtension(outPath)}.{stamp}.dll");
+
+                            modder.Module.Name += "." + stamp;
+                            modder.Module.Assembly.Name.Name += "." + stamp;
+                            modder.OutputPath = tmpOutPath;
+                            modder.WriterParameters.WriteSymbols = true;
+
+                            goto RetryWrite;
+                        }
+                    }
+                } finally {
+                    modder.Module?.Dispose();
                 }
 
                 // Try to load the assembly and the module definition
                 try {
-                    mod = ModuleDefinition.ReadModule(outPath);
-                    asm = Assembly.LoadFrom(outPath);
-                    return true;
+                    return meta.AssemblyContext.LoadRelinkedAssembly(outPath);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading relinked assembly {meta} - {asmname} - {modder.Module.Assembly.Name}");
+                    Logger.Log(LogLevel.Warn, "relinker", $"Failed loading relinked assembly {meta} - {asmname}");
                     e.LogDetailed();
-                    return false;
+                    return null;
                 }
             }
 
@@ -366,72 +331,6 @@ namespace Celeste.Mod {
 
                 // Load the module
                 return _RuntimeRulesModule = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
-            }
-
-            private static MissingDependencyResolver GenerateModDependencyResolver(EverestModuleMetadata meta) {
-                HashSet<string> asmWarnings = new HashSet<string>();
-
-                if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                    return (mod, main, name, fullName) => {
-                        if (name == _RuntimeRulesModule?.Name)
-                            return _RuntimeRulesModule;
-                        else if (main == _RuntimeRulesModule)
-                            return null;
-
-                        // Try to resolve cross-mod references
-                        if (RelinkedModules.TryGetValue(name, out ModuleDefinition def))
-                            return def;
-
-                        // Try to resolve the DLL inside of the mod ZIP
-                        string path = name + ".dll";
-                        if (!string.IsNullOrEmpty(meta.DLL))
-                            path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
-                        path = path.Replace('\\', '/');
-
-                        using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                            foreach (ZipEntry entry in zip.Entries) {
-                                if (entry.FileName != path)
-                                    continue;
-                                using (MemoryStream stream = entry.ExtractStream())
-                                    return ModuleDefinition.ReadModule(stream, mod.GenReaderParameters(false));
-                            }
-                        }
-
-                        if (!name.StartsWith("System.") && asmWarnings.Add(fullName))
-                            Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
-
-                        return null;
-                    };
-                }
-
-                if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                    return (mod, main, name, fullName) => {
-                        if (name == _RuntimeRulesModule?.Name)
-                            return _RuntimeRulesModule;
-                        else if (main == _RuntimeRulesModule)
-                            return null;
-
-                        // Try to resolve cross-mod references
-                        if (RelinkedModules.TryGetValue(name, out ModuleDefinition def))
-                            return def;
-
-                        // Try to resolve the DLL inside of the mod folder
-                        string path = name + ".dll";
-                        if (!string.IsNullOrEmpty(meta.DLL))
-                            path = Path.Combine(Path.GetDirectoryName(meta.DLL), path);
-                        if (!File.Exists(path))
-                            path = Path.Combine(meta.PathDirectory, path);
-                        if (File.Exists(path))
-                            return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
-
-                        if (!name.StartsWith("System.") && asmWarnings.Add(fullName))
-                            Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
-
-                        return null;
-                    };
-                }
-
-                return null;
             }
 
             private static Stream OpenStream(EverestModuleMetadata meta, out string result, params string[] names) {

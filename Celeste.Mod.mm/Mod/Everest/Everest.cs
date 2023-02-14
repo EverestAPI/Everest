@@ -78,6 +78,7 @@ namespace Celeste.Mod {
         /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
+        internal static Dictionary<string, EverestModule> _ModulesByName = new Dictionary<string, EverestModule>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -310,45 +311,6 @@ namespace Celeste.Mod {
                 return Assembly.LoadFrom(Path.Combine(PathGame, asmName.Name + ".dll"));
             };
 
-            // .NET hates to acknowledge manually loaded assemblies.
-            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
-                AssemblyName asmName = new AssemblyName(asmArgs.Name);
-                foreach (Assembly asm in Relinker.RelinkedAssemblies) {
-                    if (asm.GetName().Name == asmName.Name)
-                        return asm;
-                }
-
-                return null;
-            };
-
-            // Handle failed resolution for unregistered assemblies
-            AppDomain.CurrentDomain.AssemblyResolve += (asmSender, asmArgs) => {
-                AssemblyName name = asmArgs?.Name == null ? null : new AssemblyName(asmArgs.Name);
-                if (string.IsNullOrEmpty(name?.Name))
-                    return null;
-
-                foreach (ModContent mod in Content.Mods) {
-                    EverestModuleMetadata meta = mod.Mod;
-                    if (meta == null)
-                        continue;
-
-                    string path = name.Name + ".dll";
-                    if (!string.IsNullOrEmpty(meta.DLL)) {
-                        path = Path.Combine(Path.GetDirectoryName(meta.DLL), path).Replace('\\', '/');
-                        if (!string.IsNullOrEmpty(meta.PathDirectory))
-                            path = path.Substring(meta.PathDirectory.Length + 1);
-                    }
-
-                    if (mod.Map.TryGetValue(path, out ModAsset asm) && asm.Type == typeof(AssetTypeAssembly)) {
-                        using Stream stream = asm.Stream;
-                        if (stream != null)
-                            return Relinker.GetRelinkedAssembly(meta, name.Name, stream);
-                    }
-                }
-
-                return null;
-            };
-
             // Preload some basic dependencies.
             Assembly.Load("MonoMod.RuntimeDetour");
             Assembly.Load("MonoMod.Utils");
@@ -536,6 +498,7 @@ namespace Celeste.Mod {
         public static void Register(this EverestModule module) {
             lock (_Modules) {
                 _Modules.Add(module);
+                _ModulesByName.Add(module.Metadata.Name, module);
             }
 
             LuaLoader.Precache(module.GetType().Assembly);
@@ -898,15 +861,7 @@ namespace Celeste.Mod {
         internal static void Unregister(this EverestModule module) {
             module.OnInputDeregister();
             module.Unload();
-
-            Assembly asm = module.GetType().Assembly;
-
-            if (_ModDetours.TryRemove(asm, out ConcurrentDictionary<object, Action> detours))
-                foreach (Action detourUndo in detours.Values)
-                    detourUndo();
-
-            Relinker.RelinkedAssemblies.Remove(asm);
-
+    
             // TODO: Unload from LuaLoader
             // TODO: Unload from EntityLoaders
             // TODO: Undo event listeners
@@ -917,6 +872,7 @@ namespace Celeste.Mod {
             lock (_Modules) {
                 int index = _Modules.IndexOf(module);
                 _Modules.RemoveAt(index);
+                _ModulesByName.Remove(module.Metadata.Name);
             }
 
             if (_Initialized) {
@@ -925,7 +881,23 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
+            // Unload mod assemblies
+            module.Metadata.AssemblyContext.Dispose();
+            module.Metadata.AssemblyContext = null;
+
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
+        }
+
+        /// <summary>
+        /// "Unloads" an assembly. This ensures that no references to the modules are kept alive
+        /// </summary>
+        /// <param name="meta"></param>
+        /// <param name="asm"></param>
+        internal static void UnloadAssembly(EverestModuleMetadata meta, Assembly asm) {
+            // Remove hooks
+            if (_ModDetours.TryRemove(asm, out ConcurrentDictionary<object, Action> detours))
+                foreach (Action detourUndo in detours.Values)
+                    detourUndo();
         }
 
         /// <summary>
