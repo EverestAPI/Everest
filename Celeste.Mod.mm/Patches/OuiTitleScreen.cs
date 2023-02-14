@@ -65,7 +65,7 @@ namespace Celeste {
             for (int i = everestTitle.Height - 4; i > 0; i -= 4)
                 everestReflections.Add(everestTitle.GetSubtexture(0, i, everestTitle.Width, 4, null));
 
-            arrowToVanilla = AppDomain.CurrentDomain.IsDefaultAppDomain() ? null : GFX.Gui["dotarrow"];
+            arrowToVanilla = GFX.Gui["dotarrow"];
 
             version += string.Format("\nEverest v.{0}-{1}", Everest.Version, Everest.VersionTag);
 

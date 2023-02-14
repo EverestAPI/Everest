@@ -24,9 +24,6 @@ namespace Celeste.Mod {
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
-                CultureInfo originalCurrentThreadCulture = Thread.CurrentThread.CurrentCulture;
-                CultureInfo originalCurrentThreadUICulture = Thread.CurrentThread.CurrentUICulture;
-
                 // 0.1 parses into 1 in regions using ,
                 // This also somehow sets the exception message language to English.
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -67,8 +64,9 @@ namespace Celeste.Mod {
                     StartCelesteProcess();
                     goto Exit;
                 } else if (Everest.RestartVanilla) {
-                    //TODO
-                    throw new NotImplementedException();
+                    // Start the vanilla process
+                    StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
+                    goto Exit;
                 }
             } catch (Exception e) {
                 LogError("BOOT-CRITICAL", e);
@@ -108,25 +106,18 @@ namespace Celeste.Mod {
             return false;
         }
 
-        // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
-        // This is also used by Everest.SlowFullRestart
-        public static Process StartCelesteProcess() {
-            string path = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+        public static Process StartCelesteProcess(string gameDir = null) {
+            gameDir ??= AppContext.BaseDirectory;
 
             Process game = new Process();
 
-            // Unix-likes use the wrapper script
-            if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                game.StartInfo.FileName = Path.Combine(path, "Celeste");
-                // 1.3.3.0 splits Celeste into two, so to speak.
-                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(path) == "Resources")
-                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(path), "MacOS", "Celeste");
-            } else {
-                game.StartInfo.FileName = Path.Combine(path, "Celeste.exe");
-            }
-
-            game.StartInfo.WorkingDirectory = path;
+            game.StartInfo.FileName = Path.Combine(gameDir,
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Celeste.exe" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "Celeste" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "Celeste" :
+                throw new Exception("Unknown OS platform")
+            );
+            game.StartInfo.WorkingDirectory = gameDir;
 
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
