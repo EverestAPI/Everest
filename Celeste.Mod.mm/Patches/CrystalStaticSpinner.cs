@@ -116,8 +116,8 @@ namespace MonoMod {
 
             // replace `(item.Position - Position).Length() < 24f` with `.LengthSquared() < 576f`.
             // this is equivalent, except it skips a square root calculation, which helps with performance.
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Microsoft.Xna.Framework.Vector2", "Length"));
-            ((MethodReference) cursor.Prev.Operand).Name = "LengthSquared";
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Celeste.Mod.Helpers.VectorShims", "Length"));
+            cursor.Prev.Operand = ((MethodReference) cursor.Prev.Operand).DeclaringType.Resolve().FindMethod("System.Single LengthSquared(Microsoft.Xna.Framework.Vector2&)");
             cursor.Next.Operand = 576f;
         }
 
