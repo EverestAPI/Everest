@@ -9,27 +9,20 @@ using MethodBody = Mono.Cecil.Cil.MethodBody;
 using MethodImplAttributes = Mono.Cecil.MethodImplAttributes;
 
 namespace NETCoreifier {
-    public class NetFrameworkModder : MonoModder, IAssemblyResolver {
+    public class NetFrameworkModder : MonoModder {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
-        public bool SharedDependencies;
-        public IAssemblyResolver ModuleDependencyResolver;
+        public bool SharedAssemblyResolver, SharedDependencies;
         private ModuleDefinition _CoreifierModule;
 
-        public override IAssemblyResolver AssemblyResolver {
-            get => this;
-            set {}
-        }
-
-        private bool _IsDisposing;
-
         public override void Dispose() {
-            if (_IsDisposing)
-                return;
-            _IsDisposing = true;
-
+            // Don't dispose the main module
             Module = null;
+
+            // Don't dispose the assembly resolver if it's shared
+            if (SharedAssemblyResolver)
+                AssemblyResolver = null;
 
             // Don't dispose the dependency modules if they're shared 
             if (SharedDependencies) {
@@ -54,28 +47,11 @@ namespace NETCoreifier {
                 Module.AssemblyReferences.Add(new AssemblyNameReference(coreifierName.Name, coreifierName.Version));
             }
 
-            base.MapDependencies();
-        }
-
-        private AssemblyDefinition ResolveCoreifierModule(AssemblyNameReference asmName) {
-            if (asmName.Name != "NETCoreifier")
-                return null;
-
             // We have to load our own module again every time because MonoMod messes with it ._.
             _CoreifierModule ??= ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location) ?? throw new Exception("Failed to load .NET Coreifier assembly");
-            return _CoreifierModule.Assembly;
-        }
+            DependencyCache[Assembly.GetExecutingAssembly().FullName] = _CoreifierModule;
 
-        public AssemblyDefinition Resolve(AssemblyNameReference name) {
-            if (ResolveCoreifierModule(name) is AssemblyDefinition asm)
-                return asm;
-            return ModuleDependencyResolver.Resolve(name);
-        }
-
-        public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters) {
-            if (ResolveCoreifierModule(name) is AssemblyDefinition asm)
-                return asm;
-            return ModuleDependencyResolver.Resolve(name, parameters);
+            base.MapDependencies();
         }
 
         public override void AutoPatch() {

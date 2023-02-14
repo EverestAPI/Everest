@@ -58,9 +58,15 @@ namespace NETCoreifier {
                 // Relink legacy framework code
                 using (NetFrameworkModder modder = new NetFrameworkModder()) {
                     modder.Module = module;
-                    modder.ModuleDependencyResolver = asmResolver ?? new DefaultAssemblyResolver();
-                    modder.SharedDependencies = sharedDeps;
+
+                    if (asmResolver != null) {
+                        modder.AssemblyResolver = asmResolver;
+                        modder.SharedAssemblyResolver = true;
+                    } else
+                        modder.SharedAssemblyResolver = false;
                     modder.MissingDependencyThrow = false;
+
+                    modder.SharedDependencies = sharedDeps;
 
                     modder.MapDependencies();
                     modder.AutoPatch();
