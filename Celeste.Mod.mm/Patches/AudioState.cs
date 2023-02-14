@@ -1,9 +1,14 @@
 #pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
+using System.Xml.Serialization;
+
 namespace Celeste {
     class patch_AudioState : AudioState {
 
         public float? AmbienceVolume;
+
+        [XmlIgnore]
+        public bool AmbienceVolumeSpecified { get { return AmbienceVolume.HasValue; } }
 
         public extern void orig_Apply(bool forceSixteenthNoteHack = false);
         public new void Apply(bool forceSixteenthNoteHack = false) {
