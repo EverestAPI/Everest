@@ -91,10 +91,13 @@ namespace MiniInstaller {
                     DeleteSystemLibs();
                     SetupNativeLibs();
 
-                    if (AsmMonoMod == null || AsmNETCoreifier == null) {
+                    if (AsmMonoMod == null || AsmNETCoreifier == null)
                         LoadModders();
-                    }
-                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") });
+
+                    string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
+                    RunMonoMod(Path.Combine(PathOrig, "FNA.dll"), Path.Combine(PathGame, "FNA.dll"), mods); // We need to patch some methods in FNA as well
+                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, mods);
+
                     ConvertToNETCore(PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
@@ -119,18 +122,12 @@ namespace MiniInstaller {
                     LogErr(msg);
                     LogErr("");
                     LogErr("Installing Everest failed.");
-                    if (msg.Contains("MonoMod failed relinking Microsoft.Xna.Framework") ||
-                        msg.Contains("MonoModRules failed resolving Microsoft.Xna.Framework.Game")) {
-                        LogErr("Please run the game at least once to install missing dependencies.");
-                    } else {
-                        if (msg.Contains("--->")) {
-                            LogErr("Please review the error after the '--->' to see if you can fix it on your end.");
-                        }
-                        LogErr("");
-                        LogErr("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
-                        LogErr("or join the #modding_help channel on Discord (invite in the repo).");
-                        LogErr("Make sure to upload your log file.");
-                    }
+                    if (msg.Contains("--->"))
+                        LogErr("Please review the error after the '--->' to see if you can fix it on your end.");
+                    LogErr("");
+                    LogErr("If you need help, please create a new issue on GitHub @ https://github.com/EverestAPI/Everest");
+                    LogErr("or join the #modding_help channel on Discord (invite in the repo).");
+                    LogErr("Make sure to upload your log file.");
                     return 1;
 
                 } finally {
@@ -402,13 +399,13 @@ namespace MiniInstaller {
             LogLine("Loading MonoMod.Utils.dll");
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Utils.dll"));
             LogLine("Loading MonoMod");
-            AsmMonoMod = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Patcher.dll"));
+            AsmMonoMod ??= LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.Patcher.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.dll");
             LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.dll"));
             LogLine("Loading MonoMod.RuntimeDetour.HookGen");
-            AsmHookGen = LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.dll"));
+            AsmHookGen ??= LazyLoadAssembly(Path.Combine(PathGame, "MonoMod.RuntimeDetour.HookGen.dll"));
             LogLine("Loading NETCoreifier");
-            AsmNETCoreifier = LazyLoadAssembly(Path.Combine(PathGame, "NETCoreifier.dll"));
+            AsmNETCoreifier ??= LazyLoadAssembly(Path.Combine(PathGame, "NETCoreifier.dll"));
         }
 
         public static void RunMonoMod(string asmFrom, string asmTo = null, string[] dllPaths = null) {

@@ -41,7 +41,11 @@ namespace MonoMod {
 
     static partial class MonoModRules {
 
-        public static readonly bool IsPatchingGame;
+        public enum PatchTarget {
+            Game, GameDependency, Mod
+        }
+
+        public static readonly PatchTarget RulesPatchTarget;
         public static readonly ModuleDefinition RulesModule;
 
         static MonoModRules() {
@@ -58,15 +62,31 @@ namespace MonoMod {
                 execModName == $"{mod.Name.Substring(0, mod.Name.Length - 4)}.MonoModRules [MMILRT, ID:{MonoModRulesManager.GetId(MonoModRule.Modder)}]"
             );
 
-            // Determine if we're patching the game itself or a mod
-            IsPatchingGame = MonoModRule.Modder.FindType("Celeste.Celeste")?.SafeResolve()?.Scope == MonoModRule.Modder.Module;
+            // Determine the patch targets
+            if (MonoModRule.Modder.FindType("Celeste.Celeste")?.SafeResolve()?.Scope == MonoModRule.Modder.Module) {
+                RulesPatchTarget = PatchTarget.Game;
+            } else if (MonoModRule.Modder.Mods.Contains(RulesModule)) {
+                RulesPatchTarget = PatchTarget.GameDependency;
+            } else {
+                RulesPatchTarget = PatchTarget.Mod;
+            }
 
             // Initialize the appropriate rules
             InitCommonRules(MonoModRule.Modder);
-            if (IsPatchingGame)
-                InitGameRules(MonoModRule.Modder);
-            else
-                InitModRules(MonoModRule.Modder);
+            switch (RulesPatchTarget) {
+                case PatchTarget.Game:
+                    MonoModRule.Modder.Log($"[{RulesModule.Assembly.Name.Name}] Patching game executable...");
+                    InitGameRules(MonoModRule.Modder);
+                    break;
+                case PatchTarget.GameDependency:
+                    MonoModRule.Modder.Log($"[{RulesModule.Assembly.Name.Name}] Patching game dependency...");
+                    InitDependencyRules(MonoModRule.Modder);
+                    break;
+                case PatchTarget.Mod:
+                    MonoModRule.Modder.Log($"[{RulesModule.Assembly.Name.Name}] Patching mod executable...");
+                    InitModRules(MonoModRule.Modder);
+                    break;
+            }
         }
 
         private static void InitCommonRules(MonoModder modder) {

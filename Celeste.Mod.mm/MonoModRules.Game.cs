@@ -61,7 +61,7 @@ namespace MonoMod {
         private static void InitGameRules(MonoModder modder) {
             // Ensure that Celeste assembly is not already modded
             // (https://github.com/MonoMod/MonoMod#how-can-i-check-if-my-assembly-has-been-modded)
-            if (modder.FindType("MonoMod.WasHere") != null)
+            if (modder.FindType("MonoMod.WasHere")?.Scope == modder.Module)
                 throw new Exception("This version of Celeste is already modded. You need a clean install of Celeste to mod it.");
 
             // Check if Celeste version is supported
@@ -87,6 +87,9 @@ namespace MonoMod {
 
             // Add game post processor
             modder.PostProcessors += GamePostProcessor;
+
+            // Remove patches targeting game dependencies
+            RemoveDependencyPatches();
         }
 
         private static Version DetermineGameVersion(MonoModder modder) {
