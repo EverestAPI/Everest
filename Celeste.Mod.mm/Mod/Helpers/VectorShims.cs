@@ -36,6 +36,24 @@ namespace Celeste.Mod.Helpers {
             o = v;
             Normalize(ref o);
         }
+
+        [MonoModLinkFrom($"System.Single {Vector2FName}::Distance({Vector2FName},{Vector2FName})")]
+        public static float Distance(Vector2 a, Vector2 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
+            return (float) Math.Sqrt(xD*xD + yD*yD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector2FName}::Distance({Vector2FName}&,{Vector2FName}&,System.Single&)")]
+        public static void Distance(ref Vector2 a, ref Vector2 b, out float r) => r = Distance(a, b);
+
+        [MonoModLinkFrom($"System.Single {Vector2FName}::DistanceSquared({Vector2FName},{Vector2FName})")]
+        public static float DistanceSquared(Vector2 a, Vector2 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
+            return (float) (xD*xD + yD*yD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector2FName}::DistanceSquared({Vector2FName}&,{Vector2FName}&,System.Single&)")]
+        public static void DistanceSquared(ref Vector2 a, ref Vector2 b, out float r) => r = DistanceSquared(a, b);
 #endregion
 
 #region Vector3 Shims
@@ -63,6 +81,24 @@ namespace Celeste.Mod.Helpers {
             o = v;
             Normalize(ref o);
         }
+
+        [MonoModLinkFrom($"System.Single {Vector3FName}::Distance({Vector3FName},{Vector3FName})")]
+        public static float Distance(Vector3 a, Vector3 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
+            return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector3FName}::Distance({Vector3FName}&,{Vector3FName}&,System.Single&)")]
+        public static void Distance(ref Vector3 a, ref Vector3 b, out float r) => r = Distance(a, b);
+
+        [MonoModLinkFrom($"System.Single {Vector3FName}::DistanceSquared({Vector3FName},{Vector3FName})")]
+        public static float DistanceSquared(Vector3 a, Vector3 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
+            return (float) (xD*xD + yD*yD + zD*zD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector3FName}::DistanceSquared({Vector3FName}&,{Vector3FName}&,System.Single&)")]
+        public static void DistanceSquared(ref Vector3 a, ref Vector3 b, out float r) => r = DistanceSquared(a, b);
 #endregion
 
 #region Vector4 Shims
@@ -90,6 +126,24 @@ namespace Celeste.Mod.Helpers {
             o = v;
             Normalize(ref o);
         }
+
+        [MonoModLinkFrom($"System.Single {Vector4FName}::Distance({Vector4FName},{Vector4FName})")]
+        public static float Distance(Vector4 a, Vector4 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
+            return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD + wD*wD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector4FName}::Distance({Vector4FName}&,{Vector4FName}&,System.Single&)")]
+        public static void Distance(ref Vector4 a, ref Vector4 b, out float r) => r = Distance(a, b);
+
+        [MonoModLinkFrom($"System.Single {Vector4FName}::DistanceSquared({Vector4FName},{Vector4FName})")]
+        public static float DistanceSquared(Vector4 a, Vector4 b) {
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
+            return (float) (xD*xD + yD*yD + zD*zD + wD*wD);
+        }
+
+        [MonoModLinkFrom($"System.Void {Vector4FName}::DistanceSquared({Vector4FName}&,{Vector4FName}&,System.Single&)")]
+        public static void DistanceSquared(ref Vector4 a, ref Vector4 b, out float r) => r = DistanceSquared(a, b);
 #endregion
 
     }
