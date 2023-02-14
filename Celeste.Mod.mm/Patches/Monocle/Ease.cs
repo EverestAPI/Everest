@@ -41,19 +41,19 @@ namespace Monocle {
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_10(System.Single)")]
         public float ElasticIn(float t) {
-            double t2 = (double) t * (double) t, t3 = t2 * (double) t;
+            double t2 = (float) ((double) t * (double) t), t3 = (float) (t2 * (double) t);
             return (float) (33.0*t2*t3 + -59.0*t2*t2 + 32.0*t3 + -5.0*t2);
         }
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_11(System.Single)")]
         public float ElasticOut(float t) {
-            double t2 = (double) t * (double) t, t3 = t2 * (double) t;
+            double t2 = (float) ((double) t * (double) t), t3 = (float) (t2 * (double) t);
             return (float) (33.0*t2*t3 + -106.0*t2*t2 + 126.0*t3 + -67.0*t2 + 15.0*t);
         }
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_12(System.Single)")]
         public float BounceIn(float t) {
-            double td = 1.0 - t;
+            double td = (float) (1.0 - t);
             if (td < B1)
                 return (float) (1.0 - 1.0/(B1*B1) * td * td);
             else if (td < B2)
@@ -80,7 +80,7 @@ namespace Monocle {
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_14(System.Single)")]
         public float BounceInOut(float t) {
             if (t < 0.5f) {
-                double td = 1.0 - t * 2.0;
+                double td = (float) (1.0 - t * 2.0);
                 if (td < B1)
                     return (float) ((1.0 - 1.0/(B1*B1) * td * td) / 2.0);
                 else if (td < B2)
@@ -90,7 +90,7 @@ namespace Monocle {
                 else
                     return (float) ((1.0 - (1.0/(B1*B1) * (td - B6) * (td - B6) + (1.0 - 1.0 / (4*4*4)))) / 2.0);
             } else {
-                double td = t * 2.0 - 1.0;
+                double td = (float) (t * 2.0 - 1.0);
                 if (td < B1)
                     return (float) ((1.0/(B1*B1) * td * td) / 2.0 + 0.5);
                 else if (td < B2)

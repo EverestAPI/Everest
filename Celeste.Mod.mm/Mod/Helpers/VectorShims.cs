@@ -7,6 +7,13 @@ namespace Celeste.Mod.Helpers {
     // To preserve compatibilty, we need to force these methods to execute with higher precision as well
     public static class VectorShims {
 
+        // DON'T. TOUCH. THIS.
+        // For the sake of your own sanity, only mess with the below code when forced to at gunpoint
+        // If you still do, run the full 100% and any% TASes afterwards
+        // Don't be surprised if stuff falls apart, I've warned you
+        // Note that the only way to reliably determine the correct behaviour here is to inspect the x86 assembly code emitted by the .NET Framework JIT
+        // (everything also depends on if the assembly was compiled in Debug/Release mode - there's your XNA/FNA desyncs)
+
         public const string Vector2FName = "Microsoft.Xna.Framework.Vector2";
         public const string Vector3FName = "Microsoft.Xna.Framework.Vector3";
         public const string Vector4FName = "Microsoft.Xna.Framework.Vector4";
@@ -20,9 +27,9 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector2FName}::Normalize()")]
         public static void Normalize(ref Vector2 v) {
-            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y);
-            v.X = (float) (v.X * invLen);
-            v.Y = (float) (v.Y * invLen);
+            float invLen = (float) (1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y));
+            v.X *= invLen;
+            v.Y *= invLen;
         }
 
         [MonoModLinkFrom($"{Vector2FName} {Vector2FName}::Normalize({Vector2FName})")]
@@ -39,7 +46,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector2FName}::Distance({Vector2FName},{Vector2FName})")]
         public static float Distance(Vector2 a, Vector2 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
+            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y);
             return (float) Math.Sqrt(xD*xD + yD*yD);
         }
 
@@ -48,7 +55,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector2FName}::DistanceSquared({Vector2FName},{Vector2FName})")]
         public static float DistanceSquared(Vector2 a, Vector2 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
+            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y);
             return (float) (xD*xD + yD*yD);
         }
 
@@ -65,9 +72,10 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector3FName}::Normalize()")]
         public static void Normalize(ref Vector3 v) {
-            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z);
-            v.X = (float) (v.X * invLen);
-            v.Y = (float) (v.Y * invLen);
+            float invLen = (float) (1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z));
+            v.X *= invLen;
+            v.Y *= invLen;
+            v.Z *= invLen;
         }
 
         [MonoModLinkFrom($"{Vector3FName} {Vector3FName}::Normalize({Vector3FName})")]
@@ -84,7 +92,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector3FName}::Distance({Vector3FName},{Vector3FName})")]
         public static float Distance(Vector3 a, Vector3 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
+            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z);
             return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD);
         }
 
@@ -93,7 +101,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector3FName}::DistanceSquared({Vector3FName},{Vector3FName})")]
         public static float DistanceSquared(Vector3 a, Vector3 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
+            double xD = (float) ((double) a.X - (double) b.X), yD =(float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z);
             return (float) (xD*xD + yD*yD + zD*zD);
         }
 
@@ -110,9 +118,11 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Void {Vector4FName}::Normalize()")]
         public static void Normalize(ref Vector4 v) {
-            double invLen = 1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z + (double) v.W * (double) v.W);
-            v.X = (float) (v.X * invLen);
-            v.Y = (float) (v.Y * invLen);
+            float invLen = (float) (1.0 / (float) Math.Sqrt((double) v.X * (double) v.X + (double) v.Y * (double) v.Y + (double) v.Z * (double) v.Z + (double) v.W * (double) v.W));
+            v.X *= invLen;
+            v.Y *= invLen;
+            v.Z *= invLen;
+            v.W *= invLen;
         }
 
         [MonoModLinkFrom($"{Vector4FName} {Vector4FName}::Normalize({Vector4FName})")]
@@ -129,7 +139,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector4FName}::Distance({Vector4FName},{Vector4FName})")]
         public static float Distance(Vector4 a, Vector4 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
+            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z), wD = (float) ((double) a.W - (double) b.W);
             return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD + wD*wD);
         }
 
@@ -138,7 +148,7 @@ namespace Celeste.Mod.Helpers {
 
         [MonoModLinkFrom($"System.Single {Vector4FName}::DistanceSquared({Vector4FName},{Vector4FName})")]
         public static float DistanceSquared(Vector4 a, Vector4 b) {
-            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
+            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z), wD = (float) ((double) a.W - (double) b.W);
             return (float) (xD*xD + yD*yD + zD*zD + wD*wD);
         }
 
