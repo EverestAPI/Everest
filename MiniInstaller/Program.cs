@@ -333,22 +333,23 @@ namespace MiniInstaller {
         public static void SetupNativeLibs() {
             string[] libSrcDirs;
             string libDstDir;
-            bool strip64NameSuffix = false, stripSoVersionSuffix = false;
+            string[] fixupLibs;
 
             if (PathDylibs != null) {
                 // Setup MacOS native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                 libDstDir = PathDylibs;
+                fixupLibs = new string[] {};
             } if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
                 // Setup Linux native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
                 libDstDir = PathGame;
-                stripSoVersionSuffix = true;
+                fixupLibs = new string[] { "libfmodstudio.so.10", "libFNA3D.so.0", "libFAudio.so.0", "libSDL2-2.0.so.0" };
             } else {
                 // Setup Windows native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
                 libDstDir = PathGame;
-                strip64NameSuffix = true;
+                fixupLibs = new string[] { "fmodstudio64.dll", "steam_api64.dll" };
             }
 
             // Copy native libraries for the OS
@@ -361,7 +362,7 @@ namespace MiniInstaller {
                 foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
                     string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
 
-                    if (strip64NameSuffix && Path.GetFileNameWithoutExtension(fileDst).EndsWith("64")) {
+                    if (fileSrc.EndsWith("64.dll") && fixupLibs.Contains(Path.GetFileName(fileSrc))) {
                         // Remove XYZ64.dll suffix to make the target name XYZ.dll
                         string fname = Path.GetFileNameWithoutExtension(fileDst);
                         fname = fname.Substring(0, fname.Length - 2);
@@ -373,7 +374,7 @@ namespace MiniInstaller {
 
                     File.Copy(fileSrc, fileDst, true);
 
-                    if (stripSoVersionSuffix) {
+                    if (Path.GetFileNameWithoutExtension(fileSrc).EndsWith(".so") && fixupLibs.Contains(Path.GetFileName(fileSrc))) {
                         // Create symlinks for .so files without their suffix
                         int soIdx = fileDst.LastIndexOf(".so");
                         if (0 <= soIdx && soIdx < fileDst.Length - 3) {
