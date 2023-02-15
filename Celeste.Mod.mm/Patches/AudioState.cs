@@ -8,7 +8,7 @@ namespace Celeste {
         public float? AmbienceVolume;
 
         [XmlIgnore]
-        public bool AmbienceVolumeSpecified { get { return AmbienceVolume.HasValue; } }
+        public bool AmbienceVolumeSpecified => AmbienceVolume.HasValue;
 
         public extern void orig_Apply(bool forceSixteenthNoteHack = false);
         public new void Apply(bool forceSixteenthNoteHack = false) {
