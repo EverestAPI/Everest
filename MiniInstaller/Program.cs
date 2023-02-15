@@ -95,11 +95,11 @@ namespace MiniInstaller {
                     if (AsmMonoMod == null || AsmNETCoreifier == null)
                         LoadModders();
 
-                    ConvertToNETCore(PathEverestExe);
+                    ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
 
                     string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
-                    RunMonoMod(Path.Combine(PathOrig, "FNA.dll"), Path.Combine(PathGame, "FNA.dll"), mods); // We need to patch some methods in FNA as well
-                    RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, mods);
+                    RunMonoMod(Path.Combine(PathGame, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
+                    RunMonoMod(PathEverestExe, dllPaths: mods);
 
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
