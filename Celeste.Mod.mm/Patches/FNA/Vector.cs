@@ -3,7 +3,7 @@ using System;
 
 namespace Microsoft.Xna.Framework {
     // Patch some Vector2/3/4 methods because they execute with more precision than they should on .NET Framework
-    // To preserve compatibilty, we need to ensure that these methods to execute with higher precision as well
+    // To preserve compatibilty, we need to ensure that these methods execute with higher precision as well
 
     // DON'T. TOUCH. THIS.
     // For the sake of your own sanity, only mess with the below code when forced to at gunpoint
@@ -29,6 +29,7 @@ namespace Microsoft.Xna.Framework {
             X *= invLen;
             Y *= invLen;
         }
+
         [MonoModReplace]
         public static Vector2 Normalize(Vector2 v) {
             v.Normalize();
