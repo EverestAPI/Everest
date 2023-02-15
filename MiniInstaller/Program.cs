@@ -95,11 +95,12 @@ namespace MiniInstaller {
                     if (AsmMonoMod == null || AsmNETCoreifier == null)
                         LoadModders();
 
+                    ConvertToNETCore(PathEverestExe);
+
                     string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
                     RunMonoMod(Path.Combine(PathOrig, "FNA.dll"), Path.Combine(PathGame, "FNA.dll"), mods); // We need to patch some methods in FNA as well
                     RunMonoMod(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe, mods);
 
-                    ConvertToNETCore(PathEverestExe);
                     RunHookGen(PathEverestExe, PathCelesteExe);
 
                     MoveExecutable(PathEverestExe, PathEverestDLL);
@@ -438,27 +439,31 @@ namespace MiniInstaller {
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
         }
 
-        public static void ConvertToNETCore(string asm, HashSet<string> convertedAsms = null) {
+        public static void ConvertToNETCore(string srcAsm, string dstAsm = null, HashSet<string> convertedAsms = null) {
+            dstAsm ??= srcAsm;
             convertedAsms ??= new HashSet<string>();
 
-            if (!convertedAsms.Add(asm))
+            if (!convertedAsms.Add(srcAsm))
                 return;
 
             // Convert dependencies first
-            foreach (string dep in GetPEAssemblyReferences(asm).Keys) {
-                string depPath = Path.Combine(Path.GetDirectoryName(asm), $"{dep}.dll");
-                if (File.Exists(depPath) && !IsSystemLibrary(depPath))
-                    ConvertToNETCore(depPath, convertedAsms);
+            foreach (string dep in GetPEAssemblyReferences(srcAsm).Keys) {
+                string srcDepPath = Path.Combine(Path.GetDirectoryName(srcAsm), $"{dep}.dll");
+                string dstDepPath = Path.Combine(Path.GetDirectoryName(dstAsm), $"{dep}.dll");
+                if (File.Exists(srcDepPath) && !IsSystemLibrary(srcDepPath))
+                    ConvertToNETCore(srcDepPath, dstDepPath, convertedAsms);
+                else if (File.Exists(dstDepPath) && !IsSystemLibrary(srcDepPath))
+                    ConvertToNETCore(dstDepPath, convertedAsms: convertedAsms);
             }
 
-            LogLine($"Converting {asm} to .NET Core");
+            LogLine($"Converting {srcAsm} to .NET Core");
 
             AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
                 .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
-                .Invoke(null, new object[] { asm, asm + ".tmp" });
+                .Invoke(null, new object[] { srcAsm, dstAsm + ".tmp" });
 
-            File.Delete(asm);
-            File.Move(asm + ".tmp", asm);
+            File.Delete(dstAsm);
+            File.Move(dstAsm + ".tmp", dstAsm);
         }
 
         public static void MoveExecutable(string srcPath, string dstPath) {
