@@ -94,6 +94,10 @@ namespace Celeste.Mod {
                 if (_LoadedAssemblies.TryGetValue(path, out Assembly asm))
                     return asm;
 
+                // Temporarily make the assembly resolve to null while actually loading it
+                // This can fix self referential assemblies blowing up
+                _LoadedAssemblies.Add(path, null);
+
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
                 asm = MainThreadHelper.Get(() => {
@@ -115,8 +119,9 @@ namespace Celeste.Mod {
                     return null;
                 }).GetResult();
 
-                // Add the assembly to list of loaded assemblies
-                _LoadedAssemblies.Add(path, asm);
+                // Actually add the assembly to list of loaded assemblies if we managed to load it
+                if (asm != null)
+                    _LoadedAssemblies[path] = asm;
 
                 if (asm != null)
                     Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
