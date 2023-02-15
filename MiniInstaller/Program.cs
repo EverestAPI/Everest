@@ -257,7 +257,7 @@ namespace MiniInstaller {
                         foreach (string dir in Directory.GetDirectories(src))
                             CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
                     }
-                    CopyDirectory(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+                    CopyDirectory(Path.Combine(PathGame, "Content"), Path.Combine(PathOrig, "Content"));
                 }
             }
         }
