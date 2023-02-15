@@ -115,8 +115,6 @@ namespace Celeste.Mod {
                         using (Stream stream = File.OpenRead(path))
                             return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
 
-                return null;
-
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
                 if (asm != null)
                     _LoadedAssemblies[path] = asm;
