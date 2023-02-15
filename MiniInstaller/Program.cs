@@ -345,7 +345,7 @@ namespace MiniInstaller {
                 stripSoVersionSuffix = true;
             } else {
                 // Setup Windows native libs
-                libSrcDirs = new string[] { Path.Combine("lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
+                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
                 libDstDir = PathGame;
                 strip64NameSuffix = true;
             }
