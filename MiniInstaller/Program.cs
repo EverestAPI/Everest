@@ -366,7 +366,7 @@ namespace MiniInstaller {
                         string fname = Path.GetFileNameWithoutExtension(fileDst);
                         fname = fname.Substring(0, fname.Length - 2);
                         if (Path.HasExtension(fileDst))
-                            fname += "." + Path.GetExtension(fileDst);
+                            fname += Path.GetExtension(fileDst);
 
                         fileDst = Path.Combine(Path.GetDirectoryName(fileDst), fname);
                     }
