@@ -29,7 +29,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
 - Publish all
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required depdency DLLs won't be copied!
 - Copy everything in `MiniInstaller\bin\Debug\publish` and `Celeste.Mod.mm\bin\Debug\publish` to your Celeste directory
-- Run MiniInstaller.exe
+- Run MiniInstaller-win.exe
 
 ### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
@@ -39,7 +39,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required depdency DLLs won't be copied!
 - Copy everything in `MiniInstaller/bin/Debug/publish` and `Celeste.Mod.mm/bin/Debug/publish` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
-- Run `./MiniInstaller`
+- Run `./MiniInstaller-linux` or `./MiniInstaller-osx`
 
 ## Contributing
 Contributions of any kind are welcome, and a guide on how to contribute effectively to the Everest project is available [here](./CONTRIBUTING.md).
