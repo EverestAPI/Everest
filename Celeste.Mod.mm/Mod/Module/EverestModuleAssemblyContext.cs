@@ -108,19 +108,18 @@ namespace Celeste.Mod {
 
                         if (entry != null)
                             using (Stream stream = entry.ExtractStream())
-                                return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                                asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
                     }
                 else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
                     if (File.Exists(path))
                         using (Stream stream = File.OpenRead(path))
-                            return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                            asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
 
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
-                if (asm != null)
+                if (asm != null) {
                     _LoadedAssemblies[path] = asm;
-
-                if (asm != null)
                     Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
+                }
 
                 return asm;
             }
