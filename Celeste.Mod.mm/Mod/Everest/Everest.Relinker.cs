@@ -29,6 +29,11 @@ namespace Celeste.Mod {
             private static string _GameChecksum;
 
             /// <summary>
+            /// The lock which the relinker holds when relinking assemblies
+            /// </summary>
+            public static readonly object RelinkerLock = new object();
+
+            /// <summary>
             /// A map shared between all invocations of the relinker which maps certain referenced modules onto others. Can be used with <see cref="MonoModder.RelinkModuleMap"/>.
             /// </summary>
             public static Dictionary<string, ModuleDefinition> SharedRelinkModuleMap {
@@ -82,12 +87,12 @@ namespace Celeste.Mod {
                     _SharedRelinkMap = new Dictionary<string, object>();
 
                     // Fix old mods depending on MonoModExt
-                    SharedRelinkMap["MonoMod.Utils.MonoModExt"] = "MonoMod.Utils.Extensions";
-                    SharedRelinkMap["System.String MonoMod.Utils.Extensions::GetFindableID(Mono.Cecil.MethodReference,System.String,System.String,System.Boolean,System.Boolean)"] =
+                    _SharedRelinkMap["MonoMod.Utils.MonoModExt"] = "MonoMod.Utils.Extensions";
+                    _SharedRelinkMap["System.String MonoMod.Utils.Extensions::GetFindableID(Mono.Cecil.MethodReference,System.String,System.String,System.Boolean,System.Boolean)"] =
                         new RelinkMapEntry("MonoMod.Utils.Extensions", "System.String GetID(Mono.Cecil.MethodReference,System.String,System.String,System.Boolean,System.Boolean)");
-                    SharedRelinkMap["System.String MonoMod.Utils.Extensions::GetFindableID(System.Reflection.MethodBase,System.String,System.String,System.Boolean,System.Boolean,System.Boolean)"] =
+                    _SharedRelinkMap["System.String MonoMod.Utils.Extensions::GetFindableID(System.Reflection.MethodBase,System.String,System.String,System.Boolean,System.Boolean,System.Boolean)"] =
                         new RelinkMapEntry("MonoMod.Utils.Extensions", "System.String GetID(System.Reflection.MethodBase,System.String,System.String,System.Boolean,System.Boolean,System.Boolean)");
-                    SharedRelinkMap["Mono.Cecil.ModuleDefinition MonoMod.Utils.Extensions::ReadModule(System.String,Mono.Cecil.ReaderParameters)"] =
+                    _SharedRelinkMap["Mono.Cecil.ModuleDefinition MonoMod.Utils.Extensions::ReadModule(System.String,Mono.Cecil.ReaderParameters)"] =
                         new RelinkMapEntry("Mono.Cecil.ModuleDefinition", "Mono.Cecil.ModuleDefinition ReadModule(System.String,Mono.Cecil.ReaderParameters)");
 
                     return _SharedRelinkMap;
@@ -121,58 +126,60 @@ namespace Celeste.Mod {
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
-                // Ensure the stream is seekable
-                if (!stream.CanSeek) {
-                    MemoryStream ms = new MemoryStream();
-                    stream.CopyTo(ms);
-                    stream.Dispose();
-                    stream = ms;
-                    stream.Seek(0, SeekOrigin.Begin);
-                }
-
-                // Determine cache paths
-                string cachePath = GetCachedPath(meta, asmname);
-                string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
-
-                Assembly asm = null;
-
-                // Try to load the assembly from the cache
-                if (TryLoadCachedAssembly(meta, asmname, cachePath, cacheChecksumPath, stream, checksumsExtra, out string[] checksums) is not Assembly cacheAsm) {
-                    // Delete cached files
-                    File.Delete(cachePath);
-                    File.Delete(cacheChecksumPath);
-
-                    try {
-                        // Relink the assembly                
-                        if (RelinkAssembly(meta, asmname, cachePath, stream, depResolver, prePatch, out string tmpOutPath) is not Assembly relinkedAsm)
-                            return null;
-                        else
-                            asm = relinkedAsm;
-
-                        // Write the checksums for the cached assembly to be loaded in the future
-                        // Skip this step if the relinker had to fall back to using a temporary output file
-                        if (tmpOutPath == null)
-                            File.WriteAllLines(cacheChecksumPath, checksums);
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
-                        e.LogDetailed();
-                        return null;
+                lock (RelinkerLock) {
+                    // Ensure the stream is seekable
+                    if (!stream.CanSeek) {
+                        MemoryStream ms = new MemoryStream();
+                        stream.CopyTo(ms);
+                        stream.Dispose();
+                        stream = ms;
+                        stream.Seek(0, SeekOrigin.Begin);
                     }
-                } else
-                    asm = cacheAsm;
 
-                // Log the assembly load and dependencies
-                Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
+                    // Determine cache paths
+                    string cachePath = GetCachedPath(meta, asmname);
+                    string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
 
-                HashSet<string> loadedAsmNames = AppDomain.CurrentDomain.GetAssemblies().Select(asm => asm.GetName().Name).ToHashSet();
-                foreach (AssemblyName asmRef in asm.GetReferencedAssemblies()) {
-                    if (loadedAsmNames.Contains(asmRef.Name))
-                        Logger.Log(LogLevel.Verbose, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} found");
-                    else
-                        Logger.Log(LogLevel.Warn, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} NOT FOUND");
+                    Assembly asm = null;
+
+                    // Try to load the assembly from the cache
+                    if (TryLoadCachedAssembly(meta, asmname, cachePath, cacheChecksumPath, stream, checksumsExtra, out string[] checksums) is not Assembly cacheAsm) {
+                        // Delete cached files
+                        File.Delete(cachePath);
+                        File.Delete(cacheChecksumPath);
+
+                        try {
+                            // Relink the assembly                
+                            if (RelinkAssembly(meta, asmname, cachePath, stream, depResolver, prePatch, out string tmpOutPath) is not Assembly relinkedAsm)
+                                return null;
+                            else
+                                asm = relinkedAsm;
+
+                            // Write the checksums for the cached assembly to be loaded in the future
+                            // Skip this step if the relinker had to fall back to using a temporary output file
+                            if (tmpOutPath == null)
+                                File.WriteAllLines(cacheChecksumPath, checksums);
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
+                            e.LogDetailed();
+                            return null;
+                        }
+                    } else
+                        asm = cacheAsm;
+
+                    // Log the assembly load and dependencies
+                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
+
+                    HashSet<string> loadedAsmNames = AppDomain.CurrentDomain.GetAssemblies().Select(asm => asm.GetName().Name).ToHashSet();
+                    foreach (AssemblyName asmRef in asm.GetReferencedAssemblies()) {
+                        if (loadedAsmNames.Contains(asmRef.Name))
+                            Logger.Log(LogLevel.Verbose, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} found");
+                        else
+                            Logger.Log(LogLevel.Warn, "relinker", $"dep. {asm.FullName} -> {asmRef.FullName} NOT FOUND");
+                    }
+
+                    return asm;
                 }
-
-                return asm;
             }
 
             private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string cachePath, string cacheChecksumsPath, Stream stream, string[] extraChecksums, out string[] curChecksums) {

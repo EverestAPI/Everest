@@ -100,24 +100,22 @@ namespace Celeste.Mod {
 
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
-                asm = MainThreadHelper.Get(() => {
-                    if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
-                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                            // Try to find + load the entry
-                            path = path.Replace('\\', '/');
-                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
+                if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
+                    using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
+                        // Try to find + load the entry
+                        path = path.Replace('\\', '/');
+                        ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
 
-                            if (entry != null)
-                                using (Stream stream = entry.ExtractStream())
-                                    return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
-                        }
-                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
-                        if (File.Exists(path))
-                            using (Stream stream = File.OpenRead(path))
+                        if (entry != null)
+                            using (Stream stream = entry.ExtractStream())
                                 return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                    }
+                else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
+                    if (File.Exists(path))
+                        using (Stream stream = File.OpenRead(path))
+                            return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
 
-                    return null;
-                }).GetResult();
+                return null;
 
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
                 if (asm != null)
