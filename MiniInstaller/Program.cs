@@ -448,7 +448,12 @@ namespace MiniInstaller {
                 return;
 
             // Convert dependencies first
-            foreach (string dep in GetPEAssemblyReferences(srcAsm).Keys) {
+            string[] deps = GetPEAssemblyReferences(srcAsm).Keys.ToArray();
+
+            if (deps.Contains("NETCoreifier"))
+                return; // Don't convert an assembly twice
+
+            foreach (string dep in deps) {
                 string srcDepPath = Path.Combine(Path.GetDirectoryName(srcAsm), $"{dep}.dll");
                 string dstDepPath = Path.Combine(Path.GetDirectoryName(dstAsm), $"{dep}.dll");
                 if (File.Exists(srcDepPath) && !IsSystemLibrary(srcDepPath))
