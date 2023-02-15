@@ -349,7 +349,7 @@ namespace MiniInstaller {
                 // Setup Windows native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
                 libDstDir = PathGame;
-                fixupLibs = new string[] { "fmodstudio64.dll", "steam_api64.dll" };
+                fixupLibs = new string[] { "fmodstudio64.dll" };
             }
 
             // Copy native libraries for the OS
