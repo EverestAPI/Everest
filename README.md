@@ -37,7 +37,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
     - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
-- Copy everything in ``MiniInstaller\bin\Debug\net7.0\publish`, `Celeste.Mod.mm\bin\Debug\net7.0\publish` and `NETCoreifier\bin\Debug\net7.0\publish` to your Celeste directory
+- Copy everything in `MiniInstaller\bin\Debug\net7.0\publish`, `Celeste.Mod.mm\bin\Debug\net7.0\publish` and `NETCoreifier\bin\Debug\net7.0\publish` to your Celeste directory
     - macOS: `Celeste.app/Contents/MacOS`
 - Run `./MiniInstaller-linux` or `./MiniInstaller-osx`
 
