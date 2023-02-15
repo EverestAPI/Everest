@@ -80,6 +80,7 @@ namespace MiniInstaller {
                 File = fileWriter
             }) {
                 Console.SetOut(logWriter);
+                Console.SetError(logWriter);
 
                 try {
                     WaitForGameExit();

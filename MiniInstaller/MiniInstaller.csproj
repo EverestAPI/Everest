@@ -45,13 +45,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="$(AppHostIntermediatePath_win-x64)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-        <None Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-        <None Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
     </ItemGroup>
   </Target>
 
-  <Target Name="BindAppHosts" AfterTargets="CoreCompile">
+  <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
     <Message Importance="High" Text="Binding MiniInstaller AppHosts..." />
 
     <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
