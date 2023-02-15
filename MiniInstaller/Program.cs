@@ -249,6 +249,8 @@ namespace MiniInstaller {
                     Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
                 } catch (IOException) {
                     static void CopyDirectory(string src, string dst) {
+                        Directory.CreateDirectory(dst);
+
                         foreach (string file in Directory.GetFiles(src))
                             File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
 
