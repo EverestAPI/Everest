@@ -13,24 +13,28 @@ namespace NETCoreifier {
             => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps);
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
-            // Read the module
-            ReaderParameters readerParams = new ReaderParameters()  { ReadSymbols = true };
-            ModuleDefinition module;
+            ModuleDefinition module = null;;
             try {
-                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
-            } catch (SymbolsNotFoundException) {
-                readerParams.ReadSymbols = false;
-                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
-            } catch (SymbolsNotMatchingException) {
-                readerParams.ReadSymbols = false;
-                module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+                // Read the module
+                ReaderParameters readerParams = new ReaderParameters()  { ReadSymbols = true };
+                try {
+                    module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+                } catch (SymbolsNotFoundException) {
+                    readerParams.ReadSymbols = false;
+                    module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+                } catch (SymbolsNotMatchingException) {
+                    readerParams.ReadSymbols = false;
+                    module = ModuleDefinition.ReadModule(inputAsm, readerParams);
+                }
+
+                // Convert the module
+                ConvertToNetCore(module);
+
+                // Write the converted module
+                module.Write(outputAsm ?? inputAsm, new WriterParameters() { WriteSymbols = readerParams.ReadSymbols });
+            } finally {
+                module?.Dispose();
             }
-
-            // Convert the module
-            ConvertToNetCore(module);
-
-            // Write the converted module
-            module.Write(outputAsm ?? inputAsm, new WriterParameters() { WriteSymbols = readerParams.ReadSymbols });
         }
 
         public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false) {
