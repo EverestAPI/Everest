@@ -2,6 +2,7 @@ using Celeste.Mod.Helpers;
 using Ionic.Zip;
 using Mono.Cecil;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,6 +17,8 @@ namespace Celeste.Mod {
 
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
+        private readonly object LOCK = new object();
+
         public readonly EverestModuleMetadata ModuleMeta;
         internal readonly List<EverestModuleAssemblyContext> DependencyContexts = new List<EverestModuleAssemblyContext>();
 
@@ -23,8 +26,8 @@ namespace Celeste.Mod {
         private readonly Dictionary<string, Assembly> _LoadedAssemblies = new Dictionary<string, Assembly>();
         private readonly Dictionary<string, ModuleDefinition> _AssemblyModules = new Dictionary<string, ModuleDefinition>();
 
-        private readonly Dictionary<string, Assembly> _AssemblyLoadCache = new Dictionary<string, Assembly>();
-        private readonly Dictionary<string, AssemblyDefinition> _AssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
+        private readonly ConcurrentDictionary<string, Assembly> _AssemblyLoadCache = new ConcurrentDictionary<string, Assembly>();
+        private readonly ConcurrentDictionary<string, AssemblyDefinition> _AssemblyResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
 
         private bool isDisposed = false;
 
@@ -50,21 +53,23 @@ namespace Celeste.Mod {
         }
 
         public void Dispose() {
-            if (isDisposed)
-                return;
-            isDisposed = true;
+            lock (LOCK) {
+                if (isDisposed)
+                    return;
+                isDisposed = true;
 
-            // Unload all assemblies loaded in the context
-            foreach (ModuleDefinition module in _AssemblyModules.Values)
-                module.Dispose();
-            _AssemblyModules.Clear();
+                // Unload all assemblies loaded in the context
+                foreach (ModuleDefinition module in _AssemblyModules.Values)
+                    module.Dispose();
+                _AssemblyModules.Clear();
 
-            foreach (Assembly asm in Assemblies)
-                Everest.UnloadAssembly(ModuleMeta, asm);            
-            _LoadedAssemblies.Clear();
+                foreach (Assembly asm in Assemblies)
+                    Everest.UnloadAssembly(ModuleMeta, asm);            
+                _LoadedAssemblies.Clear();
 
-            _AssemblyLoadCache.Clear();
-            _AssemblyResolveCache.Clear();
+                _AssemblyLoadCache.Clear();
+                _AssemblyResolveCache.Clear();
+            }
 
             Unload();
         }
@@ -77,40 +82,47 @@ namespace Celeste.Mod {
         /// <param name="asmName">The assembly name, or null for the default</param>
         /// <returns></returns>
         public Assembly LoadAssemblyFromModPath(string path, string asmName = null) {
-            if (isDisposed)
-                throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));
+            lock (LOCK) {
+                if (isDisposed)
+                    throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));
 
-            // Determine the default assembly name
-            if (asmName == null)
-                asmName = Path.GetFileNameWithoutExtension(path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar));
+                // Determine the default assembly name
+                if (asmName == null)
+                    asmName = Path.GetFileNameWithoutExtension(path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar));
 
-            // Check if the assembly has already been loaded
-            if (_LoadedAssemblies.TryGetValue(path, out Assembly asm))
+                // Check if the assembly has already been loaded
+                if (_LoadedAssemblies.TryGetValue(path, out Assembly asm))
+                    return asm;
+
+                // Try to load + relink the assembly
+                // Do this on the main thread, as otherwise stuff can break
+                asm = MainThreadHelper.Get(() => {
+                    if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
+                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
+                            // Try to find + load the entry
+                            path = path.Replace('\\', '/');
+                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
+
+                            if (entry != null)
+                                using (Stream stream = entry.ExtractStream())
+                                    return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                        }
+                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
+                        if (File.Exists(path))
+                            using (Stream stream = File.OpenRead(path))
+                                return Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+
+                    return null;
+                }).GetResult();
+
+                // Add the assembly to list of loaded assemblies
+                _LoadedAssemblies.Add(path, asm);
+
+                if (asm != null)
+                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
+
                 return asm;
-
-            // Try to load + relink the assembly
-            if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
-                using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                    // Try to find + load the entry
-                    path = path.Replace('\\', '/');
-                    ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
-
-                    if (entry != null)
-                        using (Stream stream = entry.ExtractStream())
-                            asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
-                }
-            else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
-                if (File.Exists(path))
-                    using (Stream stream = File.OpenRead(path))
-                        asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
-
-            // Add the assembly to list of loaded assemblies
-            _LoadedAssemblies.Add(path, asm);
-
-            if (asm != null)
-                Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
-
-            return asm;
+            }
         }
 
         /// <summary>
@@ -146,7 +158,7 @@ namespace Celeste.Mod {
 
             // Try to load the assembly
             Assembly asm = LoadUncached(asmName);
-            _AssemblyLoadCache.Add(asmName.Name, asm);
+            _AssemblyLoadCache.TryAdd(asmName.Name, asm);
 
             if (asm == null)
                 Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
@@ -166,7 +178,7 @@ namespace Celeste.Mod {
 
             // Try to resolve the assembly
             AssemblyDefinition asm = ResolveUncached(asmName);
-            _AssemblyResolveCache.Add(asmName.Name, asm);
+            _AssemblyResolveCache.TryAdd(asmName.Name, asm);
 
             // No warning if we failed to resolve it - the relinker will emit its own warning if needed + there's another warning upon an actual load failure
 
