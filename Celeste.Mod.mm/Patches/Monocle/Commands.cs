@@ -332,7 +332,7 @@ namespace Monocle {
                 case Keys.V:
                     if (ctrl && TextInput.GetClipboardText() is {Length: > 0} clipboard) {
                         clipboard = clipboard.Replace("\n", " ");
-                        currentText = currentText.Substring(0, charIndex) + clipboard + currentText.Substring(charIndex);;
+                        currentText = currentText.Substring(0, charIndex) + clipboard + currentText.Substring(charIndex);
                         charIndex = Math.Min(charIndex + clipboard.Length, currentText.Length);
                     }
                     break;

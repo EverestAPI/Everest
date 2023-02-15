@@ -13,7 +13,7 @@ namespace NETCoreifier {
             => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps);
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
-            ModuleDefinition module = null;;
+            ModuleDefinition module = null;
             try {
                 // Read the module
                 ReaderParameters readerParams = new ReaderParameters()  { ReadSymbols = true };
