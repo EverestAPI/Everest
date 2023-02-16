@@ -356,6 +356,8 @@ namespace Celeste.Mod {
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
+
+                bool isNative = true;
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
@@ -375,6 +377,10 @@ namespace Celeste.Mod {
                             string entryName = entry.FileName;
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
+
+                            if (entryName == "MiniInstaller.exe")
+                                isNative = false;
+
                             string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
@@ -413,7 +419,7 @@ namespace Celeste.Mod {
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
                     installer.StartInfo.FileName = installerPath;
 
-                    if (File.Exists(installerPath)) {
+                    if (!isNative) {
                         if (Type.GetType("Mono.Runtime") != null) {
                             // Start MiniInstaller using mono
                             installer.StartInfo.FileName = "mono";
