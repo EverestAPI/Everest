@@ -97,7 +97,7 @@ namespace MiniInstaller {
                         LoadModders();
 
                     ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
-                    ConvertToNETCore(Path.Combine(PathGame, "FNA.dll")); // Explicitly convert FNA as well, otherwise it won't convert for XNA
+                    ConvertToNETCore(Path.Combine(PathOrig, "FNA.dll"), Path.Combine(PathGame, "FNA.dll")); // Explicitly convert FNA as well, otherwise it won't convert for XNA
 
                     string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
                     RunMonoMod(Path.Combine(PathGame, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
@@ -219,6 +219,7 @@ namespace MiniInstaller {
 
             //Backup game dependencies
             BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)), PathGame);
+            Backup(Path.Combine(PathGame, "FNA.dll")); // Explicitly back up the FNA dll for XNA builds
 
             //Backup all system libraries explicitly, as we'll delete those
             foreach (string file in Directory.GetFiles(PathGame)) {
