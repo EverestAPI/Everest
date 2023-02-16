@@ -146,23 +146,26 @@ namespace MonoMod {
         public static AssemblyName GetRulesAssemblyRef(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));
 
         public static bool ReplaceAssemblyRefs(MonoModder modder, Func<AssemblyNameReference, bool> filter, AssemblyName newRef) {
-            bool hasNewRef = false;
-            for (int i = 0; i < modder.Module.AssemblyReferences.Count; i++) {
-                AssemblyNameReference asmRef = modder.Module.AssemblyReferences[i];
-                if (asmRef.Name.Equals(newRef.Name))
-                    hasNewRef = true;
-                else if(filter(asmRef)) {
-                    // Remove dependency
-                    modder.Module.AssemblyReferences.RemoveAt(i--);
-                    modder.DependencyMap[modder.Module].RemoveAll(dep => dep.Assembly.FullName == asmRef.FullName);
-                }
-            }
-
+            // Add new dependency and map it, if it not already exist
+            bool hasNewRef = modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == newRef.Name);
             if (!hasNewRef) {
-                // Add new dependency and map it
                 AssemblyNameReference asmNameRef = new AssemblyNameReference(newRef.Name, newRef.Version);
                 modder.Module.AssemblyReferences.Add(asmNameRef);
                 modder.MapDependency(modder.Module, asmNameRef);
+            }
+
+            // Replace old references
+            ModuleDefinition newModule = modder.DependencyMap[modder.Module].First(mod => mod.Assembly.Name.Name == newRef.Name);
+
+            for (int i = 0; i < modder.Module.AssemblyReferences.Count; i++) {
+                AssemblyNameReference asmRef = modder.Module.AssemblyReferences[i];
+                if(!filter(asmRef))
+                    continue;
+
+                // Remove dependency
+                modder.Module.AssemblyReferences.RemoveAt(i--);
+                modder.DependencyMap[modder.Module].RemoveAll(dep => dep.Assembly.FullName == asmRef.FullName);
+                modder.RelinkModuleMap[asmRef.Name] = newModule;
             }
 
             return !hasNewRef;
