@@ -422,15 +422,15 @@ namespace MiniInstaller {
             // We're lazy.
             Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
             Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(asmTo + ".tmp").ToArray() });
+            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(Path.ChangeExtension(asmTo, "tmp")).ToArray() });
 
-            if (returnCode != 0 && File.Exists(asmTo + ".tmp"))
-                File.Delete(asmTo + ".tmp");
+            if (returnCode != 0)
+                File.Delete(Path.ChangeExtension(asmTo, "tmp"));
 
-            if (!File.Exists(asmTo + ".tmp"))
+            if (!File.Exists(Path.ChangeExtension(asmTo, "tmp")))
                 throw new Exception("MonoMod failed creating a patched assembly!");
 
-            MoveExecutable(asmTo + ".tmp", asmTo);
+            MoveExecutable(Path.ChangeExtension(asmTo, "tmp"), asmTo);
         }
 
         public static void RunHookGen(string asm, string target) {
@@ -467,10 +467,9 @@ namespace MiniInstaller {
 
             AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
                 .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
-                .Invoke(null, new object[] { srcAsm, dstAsm + ".tmp" });
+                .Invoke(null, new object[] { srcAsm, Path.ChangeExtension(dstAsm, "tmp") });
 
-            File.Delete(dstAsm);
-            File.Move(dstAsm + ".tmp", dstAsm);
+            MoveExecutable(Path.ChangeExtension(dstAsm, "tmp"), dstAsm);
         }
 
         public static void MoveExecutable(string srcPath, string dstPath) {
