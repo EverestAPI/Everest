@@ -25,6 +25,7 @@ namespace MiniInstaller {
         public static string PathOrig;
         public static string PathDylibs;
         public static string PathLog;
+        public static string PathTmp;
 
         public static Assembly AsmMonoMod;
         public static Assembly AsmHookGen;
@@ -186,6 +187,8 @@ namespace MiniInstaller {
                 if (!Directory.Exists(PathDylibs))
                     PathDylibs = null;
             }
+
+            PathTmp = Directory.CreateTempSubdirectory("Everest_MiniInstaller").FullName;
 
             return true;
         }
@@ -419,18 +422,26 @@ namespace MiniInstaller {
             dllPaths ??= new string[] { PathGame };
 
             LogLine($"Running MonoMod for {asmFrom}");
-            // We're lazy.
-            Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
-            Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-            int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(Path.ChangeExtension(asmTo, "tmp")).ToArray() });
 
-            if (returnCode != 0)
-                File.Delete(Path.ChangeExtension(asmTo, "tmp"));
+            string asmTmp = Path.Combine(PathTmp, Path.GetFileName(asmTo));
+            try {
+                // We're lazy.
+                Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
+                Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
+                int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmTo, 1).Concat(dllPaths).Append(asmTmp).ToArray() });
 
-            if (!File.Exists(Path.ChangeExtension(asmTo, "tmp")))
-                throw new Exception("MonoMod failed creating a patched assembly!");
+                if (returnCode != 0)
+                    File.Delete(asmTmp);
 
-            MoveExecutable(Path.ChangeExtension(asmTo, "tmp"), asmTo);
+                if (!File.Exists(asmTmp))
+                    throw new Exception($"MonoMod failed creating a patched assembly: exit code {returnCode}!");
+
+                MoveExecutable(asmTmp, asmTo);
+            } finally {
+                File.Delete(asmTmp);
+                File.Delete(Path.ChangeExtension(asmTmp, "pdb"));
+                File.Delete(Path.ChangeExtension(asmTmp, "mdb"));
+            }
         }
 
         public static void RunHookGen(string asm, string target) {
@@ -441,35 +452,42 @@ namespace MiniInstaller {
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
         }
 
-        public static void ConvertToNETCore(string srcAsm, string dstAsm = null, HashSet<string> convertedAsms = null) {
-            dstAsm ??= srcAsm;
+        public static void ConvertToNETCore(string asmFrom, string asmTo = null, HashSet<string> convertedAsms = null) {
+            asmTo ??= asmFrom;
             convertedAsms ??= new HashSet<string>();
 
-            if (!convertedAsms.Add(srcAsm))
+            if (!convertedAsms.Add(asmFrom))
                 return;
 
             // Convert dependencies first
-            string[] deps = GetPEAssemblyReferences(srcAsm).Keys.ToArray();
+            string[] deps = GetPEAssemblyReferences(asmFrom).Keys.ToArray();
 
             if (deps.Contains("NETCoreifier"))
                 return; // Don't convert an assembly twice
 
             foreach (string dep in deps) {
-                string srcDepPath = Path.Combine(Path.GetDirectoryName(srcAsm), $"{dep}.dll");
-                string dstDepPath = Path.Combine(Path.GetDirectoryName(dstAsm), $"{dep}.dll");
+                string srcDepPath = Path.Combine(Path.GetDirectoryName(asmFrom), $"{dep}.dll");
+                string dstDepPath = Path.Combine(Path.GetDirectoryName(asmTo), $"{dep}.dll");
                 if (File.Exists(srcDepPath) && !IsSystemLibrary(srcDepPath))
                     ConvertToNETCore(srcDepPath, dstDepPath, convertedAsms);
                 else if (File.Exists(dstDepPath) && !IsSystemLibrary(srcDepPath))
                     ConvertToNETCore(dstDepPath, convertedAsms: convertedAsms);
             }
 
-            LogLine($"Converting {srcAsm} to .NET Core");
+            LogLine($"Converting {asmFrom} to .NET Core");
 
-            AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
-                .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
-                .Invoke(null, new object[] { srcAsm, Path.ChangeExtension(dstAsm, "tmp") });
+            string asmTmp = Path.Combine(PathTmp, Path.GetFileName(asmTo));
+            try {
+                AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
+                    .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
+                    .Invoke(null, new object[] { asmFrom, asmTmp });
 
-            MoveExecutable(Path.ChangeExtension(dstAsm, "tmp"), dstAsm);
+                MoveExecutable(asmTmp, asmTo);
+            } finally {
+                File.Delete(asmTmp);
+                File.Delete(Path.ChangeExtension(asmTmp, "pdb"));
+                File.Delete(Path.ChangeExtension(asmTmp, "mdb"));
+            }
         }
 
         public static void MoveExecutable(string srcPath, string dstPath) {
