@@ -240,8 +240,8 @@ namespace Celeste.Mod {
 
             private static Func<MethodBase, LuaFunction, Hook> _Hook = (from, to) => {
                 // NLua hates DynamicMethods.
-                string dmdType = Environment.GetEnvironmentVariable("MONOMOD_DMD_TYPE");
-                Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", "Cecil");
+                string dmdType = Environment.GetEnvironmentVariable("MONOMOD_DMDType");
+                Environment.SetEnvironmentVariable("MONOMOD_DMDType", "Cecil");
                 try {
 
                     ParameterInfo[] args = from.GetParameters();
@@ -323,7 +323,7 @@ namespace Celeste.Mod {
 
                     return new Hook(from, proxy);
                 } finally {
-                    Environment.SetEnvironmentVariable("MONOMOD_DMD_TYPE", dmdType);
+                    Environment.SetEnvironmentVariable("MONOMOD_DMDType", dmdType);
                 }
             };
 

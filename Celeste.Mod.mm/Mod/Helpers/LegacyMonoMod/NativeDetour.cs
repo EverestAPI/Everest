@@ -20,13 +20,15 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         public static Func<LegacyNativeDetour, MethodBase, MethodBase> OnGenerateTrampoline;
 
         private IntPtr _From, _To;
-        private ICoreNativeDetour actualDetour;
+        private ICoreDetourBase actualDetour;
 
         public bool IsValid { get; private set; }
         public bool IsApplied { get; private set; }
 
         public LegacyNativeDetourData Data => new LegacyNativeDetourData() { Method = _From, Target = _To };
         public readonly MethodBase Method;
+
+        private readonly MethodBase _FromMethod, _ToMethod;
 
         private readonly MethodInfo _BackupMethod;
 
@@ -35,55 +37,64 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         private HashSet<MethodBase> _Pinned = new HashSet<MethodBase>();
 
-        public LegacyNativeDetour(MethodBase method, IntPtr from, IntPtr to, ref LegacyNativeDetourConfig config) {
+        private LegacyNativeDetour(MethodBase fromMethod, MethodBase toMethod, IntPtr from, IntPtr to, ref LegacyNativeDetourConfig config) {
             if (from == to)
-                throw new InvalidOperationException($"Cannot detour from a location to itself! (from: {from:X16} to: {to:X16} method: {method})");
+                throw new InvalidOperationException($"Cannot detour from a location to itself! (from: {from:X16} to: {to:X16} method: {from})");
 
-            _From = from;
-            _To = to;
+            _FromMethod = fromMethod;
+            _ToMethod = toMethod;
 
-            method = method?.GetIdentifiable();
-            Method = method;
+            fromMethod = fromMethod?.GetIdentifiable();
+            toMethod = toMethod?.GetIdentifiable();
+            Method = fromMethod;
 
-            if (!(OnDetour?.InvokeWhileTrue(this, method, from, to) ?? true))
+            if (!(OnDetour?.InvokeWhileTrue(this, fromMethod, from, to) ?? true))
                 return;
             IsValid = true;
 
             if (!config.SkipILCopy)
-                method?.TryCreateILCopy(out _BackupMethod);
+                fromMethod?.TryCreateILCopy(out _BackupMethod);
 
             if (!config.ManualApply)
                 Apply();
         }
+
+        public LegacyNativeDetour(MethodBase method, IntPtr from, IntPtr to, ref LegacyNativeDetourConfig config) : this(method, null, from, to, ref config) {}
         public LegacyNativeDetour(MethodBase method, IntPtr from, IntPtr to, LegacyNativeDetourConfig config) : this(method, from, to, ref config) {}
         public LegacyNativeDetour(MethodBase method, IntPtr from, IntPtr to) : this(method, from, to, default) {}
         public LegacyNativeDetour(IntPtr from, IntPtr to, ref LegacyNativeDetourConfig config) : this(null, from, to, ref config) {}
         public LegacyNativeDetour(IntPtr from, IntPtr to, LegacyNativeDetourConfig config) : this(null, from, to, ref config) {}
         public LegacyNativeDetour(IntPtr from, IntPtr to) : this(null, from, to) {}
-        public LegacyNativeDetour(MethodBase from, IntPtr to, ref LegacyNativeDetourConfig config) : this(from, from.Pin().GetNativeStart(), to, ref config)
-            => _Pinned.Add(from);
-        public LegacyNativeDetour(MethodBase from, IntPtr to, LegacyNativeDetourConfig config) : this(from, from.Pin().GetNativeStart(), to, ref config)
-            => _Pinned.Add(from);
-        public LegacyNativeDetour(MethodBase from, IntPtr to) : this(from, from.Pin().GetNativeStart(), to)
-            => _Pinned.Add(from);
-        public LegacyNativeDetour(IntPtr from, MethodBase to, ref LegacyNativeDetourConfig config) : this(from, to.Pin().GetNativeStart(), ref config)
-            => _Pinned.Add(to);
-        public LegacyNativeDetour(IntPtr from, MethodBase to, LegacyNativeDetourConfig config) : this(from, to.Pin().GetNativeStart(), ref config)
-            => _Pinned.Add(to);
-        public LegacyNativeDetour(IntPtr from, MethodBase to) : this(from, to.Pin().GetNativeStart())
-            => _Pinned.Add(to);
-        public LegacyNativeDetour(MethodBase from, MethodBase to, ref LegacyNativeDetourConfig config) : this(from.Pin().GetNativeStart(), PlatformTriple.Current.GetRealDetourTarget(from, to), ref config)
-            => _Pinned.Add(from);
-        public LegacyNativeDetour(MethodBase from, MethodBase to, LegacyNativeDetourConfig config) : this(from.Pin().GetNativeStart(), PlatformTriple.Current.GetRealDetourTarget(from, to), ref config)
-            => _Pinned.Add(from);
-        public LegacyNativeDetour(MethodBase from, MethodBase to) : this(from.Pin().GetNativeStart(), PlatformTriple.Current.GetRealDetourTarget(from, to))
-            => _Pinned.Add(from);
+
+        public LegacyNativeDetour(MethodBase from, IntPtr to, ref LegacyNativeDetourConfig config)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+        public LegacyNativeDetour(MethodBase from, IntPtr to, LegacyNativeDetourConfig config)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+        public LegacyNativeDetour(MethodBase from, IntPtr to)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+        public LegacyNativeDetour(IntPtr from, MethodBase to, ref LegacyNativeDetourConfig config)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+        public LegacyNativeDetour(IntPtr from, MethodBase to, LegacyNativeDetourConfig config)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+        public LegacyNativeDetour(IntPtr from, MethodBase to)
+            => throw new NotSupportedException("This *evil* constructor is no longer supported");
+
+        public LegacyNativeDetour(MethodBase from, MethodBase to, ref LegacyNativeDetourConfig config)
+            : this(from, PlatformTriple.Current.GetRealDetourTarget(from, to), from.Pin().GetNativeStart(), PlatformTriple.Current.GetRealDetourTarget(from, to).GetNativeStart(), ref config) {
+            _Pinned.Add(from);
+            _Pinned.Add(to);
+        }
+        public LegacyNativeDetour(MethodBase from, MethodBase to, LegacyNativeDetourConfig config) : this(from, to, ref config) {}
+        public LegacyNativeDetour(MethodBase from, MethodBase to) : this(from, to, default) {}
+
         public LegacyNativeDetour(Delegate from, IntPtr to, ref LegacyNativeDetourConfig config) : this(from.Method, to, ref config) {}
         public LegacyNativeDetour(Delegate from, IntPtr to, LegacyNativeDetourConfig config) : this(from.Method, to, ref config) {}
         public LegacyNativeDetour(Delegate from, IntPtr to) : this(from.Method, to) {}
+
         public LegacyNativeDetour(IntPtr from, Delegate to, ref LegacyNativeDetourConfig config) : this(from, to.Method, ref config) {}
         public LegacyNativeDetour(IntPtr from, Delegate to, LegacyNativeDetourConfig config) : this(from, to.Method, ref config) {}
         public LegacyNativeDetour(IntPtr from, Delegate to) : this(from, to.Method) {}
+
         public LegacyNativeDetour(Delegate from, Delegate to, ref LegacyNativeDetourConfig config) : this(from.Method, to.Method, ref config) {}
         public LegacyNativeDetour(Delegate from, Delegate to, LegacyNativeDetourConfig config) : this(from.Method, to.Method, ref config) {}
         public LegacyNativeDetour(Delegate from, Delegate to) : this(from.Method, to.Method) {}
@@ -104,7 +115,12 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 return;
             IsApplied = true;
 
-            actualDetour = DetourFactory.Current.CreateNativeDetour(_From, _To);
+            if (_FromMethod != null && _ToMethod != null)
+                // Make this slightly less evil ._.
+                actualDetour = DetourFactory.Current.CreateDetour(_FromMethod, (MethodInfo) _ToMethod);
+            else 
+                actualDetour = DetourFactory.Current.CreateNativeDetour(_From, _To);
+
             GC.SuppressFinalize(actualDetour);
         }
 

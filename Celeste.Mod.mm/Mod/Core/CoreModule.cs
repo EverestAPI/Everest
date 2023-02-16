@@ -143,7 +143,7 @@ namespace Celeste.Mod.Core {
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
                 Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
-                cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
+                cursor.Next.Operand = cursor.Module.ImportReference(typeof(Extensions).GetMethod("GetTypesSafe"));
             }
         }
 
