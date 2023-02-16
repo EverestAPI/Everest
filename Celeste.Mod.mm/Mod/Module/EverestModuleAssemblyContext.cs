@@ -100,7 +100,7 @@ namespace Celeste.Mod {
 
                 // Temporarily make the assembly resolve to null while actually loading it
                 // This can fix self referential assemblies blowing up
-                _LoadedAssemblies.Add(path, null);
+                _LoadedAssemblies.Add(asmPath, null);
 
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
