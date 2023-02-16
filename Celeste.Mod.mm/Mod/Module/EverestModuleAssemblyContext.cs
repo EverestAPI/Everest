@@ -17,6 +17,9 @@ namespace Celeste.Mod {
 
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
+        [ThreadStatic]
+        private static Stack<EverestModuleAssemblyContext> _CurrentLoadContexts;
+
         private readonly object LOCK = new object();
 
         public readonly EverestModuleMetadata ModuleMeta;
@@ -157,9 +160,16 @@ namespace Celeste.Mod {
                 return cachedAsm;
 
             // Try to load the assembly
-            Assembly asm = LoadUncached(asmName);
-            _AssemblyLoadCache.TryAdd(asmName.Name, asm);
+            Assembly asm;
+            (_CurrentLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
+            try {
+                asm = LoadUncached(asmName);
+            } finally {
+                if (_CurrentLoadContexts.Pop() != this)
+                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
+            }
 
+            _AssemblyLoadCache.TryAdd(asmName.Name, asm);
             if (asm == null)
                 Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
 
@@ -177,10 +187,17 @@ namespace Celeste.Mod {
                 return cachedAsm;
 
             // Try to resolve the assembly
-            AssemblyDefinition asm = ResolveUncached(asmName);
-            _AssemblyResolveCache.TryAdd(asmName.Name, asm);
+            AssemblyDefinition asm;
+            (_CurrentLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
+            try {
+                asm = ResolveUncached(asmName);
+            } finally {
+                if (_CurrentLoadContexts.Pop() != this)
+                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
+            }
 
             // No warning if we failed to resolve it - the relinker will emit its own warning if needed + there's another warning upon an actual load failure
+            _AssemblyResolveCache.TryAdd(asmName.Name, asm);
 
             return asm;
         }
@@ -195,7 +212,7 @@ namespace Celeste.Mod {
             // Try to load the assembly from dependency assembly contexts
             foreach (EverestModuleAssemblyContext depCtx in DependencyContexts) {
                 try {
-                    if (depCtx.LoadFromAssemblyName(asmName) is Assembly depAsm)
+                    if (!_CurrentLoadContexts.Contains(depCtx) && depCtx.LoadFromAssemblyName(asmName) is Assembly depAsm)
                         return depAsm;
                 } catch {}
             }
@@ -225,7 +242,7 @@ namespace Celeste.Mod {
 
             // Try to resolve the assembly in dependency assembly contexts
             foreach (EverestModuleAssemblyContext depCtx in DependencyContexts)
-                if (depCtx.Resolve(asmName) is AssemblyDefinition depAsm)
+                if (!_CurrentLoadContexts.Contains(depCtx) && depCtx.Resolve(asmName) is AssemblyDefinition depAsm)
                     return depAsm;
 
             // Check if we can resolve this assembly in another module
