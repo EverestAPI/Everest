@@ -94,7 +94,8 @@ namespace Celeste.Mod {
                     asmName = Path.GetFileNameWithoutExtension(path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar));
 
                 // Check if the assembly has already been loaded
-                if (_LoadedAssemblies.TryGetValue(path, out Assembly asm))
+                string asmPath = path.Replace('\\', '/');
+                if (_LoadedAssemblies.TryGetValue(asmPath, out Assembly asm))
                     return asm;
 
                 // Temporarily make the assembly resolve to null while actually loading it
@@ -120,8 +121,8 @@ namespace Celeste.Mod {
 
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
                 if (asm != null) {
-                    _LoadedAssemblies[path] = asm;
-                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
+                    _LoadedAssemblies[asmPath] = asm;
+                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{asmPath}'");
                 }
 
                 return asm;
@@ -143,9 +144,11 @@ namespace Celeste.Mod {
 
                 // Insert into dictionaries
                 string asmName = asm.GetName().Name;
-                _AssemblyModules.Add(asmName, mod);
-                _AssemblyLoadCache.TryAdd(asmName, asm);
-                _AssemblyResolveCache.TryAdd(asmName, mod.Assembly);
+                if (_AssemblyModules.TryAdd(asmName, mod)) {
+                    _AssemblyLoadCache.TryAdd(asmName, asm);
+                    _AssemblyResolveCache.TryAdd(asmName, mod.Assembly);
+                } else
+                    Logger.Log(LogLevel.Warn, "modasmctx", $"Assembly name conflict for name '{asmName}' for module '{ModuleMeta.Name}'!");
 
                 return asm;
             } catch {
