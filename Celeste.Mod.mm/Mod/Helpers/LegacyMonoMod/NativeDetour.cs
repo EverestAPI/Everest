@@ -117,7 +117,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             if (_FromMethod != null && _ToMethod != null)
                 // Make this slightly less evil ._.
-                actualDetour = DetourFactory.Current.CreateDetour(_FromMethod, (MethodInfo) _ToMethod);
+                actualDetour = DetourFactory.Current.CreateDetour(_FromMethod, _ToMethod);
             else 
                 actualDetour = DetourFactory.Current.CreateNativeDetour(_From, _To);
 
