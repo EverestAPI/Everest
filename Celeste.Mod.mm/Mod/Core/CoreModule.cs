@@ -150,15 +150,23 @@ namespace Celeste.Mod.Core {
         }
 
         private Type hookNLuaObjectTranslatorFindType(Func<ObjectTranslator, string, Type> orig, ObjectTranslator translator, string typeName) {
-            // Try to find the type in mod assemblies
-            if (Everest.Modules
-                .SelectMany(mod => mod.Metadata.AssemblyContext?.Assemblies ?? Enumerable.Empty<Assembly>())
-                .Select(asm => asm.GetType(typeName))
-                .FirstOrDefault(type => type != null) is Type type
-            )
-                return type;
+            if (orig(translator, typeName) is Type origType)
+                return origType;
 
-            return orig(translator, typeName);
+            // Try to find the type in mod assemblies
+            EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
+            try {
+                if (EverestModuleAssemblyContext._AllContexts
+                    .SelectMany(alc => alc?.Assemblies ?? Enumerable.Empty<Assembly>())
+                    .Select(asm => asm.GetType(typeName))
+                    .FirstOrDefault(type => type != null) is Type type
+                )
+                    return type;
+            } finally {
+                EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
+            }
+
+            return null;
         }
 
         public override void Unload() {

@@ -8,12 +8,16 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
     /// A mods assembly context, which handles resolving/loading mod assemblies
     /// </summary>
     public sealed class EverestModuleAssemblyContext : AssemblyLoadContext, IAssemblyResolver {
+
+        internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
+        internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
 
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
@@ -32,6 +36,7 @@ namespace Celeste.Mod {
         private readonly ConcurrentDictionary<string, Assembly> _AssemblyLoadCache = new ConcurrentDictionary<string, Assembly>();
         private readonly ConcurrentDictionary<string, AssemblyDefinition> _AssemblyResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
 
+        private LinkedListNode<EverestModuleAssemblyContext> listNode;
         private bool isDisposed = false;
 
         internal EverestModuleAssemblyContext(EverestModuleMetadata meta) : base(meta.Name, true) {
@@ -46,13 +51,23 @@ namespace Celeste.Mod {
             }
 
             // Resolve dependecies
-            foreach (EverestModuleMetadata dep in meta.Dependencies)
-                if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
-                    DependencyContexts.Add(module.Metadata.AssemblyContext);
+            lock (Everest._Modules) {
+                foreach (EverestModuleMetadata dep in meta.Dependencies)
+                    if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
+                        DependencyContexts.Add(module.Metadata.AssemblyContext);
 
-            foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
-                if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
-                    DependencyContexts.Add(module.Metadata.AssemblyContext);
+                foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
+                    if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
+                        DependencyContexts.Add(module.Metadata.AssemblyContext);
+            }
+
+            // Add to mod ALC list
+            _AllContextsLock.EnterWriteLock();
+            try {
+                listNode = _AllContexts.AddLast(this);
+            } finally {
+                _AllContextsLock.ExitWriteLock();
+            }
         }
 
         public void Dispose() {
@@ -60,6 +75,15 @@ namespace Celeste.Mod {
                 if (isDisposed)
                     return;
                 isDisposed = true;
+
+                // Remove from mod ALC list
+                _AllContextsLock.EnterWriteLock();
+                try {
+                    _AllContexts.Remove(listNode);
+                    listNode = null;
+                } finally {
+                    _AllContextsLock.ExitWriteLock();
+                }
 
                 // Unload all assemblies loaded in the context
                 foreach (ModuleDefinition module in _AssemblyModules.Values)
@@ -259,12 +283,17 @@ namespace Celeste.Mod {
             if (forThisMod) {
                 // Check if we can resolve this assembly in another module
                 // If yes add its context as a dependency
-                foreach (EverestModule module in Everest.Modules)
-                    if (module.Metadata.AssemblyContext?.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
-                        Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
-                        DependencyContexts.Add(module.Metadata.AssemblyContext);
-                        return moduleAsm;
-                    }
+                _AllContextsLock.EnterReadLock();
+                try {
+                    foreach (EverestModuleAssemblyContext alc in _AllContexts)
+                        if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
+                            Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
+                            DependencyContexts.Add(alc);
+                            return moduleAsm;
+                        }
+                } finally {
+                    _AllContextsLock.ExitReadLock();
+                }
 
                 // Try to resolve a global assembly definition
                 if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition globalAsmDef)) {
