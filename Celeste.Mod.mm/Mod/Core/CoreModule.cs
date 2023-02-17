@@ -33,6 +33,7 @@ namespace Celeste.Mod.Core {
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
 
         private static ILHook nluaAssemblyGetTypesHook;
+        private static Hook nluaObjectTranslatorFindType;
 
         public CoreModule() {
             Instance = this;
@@ -67,6 +68,7 @@ namespace Celeste.Mod.Core {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
+            nluaObjectTranslatorFindType = new Hook(typeof(ObjectTranslator).GetMethod("FindType", BindingFlags.NonPublic | BindingFlags.Instance), hookNLuaObjectTranslatorFindType);
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
                 Logger.SetLogLevelFromSettings(logLevel.Key, logLevel.Value);
@@ -147,12 +149,26 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        private Type hookNLuaObjectTranslatorFindType(Func<ObjectTranslator, string, Type> orig, ObjectTranslator translator, string typeName) {
+            // Try to find the type in mod assemblies
+            if (Everest.Modules
+                .SelectMany(mod => mod.Metadata.AssemblyContext?.Assemblies ?? Enumerable.Empty<Assembly>())
+                .Select(asm => asm.GetType(typeName))
+                .FirstOrDefault(type => type != null) is Type type
+            )
+                return type;
+
+            return orig(translator, typeName);
+        }
+
         public override void Unload() {
             Everest.Events.Celeste.OnExiting -= FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();
             nluaAssemblyGetTypesHook = null;
+            nluaObjectTranslatorFindType?.Dispose();
+            nluaObjectTranslatorFindType = null;
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
