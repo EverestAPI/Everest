@@ -85,6 +85,9 @@ namespace MonoMod {
 
             MonoModRule.Flag.Set("Has:BirdTutorialGuiButtonPromptEnum", MonoModRule.Modder.FindType("Celeste.BirdTutorialGui/ButtonPrompt")?.SafeResolve() != null);
 
+            // Run game preprocessor
+            GamePreProcessor(modder);
+
             // Add game post processor
             modder.PostProcessors += GamePostProcessor;
 
@@ -132,6 +135,23 @@ namespace MonoMod {
             }
 
             throw new InvalidOperationException("Couldn't determine Celeste version");
+        }
+
+        public static void GamePreProcessor(MonoModder modder) {
+            static void VisitType(TypeDefinition type) {
+                // Remove readonly attribute from all static fields
+                // This "fixes" https://github.com/dotnet/runtime/issues/11571, which breaks some mods
+                foreach (FieldDefinition field in type.Fields)
+                    if ((field.Attributes & FieldAttributes.Static) != 0)
+                        field.Attributes &= ~FieldAttributes.InitOnly;
+
+                // Visit nested types
+                foreach (TypeDefinition nestedType in type.NestedTypes)
+                    VisitType(nestedType);
+            }
+
+            foreach (TypeDefinition type in modder.Module.Types)
+                VisitType(type);
         }
 
         public static void GamePostProcessor(MonoModder modder) {
