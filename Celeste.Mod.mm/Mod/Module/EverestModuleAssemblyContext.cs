@@ -22,7 +22,7 @@ namespace Celeste.Mod {
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
         [ThreadStatic]
-        private static Stack<EverestModuleAssemblyContext> _CurrentLoadContexts;
+        private static Stack<EverestModuleAssemblyContext> _ActiveLocalLoadContexts;
 
         private readonly object LOCK = new object();
 
@@ -35,6 +35,9 @@ namespace Celeste.Mod {
 
         private readonly ConcurrentDictionary<string, Assembly> _AssemblyLoadCache = new ConcurrentDictionary<string, Assembly>();
         private readonly ConcurrentDictionary<string, AssemblyDefinition> _AssemblyResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
+
+        private readonly ConcurrentDictionary<string, Assembly> _LocalLoadCache = new ConcurrentDictionary<string, Assembly>();
+        private readonly ConcurrentDictionary<string, AssemblyDefinition> _LocalResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
 
         private LinkedListNode<EverestModuleAssemblyContext> listNode;
         private bool isDisposed = false;
@@ -93,8 +96,9 @@ namespace Celeste.Mod {
                 foreach (Assembly asm in Assemblies)
                     Everest.UnloadAssembly(ModuleMeta, asm);            
                 _LoadedAssemblies.Clear();
-
+    
                 _AssemblyLoadCache.Clear();
+                _LocalLoadCache.Clear();
                 _AssemblyResolveCache.Clear();
             }
 
@@ -128,8 +132,8 @@ namespace Celeste.Mod {
 
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
-                Stack<EverestModuleAssemblyContext> prevCtxs = _CurrentLoadContexts;
-                _CurrentLoadContexts = null;
+                Stack<EverestModuleAssemblyContext> prevCtxs = _ActiveLocalLoadContexts;
+                _ActiveLocalLoadContexts = null;
                 try {
                     if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
                         using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
@@ -146,7 +150,7 @@ namespace Celeste.Mod {
                             using (Stream stream = File.OpenRead(path))
                                 asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
                 } finally {
-                    _CurrentLoadContexts = prevCtxs;
+                    _ActiveLocalLoadContexts = prevCtxs;
                 }
 
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
@@ -176,6 +180,7 @@ namespace Celeste.Mod {
                 string asmName = asm.GetName().Name;
                 if (_AssemblyModules.TryAdd(asmName, mod)) {
                     _AssemblyLoadCache.TryAdd(asmName, asm);
+                    _LocalLoadCache.TryAdd(asmName, asm);
                     _AssemblyResolveCache.TryAdd(asmName, mod.Assembly);
                 } else
                     Logger.Log(LogLevel.Warn, "modasmctx", $"Assembly name conflict for name '{asmName}' for module '{ModuleMeta.Name}'!");
@@ -192,20 +197,14 @@ namespace Celeste.Mod {
             if (_AssemblyLoadCache.TryGetValue(asmName.Name, out Assembly cachedAsm))
                 return cachedAsm;
 
-            // Try to load the assembly
-            Assembly asm;
-            (_CurrentLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
-            try {
-                asm = LoadUncached(asmName, _CurrentLoadContexts.Count == 1);
-            } finally {
-                if (_CurrentLoadContexts.Pop() != this)
-                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
-            }
+            // Try to load the assembly locally (from this or dependency ALCs)
+            // If that fails, try to load the assembly globally (from non-dependency mods / game assemblies)
+            Assembly asm = LoadLocal(asmName) ?? LoadGlobal(asmName);
 
-            _AssemblyLoadCache.TryAdd(asmName.Name, asm);
             if (asm == null)
                 Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
 
+            _AssemblyLoadCache.TryAdd(asmName.Name, asm);
             return asm;
         }
 
@@ -219,110 +218,133 @@ namespace Celeste.Mod {
             if (_AssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition cachedAsm))
                 return cachedAsm;
 
-            // Try to resolve the assembly
-            AssemblyDefinition asm;
-            (_CurrentLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
-            try {
-                asm = ResolveUncached(asmName, _CurrentLoadContexts.Count == 1);
-            } finally {
-                if (_CurrentLoadContexts.Pop() != this)
-                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
-            }
+            // Try to resolve the assembly locally (from this or dependency ALCs)
+            // If that fails, try to resolve the assembly globally (from non-dependency mods / game assemblies)
+            AssemblyDefinition asm = ResolveLocal(asmName) ?? ResolveGlobal(asmName);
 
             // No warning if we failed to resolve it - the relinker will emit its own warning if needed + there's another warning upon an actual load failure
-            _AssemblyResolveCache.TryAdd(asmName.Name, asm);
 
+            _AssemblyResolveCache.TryAdd(asmName.Name, asm);
             return asm;
         }
 
         public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters) => Resolve(name);
 
-        private Assembly LoadUncached(AssemblyName asmName, bool forThisMod) {
-            // Try to load the assembly from this mod
-            if (LoadFromThisMod(asmName) is Assembly asm)
-                return asm;
+        private Assembly LoadLocal(AssemblyName asmName) {
+            // Lookup in the cache
+            if (_LocalLoadCache.TryGetValue(asmName.Name, out Assembly cachedAsm))
+                return cachedAsm;
 
-            // Try to load the assembly from dependency assembly contexts
-            foreach (EverestModuleAssemblyContext depCtx in DependencyContexts) {
-                try {
-                    if (!_CurrentLoadContexts.Contains(depCtx) && depCtx.LoadFromAssemblyName(asmName) is Assembly depAsm)
-                        return depAsm;
-                } catch {}
+            // Try to load the assembly from this mod
+            if (LoadFromThisMod(asmName) is Assembly asm) {
+                _LocalLoadCache.TryAdd(asmName.Name, asm);
+                return asm;
             }
 
-            if (forThisMod) {
-                // Check if we can load this assembly from another module
-                // If yes add its context as a dependency
-                foreach (EverestModule module in Everest.Modules)
-                    if (module.Metadata.AssemblyContext?.LoadFromThisMod(asmName) is Assembly moduleAsm) {
-                        Logger.Log(LogLevel.Info, "modasmctx", $"Loading assembly '{asmName.FullName}' from non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
-                        DependencyContexts.Add(module.Metadata.AssemblyContext);
-                        return moduleAsm;
-                    }
-
-                // Try to load the assembly from the default assembly load context
-                try {
-                    if (AssemblyLoadContext.Default.LoadFromAssemblyName(asmName) is Assembly globalAsm)
-                        return globalAsm;
-                } catch {}
+            // Try to load the assembly from dependency assembly contexts
+            (_ActiveLocalLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
+            try {
+                foreach (EverestModuleAssemblyContext depCtx in DependencyContexts) {
+                    try {
+                        if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.LoadFromAssemblyName(asmName) is Assembly depAsm) {
+                            _LocalLoadCache.TryAdd(asmName.Name, depAsm);
+                            return depAsm;
+                        }
+                    } catch {}
+                }
+            } finally {
+                if (_ActiveLocalLoadContexts.Pop() != this)
+                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
             }
 
             return null;
         }
 
-        private AssemblyDefinition ResolveUncached(AssemblyNameReference asmName, bool forThisMod) {
+        private AssemblyDefinition ResolveLocal(AssemblyNameReference asmName) {
+            // Lookup in the cache
+            if (_LocalResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition cachedAsm))
+                return cachedAsm;
+
             // Try to resolve the assembly in this mod
-            if (ResolveFromThisMod(asmName) is AssemblyDefinition asm)
+            if (ResolveFromThisMod(asmName) is AssemblyDefinition asm) {
+                _LocalResolveCache.TryAdd(asmName.Name, asm);
                 return asm;
+            }
 
             // Try to resolve the assembly in dependency assembly contexts
-            foreach (EverestModuleAssemblyContext depCtx in DependencyContexts)
-                if (!_CurrentLoadContexts.Contains(depCtx) && depCtx.Resolve(asmName) is AssemblyDefinition depAsm)
-                    return depAsm;
-
-            if (forThisMod) {
-                // Check if we can resolve this assembly in another module
-                // If yes add its context as a dependency
-                _AllContextsLock.EnterReadLock();
-                try {
-                    foreach (EverestModuleAssemblyContext alc in _AllContexts)
-                        if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
-                            Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
-                            DependencyContexts.Add(alc);
-                            return moduleAsm;
-                        }
-                } finally {
-                    _AllContextsLock.ExitReadLock();
-                }
-
-                // Try to resolve a global assembly definition
-                if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition globalAsmDef)) {
-                    // Try to load the global assembly
-                    Assembly globalAsm = null;
-                    try {
-                        globalAsm = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(asmName.Name));
-                    } catch {}
-
-                    // Try to read its module
-                    globalAsmDef = null;
-                    if (globalAsm?.Location is string globalAsmLoc) {
-                        try {
-                            globalAsmDef = ModuleDefinition.ReadModule(globalAsmLoc).Assembly;
-                        } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to resolve global assembly definition '{asmName.FullName}'");
-                            e.LogDetailed();
-                        }
+            (_ActiveLocalLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
+            try {
+                foreach (EverestModuleAssemblyContext depCtx in DependencyContexts)
+                    if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.Resolve(asmName) is AssemblyDefinition depAsm) {
+                        _LocalResolveCache.TryAdd(asmName.Name, depAsm);
+                        return depAsm;
                     }
-                
-                    // Add to cache
-                    _GlobalAssemblyResolveCache.Add(asmName.Name, globalAsmDef);
-                }
-
-                if (globalAsmDef != null)
-                    return globalAsmDef;
+            } finally {
+                if (_ActiveLocalLoadContexts.Pop() != this)
+                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
             }
 
             return null;
+        }
+
+        private Assembly LoadGlobal(AssemblyName asmName) {
+            // Check if we can load this assembly from another module
+            // If yes add its context as a dependency
+            foreach (EverestModule module in Everest.Modules)
+                if (module.Metadata.AssemblyContext?.LoadFromThisMod(asmName) is Assembly moduleAsm) {
+                    Logger.Log(LogLevel.Info, "modasmctx", $"Loading assembly '{asmName.FullName}' from non-dependency '{module.Metadata.Name}' for module '{ModuleMeta.Name}'");
+                    DependencyContexts.Add(module.Metadata.AssemblyContext);
+                    return moduleAsm;
+                }
+
+            // Try to load the assembly from the default assembly load context
+            try {
+                if (AssemblyLoadContext.Default.LoadFromAssemblyName(asmName) is Assembly globalAsm)
+                    return globalAsm;
+            } catch {}
+
+            return null;
+        }
+
+        private AssemblyDefinition ResolveGlobal(AssemblyNameReference asmName) {
+            // Check if we can resolve this assembly in another module
+            // If yes add its context as a dependency
+            _AllContextsLock.EnterReadLock();
+            try {
+                foreach (EverestModuleAssemblyContext alc in _AllContexts)
+                    if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
+                        Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
+                        DependencyContexts.Add(alc);
+                        return moduleAsm;
+                    }
+            } finally {
+                _AllContextsLock.ExitReadLock();
+            }
+
+            // Try to resolve a global assembly definition
+            if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition globalAsmDef)) {
+                // Try to load the global assembly
+                Assembly globalAsm = null;
+                try {
+                    globalAsm = AssemblyLoadContext.Default.LoadFromAssemblyName(new AssemblyName(asmName.Name));
+                } catch {}
+
+                // Try to read its module
+                globalAsmDef = null;
+                if (!string.IsNullOrEmpty(globalAsm?.Location)) {
+                    try {
+                        globalAsmDef = ModuleDefinition.ReadModule(globalAsm.Location).Assembly;
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to resolve global assembly definition '{asmName.FullName}'");
+                        e.LogDetailed();
+                    }
+                }
+            
+                // Add to cache
+                _GlobalAssemblyResolveCache.Add(asmName.Name, globalAsmDef);
+            }
+
+            return globalAsmDef;
         }
 
         private Assembly LoadFromThisMod(AssemblyName asmName) {
