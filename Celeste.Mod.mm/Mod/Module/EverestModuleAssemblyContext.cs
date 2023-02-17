@@ -104,20 +104,26 @@ namespace Celeste.Mod {
 
                 // Try to load + relink the assembly
                 // Do this on the main thread, as otherwise stuff can break
-                if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
-                    using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                        // Try to find + load the entry
-                        path = path.Replace('\\', '/');
-                        ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
+                Stack<EverestModuleAssemblyContext> prevCtxs = _CurrentLoadContexts;
+                _CurrentLoadContexts = null;
+                try {
+                    if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
+                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
+                            // Try to find + load the entry
+                            path = path.Replace('\\', '/');
+                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
 
-                        if (entry != null)
-                            using (Stream stream = entry.ExtractStream())
+                            if (entry != null)
+                                using (Stream stream = entry.ExtractStream())
+                                    asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                        }
+                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
+                        if (File.Exists(path))
+                            using (Stream stream = File.OpenRead(path))
                                 asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
-                    }
-                else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
-                    if (File.Exists(path))
-                        using (Stream stream = File.OpenRead(path))
-                            asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                } finally {
+                    _CurrentLoadContexts = prevCtxs;
+                }
 
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
                 if (asm != null) {
