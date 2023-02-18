@@ -149,9 +149,10 @@ namespace MonoMod {
             // Add new dependency and map it, if it not already exist
             bool hasNewRef = modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == newRef.Name);
             if (!hasNewRef) {
-                AssemblyNameReference asmNameRef = new AssemblyNameReference(newRef.Name, newRef.Version);
-                modder.Module.AssemblyReferences.Add(asmNameRef);
-                modder.MapDependency(modder.Module, asmNameRef);
+                AssemblyNameReference asmRef = new AssemblyNameReference(newRef.Name, newRef.Version);
+                modder.Module.AssemblyReferences.Add(asmRef);
+                modder.MapDependency(modder.Module, asmRef);
+                modder.Log($"[Celeste.Mod.mm] Adding assembly reference to {asmRef.FullName}");
             }
 
             // Replace old references
@@ -166,6 +167,7 @@ namespace MonoMod {
                 modder.Module.AssemblyReferences.RemoveAt(i--);
                 modder.DependencyMap[modder.Module].RemoveAll(dep => dep.Assembly.FullName == asmRef.FullName);
                 modder.RelinkModuleMap[asmRef.Name] = newModule;
+                modder.Log($"[Celeste.Mod.mm] Replacing assembly reference {asmRef.FullName} -> {newRef.FullName}");
             }
 
             return !hasNewRef;
