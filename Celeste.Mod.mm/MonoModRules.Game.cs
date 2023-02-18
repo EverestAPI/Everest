@@ -138,6 +138,9 @@ namespace MonoMod {
         }
 
         public static void GamePreProcessor(MonoModder modder) {
+            // Relink against FNA
+            RelinkAgainstFNA(modder);
+
             static void VisitType(TypeDefinition type) {
                 // Remove readonly attribute from all static fields
                 // This "fixes" https://github.com/dotnet/runtime/issues/11571, which breaks some mods

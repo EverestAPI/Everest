@@ -15,6 +15,9 @@ namespace MonoMod {
 
         // Init rules for patching mod DLLs
         private static void InitModRules(MonoModder modder) {
+            // Relink against FNA
+            RelinkAgainstFNA(modder);
+
             // Determine if the mod uses (legacy) MonoMod
             bool isMonoMod = false, isLegacyMonoMod = true;
             foreach (AssemblyNameReference name in modder.Module.AssemblyReferences) {

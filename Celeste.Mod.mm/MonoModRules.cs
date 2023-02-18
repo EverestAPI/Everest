@@ -96,15 +96,17 @@ namespace MonoMod {
             if (MonoModder.Version < monoModderAsmRef.Version)
                 throw new Exception($"Unexpected version of MonoMod patcher: {MonoModder.Version} (expected {monoModderAsmRef.Version}+)");
 
+            // Add common post processor
+            modder.PostProcessors += CommonPostProcessor;
+        }
+
+        private static void RelinkAgainstFNA(MonoModder modder) {
             // Replace XNA assembly references with FNA ones
             ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
 
             // Ensure that FNA.dll can be loaded
             if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
                 throw new Exception("Failed to resolve Microsoft.Xna.Framework.Game");
-
-            // Add common post processor
-            modder.PostProcessors += CommonPostProcessor;
         }
 
         public static void CommonPostProcessor(MonoModder modder) {
