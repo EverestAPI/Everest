@@ -393,6 +393,10 @@ namespace Celeste.Mod {
                             progress.Progress++;
                         }
                     }
+
+                    // .NET Core Everest versions only supports native MiniInstaller binaries
+                    if (!isNative)
+                        throw new Exception("Can't downgrade to legacy Everest builds from .NET Core versions");
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFAILED"));
                     e.LogDetailed();
@@ -416,35 +420,14 @@ namespace Celeste.Mod {
                 // Start MiniInstaller in a separate process.
                 try {
                     Process installer = new Process();
-                    string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
-                    installer.StartInfo.FileName = installerPath;
+                    installer.StartInfo.FileName = Path.Combine(extractedPath,
+                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MiniInstaller-win.exe" :
+                        RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
+                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
+                        throw new Exception("Unknown OS platform")
+                    );
 
-                    if (!isNative) {
-                        if (Type.GetType("Mono.Runtime") != null) {
-                            // Start MiniInstaller using mono
-                            installer.StartInfo.FileName = "mono";
-                            installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                            if (File.Exists("/bin/sh")) {
-                                string pid = Process.GetCurrentProcess().Id.ToString();
-                                installer.StartInfo.FileName = "/bin/sh";
-                                string pathToMono = "mono";
-                                if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
-                                    pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
-                                }
-                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
-                            }
-                        }
-                    } else {
-                        // This build ships with native MiniInstaller binaries
-                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
-                            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MiniInstaller-win.exe" :
-                            RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
-                            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
-                            throw new Exception("Unknown OS platform")
-                        );
-                    }
-
-                    if (!File.Exists(installerPath))
+                    if (!File.Exists(installer.StartInfo.FileName))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
                     installer.StartInfo.WorkingDirectory = extractedPath;
