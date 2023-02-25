@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Versioning;
@@ -59,6 +60,14 @@ namespace NETCoreifier {
             }
 
             if (isFrameworkModule) {
+                // Patch debuggable attribute
+                // We can't get the attribute from our own assembly (because it's a temporary MonoMod one), so get it from the entry assembly (which is MiniInstaller)
+                DebuggableAttribute everestAttr = Assembly.GetEntryAssembly().GetCustomAttribute<DebuggableAttribute>();
+                CustomAttribute celesteAttr = module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == typeof(DebuggableAttribute).FullName);
+                if (celesteAttr != null && everestAttr != null) {
+                    celesteAttr.ConstructorArguments[0] = new CustomAttributeArgument(module.ImportReference(typeof(DebuggableAttribute.DebuggingModes)), everestAttr.DebuggingFlags);
+                }
+
                 // Relink legacy framework code
                 using (NetFrameworkModder modder = new NetFrameworkModder()) {
                     modder.Module = module;

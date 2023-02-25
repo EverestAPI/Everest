@@ -4,7 +4,6 @@ using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using ICustomAttributeProvider = Mono.Cecil.ICustomAttributeProvider;
@@ -63,10 +62,11 @@ namespace MonoMod {
             );
 
             // Determine the patch targets
-            if (MonoModRule.Modder.FindType("Celeste.Celeste")?.SafeResolve()?.Scope == MonoModRule.Modder.Module) {
-                RulesPatchTarget = PatchTarget.Game;
-            } else if (MonoModRule.Modder.Mods.Contains(RulesModule)) {
-                RulesPatchTarget = PatchTarget.GameDependency;
+            if (MonoModRule.Modder.Mods.Contains(RulesModule)) {
+                if (MonoModRule.Modder.FindType("Celeste.Celeste")?.SafeResolve()?.Scope == MonoModRule.Modder.Module)
+                    RulesPatchTarget = PatchTarget.Game;
+                else
+                    RulesPatchTarget = PatchTarget.GameDependency;
             } else {
                 RulesPatchTarget = PatchTarget.Mod;
             }
@@ -101,6 +101,10 @@ namespace MonoMod {
         }
 
         private static void RelinkAgainstFNA(MonoModder modder) {
+            // Check if the module references either XNA or FNA
+            if (!modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == "FNA" || asmRef.Name.StartsWith("Microsoft.Xna.Framework")))
+                return;
+
             // Replace XNA assembly references with FNA ones
             ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
 
@@ -110,14 +114,6 @@ namespace MonoMod {
         }
 
         public static void CommonPostProcessor(MonoModder modder) {
-            // Patch debuggable attribute
-            // We can't get the attribute from our own assembly (because it's a temporary MonoMod one), so get it from the entry assembly (which is MiniInstaller)
-            DebuggableAttribute everestAttr = Assembly.GetEntryAssembly().GetCustomAttribute<DebuggableAttribute>();
-            CustomAttribute celesteAttr = modder.Module.Assembly.CustomAttributes.FirstOrDefault(a => a.AttributeType.FullName == typeof(DebuggableAttribute).FullName);
-            if (celesteAttr != null && everestAttr != null) {
-                celesteAttr.ConstructorArguments[0] = new CustomAttributeArgument(modder.Module.ImportReference(typeof(DebuggableAttribute.DebuggingModes)), everestAttr.DebuggingFlags);
-            }
-
             // Replace assembly name versions (fixes stubbed steam DLLs under Linux)
             foreach (AssemblyNameReference asmRef in modder.Module.AssemblyReferences) {
                 ModuleDefinition dep = modder.DependencyMap[modder.Module].FirstOrDefault(mod => mod.Assembly.Name.Name == asmRef.Name);
@@ -144,10 +140,13 @@ namespace MonoMod {
                 PostProcessType(modder, nested);
         }
 
-
         public static AssemblyName GetRulesAssemblyRef(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));
 
         public static bool ReplaceAssemblyRefs(MonoModder modder, Func<AssemblyNameReference, bool> filter, AssemblyName newRef) {
+            // Check if the module has a reference affected by the filter
+            if (!modder.Module.AssemblyReferences.Any(filter))
+                return false;
+
             // Add new dependency and map it, if it not already exist
             bool hasNewRef = modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == newRef.Name);
             if (!hasNewRef) {

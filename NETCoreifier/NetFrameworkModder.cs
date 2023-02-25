@@ -39,12 +39,12 @@ namespace NETCoreifier {
             // Add reference to System.Runtime + NETCoreifier
             if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "System.Runtime")) {
                 AssemblyName runtimeName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(name => name.Name == "System.Runtime");
-                Module.AssemblyReferences.Add(new AssemblyNameReference(runtimeName.Name, runtimeName.Version));
+                Module.AssemblyReferences.Add(AssemblyNameReference.Parse(runtimeName.FullName));
             }
 
             if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "NETCoreifier")) {
                 AssemblyName coreifierName = Assembly.GetExecutingAssembly().GetName();
-                Module.AssemblyReferences.Add(new AssemblyNameReference(coreifierName.Name, coreifierName.Version));
+                Module.AssemblyReferences.Add(AssemblyNameReference.Parse(coreifierName.FullName));
             }
 
             // We have to load our own module again every time because MonoMod messes with it ._.

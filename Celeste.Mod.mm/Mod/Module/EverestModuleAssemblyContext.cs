@@ -17,6 +17,12 @@ namespace Celeste.Mod {
     /// </summary>
     public sealed class EverestModuleAssemblyContext : AssemblyLoadContext, IAssemblyResolver {
 
+        // A list of assembly names which must not be loaded by a mod
+        internal static readonly string[] AssemblyLoadBlackList = 
+            Assembly.GetExecutingAssembly().GetReferencedAssemblies()
+            .Append(Assembly.GetExecutingAssembly().GetName())
+            .Select(asmName => asmName.Name).ToArray();
+
         internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
         internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
 
@@ -168,7 +174,7 @@ namespace Celeste.Mod {
                     if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory) && ModuleMeta.SupportsCodeReload && CoreModule.Settings.CodeReload)
                         RegisterCodeReloadWatcher(Path.GetFullPath(Path.GetDirectoryName(path)));
 
-                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{asmPath}'");
+                    Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{path}'");
                 }
 
                 return asm;
@@ -220,6 +226,9 @@ namespace Celeste.Mod {
             try {
                 // Load the module + assembly
                 mod = ModuleDefinition.ReadModule(path);
+                if (AssemblyLoadBlackList.Contains(mod.Assembly.Name.Name, StringComparer.OrdinalIgnoreCase))
+                    throw new Exception($"Attempted load of blacklisted assembly {mod.Assembly.Name} from module '{ModuleMeta.Name}'");
+
                 Assembly asm = LoadFromAssemblyPath(path);
 
                 // Insert into dictionaries
@@ -334,6 +343,12 @@ namespace Celeste.Mod {
         }
 
         private Assembly LoadGlobal(AssemblyName asmName) {
+            // Try to load the assembly from the default assembly load context
+            try {
+                if (AssemblyLoadContext.Default.LoadFromAssemblyName(asmName) is Assembly globalAsm)
+                    return globalAsm;
+            } catch {}
+
             // Check if we can load this assembly from another module
             // If yes add its context as a dependency
             foreach (EverestModule module in Everest.Modules)
@@ -343,30 +358,10 @@ namespace Celeste.Mod {
                     return moduleAsm;
                 }
 
-            // Try to load the assembly from the default assembly load context
-            try {
-                if (AssemblyLoadContext.Default.LoadFromAssemblyName(asmName) is Assembly globalAsm)
-                    return globalAsm;
-            } catch {}
-
             return null;
         }
 
         private AssemblyDefinition ResolveGlobal(AssemblyNameReference asmName) {
-            // Check if we can resolve this assembly in another module
-            // If yes add its context as a dependency
-            _AllContextsLock.EnterReadLock();
-            try {
-                foreach (EverestModuleAssemblyContext alc in _AllContexts)
-                    if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
-                        Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
-                        DependencyContexts.Add(alc);
-                        return moduleAsm;
-                    }
-            } finally {
-                _AllContextsLock.ExitReadLock();
-            }
-
             // Try to resolve a global assembly definition
             if (!_GlobalAssemblyResolveCache.TryGetValue(asmName.Name, out AssemblyDefinition globalAsmDef)) {
                 // Try to load the global assembly
@@ -388,6 +383,20 @@ namespace Celeste.Mod {
             
                 // Add to cache
                 _GlobalAssemblyResolveCache.Add(asmName.Name, globalAsmDef);
+            }
+
+            // Check if we can resolve this assembly in another module
+            // If yes add its context as a dependency
+            _AllContextsLock.EnterReadLock();
+            try {
+                foreach (EverestModuleAssemblyContext alc in _AllContexts)
+                    if (alc.ResolveFromThisMod(asmName) is AssemblyDefinition moduleAsm) {
+                        Logger.Log(LogLevel.Info, "modasmctx", $"Resolving assembly '{asmName.FullName}' in non-dependency '{alc.ModuleMeta.Name}' for module '{ModuleMeta.Name}'");
+                        DependencyContexts.Add(alc);
+                        return moduleAsm;
+                    }
+            } finally {
+                _AllContextsLock.ExitReadLock();
             }
 
             return globalAsmDef;

@@ -249,6 +249,12 @@ namespace Celeste.Mod {
                         modder.Read();
                     }
 
+                    // Check if the assembly name is on the blacklist
+                    if (EverestModuleAssemblyContext.AssemblyLoadBlackList.Contains(modder.Module.Assembly.Name.Name, StringComparer.OrdinalIgnoreCase)) {
+                        Logger.Log(LogLevel.Warn, "relinker", $"Attempted load of blacklisted assembly {meta} - {modder.Module.Assembly.Name}");
+                        return null;
+                    }
+
                     // Map assembly dependencies
                     modder.MapDependencies();
                     modder.MapDependencies(runtimeRulesMod);
