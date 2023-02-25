@@ -240,6 +240,7 @@ namespace MiniInstaller {
             //Backup native libraries
             Backup(Path.Combine(PathGame, "fmod.dll"));
             Backup(Path.Combine(PathGame, "fmodstudio.dll"));
+            Backup(Path.Combine(PathGame, "CSteamworks.dll"));
             Backup(Path.Combine(PathGame, "steam_api.dll"));
             Backup(Path.Combine(PathGame, "FNA3D.dll"));
             Backup(Path.Combine(PathGame, "SDL2.dll"));
