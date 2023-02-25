@@ -108,12 +108,11 @@ namespace MiniInstaller {
                     MoveExecutable(PathEverestExe, PathEverestDLL);
                     CreateRuntimeConfigFiles(PathEverestDLL, new string[] {
                         Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll"),
-                        Path.Combine(Path.GetDirectoryName(PathCelesteExe), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"))
+                        Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"))
                     });
                     SetupAppHosts(PathEverestExe, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
-
 
                     // If we're updating, start the game. Otherwise, close the window.
                     if (PathUpdate != null) {

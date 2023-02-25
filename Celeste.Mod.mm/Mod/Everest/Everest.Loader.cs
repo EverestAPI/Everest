@@ -543,44 +543,49 @@ namespace Celeste.Mod {
                 if (!Flags.SupportRuntimeMods || meta.AssemblyContext == null)
                     return;
 
-                Logger.Log(LogLevel.Info, "loader", $"Reloading mod: {meta.Name}");
+                QueuedTaskHelper.Do($"ReloadModAssembly: {meta.Name}", () => {
+                    Logger.Log(LogLevel.Info, "loader", $"Reloading mod assemblies: {meta.Name}");
 
-                // Determine the order to load/unload modules in
-                List<EverestModuleMetadata> reloadMods = new List<EverestModuleMetadata>();
-                lock (Everest._Modules) {
-                    // Create reverse dependency graph
-                    Dictionary<string, List<EverestModule>> revDeps = new Dictionary<string, List<EverestModule>>();
-                    Everest._Modules.ForEach(mod => revDeps.Add(mod.Metadata.Name, new List<EverestModule>()));
+                    AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {meta.Name}", () => {
+                        // Determine the order to load/unload modules in
+                        List<EverestModuleMetadata> reloadMods = new List<EverestModuleMetadata>();
+                        lock (Everest._Modules) {
+                            // Create reverse dependency graph
+                            Dictionary<string, List<EverestModule>> revDeps = new Dictionary<string, List<EverestModule>>();
+                            Everest._Modules.ForEach(mod => revDeps.Add(mod.Metadata.Name, new List<EverestModule>()));
 
-                    foreach (EverestModule mod in Everest._Modules)
-                        foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.DependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
-                            revDeps.GetValueOrDefault(depAsmCtx.ModuleMeta.Name)?.Add(mod);
+                            foreach (EverestModule mod in Everest._Modules)
+                                foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.DependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
+                                    revDeps.GetValueOrDefault(depAsmCtx.ModuleMeta.Name)?.Add(mod);
 
-                    // Run a DFS over the reverse dependency graph to determine the reload order
-                    HashSet<string> visited = new HashSet<string>();
-                    void VisitMod(EverestModuleMetadata node) {
-                        // Check if we already visited this node
-                        if (!visited.Add(node.Name))
-                            return;
+                            // Run a DFS over the reverse dependency graph to determine the reload order
+                            HashSet<string> visited = new HashSet<string>();
+                            void VisitMod(EverestModuleMetadata node) {
+                                // Check if we already visited this node
+                                if (!visited.Add(node.Name))
+                                    return;
 
-                        // Ensure mods which depend on this one are placed before this mod in the reload order
-                        revDeps[node.Name].ForEach(revDep => VisitMod(revDep.Metadata));
-                        reloadMods.Add(node);
-                    }
-                }
+                                // Ensure mods which depend on this one are placed before this mod in the reload order
+                                revDeps[node.Name].ForEach(revDep => VisitMod(revDep.Metadata));
+                                reloadMods.Add(node);
+                            }
+                            VisitMod(meta);
+                        }
 
-                // Unload modules in the order determined before (dependents before dependencies)
-                foreach (EverestModuleMetadata unloadMod in reloadMods) {
-                    Logger.Log(LogLevel.Verbose, "loader", $"-> unloading: {unloadMod.Name}");
-                    unloadMod.AssemblyContext?.Dispose();
-                    unloadMod.AssemblyContext = null;
-                }
+                        // Unload modules in the order determined before (dependents before dependencies)
+                        foreach (EverestModuleMetadata unloadMod in reloadMods) {
+                            Logger.Log(LogLevel.Verbose, "loader", $"-> unloading: {unloadMod.Name}");
+                            unloadMod.AssemblyContext?.Dispose();
+                            unloadMod.AssemblyContext = null;
+                        }
 
-                // Load modules in the reverse order determined before (dependencies before dependents)
-                foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
-                    Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
-                    LoadMod(loadMod);
-                }
+                        // Load modules in the reverse order determined before (dependencies before dependents)
+                        foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
+                            Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
+                            LoadMod(loadMod);
+                        }
+                    }, AssetReloadHelper.ReloadLevel);
+                });
             }
 
             /// <summary>

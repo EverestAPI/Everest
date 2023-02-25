@@ -13,15 +13,20 @@ using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
-    /// A mods assembly context, which handles resolving/loading mod assemblies
+    /// A module's assembly context, which handles resolving/loading mod assemblies
     /// </summary>
     public sealed class EverestModuleAssemblyContext : AssemblyLoadContext, IAssemblyResolver {
 
-        // A list of assembly names which must not be loaded by a mod
-        internal static readonly string[] AssemblyLoadBlackList = 
-            Assembly.GetExecutingAssembly().GetReferencedAssemblies()
-            .Append(Assembly.GetExecutingAssembly().GetName())
-            .Select(asmName => asmName.Name).ToArray();
+        /// <summary>
+        /// A list of assembly names which must not be loaded by a mod. The list will be initialized upon first access (which is before any mods will have loaded).
+        /// </summary>
+        /// <returns></returns>
+        internal static string[] AssemblyLoadBlackList => _AssemblyLoadBlackList ?? (_AssemblyLoadBlackList = 
+            AssemblyLoadContext.Default.Assemblies.Select(asm => asm.GetName().Name)
+            .Append("Mono.Cecil.Pdb").Append("Mono.Cecil.Mdb") // These two aren't picked up by default for some reason
+            .ToArray()
+        );
+        private static string[] _AssemblyLoadBlackList;
 
         internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
         internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
@@ -194,15 +199,15 @@ namespace Celeste.Mod {
                 };
 
                 watcher.Changed += (s, e) => {
-                    string asmPath = e.FullPath.Replace('\\', '/');
+                    // Check if the assembly was actually loaded
                     lock (LOCK) {
-                        if (!_LoadedAssemblies.ContainsKey(asmPath))
+                        if (_LoadedAssemblies.GetValueOrDefault(e.FullPath.Replace('\\', '/')) == null)
                             return;
                     }
 
                     // Reload the assembly context
-                    Logger.Log(LogLevel.Verbose, "modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
-                    QueuedTaskHelper.Do($"ReloadModAssembly: {ModuleMeta.Name}", () => Everest.Loader.ReloadMod(ModuleMeta));
+                    Logger.Log(LogLevel.Info, "modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
+                    Everest.Loader.ReloadMod(ModuleMeta);
                 };
                 watcher.EnableRaisingEvents = true;
 
