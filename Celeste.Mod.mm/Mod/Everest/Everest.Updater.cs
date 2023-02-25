@@ -357,13 +357,16 @@ namespace Celeste.Mod {
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
 
-                bool isNative = true;
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
                     using (ZipFile zip = new ZipFile(zipPath)) {
+                        // .NET Core Everest versions only support native MiniInstaller binaries
+                        if (zip.ContainsEntry("MiniInstaller.exe") || zip.ContainsEntry("main/MiniInstaller.exe") || zip.ContainsEntry("main\\MiniInstaller.exe"))
+                            throw new Exception("Can't downgrade to legacy Everest builds from .NET Core versions");
+
                         progress.LogLine($"{zip.Entries.Count} {Dialog.Clean("EVERESTUPDATER_ZIPENTRIES")}");
                         progress.Progress = 0;
                         progress.ProgressMax = zip.Entries.Count;
@@ -378,9 +381,6 @@ namespace Celeste.Mod {
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
 
-                            if (entryName == "MiniInstaller.exe")
-                                isNative = false;
-
                             string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
@@ -393,10 +393,6 @@ namespace Celeste.Mod {
                             progress.Progress++;
                         }
                     }
-
-                    // .NET Core Everest versions only supports native MiniInstaller binaries
-                    if (!isNative)
-                        throw new Exception("Can't downgrade to legacy Everest builds from .NET Core versions");
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFAILED"));
                     e.LogDetailed();
