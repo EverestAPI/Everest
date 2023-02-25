@@ -488,29 +488,6 @@ namespace Celeste.Mod {
                     return;
                 }
 
-                if (string.IsNullOrEmpty(meta.PathArchive) && File.Exists(meta.DLL) && meta.SupportsCodeReload && CoreModule.Settings.CodeReload) {
-                    try {
-                        FileSystemWatcher watcher = meta.DevWatcher = new FileSystemWatcher {
-                            Path = Path.GetDirectoryName(meta.DLL),
-                            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
-                        };
-
-                        watcher.Changed += (s, e) => {
-                            if (e.FullPath != meta.DLL)
-                                return;
-                            ReloadModAssembly(s, e);
-                            // FIXME: Should we dispose the old .dll watcher?
-                        };
-
-                        watcher.EnableRaisingEvents = true;
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
-                        e.LogDetailed();
-                        meta.DevWatcher?.Dispose();
-                        meta.DevWatcher = null;
-                    }
-                }
-
                 // Apply hackfixes
                 ApplyModHackfixes(meta, asm);
 
@@ -557,64 +534,53 @@ namespace Celeste.Mod {
                 if (!foundModule)
                     Logger.Log(LogLevel.Warn, "loader", "Assembly doesn't contain an EverestModule!");
             }
-
-            internal static void ReloadModAssembly(object source, FileSystemEventArgs e, bool retrying = false) {
-                if (!File.Exists(e.FullPath))
+            
+            /// <summary>
+            /// Reload a mod .dll and all mods depending on it given its metadata at runtime. Doesn't reload the mod content.
+            /// </summary>
+            /// <param name="meta">Metadata of the mod to reload.</param>
+            public static void ReloadMod(EverestModuleMetadata meta) {
+                if (!Flags.SupportRuntimeMods || meta.AssemblyContext == null)
                     return;
 
-                Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
-                QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
-                    EverestModule module = _Modules.FirstOrDefault(m => m.Metadata.DLL == e.FullPath);
-                    if (module == null)
-                        return;
+                Logger.Log(LogLevel.Info, "loader", $"Reloading mod: {meta.Name}");
 
-                    AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
-                        //FIXME Reload entire assembly contexts
-                        Assembly asm = null;
-                        if (asm == null) {
-                            if (!retrying) {
-                                // Retry.
-                                QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
-                                    ReloadModAssembly(source, e, true);
-                                });
-                            }
+                // Determine the order to load/unload modules in
+                List<EverestModuleMetadata> reloadMods = new List<EverestModuleMetadata>();
+                lock (Everest._Modules) {
+                    // Create reverse dependency graph
+                    Dictionary<string, List<EverestModule>> revDeps = new Dictionary<string, List<EverestModule>>();
+                    Everest._Modules.ForEach(mod => revDeps.Add(mod.Metadata.Name, new List<EverestModule>()));
+
+                    foreach (EverestModule mod in Everest._Modules)
+                        foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.DependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
+                            revDeps.GetValueOrDefault(depAsmCtx.ModuleMeta.Name)?.Add(mod);
+
+                    // Run a DFS over the reverse dependency graph to determine the reload order
+                    HashSet<string> visited = new HashSet<string>();
+                    void VisitMod(EverestModuleMetadata node) {
+                        // Check if we already visited this node
+                        if (!visited.Add(node.Name))
                             return;
-                        }
 
-                        ((FileSystemWatcher) source).Dispose();
+                        // Ensure mods which depend on this one are placed before this mod in the reload order
+                        revDeps[node.Name].ForEach(revDep => VisitMod(revDep.Metadata));
+                        reloadMods.Add(node);
+                    }
+                }
 
-                        // be sure to save this module's save data and session before reloading it, so that they are not lost.
-                        if (SaveData.Instance != null) {
-                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                            if (module.SaveDataAsync) {
-                                module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
-                            } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                                if (CoreModule.Settings.SaveDataFlush ?? false)
-                                    module.ForceSaveDataFlush++;
-                                module.SaveSaveData(SaveData.Instance.FileSlot);
-#pragma warning restore CS0618
-                            }
+                // Unload modules in the order determined before (dependents before dependencies)
+                foreach (EverestModuleMetadata unloadMod in reloadMods) {
+                    Logger.Log(LogLevel.Verbose, "loader", $"-> unloading: {unloadMod.Name}");
+                    unloadMod.AssemblyContext?.Dispose();
+                    unloadMod.AssemblyContext = null;
+                }
 
-                            if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                                if (module.SaveDataAsync) {
-                                    module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
-                                } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                                    if (CoreModule.Settings.SaveDataFlush ?? false)
-                                        module.ForceSaveDataFlush++;
-                                    module.SaveSession(SaveData.Instance.FileSlot);
-#pragma warning restore CS0618
-                                }
-                            }
-                        }
-
-                        Unregister(module);
-                        LoadModAssembly(module.Metadata, asm);
-                    });
-                    AssetReloadHelper.ReloadLevel();
-                });
+                // Load modules in the reverse order determined before (dependencies before dependents)
+                foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
+                    Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
+                    LoadMod(loadMod);
+                }
             }
 
             /// <summary>

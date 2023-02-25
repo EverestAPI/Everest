@@ -894,6 +894,14 @@ namespace Celeste.Mod {
         /// <param name="meta"></param>
         /// <param name="asm"></param>
         internal static void UnloadAssembly(EverestModuleMetadata meta, Assembly asm) {
+            // Unregister all modules contained in the assembly
+            EverestModule[] asmModules;
+            lock (_Modules)
+                asmModules = _Modules.Where(m => m.GetType().Assembly == asm).ToArray();
+
+            foreach (EverestModule mod in asmModules)
+                Unregister(mod);
+
             // Remove hooks
             if (_ModDetours.TryRemove(asm, out ConcurrentDictionary<object, Action> detours))
                 foreach (Action detourUndo in detours.Values)

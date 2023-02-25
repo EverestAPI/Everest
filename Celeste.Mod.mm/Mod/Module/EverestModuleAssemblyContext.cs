@@ -1,3 +1,4 @@
+using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
 using Mono.Cecil;
@@ -32,6 +33,7 @@ namespace Celeste.Mod {
         private readonly string _ModAsmDir;
         private readonly Dictionary<string, Assembly> _LoadedAssemblies = new Dictionary<string, Assembly>();
         private readonly Dictionary<string, ModuleDefinition> _AssemblyModules = new Dictionary<string, ModuleDefinition>();
+        private readonly Dictionary<string, FileSystemWatcher> _AssemblyReloadWatchers = new Dictionary<string, FileSystemWatcher>();
 
         private readonly ConcurrentDictionary<string, Assembly> _AssemblyLoadCache = new ConcurrentDictionary<string, Assembly>();
         private readonly ConcurrentDictionary<string, AssemblyDefinition> _AssemblyResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
@@ -87,6 +89,11 @@ namespace Celeste.Mod {
                 } finally {
                     _AllContextsLock.ExitWriteLock();
                 }
+
+                // Dispose all code reload file system watchers
+                foreach (FileSystemWatcher watcher in _AssemblyReloadWatchers.Values)
+                    watcher.Dispose();
+                _AssemblyReloadWatchers.Clear();
 
                 // Unload all assemblies loaded in the context
                 foreach (ModuleDefinition module in _AssemblyModules.Values)
@@ -156,10 +163,49 @@ namespace Celeste.Mod {
                 // Actually add the assembly to list of loaded assemblies if we managed to load it
                 if (asm != null) {
                     _LoadedAssemblies[asmPath] = asm;
+
+                    // Watch the assembly directory for changes if code mod reloading is enabled
+                    if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory) && ModuleMeta.SupportsCodeReload && CoreModule.Settings.CodeReload)
+                        RegisterCodeReloadWatcher(Path.GetFullPath(Path.GetDirectoryName(path)));
+
                     Logger.Log(LogLevel.Info, "modasmctx", $"Loaded assembly {asm.FullName} from module '{ModuleMeta.Name}' path '{asmPath}'");
                 }
 
                 return asm;
+            }
+        }
+
+        private void RegisterCodeReloadWatcher(string asmDir) {
+            // Check if there already is a watcher for the directory
+            if (_AssemblyReloadWatchers.ContainsKey(asmDir))
+                return;
+
+            // Create a new watcher
+            FileSystemWatcher watcher = null;
+            try {
+                watcher = new FileSystemWatcher(asmDir) {
+                    NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite,
+                };
+
+                watcher.Changed += (s, e) => {
+                    string asmPath = e.FullPath.Replace('\\', '/');
+                    lock (LOCK) {
+                        if (!_LoadedAssemblies.ContainsKey(asmPath))
+                            return;
+                    }
+
+                    // Reload the assembly context
+                    Logger.Log(LogLevel.Verbose, "modasmctx", $"Reloading mod assembly context because of changed assembly: {e.FullPath}");
+                    QueuedTaskHelper.Do($"ReloadModAssembly: {ModuleMeta.Name}", () => Everest.Loader.ReloadMod(ModuleMeta));
+                };
+                watcher.EnableRaisingEvents = true;
+
+                _AssemblyReloadWatchers.Add(asmDir, watcher);
+                Logger.Log(LogLevel.Verbose, "modasmctx", $"Started watching assembly folder: {asmDir}");
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "modasmctx", $"Failed watching assembly folder: {asmDir}");
+                e.LogDetailed();
+                watcher?.Dispose();
             }
         }
 

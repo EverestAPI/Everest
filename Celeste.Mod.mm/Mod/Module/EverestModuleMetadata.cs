@@ -84,8 +84,6 @@ namespace Celeste.Mod {
         /// </summary>
         public bool SupportsCodeReload { get; set; } = true;
 
-        internal FileSystemWatcher DevWatcher;
-
         public override string ToString() {
             return Name + " " + Version;
         }
