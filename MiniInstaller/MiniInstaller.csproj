@@ -18,6 +18,7 @@
 
   <!-- Resolve AppHosts -->
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
     <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />

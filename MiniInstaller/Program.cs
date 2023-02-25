@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Helpers;
+using Microsoft.NET.HostModel.AppHost;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -110,7 +111,7 @@ namespace MiniInstaller {
                         Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll"),
                         Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"))
                     });
-                    SetupAppHosts(PathEverestExe, PathEverestDLL);
+                    SetupAppHosts(PathEverestExe, PathEverestDLL, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
 
@@ -604,7 +605,11 @@ namespace MiniInstaller {
             }
         }
 
-        public static void SetupAppHosts(string appExe, string appDll) {
+        public static void SetupAppHosts(string appExe, string appDll, string resDll = null) {
+            // We only support setting copying the host resources on Windows
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                resDll = null;
+
             // Delete MonoKickstart files
             File.Delete(Path.ChangeExtension(appExe, ".bin.x86"));
             File.Delete(Path.ChangeExtension(appExe, ".bin.x86_64"));
@@ -613,20 +618,22 @@ namespace MiniInstaller {
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monomachineconfig"));
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "FNA.dll.config"));
 
+            string hostsDir = Path.Combine(PathGame, "apphosts");
+
             // Bind Windows apphost
             LogLine($"Binding Windows apphost {appExe}");
-            BindAppHost("win.exe", appExe, appDll);
+            HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
 
             // Bind Linux apphost (if it exists)
             if (File.Exists(Path.ChangeExtension(appExe, null))) {
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
-                BindAppHost("linux", Path.ChangeExtension(appExe, null), appDll);
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "linux"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
             }
 
             // Bind OS X apphost (if it exists)
             if (PathDylibs != null) {
                 LogLine($"Binding OS X apphost {Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe))}");
-                BindAppHost("osx", Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), appDll);
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.GetRelativePath(Path.GetDirectoryName(PathDylibs), appDll));
             }
         }
 
@@ -717,30 +724,6 @@ namespace MiniInstaller {
 
                 return deps;
             }
-        }
-
-        static void BindAppHost(string hostName, string outPath, string appPath) {
-            appPath = Path.GetRelativePath(Path.GetDirectoryName(outPath), appPath);
-
-            byte[] appHost = File.ReadAllBytes(Path.Combine(PathGame, "apphosts", hostName));
-
-            byte[] placeholder = Encoding.UTF8.GetBytes("c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2"); //SHA256 of "foobar"
-            int pathIdx = appHost.AsSpan().IndexOf(placeholder);
-            if (pathIdx < 0)
-                throw new Exception("Couldn't bind apphost!");
-
-            int appPathLen = Encoding.UTF8.GetBytes(appPath, 0, appPath.Length, appHost, pathIdx);
-            if (appPathLen > placeholder.Length)
-                throw new ArgumentException("Apphost application path is too long!");
-
-            Array.Fill<byte>(appHost, 0, pathIdx + appPathLen, placeholder.Length - appPathLen);
-
-            File.WriteAllBytes(outPath, appHost);
-
-            // Set the executable flag
-            // TODO Check if this actually works on MacOS
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                Process.Start("/bin/sh", new string[] { "-c", $"chmod ug+x \"{Path.GetFullPath(outPath)}\"" }).WaitForExit();
         }
 
         static void CombineXMLDoc(string xmlFrom, string xmlTo) {
