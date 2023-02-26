@@ -40,10 +40,14 @@ namespace Celeste.Mod {
                 } catch {
                 }
 
-                // Required for native libs to be picked up on Linux
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                // Required for native libs to be picked up on Linux / MacOS
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    string execLdPath = Path.GetFullPath(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? 
+                        AppContext.BaseDirectory : 
+                        Path.Combine(AppContext.BaseDirectory, "..", "MacOS", "osx")
+                    );
+
                     string[] ldPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")?.Split(":") ?? Array.Empty<string>();
-                    string execLdPath = Path.GetFullPath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
                     if (!ldPath.Any(path => Path.GetFullPath(path) == execLdPath)) {
                         Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{execLdPath}:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
                         Console.WriteLine($"Restarting with LD_LIBRARY_PATH=\"{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}\"...");
