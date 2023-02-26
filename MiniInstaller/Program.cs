@@ -369,8 +369,16 @@ namespace MiniInstaller {
                 foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
                     string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
 
-                    if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName))
+                    if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName)) {
+                        // On Linux, additionaly create a symlink for the unmapped path
+                        // Luckilfy for us only Linux requires such symlinks, as Windows can't create them
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                            File.Delete(fileDst);
+                            File.CreateSymbolicLink(fileDst, Path.Combine(Path.GetDirectoryName(fileDst), mappedName));
+                        }
+
                         fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
+                    }
 
                     File.Copy(fileSrc, fileDst, true);
                 }
