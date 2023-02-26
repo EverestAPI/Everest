@@ -338,23 +338,25 @@ namespace MiniInstaller {
         public static void SetupNativeLibs() {
             string[] libSrcDirs;
             string libDstDir;
-            string[] fixupLibs;
+            Dictionary<string, string> dllMap = new Dictionary<string, string>();
 
             if (PathDylibs != null) {
                 // Setup MacOS native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                 libDstDir = PathDylibs;
-                fixupLibs = new string[] {};
+                ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
+                ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
             } if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
                 // Setup Linux native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
                 libDstDir = PathGame;
-                fixupLibs = new string[] { "libfmodstudio.so.10", "libFNA3D.so.0", "libFAudio.so.0", "libSDL2-2.0.so.0" };
+                ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
+                ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
             } else {
                 // Setup Windows native libs
                 libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
                 libDstDir = PathGame;
-                fixupLibs = new string[] { "fmodstudio64.dll" };
+                dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
             }
 
             // Copy native libraries for the OS
@@ -367,26 +369,10 @@ namespace MiniInstaller {
                 foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
                     string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
 
-                    if (fileSrc.EndsWith("64.dll") && fixupLibs.Contains(Path.GetFileName(fileSrc))) {
-                        // Remove XYZ64.dll suffix to make the target name XYZ.dll
-                        string fname = Path.GetFileNameWithoutExtension(fileDst);
-                        fname = fname.Substring(0, fname.Length - 2);
-                        if (Path.HasExtension(fileDst))
-                            fname += Path.GetExtension(fileDst);
-
-                        fileDst = Path.Combine(Path.GetDirectoryName(fileDst), fname);
-                    }
+                    if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName))
+                        fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
 
                     File.Copy(fileSrc, fileDst, true);
-
-                    if (Path.GetFileNameWithoutExtension(fileSrc).EndsWith(".so") && fixupLibs.Contains(Path.GetFileName(fileSrc))) {
-                        // Create symlinks for .so files without their suffix
-                        int soIdx = fileDst.LastIndexOf(".so");
-                        if (0 <= soIdx && soIdx < fileDst.Length - 3) {
-                            File.Delete(fileDst.Substring(0, soIdx + 3));
-                            File.CreateSymbolicLink(fileDst.Substring(0, soIdx + 3), fileDst);
-                        }
-                    }
                 }
             }
 
@@ -685,6 +671,23 @@ namespace MiniInstaller {
                 "Mono.Posix.dll",
                 "Mono.Security.dll"
             }.Any(name => Path.GetFileName(file).Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        static void ParseMonoNativeLibConfig(string configFile, string os, Dictionary<string, string> dllMap, string dllNameScheme) {
+            //Read the config file
+            XmlDocument configDoc = new XmlDocument();
+            configDoc.Load(configFile);
+            foreach (XmlNode node in configDoc.DocumentElement) {
+                if (node is not XmlElement dllmapElement || node.Name != "dllmap")
+                    continue;
+
+                // Check the dllmap entry OS
+                if (!dllmapElement.GetAttribute("os").Split(',').Contains(os))
+                    continue;
+        
+                // Add an entry to the dllmap
+                dllMap[dllmapElement.GetAttribute("target")] = string.Format(dllNameScheme, dllmapElement.GetAttribute("dll"));
+            }
         }
 
         static Assembly LazyLoadAssembly(string path) {
