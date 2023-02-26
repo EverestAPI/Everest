@@ -342,13 +342,13 @@ namespace MiniInstaller {
 
             if (PathDylibs != null) {
                 // Setup MacOS native libs
-                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                 libDstDir = PathDylibs;
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
             } if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
                 // Setup Linux native libs
-                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
+                libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
                 libDstDir = PathGame;
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
@@ -369,18 +369,22 @@ namespace MiniInstaller {
                 foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
                     string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
 
+                    string symlinkPath = null;
                     if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName)) {
                         // On Linux, additionaly create a symlink for the unmapped path
                         // Luckilfy for us only Linux requires such symlinks, as Windows can't create them
-                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                            File.Delete(fileDst);
-                            File.CreateSymbolicLink(fileDst, Path.Combine(Path.GetDirectoryName(fileDst), mappedName));
-                        }
+                        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                            symlinkPath = fileDst;
 
                         fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
                     }
 
                     File.Copy(fileSrc, fileDst, true);
+
+                    if (symlinkPath != null) {
+                        File.Delete(symlinkPath);
+                        File.CreateSymbolicLink(symlinkPath, fileDst);
+                    }
                 }
             }
 
@@ -614,18 +618,18 @@ namespace MiniInstaller {
 
             string hostsDir = Path.Combine(PathGame, "apphosts");
 
-            // Bind Windows apphost
-            LogLine($"Binding Windows apphost {appExe}");
-            HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
-
-            // Bind Linux apphost (if it exists)
-            if (File.Exists(Path.ChangeExtension(appExe, null))) {
+            if (!File.Exists(Path.ChangeExtension(appExe, null))) {
+                // Bind Windows apphost
+                LogLine($"Binding Windows apphost {appExe}");
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
+            } else {
+                // Bind Linux apphost
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "linux"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
             }
 
-            // Bind OS X apphost (if it exists)
             if (PathDylibs != null) {
+                // Bind OS X apphost
                 LogLine($"Binding OS X apphost {Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe))}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.GetRelativePath(Path.GetDirectoryName(PathDylibs), appDll));
             }
