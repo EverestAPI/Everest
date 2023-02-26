@@ -31,7 +31,9 @@ namespace MonoMod {
             }
 
             // If this is legacy MonoMod, relink against modern MonoMod
-            if (isMonoMod && isLegacyMonoMod && ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"))) {
+            if (isMonoMod && isLegacyMonoMod) {
+                modder.Log($"[Celeste.Mod.mm] Relinking legacy MonoMod to glue code layer");
+                ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"));
                 SetupLegacyMonoModRelinking(modder);
             } else
                 isLegacyMonoMod = false;
