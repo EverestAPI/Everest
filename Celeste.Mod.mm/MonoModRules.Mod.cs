@@ -32,8 +32,6 @@ namespace MonoMod {
 
             // If this is legacy MonoMod, relink against modern MonoMod
             if (isMonoMod && isLegacyMonoMod) {
-                modder.Log($"[Celeste.Mod.mm] Relinking legacy MonoMod to glue code layer");
-                ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"));
                 SetupLegacyMonoModRelinking(modder);
             } else
                 isLegacyMonoMod = false;
@@ -42,6 +40,11 @@ namespace MonoMod {
         }
 
         public static void SetupLegacyMonoModRelinking(MonoModder modder) {
+            modder.Log($"[Celeste.Mod.mm] Relinking legacy MonoMod to glue code layer");
+
+            // Replace assembly references which changed
+            ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"));
+
             // Convert all RelinkLegacyMonoMod attributes to MonoModLinkFrom attributes
             static void VisitAttributes(MonoModder modder, ICustomAttributeProvider prov) {
                 foreach (CustomAttribute attr in prov.CustomAttributes)
