@@ -228,9 +228,10 @@ namespace MiniInstaller {
             }
 
             //Backup MonoKickstart executable / config (for Linux + MacOS)
-            Backup(Path.Combine(PathGame, "Celeste"));
             if (PathDylibs != null)
                 Backup(Path.Combine(Path.GetDirectoryName(PathDylibs), "Celeste"));
+            else
+                Backup(Path.Combine(PathGame, "Celeste"));
             Backup(Path.Combine(PathGame, "Celeste.bin.x86"));
             Backup(Path.Combine(PathGame, "Celeste.bin.x86_64"));
             Backup(Path.Combine(PathGame, "monoconfig"));
@@ -622,16 +623,17 @@ namespace MiniInstaller {
                 // Bind Windows apphost
                 LogLine($"Binding Windows apphost {appExe}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
+            } else if (PathDylibs != null) {
+                // Bind OS X apphost
+                LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
+
+                File.Delete(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe)));
+                File.CreateSymbolicLink(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe)), fileDst);
             } else {
                 // Bind Linux apphost
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "linux"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
-            }
-
-            if (PathDylibs != null) {
-                // Bind OS X apphost
-                LogLine($"Binding OS X apphost {Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe))}");
-                HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.GetRelativePath(Path.GetDirectoryName(PathDylibs), appDll));
             }
         }
 
@@ -648,11 +650,7 @@ namespace MiniInstaller {
             if (Environment.OSVersion.Platform == PlatformID.Unix ||
                 Environment.OSVersion.Platform == PlatformID.MacOSX) {
                 // The Linux and macOS version apphosts don't end in ".exe"
-                // Additionaly, the macOS apphost is outside the game files folder
-                if (PathDylibs != null)
-                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe));
-                else
-                    game.StartInfo.FileName = Path.ChangeExtension(PathEverestExe, null);
+                game.StartInfo.FileName = Path.ChangeExtension(PathEverestExe, null);
             } else {
                 game.StartInfo.FileName = PathEverestExe;
             }
