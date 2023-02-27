@@ -628,8 +628,8 @@ namespace MiniInstaller {
                 LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
 
-                File.Delete(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe)));
-                File.CreateSymbolicLink(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(PathEverestExe)), fileDst);
+                File.Delete(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)));
+                File.CreateSymbolicLink(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.ChangeExtension(appExe, null));
             } else {
                 // Bind Linux apphost
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
@@ -684,6 +684,11 @@ namespace MiniInstaller {
         }
 
         static void ParseMonoNativeLibConfig(string configFile, string os, Dictionary<string, string> dllMap, string dllNameScheme) {
+            if (!File.Exists(configFile))
+                return;
+
+            LogLine($"Parsing Mono config file {configFile}");
+
             //Read the config file
             XmlDocument configDoc = new XmlDocument();
             configDoc.Load(configFile);
