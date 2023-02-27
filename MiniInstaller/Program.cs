@@ -253,7 +253,7 @@ namespace MiniInstaller {
             Backup(Path.Combine(PathGame, "gamecontrollerdb.txt"));
 
             //Create a symlink for the contents folder
-            if (!Directory.Exists(Path.Combine(PathOrig, "Content"))) {
+            if (!File.Exist(Path.Combine(PathOrig, "Content")) && !Directory.Exists(Path.Combine(PathOrig, "Content"))) {
                 try {
                     Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
                 } catch (IOException) {
