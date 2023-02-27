@@ -212,22 +212,22 @@ namespace MiniInstaller {
                 Directory.CreateDirectory(PathOrig);
             }
 
-            //Backup the game executable
+            // Backup the game executable
             Backup(PathCelesteExe);
             Backup(PathCelesteExe + ".pdb");
             Backup(Path.ChangeExtension(PathCelesteExe, "mdb"));
 
-            //Backup game dependencies
+            // Backup game dependencies
             BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)), PathGame);
             Backup(Path.Combine(PathGame, "FNA.dll")); // Explicitly back up the FNA dll for XNA builds
 
-            //Backup all system libraries explicitly, as we'll delete those
+            // Backup all system libraries explicitly, as we'll delete those
             foreach (string file in Directory.GetFiles(PathGame)) {
                 if(IsSystemLibrary(file))
                     Backup(file);
             }
 
-            //Backup MonoKickstart executable / config (for Linux + MacOS)
+            // Backup MonoKickstart executable / config (for Linux + MacOS)
             if (PathDylibs != null)
                 Backup(Path.Combine(Path.GetDirectoryName(PathDylibs), "Celeste"));
             else
@@ -238,7 +238,7 @@ namespace MiniInstaller {
             Backup(Path.Combine(PathGame, "monomachineconfig"));
             Backup(Path.Combine(PathGame, "FNA.dll.config"));
 
-            //Backup native libraries
+            // Backup native libraries
             Backup(Path.Combine(PathGame, "fmod.dll"));
             Backup(Path.Combine(PathGame, "fmodstudio.dll"));
             Backup(Path.Combine(PathGame, "CSteamworks.dll"));
@@ -248,12 +248,12 @@ namespace MiniInstaller {
             Backup(Path.Combine(PathGame, "lib"));
             Backup(Path.Combine(PathGame, "lib64"));
 
-            //Backup misc files
+            // Backup misc files
             Backup(PathCelesteExe + ".config");
             Backup(Path.Combine(PathGame, "gamecontrollerdb.txt"));
 
-            //Create a symlink for the contents folder
-            if (!File.Exist(Path.Combine(PathOrig, "Content")) && !Directory.Exists(Path.Combine(PathOrig, "Content"))) {
+            // Create a symlink for the contents folder
+            if (!File.Exists(Path.Combine(PathOrig, "Content")) && !Directory.Exists(Path.Combine(PathOrig, "Content"))) {
                 try {
                     Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
                 } catch (IOException) {
