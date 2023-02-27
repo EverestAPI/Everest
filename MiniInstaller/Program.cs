@@ -619,17 +619,17 @@ namespace MiniInstaller {
 
             string hostsDir = Path.Combine(PathGame, "apphosts");
 
-            if (!File.Exists(Path.ChangeExtension(appExe, null))) {
-                // Bind Windows apphost
-                LogLine($"Binding Windows apphost {appExe}");
-                HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
-            } else if (PathDylibs != null) {
+            if (PathDylibs != null) {
                 // Bind OS X apphost
                 LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
 
                 File.Delete(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)));
                 File.CreateSymbolicLink(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.ChangeExtension(appExe, null));
+            } else if (!File.Exists(Path.ChangeExtension(appExe, null))) {
+                // Bind Windows apphost
+                LogLine($"Binding Windows apphost {appExe}");
+                HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
             } else {
                 // Bind Linux apphost
                 LogLine($"Binding Linux apphost {Path.ChangeExtension(appExe, null)}");
