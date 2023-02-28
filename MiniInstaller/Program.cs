@@ -363,9 +363,8 @@ namespace MiniInstaller {
             }
 
             // Copy native libraries for the OS
-            if (Directory.Exists(libDstDir))
-                Directory.Delete(libDstDir, true);
-            Directory.CreateDirectory(libDstDir);
+            if (!Directory.Exists(libDstDir))
+                Directory.CreateDirectory(libDstDir);
 
             foreach (string libSrcDir in libSrcDirs) {
                 if (!Directory.Exists(libSrcDir))
