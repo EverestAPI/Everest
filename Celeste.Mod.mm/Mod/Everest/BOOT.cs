@@ -157,7 +157,7 @@ namespace Celeste.Mod {
                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "Celeste" :
                 throw new Exception("Unknown OS platform")
             );
-            game.StartInfo.WorkingDirectory = gameDir;
+            game.StartInfo.WorkingDirectory = AppContext.BaseDirectory;
 
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
