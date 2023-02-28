@@ -2,6 +2,7 @@
 using Microsoft.NET.HostModel.AppHost;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,10 @@ using System.Xml;
 
 namespace MiniInstaller {
     public class Program {
+
+        public static readonly ReadOnlyCollection<string> WindowsNativeLibFileNames = Array.AsReadOnly(new string[] {
+            "fmod.dll", "fmodstudio.dll", "CSteamworks.dll", "steam_api.dll", "FNA3D.dll", "SDL2.dll"
+        });
 
         public static string PathUpdate;
         public static string PathGame;
@@ -239,12 +244,8 @@ namespace MiniInstaller {
             Backup(Path.Combine(PathGame, "FNA.dll.config"));
 
             // Backup native libraries
-            Backup(Path.Combine(PathGame, "fmod.dll"));
-            Backup(Path.Combine(PathGame, "fmodstudio.dll"));
-            Backup(Path.Combine(PathGame, "CSteamworks.dll"));
-            Backup(Path.Combine(PathGame, "steam_api.dll"));
-            Backup(Path.Combine(PathGame, "FNA3D.dll"));
-            Backup(Path.Combine(PathGame, "SDL2.dll"));
+            foreach (string libName in WindowsNativeLibFileNames)
+                Backup(Path.Combine(PathGame, libName));
             Backup(Path.Combine(PathGame, "lib"));
             Backup(Path.Combine(PathGame, "lib64"));
             if (PathOSXExecDir != null)
@@ -385,12 +386,6 @@ namespace MiniInstaller {
                         fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
                     }
 
-                    if (Path.GetExtension(fileDst) == ".dll") {
-                        // Windows has its vanilla libraries directly in the game directory
-                        // Delete those, as they clutter up the directory and could cause load errors
-                        File.Delete(Path.Combine(PathGame, Path.GetFileName(fileDst)));
-                    }
-
                     File.Copy(fileSrc, fileDst, true);
 
                     if (symlinkPath != null && symlinkPath != fileDst) {
@@ -400,7 +395,10 @@ namespace MiniInstaller {
                 }
             }
 
-            // Delete library folders
+            // Delete old libraries
+            foreach (string libFile in WindowsNativeLibFileNames)
+                File.Delete(Path.Combine(PathGame, libFile));
+
             foreach (string libDir in new string[] { "lib", "lib64", "everest-lib64-win", "everest-lib64-linux", "everest-lib64-osx", "runtimes" }) {
                 if (Directory.Exists(Path.Combine(PathGame, libDir)))
                     Directory.Delete(Path.Combine(PathGame, libDir), true);
