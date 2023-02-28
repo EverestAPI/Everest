@@ -41,6 +41,12 @@ namespace Celeste.Mod {
                 } catch {
                 }
 
+                // Start vanilla if instructed to
+                if (args.FirstOrDefault() == "--vanilla") {
+                    StartVanilla();
+                    goto Exit;
+                }
+
                 // Required for native libs to be picked up on Linux / MacOS
                 SetupNativeLibPaths();
 
@@ -53,7 +59,7 @@ namespace Celeste.Mod {
                     goto Exit;
                 } else if (Everest.RestartVanilla) {
                     // Start the vanilla process
-                    StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
+                    StartVanilla();
                     goto Exit;
                 }
             } catch (Exception e) {
@@ -159,6 +165,8 @@ namespace Celeste.Mod {
             game.Start();
             return game;
         }
+
+        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
 
     }
 }
