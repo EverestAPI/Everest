@@ -385,6 +385,12 @@ namespace MiniInstaller {
                         fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
                     }
 
+                    if (Path.GetExtension(fileDst) == ".dll") {
+                        // Windows has its vanilla libraries directly in the game directory
+                        // Delete those, as they clutter up the directory and could cause load errors
+                        File.Delete(Path.Combine(PathGame, Path.GetFileName(fileDst)));
+                    }
+
                     File.Copy(fileSrc, fileDst, true);
 
                     if (symlinkPath != null && symlinkPath != fileDst) {
