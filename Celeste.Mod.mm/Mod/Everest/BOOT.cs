@@ -157,7 +157,7 @@ namespace Celeste.Mod {
                 RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "Celeste" :
                 throw new Exception("Unknown OS platform")
             );
-            game.StartInfo.WorkingDirectory = AppContext.BaseDirectory;
+            game.StartInfo.WorkingDirectory = gameDir;
 
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
@@ -166,7 +166,21 @@ namespace Celeste.Mod {
             return game;
         }
 
-        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
+        public static void StartVanilla() {
+            string origPath = Path.Combine(AppContext.BaseDirectory, "orig");
+
+            // On Windows, we have to symlink Saves
+            // This isn't guaranteed to work (needs a modern Windows 10 patch), so retry on every launch
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !File.Exists(Path.Combine(origPath, "Saves"))) {
+                try {
+                    File.CreateSymbolicLink(Path.Combine(origPath, "Saves"), Path.Combine(AppContext.BaseDirectory, "Saves"));
+                } catch {
+                    Console.WriteLine("Failed to symlink vanilla saves!");
+                }
+            }
+
+            StartCelesteProcess(origPath);
+        }
 
     }
 }
