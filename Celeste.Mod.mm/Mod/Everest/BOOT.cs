@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
 
@@ -41,22 +42,7 @@ namespace Celeste.Mod {
                 }
 
                 // Required for native libs to be picked up on Linux / MacOS
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                    string execLdPath = Path.GetFullPath(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? 
-                        AppContext.BaseDirectory : 
-                        Path.Combine(AppContext.BaseDirectory, "..", "MacOS", "osx")
-                    );
-
-                    string[] ldPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")?.Split(":") ?? Array.Empty<string>();
-                    if (!ldPath.Any(path => Path.GetFullPath(path) == execLdPath)) {
-                        Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", $"{execLdPath}:{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}");
-                        Console.WriteLine($"Restarting with LD_LIBRARY_PATH=\"{Environment.GetEnvironmentVariable("LD_LIBRARY_PATH")}\"...");
-
-                        Process proc = StartCelesteProcess();
-                        proc.WaitForExit();
-                        Environment.Exit(proc.ExitCode);
-                    }
-                }
+                SetupNativeLibPaths();
 
                 patch_Celeste.Main(args);
 
@@ -107,6 +93,52 @@ namespace Celeste.Mod {
         private static bool RestartViaNoLauncher() {
             return false;
         }
+
+        private static void SetupNativeLibPaths() {
+            // MacOS SIP Steam overlay hack (taken from the Linux launcher script - is this required?)
+            bool didApplySteamSIPHack = false;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && 
+                !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("STEAM_DYLD_INSERT_LIBRARIES")) &&
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DYLD_INSERT_LIBRARIES"))
+            ) {
+                Console.WriteLine("Applying Steam DYLD_INSERT_LIBRARIES...");
+                Environment.SetEnvironmentVariable("DYLD_INSERT_LIBRARIES", Environment.GetEnvironmentVariable("STEAM_DYLD_INSERT_LIBRARIES"));
+                didApplySteamSIPHack = true;
+            }
+
+            // This is a bit hacky, but I'm not getting MiniInstaller to set an rpath ._.
+            static void EnsureLibPathEnvVarSet(string envVar, string libPath) {
+                libPath = Path.GetFullPath(libPath);
+
+                string[] ldPath = Environment.GetEnvironmentVariable(envVar)?.Split(":") ?? Array.Empty<string>();
+                if (!ldPath.Any(path => Path.GetFullPath(path) == libPath)) {
+                    Environment.SetEnvironmentVariable(envVar, $"{libPath}:{Environment.GetEnvironmentVariable(envVar)}");
+                    Console.WriteLine($"Restarting with {envVar}=\"{Environment.GetEnvironmentVariable(envVar)}\"...");
+
+                    Process proc = StartCelesteProcess();
+                    proc.WaitForExit();
+                    Environment.Exit(proc.ExitCode);
+                }
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                SetDllDirectory(Path.Combine(AppContext.BaseDirectory, "lib64-win")); // Windows is the only platform with an API like this
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                EnsureLibPathEnvVarSet("LD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-linux"));
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                EnsureLibPathEnvVarSet("DYLD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-osx"));
+
+            // If we got here without restarting the process, restart it now if required
+            if (didApplySteamSIPHack) {
+                Process proc = StartCelesteProcess();
+                proc.WaitForExit();
+                Environment.Exit(proc.ExitCode);
+            }
+        }
+
+        [SupportedOSPlatform("windows")]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool SetDllDirectory(string lpPathName);
 
         public static Process StartCelesteProcess(string gameDir = null) {
             gameDir ??= AppContext.BaseDirectory;

@@ -21,10 +21,10 @@ namespace MiniInstaller {
 
         public static string PathUpdate;
         public static string PathGame;
+        public static string PathOSXExecDir;
         public static string PathCelesteExe;
         public static string PathEverestExe, PathEverestDLL;
         public static string PathOrig;
-        public static string PathDylibs;
         public static string PathLog;
         public static string PathTmp;
 
@@ -183,9 +183,9 @@ namespace MiniInstaller {
 
             // Can't check for platform as some morons^Wuninformed people could be running MiniInstaller via wine.
             if (PathGame.Replace(Path.DirectorySeparatorChar, '/').Trim('/').EndsWith(".app/Contents/Resources")) {
-                PathDylibs = Path.Combine(Path.GetDirectoryName(PathGame), "MacOS", "osx");
-                if (!Directory.Exists(PathDylibs))
-                    PathDylibs = null;
+                PathOSXExecDir = Path.Combine(Path.GetDirectoryName(PathGame), "MacOS");
+                if (!Directory.Exists(PathOSXExecDir))
+                    PathOSXExecDir = null;
             }
 
             PathTmp = Directory.CreateTempSubdirectory("Everest_MiniInstaller").FullName;
@@ -228,8 +228,8 @@ namespace MiniInstaller {
             }
 
             // Backup MonoKickstart executable / config (for Linux + MacOS)
-            if (PathDylibs != null)
-                Backup(Path.Combine(Path.GetDirectoryName(PathDylibs), "Celeste"));
+            if (PathOSXExecDir != null)
+                Backup(Path.Combine(PathOSXExecDir, "Celeste"));
             else
                 Backup(Path.Combine(PathGame, "Celeste"));
             Backup(Path.Combine(PathGame, "Celeste.bin.x86"));
@@ -247,6 +247,8 @@ namespace MiniInstaller {
             Backup(Path.Combine(PathGame, "SDL2.dll"));
             Backup(Path.Combine(PathGame, "lib"));
             Backup(Path.Combine(PathGame, "lib64"));
+            if (PathOSXExecDir != null)
+                Backup(Path.Combine(PathOSXExecDir, "osx"));
 
             // Backup misc files
             Backup(PathCelesteExe + ".config");
@@ -341,26 +343,30 @@ namespace MiniInstaller {
             string libDstDir;
             Dictionary<string, string> dllMap = new Dictionary<string, string>();
 
-            if (PathDylibs != null) {
+            if (PathOSXExecDir != null) {
                 // Setup MacOS native libs
-                libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
-                libDstDir = PathDylibs;
+                libSrcDirs = new string[] { Path.Combine(PathOrig, "everest-lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                libDstDir = Path.Combine(PathGame, "lib64-osx");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
             } if (File.Exists(Path.ChangeExtension(PathCelesteExe, null))) {
                 // Setup Linux native libs
-                libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathGame, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
-                libDstDir = PathGame;
+                libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathGame, "everest-lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
+                libDstDir = Path.Combine(PathGame, "lib64-linux");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
                 ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
             } else {
                 // Setup Windows native libs
-                libSrcDirs = new string[] { Path.Combine(PathGame, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
-                libDstDir = PathGame;
+                libSrcDirs = new string[] { Path.Combine(PathGame, "everest-lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
+                libDstDir = Path.Combine(PathGame, "lib64-win");
                 dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
             }
 
             // Copy native libraries for the OS
+            if (Directory.Exists(libDstDir))
+                Directory.Delete(libDstDir, true);
+            Directory.CreateDirectory(libDstDir);
+
             foreach (string libSrcDir in libSrcDirs) {
                 if (!Directory.Exists(libSrcDir))
                     continue;
@@ -372,7 +378,7 @@ namespace MiniInstaller {
 
                     string symlinkPath = null;
                     if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName)) {
-                        // On Linux, additionaly create a symlink for the unmapped path
+                        // On Linux, additionally create a symlink for the unmapped path
                         // Luckilfy for us only Linux requires such symlinks, as Windows can't create them
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                             symlinkPath = fileDst;
@@ -382,7 +388,7 @@ namespace MiniInstaller {
 
                     File.Copy(fileSrc, fileDst, true);
 
-                    if (symlinkPath != null) {
+                    if (symlinkPath != null && symlinkPath != fileDst) {
                         File.Delete(symlinkPath);
                         File.CreateSymbolicLink(symlinkPath, fileDst);
                     }
@@ -390,10 +396,13 @@ namespace MiniInstaller {
             }
 
             // Delete library folders
-            foreach (string libDirName in new string[] { "lib", "lib64", "lib64-win", "lib64-linux", "lib64-osx", "runtimes" }) {
-                if (Directory.Exists(Path.Combine(PathGame, libDirName)))
-                    Directory.Delete(Path.Combine(PathGame, libDirName), true);
+            foreach (string libDir in new string[] { "lib", "lib64", "everest-lib64-win", "everest-lib64-linux", "everest-lib64-osx", "runtimes" }) {
+                if (Directory.Exists(Path.Combine(PathGame, libDir)))
+                    Directory.Delete(Path.Combine(PathGame, libDir), true);
             }
+
+            if (PathOSXExecDir != null && Path.Exists(Path.Combine(PathOSXExecDir, "osx")))
+                Directory.Delete(Path.Combine(PathOSXExecDir, "osx"), true);
         }
 
         public static void LoadModders() {
@@ -619,13 +628,13 @@ namespace MiniInstaller {
 
             string hostsDir = Path.Combine(PathGame, "apphosts");
 
-            if (PathDylibs != null) {
+            if (PathOSXExecDir != null) {
                 // Bind OS X apphost
                 LogLine($"Binding OS X apphost {Path.ChangeExtension(appExe, null)}");
                 HostWriter.CreateAppHost(Path.Combine(hostsDir, "osx"), Path.ChangeExtension(appExe, null), Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll));
 
-                File.Delete(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)));
-                File.CreateSymbolicLink(Path.Combine(Path.GetDirectoryName(PathDylibs), Path.GetFileNameWithoutExtension(appExe)), Path.ChangeExtension(appExe, null));
+                File.Delete(Path.Combine(PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)));
+                File.CreateSymbolicLink(Path.Combine(PathOSXExecDir, Path.GetFileNameWithoutExtension(appExe)), Path.ChangeExtension(appExe, null));
             } else if (!File.Exists(Path.ChangeExtension(appExe, null))) {
                 // Bind Windows apphost
                 LogLine($"Binding Windows apphost {appExe}");
