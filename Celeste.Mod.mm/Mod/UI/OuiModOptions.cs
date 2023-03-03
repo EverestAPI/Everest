@@ -46,9 +46,16 @@ namespace Celeste.Mod.UI {
                 List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
 
                 lock (Everest.Loader.Delayed) {
-                    if (Everest.Loader.Delayed.Count > 0) {
+                    if (Everest.Loader.Delayed.Count > 0 || Everest.Loader.ModsWithAssemblyLoadFailures.Count > 0) {
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                        foreach (EverestModuleMetadata mod in Everest.Loader.ModsWithAssemblyLoadFailures) {
+                            menu.Add(new TextMenuExt.SubHeaderExt($"{mod.Name} | v.{mod.VersionString} ({Dialog.Get("modoptions_coremodule_notloaded_asmloaderror")})") {
+                                HeightExtra = 0f,
+                                TextColor = Color.PaleVioletRed
+                            });
+                        }
 
                         foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
                             string missingDepsString = "";

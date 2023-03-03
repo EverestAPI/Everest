@@ -62,6 +62,7 @@ namespace Celeste.Mod {
             private static bool enforceOptionalDependencies;
 
             internal static HashSet<string> FilesWithMetadataLoadFailures = new HashSet<string>();
+            internal static HashSet<EverestModuleMetadata> ModsWithAssemblyLoadFailures = new HashSet<EverestModuleMetadata>();
 
             internal static readonly Version _VersionInvalid = new Version(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue);
             internal static readonly Version _VersionMax = new Version(int.MaxValue, int.MaxValue);
@@ -467,7 +468,13 @@ namespace Celeste.Mod {
                 }
 
                 // Try to load a module from a DLL
-                if (!string.IsNullOrEmpty(meta.DLL) && meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is Assembly asm) {
+                if (!string.IsNullOrEmpty(meta.DLL)) {
+                    if (meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is not Assembly asm) {
+                        // Don't register a module - this will cause dependencies to not load
+                        ModsWithAssemblyLoadFailures.Add(meta);
+                        return;
+                    }
+
                     LoadModAssembly(meta, asm);
                     return; 
                 }

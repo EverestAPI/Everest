@@ -113,6 +113,7 @@
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Some mods failed loading.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Please check your log.txt for more info.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} not found
+	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			mod assembly failed to load
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						Some everest.yaml files could not be loaded.
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
