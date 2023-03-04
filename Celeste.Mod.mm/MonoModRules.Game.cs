@@ -1,3 +1,4 @@
+using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Collections.Generic;
@@ -47,7 +48,13 @@ namespace MonoMod {
     /// Also implements mouse button remapping.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchConfigUIUpdate))]
-    class PatchConfigUIUpdate : Attribute { };
+    class PatchConfigUIUpdate : Attribute { }
+
+    /// <summary>
+    /// Swaps BlendFunction.Min/Max for BlendState construction, as they are switched on XNA/FNA
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMinMaxBlendFunction))]
+    class PatchMinMaxBlendFunction : Attribute {}
 #endregion
 
     static partial class MonoModRules {
@@ -326,7 +333,25 @@ namespace MonoMod {
             // Remove hardcoded event string
             cursor.Remove();
         }
-#endregion
+
+        public static void PatchMinMaxBlendFunction(ILContext il, CustomAttribute attrib) {
+            ILCursor c = new ILCursor(il);
+            while (c.TryGotoNext(MoveType.After, i =>
+                i.MatchCallOrCallvirt("Microsoft.Xna.Framework.Graphics.BlendState", "set_ColorBlendFunction") ||
+                i.MatchCallOrCallvirt("Microsoft.Xna.Framework.Graphics.BlendState", "set_AlphaBlendFunction")
+            )) {
+                // Instruction right before the call must be a ldc.i4.XYZ
+                if (!c.Instrs[c.Index-2].MatchLdcI4(out int val))
+                    throw new Exception("Unexpected instruction before call to ColorBlendFunction/AlphaBlendFunction setter");
+
+                // Swap Min/Max blend functions
+                if (val == (int) BlendFunction.Min)
+                    c.Instrs[c.Index-2] = Instruction.Create(OpCodes.Ldc_I4, (int) BlendFunction.Max);
+                else if (val == (int) BlendFunction.Max)
+                    c.Instrs[c.Index-2] = Instruction.Create(OpCodes.Ldc_I4, (int) BlendFunction.Min);
+            }
+        }
+        #endregion
 
     }
 }
