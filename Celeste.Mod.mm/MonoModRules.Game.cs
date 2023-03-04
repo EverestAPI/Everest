@@ -139,7 +139,8 @@ namespace MonoMod {
 
         public static void GamePreProcessor(MonoModder modder) {
             // Relink against FNA
-            RelinkAgainstFNA(modder);
+            if (RelinkAgainstFNA(modder))
+                MonoModRule.Flag.Set("RelinkXNA", true);
 
             static void VisitType(TypeDefinition type) {
                 // Remove readonly attribute from all static fields

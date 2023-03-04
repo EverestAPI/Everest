@@ -162,17 +162,19 @@ namespace MonoMod {
             return !hasNewRef;
         }
 
-        private static void RelinkAgainstFNA(MonoModder modder) {
+        private static bool RelinkAgainstFNA(MonoModder modder) {
             // Check if the module references either XNA or FNA
             if (!modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == "FNA" || asmRef.Name.StartsWith("Microsoft.Xna.Framework")))
-                return;
+                return false;
 
             // Replace XNA assembly references with FNA ones
-            ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
+            bool didReplaceXNA = ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
 
             // Ensure that FNA.dll can be loaded
             if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
                 throw new Exception("Failed to resolve Microsoft.Xna.Framework.Game");
+
+            return didReplaceXNA;
         }
 #endregion
 
