@@ -100,6 +100,19 @@ namespace MonoMod {
             modder.PostProcessors += CommonPostProcessor;
         }
 
+        private static void RelinkAgainstFNA(MonoModder modder) {
+            // Check if the module references either XNA or FNA
+            if (!modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == "FNA" || asmRef.Name.StartsWith("Microsoft.Xna.Framework")))
+                return;
+
+            // Replace XNA assembly references with FNA ones
+            ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
+
+            // Ensure that FNA.dll can be loaded
+            if (MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
+                throw new Exception("Failed to resolve Microsoft.Xna.Framework.Game");
+        }
+
         public static void CommonPostProcessor(MonoModder modder) {
             // Replace assembly name versions (fixes stubbed steam DLLs under Linux)
             foreach (AssemblyNameReference asmRef in modder.Module.AssemblyReferences) {
@@ -127,7 +140,6 @@ namespace MonoMod {
                 PostProcessType(modder, nested);
         }
 
-#region Commmon Helper Methods
         public static AssemblyName GetRulesAssemblyRef(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));
 
         public static bool ReplaceAssemblyRefs(MonoModder modder, Func<AssemblyNameReference, bool> filter, AssemblyName newRef) {
@@ -161,22 +173,6 @@ namespace MonoMod {
 
             return !hasNewRef;
         }
-
-        private static void RelinkAgainstFNA(MonoModder modder) {
-            // Check if the module references either XNA or FNA
-            if (!modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == "FNA" || asmRef.Name.StartsWith("Microsoft.Xna.Framework")))
-                return;
-
-            // Replace XNA assembly references with FNA ones
-            ReplaceAssemblyRefs(MonoModRule.Modder, static asm => asm.Name.StartsWith("Microsoft.Xna.Framework"), GetRulesAssemblyRef("FNA"));
-        }
-
-        private static void EnsureFNAIsResolvable(MonoModder modder) {
-            // Ensure that FNA.dll can be loaded
-            if (modder.FindType("Microsoft.Xna.Framework.Game")?.SafeResolve() == null)
-                throw new Exception("Failed to resolve Microsoft.Xna.Framework.Game");
-        }
-#endregion
 
 #region Helper Patches
         public static void MakeEntryPoint(MethodDefinition method, CustomAttribute attrib) {

@@ -138,11 +138,8 @@ namespace MonoMod {
         }
 
         public static void GamePreProcessor(MonoModder modder) {
-            // Check if this is an XNA build
-            if (modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name.StartsWith("Microsoft.Xna.Framework")))
-                throw new Exception("Only FNA Celeste builds are supported");
-
-            EnsureFNAIsResolvable(modder);
+            // Relink against FNA
+            RelinkAgainstFNA(modder);
 
             static void VisitType(TypeDefinition type) {
                 // Remove readonly attribute from all static fields
