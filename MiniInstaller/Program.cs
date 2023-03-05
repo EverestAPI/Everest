@@ -470,7 +470,7 @@ namespace MiniInstaller {
                 // We're lazy.
                 Environment.SetEnvironmentVariable("MONOMOD_DEPDIRS", PathGame);
                 Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "0");
-                int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmTo, 1).Concat(dllPaths).Append(asmTmp).ToArray() });
+                int returnCode = (int) AsmMonoMod.EntryPoint.Invoke(null, new object[] { Enumerable.Repeat(asmFrom, 1).Concat(dllPaths).Append(asmTmp).ToArray() });
 
                 if (returnCode != 0)
                     File.Delete(asmTmp);
