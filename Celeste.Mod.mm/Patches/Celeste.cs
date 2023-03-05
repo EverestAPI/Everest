@@ -188,6 +188,7 @@ namespace Celeste {
 
             try {
                 Everest.ParseArgs(args);
+                ParseFNAArgs(args);
                 orig_Main(args);
             } catch (Exception e) {
                 CriticalFailureHandler(e);
@@ -197,6 +198,30 @@ namespace Celeste {
             }
 
             Everest.Shutdown();
+        }
+
+        [MonoModIgnore]
+        private static extern void ParseFNAArgs(string[] args);
+
+        [MonoModReplace]
+        [MonoModIfFlag("DontRelinkXNA")]
+        [MonoModPatch("ParseFNAArgs")]
+        private static void ParseFNAArgs_FNA(string[] args) {
+            // FNA's main function already does this
+        }
+
+        [MonoModReplace]
+        [MonoModIfFlag("RelinkXNA")]
+        [MonoModPatch("ParseFNAArgs")]
+        private static void ParseFNAArgs_XNA(string[] args) {
+            Environment.SetEnvironmentVariable("FNA_AUDIO_DISABLE_SOUND", "1");
+            for (int i = 0; i < args.Length; i++) {
+                if (args[i] == "--graphics" && i < args.Length - 1) {
+                    Environment.SetEnvironmentVariable("FNA3D_FORCE_DRIVER", args[i + 1]);
+                    i++;
+                } else if (args[i] == "--disable-lateswaptear")
+                    Environment.SetEnvironmentVariable("FNA3D_DISABLE_LATESWAPTEAR", "1");
+            }
         }
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {

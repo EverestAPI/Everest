@@ -148,6 +148,7 @@ namespace MonoMod {
             // Relink against FNA
             bool didReplaceXNA = RelinkAgainstFNA(modder);
             MonoModRule.Flag.Set("RelinkXNA", didReplaceXNA);
+            MonoModRule.Flag.Set("DontRelinkXNA", !didReplaceXNA);
 
             if (didReplaceXNA)
                 modder.Log("[Celeste.Mod.mm] Converting XNA game install to FNA");
