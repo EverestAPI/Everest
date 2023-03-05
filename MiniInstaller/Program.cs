@@ -111,7 +111,7 @@ namespace MiniInstaller {
 
                     ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
 
-                    string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
+                    string[] mods = new string[] { PathEverestLib, Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
                     RunMonoMod(Path.Combine(PathEverestLib, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
                     RunMonoMod(PathEverestExe, dllPaths: mods);
 
