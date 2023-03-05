@@ -146,8 +146,11 @@ namespace MonoMod {
 
         public static void GamePreProcessor(MonoModder modder) {
             // Relink against FNA
-            if (RelinkAgainstFNA(modder))
-                MonoModRule.Flag.Set("RelinkXNA", true);
+            bool didReplaceXNA = RelinkAgainstFNA(modder);
+            MonoModRule.Flag.Set("RelinkXNA", didReplaceXNA);
+
+            if (didReplaceXNA)
+                modder.Log("[Celeste.Mod.mm] Converting XNA game install to FNA");
 
             static void VisitType(TypeDefinition type) {
                 // Remove readonly attribute from all static fields
