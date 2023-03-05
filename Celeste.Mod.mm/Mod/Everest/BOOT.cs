@@ -117,7 +117,7 @@ namespace Celeste.Mod {
                 libPath = Path.GetFullPath(libPath);
 
                 string[] ldPath = Environment.GetEnvironmentVariable(envVar)?.Split(":") ?? Array.Empty<string>();
-                if (!ldPath.Any(path => Path.GetFullPath(path) == libPath)) {
+                if (!ldPath.Any(path => !string.IsNullOrWhiteSpace(path) && Path.GetFullPath(path) == libPath)) {
                     Environment.SetEnvironmentVariable(envVar, $"{libPath}:{Environment.GetEnvironmentVariable(envVar)}");
                     Console.WriteLine($"Restarting with {envVar}=\"{Environment.GetEnvironmentVariable(envVar)}\"...");
 
