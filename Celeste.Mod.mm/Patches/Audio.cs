@@ -5,8 +5,10 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using FMOD;
 using FMOD.Studio;
+using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +20,7 @@ namespace Celeste {
 
         private static FMOD.Studio.System system;
         private static bool ready;
+        private static FMOD.Studio._3D_ATTRIBUTES attributes3d;
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
@@ -36,12 +39,36 @@ namespace Celeste {
         [MonoModIgnore]
         internal static extern void CheckFmod(RESULT result);
 
-        public static extern void orig_Init();
+        [MonoModIfFlag("RelinkXNA")]
+        [DllImport("fmod_SDL", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void FMOD_SDL_Register(IntPtr system);
+
+        [MonoModReplace]
         public static void Init() {
             bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
             Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
+        
+            // Original initialization code
+            {
+                FMOD.Studio.INITFLAGS flags = FMOD.Studio.INITFLAGS.NORMAL;
+                if (Settings.Instance.LaunchWithFMODLiveUpdate)
+                    flags = FMOD.Studio.INITFLAGS.LIVEUPDATE;
 
-            orig_Init();
+                CheckFmod(FMOD.Studio.System.create(out system));
+
+                // The following snippet is missing on XNA
+                system.getLowLevelSystem(out var lowLevelSystem);
+                if (SDL.SDL_GetPlatform().Equals("Linux"))
+                    FMOD_SDL_Register(lowLevelSystem.getRaw());
+
+                CheckFmod(system.initialize(1024, flags, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
+
+                attributes3d.forward = new VECTOR { x = 0f, y = 0f, z = 1f };
+                attributes3d.up = new VECTOR { x = 0f, y = 1f, z = 0f };
+                Audio.SetListenerPosition(new Vector3(0f, 0f, 1f), new Vector3(0f, 1f, 0f), new Vector3(0f, 0f, -345f));
+
+                ready = true;
+            }
 
             Settings.Instance.LaunchWithFMODLiveUpdate = fmodLiveUpdate;
 
