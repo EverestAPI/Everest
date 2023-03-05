@@ -10,9 +10,36 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using Celeste.Mod.Helpers;
+using SDL2;
+using System.IO;
 
 namespace Monocle {
     class patch_ErrorLog {
+
+        [MonoModIfFlag("RelinkXNA")]
+        [MonoModReplace]
+        public static string Filename = GetLogPath();
+
+        [MonoModIfFlag("RelinkXNA")]
+        private static string GetLogPath() {
+            string platform = SDL.SDL_GetPlatform(), home;
+            if (platform.Equals("Linux") || platform.Equals("FreeBSD") || platform.Equals("OpenBSD") || platform.Equals("NetBSD")) {
+                home = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+                if (!string.IsNullOrEmpty(home))
+                    return Path.Combine(home, "Celeste", "errorLog.txt");
+
+                home = Environment.GetEnvironmentVariable("HOME");
+                if (!string.IsNullOrEmpty(home))
+                    return Path.Combine(home, ".local/share/Celeste", "errorLog.txt");
+            } else if (platform.Equals("Mac OS X")) {
+                home = Environment.GetEnvironmentVariable("HOME");
+                if (!string.IsNullOrEmpty(home))
+                    return Path.Combine(home, "Library/Application Support/Celeste", "errorLog.txt");
+            } else if (!platform.Equals("Windows")) {
+                return Path.Combine(SDL.SDL_GetPrefPath(null, "Celeste"), "errorLog.txt");
+            }
+            return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "errorLog.txt");
+        }
 
         public static extern void orig_Write(Exception e);
         public static void Write(Exception e) {
@@ -39,12 +66,14 @@ namespace Monocle {
 namespace MonoMod {
     /// <summary>
     /// Find ldfld Engine::Version + ToString. Pop ToString result, call Everest::get_VersionCelesteString
+    /// Replace Filename constant on XNA
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchErrorLogWrite))]
     class PatchErrorLogWriteAttribute : Attribute { }
 
     /// <summary>
     /// Find call to Process.Start, and set UseShellExecute flag
+    /// Replace Filename constant on XNA
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchErrorLogOpen))]
     class PatchErrorLogOpenAttribute : Attribute { }
@@ -71,6 +100,10 @@ namespace MonoMod {
             // Remove all that and replace with our own string.
             cursor.RemoveRange(3);
             cursor.Emit(OpCodes.Call, m_Everest_get_VersionCelesteString);
+
+            // Patch the error log filename on XNA
+            if (IsRelinkingXNAInstall)
+                PatchErrorLogFileName(context);
         }
 
         public static void PatchErrorLogOpen(ILContext context, CustomAttribute attrib) {
@@ -108,6 +141,19 @@ namespace MonoMod {
             // Start the process
             cursor.Emit(OpCodes.Callvirt, MonoModRule.Modder.Module.ImportReference(t_Process.FindMethod("System.Boolean Start()")));
             cursor.Emit(OpCodes.Pop);
+
+            // Patch the error log filename on XNA
+            if (IsRelinkingXNAInstall)
+                PatchErrorLogFileName(context);
+        }
+
+        private static void PatchErrorLogFileName(ILContext context) {
+            ILCursor cursor = new ILCursor(context);
+            FieldDefinition f_ErrorLog_Filename = context.Method.DeclaringType.FindField("Filename");
+            while (cursor.TryGotoNext(MoveType.After, i => i.MatchLdstr("error_log.txt"))) {
+                cursor.Instrs[cursor.Index-1].OpCode = OpCodes.Ldsfld;
+                cursor.Instrs[cursor.Index-1].Operand = f_ErrorLog_Filename;
+            }
         }
 
     }
