@@ -33,6 +33,7 @@ namespace MiniInstaller {
         public static string PathOSXExecDir;
         public static string PathCelesteExe;
         public static string PathEverestExe, PathEverestDLL;
+        public static string PathEverestLib;
         public static string PathOrig;
         public static string PathLog;
         public static string PathTmp;
@@ -109,10 +110,9 @@ namespace MiniInstaller {
                         LoadModders();
 
                     ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
-                    ConvertToNETCore(Path.Combine(PathOrig, "FNA.dll"), Path.Combine(PathGame, "FNA.dll")); // Explicitly convert FNA as well, otherwise it won't convert for XNA
 
                     string[] mods = new string[] { Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
-                    RunMonoMod(Path.Combine(PathGame, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
+                    RunMonoMod(Path.Combine(PathEverestLib, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
                     RunMonoMod(PathEverestExe, dllPaths: mods);
 
                     RunHookGen(PathEverestExe, PathCelesteExe);
@@ -183,6 +183,7 @@ namespace MiniInstaller {
             // RIP Everest.exe 2019 - 2020
             PathEverestExe = PathCelesteExe;
             PathEverestDLL = Path.ChangeExtension(PathEverestExe, ".dll");
+            PathEverestLib = Path.Combine(Path.GetDirectoryName(PathEverestExe), "everest-lib");
 
             PathOrig = Path.Combine(PathGame, "orig");
             PathLog = Path.Combine(PathGame, "miniinstaller-log.txt");
@@ -240,7 +241,6 @@ namespace MiniInstaller {
 
             // Backup game dependencies
             BackupPEDeps(Path.Combine(PathOrig, Path.GetRelativePath(PathGame, PathCelesteExe)), PathGame);
-            Backup(Path.Combine(PathGame, "FNA.dll")); // Explicitly back up the FNA dll for XNA builds
 
             // Backup all system libraries explicitly, as we'll delete those
             foreach (string file in Directory.GetFiles(PathGame)) {
@@ -364,27 +364,27 @@ namespace MiniInstaller {
         }
 
         public static void SetupNativeLibs() {
-            string[] libSrcDirs;
+            string[] libSrcDirs; // Later directories take priority
             string libDstDir;
             Dictionary<string, string> dllMap = new Dictionary<string, string>();
 
             switch (Platform) {
                 case InstallPlatform.Windows: {
                     // Setup Windows native libs
-                    libSrcDirs = new string[] { Path.Combine(PathGame, "everest-lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
+                    libSrcDirs = new string[] { Path.Combine(PathEverestLib, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-win");
                     dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
                 } break;
                 case InstallPlatform.Linux: {
                     // Setup Linux native libs
-                    libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathGame, "everest-lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
+                    libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathEverestLib, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-linux");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
                 } break;
                 case InstallPlatform.MacOS:{
                     // Setup MacOS native libs
-                    libSrcDirs = new string[] { Path.Combine(PathOrig, "everest-lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                    libSrcDirs = new string[] { Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-osx");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");

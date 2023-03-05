@@ -80,9 +80,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\lib-ext\**\*">
+    <Content Include="..\lib-ext\**\*" Link="everest-lib\%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Remove="..\lib-ext\.gitignore" />
   </ItemGroup>
 
   <ItemGroup>
