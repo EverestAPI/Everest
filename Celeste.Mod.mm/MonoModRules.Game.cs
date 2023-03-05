@@ -60,6 +60,7 @@ namespace MonoMod {
     static partial class MonoModRules {
 
         public static Version MinimumGameVersion = new Version(1, 4, 0, 0);
+        public static bool IsRelinkingXNAInstall { get; private set; }
 
         static List<MethodDefinition> LevelExitRoutines = new List<MethodDefinition>();
         static List<MethodDefinition> AreaCompleteCtors = new List<MethodDefinition>();
@@ -146,11 +147,11 @@ namespace MonoMod {
 
         public static void GamePreProcessor(MonoModder modder) {
             // Relink against FNA
-            bool didReplaceXNA = RelinkAgainstFNA(modder);
-            MonoModRule.Flag.Set("RelinkXNA", didReplaceXNA);
-            MonoModRule.Flag.Set("DontRelinkXNA", !didReplaceXNA);
+            IsRelinkingXNAInstall = RelinkAgainstFNA(modder);
+            MonoModRule.Flag.Set("RelinkXNA", IsRelinkingXNAInstall);
+            MonoModRule.Flag.Set("DontRelinkXNA", !IsRelinkingXNAInstall);
 
-            if (didReplaceXNA)
+            if (IsRelinkingXNAInstall)
                 modder.Log("[Celeste.Mod.mm] Converting XNA game install to FNA");
 
             static void VisitType(TypeDefinition type) {
