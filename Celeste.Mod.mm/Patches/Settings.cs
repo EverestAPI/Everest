@@ -217,7 +217,7 @@ namespace MonoMod {
     /// <summary>
     /// Patches Settings.SetDefaultKeyboardControls to take mouse bindings into account
     /// and ensure that TranslateKeys only gets called when reset = true. Additionaly
-    /// adds missing code missing on XNA to the end of the function.
+    /// adds code missing on XNA to the end of the function.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsSetDefaultKeyboardControls))]
     class PatchSettingsSetDefaultKeyboardControls : Attribute { }
