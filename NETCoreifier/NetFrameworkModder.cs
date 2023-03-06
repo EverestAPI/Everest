@@ -14,7 +14,7 @@ namespace NETCoreifier {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
-        public bool SharedAssemblyResolver, SharedDependencies, JustDependencies;
+        public bool SharedAssemblyResolver, SharedDependencies;
         private ModuleDefinition _CoreifierModule;
 
         private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
@@ -39,18 +39,18 @@ namespace NETCoreifier {
             base.Dispose();
         }
 
-        public override void MapDependencies() {
-            // Add reference to System.Runtime + NETCoreifier
-            if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "System.Runtime")) {
-                AssemblyName runtimeName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(name => name.Name == "System.Runtime");
-                Module.AssemblyReferences.Add(AssemblyNameReference.Parse(runtimeName.FullName));
+        public void AddReferenceIfMissing(AssemblyName asmName) {
+            if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == asmName.Name)) {
+                Module.AssemblyReferences.Add(AssemblyNameReference.Parse(asmName.FullName));
             }
-            _RuntimeRef = Module.AssemblyReferences.First(asmRef => asmRef.Name == "System.Runtime");
+        }
 
-            if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "NETCoreifier")) {
-                AssemblyName coreifierName = Assembly.GetExecutingAssembly().GetName();
-                Module.AssemblyReferences.Add(AssemblyNameReference.Parse(coreifierName.FullName));
-            }
+        public void AddReferenceIfMissing(string name) => AddReferenceIfMissing(Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asmName => asmName.Name == name));
+
+        public override void MapDependencies() {
+            // Ensure critical references are present
+            AddReferenceIfMissing("System.Runtime");
+            AddReferenceIfMissing(Assembly.GetExecutingAssembly().GetName());
 
             // We have to load our own module again every time because MonoMod messes with it ._.
             _CoreifierModule ??= ModuleDefinition.ReadModule(Assembly.GetExecutingAssembly().Location) ?? throw new Exception("Failed to load .NET Coreifier assembly");
@@ -69,7 +69,7 @@ namespace NETCoreifier {
         public override void PatchRefs(ModuleDefinition mod) {
             base.PatchRefs(mod);
 
-            // Remove references to System.Private.CoreLib
+            // Remove references to private system libraries
             for (int i = 0; i < mod.AssemblyReferences.Count; i++) {
                 if (_PrivateSystemLibs.Contains(mod.AssemblyReferences[i].Name))
                     mod.AssemblyReferences.RemoveAt(i--);
@@ -81,7 +81,7 @@ namespace NETCoreifier {
 
             if (relinkedMtp is TypeReference typeRef && _PrivateSystemLibs.Contains(typeRef.Scope.Name)) {
                 // Don't reference System.Private.CoreLib directly
-                return Module.ImportReference(new TypeReference(typeRef.Namespace, typeRef.Name, Module, _RuntimeRef));
+                return Module.ImportReference(FindType(typeRef.FullName));
             }
 
             return relinkedMtp;
@@ -89,9 +89,6 @@ namespace NETCoreifier {
 
         public override void PatchRefsInMethod(MethodDefinition method) {
             base.PatchRefsInMethod(method);
-
-            if (JustDependencies)
-                return;
 
             // The CoreCLR JIT is much more aggressive about inlining, so explicitly force it to not inline in some cases
             // The performance penalty isn't that bad, and it makes modding easier
