@@ -3,6 +3,7 @@ using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Utils;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MethodBody = Mono.Cecil.Cil.MethodBody;
@@ -13,8 +14,11 @@ namespace NETCoreifier {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
-        public bool SharedAssemblyResolver, SharedDependencies;
+        public bool SharedAssemblyResolver, SharedDependencies, JustDependencies;
         private ModuleDefinition _CoreifierModule;
+
+        private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
+        private AssemblyNameReference _RuntimeRef;
 
         public override void Dispose() {
             // Don't dispose the main module
@@ -41,6 +45,7 @@ namespace NETCoreifier {
                 AssemblyName runtimeName = Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(name => name.Name == "System.Runtime");
                 Module.AssemblyReferences.Add(AssemblyNameReference.Parse(runtimeName.FullName));
             }
+            _RuntimeRef = Module.AssemblyReferences.First(asmRef => asmRef.Name == "System.Runtime");
 
             if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == "NETCoreifier")) {
                 AssemblyName coreifierName = Assembly.GetExecutingAssembly().GetName();
@@ -61,20 +66,32 @@ namespace NETCoreifier {
             base.AutoPatch();
         }
 
+        public override void PatchRefs(ModuleDefinition mod) {
+            base.PatchRefs(mod);
+
+            // Remove references to System.Private.CoreLib
+            for (int i = 0; i < mod.AssemblyReferences.Count; i++) {
+                if (_PrivateSystemLibs.Contains(mod.AssemblyReferences[i].Name))
+                    mod.AssemblyReferences.RemoveAt(i--);
+            }
+        }
+
         public override IMetadataTokenProvider Relinker(IMetadataTokenProvider mtp, IGenericParameterProvider context) {
-            if (mtp is TypeReference typeRef && typeRef.FullName.StartsWith("System.") && typeRef.SafeResolve() == null) {
-                // Try to resolve the type
-                if (FindType(typeRef.FullName) is TypeDefinition sysType) {
-                    LogVerbose($"Relinked system type '{typeRef.FullName}' to {typeRef.Module.Name}");
-                    return Module.ImportReference(sysType);
-                }
+            IMetadataTokenProvider relinkedMtp = base.Relinker(mtp, context);
+
+            if (relinkedMtp is TypeReference typeRef && _PrivateSystemLibs.Contains(typeRef.Scope.Name)) {
+                // Don't reference System.Private.CoreLib directly
+                return Module.ImportReference(new TypeReference(typeRef.Namespace, typeRef.Name, Module, _RuntimeRef));
             }
 
-            return base.Relinker(mtp, context);
+            return relinkedMtp;
         }
 
         public override void PatchRefsInMethod(MethodDefinition method) {
             base.PatchRefsInMethod(method);
+
+            if (JustDependencies)
+                return;
 
             // The CoreCLR JIT is much more aggressive about inlining, so explicitly force it to not inline in some cases
             // The performance penalty isn't that bad, and it makes modding easier

@@ -111,17 +111,17 @@ namespace MiniInstaller {
 
                     ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
 
-                    string[] mods = new string[] { PathEverestLib, Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll") };
+                    string everestModDLL = Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll");
+                    string[] mods = new string[] { PathEverestLib, everestModDLL };
                     RunMonoMod(Path.Combine(PathEverestLib, "FNA.dll"), Path.Combine(PathGame, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
                     RunMonoMod(PathEverestExe, dllPaths: mods);
 
+                    string hookGenOutput = Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"));
                     RunHookGen(PathEverestExe, PathCelesteExe);
+                    ConvertToNETCore(hookGenOutput, justDeps: true); // Fixup hookgen dependencies
 
                     MoveExecutable(PathEverestExe, PathEverestDLL);
-                    CreateRuntimeConfigFiles(PathEverestDLL, new string[] {
-                        Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll"),
-                        Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"))
-                    });
+                    CreateRuntimeConfigFiles(PathEverestDLL, new string[] { everestModDLL, hookGenOutput });
                     SetupAppHosts(PathEverestExe, PathEverestDLL, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
@@ -307,6 +307,9 @@ namespace MiniInstaller {
                     continue;
 
                 backedUpDeps.Add(asmRefPath);
+                if (File.Exists(Path.Combine(PathOrig, $"{dep}.dll")))
+                    continue;
+
                 Backup(asmRefPath);
                 BackupPEDeps(asmRefPath, depFolder, backedUpDeps);
             }
@@ -494,35 +497,40 @@ namespace MiniInstaller {
             AsmHookGen.EntryPoint.Invoke(null, new object[] { new string[] { "--private", asm, Path.Combine(Path.GetDirectoryName(target), "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(target), "dll")) } });
         }
 
-        public static void ConvertToNETCore(string asmFrom, string asmTo = null, HashSet<string> convertedAsms = null) {
+        public static void ConvertToNETCore(string asmFrom, string asmTo = null, HashSet<string> convertedAsms = null, bool justDeps = false) {
             asmTo ??= asmFrom;
             convertedAsms ??= new HashSet<string>();
 
             if (!convertedAsms.Add(asmFrom))
                 return;
 
-            // Convert dependencies first
-            string[] deps = GetPEAssemblyReferences(asmFrom).Keys.ToArray();
+            if (!justDeps) {
+                // Convert dependencies first
+                string[] deps = GetPEAssemblyReferences(asmFrom).Keys.ToArray();
 
-            if (deps.Contains("NETCoreifier"))
-                return; // Don't convert an assembly twice
+                if (deps.Contains("NETCoreifier"))
+                    return; // Don't convert an assembly twice
 
-            foreach (string dep in deps) {
-                string srcDepPath = Path.Combine(Path.GetDirectoryName(asmFrom), $"{dep}.dll");
-                string dstDepPath = Path.Combine(Path.GetDirectoryName(asmTo), $"{dep}.dll");
-                if (File.Exists(srcDepPath) && !IsSystemLibrary(srcDepPath))
-                    ConvertToNETCore(srcDepPath, dstDepPath, convertedAsms);
-                else if (File.Exists(dstDepPath) && !IsSystemLibrary(srcDepPath))
-                    ConvertToNETCore(dstDepPath, convertedAsms: convertedAsms);
+                foreach (string dep in deps) {
+                    string srcDepPath = Path.Combine(Path.GetDirectoryName(asmFrom), $"{dep}.dll");
+                    string dstDepPath = Path.Combine(Path.GetDirectoryName(asmTo), $"{dep}.dll");
+                    if (File.Exists(srcDepPath) && !IsSystemLibrary(srcDepPath))
+                        ConvertToNETCore(srcDepPath, dstDepPath, convertedAsms);
+                    else if (File.Exists(dstDepPath) && !IsSystemLibrary(srcDepPath))
+                        ConvertToNETCore(dstDepPath, convertedAsms: convertedAsms);
+                }
             }
 
-            LogLine($"Converting {asmFrom} to .NET Core");
+            if (!justDeps)
+                LogLine($"Converting {asmFrom} to .NET Core");
+            else
+                LogLine($"Converting dependencies of {asmFrom} to .NET Core");
 
             string asmTmp = Path.Combine(PathTmp, Path.GetFileName(asmTo));
             try {
                 AsmNETCoreifier.GetType("NETCoreifier.Coreifier")
-                    .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string) }, null)
-                    .Invoke(null, new object[] { asmFrom, asmTmp });
+                    .GetMethod("ConvertToNetCore", BindingFlags.Public | BindingFlags.Static, null, new Type[] { typeof(string), typeof(string), typeof(bool) }, null)
+                    .Invoke(null, new object[] { asmFrom, asmTmp, justDeps });
 
                 MoveExecutable(asmTmp, asmTo);
             } finally {
