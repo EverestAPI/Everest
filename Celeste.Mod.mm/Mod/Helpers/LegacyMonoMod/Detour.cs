@@ -232,6 +232,10 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             = typeof(Hook).Assembly.GetType("MonoMod.RuntimeDetour.IDetour").GetProperty("NextTrampoline", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
             ?? throw new InvalidOperationException("Couldn't get IDetour.NextTrampoline property");
 
+        private static readonly PropertyInfo IDetourTrampoline_TrampolineMethod
+            = typeof(Hook).Assembly.GetType("MonoMod.RuntimeDetour.IDetourTrampoline").GetProperty("TrampolineMethod", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("Couldn't get IDetourTrampoline.TrampolineMethod property");
+
         private void _Refresh() {
             if (!IsValid)
                 return;
@@ -243,7 +247,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
                 // Update the trampoline detour
                 _ChainedTrampolineDetour?.Dispose();
-                _ChainedTrampolineDetour = DetourFactory.Current.CreateDetour(_ChainedTrampoline, (MethodBase) IDetour_NextTrampoline.GetValue(actualHook));
+                _ChainedTrampolineDetour = DetourFactory.Current.CreateDetour(_ChainedTrampoline, (MethodBase) IDetourTrampoline_TrampolineMethod.GetValue(IDetour_NextTrampoline.GetValue(actualHook)));
                 GC.SuppressFinalize(_ChainedTrampolineDetour);
             } else
                 actualHook = null;
