@@ -194,6 +194,19 @@ namespace Celeste {
             return ExplodeLaunch(from, snapUp, false);
         }
 
+        public extern Vector2 orig_ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly);
+
+        public new Vector2 ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly) {
+            if (Scene is patch_Level level) {
+                level.playerWasExplodeLaunchedThisFrame = true;
+            }
+            return orig_ExplodeLaunch(from, snapUp, sidesOnly);
+        }
+
+        private bool _SkipExplodeLaunchBoostCheck() {
+            return Scene is patch_Level lvl && lvl.Session.Area.GetLevelSet() != "Celeste" && lvl.playerWasExplodeLaunchedThisFrame;
+        }
+
         private extern bool orig_Pickup(Holdable pickup);
         private bool Pickup(Holdable pickup) {
             // Madeline cannot grab something if she is dead...
@@ -295,7 +308,9 @@ namespace MonoMod {
     static partial class MonoModRules {
 
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+            TypeDefinition t_Player = context.Method.DeclaringType;
+            MethodDefinition m_IsOverWater = t_Player.FindMethod("System.Boolean _IsOverWater()");
+            MethodDefinition m_SkipExplodeLaunchBoostCheck = t_Player.FindMethod("System.Boolean _SkipExplodeLaunchBoostCheck()");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
             ILProcessor il = context.Body.GetILProcessor();
@@ -321,6 +336,16 @@ namespace MonoMod {
                     instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
                 }
             }
+            
+            // delay the explode launch boost leniency check by one frame if ExplodeLaunch was called earlier in the same frame
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "explodeLaunchBoostTimer"), instr => instr.MatchLdcR4(0f), instr => instr.MatchBleUn(out _));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_SkipExplodeLaunchBoostCheck);
+            ILLabel afterLaunchBoostCheck = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brtrue_S, afterLaunchBoostCheck);
+            cursor.GotoNext(instr => instr.MatchLdarg(0), instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "StrawberryCollectResetTimer"));
+            cursor.MarkLabel(afterLaunchBoostCheck);
         }
 
         public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {

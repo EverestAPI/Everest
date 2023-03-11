@@ -41,6 +41,8 @@ namespace Celeste {
 
         private float unpauseTimer;
 
+        internal bool playerWasExplodeLaunchedThisFrame;
+
         /// <summary>
         /// If in vanilla levels, gets the spawnpoint closest to the bottom left of the level.<br/>
         /// Otherwise, get the default spawnpoint from the level data if present, falling back to
@@ -697,6 +699,7 @@ namespace MonoMod {
             MethodReference m_Everest_CoreModule_Settings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModule").FindProperty("Settings").GetMethod;
             TypeDefinition t_Everest_CoreModuleSettings = MonoModRule.Modder.Module.GetType("Celeste.Mod.Core.CoreModuleSettings");
             MethodReference m_ButtonBinding_Pressed = MonoModRule.Modder.Module.GetType("Celeste.Mod.ButtonBinding").FindProperty("Pressed").GetMethod;
+            FieldDefinition f_playerWasExplodeLaunchedThisFrame = context.Method.DeclaringType.FindField("playerWasExplodeLaunchedThisFrame");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -705,6 +708,12 @@ namespace MonoMod {
 
             // insert FixChaserStatesTimeStamp()
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);
+
+            // insert playerWasExplodeLaunchedThisFrame = false after base.Update() call
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Monocle.Scene", "Update"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Stfld, f_playerWasExplodeLaunchedThisFrame);
 
             /* We expect something similar enough to the following:
             call class Monocle.MInput/KeyboardData Monocle.MInput::get_Keyboard() // We're here
