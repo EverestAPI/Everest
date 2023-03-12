@@ -57,6 +57,9 @@ namespace NETCoreifier {
                     moduleAttr.Properties.Clear();
                     moduleAttr.Properties.Add(new CustomAttributeNamedArgument(nameof(attr.FrameworkDisplayName), new CustomAttributeArgument(module.ImportReference(typeof(string)), attr.FrameworkDisplayName)));
                 }
+            } else {
+                // Fall back to assembly references
+                isFrameworkModule = module.AssemblyReferences.Any(asmRef => asmRef.Name == "mscorlib") && !module.AssemblyReferences.Any(asmRef => asmRef.Name == "System.Runtime");
             }
 
             if (isFrameworkModule) {
