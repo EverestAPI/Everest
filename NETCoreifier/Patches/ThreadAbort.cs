@@ -56,8 +56,8 @@ namespace NETCoreifier {
         }
 
         [MonoModLinkFrom("System.Void System.Threading.Thread::ResetAbort()")]
-        public static void ResetAbort(Thread thread)
-            => ThreadAbortStates.TryRemove(thread.ManagedThreadId, out _);
+        public static void ResetAbort()
+            => ThreadAbortStates.TryRemove(Thread.CurrentThread.ManagedThreadId, out _);
 
         [MonoModLinkFrom("System.Object System.Threading.ThreadInterruptedException::get_ExceptionState()")]
         public static object get_ExceptionState(ThreadAbortException ex)
