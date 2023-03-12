@@ -386,7 +386,7 @@ namespace MiniInstaller {
                 } break;
                 case InstallPlatform.MacOS:{
                     // Setup MacOS native libs
-                    libSrcDirs = new string[] { Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                    libSrcDirs = new string[] { Path.Combine(PathOSXExecDir, "osx"), Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-osx");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
