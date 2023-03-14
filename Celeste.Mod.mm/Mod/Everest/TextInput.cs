@@ -31,6 +31,10 @@ namespace Celeste.Mod {
                 // public static event Action<char> TextInput;
                 e_TextInput.AddEventHandler(null, new Action<char>(ReceiveTextInput).CastDelegate(e_TextInput.EventHandlerType));
 
+                // Some platforms like Linux/Wayland may require calling TextInputEXT.StartTextInput to receive events for TextInputEXT.TextInput
+                MethodInfo m_StartTextInput = t_TextInputExt?.GetMethod("StartTextInput", new Type[] { } );
+                m_StartTextInput?.Invoke(t_TextInputExt, null);
+
                 // SDL2 offers SDL_GetClipboardText and SDL_SetClipboardText
                 Type t_SDL2 = typeof(Keyboard).Assembly.GetType("SDL2.SDL");
                 _GetClipboardText = t_SDL2.GetMethod("SDL_GetClipboardText").CreateDelegate(typeof(Func<string>)) as Func<string>;
