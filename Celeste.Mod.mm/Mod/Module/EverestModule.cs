@@ -823,8 +823,18 @@ namespace Celeste.Mod {
                         }
 
                         TextMenu.Item subMenuItem = CreateItem(subTypeProp, settingsObject: propObject);
-                        if (subMenuItem != null)
-                            subMenu.Add(subMenuItem);
+                        if (subMenuItem == null)
+                            continue;
+
+                        string subsubheader = subTypeProp.GetCustomAttribute<SettingSubHeaderAttribute>()?.SubHeader;
+                        if (subsubheader != null)
+                            subMenu.Add(new TextMenu.SubHeader(subsubheader.DialogCleanOrNull() ?? subsubheader, false));
+
+                        subMenu.Add(subMenuItem);
+
+                        string subdescription = subTypeProp.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
+                        if (subdescription != null)
+                            subMenuItem.AddDescription(subMenu, menu, subdescription.DialogCleanOrNull() ?? subdescription);
                     }
                     item = subMenu;
                 }
@@ -844,11 +854,11 @@ namespace Celeste.Mod {
                 menu.Add(item);
 
                 if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
-                    item = item.NeedsRelaunch(menu);
+                    item.NeedsRelaunch(menu);
 
                 string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
                 if (description != null)
-                    item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
+                    item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
             foreach (PropertyInfo prop in type.GetProperties()) {
