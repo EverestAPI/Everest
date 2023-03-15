@@ -19,11 +19,6 @@ namespace Celeste {
         public static void Initialize() {
             orig_Initialize();
 
-            foreach (EverestModule mod in Everest._Modules)
-                mod.OnInputInitialize();
-
-            Everest.Events.Input.Initialize();
-
             //Sets the slight camera movement on the map to the set debug camera movement keys in Everest mod settings
             Input.MountainAim = new VirtualJoystick(
                 CoreModule.Settings.CameraForward.Binding,
@@ -32,6 +27,11 @@ namespace Celeste {
                 CoreModule.Settings.CameraRight.Binding,
                 Input.Gamepad, 0.1f
             );
+
+            foreach (EverestModule mod in Everest._Modules)
+                mod.OnInputInitialize();
+
+            Everest.Events.Input.Initialize();
         }
 
         public static extern void orig_Deregister();
