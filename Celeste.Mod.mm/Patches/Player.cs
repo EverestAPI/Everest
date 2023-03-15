@@ -194,17 +194,18 @@ namespace Celeste {
             return ExplodeLaunch(from, snapUp, false);
         }
 
-        public extern Vector2 orig_ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly);
-
-        public new Vector2 ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly) {
-            if (Scene is patch_Level level) {
-                level.playerWasExplodeLaunchedThisFrame = true;
-            }
-            return orig_ExplodeLaunch(from, snapUp, sidesOnly);
-        }
+        [MonoModIgnore]
+        [PatchPlayerExplodeLaunch]
+        public extern new Vector2 ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly);
 
         private bool _SkipExplodeLaunchBoostCheck() {
             return Scene is patch_Level lvl && lvl.Session.Area.GetLevelSet() != "Celeste" && lvl.playerWasExplodeLaunchedThisFrame;
+        }
+
+        private void _SetPlayerWasExplodeLaunchedThisFrame() {
+            if (Scene is patch_Level lvl) {
+                lvl.playerWasExplodeLaunchedThisFrame = true;
+            }
         }
 
         private extern bool orig_Pickup(Holdable pickup);
@@ -304,6 +305,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
     class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to fix puffer boosts breaking on respawn.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
+    class PatchPlayerExplodeLaunchAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -452,6 +459,16 @@ namespace MonoMod {
                 PatchPlaySurfaceIndex(cursor, "/footstep");
                 PatchPlaySurfaceIndex(cursor, "/handhold");
             });
+        }
+
+        public static void PatchPlayerExplodeLaunch(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_SetPlayerWasExplodeLaunchedThisFrame = context.Method.DeclaringType.FindMethod("_SetPlayerWasExplodeLaunchedThisFrame");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.Player", "explodeLaunchBoostSpeed"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
     }
