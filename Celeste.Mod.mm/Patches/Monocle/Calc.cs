@@ -56,7 +56,7 @@ namespace Monocle {
         /// <summary>
         /// Convert a hex color, possibly including an alpha value, into an XNA Color.
         /// </summary>
-        /// <param name="hex">a hex color, in either <c>RRGGBB</c>, <c>RRGGBBAA</c>, or <c>AA</c> form.</param>
+        /// <param name="hex">a hex color, in either <c>RRGGBB</c> or <c>RRGGBBAA</c> form.</param>
         /// <returns>an XNA color, defaulting to white.</returns>
         public static Color HexToColorWithAlpha(string hex) {
             int consumed = 0;
@@ -68,12 +68,6 @@ namespace Monocle {
             int r, g, b, a;
 
             switch (hex.Length - consumed) {
-                case 2:
-                    // one byte of data, for the alpha channel
-                    a = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
-                    // the other channels are fixed at white
-                    return new Color(255, 255, 255, a);
-
                 case 6:
                     // three bytes, for RGB and no alpha
                     r = Calc.HexToByte(hex[consumed++]) * 16 + Calc.HexToByte(hex[consumed++]);
