@@ -295,6 +295,27 @@ namespace MiniInstaller {
                     LogErr($"Couldn't create symlinks for vanilla saves folder!");
                 }
             }
+
+            // Apply patch vanilla libraries
+            string patchLibsDir = Path.Combine(PathEverestLib, "lib-vanilla");
+            if (Directory.Exists(patchLibsDir)) {
+                LogLine("Applying patch vanilla libraries");
+
+                foreach (string src in Directory.GetFileSystemEntries(patchLibsDir)) {
+                    string dst = Path.Combine(PathOrig, Path.GetRelativePath(patchLibsDir, src));
+                    if (File.Exists(src)) {
+                        if (File.Exists(dst))
+                            File.Delete(dst);
+                        File.Move(src, dst);
+                    } else if (Directory.Exists(src)) {
+                        if (Directory.Exists(dst))
+                            Directory.Delete(dst, true);
+                        Directory.Move(src, dst);
+                    }
+                }
+
+                Directory.Delete(patchLibsDir, true);
+            }
         }
 
         public static void BackupPEDeps(string path, string depFolder, HashSet<string> backedUpDeps = null) {
