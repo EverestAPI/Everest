@@ -78,7 +78,6 @@ namespace Celeste.Mod {
         /// </summary>
         public static ReadOnlyCollection<EverestModule> Modules => _Modules.AsReadOnly();
         internal static List<EverestModule> _Modules = new List<EverestModule>();
-        internal static Dictionary<string, EverestModule> _ModulesByName = new Dictionary<string, EverestModule>();
 
         /// <summary>
         /// The path to the directory holding Celeste.exe
@@ -496,10 +495,8 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="module">Mod to register.</param>
         public static void Register(this EverestModule module) {
-            lock (_Modules) {
+            lock (_Modules)
                 _Modules.Add(module);
-                _ModulesByName.Add(module.Metadata.Name, module);
-            }
 
             LuaLoader.Precache(module.GetType().Assembly);
 
@@ -869,11 +866,8 @@ namespace Celeste.Mod {
             // TODO: Make sure modules depending on this are unloaded as well.
             // TODO: Unload content, textures, audio, maps, AAAAAAAAAAAAAAAAAAAAAAA
 
-            lock (_Modules) {
-                int index = _Modules.IndexOf(module);
-                _Modules.RemoveAt(index);
-                _ModulesByName.Remove(module.Metadata.Name);
-            }
+            lock (_Modules)
+                _Modules.RemoveAt(_Modules.IndexOf(module));
 
             if (_Initialized) {
                 ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();

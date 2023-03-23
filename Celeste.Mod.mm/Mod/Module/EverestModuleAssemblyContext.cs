@@ -30,6 +30,7 @@ namespace Celeste.Mod {
 
         internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
         internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
+        private static readonly Dictionary<string, EverestModuleAssemblyContext> _ContextsByName = new Dictionary<string, EverestModuleAssemblyContext>();
 
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
@@ -69,18 +70,19 @@ namespace Celeste.Mod {
             // Resolve dependecies
             lock (Everest._Modules) {
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
-                    if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
-                        DependencyContexts.Add(module.Metadata.AssemblyContext);
+                    if (_ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
+                        DependencyContexts.Add(alc);
 
                 foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
-                    if (Everest._ModulesByName.TryGetValue(dep.Name, out EverestModule module) && module.Metadata.AssemblyContext != null)
-                        DependencyContexts.Add(module.Metadata.AssemblyContext);
+                    if (_ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
+                        DependencyContexts.Add(alc);
             }
 
             // Add to mod ALC list
             _AllContextsLock.EnterWriteLock();
             try {
                 listNode = _AllContexts.AddLast(this);
+                _ContextsByName.Add(meta.Name, this);
             } finally {
                 _AllContextsLock.ExitWriteLock();
             }
@@ -96,6 +98,7 @@ namespace Celeste.Mod {
                 _AllContextsLock.EnterWriteLock();
                 try {
                     _AllContexts.Remove(listNode);
+                    _ContextsByName.Remove(ModuleMeta.Name);
                     listNode = null;
                 } finally {
                     _AllContextsLock.ExitWriteLock();
