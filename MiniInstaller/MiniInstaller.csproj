@@ -19,12 +19,14 @@
   <!-- Resolve AppHosts -->
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
+    <PackageReference Include="runtime.win-x86.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
     <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.2" GeneratePathProperty="true" ExcludeAssets="all" />
   </ItemGroup>
 
   <PropertyGroup>
+    <AppHost_win-x86>$(Pkgruntime_win-x86_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x86\native\apphost.exe</AppHost_win-x86>
     <AppHost_win-x64>$(Pkgruntime_win-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x64\native\apphost.exe</AppHost_win-x64>
     <AppHost_linux-x64>$(Pkgruntime_linux-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\linux-x64\native\apphost</AppHost_linux-x64>
     <AppHost_osx-x64>$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost</AppHost_osx-x64>
@@ -32,7 +34,8 @@
 
   <!-- Include AppHosts in the build (so that MiniInstaller can bind them for the Celeste executable) -->
   <ItemGroup>
-    <Content Include="$(AppHost_win-x64)" TargetPath="apphosts\win.exe" CopyToOutputDirectory="always" />
+    <Content Include="$(AppHost_win-x86)" TargetPath="apphosts\win.x86.exe" CopyToOutputDirectory="always" />
+    <Content Include="$(AppHost_win-x64)" TargetPath="apphosts\win.x64.exe" CopyToOutputDirectory="always" />
     <Content Include="$(AppHost_linux-x64)" TargetPath="apphosts\linux" CopyToOutputDirectory="always" />
     <Content Include="$(AppHost_osx-x64)" TargetPath="apphosts\osx" CopyToOutputDirectory="always" />
   </ItemGroup>
@@ -40,13 +43,13 @@
   <!-- Bind AppHosts for MiniInstaller itself -->
   <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
     <PropertyGroup>
-      <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\MiniInstaller-win.exe</AppHostIntermediatePath_win-x64>
+      <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\MiniInstaller-win.exe</AppHostIntermediatePath_win-x86>
       <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\MiniInstaller-linux</AppHostIntermediatePath_linux-x64>
       <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\MiniInstaller-osx</AppHostIntermediatePath_osx-x64>
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
     </ItemGroup>
@@ -55,7 +58,7 @@
   <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
     <Message Importance="High" Text="Binding MiniInstaller AppHosts..." />
 
-    <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
   </Target>

@@ -130,7 +130,7 @@ namespace Celeste.Mod {
             }
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                SetDllDirectory(Path.Combine(AppContext.BaseDirectory, "lib64-win")); // Windows is the only platform with an API like this
+                SetDllDirectory(Path.Combine(AppContext.BaseDirectory, $"lib64-win-{(Environment.Is64BitProcess ? "x64" : "x86")}")); // Windows is the only platform with an API like this
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 EnsureLibPathEnvVarSet("LD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-linux"));
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))

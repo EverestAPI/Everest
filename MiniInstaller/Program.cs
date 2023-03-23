@@ -387,27 +387,36 @@ namespace MiniInstaller {
         }
 
         public static void SetupNativeLibs() {
-            string[] libSrcDirs; // Later directories take priority
+            string[] libSrcs; // Later entries take priority
             string libDstDir;
             Dictionary<string, string> dllMap = new Dictionary<string, string>();
 
             switch (Platform) {
                 case InstallPlatform.Windows: {
                     // Setup Windows native libs
-                    libSrcDirs = new string[] { Path.Combine(PathEverestLib, "lib64-win"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
-                    libDstDir = Path.Combine(PathGame, "lib64-win");
-                    dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
+                    if (Environment.Is64BitOperatingSystem) {
+                        libSrcs = new string[] { Path.Combine(PathEverestLib, "lib64-win-x64"), Path.Combine(PathGame, "runtimes", "win-x64", "native") };
+                        libDstDir = Path.Combine(PathGame, "lib64-win-x64");
+                        dllMap.Add("fmodstudio64.dll", "fmodstudio.dll");
+                    } else {
+                        // We can take some native libraries from the vanilla install
+                        libSrcs = new string[] {
+                            Path.Combine(PathOrig, "fmod.dll"), Path.Combine(PathOrig, "fmodstudio.dll"), Path.Combine(PathOrig, "steam_api.dll"),
+                            Path.Combine(PathEverestLib, "lib64-win-x86"), Path.Combine(PathGame, "runtimes", "win-x86", "native")
+                        };
+                        libDstDir = Path.Combine(PathGame, "lib64-win-x86");
+                    }
                 } break;
                 case InstallPlatform.Linux: {
                     // Setup Linux native libs
-                    libSrcDirs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathEverestLib, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
+                    libSrcs = new string[] { Path.Combine(PathOrig, "lib64"), Path.Combine(PathEverestLib, "lib64-linux"), Path.Combine(PathGame, "runtimes", "linux-x64", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-linux");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
                 } break;
                 case InstallPlatform.MacOS:{
                     // Setup MacOS native libs
-                    libSrcDirs = new string[] { Path.Combine(PathOSXExecDir, "osx"), Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                    libSrcs = new string[] { Path.Combine(PathOSXExecDir, "osx"), Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-osx");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
@@ -419,31 +428,37 @@ namespace MiniInstaller {
             if (!Directory.Exists(libDstDir))
                 Directory.CreateDirectory(libDstDir);
 
-            foreach (string libSrcDir in libSrcDirs) {
-                if (!Directory.Exists(libSrcDir))
+            foreach (string libSrc in libSrcs) {
+                if (!Directory.Exists(libSrc))
                     continue;
 
-                LogLine($"Copying native libraries from {libSrcDir} -> {libDstDir}");
-
-                foreach (string fileSrc in Directory.GetFiles(libSrcDir)) {
-                    string fileDst = Path.Combine(libDstDir, Path.GetRelativePath(libSrcDir, fileSrc));
-
+                void CopyNativeLib(string src, string dst) {
                     string symlinkPath = null;
-                    if (dllMap.TryGetValue(Path.GetFileName(fileDst), out string mappedName)) {
+                    if (dllMap.TryGetValue(Path.GetFileName(dst), out string mappedName)) {
                         // On Linux, additionally create a symlink for the unmapped path
                         // Luckilfy for us only Linux requires such symlinks, as Windows can't create them
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                            symlinkPath = fileDst;
+                            symlinkPath = dst;
 
-                        fileDst = Path.Combine(Path.GetDirectoryName(fileDst), mappedName);
+                        dst = Path.Combine(Path.GetDirectoryName(dst), mappedName);
                     }
 
-                    File.Copy(fileSrc, fileDst, true);
+                    File.Copy(src, dst, true);
 
-                    if (symlinkPath != null && symlinkPath != fileDst) {
+                    if (symlinkPath != null && symlinkPath != dst) {
                         File.Delete(symlinkPath);
-                        File.CreateSymbolicLink(symlinkPath, fileDst);
+                        File.CreateSymbolicLink(symlinkPath, dst);
                     }
+                }
+
+                if (File.Exists(libSrc)) {
+                    string libDst = Path.Combine(libDstDir, Path.GetFileName(libSrc));
+                    LogLine($"Copying native library from {libSrc} -> {libDst}");
+                    CopyNativeLib(libSrc, libDst);
+                } else if (Directory.Exists(libSrc)) {
+                    LogLine($"Copying native libraries from {libSrc} -> {libDstDir}");
+                    foreach (string fileSrc in Directory.GetFiles(libSrc))
+                        CopyNativeLib(fileSrc, Path.Combine(libDstDir, Path.GetRelativePath(libSrc, fileSrc)));
                 }
             }
 
@@ -686,8 +701,12 @@ namespace MiniInstaller {
             switch (Platform) {
                 case InstallPlatform.Windows: {
                     // Bind Windows apphost
-                    LogLine($"Binding Windows apphost {appExe}");
-                    HostWriter.CreateAppHost(Path.Combine(hostsDir, "win.exe"), appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll), assemblyToCopyResorcesFrom: resDll);
+                    LogLine($"Binding Windows {(Environment.Is64BitOperatingSystem ? "64" : "32")} bit apphost {appExe}");
+                    HostWriter.CreateAppHost(
+                        Path.Combine(hostsDir, $"win.{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}.exe"),
+                        appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll),
+                        assemblyToCopyResorcesFrom: resDll
+                    );
                 } break;
                 case InstallPlatform.Linux:{
                     // Bind Linux apphost
