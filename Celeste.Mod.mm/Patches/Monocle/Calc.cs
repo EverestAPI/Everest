@@ -53,5 +53,27 @@ namespace Monocle {
             return MathHelper.Clamp((num - zeroAt) / (oneAt - zeroAt), 0f, 1f);
         }
 
+        [MonoModReplace]
+        public static Vector2 Approach(Vector2 val, Vector2 target, float maxMove) {
+            if (maxMove == 0f || val == target)
+                return val;
+
+            Vector2 delta = target - val;
+            if (delta.Length() < maxMove)
+                return target;
+
+            delta.Normalize();
+            return new Vector2((float) (val.X + (double) delta.X * maxMove), (float) (val.Y + (double) delta.Y * maxMove)); // Patch in XNA float jank
+        }
+
+        [MonoModReplace]
+        public static Vector3 Approach(this Vector3 v, Vector3 target, float amount) {
+            if (amount > (target - v).Length())
+                return target;
+
+            Vector3 delta = (target - v).SafeNormalize();
+            return new Vector3((float) (v.X + (double) delta.X * amount), (float) (v.Y + (double) delta.Y * amount), (float) (v.Z + (double) delta.Z * amount)); // Patch in XNA float jank
+        }
+
     }
 }

@@ -6,7 +6,7 @@ using MonoMod;
 namespace Celeste {
     class patch_Actor : Actor {
 
-        private Vector2 movementCounter;
+        private Vector2 movementCounter = default;
 
         public patch_Actor(Vector2 position)
             : base(position) {

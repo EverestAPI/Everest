@@ -1,0 +1,38 @@
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Microsoft.Xna.Framework;
+using Monocle;
+using MonoMod;
+
+namespace Celeste {
+    class patch_FinalBossMovingBlock : FinalBossMovingBlock {
+
+        private Vector2 movementCounter = default;
+
+        public patch_FinalBossMovingBlock(EntityData data, Vector2 offset)
+            : base(data, offset) {
+            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        [MonoModPatch("<>c__DisplayClass14_0")]
+        class patch_MoveSequenceLambdas {
+
+            [MonoModPatch("<>4__this")]
+            private patch_FinalBossMovingBlock _this = default;
+            private Vector2 from = default, to = default;
+
+            [MonoModReplace]
+            [MonoModPatch("<MoveSequence>b__0")]
+            public void TweenUpdateLambda(Tween t) {
+                // Patch this to always behave like XNA
+                // This is absolutely hecking ridiculous and a perfect example of why we want to switch to .NET Core
+                // The Y member gets downcast but not the X one because of JIT jank
+                double lerpX = from.X + ((double) to.X - from.X) * t.Eased, lerpY = from.Y + ((double) to.Y - from.Y) * t.Eased;
+                _this.MoveH((float) (lerpX - _this.Position.X - _this.movementCounter.X));
+                _this.MoveV((float) ((double) (float) lerpY - _this.Position.Y - _this.movementCounter.Y));
+            }
+
+        }
+
+    }
+}
