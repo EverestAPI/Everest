@@ -5,7 +5,7 @@ using MonoMod;
 namespace Celeste {
     public class patch_CustomSpriteEffect : CustomSpriteEffect {
 
-        private EffectParameter matrixParam;
+        private EffectParameter matrixParam = default;
 
         [MonoModIgnore]
         public patch_CustomSpriteEffect(Effect effect) : base(effect) {}
