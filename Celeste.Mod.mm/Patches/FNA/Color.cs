@@ -2,7 +2,7 @@
 
 namespace Microsoft.Xna.Framework {
     [GameDependencyPatch("FNA")]
-    public struct patch_Color {
+    struct patch_Color {
 
         // The following signatures existed in older versions of FNA when they shouldn't have.
 

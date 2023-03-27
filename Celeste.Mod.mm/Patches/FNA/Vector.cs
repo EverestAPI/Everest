@@ -13,7 +13,7 @@ namespace Microsoft.Xna.Framework {
     // (everything also depends on if the assembly was compiled in Debug/Release mode - there's your XNA/FNA desyncs)
 
     [GameDependencyPatch("FNA")]
-    public struct patch_Vector2 {
+    struct patch_Vector2 {
 
         public float X, Y;
 
