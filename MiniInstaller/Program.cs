@@ -466,7 +466,7 @@ namespace MiniInstaller {
             foreach (string libFile in WindowsNativeLibFileNames)
                 File.Delete(Path.Combine(PathGame, libFile));
 
-            foreach (string libDir in new string[] { "lib", "lib64", "everest-lib64-win", "everest-lib64-linux", "everest-lib64-osx", "runtimes" }) {
+            foreach (string libDir in new string[] { "lib", "lib64", "everest-lib64", "runtimes" }) {
                 if (Directory.Exists(Path.Combine(PathGame, libDir)))
                     Directory.Delete(Path.Combine(PathGame, libDir), true);
             }
