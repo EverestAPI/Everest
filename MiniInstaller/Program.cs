@@ -299,21 +299,22 @@ namespace MiniInstaller {
             // Apply patch vanilla libraries
             string patchLibsDir = Path.Combine(PathEverestLib, "lib-vanilla");
             if (Directory.Exists(patchLibsDir)) {
-                LogLine("Applying patch vanilla libraries");
-
-                foreach (string src in Directory.GetFileSystemEntries(patchLibsDir)) {
-                    string dst = Path.Combine(PathOrig, Path.GetRelativePath(patchLibsDir, src));
-                    if (File.Exists(src)) {
-                        if (File.Exists(dst))
-                            File.Delete(dst);
-                        File.Move(src, dst);
-                    } else if (Directory.Exists(src)) {
-                        if (Directory.Exists(dst))
-                            Directory.Delete(dst, true);
-                        Directory.Move(src, dst);
+                static void ApplyVanillaPatchLibs(string patchLibsDir, string targetDir) {
+                    foreach (string src in Directory.GetFileSystemEntries(patchLibsDir)) {
+                        string dst = Path.Combine(targetDir, Path.GetRelativePath(patchLibsDir, src));
+                        if (File.Exists(src)) {
+                            if (File.Exists(dst))
+                                File.Delete(dst);
+                            File.Move(src, dst);
+                        } else if (Directory.Exists(src)) {
+                            Directory.CreateDirectory(dst);
+                            ApplyVanillaPatchLibs(src, dst);
+                        }
                     }
                 }
 
+                LogLine("Applying patch vanilla libraries");
+                ApplyVanillaPatchLibs(patchLibsDir, PathOrig);
                 Directory.Delete(patchLibsDir, true);
             }
         }
@@ -416,7 +417,7 @@ namespace MiniInstaller {
                 } break;
                 case InstallPlatform.MacOS:{
                     // Setup MacOS native libs
-                    libSrcs = new string[] { Path.Combine(PathOSXExecDir, "osx"), Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
+                    libSrcs = new string[] { Path.Combine(PathOrig, "osx"), Path.Combine(PathEverestLib, "lib64-osx"), Path.Combine(PathGame, "runtimes", "osx", "native") };
                     libDstDir = Path.Combine(PathGame, "lib64-osx");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "osx", dllMap, "lib{0}.dylib");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "osx", dllMap, "lib{0}.dylib");
