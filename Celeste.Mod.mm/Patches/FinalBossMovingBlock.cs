@@ -29,8 +29,11 @@ namespace Celeste {
                 // The Y member gets downcast but not the X one because of JIT jank
                 double lerpX = from.X + ((double) to.X - from.X) * t.Eased, lerpY = from.Y + ((double) to.Y - from.Y) * t.Eased;
                 _this.MoveH((float) (lerpX - _this.Position.X - _this.movementCounter.X));
-                _this.MoveV((float) ((double) (float) lerpY - _this.Position.Y - _this.movementCounter.Y));
+                _this.MoveV((float) ((double) JITBarrier((float) lerpY) - _this.Position.Y - _this.movementCounter.Y));
             }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static float JITBarrier(float v) => v;
 
         }
 
