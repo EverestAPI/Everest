@@ -1,13 +1,13 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using System.Runtime.CompilerServices;
 
 namespace Celeste {
     class patch_FinalBossMovingBlock : FinalBossMovingBlock {
 
-        private Vector2 movementCounter = default;
+        [MonoModLinkTo("Celeste.Platform", "movementCounter")]
+        internal Vector2 movementCounter = default;
 
         public patch_FinalBossMovingBlock(EntityData data, Vector2 offset)
             : base(data, offset) {
