@@ -60,7 +60,7 @@ namespace Microsoft.Xna.Framework {
     }
 
     [GameDependencyPatch("FNA")]
-    public struct patch_Vector3 {
+    struct patch_Vector3 {
 
         public float X, Y, Z;
 
@@ -109,7 +109,7 @@ namespace Microsoft.Xna.Framework {
 
 
     [GameDependencyPatch("FNA")]
-    public struct patch_Vector4 {
+    struct patch_Vector4 {
 
         public float X, Y, Z, W;
 
