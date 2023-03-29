@@ -8,8 +8,9 @@ using System.Runtime.CompilerServices;
 namespace Celeste {
     class patch_DreamBlock : DreamBlock {
 
-        [MonoModLinkTo("Celeste.Platform", "movementCounter")]
-        internal Vector2 movementCounter = default;
+        internal Vector2 movementCounter {
+            [MonoModLinkTo("Celeste.Platform", "get__movementCounter")] get;
+        }
 
         private bool playerHasDreamDash;
         private LightOcclude occlude;

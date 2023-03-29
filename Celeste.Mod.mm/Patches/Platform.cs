@@ -5,9 +5,8 @@ using System;
 namespace Celeste {
     abstract class patch_Platform : Platform {
 
-        // internal has the same BindingFlags as private, so this is safe to do
-        [MonoModReplace]
-        internal Vector2 movementCounter = default;
+        private Vector2 movementCounter = default;
+        internal Vector2 _movementCounter => movementCounter; // proxy for Solid patches to link against
 
         public patch_Platform(Vector2 position, bool safe)
             : base(position, safe) {

@@ -6,8 +6,9 @@ using System.Runtime.CompilerServices;
 namespace Celeste {
     class patch_FinalBossMovingBlock : FinalBossMovingBlock {
 
-        [MonoModLinkTo("Celeste.Platform", "movementCounter")]
-        internal Vector2 movementCounter = default;
+        internal Vector2 movementCounter {
+            [MonoModLinkTo("Celeste.Platform", "get__movementCounter")] get;
+        }
 
         public patch_FinalBossMovingBlock(EntityData data, Vector2 offset)
             : base(data, offset) {
