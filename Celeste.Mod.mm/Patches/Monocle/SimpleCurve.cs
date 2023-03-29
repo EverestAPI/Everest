@@ -1,6 +1,5 @@
 using Microsoft.Xna.Framework;
 using MonoMod;
-using System;
 
 namespace Monocle {
     // Patch XNA/FNA float jank differences
@@ -16,17 +15,13 @@ namespace Monocle {
             );
         }
 
-        // Separate high-precision calculation method as to not have to inline this into LengthParametric
-        private void __GetPoint(double percent, out double outX, out double outY) {
-            double num = 1.0 - percent;
-            outX = num * num * Begin.X + 2.0 * num * percent * Control.X + percent * percent * End.X;
-            outY = num * num * Begin.Y + 2.0 * num * percent * Control.Y + percent * percent * End.Y;
-        }
-
         [MonoModReplace]
         public Vector2 GetPoint(float percent) {
-            __GetPoint(percent, out double x, out double y);
-            return new Vector2((float) x, (float) y);
+            double num = 1.0 - percent;
+            return new Vector2(
+                (float) ((double) (float) (num * num) * Begin.X + (float) (2.0 * num * percent) * Control.X + (float) (percent * percent) * End.X),
+                (float) ((double) (float) (num * num) * Begin.Y + (float) (2.0 * num * percent) * Control.Y + (float) (percent * percent) * End.Y)
+            );
         }
 
         [MonoModReplace]
@@ -34,9 +29,9 @@ namespace Monocle {
             Vector2 vector = Begin;
             float num = 0f;
             for (int i = 1; i <= resolution; i++) {
-                __GetPoint((double) i / resolution, out double pointX, out double pointY);
-                num += (float) Math.Sqrt((pointX - vector.X)*(pointX - vector.X) + (pointY - vector.Y)*(pointY - vector.Y));
-                vector = new Vector2((float) pointX, (float) pointY);
+                Vector2 point = GetPoint((float) i / resolution);
+                num += Vector2.Distance(point, vector);
+                vector = point;
             }
             return num;
         }
