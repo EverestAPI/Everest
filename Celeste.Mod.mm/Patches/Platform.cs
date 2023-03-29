@@ -31,6 +31,11 @@ namespace Celeste {
         }
 
         [MonoModReplace]
+        public new void MoveToXNaive(float toX) {
+            MoveHNaive((float) ((double) toX - Position.X - movementCounter.X));
+        }
+
+        [MonoModReplace]
         public new void MoveToY(float toY) {
             MoveV((float) ((double) toY - Position.Y - movementCounter.Y));
         }
@@ -38,6 +43,11 @@ namespace Celeste {
         [MonoModReplace]
         public new void MoveToY(float toY, float liftSpeedY) {
             MoveV((float) ((double) toY - Position.Y - movementCounter.Y), liftSpeedY);
+        }
+
+        [MonoModReplace]
+        public new void MoveToYNaive(float toY) {
+            MoveVNaive((float) ((double) toY - Position.Y - movementCounter.Y));
         }
 
     }
