@@ -25,9 +25,9 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public void Normalize() {
-            float invLen = (float) (1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y));
-            X *= invLen;
-            Y *= invLen;
+            double invLen = 1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y);
+            X = (float) (X * invLen);
+            Y = (float) (Y * invLen);
         }
 
         [MonoModReplace]
@@ -72,10 +72,10 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public void Normalize() {
-            float invLen = (float) (1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y + (double) Z * (double) Z));
-            X *= invLen;
-            Y *= invLen;
-            Z *= invLen;
+            double invLen = 1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y + (double) Z * (double) Z);
+            X = (float) (X * invLen);
+            Y = (float) (Y * invLen);
+            Z = (float) (Z * invLen);
         }
 
         [MonoModReplace]
@@ -121,11 +121,11 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public void Normalize() {
-            float invLen = (float) (1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y + (double) Z * (double) Z + (double) W * (double) W));
-            X *= invLen;
-            Y *= invLen;
-            Z *= invLen;
-            W *= invLen;
+            double invLen = 1.0 / (float) Math.Sqrt((double) X * (double) X + (double) Y * (double) Y + (double) Z * (double) Z + (double) W * (double) W);
+            X = (float) (X * invLen);
+            Y = (float) (Y * invLen);
+            Z = (float) (Z * invLen);
+            W = (float) (W * invLen);
         }
 
         [MonoModReplace]
