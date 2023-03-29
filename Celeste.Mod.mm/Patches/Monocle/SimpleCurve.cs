@@ -30,7 +30,7 @@ namespace Monocle {
             float num = 0f;
             for (int i = 1; i <= resolution; i++) {
                 Vector2 point = GetPoint((float) i / resolution);
-                num += Vector2.Distance(point, vector);
+                num += (point - vector).Length();
                 vector = point;
             }
             return num;
