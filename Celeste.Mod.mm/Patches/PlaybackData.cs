@@ -93,13 +93,18 @@ namespace Celeste {
             Tutorials?.Clear();
 
             // load vanilla tutorials
-            foreach (string path in Directory.GetFiles(Path.Combine(Engine.ContentDirectory, "Tutorials"))) {
-                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
-                Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
+            try {
+                foreach (string path in Directory.GetFiles(Path.Combine(Engine.ContentDirectory, "Tutorials"))) {
+                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(path);
+                    Logger.Log(LogLevel.Verbose, "PlaybackData", $"Loading vanilla tutorial: {fileNameWithoutExtension}");
 
-                List<Player.ChaserState> tutorial = Import(File.ReadAllBytes(path));
-                if (tutorial != null)
-                    PlaybackData.Tutorials.Add(fileNameWithoutExtension, tutorial);
+                    List<Player.ChaserState> tutorial = Import(File.ReadAllBytes(path));
+                    if (tutorial != null)
+                        PlaybackData.Tutorials.Add(fileNameWithoutExtension, tutorial);
+                }
+            } catch (DirectoryNotFoundException e) {
+                Logger.Log(LogLevel.Error, "PlaybackData", "Vanilla Tutorials folder could not be found.");
+                e.LogDetailed();
             }
 
             // load mod tutorials

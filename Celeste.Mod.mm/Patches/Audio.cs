@@ -274,6 +274,18 @@ namespace Celeste {
             return desc;
         }
 
+        [MonoModIgnore]
+        public static extern EventInstance orig_CreateSnapshot(string name, bool start);
+        public static EventInstance CreateSnapshot(string name, bool start) {
+            try {
+                return orig_CreateSnapshot(name, start);
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Error, "Audio", "Failed to create snapshot: " + name);
+                Logger.LogDetailed(e);
+                return null;
+            }
+        }
+
         public static class patch_Banks {
 
             public static Dictionary<string, Bank> Banks = new Dictionary<string, Bank>();
@@ -295,21 +307,32 @@ namespace Celeste {
                     bank = IngestBank(asset);
 
                 } else {
-                    system.loadBankFile(
-                        Path.Combine(Engine.ContentDirectory, "FMOD", "Desktop", name + ".bank"),
-                        LOAD_BANK_FLAGS.NORMAL, out bank
-                    ).CheckFMOD();
+                    try {
+                        system.loadBankFile(
+                            Path.Combine(Engine.ContentDirectory, "FMOD", "Desktop", name + ".bank"),
+                            LOAD_BANK_FLAGS.NORMAL, out bank
+                        ).CheckFMOD();
+                    } catch (Exception e) {
+                        Logger.Log(LogLevel.Error, "Audio", "Error loading vanilla .bank file: " + name);
+                        Logger.LogDetailed(e);
+                        return bank;
+                    }
                 }
 
                 if (loadStrings) {
                     if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}.strings", out asset)) {
                         IngestBank(asset);
                     } else {
-                        Bank strings;
-                        system.loadBankFile(
-                            Path.Combine(Engine.ContentDirectory, "FMOD", "Desktop", name + ".strings.bank"),
-                            LOAD_BANK_FLAGS.NORMAL, out strings
-                        ).CheckFMOD();
+                        try {
+                            system.loadBankFile(
+                                Path.Combine(Engine.ContentDirectory, "FMOD", "Desktop", name + ".strings.bank"),
+                                LOAD_BANK_FLAGS.NORMAL, out Bank _
+                            ).CheckFMOD();
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Error, "Audio", "Error loading vanilla .strings.bank file: " + name);
+                            Logger.LogDetailed(e);
+                            return bank;
+                        }
                     }
                 }
 

@@ -2,6 +2,7 @@
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
@@ -55,6 +56,16 @@ namespace Celeste {
             MTexture mTexture = GuiTexture("mouse", name);
             if (mTexture is null && fallback is not null)
                 return GFX.Gui[fallback];
+            return mTexture;
+        }
+
+        [MonoModIgnore]
+        private static extern MTexture orig_GuiDirection(Vector2 direction);
+
+        public static MTexture GuiDirection(Vector2 direction) {
+            MTexture mTexture = orig_GuiDirection(direction);
+            if (mTexture is null)
+                return GFX.Gui["controls/keyboard/oemquestion"];
             return mTexture;
         }
 

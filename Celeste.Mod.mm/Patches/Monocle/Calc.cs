@@ -21,6 +21,7 @@ namespace Monocle {
             }
             if (orig_ContentXMLExists(filename))
                 return orig_LoadContentXML(filename);
+            Logger.Log(LogLevel.Warn, "Content", "XML File not found: " + filename);
             return new XmlDocument();
         }
 
@@ -34,6 +35,7 @@ namespace Monocle {
             }
             if (orig_XMLExists(filename))
                 return orig_LoadXML(filename);
+            Logger.Log(LogLevel.Warn, "Content", "XML File not found: " + filename);
             return new XmlDocument();
         }
 

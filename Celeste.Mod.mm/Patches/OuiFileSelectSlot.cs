@@ -316,6 +316,24 @@ namespace Celeste {
             tween.OnComplete = t => tween = null;
             tween.Start();
         }
+
+        [MonoModReplace]
+        private void Setup() {
+            try {
+                string text = "portrait_madeline";
+                string id = "idle_normal";
+                Portrait = GFX.PortraitsSpriteBank.Create(text);
+                Portrait.Play(id);
+                Portrait.Scale = Vector2.One *
+                    (200f / (float)GFX.PortraitsSpriteBank.SpriteData[text]
+                    .Sources[0].XML.AttrInt("size", 160));
+            } catch (KeyNotFoundException) {
+                // SpriteData[text] will throw this error if `portrait_madeline` does not exist.
+                // Any relevant error messages will already have been logged by this point.
+            }
+            Add(Portrait);
+        }
+
     }
 }
 

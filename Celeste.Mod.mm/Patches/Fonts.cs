@@ -32,7 +32,17 @@ namespace Celeste {
         public static extern void Prepare();
 
         private static string[] _GetFiles(string path, string searchPattern, SearchOption searchOption) {
-            string[] vanillaFiles = Directory.GetFiles(path, searchPattern, searchOption);
+            string[] vanillaFiles;
+            try {
+                vanillaFiles = Directory.GetFiles(path, searchPattern, searchOption);
+                if (vanillaFiles.Length < 1)
+                    Logger.Log(LogLevel.Error, "Dialog", "No vanilla font files found in folder: " + path);
+            } catch (DirectoryNotFoundException e) {
+                Logger.Log(LogLevel.Error, "Dialog", "Vanilla dialog folder does not exist: " + path);
+                Logger.LogDetailed(e);
+                vanillaFiles = new string[0];
+            }
+
 
             lock (Everest.Content.Map)
                 return Everest.Content.Map.Values

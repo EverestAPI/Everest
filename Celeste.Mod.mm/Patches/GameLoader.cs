@@ -7,15 +7,15 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Utils;
 
 namespace Celeste {
     class patch_GameLoader : GameLoader {
@@ -93,7 +93,27 @@ namespace Celeste {
 
             GFX.Load();
             MTN.Load();
-            GFX.LoadData();
+            try {
+                GFX.LoadData();
+            } catch (NullReferenceException e) {
+                if (GFX.AnimatedTilesBank is not null
+                    && new StackTrace(e).GetFrame(0).GetMethod().DeclaringType == typeof(GFX)) {
+                    // AnimatedTilesBank is the last to be setup in orig_Load. Exceptions after this point
+                    // are either from mods or from loading the AnimatedTiles.xml
+                    Logger.Log(LogLevel.Error, "GFX", "Failed loading AnimatedTiles.xml: " +
+                        "File is likely missing or does not contain a <Data> root element.");
+                    Logger.LogDetailed(e);
+                } else {
+                    throw;
+                }
+            } catch (KeyNotFoundException e) {
+                // This isn't worth attempting to recover from due to how integrated PlayerSprite is with gameplay
+                // We'll just re-throw with a more helpful exception for now.
+                if (e.TypeInStacktrace(typeof(PlayerSprite)))
+                    throw new Exception("Failed loading player sprite metadata.", e);
+                throw;
+            }
+
             MTN.LoadData();
 
             timer = Stopwatch.StartNew();

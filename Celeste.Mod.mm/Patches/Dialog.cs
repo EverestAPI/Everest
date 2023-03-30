@@ -25,9 +25,18 @@ namespace Celeste {
         }
 
         public static List<string> GetVanillaLanguageFileList(string root, string searchPattern, SearchOption searchOption) {
-            return Directory.GetFiles(root, searchPattern, searchOption)
-                .Select(f => f.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/'))
-                .ToList();
+            try {
+                List<string> vanillaFiles = Directory.GetFiles(root, searchPattern, searchOption)
+                    .Select(f => f.Substring(Everest.Content.PathContentOrig.Length + 1).Replace('\\', '/'))
+                    .ToList();
+                if (vanillaFiles.Count < 1)
+                    Logger.Log(LogLevel.Error, "Dialog", "No vanilla font files found in folder: " + root);
+                return vanillaFiles;
+            } catch (DirectoryNotFoundException e) {
+                Logger.Log(LogLevel.Error, "Dialog", "Vanilla dialog folder does not exist: " + root);
+                Logger.LogDetailed(e);
+                return new List<string>();
+            }
         }
 
         private static string[] _GetFiles(string root, string searchPattern, SearchOption searchOption) {
