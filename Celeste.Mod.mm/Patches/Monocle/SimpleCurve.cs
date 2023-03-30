@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using MonoMod;
+using System.Runtime.CompilerServices;
 
 namespace Monocle {
     // Patch XNA/FNA float jank differences
@@ -19,8 +20,8 @@ namespace Monocle {
         public Vector2 GetPoint(float percent) {
             double num = 1.0 - percent;
             return new Vector2(
-                (float) ((double) (float) (num * num) * Begin.X + (float) (2.0 * num * percent) * Control.X + (float) (percent * percent) * End.X),
-                (float) ((double) (float) (num * num) * Begin.Y + (float) (2.0 * num * percent) * Control.Y + (float) (percent * percent) * End.Y)
+                (float) ((double) JITBarrier((float) (num * num)) * Begin.X + (double) JITBarrier((float) (2.0 * num * percent)) * Control.X + (double) JITBarrier((float) ((double) percent * percent)) * End.X),
+                (float) ((double) JITBarrier((float) (num * num)) * Begin.Y + (double) JITBarrier((float) (2.0 * num * percent)) * Control.Y + (double) JITBarrier((float) ((double) percent * percent)) * End.Y)
             );
         }
 
@@ -35,6 +36,9 @@ namespace Monocle {
             }
             return num;
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private float JITBarrier(float v) => v;
 
     }
 }
