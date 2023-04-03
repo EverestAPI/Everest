@@ -26,7 +26,7 @@ namespace Celeste.Mod {
             ?.GetMethod("FNA3D_Image_Free")
             ?.CreateDelegate<d_FNA3D_Image_Free>();
 
-        public static readonly bool TextureSetDataSupportsPtr = Everest.Flags.IsFNA;
+        public static readonly bool TextureSetDataSupportsPtr = true; //We only support FNA
 
         /// <summary>
         /// Determine if the MTexture depicts a region of a larger VirtualTexture.

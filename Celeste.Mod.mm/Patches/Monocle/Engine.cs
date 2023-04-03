@@ -23,6 +23,7 @@ namespace Monocle {
 
 #pragma warning disable CS0649 // variable defined in vanilla
         private Scene nextScene;
+        private static bool resizing;
 #pragma warning restore CS0649
 
         /// <summary>
@@ -66,6 +67,24 @@ namespace Monocle {
                                  .Aggregate(1f, (acc, val) => acc * val)
                    ?? 1;
         }
+
+        [MonoModReplace]
+        public static new void SetFullscreen() {
+            //The original method has a Stadia check here - we don't really care about preserving it
+            resizing = true;
+
+            Graphics.PreferredBackBufferWidth = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Width;
+            Graphics.PreferredBackBufferHeight = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Height;
+            Graphics.IsFullScreen = true;
+            Graphics.ApplyChanges();
+
+            //Force exclusive fullscreen
+            SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
+
+            Console.WriteLine("FULLSCREEN");
+            resizing = false;
+        }
+
 
     }
     public static class EngineExt {

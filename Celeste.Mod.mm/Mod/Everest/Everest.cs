@@ -963,7 +963,7 @@ namespace Celeste.Mod {
 
             AppDomain.CurrentDomain.SetData("EverestRestart", true);
             scene.RunAfterRender = () => {
-                if (Flags.IsXNA && Engine.Graphics.IsFullScreen) {
+                if (Engine.Graphics.IsFullScreen) {
                     Engine.SetWindowed(320 * (Settings.Instance?.WindowScale ?? 1), 180 * (Settings.Instance?.WindowScale ?? 1));
                 }
                 Engine.Instance.Exit();
