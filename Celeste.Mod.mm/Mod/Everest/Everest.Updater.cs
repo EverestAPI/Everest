@@ -47,7 +47,7 @@ namespace Celeste.Mod {
 
                 public UpdatePriority UpdatePriority = UpdatePriority.Low;
 
-                public string Index;
+                public Func<string> Index;
 
                 public Func<Source, string, List<Entry>> ParseData;
 #pragma warning disable CS0649
@@ -83,7 +83,7 @@ namespace Celeste.Mod {
                         Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
                         using (WebClient wc = new WebClient()) {
                             wc.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
-                            data = wc.DownloadString(Index);
+                            data = wc.DownloadString(Index());
                         }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
@@ -142,21 +142,21 @@ namespace Celeste.Mod {
 
                     UpdatePriority = UpdatePriority.High,
 
-                    Index = GetEverestUpdaterDatabaseURL(),
+                    Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("stable")
                 },
                 new Source {
                     Name = "updater_src_beta",
                     Description = "updater_src_release_github",
 
-                    Index = GetEverestUpdaterDatabaseURL(),
+                    Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("beta")
                 },
                 new Source {
                     Name = "updater_src_dev",
                     Description = "updater_src_buildbot_azure",
 
-                    Index = GetEverestUpdaterDatabaseURL(),
+                    Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("dev")
                 },
             };
