@@ -65,8 +65,8 @@ namespace Monocle {
         internal void UpdateClosed() {
             if (!canOpen) {
                 canOpen = true;
-            // Original code only checks OemTillde and Oem8, leaving QWERTZ users in the dark...
-            } else if (MInput.Keyboard.Pressed(Keys.OemTilde, Keys.Oem8) || CoreModule.Settings.DebugConsole.Pressed) {
+            // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
+            } else if (CoreModule.Settings.DebugConsole.Pressed) {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {
@@ -358,7 +358,7 @@ namespace Monocle {
             if (!Open) {
                 return;
             }
-            if (key == '~' || key == '`') {
+            if (key == '~' || key == '`') { // closing fallback using vanilla characters, which are unlikely to be used as part of commands
                 Open = canOpen = false;
                 return;
             }
