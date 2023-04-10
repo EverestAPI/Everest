@@ -19,10 +19,9 @@ namespace Celeste.Mod.Entities {
         }
 
         public override void OnStay(Player player) {
-            patch_AudioState audioState = (patch_AudioState) SceneAs<Level>().Session.Audio;
-
-            audioState.AmbienceVolume = Calc.ClampedMap(GetPositionLerp(player, positionMode), 0f, 1f, from, to);
-            audioState.Apply();
+            float ambienceVolume = Calc.ClampedMap(GetPositionLerp(player, positionMode), 0f, 1f, from, to);
+            ((patch_AudioState) SceneAs<Level>().Session.Audio).AmbienceVolume = ambienceVolume;
+            Audio.CurrentAmbienceEventInstance?.setVolume(ambienceVolume);
         }
     }
 }
