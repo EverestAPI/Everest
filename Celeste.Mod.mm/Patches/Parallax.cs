@@ -61,8 +61,10 @@ namespace Celeste {
             int width = LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width;
             int height = LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height;
             
+            // take advantage of the PointWrap sampler state to draw in a single draw call
             Rectangle rect = new Rectangle(FlipX ? -width : 0, FlipY ? -height : 0, width, height);
-            ((patch_MTexture) Texture).Draw(position, Vector2.Zero, color, 1f, 0f, flip, rect); // take advantage of the PointWrap sampler state to draw in a single draw call
+            float scaleFix = ((patch_MTexture) Texture).ScaleFix;
+            Draw.SpriteBatch.Draw(((patch_MTexture) Texture).Texture.Texture, position, rect, color, 0f, -((patch_MTexture) Texture).DrawOffset / scaleFix, scaleFix, flip, 0f);
         }
     }
 }
