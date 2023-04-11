@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework.Input;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using System;
@@ -249,29 +250,20 @@ namespace Celeste.Mod.Core {
             }
         }
 
-        private bool _DiscordRichPresence = true;
-        public bool DiscordRichPresence {
-            get => _DiscordRichPresence;
-            set {
-                _DiscordRichPresence = value;
-                if (value) {
-                    Everest.Discord.Initialize();
-                } else {
-                    Everest.Discord.Disable();
-                }
-            }
-        }
+        public bool DiscordRichPresence { get; set; } = true;
 
         [SettingIgnore]
-        public string DiscordLib { get; set; } = "";
+        public bool DiscordShowIcon { get; set; } = true;
         [SettingIgnore]
-        public string DiscordID { get; set; } = "";
+        public bool DiscordShowMap { get; set; } = true;
         [SettingIgnore]
-        public string DiscordTextInMenu { get; set; } = "📋 Menu";
+        public bool DiscordShowSide { get; set; } = true;
         [SettingIgnore]
-        public string DiscordTextInGame { get; set; } = "🗻 ((area)) 📼 ((side))";
+        public bool DiscordShowRoom { get; set; } = false;
         [SettingIgnore]
-        public string DiscordSubtextInGame { get; set; } = "((deaths)) x 💀 | ((strawberries)) x 🍓";
+        public bool DiscordShowBerries { get; set; } = true;
+        [SettingIgnore]
+        public bool DiscordShowDeaths { get; set; } = true;
 
         [SettingIgnore]
         public int DebugRCPort { get; set; } = 32270;
@@ -313,7 +305,7 @@ namespace Celeste.Mod.Core {
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemPeriod)]
         public ButtonBinding DebugConsole { get; set; }
-        
+
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.F6)]
         public ButtonBinding DebugMap { get; set; }
@@ -418,6 +410,97 @@ namespace Celeste.Mod.Core {
                     })
                 );
             }
+        }
+
+        public void CreateDiscordRichPresenceEntry(TextMenu menu, bool inGame) {
+            Session session = (Engine.Scene as Level)?.Session;
+
+            TextMenu.Option<bool> showSide = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowside"), DiscordShowSide)
+                .Change(value => {
+                    DiscordShowSide = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Option<bool> showRoom = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowroom"), DiscordShowRoom)
+                .Change(value => {
+                    DiscordShowRoom = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showMap = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowmap"), DiscordShowMap)
+                .Change(value => {
+                    DiscordShowMap = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+
+                    showSide.Disabled = !DiscordShowMap;
+                    showRoom.Disabled = !DiscordShowMap;
+
+                    if (!DiscordShowMap) {
+                        showSide.Index = 0;
+                        showRoom.Index = 0;
+                        DiscordShowSide = false;
+                        DiscordShowRoom = false;
+                    }
+                });
+
+            TextMenu.Item showIcon = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowicon"), DiscordShowIcon)
+                .Change(value => {
+                    DiscordShowIcon = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showDeaths = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowdeaths"), DiscordShowDeaths)
+                .Change(value => {
+                    DiscordShowDeaths = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenu.Item showBerries = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordshowberries"), DiscordShowBerries)
+                .Change(value => {
+                    DiscordShowBerries = value;
+                    Everest.DiscordSDK.Instance?.UpdatePresence(session);
+                });
+
+            TextMenuExt.SubMenu submenu = new TextMenuExt.SubMenu(Dialog.Clean("modoptions_coremodule_discordrichpresenceoptions"), false)
+                .Add(showIcon)
+                .Add(showMap)
+                .Add(showSide)
+                .Add(showRoom)
+                .Add(showDeaths)
+                .Add(showBerries);
+
+            TextMenuExt.EaseInSubHeaderExt failureWarning = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean("modoptions_coremodule_discordfailed"), false, menu) {
+                TextColor = Color.Goldenrod,
+                HeightExtra = 0f
+            };
+
+            TextMenu.Item masterSwitch = new TextMenu.OnOff(Dialog.Clean("modoptions_coremodule_discordrichpresence"), DiscordRichPresence)
+                .Change(value => {
+                    DiscordRichPresence = value;
+                    if (DiscordRichPresence) {
+                        Everest.DiscordSDK.CreateInstance()?.UpdatePresence(session);
+                    } else {
+                        Everest.DiscordSDK.Instance?.Dispose();
+                    }
+                    submenu.Disabled = !value;
+                    failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+                });
+
+            masterSwitch.OnEnter += delegate {
+                failureWarning.FadeVisible = DiscordRichPresence && Everest.DiscordSDK.Instance == null;
+            };
+            masterSwitch.OnLeave += delegate {
+                failureWarning.FadeVisible = false;
+            };
+
+            menu.Add(masterSwitch);
+            menu.Add(failureWarning);
+
+            submenu.Disabled = !DiscordRichPresence;
+            showSide.Disabled = !DiscordShowMap;
+            showRoom.Disabled = !DiscordShowMap;
+
+            menu.Add(submenu);
         }
 
         public enum VanillaTristate {

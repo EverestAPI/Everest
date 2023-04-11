@@ -245,11 +245,9 @@ namespace Celeste {
 
             // Satisfies error handling for the orig_ method too.
             if (!lookup.TryGetValue(tile, out patch_TerrainType terrainType)) {
-                throw new AutotilerException($"Level contains a tileset with an id of '{tile}' that is not defined.") {
-                    Source = "TileHandler",
-                    ID = tile,
-                    X = x,
-                    Y = y
+                Logger.Log(LogLevel.Error, "Autotiler", $"Undefined tile id '{tile}' at ({x}, {y})");
+                return new patch_Tiles {
+                    Textures = { ((patch_Atlas) GFX.Game).GetFallback() },
                 };
             }
 
@@ -385,7 +383,7 @@ namespace Celeste {
         }
 
         public bool TryGetCustomDebris(out string path, char tiletype) {
-            return !string.IsNullOrEmpty(path = lookup[tiletype].Debris);
+            return !string.IsNullOrEmpty(path = lookup.TryGetValue(tiletype, out patch_TerrainType t) ? t.Debris : "");
         }
 
         // Required because TerrainType is private.

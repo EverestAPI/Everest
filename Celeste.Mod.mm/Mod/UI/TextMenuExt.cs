@@ -99,6 +99,7 @@ namespace Celeste {
 
             public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1f;
+            public bool AlwaysCenter { get; set; }
 
             public float HeightExtra { get; set; } = 48f;
 
@@ -116,11 +117,11 @@ namespace Celeste {
                 Color strokeColor = Color.Black * (alpha * alpha * alpha);
 
                 Vector2 textPosition = position + (
-                    Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ?
+                    Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter ?
                     new Vector2(0f, MathHelper.Max(0f, 32f - 48f + HeightExtra)) :
                     new Vector2(Container.Width * 0.5f, MathHelper.Max(0f, 32f - 48f + HeightExtra))
                 );
-                Vector2 justify = new Vector2(Container.InnerContent == TextMenu.InnerContentMode.TwoColumn ? 0f : 0.5f, 0.5f);
+                Vector2 justify = new Vector2(Container.InnerContent == TextMenu.InnerContentMode.TwoColumn && !AlwaysCenter ? 0f : 0.5f, 0.5f);
 
                 DrawIcon(
                     position,
@@ -1337,5 +1338,20 @@ namespace Celeste {
             #endregion
 
         }
+
+        public class BatchModeContext : IDisposable {
+
+            patch_TextMenu menu;
+
+            public BatchModeContext(patch_TextMenu menu) {
+                menu.BatchMode = true;
+                this.menu = menu;
+            }
+
+            public void Dispose() {
+                menu.BatchMode = false;
+            }
+        }
+
     }
 }

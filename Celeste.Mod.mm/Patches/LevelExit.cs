@@ -55,8 +55,8 @@ namespace Celeste {
             completeLoaded = true;
         }
 
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLevelExitRoutine] // ... except for slapping an additional parameter to / updating newobj AreaComplete
+        [MonoModIgnore]
+        [PatchLevelExitRoutine]
         private extern IEnumerator Routine();
 
         [MonoModIgnore] // We don't want to change anything about the method...
@@ -77,7 +77,8 @@ namespace Celeste {
 
 namespace MonoMod {
     /// <summary>
-    /// Slap a ldfld completeMeta right before newobj AreaComplete
+    /// Replace the AreaComplete ctor with one that will take in a complete screen meta.
+    /// Set Session.RestartedFromGolden after a golden berry death.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.RegisterLevelExitRoutine))]
     class PatchLevelExitRoutineAttribute : Attribute { }
@@ -96,39 +97,41 @@ namespace MonoMod {
         }
 
         public static void PatchLevelExitRoutine(MethodDefinition method) {
+            string newCtorId = "System.Void .ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow,Celeste.Mod.Meta.MapMetaCompleteScreen)";
+            MethodDefinition m_areaCompleteCtor = method.Module.GetType("Celeste.AreaComplete").FindMethod(newCtorId);
             FieldDefinition f_completeMeta = method.DeclaringType.FindField("completeMeta");
+            FieldDefinition f_sessionRestartedFromGolden = method.Module.GetType("Celeste.Session").FindField("RestartedFromGolden");
 
             // The level exit routine is stored in a compiler-generated method.
-            method = method.GetEnumeratorMoveNext();
-            FieldDefinition f_this = method.DeclaringType.FindField("<>4__this");
+            MethodDefinition routine = method.GetEnumeratorMoveNext();
+            FieldDefinition f_this = routine.DeclaringType.FindField("<>4__this");
 
-            Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
-            ILProcessor il = method.Body.GetILProcessor();
-            for (int instri = 0; instri < instrs.Count; instri++) {
-                Instruction instr = instrs[instri];
-                MethodReference calling = instr.Operand as MethodReference;
-                string callingID = calling?.GetID();
+            new ILContext(routine).Invoke((il) => {
+                ILCursor cursor = new ILCursor(il);
 
-                // The original AreaComplete .ctor has been modified to contain an extra parameter.
-                // For safety, check against both signatures.
-                if (instr.OpCode != OpCodes.Newobj ||
-                    (callingID != "System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow)" &&
-                        callingID != "System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow,Celeste.Mod.Meta.MapMetaCompleteScreen)")
-                ) {
-                    continue;
-                }
-
-                // For safety, replace the .ctor call if the new .ctor exists already.
-                instr.Operand = calling.DeclaringType.Resolve().FindMethod("System.Void Celeste.AreaComplete::.ctor(Celeste.Session,System.Xml.XmlElement,Monocle.Atlas,Celeste.HiresSnow,Celeste.Mod.Meta.MapMetaCompleteScreen)") ?? instr.Operand;
-
-                instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
-
+                // Replace the AreaComplete ctor with one that will take in the new completeMeta field
+                //  Before: Engine.Scene = new AreaComplete(this.session, this.completeXml, this.completeAtlas, this.snow);
+                //  After:  Engine.Scene = new AreaComplete(this.session, this.completeXml, this.completeAtlas, this.snow, this.completeMeta);
+                cursor.GotoNext(instr => instr.MatchNewobj("Celeste.AreaComplete"));
+                cursor.Next.Operand = m_areaCompleteCtor ?? cursor.Next.Operand; // "For safety, replace the .ctor call if the new .ctor exists already." - still needed?
+                cursor.Emit(OpCodes.Ldarg_0);
                 if (f_this != null) {
-                    instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_this));
+                    cursor.Emit(OpCodes.Ldfld, f_this);
                 }
+                cursor.Emit(OpCodes.Ldfld, f_completeMeta);
 
-                instrs.Insert(instri++, il.Create(OpCodes.Ldfld, f_completeMeta));
-            }
+                // Set Session.RestartedFromGolden to true after a golden berry death
+                //         session = this.session.Restart(this.GoldenStrawberryEntryLevel);
+                //  After: session.RestartedFromGolden = true;
+                int newSessionLoc = -1;
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld("Celeste.LevelExit", "GoldenStrawberryEntryLevel"),
+                    instr => instr.MatchCallvirt("Celeste.Session", "Restart"), 
+                    instr => instr.MatchStloc(out newSessionLoc));
+                cursor.Emit(OpCodes.Ldloc, newSessionLoc);
+                cursor.Emit(OpCodes.Ldc_I4_1);
+                cursor.Emit(OpCodes.Stfld, f_sessionRestartedFromGolden);
+            });
         }
 
         public static void PatchAreaCompleteMusic(ILContext context, CustomAttribute attrib) {

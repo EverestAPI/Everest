@@ -68,7 +68,7 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Override the given MTexutre with the given VirtualTexture and parameters.
+        /// Override the given MTexture with the given VirtualTexture and parameters.
         /// </summary>
         public void SetOverride(VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight) {
             if (!_HasOrig) {
@@ -89,7 +89,7 @@ namespace Monocle {
         }
 
         /// <summary>
-        /// Override the given MTexutre with the given mod asset.
+        /// Override the given MTexture with the given mod asset.
         /// </summary>
         public void SetOverride(ModAsset asset) {
             if (!_HasOrig && Texture.GetMetadata() == asset) {
@@ -209,6 +209,8 @@ namespace Monocle {
 
             return new Rectangle(x, y, w, h);
         }
+
+        public bool IsPacked => Width != Texture.Width || Height != Texture.Height;
 
         #region Drawing Methods
 

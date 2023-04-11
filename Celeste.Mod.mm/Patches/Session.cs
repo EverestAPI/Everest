@@ -4,6 +4,8 @@ using MonoMod;
 
 namespace Celeste {
     public class patch_Session {
+        public bool RestartedFromGolden;
+
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
 
         [MonoModConstructor]

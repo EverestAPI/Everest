@@ -307,7 +307,7 @@ namespace Celeste.Mod {
                     Loader.NameTemporaryBlacklist = queue.Dequeue();
 
                 else if (arg == "--loglevel" && queue.Count >= 1) {
-                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level)) 
+                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level))
                         Logger.SetLogLevelFromSettings("", level);
                 }
             }
@@ -512,6 +512,8 @@ namespace Celeste.Mod {
 
             // Request the mod update list as well.
             ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
+
+            DiscordSDK.LoadRichPresenceIcons();
         }
 
         internal static bool _Initialized;

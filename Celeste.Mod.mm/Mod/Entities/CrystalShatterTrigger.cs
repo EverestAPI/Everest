@@ -25,9 +25,13 @@ namespace Celeste.Mod.Entities {
                 if (mode == Modes.All)
                     Audio.Play("event:/game/06_reflection/boss_spikes_burst");
 
-                foreach (CrystalStaticSpinner spinner in spinners)
-                    if (CollideCheck(spinner) || mode == Modes.All)
+                foreach (CrystalStaticSpinner spinner in spinners) {
+                    bool wasCollidable = spinner.Collidable;
+                    spinner.Collidable = true;
+                    if (mode == Modes.All || CollideCheck(spinner))
                         spinner.Destroy();
+                    spinner.Collidable = wasCollidable;
+                }
             }
 
             RemoveSelf();

@@ -113,5 +113,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
+  </ItemGroup>
   
 </Project>
