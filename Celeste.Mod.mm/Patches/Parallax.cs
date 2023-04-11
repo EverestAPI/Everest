@@ -64,7 +64,7 @@ namespace Celeste {
             // take advantage of the PointWrap sampler state to draw in a single draw call
             Rectangle rect = new Rectangle(FlipX ? -width : 0, FlipY ? -height : 0, width, height);
             float scaleFix = ((patch_MTexture) Texture).ScaleFix;
-            Draw.SpriteBatch.Draw(((patch_MTexture) Texture).Texture.Texture, position, rect, color, 0f, -((patch_MTexture) Texture).DrawOffset / scaleFix, scaleFix, flip, 0f);
+            Draw.SpriteBatch.Draw(Texture.Texture.Texture, position, rect, color, 0f, -Texture.DrawOffset / scaleFix, scaleFix, flip, 0f);
         }
     }
 }
