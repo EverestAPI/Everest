@@ -312,19 +312,19 @@ namespace Celeste.Mod.Core {
 
         [SettingSubHeader("MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER")]
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.W)]
+        [DefaultButtonBinding(Buttons.RightThumbstickUp, Keys.W)]
         public ButtonBinding CameraForward { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.S)]
+        [DefaultButtonBinding(Buttons.RightThumbstickDown, Keys.S)]
         public ButtonBinding CameraBackward { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.D)]
+        [DefaultButtonBinding(Buttons.RightThumbstickRight, Keys.D)]
         public ButtonBinding CameraRight { get; set; }
 
         [SettingInGame(false)]
-        [DefaultButtonBinding(0, Keys.A)]
+        [DefaultButtonBinding(Buttons.RightThumbstickLeft, Keys.A)]
         public ButtonBinding CameraLeft { get; set; }
 
         [SettingInGame(false)]
