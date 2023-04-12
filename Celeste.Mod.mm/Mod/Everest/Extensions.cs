@@ -335,8 +335,15 @@ namespace Celeste.Mod {
         public static bool IsUp(this TouchLocationState state)
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
+        [ThreadStatic]
+        private static HashSet<string> _SafeTypes;
         public static bool IsSafe(this Type type) {
+            _SafeTypes ??= new HashSet<string>();
+
             try {
+                if (_SafeTypes.Contains(type.AssemblyQualifiedName))
+                    return true;
+
                 // "Probe" the type
                 _ = type.Name;
                 _ = type.Assembly.FullName;
@@ -348,6 +355,7 @@ namespace Celeste.Mod {
                 if (!type.BaseType?.IsSafe() ?? false)
                     return false;
 
+                _SafeTypes.Add(type.AssemblyQualifiedName);
                 return true;
             } catch {
                 return false;
