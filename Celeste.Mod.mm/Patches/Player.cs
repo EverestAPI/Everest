@@ -43,7 +43,7 @@ namespace Celeste {
         public bool IsIntroState {
             get {
                 int state = StateMachine.State;
-                return StIntroWalk <= state && state <= StIntroWakeUp;
+                return state is >= StIntroWalk and <= StIntroWakeUp or StIntroMoonJump or StIntroThinkForABit;
             }
         }
 
