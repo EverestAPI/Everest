@@ -32,5 +32,10 @@ namespace Celeste.Mod.Helpers {
             } else
                 Engine.Commands.Log($"Invalid log level! Use Verbose, Debug, Info, Warn, or Error");
         }
+
+        [Command("modoptions", "toggles Everest's 'Show Mod Options in Game' setting")]
+        public static void ToggleShowModOptions() {
+            Core.CoreModule.Settings.ShowModOptionsInGame = !Core.CoreModule.Settings.ShowModOptionsInGame;
+        }
     }
 }
