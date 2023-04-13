@@ -3,9 +3,15 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 namespace Celeste {
     class patch_DreamBlock : DreamBlock {
+
+        internal Vector2 movementCounter {
+            [MonoModLinkTo("Celeste.Platform", "get__movementCounter")] get;
+        }
+
         private bool playerHasDreamDash;
         private LightOcclude occlude;
         private float whiteHeight;
@@ -185,5 +191,36 @@ namespace Celeste {
             }
             return pos;
         }
+
+        // Patch XNA/FNA jank in Tween.OnUpdate lambda
+        [MonoModPatch("<>c__DisplayClass22_0")]
+        class patch_AddedLambdas {
+            
+            [MonoModPatch("<>4__this")]
+            private patch_DreamBlock _this = default;
+            private Vector2 start = default, end = default;
+
+            [MonoModReplace]
+            [MonoModPatch("<Added>b__0")]
+            public void TweenUpdateLambda(Tween t) {
+                // Patch this to always behave like XNA
+                // This is absolutely hecking ridiculous and a perfect example of why we want to switch to .NET Core
+                // The Y member gets downcast but not the X one because of JIT jank
+                double lerpX = start.X + ((double) end.X - start.X) * t.Eased, lerpY = start.Y + ((double) end.Y - start.Y) * t.Eased;
+                float moveHDelta = (float) (lerpX - _this.Position.X - _this.movementCounter.X), moveVDelta = (float) ((double) JITBarrier((float) lerpY) - _this.Position.Y - _this.movementCounter.Y);
+                if (_this.Collidable) {
+                    _this.MoveH(moveHDelta);
+                    _this.MoveV(moveVDelta);
+                } else {
+                    _this.MoveHNaive(moveHDelta);
+                    _this.MoveVNaive(moveVDelta);
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static float JITBarrier(float v) => v;
+
+        }
+
     }
 }
