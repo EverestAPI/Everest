@@ -184,6 +184,20 @@ namespace Celeste {
             return ExplodeLaunch(from, snapUp, false);
         }
 
+        [MonoModIgnore]
+        [PatchPlayerExplodeLaunch]
+        public extern new Vector2 ExplodeLaunch(Vector2 from, bool snapUp, bool sidesOnly);
+
+        private bool _SkipExplodeLaunchBoostCheck() {
+            return Scene is patch_Level lvl && lvl.Session.Area.GetLevelSet() != "Celeste" && lvl.playerWasExplodeLaunchedThisFrame;
+        }
+
+        private void _SetPlayerWasExplodeLaunchedThisFrame() {
+            if (Scene is patch_Level lvl) {
+                lvl.playerWasExplodeLaunchedThisFrame = true;
+            }
+        }
+
         private extern bool orig_Pickup(Holdable pickup);
         private bool Pickup(Holdable pickup) {
             // Madeline cannot grab something if she is dead...
@@ -281,11 +295,19 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
     class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to fix puffer boosts breaking on respawn.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
+    class PatchPlayerExplodeLaunchAttribute : Attribute { }
 
     static partial class MonoModRules {
 
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+            TypeDefinition t_Player = context.Method.DeclaringType;
+            MethodDefinition m_IsOverWater = t_Player.FindMethod("System.Boolean _IsOverWater()");
+            MethodDefinition m_SkipExplodeLaunchBoostCheck = t_Player.FindMethod("System.Boolean _SkipExplodeLaunchBoostCheck()");
 
             Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
             ILProcessor il = context.Body.GetILProcessor();
@@ -311,6 +333,16 @@ namespace MonoMod {
                     instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
                 }
             }
+            
+            // delay the explode launch boost leniency check by one frame if ExplodeLaunch was called earlier in the same frame
+            ILCursor cursor = new ILCursor(context);
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "explodeLaunchBoostTimer"), instr => instr.MatchLdcR4(0f), instr => instr.MatchBleUn(out _));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_SkipExplodeLaunchBoostCheck);
+            ILLabel afterLaunchBoostCheck = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brtrue_S, afterLaunchBoostCheck);
+            cursor.GotoNext(instr => instr.MatchLdarg(0), instr => instr.MatchLdarg(0), instr => instr.MatchLdfld("Celeste.Player", "StrawberryCollectResetTimer"));
+            cursor.MarkLabel(afterLaunchBoostCheck);
         }
 
         public static void PatchPlayerBeforeUpTransition(ILContext context, CustomAttribute attrib) {
@@ -417,6 +449,16 @@ namespace MonoMod {
                 PatchPlaySurfaceIndex(cursor, "/footstep");
                 PatchPlaySurfaceIndex(cursor, "/handhold");
             });
+        }
+
+        public static void PatchPlayerExplodeLaunch(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_SetPlayerWasExplodeLaunchedThisFrame = context.Method.DeclaringType.FindMethod("_SetPlayerWasExplodeLaunchedThisFrame");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.Player", "explodeLaunchBoostSpeed"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
     }
