@@ -12,21 +12,16 @@ namespace Monocle {
         [MonoModIgnore]
         public patch_Tileset(MTexture texture, int tileWidth, int tileHeight)
             : base(texture, tileWidth, tileHeight) {}
+        
+        // patch compiler generated methods directly to circumvent MonoMod issue with patching properties with identical names
+        [MonoModReplace]
+        public MTexture get_Item(int x, int y) => tiles[x % tiles.GetLength(0), y % tiles.GetLength(1)];
 
-        public new MTexture this[int x, int y] {
-            [MonoModReplace]
-            get {
-                return tiles[x % tiles.GetLength(0), y % tiles.GetLength(1)];
-            }
-        }
-
-        public new MTexture this[int index] {
-            [MonoModReplace]
-            get {
-                if (index < 0)
-                    return null;
-                return tiles[index % tiles.GetLength(0), (index / tiles.GetLength(0)) % tiles.GetLength(1)];
-            }
+        [MonoModReplace]
+        public MTexture get_Item(int index) {
+            if (index < 0)
+                return null;
+            return tiles[index % tiles.GetLength(0), (index / tiles.GetLength(0)) % tiles.GetLength(1)];
         }
     }
 }
