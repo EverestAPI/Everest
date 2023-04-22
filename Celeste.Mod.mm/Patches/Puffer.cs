@@ -14,7 +14,7 @@ namespace Celeste {
 
         public override void Added(Scene scene) {
             base_Added(scene);
-            if ((scene as Level).Session.Area.GetLevelSet() != "Celeste") {
+            if (Depth == 0 && ((patch_AreaKey) (object) (scene as Level).Session.Area).LevelSet != "Celeste") {
                 Depth = -1; // makes puffer boosts work after player respawn or other depth reset
             }
         }
