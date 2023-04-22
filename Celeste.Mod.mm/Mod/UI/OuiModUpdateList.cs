@@ -25,22 +25,6 @@ namespace Celeste.Mod.UI {
 
         private bool shouldRestart = false;
 
-        private class CheckForUpdates {
-            public Dictionary<string, ModUpdateInfo> updateCatalog = null;
-            public SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
-
-            public void Fetch() {
-                // 1. Download the mod updates database
-                updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
-
-                // 2. Find out what actually has been updated
-                if (updateCatalog != null) {
-                    availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
-                }
-            }
-        }
-
-        private CheckForUpdates currentCheckForUpdates = null;
         private List<ModUpdateHolder> updatableMods = new List<ModUpdateHolder>();
 
         private static bool ongoingUpdateCancelled = false;
@@ -62,8 +46,7 @@ namespace Celeste.Mod.UI {
 
             Scene.Add(menu);
 
-            currentCheckForUpdates = new CheckForUpdates();
-            task = new Task(() => currentCheckForUpdates.Fetch());
+            task = new Task(() => checkForUpdates());
             task.Start();
 
             menu.Visible = Visible = true;
@@ -96,98 +79,41 @@ namespace Celeste.Mod.UI {
             menu.RemoveSelf();
             menu = null;
 
-            currentCheckForUpdates = null;
             updatableMods = new List<ModUpdateHolder>();
 
             task = null;
         }
 
         public override void Update() {
-            // check if the "press Back to restart" message has to be toggled
-            if (menu != null && subHeader != null) {
-                if (menu.Focused && shouldRestart) {
-                    subHeader.TextColor = Color.OrangeRed;
-                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
-                } else if (!menu.Focused && ongoingUpdateCancelled && menuOnScreen) {
-                    subHeader.TextColor = Color.Gray;
-                    subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_CANCELLING")})";
-                } else {
-                    subHeader.TextColor = Color.Gray;
-                    subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
-                }
+            if (menu == null || subHeader == null) { // not ready yet, skip for now
+                base.Update();
+                return;
+            }
+            
+            if (task != null && !task.IsCompleted) { // something is going on, we need to wait for it before we can do anything
+                base.Update();
+                return;
             }
 
-            if (menu != null && task != null && task.IsCompleted) {
-                // there is no download or install task in progress
+            // check if the "press Back to restart" message has to be toggled
+            if (menu.Focused && shouldRestart) {
+                subHeader.TextColor = Color.OrangeRed;
+                subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+            } else if (!menu.Focused && ongoingUpdateCancelled && menuOnScreen) {
+                subHeader.TextColor = Color.Gray;
+                subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_CANCELLING")})";
+            } else {
+                subHeader.TextColor = Color.Gray;
+                subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
+            }
 
-                if (fetchingButton != null) {
-                    // This means fetching the updates just finished. We have to remove the "Checking for updates" button
-                    // and put the actual update list instead.
-
-                    Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
-
-                    menu.Remove(fetchingButton);
-                    fetchingButton = null;
-
-                    if (currentCheckForUpdates.updateCatalog == null) {
-                        // display an error message
-                        TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
-                        button.Disabled = true;
-                        menu.Add(button);
-                    } else if (currentCheckForUpdates.availableUpdatesCatalog.Count == 0) {
-                        // display a dummy "no update available" button
-                        TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
-                        button.Disabled = true;
-                        menu.Add(button);
-                    } else {
-                        // if there are multiple updates...
-                        if (currentCheckForUpdates.availableUpdatesCatalog.Count > 1) {
-                            // display an "update all" button at the top of the list
-                            updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
-                            updateAllButton.Pressed(() => downloadAllMods());
-
-                            menu.Add(updateAllButton);
-                        }
-
-                        // then, display one button per update
-                        foreach (ModUpdateInfo update in currentCheckForUpdates.availableUpdatesCatalog.Keys) {
-                            EverestModuleMetadata metadata = currentCheckForUpdates.availableUpdatesCatalog[update];
-
-                            string versionUpdate = metadata.VersionString;
-                            if (metadata.VersionString != update.Version)
-                                versionUpdate = $"{metadata.VersionString} > {update.Version}";
-
-                            TextMenu.Button button = new TextMenu.Button($"{ModUpdaterHelper.FormatModName(metadata.Name)} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
-                            button.Pressed(() => {
-                                // make the menu non-interactive
-                                menu.Focused = false;
-                                button.Disabled = true;
-
-                                // trigger the update download
-                                downloadModUpdate(update, metadata, button);
-                            });
-
-                            // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
-                            // if there isn't, add it to the list of mods that can be updated via "update all"
-                            if (update.xxHash.Count > 1) {
-                                button.Disabled = true;
-                            } else {
-                                updatableMods.Add(new ModUpdateHolder() { update = update, metadata = metadata, button = button });
-                            }
-
-                            menu.Add(button);
-                        }
-                    }
-                }
-
-                if (menu.Focused && Selected && Input.MenuCancel.Pressed) {
-                    if (shouldRestart) {
-                        Everest.QuickFullRestart();
-                    } else {
-                        // go back to mod options instead
-                        Audio.Play(SFX.ui_main_button_back);
-                        Overworld.Goto<OuiModOptions>();
-                    }
+            if (menu.Focused && Selected && Input.MenuCancel.Pressed) {
+                if (shouldRestart) {
+                    Everest.QuickFullRestart();
+                } else {
+                    // go back to mod options instead
+                    Audio.Play(SFX.ui_main_button_back);
+                    Overworld.Goto<OuiModOptions>();
                 }
             }
 
@@ -195,7 +121,7 @@ namespace Celeste.Mod.UI {
                 // cancel any ongoing download (this has no effect if no download is ongoing anyway).
                 ongoingUpdateCancelled = true;
 
-                if (menu != null && currentCheckForUpdates.updateCatalog == null && task != null && !task.IsCompleted) {
+                if (fetchingButton != null) {
                     // cancelling out during check for updates: go back to mod options instead
                     Audio.Play(SFX.ui_main_button_back);
                     Overworld.Goto<OuiModOptions>();
@@ -203,13 +129,189 @@ namespace Celeste.Mod.UI {
             }
 
             base.Update();
+
         }
+
+        // public override void Update() {
+        //     // check if the "press Back to restart" message has to be toggled
+        //     if (menu != null && subHeader != null) {
+        //         if (menu.Focused && shouldRestart) {
+        //             subHeader.TextColor = Color.OrangeRed;
+        //             subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+        //         } else if (!menu.Focused && ongoingUpdateCancelled && menuOnScreen) {
+        //             subHeader.TextColor = Color.Gray;
+        //             subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_CANCELLING")})";
+        //         } else {
+        //             subHeader.TextColor = Color.Gray;
+        //             subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
+        //         }
+        //     }
+
+        //     if (menu != null && task != null && task.IsCompleted) {
+        //         // there is no download or install task in progress
+
+        //         if (fetchingButton != null) {
+        //             // This means fetching the updates just finished. We have to remove the "Checking for updates" button
+        //             // and put the actual update list instead.
+
+        //             Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
+
+        //             menu.Remove(fetchingButton);
+        //             fetchingButton = null;
+
+        //             if (currentCheckForUpdates.updateCatalog == null) {
+        //                 // display an error message
+        //                 TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
+        //                 button.Disabled = true;
+        //                 menu.Add(button);
+        //             } else if (currentCheckForUpdates.availableUpdatesCatalog.Count == 0) {
+        //                 // display a dummy "no update available" button
+        //                 TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
+        //                 button.Disabled = true;
+        //                 menu.Add(button);
+        //             } else {
+        //                 // if there are multiple updates...
+        //                 if (currentCheckForUpdates.availableUpdatesCatalog.Count > 1) {
+        //                     // display an "update all" button at the top of the list
+        //                     updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
+        //                     updateAllButton.Pressed(() => downloadAllMods());
+
+        //                     menu.Add(updateAllButton);
+        //                 }
+
+        //                 // then, display one button per update
+        //                 foreach (ModUpdateInfo update in currentCheckForUpdates.availableUpdatesCatalog.Keys) {
+        //                     EverestModuleMetadata metadata = currentCheckForUpdates.availableUpdatesCatalog[update];
+
+        //                     string versionUpdate = metadata.VersionString;
+        //                     if (metadata.VersionString != update.Version)
+        //                         versionUpdate = $"{metadata.VersionString} > {update.Version}";
+
+        //                     TextMenu.Button button = new TextMenu.Button($"{ModUpdaterHelper.FormatModName(metadata.Name)} | v. {versionUpdate} ({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+        //                     button.Pressed(() => {
+        //                         // make the menu non-interactive
+        //                         menu.Focused = false;
+        //                         button.Disabled = true;
+
+        //                         // trigger the update download
+        //                         downloadModUpdate(update, metadata, button);
+        //                     });
+
+        //                     // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
+        //                     // if there isn't, add it to the list of mods that can be updated via "update all"
+        //                     if (update.xxHash.Count > 1) {
+        //                         button.Disabled = true;
+        //                     } else {
+        //                         updatableMods.Add(new ModUpdateHolder() { update = update, metadata = metadata, button = button });
+        //                     }
+
+        //                     menu.Add(button);
+        //                 }
+        //             }
+        //         }
+
+        //         if (menu.Focused && Selected && Input.MenuCancel.Pressed) {
+        //             if (shouldRestart) {
+        //                 Everest.QuickFullRestart();
+        //             } else {
+        //                 // go back to mod options instead
+        //                 Audio.Play(SFX.ui_main_button_back);
+        //                 Overworld.Goto<OuiModOptions>();
+        //             }
+        //         }
+        //     }
+
+        //     if (menuOnScreen && Input.MenuCancel.Pressed) {
+        //         // cancel any ongoing download (this has no effect if no download is ongoing anyway).
+        //         ongoingUpdateCancelled = true;
+
+        //         if (menu != null && currentCheckForUpdates.updateCatalog == null && task != null && !task.IsCompleted) {
+        //             // cancelling out during check for updates: go back to mod options instead
+        //             Audio.Play(SFX.ui_main_button_back);
+        //             Overworld.Goto<OuiModOptions>();
+        //         }
+        //     }
+
+        //     base.Update();
+        // }
 
         public override void Render() {
             if (alpha > 0f) {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
             }
             base.Render();
+        }
+
+        private void checkForUpdates() {
+            // 1. Download the mod updates database
+            Dictionary<string, ModUpdateInfo> updateCatalog = null;
+            updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
+
+            // 2. Find out what actually has been updated
+            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
+            if (updateCatalog != null) {
+                availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
+            }
+
+            // 3. Render on screen
+            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
+
+            menu.Remove(fetchingButton);
+            fetchingButton = null;
+            if (updateCatalog == null) {
+                // display an error message
+                TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
+                button.Disabled = true;
+                menu.Add(button);
+                return;
+            } else if (availableUpdatesCatalog.Count == 0) {
+                // display a dummy "no update available" button
+                TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
+                button.Disabled = true;
+                menu.Add(button);
+                return;
+            }
+            // if there are multiple updates...
+            if (availableUpdatesCatalog.Count > 1) {
+                // display an "update all" button at the top of the list
+                updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
+                updateAllButton.Pressed(() => downloadAllMods());
+
+                menu.Add(updateAllButton);
+            }
+
+            // then, display one button per update
+            foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
+                EverestModuleMetadata metadata = availableUpdatesCatalog[update];
+
+                string versionUpdate = metadata.VersionString;
+                if (metadata.VersionString != update.Version)
+                    versionUpdate = $"{metadata.VersionString} > {update.Version}";
+
+                TextMenu.Button button = new TextMenu.Button(
+                    $"{ModUpdaterHelper.FormatModName(metadata.Name)} " +
+                    $"| v. {versionUpdate} " +
+                    $"({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
+                button.Pressed(() => {
+                    // make the menu non-interactive
+                    menu.Focused = false;
+                    button.Disabled = true;
+
+                    // trigger the update download
+                    downloadModUpdate(update, metadata, button);
+                });
+
+                // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
+                // if there isn't, add it to the list of mods that can be updated via "update all"
+                if (update.xxHash.Count > 1) {
+                    button.Disabled = true;
+                } else {
+                    updatableMods.Add(new ModUpdateHolder() { update = update, metadata = metadata, button = button });
+                }
+
+                menu.Add(button);
+            }
+            
         }
 
         /// <summary>
