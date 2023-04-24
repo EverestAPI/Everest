@@ -23,7 +23,7 @@ namespace Celeste.Mod {
         public static class Updater {
 
             public enum UpdatePriority {
-                High, Low, None
+                None, Low, High
             }
 
             public class Entry {
@@ -138,27 +138,11 @@ namespace Celeste.Mod {
 
             public static List<Source> Sources = new List<Source>() {
                 new Source {
-                    Name = "updater_src_stable",
-                    Description = "updater_src_release_github",
-
-                    UpdatePriority = UpdatePriority.High,
-
-                    Index = GetEverestUpdaterDatabaseURL,
-                    ParseData = UpdateListParser("stable")
-                },
-                new Source {
-                    Name = "updater_src_beta",
-                    Description = "updater_src_release_github",
-
-                    Index = GetEverestUpdaterDatabaseURL,
-                    ParseData = UpdateListParser("beta")
-                },
-                new Source {
-                    Name = "updater_src_dev",
+                    Name = "updater_src_core",
                     Description = "updater_src_buildbot_azure",
 
                     Index = GetEverestUpdaterDatabaseURL,
-                    ParseData = UpdateListParser("dev")
+                    ParseData = UpdateListParser("core")
                 },
             };
 

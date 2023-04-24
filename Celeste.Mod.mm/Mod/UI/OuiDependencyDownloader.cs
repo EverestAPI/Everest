@@ -358,20 +358,30 @@ namespace Celeste.Mod.UI {
         }
 
         private Everest.Updater.Entry findEverestVersionToInstall(int requestedBuild) {
+            // Find the entry with the highest build number and the highest priority
+            Everest.Updater.UpdatePriority updatePrio = Everest.Updater.UpdatePriority.None;
+            Everest.Updater.Entry updateEntry = null;
+
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                if (source?.Entries == null)
+                if (source?.Entries == null || source?.UpdatePriority is Everest.Updater.UpdatePriority.None)
                     continue;
 
                 foreach (Everest.Updater.Entry entry in source.Entries) {
-                    if (entry.Build >= requestedBuild) {
-                        // we found a suitable build! return it.
-                        return entry;
-                    }
+                    if (entry.Build < requestedBuild)
+                        continue;
+
+                    if (source.UpdatePriority < updatePrio)
+                        continue;
+ 
+                    if (source.UpdatePriority == updatePrio && entry.Build < updateEntry?.Build)
+                        continue;
+ 
+                    updatePrio = source.UpdatePriority;
+                    updateEntry = entry;
                 }
             }
 
-            // we checked the whole version list and didn't find anything suitable, so...
-            return null;
+            return updateEntry;
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {
