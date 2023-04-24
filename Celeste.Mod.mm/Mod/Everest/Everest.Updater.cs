@@ -433,9 +433,6 @@ namespace Celeste.Mod {
                             }
                         }
                     } else {
-                        if (Everest.Flags.IsXNA)
-                            throw new Exception(".NET Core Everest builds only support FNA versions of the game");
-
                         // This build ships with native MiniInstaller binaries
                         installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ? "MiniInstaller-win.exe" :
