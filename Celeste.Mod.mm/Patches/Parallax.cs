@@ -57,10 +57,14 @@ namespace Celeste {
             if (FlipY) {
                 flip |= SpriteEffects.FlipVertically;
             }
-            Rectangle rect = new Rectangle(0, 0,
-                                           LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width,
-                                           LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height);
-            ((patch_MTexture) Texture).Draw(position, Vector2.Zero, color, 1f, 0f, flip, rect); // take advantage of the PointWrap sampler state to draw in a single draw call
+            
+            int width = LoopX ? (int) Math.Ceiling(Celeste.GameWidth - position.X) : Texture.Width;
+            int height = LoopY ? (int) Math.Ceiling(Celeste.GameHeight - position.Y) : Texture.Height;
+            
+            // take advantage of the PointWrap sampler state to draw in a single draw call
+            Rectangle rect = new Rectangle(FlipX ? -width : 0, FlipY ? -height : 0, width, height);
+            float scaleFix = ((patch_MTexture) Texture).ScaleFix;
+            Draw.SpriteBatch.Draw(Texture.Texture.Texture, position, rect, color, 0f, -Texture.DrawOffset / scaleFix, scaleFix, flip, 0f);
         }
     }
 }

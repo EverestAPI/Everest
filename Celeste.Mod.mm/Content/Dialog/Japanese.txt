@@ -20,11 +20,16 @@
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}おかえり((player))！{/big}{n}でも{#ff1144}((sid)){#}はどこか別の山に行ってしまったみたいだね。
-	POSTCARD_LEVELLOADFAILED= 	{big}ごめんなさい！{/big}{n}{#ff1144}((sid)){#}をロードできなかったよ。{n}{#44adf7}log.txt{#}{n}をマップの制作者に送ってね。
-	POSTCARD_LEVELNOSPAWN= 		{big}しまった！{/big}{n}誰かが{#44adf7}出発地点{#}を間違って置いてしまったよ！{n}マップに{#44adf7}プレイヤー{#}の実体が{n}含まれているか確認してね。
+	POSTCARD_LEVELLOADFAILED= 	{big}ごめんね！{/big}{n}{#ff1144}((sid)){#}をロードできなかったよ。{n}{#44adf7}log.txt{#}{n}をマップの制作者に送ってね。
+	POSTCARD_LEVELNOSPAWN= 		{big}しまった！{/big}{n}{#44adf7}出発地点{#}が間違って置かれているよ！{n}マップに{#44adf7}Player{#}の実体が{n}含まれているか確認してね。
+	POSTCARD_BADTILEID=			{big}しまった！{/big}{n}部屋{#ff1144}((room)){#}の{#ff1144}(((x)), ((y))){#}に、{n}未定義の((type))タイル ID{#ff1144}((id)){#}があるよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
+	POSTCARD_DECALREGERROR=		{big}しまった！{/big}{n}{#ff1144}((decal)){#}に{#ff1144}((property)){#}を{n}付与する際にエラーが起きちゃった。{n}{#44adf7}Decal Registry{#}属性が見つからないか、不正な属性があるよ。
+	POSTCARD_MISSINGTUTORIAL=	{big}しまった！{/big}{n}プレイバックチュートリアル{n}{#ff1144}((tutorial)){#}が{n}見つからなかったよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
+	POSTCARD_TILEXMLERROR=		{big}しまった！{/big}{n}{#ff1144}((path)){#}の{n}タイルセット解析中にエラーが見つかっちゃった。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
+	POSTCARD_XMLERROR=			{big}しまった！{/big}{n}{#ff1144}((path)){#}に構文エラーがあるよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
 
 # Main Menu
-	MENU_TITLETOUCH= 		TOUCH
+	MENU_TITLETOUCH= 		タッチ
 	MENU_MAPLIST= 			マップリスト
 	MENU_MODOPTIONS= 		MOD設定
 	MENU_PAUSE_MODOPTIONS= 	MOD設定
@@ -33,13 +38,13 @@
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0}つのMODをロードできません
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yamlをロードできません
 	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Everestのアップデートが可能です
-	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		1つのMODのアップデートが可能です
-	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		{0}つのMODのアップデートが可能です
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		1つのMODがアップデート可能です
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		{0}つのMODがアップデート可能です
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= オリジナルのCeleste.exeを起動します
     
-# Extra Key Mapping: may not be used actually?
+# Extra Key Mapping
     KEY_CONFIG_ADDING= 追加のキーを押して割り当て
     KEY_CONFIG_ADDITION_HINT= SHIFT + CONFIRMを押して、追加のキーを追加・解除
 
@@ -49,15 +54,15 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Everestを((version))にバージョンアップする
-	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					必要なMODをインストールする
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					必要なMODをインストール
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Everestのバージョンを変更する
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						デバッグモード
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		FMOD Live Updateを有効にして起動する
-	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				起動時にイントロ画面を表示する
-	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				ポーズ画面にMOD設定を表示する
-	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			タイトル画面でEverestと表示する
-	MODOPTIONS_COREMODULE_INPUTGUI= 						入力の形式
+	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				起動時のイントロ画面表示
+	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				ポーズ画面の「MOD設定」表示
+	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			タイトル画面をEVERESTにする
+	MODOPTIONS_COREMODULE_INPUTGUI= 						ボタン表示
 	MODOPTIONS_COREMODULE_INPUTGUI_= 						自動
 	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				キーボード
 	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						SWITCH
@@ -71,17 +76,30 @@
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				ROWS
 	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				TOUCH
 	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			起動時に自動的にMODをアップデートする
-	MODOPTIONS_COREMODULE_MODUPDATES= 						MODのアップデートをチェックする
+	MODOPTIONS_COREMODULE_MODUPDATES= 						MODのアップデートを確認する
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			テキストの入力にキーボードを使用する
-	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yamlのエラーを表示する
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yamlのエラー表示
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		MOD制作者用オプションです
-	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				DiscordのRich Presence機能を有効にする
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				DiscordのRich Presence機能
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				メニュー画面の移動
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						メニュー画面での前ページ移動
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						メニュー画面での後ページ移動
-
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				デバッグモード
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						デバッグコンソール画面
+	MODOPTIONS_COREMODULE_DEBUGMAP=							デバッグマップ
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			セレステ山のカメラ操作
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					拡大
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					縮小
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						右
+	MODOPTIONS_COREMODULE_CAMERALEFT=						左
+	MODOPTIONS_COREMODULE_CAMERAUP=							上
+	MODOPTIONS_COREMODULE_CAMERADOWN=						下
+	MODOPTIONS_COREMODULE_CAMERASLOW=						スロー
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						カメラ位置の表示
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			フリーカメラに切り替える
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						サウンドテスト
 	MODOPTIONS_COREMODULE_OOBE= 							初期設定画面を表示する
-	MODOPTIONS_COREMODULE_TOGGLEMODS=						MODを有効化・無効化する
+	MODOPTIONS_COREMODULE_TOGGLEMODS=						ロードするMODを管理する
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						MODをロードするのに失敗しました。
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						詳細はlog.txtを確認してください。
@@ -89,8 +107,8 @@
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						everest.yamlがロードできませんでした。
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
-	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
-	MODOPTIONS_VANILLATRISTATE_ALWAYS=						ALWAYS
+	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVERESTのみ
+	MODOPTIONS_VANILLATRISTATE_ALWAYS=						常時
 
 # Sound Test
 	SOUNDTEST_TITLE=	サウンドテスト
@@ -106,7 +124,7 @@
 	MAPLIST_SIDE= 			面
 	MAPLIST_LIST= 			マップ
 	MAPLIST_UNCATEGORIZED= 	未分類
-	MAPLIST_SEARCH=			検索する
+	MAPLIST_SEARCH=			検索
 	MAPLIST_SEARCH_MATCH=	クイックマッチ
 	MAPLIST_TYPE_EVERYTHING=  すべて
 	MAPLIST_RESULTS_SINGULAR= {0}つのマップが見つかりました  
@@ -116,10 +134,10 @@
 	LEVELSET_= 				未分類
 
 # Updater
-	UPDATER_TITLE= 					UPDATER
-	UPDATER_VERSIONS_TITLE= 		Everestのバージョンを変更します
+	UPDATER_TITLE= 					Everestのアップデート
+	UPDATER_VERSIONS_TITLE= 		Everestのバージョンを変更する
 	UPDATER_VERSIONS_CURRENT= 		現在のバージョン: ((version))
-	UPDATER_VERSIONS_REQUESTING= 	更新しています...
+	UPDATER_VERSIONS_REQUESTING= 	更新しています…
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	バージョンリストのダウンロードに失敗しました。
 	UPDATER_VERSIONS_ERR_FORMAT= 	フォーマットが読み取れません。
@@ -146,61 +164,61 @@
 	EVERESTUPDATER_ERRORHINT3=		log.txtも忘れずにアップロードしてください
 
 # Mod Updater
-	MODUPDATECHECKER_MENU_TITLE=	MODをアップデートします
+	MODUPDATECHECKER_MENU_TITLE=	MODのアップデート
 	MODUPDATECHECKER_NOUPDATE=		アップデート可能なMODはありません
-	MODUPDATECHECKER_MENU_HEADER=	以下のMODのアップデートが可能です
-	MODUPDATECHECKER_FETCHING=		アップデートを確認しています...
+	MODUPDATECHECKER_MENU_HEADER=	以下のMODがアップデート可能です
+	MODUPDATECHECKER_FETCHING=		アップデートを確認しています…
 	MODUPDATECHECKER_ERROR=			アップデートの確認に失敗しました。
 	MODUPDATECHECKER_UPDATED=		アップデートしました
-	MODUPDATECHECKER_DOWNLOADING=	ダウンロード中...
-	MODUPDATECHECKER_INSTALLING=	インストール中...
+	MODUPDATECHECKER_DOWNLOADING=	ダウンロード中…
+	MODUPDATECHECKER_INSTALLING=	インストール中…
 	MODUPDATECHECKER_FAILED=		アップデートに失敗しました！
-	MODUPDATECHECKER_CANCELLING=	アップデートをキャンセルしています...
+	MODUPDATECHECKER_CANCELLING=	アップデートをキャンセルしています…
 	MODUPDATECHECKER_CANCELLED=		アップデートがキャンセルされました
-	MODUPDATECHECKER_WILLRESTART=	もどるボタンを押すとCelesteを再起動します
+	MODUPDATECHECKER_WILLRESTART=	もどるボタンを押して、Celesteを再起動してください
 	MODUPDATECHECKER_UPDATE_ALL=	すべてのMODをアップデートする
-	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	すべてのMODをアップデートしています...
+	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	すべてのMODをアップデートしています…
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	すべてのMODをアップデートしました。
 	
 # Auto Mod Updater
-	AUTOUPDATECHECKER_CHECKING=		MODのアップデートをチェックしています...
+	AUTOUPDATECHECKER_CHECKING=		MODのアップデートをチェックしています…
 	AUTOUPDATECHECKER_UPDATING=		自動アップデートをしています
 	AUTOUPDATECHECKER_DOWNLOADING=	ダウンロードしています
 	AUTOUPDATECHECKER_VERIFYING=	検証しています
 	AUTOUPDATECHECKER_INSTALLING=	インストールしています
 	AUTOUPDATECHECKER_FAILED=		MODのアップデートに失敗しました。詳細はlog.txtを確認してください。
 	AUTOUPDATECHECKER_CONTINUE=		OKボタンを押してください
-	AUTOUPDATECHECKER_REBOOT=		OKボタンを押すとCelesteを再起動します
+	AUTOUPDATECHECKER_REBOOT=		OKボタンを押して、Celesteを再起動してください
 	AUTOUPDATECHECKER_SKIP=			スキップ
-	AUTOUPDATECHECKER_SKIPPING=		アップデートをスキップします...
+	AUTOUPDATECHECKER_SKIPPING=		アップデートをスキップします…
 
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						必要なMODをインストール
-	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		MODのデータベースをダウンロードしています...
-	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	インストール済みMODの情報を集めています...
+	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		MODのデータベースをダウンロードしています…
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	インストール済みMODの情報を集めています…
 	DEPENDENCYDOWNLOADER_DONE=						完了。
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	エラー： データベースのダウンロードに失敗しました。詳しくはlog.txtを確認してください。
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		警告： MODをロードするのにEverestをアップデートする必要があります。「Everestのバージョンを変更する」からアップデートしてください。 
-	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			MODを動かすためにEverestを{0}にアップデートします。決定ボタンを押して続けます。
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		注意： MODをロードするのにEverestをアップデートする必要があります。「Everestのバージョンを変更する」からアップデートしてください。 
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			MODを動かすためにEverestを{0}にアップデートします。OKボタンを押して続けます。
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				エラー： データベース中に{0}が見つかりませんでした。このMODを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			エラー： MODを動かすのに最新バージョンのCelesteが必要です。Celesteをアップデートしてください。
-	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	エラー： {0}に複数のバージョンが見つかったため、自動でインストールすることができませんでした。このMODを手動でインストールしてください。
+	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	エラー： {0}に複数のバージョンが見つかったため、自動インストールができませんでした。このMODを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			エラー： {0}のバージョン{1}が必要ですが、バージョン{2}しか見つかりませんでした。新しいバージョンを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_RESTARTING=				Celesteを再起動します。
-	DEPENDENCYDOWNLOADER_RESTARTING_IN=				再起動します... {0}
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		もどるボタンを押すとCelesteを再起動します。
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		もどるボタンを押すとMOD設定画面に戻ります。
-	DEPENDENCYDOWNLOADER_DOWNLOADING=				{1}から{0}をダウンロードしています...
-	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		ダウンロードに失敗しました。ミラーサイト{0}に接続します...
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				再起動します… {0}
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		もどるボタンを押して、Celesteを再起動してください。
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		もどるボタンを押すと、MOD設定画面に戻ります。
+	DEPENDENCYDOWNLOADER_DOWNLOADING=				{1}から{0}をダウンロードしています…
+	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		ダウンロードに失敗しました。ミラーサイト{0}に接続します…
 	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			ダウンロードが完了しました。
-	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		チェックサムを検証しています...
-	DEPENDENCYDOWNLOADER_UPDATING=					{3}に{0}のアップデート({1} -> {2})をインストールしています...
-	DEPENDENCYDOWNLOADER_INSTALLING=				{0} v.{1}を{2}にインストールしています...
+	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		チェックサムを検証しています…
+	DEPENDENCYDOWNLOADER_UPDATING=					{3}に{0}のアップデート({1} -> {2})をインストールしています…
+	DEPENDENCYDOWNLOADER_INSTALLING=				{2}に{0} v.{1}をインストールしています…
 	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			エラー： {0}のインストールに失敗しました。詳しくはlog.txtを確認してください。
-	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			{0}をブラックリストから除外しています...
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			{0}をブラックリストから除外しています…
 	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		ブラックリストからの除外に失敗しました。詳しくはlog.txtを確認してください。
-	DEPENDENCYDOWNLOADER_LOADING_MOD=				{1}から{0}をロードしています...
-	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		{0}からMODをロードしています...
+	DEPENDENCYDOWNLOADER_LOADING_MOD=				{1}から{0}をロードしています…
+	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		{0}からMODをロードしています…
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		ようこそEverestへ！
@@ -210,28 +228,28 @@
 	OOBE_WELCOME_CREATE=		カスタムマップを制作したいです。
 	OOBE_WELCOME_SKIP=			あなたの助けなんか、いらない。
 
-	OOBE_SETTINGS_PLAY=			GameBananaでMODを探したりインストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}プレイ情報がDiscordのアクティビティで共有することができます。{n}F6で新しいマップをデバッグ画面で表示することができます。
-	OOBE_SETTINGS_SPEEDRUN=		タイトル画面で右ボタンを押し続けるとオリジナルのCeleste.exeを起動できます。{n}GameBananaでMODを探したりインストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。
-	OOBE_SETTINGS_CREATE=		GameBananaでMODを検索したり配布することができます。{n}カスタムマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。{n}F5で現在のマップをリロードし、CTRL+F5でCelesteを再起動してマップをリロードすることができます。{n}QWERTY配列でないキーボードの場合は、コンソール画面を「.」で開き「q」で閉じます。
+	OOBE_SETTINGS_PLAY=			GameBananaでMODを探したり、インストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}プレイ情報をDiscordのアクティビティで共有することができます。{n}F6で新しいマップをデバッグ画面で表示することができます。
+	OOBE_SETTINGS_SPEEDRUN=		タイトル画面で右ボタンを押し続けると、オリジナルのCeleste.exeを起動できます。{n}GameBananaでMODを探したり、インストールしたりすることができます。{n}インストールしたマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。
+	OOBE_SETTINGS_CREATE=		GameBananaでMODを検索したり、配布することができます。{n}カスタムマップはマップ選択画面に表示されます。{n}F6で新しいマップをデバッグ画面で表示することができます。{n}F5で現在のマップをリロードし、CTRL+F5でCelesteを再起動してマップをリロードすることができます。{n}QWERTY配列でないキーボードの場合は、コンソール画面を「.」で開き「q」で閉じることができます。
 	OOBE_SETTINGS_SUBHEADER=	以下の設定を確認してみてください。
 	OOBE_SETTINGS_MORE=			ほかの設定をMOD設定から変更することができます。
 	OOBE_SETTINGS_OK=			OK
 
 # Mod Toggle Menu
-	MODOPTIONS_MODTOGGLE=				MODを有効化・無効化
-	MODOPTIONS_MODTOGGLE_LOADING=		MODの情報をロードしています...
+	MODOPTIONS_MODTOGGLE=				ロードするMODの管理
+	MODOPTIONS_MODTOGGLE_LOADING=		MODの情報をロードしています…
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	必要なMODを自動的に切り替える
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	あるMODを有効化すると、必要なすべてのMODも有効化されます。
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	あるMODを無効化すると、そのMODに依存しているすべてのMODも無効化されます。
-	MODOPTIONS_MODTOGGLE_MESSAGE_1=		MODを有効化・無効化すると、blacklist.txtが上書きされ、
-	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するためにCelesteが再起動されます。
-	MODOPTIONS_MODTOGGLE_MESSAGE_3=		色がついているMODはほかに有効化されているMODを動かすのに必要です。
-	MODOPTIONS_MODTOGGLE_WHITELISTWARN= これらの設定を正しく適用するためには、ホワイトリストを無効化してください。
-	MODOPTIONS_MODTOGGLE_ENABLEALL=		すべて有効化する
-	MODOPTIONS_MODTOGGLE_DISABLEALL=	すべて無効化する
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	あるMODをロードすると、必要なすべてのMODもロードされます。
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	あるMODをアンロードすると、そのMODに依存しているすべてのMODもアンロードされます。
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		MODをロード・アンロードすると、blacklist.txtが上書きされ、
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するため、Celesteが再起動されます。
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=		色がついているMODは、ほかにロードされているMODを動かすのに必要です。
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= これらの設定を正しく適用するためには、ホワイトリストを無効にしてください。
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		すべてロードする
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	すべてアンロードする
 	MODOPTIONS_MODTOGGLE_CANCEL=		キャンセル
 	MODOPTIONS_MODTOGGLE_ZIPS=			ZIPファイル
-	MODOPTIONS_MODTOGGLE_DIRECTORIES=	ディレクトリ（フォルダ）
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=	ディレクトリ/フォルダ
 	MODOPTIONS_MODTOGGLE_BINS=			BIN形式のマップファイル
 
 # Asset Reload Helper
@@ -240,13 +258,9 @@
 	ASSETRELOADHELPER_UNLOADINGTEXTURE=		テクスチャをアンロードしています：
 	ASSETRELOADHELPER_RELOADINGMAPNAME=		マップをリロードしています：
 	ASSETRELOADHELPER_RELOADINGALLMAPS=		すべてのマップをリロードしています
-	ASSETRELOADHELPER_RELOADINGDIALOG=		会話ファイルをリロードしています：
+	ASSETRELOADHELPER_RELOADINGDIALOG=		ダイアログをリロードしています：
 	ASSETRELOADHELPER_RELOADINGTEXTURE=		テクスチャをリロードしています：
 	ASSETRELOADHELPER_RELOADINGTEXTURES=	テクスチャをリロードしています：
 	ASSETRELOADHELPER_LOADINGNEWMOD=		新しいMODをロードしています：
 	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	MODのアセンブリをリロードしています：
 	ASSETRELOADHELPER_RELOADINGMOUNTAIN=	山をリロードしています
-
-
-# For Asset Reload Helper, the translation is almost a kind of machine-translation.
-# I'm not developing mods, so I'm not sure how they are used actually.
