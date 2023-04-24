@@ -8,8 +8,8 @@ using System.Runtime.CompilerServices;
 namespace Celeste {
     class patch_FloatySpaceBlock : FloatySpaceBlock {
 
-        private float sineWave, dashEase, yLerp;
-        private Vector2 dashDirection;
+        private float sineWave = default, dashEase = default, yLerp = default;
+        private Vector2 dashDirection = default;
 
         public patch_FloatySpaceBlock(EntityData data, Vector2 offset)
             : base(data, offset) {
