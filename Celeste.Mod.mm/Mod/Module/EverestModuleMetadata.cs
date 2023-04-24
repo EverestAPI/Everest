@@ -84,6 +84,11 @@ namespace Celeste.Mod {
         /// </summary>
         public bool SupportsCodeReload { get; set; } = true;
 
+        /// <summary>
+        /// Whether this module is .NET Core only or not.
+        /// </summary>
+        public bool IsNetCoreOnlyMod { get; set; } = false;
+
         public override string ToString() {
             return Name + " " + Version;
         }
@@ -100,10 +105,14 @@ namespace Celeste.Mod {
             foreach (EverestModuleMetadata dep in Dependencies) {
                 if (dep.Name == "API")
                     dep.Name = CoreModule.Instance.Metadata.Name;
-                if (dep.Name == CoreModule.Instance.Metadata.Name) {
+                if (dep.Name == CoreModule.Instance.Metadata.Name || dep.Name == CoreModule.NETCoreMetaName) {
+                    if (dep.Name == CoreModule.NETCoreMetaName)
+                        IsNetCoreOnlyMod = true;
+
                     dependsOnAPI = true;
                     break;
                 }
+
             }
             if (!dependsOnAPI) {
                 // Logger.Log(LogLevel.Warn, "loader", $"No dependency to API found in {this}! Adding dependency to {CoreModule.Instance.Metadata}");

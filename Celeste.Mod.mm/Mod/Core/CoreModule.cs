@@ -20,6 +20,7 @@ namespace Celeste.Mod.Core {
     /// </summary>
     public class CoreModule : EverestModule {
 
+        public const string NETCoreMetaName = "EverestCore";
         public static CoreModule Instance;
 
         public override Type SettingsType => typeof(CoreModuleSettings);

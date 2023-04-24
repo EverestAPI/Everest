@@ -114,7 +114,7 @@ namespace Celeste.Mod.UI {
                     if (Everest.Loader.Delayed.Any(delayedMod => dependency.Name == delayedMod.Item1.Name)) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is installed but load is delayed, skipping");
 
-                    } else if (dependency.Name == "Everest") {
+                    } else if (dependency.Name == "Everest" || dependency.Name == Core.CoreModule.NETCoreMetaName) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"Everest should be updated");
                         shouldAutoExit = false;
 
