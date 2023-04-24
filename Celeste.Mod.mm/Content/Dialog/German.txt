@@ -195,6 +195,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						fertig.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	FEHLER: Download der Datenbank fehlgeschlagen. Bitte überprüfe log.txt für mehr Informationen.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNUNG: Einige Mods benötigen eine neuere Everest-Version zum Laden. Installiere sie im Menü zum Ändern der Everest-Version.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNUNG: Einige Mods benötigen eine (aktuell noch WIP) .NET Core Everest-Version zum Laden. Installiere sie im Menü zum Ändern der Everest-Version.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest wird auf {0} geupdatet, damit einige Mods geladen werden können. Drücke Bestätigen, um fortzufahren.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				FEHLER: {0} konnte nicht in der Datenbank gefunden werden. Bitte installiere diese Mod manuell.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			FEHLER: Einige Mods benötigen eine neuere Version von Celeste. Bitte update dein Spiel.
