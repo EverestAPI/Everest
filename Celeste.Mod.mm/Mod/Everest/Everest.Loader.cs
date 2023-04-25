@@ -440,14 +440,15 @@ namespace Celeste.Mod {
             /// Load a mod .dll given its metadata at runtime. Doesn't load the mod content.
             /// </summary>
             /// <param name="meta">Metadata of the mod to load.</param>
-            public static void LoadMod(EverestModuleMetadata meta) {
+            /// <returns>Whether the mod load was successful.</returns>
+            public static bool LoadMod(EverestModuleMetadata meta) {
                 if (!Flags.SupportRuntimeMods) {
                     Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
-                    return;
+                    return false;
                 }
 
                 if (meta == null)
-                    return;
+                    return true;
 
                 using var _ = new ScopeFinalizer(() => Events.Everest.LoadMod(meta));
 
@@ -464,7 +465,7 @@ namespace Celeste.Mod {
 
                 if (hasLuaModule) {
                     new LuaModule(meta).Register();
-                    return;
+                    return true;
                 }
 
                 // Try to load a module from a DLL
@@ -472,16 +473,16 @@ namespace Celeste.Mod {
                     if (meta.AssemblyContext.LoadAssemblyFromModPath(meta.DLL) is not Assembly asm) {
                         // Don't register a module - this will cause dependencies to not load
                         ModsWithAssemblyLoadFailures.Add(meta);
-                        return;
+                        return false;
                     }
 
                     LoadModAssembly(meta, asm);
-                    return; 
+                    return true;
                 }
 
                 // Register a null module for content mods.
                 new NullModule(meta).Register();
-                return;
+                return false;
             }
 
             /// <summary>
@@ -588,8 +589,14 @@ namespace Celeste.Mod {
 
                         // Load modules in the reverse order determined before (dependencies before dependents)
                         foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
+                            if (loadMod.Dependencies.Any(dep => !DependencyLoaded(dep))) {
+                                Logger.Log(LogLevel.Warn, "loader", $"-> skipping reload of mod '{loadMod.Name}' as dependency failed to load");
+                                continue;
+                            }
+
                             Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
-                            LoadMod(loadMod);
+                            if (!LoadMod(loadMod))
+                                Logger.Log(LogLevel.Warn, "loader", $"-> failed to reload mod '{loadMod.Name}'!");
                         }
                     }, AssetReloadHelper.ReloadLevel);
                 });
