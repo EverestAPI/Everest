@@ -209,7 +209,13 @@ namespace Celeste.Mod {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
                     using (WebClient wc = new WebClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
-                        _everestUpdaterDatabaseURL = wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim();
+                        
+                        UriBuilder uri = new UriBuilder(hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim());
+                        if ((uri.Query?.Length ?? 0) > 1)
+                            uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
+                        else
+                            uri.Query = "supportsNativeBuilds=true";
+                        _everestUpdaterDatabaseURL = uri.ToString();
                     }
                 }
                 return _everestUpdaterDatabaseURL;
