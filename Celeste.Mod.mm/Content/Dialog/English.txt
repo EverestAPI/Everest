@@ -43,6 +43,7 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
+	MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN= WARNING: Because of OS limitations, saves won't be shared!
     
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR

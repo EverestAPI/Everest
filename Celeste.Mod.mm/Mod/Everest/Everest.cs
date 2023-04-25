@@ -17,6 +17,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -96,6 +97,11 @@ namespace Celeste.Mod {
         /// Path to Everest base location. Defaults to the game directory.
         /// </summary>
         public static string PathEverest { get; internal set; }
+
+        /// <summary>
+        /// Whether save files and settings are shared with the "restart into vanilla" install.
+        /// </summary>
+        public static bool ShareVanillaSaveFiles { get; internal set; }
 
         internal static bool RestartVanilla;
 
@@ -461,6 +467,12 @@ namespace Celeste.Mod {
                 Content.DumpAll();
 
             TextInput.Initialize(Celeste.Instance);
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                DirectoryInfo vanillaSavesDir = new DirectoryInfo(Path.Combine(PathGame, "orig", "Saves"));
+                ShareVanillaSaveFiles = vanillaSavesDir.Exists && vanillaSavesDir.LinkTarget != null;
+            } else
+                ShareVanillaSaveFiles = true;
 
             // Add the previously created managers.
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);

@@ -169,7 +169,12 @@ namespace Celeste {
             if (switchAlpha > 0f) {
                 Draw.Rect(0f, 0f, 1920f, 1080f, Color.Black * switchAlpha);
                 float offs = 40f * (1f - switchAlpha);
+
                 ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA"), new Vector2(960f + offs, 540f - 4f), new Vector2(0.5f, 1f), Vector2.One, Color.White * switchAlpha);
+
+                if (!Everest.ShareVanillaSaveFiles)
+                    ActiveFont.Draw(Dialog.Clean("MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN"), new Vector2(960f + offs, 540f + 16f), new Vector2(0.5f, 0f), Vector2.One * 0.9f, Color.OrangeRed * switchAlpha);
+
                 Draw.Rect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.Black * switchAlpha * switchAlpha);
                 Draw.HollowRect(960f - 200f + offs, 540f + 4f, 400f, 4f, Color.DarkSlateGray * switchAlpha);
                 Draw.Rect(960f - 200f + offs, 540f + 4f, 400f * Calc.Clamp(Math.Max(switchingToVanilla, switchingToVanillaBack) / switchingToVanillaDuration, 0f, 1f), 4f, Color.White * switchAlpha);

@@ -38,7 +38,8 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Neustart mit orig/Celeste.exe
-    
+	MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN= WARNUNG: Aufgrund von Betriebssystem-Einschränkungen werden Spielstände nicht geteilt!
+
 # Extra Key Mapping
     KEY_CONFIG_ADDING= DRÜCKE ZUSÄTZLICHE TASTE FÜR
     KEY_CONFIG_ADDITION_HINT= Drücke UMSCHALT + BESTÄTIGEN, um zusätzliche Tasten hinzuzufügen oder zu entfernen
