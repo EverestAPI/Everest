@@ -641,6 +641,10 @@ namespace Celeste.Mod {
                 string depName = dep.Name;
                 Version depVersion = dep.Version;
 
+                // Harcode EverestCore as an alias for the core module
+                if (depName == CoreModule.NETCoreMetaName)
+                    depName = CoreModule.Instance.Metadata.Name;
+
                 lock (_Modules) {
                     foreach (EverestModule other in _Modules) {
                         EverestModuleMetadata meta = other.Metadata;
