@@ -52,6 +52,7 @@
       <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="app.manifest" TargetPath="MiniInstaller-win.exe.manifest" CopyToOutputDirectory="always" CopyToPublishDirectory="always" /> <!-- Needed as otherwise Windows will think we're an actual installer which requires admin privileges -->
     </ItemGroup>
   </Target>
 
