@@ -210,7 +210,7 @@ namespace Celeste.Mod {
                     using (WebClient wc = new WebClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
                         
-                        UriBuilder uri = new UriBuilder(hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim());
+                        UriBuilder uri = new UriBuilder(wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Result.Trim());
                         if ((uri.Query?.Length ?? 0) > 1)
                             uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
                         else
