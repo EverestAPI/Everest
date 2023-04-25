@@ -455,6 +455,7 @@ namespace Celeste.Mod {
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
                             throw new Exception("Unknown OS platform")
                         );
+                        installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
                     }
 
                     if (!File.Exists(installerPath))
