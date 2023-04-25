@@ -206,8 +206,8 @@
 	AUTOUPDATECHECKER_VERIFYING=	Weryfikowanie
 	AUTOUPDATECHECKER_INSTALLING=	Instalowanie
 	AUTOUPDATECHECKER_FAILED=		Niektóre aktualizacje nie powiodły się. Sprawdź swój log.txt by uzyskać więcej informacji.
-	AUTOUPDATECHECKER_CONTINUE=		Naciśnij Potwierdź by kontynuować
-	AUTOUPDATECHECKER_REBOOT=		Naciśnij Potwierdź by zrestartować Celeste
+	AUTOUPDATECHECKER_CONTINUE=		Naciśnij Akceptuj by kontynuować
+	AUTOUPDATECHECKER_REBOOT=		Naciśnij Akceptuj by zrestartować Celeste
 	AUTOUPDATECHECKER_SKIP=			Pomiń
 	AUTOUPDATECHECKER_SKIPPING=		Pomijanie aktualizacji...
 
@@ -218,7 +218,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						zakończono.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	BŁĄD: Pobieranie bazy danych nie powiodło się. Sprawdź swój log.txt by uzyskać więcej informacji.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		UWAGA: Niektóre mody wymagają nowszej wersji Everest by zadziałać. Zainstaluj ją w menu Zmiany Wersji Everestu.
-	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest zostanie zaktualizowany, by {0} modów mogło zacząć działać. Wciśnij Potwierdź by kontynuować.
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest zostanie zaktualizowany, by {0} modów mogło zacząć działać. Wciśnij Akceptuj by kontynuować.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				BŁĄD: {0} nie zostało znalezione w bazie danych. Zainstaluj ten mod ręcznie.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			BŁĄD: Niektóre mody wymagają nowszej wersji Celeste by zadziałać. Zaktualizuj swoją grę.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	BŁĄD: {0} jest dostępny w kilku wersjach i nie może być zainstalowany automatycznie. Zainstaluj ten mod ręcznie.
@@ -233,9 +233,9 @@
 	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Weryfikacja sumy kontrolnej...
 	DEPENDENCYDOWNLOADER_UPDATING=					Instalowanie aktualizacji dla {0} ({1} -> {2}) do {3}...
 	DEPENDENCYDOWNLOADER_INSTALLING=				Instalowanie moda {0} w.{1} do {2}...
-	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			BŁĄD: Instalacja {0} nie powiodła się. Sprawdź twój log.txt po więcej informacji.
+	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			BŁĄD: Instalacja {0} nie powiodła się. Sprawdź swój log.txt by uzyskać więcej informacji.
 	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Usuwanie moda {0} z czarnej listy...
-	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatyczne usuwanie z czarnej listy niektórych modów nie powiodło się. Sprawdź log.txt po więcej informacji.
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Automatyczne usuwanie niektórych modów z czarnej listy nie powiodło się. Sprawdź swój log.txt by uzyskać więcej informacji.
 	DEPENDENCYDOWNLOADER_LOADING_MOD=				Ładowanie {0} z {1}...
 	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		Ładowanie moda z {0}...
 
