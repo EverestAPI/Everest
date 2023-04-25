@@ -460,6 +460,14 @@ namespace Celeste.Mod {
                     if (!File.Exists(installerPath))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
+                    if (isNative && (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) || MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))) {
+                        // Make MiniInstaller executable
+                        Process chmodProc = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{installerPath}\""));
+                        chmodProc.WaitForExit();
+                        if (chmodProc.ExitCode != 0)
+                            throw new Exception("Failed to set MiniInstaller executable flag");
+                    }
+
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
