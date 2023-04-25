@@ -426,6 +426,14 @@ namespace Celeste.Mod {
                     if (!File.Exists(installer.StartInfo.FileName))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) | RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                        // Make MiniInstaller executable
+                        Process chmodProc = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{installer.StartInfo.FileName}\""));
+                        chmodProc.WaitForExit();
+                        if (chmodProc.ExitCode != 0)
+                            throw new Exception("Failed to set MiniInstaller executable flag");
+                    }
+
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
