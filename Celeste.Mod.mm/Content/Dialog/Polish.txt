@@ -219,6 +219,7 @@
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	BŁĄD: Pobieranie bazy danych nie powiodło się. Sprawdź swój log.txt by uzyskać więcej informacji.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		UWAGA: Niektóre mody wymagają nowszej wersji Everest by zadziałać. Zainstaluj ją w menu Zmiany Wersji Everestu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest zostanie zaktualizowany, by {0} modów mogło zacząć działać. Wciśnij Akceptuj by kontynuować.
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		UWAGA: Niektóre mody wymagają (obecnie dopracowywanej) Kompilacji .NET Core Everest by zadziałać. Zainstaluj ją w menu Zmiany Wersji Everestu.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				BŁĄD: {0} nie zostało znalezione w bazie danych. Zainstaluj ten mod ręcznie.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			BŁĄD: Niektóre mody wymagają nowszej wersji Celeste by zadziałać. Zaktualizuj swoją grę.
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	BŁĄD: {0} jest dostępny w kilku wersjach i nie może być zainstalowany automatycznie. Zainstaluj ten mod ręcznie.
