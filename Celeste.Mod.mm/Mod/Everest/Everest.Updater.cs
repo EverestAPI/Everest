@@ -424,6 +424,8 @@ namespace Celeste.Mod {
                             throw new Exception("Failed to set MiniInstaller executable flag");
                     }
 
+                    installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
+
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
