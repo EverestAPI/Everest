@@ -712,7 +712,8 @@ namespace MiniInstaller {
                     HostWriter.CreateAppHost(
                         Path.Combine(hostsDir, $"win.{(Environment.Is64BitOperatingSystem ? "x64" : "x86")}.exe"),
                         appExe, Path.GetRelativePath(Path.GetDirectoryName(appExe), appDll),
-                        assemblyToCopyResorcesFrom: resDll
+                        assemblyToCopyResorcesFrom: resDll,
+                        windowsGraphicalUserInterface: true
                     );
                 } break;
                 case InstallPlatform.Linux:{
