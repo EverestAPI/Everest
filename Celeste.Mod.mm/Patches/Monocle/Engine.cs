@@ -1,3 +1,4 @@
+using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -78,13 +79,23 @@ namespace Monocle {
             Graphics.IsFullScreen = true;
             Graphics.ApplyChanges();
 
-            //Force exclusive fullscreen
-            SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
+            //Force exclusive fullscreen if enabled
+            if (CoreModule.Settings.UseExclusiveFullscreen)
+                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
 
             Console.WriteLine("FULLSCREEN");
             resizing = false;
         }
 
+        internal static void UpdateSDLFullscreenWindowFlags() {
+            if (!Engine.Graphics.IsFullScreen)
+                return;
+
+            if (CoreModule.Settings.UseExclusiveFullscreen)
+                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
+            else
+                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP);
+        }
 
     }
     public static class EngineExt {

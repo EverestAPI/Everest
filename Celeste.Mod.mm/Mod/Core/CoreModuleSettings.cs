@@ -138,6 +138,19 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string TitleScreenType { get; set; }
 
+        [YamlIgnore]
+        [SettingInGame(false)]
+        public bool UseExclusiveFullscreen {
+            get => SDLForceExclusiveFullscreen;
+            set {
+                SDLForceExclusiveFullscreen = value;
+                patch_Engine.UpdateSDLFullscreenWindowFlags();
+            }
+        }
+
+        [SettingIgnore]
+        private bool SDLForceExclusiveFullscreen { get; set; } = true;
+
         [SettingIgnore]
         public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;
         [SettingNeedsRelaunch]
