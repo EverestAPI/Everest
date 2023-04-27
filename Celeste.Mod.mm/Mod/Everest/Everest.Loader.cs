@@ -35,6 +35,12 @@ namespace Celeste.Mod {
             public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
 
             /// <summary>
+            /// The path to the Everest /Mods/favorites.txt file.
+            /// </summary>
+            public static string PathFavorites { get; internal set; }
+            internal static HashSet<string> Favorites = new HashSet<string>();
+
+            /// <summary>
             /// The path to the Everest /Mods/temporaryblacklist.txt file.
             /// </summary>
             public static string PathTemporaryBlacklist { get; internal set; }
@@ -149,6 +155,15 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
+                    }
+                }
+
+                PathFavorites = Path.Combine(PathMods, "favorites.txt");
+                if (File.Exists(PathFavorites)) {
+                    Favorites = new HashSet<string>(File.ReadAllLines(PathFavorites).Select(l => (l.StartsWith("#") ? "" : l).Trim()));
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathFavorites)) {
+                        writer.WriteLine("# This is the favorites list. Lines starting with # are ignored.");
                     }
                 }
 
@@ -560,10 +575,10 @@ namespace Celeste.Mod {
                         Logger.Log(LogLevel.Warn, "loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
                     }
 
-                   if (mod != null) {
+                    if (mod != null) {
                         mod.Metadata = meta;
                         mod.Register();
-                   }
+                    }
                 }
 
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
