@@ -16,6 +16,8 @@ namespace Celeste.Mod.UI {
         private List<string> allMods;
         // list of currently blacklisted mods
         private HashSet<string> blacklistedMods;
+        // list of currently favorited mods
+        private HashSet<string> favoritedMods;
         // list of blacklisted mods when the menu was open
         private HashSet<string> blacklistedModsOriginal;
 
@@ -240,7 +242,8 @@ namespace Celeste.Mod.UI {
                     // reset the mods list
                     allMods = new List<string>();
                     blacklistedMods = new HashSet<string>();
-
+                    favoritedMods = new HashSet<string>();
+                    
                     string[] files;
                     bool headerInserted;
 
@@ -325,6 +328,15 @@ namespace Celeste.Mod.UI {
                     }
 
                     updateHighlightedMods();
+                }).AltPressed(() => {
+                    if (favoritedMods.Contains(file)) {
+                        favoritedMods.Remove(file);
+                    } else {
+                        favoritedMods.Add(file);
+                    }
+
+                    modToggles[file].Container.HighlightColor = Color.Pink;
+                    
                 }));
 
             allMods.Add(file);
