@@ -22,7 +22,7 @@ namespace Celeste.Mod {
         public static class Updater {
 
             public enum UpdatePriority {
-                High, Low, None
+                None, Low, High
             }
 
             public class Entry {
@@ -159,6 +159,15 @@ namespace Celeste.Mod {
                     Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("dev")
                 },
+                new Source {
+                    Name = "updater_src_core",
+                    Description = "updater_src_buildbot_azure",
+
+                    UpdatePriority = UpdatePriority.None,
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("core")
+                },
             };
 
             public static Task RequestAll() {
@@ -200,7 +209,13 @@ namespace Celeste.Mod {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
                     using (WebClient wc = new WebClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
-                        _everestUpdaterDatabaseURL = wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim();
+                        
+                        UriBuilder uri = new UriBuilder(wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim());
+                        if ((uri.Query?.Length ?? 0) > 1)
+                            uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
+                        else
+                            uri.Query = "supportsNativeBuilds=true";
+                        _everestUpdaterDatabaseURL = uri.ToString();
                     }
                 }
                 return _everestUpdaterDatabaseURL;
@@ -355,6 +370,7 @@ namespace Celeste.Mod {
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
+                bool isNative = true;
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
@@ -374,6 +390,10 @@ namespace Celeste.Mod {
                             string entryName = entry.FileName;
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
+
+                            if (entryName == "MiniInstaller.exe")
+                                isNative = false;
+
                             string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
@@ -411,19 +431,44 @@ namespace Celeste.Mod {
                     Process installer = new Process();
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
                     installer.StartInfo.FileName = installerPath;
-                    if (Type.GetType("Mono.Runtime") != null) {
-                        installer.StartInfo.FileName = "mono";
-                        installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                        if (File.Exists("/bin/sh")) {
-                            string pid = Process.GetCurrentProcess().Id.ToString();
-                            installer.StartInfo.FileName = "/bin/sh";
-                            string pathToMono = "mono";
-                            if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
-                                pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+
+                    if (!isNative) {
+                        if (Type.GetType("Mono.Runtime") != null) {
+                            // Start MiniInstaller using mono
+                            installer.StartInfo.FileName = "mono";
+                            installer.StartInfo.Arguments = $"\"{installerPath}\"";
+                            if (File.Exists("/bin/sh")) {
+                                string pid = Process.GetCurrentProcess().Id.ToString();
+                                installer.StartInfo.FileName = "/bin/sh";
+                                string pathToMono = "mono";
+                                if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
+                                    pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+                                }
+                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                             }
-                            installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                         }
+                    } else {
+                        // This build ships with native MiniInstaller binaries
+                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ? "MiniInstaller-win.exe" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
+                            throw new Exception("Unknown OS platform")
+                        );
+                        installer.StartInfo.EnvironmentVariables["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
                     }
+
+                    if (!File.Exists(installerPath))
+                        throw new Exception("Couldn't find MiniInstaller executable");
+
+                    if (isNative && (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) || MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))) {
+                        // Make MiniInstaller executable
+                        Process chmodProc = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{installerPath}\""));
+                        chmodProc.WaitForExit();
+                        if (chmodProc.ExitCode != 0)
+                            throw new Exception("Failed to set MiniInstaller executable flag");
+                    }
+
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
