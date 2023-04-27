@@ -319,7 +319,7 @@ namespace Celeste.Mod.UI {
 
                     // sort the mods list alphabetically, for output in the blacklist.txt file later.
                     allMods.Sort((a, b) => a.ToLowerInvariant().CompareTo(b.ToLowerInvariant()));
-                    
+
                     // clone the list to be able to check if the list changed when leaving the menu.
                     blacklistedModsOriginal = new HashSet<string>(blacklistedMods);
                     favoritedModsOriginal = new HashSet<string>(favoritedMods);
@@ -473,12 +473,17 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void addToFavoritesDependencies(string modFileName, string dependentmodFileName) {
+        private void addToFavoritesDependencies(string modFileName, string dependentModFileName) {
             if (!favoritesDependenciesMods.ContainsKey(modFileName)) {
                 favoritesDependenciesMods[modFileName] = new HashSet<string>();
             }
 
-            favoritesDependenciesMods[modFileName].Add(dependentmodFileName);
+            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod.
+            if (favoritesDependenciesMods[modFileName].Contains(dependentModFileName)) {
+                return;
+            }
+
+            favoritesDependenciesMods[modFileName].Add(dependentModFileName);
 
             // I guess we silently fail?
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
@@ -498,17 +503,17 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void removeFromFavoritesDependencies(string modFileName, string dependentmodFileName) {
+        private void removeFromFavoritesDependencies(string modFileName, string dependentModFileName) {
             if (favoritesDependenciesMods.ContainsKey(modFileName)) {
-                favoritesDependenciesMods[modFileName].Remove(dependentmodFileName);
+                favoritesDependenciesMods[modFileName].Remove(dependentModFileName);
                 if (favoritesDependenciesMods[modFileName].Count == 0) {
                     favoritesDependenciesMods.Remove(modFileName);
                 }
-            }
 
-            if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
-                foreach (string dependenciesFileName in dependenciesFileNames) {
-                    removeFromFavoritesDependencies(dependenciesFileName, modFileName);
+                if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
+                    foreach (string dependenciesFileName in dependenciesFileNames) {
+                        removeFromFavoritesDependencies(dependenciesFileName, modFileName);
+                    }
                 }
             }
         }
