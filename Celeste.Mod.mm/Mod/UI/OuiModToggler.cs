@@ -251,7 +251,8 @@ namespace Celeste.Mod.UI {
                     // TODO: add localization support
                     menu.Add(toggleDependenciesButton = new TextMenu.OnOff("Toggle Favorites", toggleFavorites)
                         .Change(value => toggleFavorites = value));
-
+                    // TODO: Add an better indecation for how to use the favorite system
+                    toggleDependenciesButton.AddDescription(menu, "Press the 'Journal key' in order to add or remove items from the favorite list.");
 
 
                     // "cancel" button to leave the screen without saving
