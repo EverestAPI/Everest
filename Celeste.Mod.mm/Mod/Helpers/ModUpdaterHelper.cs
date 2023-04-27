@@ -186,7 +186,7 @@ namespace Celeste.Mod.Helpers {
 
         /// <summary>
         /// Retrieves the mod updater database location from everestapi.github.io.
-        /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
+        /// This should point to a running instance of https://github.com/maddie480/EverestUpdateCheckerServer.
         /// </summary>
         private static string getModUpdaterDatabaseUrl(string database) {
             using (WebClient wc = new WebClient()) {
