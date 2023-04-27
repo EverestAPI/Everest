@@ -473,12 +473,12 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void addToFavoritesDependencies(string modFileName, string dependentModeFileName) {
+        private void addToFavoritesDependencies(string modFileName, string dependentmodFileName) {
             if (!favoritesDependenciesMods.ContainsKey(modFileName)) {
                 favoritesDependenciesMods[modFileName] = new HashSet<string>();
             }
 
-            favoritesDependenciesMods[modFileName].Add(dependentModeFileName);
+            favoritesDependenciesMods[modFileName].Add(dependentmodFileName);
 
             // I guess we silently fail?
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
@@ -498,9 +498,9 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void removeFromFavoritesDependencies(string modFileName, string dependentModeFileName) {
+        private void removeFromFavoritesDependencies(string modFileName, string dependentmodFileName) {
             if (favoritesDependenciesMods.ContainsKey(modFileName)) {
-                favoritesDependenciesMods[modFileName].Remove(dependentModeFileName);
+                favoritesDependenciesMods[modFileName].Remove(dependentmodFileName);
                 if (favoritesDependenciesMods[modFileName].Count == 0) {
                     favoritesDependenciesMods.Remove(modFileName);
                 }
@@ -560,7 +560,7 @@ namespace Celeste.Mod.UI {
                 dependenciesFileNames = new List<string>();
 
                 foreach (EverestModuleMetadata metadata in metadatas) {
-                    // iterate over each loaded mode to ensure its present
+                    // iterate over each loaded mod to ensure its present
                     foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
                         KeyValuePair<string, EverestModuleMetadata>? found = null;
                         foreach (KeyValuePair<string, EverestModuleMetadata[]> candidateMetadatas in modYamls) {
