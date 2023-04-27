@@ -427,12 +427,8 @@ namespace Celeste.Mod {
                     installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
 
                     installer.StartInfo.WorkingDirectory = extractedPath;
-                    if (Environment.OSVersion.Platform == PlatformID.Unix) {
-                        installer.StartInfo.UseShellExecute = false;
-                        installer.Start();
-                    } else {
-                        installer.Start();
-                    }
+                    installer.StartInfo.UseShellExecute = false;
+                    installer.Start();
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
                     e.LogDetailed();
