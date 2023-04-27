@@ -18,6 +18,9 @@ namespace Celeste.Mod.UI {
         private HashSet<string> blacklistedMods;
         // list of currently favorited mods
         private HashSet<string> favoritedMods;
+        // dictionary mapping between the dependence and the dependents
+        private Dictionary<string, HashSet<string>> favoritesDependenciesMods;
+
         // list of blacklisted mods when the menu was open
         private HashSet<string> blacklistedModsOriginal;
 
@@ -27,6 +30,8 @@ namespace Celeste.Mod.UI {
         private TextMenuExt.SubHeaderExt restartMessage2;
 
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
+
+
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
 
@@ -243,7 +248,8 @@ namespace Celeste.Mod.UI {
                     allMods = new List<string>();
                     blacklistedMods = new HashSet<string>();
                     favoritedMods = new HashSet<string>();
-                    
+                    favoritesDependenciesMods = new Dictionary<string, HashSet<string>>();
+
                     string[] files;
                     bool headerInserted;
 
@@ -330,13 +336,12 @@ namespace Celeste.Mod.UI {
                     updateHighlightedMods();
                 }).AltPressed(() => {
                     if (favoritedMods.Contains(file)) {
-                        favoritedMods.Remove(file);
+                        removeFromFavorites(file);
                     } else {
-                        favoritedMods.Add(file);
+                        addToFavorites(file);
                     }
 
-                    modToggles[file].Container.HighlightColor = Color.Pink;
-                    
+                    updateHighlightedMods();
                 }));
 
             allMods.Add(file);
@@ -350,7 +355,15 @@ namespace Celeste.Mod.UI {
         private void updateHighlightedMods() {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
-                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
+                Color unselectedColor = Color.White;
+                if (favoritedMods.Contains(toggle.Key)) {
+                    unselectedColor = Color.DeepPink;
+                } else if (favoritesDependenciesMods.ContainsKey(toggle.Key)) {
+                    unselectedColor = Color.LightPink;
+                } else if (modHasDependencies(toggle.Key)) {
+                    unselectedColor = Color.Goldenrod;
+                }
+                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = unselectedColor;
             }
 
             // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
@@ -428,6 +441,36 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        private void addToFavorites(string file) {
+            favoritedMods.Add(file);
+
+            // I guess we silently fail?
+            if (TryGetModDependenciesFileNames(file, out List<string> dependenciesFileNames)) {
+                foreach (string dependenciesFileName in dependenciesFileNames) {
+                    if (!favoritesDependenciesMods.ContainsKey(dependenciesFileName)) {
+                        favoritesDependenciesMods[dependenciesFileName] = new HashSet<string>();
+                    }
+
+                    favoritesDependenciesMods[dependenciesFileName].Add(file);
+                }
+            }
+        }
+
+        private void removeFromFavorites(string file) {
+            favoritedMods.Remove(file);
+
+            if (TryGetModDependenciesFileNames(file, out List<string> dependenciesFileNames)) {
+                foreach (string dependenciesFileName in dependenciesFileNames) {
+                    if (favoritesDependenciesMods.ContainsKey(dependenciesFileName)) {
+                        favoritesDependenciesMods[dependenciesFileName].Remove(file);
+                        if (favoritesDependenciesMods[dependenciesFileName].Count == 0) {
+                            favoritesDependenciesMods.Remove(dependenciesFileName);
+                        }
+                    }
+                }
+            }
+        }
+
         private void onBackPressed(Overworld overworld) {
             // "back" only works if the loading is done.
             if (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted) {
@@ -452,6 +495,43 @@ namespace Celeste.Mod.UI {
                     Everest.QuickFullRestart();
                 }
             }
+        }
+
+        private bool TryGetModDependenciesFileNames(string modFilename, out List<string> dependenciesFileNames) {
+            // TODO: This nested loop is taken from the removeFromBlacklist, this could be replaced by creating a HashMap between modName to EverestModule,
+            //       Right now it seems like we are ?needlessly? iterating n^2 times.
+
+            // iterate over all the dependencies
+            if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
+                dependenciesFileNames = new List<string>();
+
+                foreach (EverestModuleMetadata metadata in metadatas) {
+                    // iterate over each loaded mode to ensure its present
+                    foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
+                        KeyValuePair<string, EverestModuleMetadata>? found = null;
+                        foreach (KeyValuePair<string, EverestModuleMetadata[]> candidateMetadatas in modYamls) {
+                            foreach (EverestModuleMetadata candidateMetadata in candidateMetadatas.Value) {
+                                if (candidateMetadata.Name == dependencyName) {
+                                    // we found it!
+                                    if (found == null || found.Value.Value.Version < candidateMetadata.Version) {
+                                        found = new KeyValuePair<string, EverestModuleMetadata>(candidateMetadatas.Key, candidateMetadata);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (found != null) {
+                            dependenciesFileNames.Add(found.Value.Key);
+                        }
+                    }
+                }
+
+                return true;
+            }
+
+
+            dependenciesFileNames = null;
+            return false;
         }
 
         private bool modHasDependencies(string modFilename) {
