@@ -477,13 +477,14 @@ namespace Celeste.Mod.UI {
         }
 
         private void addToFavoritesDependencies(string modFileName, string dependentModFileName) {
-            if (!favoritesDependenciesMods.ContainsKey(modFileName)) {
-                favoritesDependenciesMods[modFileName] = new HashSet<string>();
+            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow we reach ourself.
+            if ((favoritesDependenciesMods.ContainsKey(modFileName) && favoritesDependenciesMods[modFileName].Contains(dependentModFileName))
+                    || modFileName.Equals(dependentModFileName)) {
+                return;
             }
 
-            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow we reach ourself.
-            if (favoritesDependenciesMods[modFileName].Contains(dependentModFileName) || modFileName.Equals(dependentModFileName)) {
-                return;
+            if (!favoritesDependenciesMods.ContainsKey(modFileName)) {
+                favoritesDependenciesMods[modFileName] = new HashSet<string>();
             }
 
             // Add dependent mod
