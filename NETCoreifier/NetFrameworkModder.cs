@@ -18,7 +18,6 @@ namespace NETCoreifier {
         private ModuleDefinition _CoreifierModule;
 
         private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
-        private AssemblyNameReference _RuntimeRef;
 
         public override void Dispose() {
             // Don't dispose the main module

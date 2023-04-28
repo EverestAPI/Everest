@@ -23,9 +23,11 @@ namespace Monocle {
         public static void SetViewport(Viewport value) => Viewport = value;
 
 #pragma warning disable CS0649 // variable defined in vanilla
-        private Scene nextScene;
-        private static bool resizing;
+#pragma warning disable CS0414
+        private Scene nextScene = default;
+        private static bool resizing = default;
 #pragma warning restore CS0649
+#pragma warning restore CS0414
 
         /// <summary>
         /// Allows to check which scene is next in methods like Entity.SceneEnd() or Scene.End().
