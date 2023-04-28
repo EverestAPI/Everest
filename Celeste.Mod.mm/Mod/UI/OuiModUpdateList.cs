@@ -13,6 +13,7 @@ namespace Celeste.Mod.UI {
 
         private TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
+        private TextMenuExt.SubHeaderExt subRestartHeader;
         private TextMenu.Button fetchingButton;
         private TextMenu.Button updateAllButton;
 
@@ -26,6 +27,8 @@ namespace Celeste.Mod.UI {
         private Task renderButtonsTask;
 
         private bool shouldRestart = false;
+
+        private bool restartMenuAdded = false;
 
         private static List<ModUpdateHolder> updatableMods = null;
 
@@ -126,7 +129,8 @@ namespace Celeste.Mod.UI {
             // check if the "press Back to restart" message has to be toggled
             if (menu.Focused && shouldRestart) {
                 subHeader.TextColor = Color.OrangeRed;
-                subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_WILLRESTART")})";
+                subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_RESTARTNEEDED")})";
+                addRestartButtons();
             } else if (!menu.Focused && ongoingUpdateCancelled && menuOnScreen) {
                 subHeader.TextColor = Color.Gray;
                 subHeader.Title = $"{Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")} ({Dialog.Clean("MODUPDATECHECKER_CANCELLING")})";
@@ -147,8 +151,8 @@ namespace Celeste.Mod.UI {
                     renderButtonsTask = null; // make sure no leftover tasks are there
                 }
             } else if (Input.MenuCancel.Pressed && menu.Focused && Selected) {
-                if (shouldRestart) {
-                    Everest.QuickFullRestart();
+                if (shouldRestart && subRestartHeader != null) {
+                    Audio.Play(SFX.ui_main_button_invalid);
                 } else {
                     // go back to mod options instead
                     Audio.Play(SFX.ui_main_button_back);
@@ -165,6 +169,23 @@ namespace Celeste.Mod.UI {
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
             }
             base.Render();
+        }
+
+        private void addRestartButtons() {
+            if (restartMenuAdded) return;
+            menu.Add(subRestartHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER_RESTART")));
+            TextMenu.Button shutdownButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_SHUTDOWN"));
+            shutdownButton.Pressed(() => {
+                new FadeWipe(base.Scene, false, delegate {
+				    Engine.Scene = new Scene();
+				    Engine.Instance.Exit();
+			    });
+            });
+            TextMenu.Button restartButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_RESTART"));
+            restartButton.Pressed(() => Everest.QuickFullRestart());
+            menu.Add(shutdownButton);
+            menu.Add(restartButton);
+            restartMenuAdded = true;
         }
 
         private void checkForUpdates() {

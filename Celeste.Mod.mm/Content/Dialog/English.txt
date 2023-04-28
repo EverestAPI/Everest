@@ -198,6 +198,10 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Update all mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Updating all mods...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	All mods have been updated.
+	MODUPDATECHECKER_RESTARTNEEDED= Celeste needs to restart to continue
+	MODUPDATECHECKER_MENU_HEADER_RESTART= Choose an action
+	MODUPDATECHECKER_SHUTDOWN= Shutdown Celeste
+	MODUPDATECHECKER_RESTART= Restart Celeste
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
