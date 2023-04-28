@@ -44,12 +44,14 @@
   <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
     <PropertyGroup>
       <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\MiniInstaller-win.exe</AppHostIntermediatePath_win-x86>
+      <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\MiniInstaller-win64.exe</AppHostIntermediatePath_win-x64>
       <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\MiniInstaller-linux</AppHostIntermediatePath_linux-x64>
       <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\MiniInstaller-osx</AppHostIntermediatePath_osx-x64>
     </PropertyGroup>
 
     <ItemGroup>
       <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="MiniInstaller-win64.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
       <Content Include="app.manifest" TargetPath="MiniInstaller-win.exe.manifest" CopyToOutputDirectory="always" CopyToPublishDirectory="always" /> <!-- Needed as otherwise Windows will think we're an actual installer which requires admin privileges -->
@@ -60,6 +62,7 @@
     <Message Importance="High" Text="Binding MiniInstaller AppHosts..." />
 
     <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
     <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
   </Target>

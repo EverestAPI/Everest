@@ -407,7 +407,8 @@ namespace Celeste.Mod {
                 try {
                     Process installer = new Process();
                     installer.StartInfo.FileName = Path.Combine(extractedPath,
-                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "MiniInstaller-win.exe" :
+                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                            (RuntimeInformation.OSArchitecture == Architecture.X64 ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
                         RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
                         RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
                         throw new Exception("Unknown OS platform")
