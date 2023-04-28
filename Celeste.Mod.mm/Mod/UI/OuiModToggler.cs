@@ -23,7 +23,7 @@ namespace Celeste.Mod.UI {
         private HashSet<string> favoritedMods;
         // list of favorited mods when the menu was open
         private HashSet<string> favoritedModsOriginal;
-        // dictionary mapping between the dependence and the dependents
+        // dictionary mapping between the dependencies and the dependents
         private Dictionary<string, HashSet<string>> favoritesDependenciesMods;
 
         private bool toggleDependencies = true;
@@ -464,6 +464,7 @@ namespace Celeste.Mod.UI {
 
         private void addToFavorites(string modFileName) {
             favoritedMods.Add(modFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added to favorites");
 
             // I guess we silently fail?
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
@@ -478,41 +479,49 @@ namespace Celeste.Mod.UI {
                 favoritesDependenciesMods[modFileName] = new HashSet<string>();
             }
 
-            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod.
-            if (favoritesDependenciesMods[modFileName].Contains(dependentModFileName)) {
+            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow we reach ourself.
+            if (favoritesDependenciesMods[modFileName].Contains(dependentModFileName) || modFileName.Equals(dependentModFileName)) {
                 return;
             }
 
+            // Add dependent mod
             favoritesDependenciesMods[modFileName].Add(dependentModFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
 
-            // I guess we silently fail?
+
+            // we want to add A as the favorite mod that is dependent on all of modFileName dependencies as well
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
-                foreach (string dependenciesFileName in dependenciesFileNames) {
-                    addToFavoritesDependencies(dependenciesFileName, modFileName);
+                foreach (string dependencyFileName in dependenciesFileNames) {
+                    addToFavoritesDependencies(dependencyFileName, dependentModFileName);
                 }
             }
         }
 
         private void removeFromFavorites(string modFileName) {
             favoritedMods.Remove(modFileName);
+            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from favorites");
 
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
-                foreach (string dependenciesFileName in dependenciesFileNames) {
-                    removeFromFavoritesDependencies(dependenciesFileName, modFileName);
+                foreach (string dependencyFileName in dependenciesFileNames) {
+                    removeFromFavoritesDependencies(dependencyFileName, modFileName);
                 }
             }
         }
 
         private void removeFromFavoritesDependencies(string modFileName, string dependentModFileName) {
-            if (favoritesDependenciesMods.ContainsKey(modFileName)) {
+            if (favoritesDependenciesMods.ContainsKey(modFileName) && favoritesDependenciesMods[modFileName].Contains(dependentModFileName)) {
+
                 favoritesDependenciesMods[modFileName].Remove(dependentModFileName);
+                Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from being a favorite dependency of {dependentModFileName}");
+
                 if (favoritesDependenciesMods[modFileName].Count == 0) {
                     favoritesDependenciesMods.Remove(modFileName);
+                    Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} is no longer a favorite dependency");
                 }
 
                 if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
-                    foreach (string dependenciesFileName in dependenciesFileNames) {
-                        removeFromFavoritesDependencies(dependenciesFileName, modFileName);
+                    foreach (string dependencyFileName in dependenciesFileNames) {
+                        removeFromFavoritesDependencies(dependencyFileName, dependentModFileName);
                     }
                 }
             }
