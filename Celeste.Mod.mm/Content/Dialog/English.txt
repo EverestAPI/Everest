@@ -260,6 +260,9 @@
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Toggle Dependencies Automatically
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	When you enable a mod, all its dependencies will be enabled.
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	When you disable a mod, all mods that depend on it will be disabled.
+	MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES=			Toggle Favorites
+	MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE1=	Press
+	MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE2=	to add or remove items from the favorite list.
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you enable or disable mods, your blacklist.txt will be replaced,
 	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes.
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Highlighted mods are used by other enabled mods as a dependency.

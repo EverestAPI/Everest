@@ -1353,5 +1353,93 @@ namespace Celeste {
             }
         }
 
+        public class SubMenuWithInputs : TextMenu.Item {
+            public object[] Items { get; set; }
+            public bool ControllerMode { get; set; }
+            public Color TextColor { get; set; } = Color.Gray;
+            public Color ButtonColor { get; set; } = Color.White;
+            public float Alpha { get; set; } = 1f;
+            public float Scale { get; set; } = 0.6f;
+
+            public SubMenuWithInputs(object[] items, bool controllerMode) {
+                this.Items = items;
+                this.ControllerMode = controllerMode;
+            }
+
+
+            public override float Height() {
+                return ActiveFont.LineHeight;
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 lineOffset = position;
+                Vector2 justify = new Vector2(0f, 0.5f);
+                float strokeAlpha = Alpha * Alpha * Alpha;
+
+                for (int i = 0; i < this.Items.Count(); i++) {
+                    if (this.Items[i] is string) {
+                        ActiveFont.DrawOutline(this.Items[i] as string, lineOffset, justify, Vector2.One * Scale, TextColor * Alpha, 2f, Color.Black * strokeAlpha);
+                        lineOffset.X += ActiveFont.Measure(this.Items[i] as string).X * Scale;
+                    } else if (this.Items[i] is VirtualButton) {
+                        VirtualButton virtualButton = this.Items[i] as VirtualButton;
+                        MTexture buttonTexture = null;
+
+                        if (this.ControllerMode) {
+                            buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached, "controls/keyboard/oemquestion");
+                        } else if (virtualButton.Binding.Keyboard.Count > 0) {
+                            buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0], "controls/keyboard/oemquestion");
+                        } else {
+                            buttonTexture = Input.GuiKey(Microsoft.Xna.Framework.Input.Keys.None, "controls/keyboard/oemquestion");
+                        }
+
+                        buttonTexture.DrawJustified(lineOffset, justify, ButtonColor * strokeAlpha, Scale);
+                        lineOffset.X += (float) buttonTexture.Width * Scale;
+                    }
+                }
+            }
+        }
+
+        public class EaseInSubMenuWithInputs : SubMenuWithInputs {
+
+
+
+            /// <summary>
+            /// Toggling this will make the header ease in/out.
+            /// </summary>
+            public bool FadeVisible { get; set; } = true;
+
+            private float uneasedAlpha;
+            private TextMenu containingMenu;
+
+            public EaseInSubMenuWithInputs(object[] items, bool controllerMode, bool initiallyVisible, TextMenu containingMenu) : base(items, controllerMode) {
+                this.containingMenu = containingMenu;
+
+                FadeVisible = initiallyVisible;
+                Alpha = FadeVisible ? 1 : 0;
+                uneasedAlpha = Alpha;
+
+            }
+
+            // the fade has to take into account the item spacing as well, or the other options will abruptly shift up when Visible is switched to false.
+            public override float Height() => MathHelper.Lerp(-containingMenu.ItemSpacing, base.Height(), Alpha);
+
+            public override void Update() {
+                base.Update();
+
+                // gradually make the sub-header fade in or out. (~333ms fade)
+                float targetAlpha = FadeVisible ? 1 : 0;
+                if (uneasedAlpha != targetAlpha) {
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
+
+                    if (FadeVisible)
+                        Alpha = Ease.SineOut(uneasedAlpha);
+                    else
+                        Alpha = Ease.SineIn(uneasedAlpha);
+                }
+
+                Visible = (Alpha != 0);
+            }
+        }
+
     }
 }

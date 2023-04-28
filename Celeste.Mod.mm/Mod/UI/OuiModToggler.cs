@@ -249,12 +249,24 @@ namespace Celeste.Mod.UI {
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
                     TextMenu.Item toggleFavoritesButton;
-                    // TODO: add localization support
-                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff("Toggle Favorites", toggleFavorites)
+                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), toggleFavorites)
                         .Change(value => toggleFavorites = value));
-                    // TODO: Add a better indication for how to use the favorite system
-                    toggleFavoritesButton.AddDescription(menu, "Press the 'Journal key' in order to add or remove items from the favorite list.");
 
+                    TextMenuExt.EaseInSubMenuWithInputs favoriteToolTip = new TextMenuExt.EaseInSubMenuWithInputs(
+                        new object[] { Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE1") + " ",
+                        Input.MenuJournal, " " + Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE2") },
+                        Input.GuiInputController(), false, menu) { TextColor = Color.Gray };
+
+                    menu.Add(favoriteToolTip);
+
+                    toggleFavoritesButton.OnEnter += delegate {
+                        // make the description appear.
+                        favoriteToolTip.FadeVisible = true;
+                    };
+                    toggleFavoritesButton.OnLeave += delegate {
+                        // make the description disappear.
+                        favoriteToolTip.FadeVisible = false;
+                    };
 
 
                     // "cancel" button to leave the screen without saving
