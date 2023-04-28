@@ -289,6 +289,24 @@ namespace Celeste.Mod {
 
             public static Entry Newest { get; internal set; }
             public static bool HasUpdate => Newest != null && Newest.Build > Build;
+            public static bool UpdateFailed { get; internal set;}
+
+            internal static void CheckForUpdateFailure() {
+                string updateBuildPath = Path.Combine(PathGame, "everest-update", "update-build.txt");
+                if(!File.Exists(updateBuildPath))
+                    return;
+
+                try {
+                    if (Build != int.Parse(File.ReadAllText(updateBuildPath)))
+                        UpdateFailed = true;
+                } catch(Exception e) {
+                    Logger.Log(LogLevel.Warn, "updater", "Exception when trying to determine update build number");
+                    Logger.LogDetailed(e);
+                    UpdateFailed = true;
+                } finally {
+                    File.Delete(updateBuildPath);
+                }
+            }
 
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
                 if (!Flags.SupportUpdatingEverest) {
@@ -403,8 +421,11 @@ namespace Celeste.Mod {
                 }
                 progress.Lines[progress.Lines.Count - 1] = action;
 
-                // Start MiniInstaller in a separate process.
                 try {
+                    // Store the update version for later
+                    File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+
+                    // Start MiniInstaller in a separate process.
                     Process installer = new Process();
                     installer.StartInfo.FileName = Path.Combine(extractedPath,
                         RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?

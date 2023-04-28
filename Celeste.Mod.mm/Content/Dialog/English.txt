@@ -34,6 +34,7 @@
 	MENU_MODOPTIONS= 		Mod Options
 	MENU_PAUSE_MODOPTIONS= 	Mod Options
 	
+	MENU_MODOPTIONS_UPDATE_FAILED=				Failed to install Everest Update
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yaml load errors occurred
