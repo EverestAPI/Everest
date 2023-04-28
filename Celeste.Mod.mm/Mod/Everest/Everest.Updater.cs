@@ -450,7 +450,8 @@ namespace Celeste.Mod {
                     } else {
                         // This build ships with native MiniInstaller binaries
                         installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
-                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ? "MiniInstaller-win.exe" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
+                                (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Bits64) ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
                             throw new Exception("Unknown OS platform")
