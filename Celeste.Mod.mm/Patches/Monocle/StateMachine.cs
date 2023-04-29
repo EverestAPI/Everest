@@ -14,7 +14,7 @@ namespace Monocle {
         // Keep track of state's names.
         private string[] names;
 
-        public extern void orig_ctor(int maxStates = 10);
+        private extern void orig_ctor(int maxStates = 10);
         [MonoModConstructor]
         public void ctor(int maxStates = 10) {
             orig_ctor(maxStates);
@@ -33,7 +33,7 @@ namespace Monocle {
             return nextIdx;
         }
 
-        public extern void orig_SetCallbacks(int state, Func<int> onUpdate, Func<IEnumerator> coroutine = null, Action begin = null, Action end = null);
+        private extern void orig_SetCallbacks(int state, Func<int> onUpdate, Func<IEnumerator> coroutine = null, Action begin = null, Action end = null);
         public void SetCallbacks(
             int state,
             Func<int> onUpdate,
@@ -58,7 +58,7 @@ namespace Monocle {
             return nextIdx;
         }
 
-        public string GetState(int state) => names[state];
+        public string GetStateName(int state) => names[state];
         public void SetStateName(int state, string name) => names[state] = name;
         
         public string GetCurrentStateName() => names[State];
