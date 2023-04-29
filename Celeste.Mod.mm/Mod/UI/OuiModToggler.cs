@@ -28,7 +28,7 @@ namespace Celeste.Mod.UI {
 
         private bool toggleDependencies = true;
 
-        private bool DisableAllIgnoresFavorites = true;
+        private bool disableAllIgnoresFavorites = true;
 
         private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
@@ -229,7 +229,7 @@ namespace Celeste.Mod.UI {
                         blacklistedMods.Clear();
                         foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
                             bool isFavorite = favoritedMods.Contains(toggle.Key) || favoritesDependenciesMods.ContainsKey(toggle.Key);
-                            if (DisableAllIgnoresFavorites && isFavorite) {
+                            if (disableAllIgnoresFavorites && isFavorite) {
                                 continue;
                             }
 
@@ -247,11 +247,8 @@ namespace Celeste.Mod.UI {
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
                     TextMenu.Item toggleFavoritesButton;
-                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), DisableAllIgnoresFavorites)
-                        .Change(value => DisableAllIgnoresFavorites = value));
-
-
-
+                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), disableAllIgnoresFavorites)
+                        .Change(value => disableAllIgnoresFavorites = value));
 
                     TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs> favoriteToolTip =
                         new TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs>(
@@ -653,7 +650,7 @@ namespace Celeste.Mod.UI {
             modToggles = null;
             modLoadingTask = null;
             toggleDependencies = true;
-            DisableAllIgnoresFavorites = false;
+            disableAllIgnoresFavorites = false;
             favoritedMods = null;
             favoritedModsOriginal = null;
             favoritesDependenciesMods = null;

@@ -1355,7 +1355,6 @@ namespace Celeste {
 
         public class SubMenuWithInputs : TextMenu.Item, IItemExt {
             public object[] Items { get; set; }
-            private Func<bool> ControllerModeCallback;
             public Color TextColor { get; set; } = Color.Gray;
             public Color ButtonColor { get; set; } = Color.White;
             public Color StrokeColor { get; set; } = Color.White;
@@ -1366,12 +1365,10 @@ namespace Celeste {
             public bool IconOutline { get; set; }
             public Vector2 Offset { get; set; }
 
-            public override float Height() {
-                return ActiveFont.LineHeight;
-            }
+            private Func<bool> controllerModeCallback;
 
             public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons, Func<bool> controllerModeCallback) {
-                this.ControllerModeCallback = controllerModeCallback;
+                this.controllerModeCallback = controllerModeCallback;
 
                 string[] parts = text.Split(separator);
                 Items = new object[parts.Length * 2 - 1];
@@ -1387,6 +1384,9 @@ namespace Celeste {
                 }
             }
 
+            public override float Height() {
+                return ActiveFont.LineHeight;
+            }
 
             public override void Render(Vector2 position, bool highlighted) {
                 Vector2 lineOffset = position;
@@ -1402,7 +1402,7 @@ namespace Celeste {
                         VirtualButton virtualButton = item as VirtualButton;
                         MTexture buttonTexture = null;
 
-                        if (this.ControllerModeCallback()) {
+                        if (controllerModeCallback()) {
                             buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached);
                         } else if (virtualButton.Binding.Keyboard.Count > 0) {
                             buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0]);
@@ -1411,7 +1411,7 @@ namespace Celeste {
                         }
 
                         buttonTexture.DrawJustified(lineOffset, justify, ButtonColor * strokeAlpha, Scale);
-                        lineOffset.X += (float) buttonTexture.Width * Scale;
+                        lineOffset.X += buttonTexture.Width * Scale;
                     }
                 }
             }
@@ -1420,111 +1420,111 @@ namespace Celeste {
         // this is full of boilerplate code might be replaceable with DispatchProxy once we upgrade .NET
         // https://learn.microsoft.com/en-us/dotnet/api/system.reflection.dispatchproxy?view=net-7.0
         public class EaseInDecorator<T> : TextMenu.Item, IItemExt where T : TextMenu.Item, IItemExt {
-            private T Inner;
+            private T inner;
+            private float uneasedAlpha;
+            private TextMenu containingMenu;
+
             public bool FadeVisible { get; set; } = true;
 
-            private float UneasedAlpha;
-            private TextMenu ContainingMenu;
-
             public EaseInDecorator(T inner, bool initiallyVisible, TextMenu containingMenu) {
-                this.Inner = inner;
-                this.ContainingMenu = containingMenu;
+                this.inner = inner;
+                this.containingMenu = containingMenu;
 
                 FadeVisible = initiallyVisible;
                 Alpha = FadeVisible ? 1 : 0;
-                UneasedAlpha = Alpha;
+                uneasedAlpha = Alpha;
             }
 
-            public Color TextColor { get => Inner.TextColor; set => Inner.TextColor = value; }
-            public string Icon { get => Inner.Icon; set => Inner.Icon = value; }
-            public float? IconWidth { get => Inner.IconWidth; set => Inner.IconWidth = value; }
-            public bool IconOutline { get => Inner.IconOutline; set => Inner.IconOutline = value; }
-            public Vector2 Offset { get => Inner.Offset; set => Inner.Offset = value; }
-            public float Alpha { get => Inner.Alpha; set => Inner.Alpha = value; }
-            new public bool Selectable { get => Inner.Selectable; set => Inner.Selectable = value; }
-            new public bool Visible { get => Inner.Visible; set => Inner.Visible = value; }
+            public Color TextColor { get => inner.TextColor; set => inner.TextColor = value; }
+            public string Icon { get => inner.Icon; set => inner.Icon = value; }
+            public float? IconWidth { get => inner.IconWidth; set => inner.IconWidth = value; }
+            public bool IconOutline { get => inner.IconOutline; set => inner.IconOutline = value; }
+            public Vector2 Offset { get => inner.Offset; set => inner.Offset = value; }
+            public float Alpha { get => inner.Alpha; set => inner.Alpha = value; }
+            new public bool Selectable { get => inner.Selectable; set => inner.Selectable = value; }
+            new public bool Visible { get => inner.Visible; set => inner.Visible = value; }
 
-            new public bool Disabled { get => Inner.Disabled; set => Inner.Disabled = value; }
-            new public bool IncludeWidthInMeasurement { get => Inner.IncludeWidthInMeasurement; set => Inner.IncludeWidthInMeasurement = value; }
-            new public bool AboveAll { get => Inner.AboveAll; set => Inner.AboveAll = value; }
-            new public TextMenu Container { get => Inner.Container; set => Inner.Container = value; }
-            new public Wiggler SelectWiggler { get => Inner.SelectWiggler; set => Inner.SelectWiggler = value; }
-            new public Wiggler ValueWiggler { get => Inner.ValueWiggler; set => Inner.ValueWiggler = value; }
-            new public Action OnEnter { get => Inner.OnEnter; set => Inner.OnEnter = value; }
-            new public Action OnLeave { get => Inner.OnLeave; set => Inner.OnLeave = value; }
-            new public Action OnPressed { get => Inner.OnPressed; set => Inner.OnPressed = value; }
-            new public Action OnAltPressed { get => Inner.OnAltPressed; set => Inner.OnAltPressed = value; }
-            new public Action OnUpdate { get => Inner.OnUpdate; set => Inner.OnUpdate = value; }
+            new public bool Disabled { get => inner.Disabled; set => inner.Disabled = value; }
+            new public bool IncludeWidthInMeasurement { get => inner.IncludeWidthInMeasurement; set => inner.IncludeWidthInMeasurement = value; }
+            new public bool AboveAll { get => inner.AboveAll; set => inner.AboveAll = value; }
+            new public TextMenu Container { get => inner.Container; set => inner.Container = value; }
+            new public Wiggler SelectWiggler { get => inner.SelectWiggler; set => inner.SelectWiggler = value; }
+            new public Wiggler ValueWiggler { get => inner.ValueWiggler; set => inner.ValueWiggler = value; }
+            new public Action OnEnter { get => inner.OnEnter; set => inner.OnEnter = value; }
+            new public Action OnLeave { get => inner.OnLeave; set => inner.OnLeave = value; }
+            new public Action OnPressed { get => inner.OnPressed; set => inner.OnPressed = value; }
+            new public Action OnAltPressed { get => inner.OnAltPressed; set => inner.OnAltPressed = value; }
+            new public Action OnUpdate { get => inner.OnUpdate; set => inner.OnUpdate = value; }
 
 
-            new public float Width { get => Inner.Width; }
+            new public float Width => inner.Width;
 
-            new public bool Hoverable { get => Inner.Hoverable; }
+            new public bool Hoverable => inner.Hoverable;
 
 
             public override void Added() {
-                Inner.Added();
+                inner.Added();
             }
 
             public new TextMenu.Item AltPressed(Action onPressed) {
-                return Inner.AltPressed(onPressed);
+                return inner.AltPressed(onPressed);
             }
 
             public override void ConfirmPressed() {
-                Inner.ConfirmPressed();
+                inner.ConfirmPressed();
             }
 
             public new TextMenu.Item Enter(Action onEnter) {
-                return Inner.Enter(onEnter);
+                return inner.Enter(onEnter);
             }
 
             public override float Height() {
-                return MathHelper.Lerp(-ContainingMenu.ItemSpacing, Inner.Height(), Inner.Alpha);
+                return MathHelper.Lerp(-containingMenu.ItemSpacing, inner.Height(), inner.Alpha);
             }
 
             public new TextMenu.Item Leave(Action onLeave) {
-                return Inner.Leave(onLeave);
+                return inner.Leave(onLeave);
             }
 
             public override void LeftPressed() {
-                Inner.LeftPressed();
+                inner.LeftPressed();
             }
 
             public override float LeftWidth() {
-                return Inner.LeftWidth();
+                return inner.LeftWidth();
             }
 
             public new TextMenu.Item Pressed(Action onPressed) {
-                return Inner.Pressed(onPressed);
+                return inner.Pressed(onPressed);
             }
 
             public override void Render(Vector2 position, bool highlighted) {
-                Inner.Render(position, highlighted);
+                inner.Render(position, highlighted);
             }
 
             public override void RightPressed() {
-                Inner.RightPressed();
+                inner.RightPressed();
             }
 
             public override float RightWidth() {
-                return Inner.RightWidth();
+                return inner.RightWidth();
             }
 
             public override void Update() {
-                Inner.Update();
+                inner.Update();
 
                 // gradually make the sub-header fade in or out. (~333ms fade)
                 float targetAlpha = FadeVisible ? 1 : 0;
-                if (UneasedAlpha != targetAlpha) {
-                    UneasedAlpha = Calc.Approach(UneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
+                if (uneasedAlpha != targetAlpha) {
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
 
                     if (FadeVisible)
-                        Alpha = Ease.SineOut(UneasedAlpha);
+                        Alpha = Ease.SineOut(uneasedAlpha);
                     else
-                        Alpha = Ease.SineIn(UneasedAlpha);
+                        Alpha = Ease.SineIn(uneasedAlpha);
                 }
 
-                Visible = (Alpha != 0);
+                Visible = Alpha != 0;
             }
         }
     }
