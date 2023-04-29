@@ -642,16 +642,16 @@ table.insert(package.searchers, loaderVirtualFS)
 
 -- Vex forced me to do this.
 local function loaderCS(name)
-    name = name and (name:match("^cs%.(.*)") or name:match("^#(.*)"))
-    if not name then
+    local stripped = name and (name:match("^cs%.(.*)") or name:match("^#(.*)"))
+    if not stripped then
         return "\n\tNot a C# reference: " .. name
     end
 
     local found = cs
-    for key in name:gmatch("[^.]+") do
+    for key in stripped:gmatch("[^.]+") do
         found = found[key]
         if not found then
-            return "\n\tC# reference not found: " .. name
+            return "\n\tC# reference not found: " .. stripped
         end
     end
 

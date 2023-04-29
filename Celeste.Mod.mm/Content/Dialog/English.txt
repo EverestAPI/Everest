@@ -34,6 +34,7 @@
 	MENU_MODOPTIONS= 		Mod Options
 	MENU_PAUSE_MODOPTIONS= 	Mod Options
 	
+	MENU_MODOPTIONS_UPDATE_FAILED=				Failed to install Everest Update
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yaml load errors occurred
@@ -156,6 +157,7 @@
 	UPDATER_SRC_STABLE=				STABLE
 	UPDATER_SRC_BETA=				BETA
 	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
 
 	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
 	UPDATER_SRC_BUILDBOT_AZURE=		Automatic builds (Azure)
@@ -218,6 +220,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						done.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		WARNING: A (currently WIP) .NET Core build of Everest is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest will be updated to {0} to make some mods work. Press Confirm to continue.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ERROR: Some of your mods require a more recent version of Celeste to work. Please update your game.

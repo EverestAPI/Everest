@@ -170,7 +170,7 @@ namespace Celeste {
 
             // skip creating a backup if we are on a develop build
             if (previousVersion == new Version(0, 0, 0)) {
-                Logger.Log(LogLevel.Verbose, "core", "Running in development build, skipping backup");
+                Logger.Log(LogLevel.Verbose, "core", "Previous Everest version was a development build, skipping backup.");
                 return;
             }
 

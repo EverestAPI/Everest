@@ -97,6 +97,9 @@ namespace Celeste.Mod.UI {
                 // Everest should be updated to satisfy a dependency on Everest
                 bool shouldUpdateEverestManually = false;
 
+                // a mod is .NET Core Everest only
+                bool requiresNetCoreEverest = false;
+
                 // these mods are absent from the database
                 HashSet<string> modsNotFound = new HashSet<string>();
 
@@ -129,6 +132,13 @@ namespace Celeste.Mod.UI {
                                 shouldUpdateEverestManually = true;
                             }
                         }
+                    } else if (dependency.Name == "EverestCore") {
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} requires .NET Core Everest");
+                        shouldUpdateEverestManually = true;
+                        everestVersionToInstall = null;
+                        requiresNetCoreEverest = true;
+                        shouldAutoExit = false;
+
                     } else if (tryUnblacklist(dependency, allModsInformation, modFilenamesToUnblacklist)) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
 
@@ -216,7 +226,9 @@ namespace Celeste.Mod.UI {
                 }
 
                 // display all mods that couldn't be accounted for
-                if (shouldUpdateEverestManually)
+                if (requiresNetCoreEverest)
+                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST"));
+                else if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
                 foreach (string mod in modsNotFound) {
@@ -358,20 +370,30 @@ namespace Celeste.Mod.UI {
         }
 
         private Everest.Updater.Entry findEverestVersionToInstall(int requestedBuild) {
+            // Find the entry with the highest build number and the highest priority
+            Everest.Updater.UpdatePriority updatePrio = Everest.Updater.UpdatePriority.None;
+            Everest.Updater.Entry updateEntry = null;
+
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                if (source?.Entries == null)
+                if (source?.Entries == null || source?.UpdatePriority is Everest.Updater.UpdatePriority.None)
                     continue;
 
                 foreach (Everest.Updater.Entry entry in source.Entries) {
-                    if (entry.Build >= requestedBuild) {
-                        // we found a suitable build! return it.
-                        return entry;
-                    }
+                    if (entry.Build < requestedBuild)
+                        continue;
+
+                    if (source.UpdatePriority < updatePrio)
+                        continue;
+ 
+                    if (source.UpdatePriority == updatePrio && entry.Build < updateEntry?.Build)
+                        continue;
+ 
+                    updatePrio = source.UpdatePriority;
+                    updateEntry = entry;
                 }
             }
 
-            // we checked the whole version list and didn't find anything suitable, so...
-            return null;
+            return updateEntry;
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {

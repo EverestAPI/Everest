@@ -510,6 +510,9 @@ namespace Celeste.Mod {
             // Start requesting the version list ASAP.
             Updater.RequestAll();
 
+            // Check if an update failed
+            Updater.CheckForUpdateFailure();
+
             // Request the mod update list as well.
             ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
 
