@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
+
+using Microsoft.Xna.Framework;
 using Monocle;
 using System;
 using System.Collections;
