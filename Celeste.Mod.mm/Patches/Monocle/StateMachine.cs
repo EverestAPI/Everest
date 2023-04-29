@@ -41,7 +41,7 @@ namespace Monocle {
             Action begin = null,
             Action end = null) {
             orig_SetCallbacks(state, onUpdate, coroutine, begin, end);
-            names[state] = state.ToString();
+            names[state] ??= state.ToString();
         }
         
         /// <summary>
