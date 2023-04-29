@@ -13,13 +13,13 @@ namespace Monocle {
         private const double B1 = 0.363636374f, B2 = 0.727272749f, B3 = 0.545454562f, B4 = 0.909090936f, B5 = 0.8181818f, B6 = 0.954545438f;
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_1(System.Single)")]
-        public float SineIn(float t) => (float) (-Math.Cos(Math.PI/2 * (double) t) + 1);
+        public float SineIn(float t) => (float) (-(double) (float) Math.Cos((float) (Math.PI/2) * (double) t) + 1.0);
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_2(System.Single)")]
-        public float SineOut(float t) => (float) Math.Sin(Math.PI/2 * (double) t);
+        public float SineOut(float t) => (float) Math.Sin((float) (Math.PI/2) * (double) t);
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_3(System.Single)")]
-        public float SineInOut(float t) => (float) (-Math.Cos(Math.PI * (double) t) / 2.0 + 0.5);
+        public float SineInOut(float t) => (float) (-(double) (float) Math.Cos(Math.PI * (double) t) / 2.0 + 0.5);
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_4(System.Single)")]
         public float QuadIn(float t) => (float) ((double) t * (double) t);
@@ -53,7 +53,7 @@ namespace Monocle {
 
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_12(System.Single)")]
         public float BounceIn(float t) {
-            double td = (float) (1.0 - t);
+            double td = 1.0 - t;
             if (td < B1)
                 return (float) (1.0 - 1.0/(B1*B1) * td * td);
             else if (td < B2)
@@ -80,7 +80,7 @@ namespace Monocle {
         [MonoModLinkFrom($"System.Single {EaserClassFName}::<.cctor>b__38_14(System.Single)")]
         public float BounceInOut(float t) {
             if (t < 0.5f) {
-                double td = (float) (1.0 - t * 2.0);
+                double td = 1.0 - t * 2.0;
                 if (td < B1)
                     return (float) ((1.0 - 1.0/(B1*B1) * td * td) / 2.0);
                 else if (td < B2)
@@ -90,7 +90,7 @@ namespace Monocle {
                 else
                     return (float) ((1.0 - (1.0/(B1*B1) * (td - B6) * (td - B6) + (1.0 - 1.0 / (4*4*4)))) / 2.0);
             } else {
-                double td = (float) (t * 2.0 - 1.0);
+                double td = t * 2.0 - 1.0;
                 if (td < B1)
                     return (float) ((1.0/(B1*B1) * td * td) / 2.0 + 0.5);
                 else if (td < B2)
