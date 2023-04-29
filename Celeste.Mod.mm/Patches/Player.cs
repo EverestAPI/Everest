@@ -14,6 +14,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using System.Collections;
 
 namespace Celeste {
     class patch_Player : Player {
@@ -178,6 +179,21 @@ namespace Celeste {
             if (Sprite.Mode == PlayerSpriteMode.MadelineAsBadeline)
                 return wasDashB ? NormalBadelineHairColor : UsedBadelineHairColor;
             return wasDashB ? NormalHairColor : UsedHairColor;
+        }
+        
+        /// <summary>
+        /// Adds a new state to this player with the given behaviour, and returns the index of the new state.
+        ///
+        /// States should always be added at the end of the <c>Player</c> constructor.
+        /// </summary>
+        /// <param name="name">The name of this state, for display purposes by mods only.</param>
+        /// <param name="onUpdate">A function to run every frame during this state, returning the index of the state that should be switched to next frame.</param>
+        /// <param name="coroutine">A function that creates a coroutine to run when this state is switched to.</param>
+        /// <param name="begin">An action to run when this state is switched to.</param>
+        /// <param name="end">An action to run when this state ends.</param>
+        /// <returns>The index of the new state.</returns>
+        public int AddState(string name, Func<Player, int> onUpdate, Func<Player, IEnumerator> coroutine = null, Action<Player> begin = null, Action<Player> end = null){
+            return ((patch_StateMachine)StateMachine).AddState(name, onUpdate, coroutine, begin, end);
         }
 
         public Vector2 ExplodeLaunch(Vector2 from, bool snapUp = true) {
