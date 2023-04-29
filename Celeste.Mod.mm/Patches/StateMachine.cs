@@ -51,10 +51,10 @@ namespace Celeste {
         /// <returns>The index of the new state.</returns>
         public int AddState(string name, Func<Entity, int> onUpdate, Func<Entity, IEnumerator> coroutine = null, Action<Entity> begin = null, Action<Entity> end = null){
             int nextIdx = Expand();
-            SetCallbacks(nextIdx, () => onUpdate(Entity),
-                () => coroutine?.Invoke(Entity),
-                () => begin?.Invoke(Entity),
-                () => end?.Invoke(Entity));
+            SetCallbacks(nextIdx, Helper.WrapFunc(onUpdate, this),
+                Helper.WrapFunc(coroutine, this),
+                Helper.WrapAction(begin, this),
+                Helper.WrapAction(end, this));
             names[nextIdx] = name;
             return nextIdx;
         }
@@ -63,5 +63,10 @@ namespace Celeste {
         public void SetStateName(int state, string name) => names[state] = name;
         
         public string GetCurrentStateName() => names[State];
+    }
+
+    internal static class Helper {
+        internal static Func<T> WrapFunc<T>(Func<Entity, T> f, Component c) => f == null ? null : () => f(c.Entity);
+        internal static Action WrapAction(Action<Entity> a, Component c) => a == null ? null : () => a(c.Entity);
     }
 }
