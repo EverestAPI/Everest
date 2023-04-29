@@ -28,7 +28,7 @@ namespace Celeste.Mod.UI {
 
         private bool toggleDependencies = true;
 
-        private bool toggleFavorites = false;
+        private bool DisableAllIgnoresFavorites = true;
 
         private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
@@ -229,9 +229,7 @@ namespace Celeste.Mod.UI {
                         blacklistedMods.Clear();
                         foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
                             bool isFavorite = favoritedMods.Contains(toggle.Key) || favoritesDependenciesMods.ContainsKey(toggle.Key);
-                            if (!toggleFavorites && isFavorite) {
-                                // TODO: I don't like the continue keywords but the logic statement we want is kinda odd so for now it will do
-                                //       toggleFavorites || (!toggleFavorites && !isFavorite)
+                            if (DisableAllIgnoresFavorites && isFavorite) {
                                 continue;
                             }
 
@@ -249,13 +247,18 @@ namespace Celeste.Mod.UI {
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
                     TextMenu.Item toggleFavoritesButton;
-                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), toggleFavorites)
-                        .Change(value => toggleFavorites = value));
+                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), DisableAllIgnoresFavorites)
+                        .Change(value => DisableAllIgnoresFavorites = value));
 
-                    TextMenuExt.EaseInSubMenuWithInputs favoriteToolTip = new TextMenuExt.EaseInSubMenuWithInputs(
-                        new object[] { Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE1") + " ",
-                        Input.MenuJournal, " " + Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE2") },
-                        Input.GuiInputController(), false, menu) { TextColor = Color.Gray };
+
+
+
+                    TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs> favoriteToolTip =
+                        new TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs>(
+                            new TextMenuExt.SubMenuWithInputs(
+                                string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE"), "|"), '|',
+                                new Monocle.VirtualButton[] { Input.MenuJournal }, () => Input.GuiInputController()) { TextColor = Color.Gray }
+                        , false, menu);
 
                     menu.Add(favoriteToolTip);
 
@@ -650,7 +653,7 @@ namespace Celeste.Mod.UI {
             modToggles = null;
             modLoadingTask = null;
             toggleDependencies = true;
-            toggleFavorites = false;
+            DisableAllIgnoresFavorites = false;
             favoritedMods = null;
             favoritedModsOriginal = null;
             favoritesDependenciesMods = null;
