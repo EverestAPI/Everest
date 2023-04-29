@@ -1,9 +1,8 @@
-﻿using Monocle;
-using MonoMod;
+﻿using MonoMod;
 using System;
 using System.Collections;
 
-namespace Celeste {
+namespace Monocle {
     public class patch_StateMachine : StateMachine {
 
         // We're effectively in StateMachine, but still need to "expose" private fields to our mod.
@@ -51,10 +50,10 @@ namespace Celeste {
         /// <returns>The index of the new state.</returns>
         public int AddState(string name, Func<Entity, int> onUpdate, Func<Entity, IEnumerator> coroutine = null, Action<Entity> begin = null, Action<Entity> end = null){
             int nextIdx = Expand();
-            SetCallbacks(nextIdx, Helper.WrapFunc(onUpdate, this),
-                Helper.WrapFunc(coroutine, this),
-                Helper.WrapAction(begin, this),
-                Helper.WrapAction(end, this));
+            SetCallbacks(nextIdx, () => onUpdate(Entity),
+                coroutine == null ? null : () =>  coroutine(Entity),
+                begin == null ? null : () => begin(Entity),
+                end == null ? null : () => end(Entity));
             names[nextIdx] = name;
             return nextIdx;
         }
@@ -63,10 +62,5 @@ namespace Celeste {
         public void SetStateName(int state, string name) => names[state] = name;
         
         public string GetCurrentStateName() => names[State];
-    }
-
-    internal static class Helper {
-        internal static Func<T> WrapFunc<T>(Func<Entity, T> f, Component c) => f == null ? null : () => f(c.Entity);
-        internal static Action WrapAction(Action<Entity> a, Component c) => a == null ? null : () => a(c.Entity);
     }
 }
