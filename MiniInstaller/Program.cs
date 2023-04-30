@@ -100,11 +100,11 @@ namespace MiniInstaller {
 
                     WaitForGameExit();
 
+                    RemoveCoreArtifacts();
+
                     Backup();
 
                     MoveFilesFromUpdate();
-
-                    RemoveCoreArtifacts();
 
                     MoveDylibs();
 
@@ -199,7 +199,7 @@ namespace MiniInstaller {
             }
 
             PathCelesteExe = Path.Combine(PathGame, "Celeste.exe");
-            if (!File.Exists(PathCelesteExe)) {
+            if (!File.Exists(PathCelesteExe) && !File.Exists(Path.ChangeExtension(PathCelesteExe, ".dll"))) {
                 LogErr("Celeste.exe not found!");
                 LogErr("Did you extract the .zip into the same place as Celeste?");
                 return false;
@@ -228,9 +228,11 @@ namespace MiniInstaller {
         }
 
         public static void WaitForGameExit() {
-            if (!CanReadWrite(PathEverestExe)) {
+            string waitPath = File.Exists(PathEverestExe) ? PathEverestExe : Path.ChangeExtension(PathEverestExe, ".dll");
+
+            if (!CanReadWrite(waitPath)) {
                 LogErr("Celeste not read-writeable - waiting");
-                while (!CanReadWrite(PathCelesteExe))
+                while (!CanReadWrite(waitPath))
                     Thread.Sleep(5000);
             }
         }
