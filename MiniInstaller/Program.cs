@@ -1,5 +1,6 @@
 ﻿using Celeste.Mod.Helpers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,31 @@ namespace MiniInstaller {
 
         public static Assembly AsmMonoMod;
         public static Assembly AsmHookGen;
+
+        public static readonly string[] EverestCoreResidualFileNames = new string[] {
+            "apphosts", "everest-lib",
+            "lib64-win-x64", "lib64-win-x86", "lib64-linux", "lib64-osx",
+            "Celeste.dll", "Celeste.runtimeconfig.json",
+            "Celeste.deps.json", "Celeste.Mod.mm.deps.json", "NETCoreifier.deps.json",
+            "MiniInstaller-win.exe", "MiniInstaller-linux", "MiniInstaller-osx", "MiniInstaller-win.exe.manifest",
+            "MiniInstaller.dll", "MiniInstaller.runtimeconfig.json", "MiniInstaller.deps.json",
+
+            "MonoMod.Backports.dll", "MonoMod.Backports.pdb", "MonoMod.Backports.xml",
+            "MonoMod.Core.dll", "MonoMod.Core.pdb", "MonoMod.Core.xml",
+            "MonoMod.Iced.dll", "MonoMod.Iced.pdb", "MonoMod.Iced.xml",
+            "MonoMod.ILHelpers.dll", "MonoMod.ILHelpers.pdb",
+            "MonoMod.RuntimeDetour.pdb", "MonoMod.RuntimeDetour.xml",
+            "MonoMod.Utils.pdb", "MonoMod.Utils.xml",
+            "MonoMod.Patcher", "MonoMod.Patcher.runtimeconfig.json",
+            "MonoMod.Patcher.dll", "MonoMod.Patcher.pdb", "MonoMod.Patcher.xml",
+            "MonoMod.RuntimeDetour.HookGen", "MonoMod.RuntimeDetour.HookGen.runtimeconfig.json",
+            "MonoMod.RuntimeDetour.HookGen.dll", "MonoMod.RuntimeDetour.HookGen.pdb", "MonoMod.RuntimeDetour.HookGen.xml",
+        };
+
+        public static readonly HashSet<string> EverestCoreBackupRestoreExclude = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "Content", "Saves",
+            "FNA.dll", "FNA3D.dll"
+        };
 
         // This can be set from the in-game installer via reflection.
         public static Action<string> LineLogger;
@@ -77,6 +103,8 @@ namespace MiniInstaller {
                     Backup();
 
                     MoveFilesFromUpdate();
+
+                    RemoveCoreArtifacts();
 
                     MoveDylibs();
 
@@ -237,6 +265,48 @@ namespace MiniInstaller {
                     string fileGame = Path.Combine(PathGame, fileRelative);
                     LogLine($"Copying {fileUpdate} +> {fileGame}");
                     File.Copy(fileUpdate, fileGame, true);
+                }
+            }
+        }
+
+        public static void RemoveCoreArtifacts() {
+            if (!File.Exists(Path.Combine(PathGame, "Celeste.dll")))
+                return;
+
+            LogLine("Removing residual .NET Core files");
+            foreach (string name in EverestCoreResidualFileNames) {
+                string path = Path.Combine(PathGame, name);
+                if (File.Exists(path))
+                    File.Delete(path);
+                else if (Directory.Exists(path))
+                    Directory.Delete(path, true);
+            }
+
+            LogLine("Restoring backup");
+            foreach (string entry in Directory.GetFileSystemEntries(PathOrig)) {
+                string name = Path.GetFileName(entry);
+                if (EverestCoreBackupRestoreExclude.Contains(name))
+                    continue;
+
+                string pathOrig = Path.Combine(PathOrig, name);
+                string pathGame = Path.Combine(PathGame, name);
+
+                if (PathDylibs != null) {
+                    // Some .NET Core backups are not from the game's folder
+                    if (name.Equals("Celeste", StringComparison.OrdinalIgnoreCase))
+                        pathGame = Path.Combine(Path.GetDirectoryName(PathDylibs), "Celeste");
+                    else if (name.Equals("osx", StringComparison.OrdinalIgnoreCase))
+                        pathGame = PathDylibs;
+                }
+
+                if (File.Exists(pathOrig)) {
+                    if (File.Exists(pathGame))
+                        File.Delete(pathGame);
+                    File.Move(pathOrig, pathGame);
+                } else if (Directory.Exists(pathOrig)) {
+                    if (Directory.Exists(pathGame))
+                        Directory.Delete(pathGame, true);
+                    Directory.Move(pathOrig, pathGame);
                 }
             }
         }
