@@ -27,7 +27,7 @@ namespace MiniInstaller {
             "lib64-win-x64", "lib64-win-x86", "lib64-linux", "lib64-osx",
             "Celeste.dll", "Celeste.runtimeconfig.json",
             "Celeste.deps.json", "Celeste.Mod.mm.deps.json", "NETCoreifier.deps.json",
-            "MiniInstaller-win.exe", "MiniInstaller-linux", "MiniInstaller-osx", "MiniInstaller-win.exe.manifest",
+            "MiniInstaller-win.exe", "MiniInstaller-win64.exe", "MiniInstaller-linux", "MiniInstaller-osx", "MiniInstaller-win.exe.manifest",
             "MiniInstaller.dll", "MiniInstaller.runtimeconfig.json", "MiniInstaller.deps.json",
 
             "MonoMod.Backports.dll", "MonoMod.Backports.pdb", "MonoMod.Backports.xml",
@@ -191,8 +191,9 @@ namespace MiniInstaller {
             PathGame = Directory.GetCurrentDirectory();
             Console.WriteLine(PathGame);
 
-            if (Path.GetFileName(PathGame) == "everest-update" &&
-                File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe"))) {
+            if (Path.GetFileName(PathGame) == "everest-update" && (
+                File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.exe")) || File.Exists(Path.Combine(Path.GetDirectoryName(PathGame), "Celeste.dll"))
+            )) {
                 // We're updating Everest via the in-game installler.
                 PathUpdate = PathGame;
                 PathGame = Path.GetDirectoryName(PathUpdate);
