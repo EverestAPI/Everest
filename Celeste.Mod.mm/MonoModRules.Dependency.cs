@@ -18,7 +18,7 @@ namespace MonoMod {
             // Remove all rule types which don't explicitly target this dependency
             for (int i = 0; i < RulesModule.Types.Count; i++) {
                 TypeDefinition type = RulesModule.Types[i];
-                if (type.FullName == "MonoMod.MonoModRules")
+                if (type.FullName.StartsWith("MonoMod."))
                     continue;
 
                 CustomAttribute depPatchAttr = type.CustomAttributes.FirstOrDefault(a => a.Constructor.DeclaringType.FullName == "MonoMod.GameDependencyPatchAttribute");

@@ -141,15 +141,19 @@ namespace Celeste.Mod.Core {
         [YamlIgnore]
         [SettingInGame(false)]
         public bool UseExclusiveFullscreen {
-            get => SDLForceExclusiveFullscreen;
+            get => FNAForceExclusiveFullscreen;
             set {
-                SDLForceExclusiveFullscreen = value;
-                patch_Engine.UpdateSDLFullscreenWindowFlags();
+                FNAForceExclusiveFullscreen = value;
+
+                if (Engine.Graphics.IsFullScreen) {
+                    Engine.SetWindowed(Engine.Graphics.PreferredBackBufferWidth, Engine.Graphics.PreferredBackBufferHeight);
+                    Engine.SetFullscreen();
+                }
             }
         }
 
         [SettingIgnore]
-        private bool SDLForceExclusiveFullscreen { get; set; } = true;
+        private bool FNAForceExclusiveFullscreen { get; set; } = true;
 
         [SettingIgnore]
         public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;

@@ -71,34 +71,6 @@ namespace Monocle {
                    ?? 1;
         }
 
-        [MonoModReplace]
-        public static new void SetFullscreen() {
-            //The original method has a Stadia check here - we don't really care about preserving it
-            resizing = true;
-
-            Graphics.PreferredBackBufferWidth = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Width;
-            Graphics.PreferredBackBufferHeight = Graphics.GraphicsDevice.Adapter.CurrentDisplayMode.Height;
-            Graphics.IsFullScreen = true;
-            Graphics.ApplyChanges();
-
-            //Force exclusive fullscreen if enabled
-            if (CoreModule.Settings.UseExclusiveFullscreen)
-                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
-
-            Console.WriteLine("FULLSCREEN");
-            resizing = false;
-        }
-
-        internal static void UpdateSDLFullscreenWindowFlags() {
-            if (!Engine.Graphics.IsFullScreen)
-                return;
-
-            if (CoreModule.Settings.UseExclusiveFullscreen)
-                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN);
-            else
-                SDL2.SDL.SDL_SetWindowFullscreen(Engine.Instance.Window.Handle, (uint) SDL2.SDL.SDL_WindowFlags.SDL_WINDOW_FULLSCREEN_DESKTOP);
-        }
-
     }
     public static class EngineExt {
 

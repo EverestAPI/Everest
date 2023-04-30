@@ -33,6 +33,7 @@ namespace Celeste.Mod.Core {
         public override Type SessionType => typeof(CoreModuleSession);
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
 
+        private static Hook fnaShouldUseExclusiveFullscreenHook;
         private static ILHook nluaAssemblyGetTypesHook;
         private static Hook nluaObjectTranslatorFindType;
 
@@ -68,6 +69,9 @@ namespace Celeste.Mod.Core {
             Everest.Events.Celeste.OnExiting += FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
+
+            fnaShouldUseExclusiveFullscreenHook = new Hook(typeof(GameWindow).Assembly.GetType("Microsoft.Xna.Framework.SDL2_FNAPlatform").GetMethod("ShouldUseExclusiveFullscreen", BindingFlags.Public | BindingFlags.Static), hookFNAShouldUseExclusiveFullscreen);
+
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
             nluaObjectTranslatorFindType = new Hook(typeof(ObjectTranslator).GetMethod("FindType", BindingFlags.NonPublic | BindingFlags.Instance), hookNLuaObjectTranslatorFindType);
 
@@ -140,6 +144,8 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        private bool hookFNAShouldUseExclusiveFullscreen(Func<bool> orig) => Settings.UseExclusiveFullscreen;
+
         private void patchNLuaAssemblyGetTypes(ILContext il) {
             ILCursor cursor = new ILCursor(il);
 
@@ -174,6 +180,10 @@ namespace Celeste.Mod.Core {
             Everest.Events.Celeste.OnExiting -= FileProxyStream.DeleteDummy;
             Everest.Events.MainMenu.OnCreateButtons -= CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
+
+            fnaShouldUseExclusiveFullscreenHook?.Dispose();
+            fnaShouldUseExclusiveFullscreenHook = null;
+
             nluaAssemblyGetTypesHook?.Dispose();
             nluaAssemblyGetTypesHook = null;
             nluaObjectTranslatorFindType?.Dispose();
