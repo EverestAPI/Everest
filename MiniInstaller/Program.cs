@@ -3,6 +3,7 @@ using Microsoft.NET.HostModel.AppHost;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -58,6 +59,14 @@ namespace MiniInstaller {
             if (Type.GetType("Mono.Runtime") != null) {
                 Console.WriteLine("MiniInstaller is unable to run under mono!");
                 return 1;
+            }
+
+            // Handle creating backup symlinks after obtaining elevation
+            if (args.Length > 0 && args[0] == $"{nameof(CreateBackupSymlinksWithElevation)}_PostElevationRequest") {
+                PathGame = args[1];
+                PathOrig = args[2];
+                CreateBackupSymlinks();
+                return 0;
             }
 
             Console.WriteLine("Everest MiniInstaller");
@@ -273,35 +282,6 @@ namespace MiniInstaller {
             Backup(PathCelesteExe + ".config");
             Backup(Path.Combine(PathGame, "gamecontrollerdb.txt"));
 
-            // Create a symlink for the contents folder
-            if (!File.Exists(Path.Combine(PathOrig, "Content")) && !Directory.Exists(Path.Combine(PathOrig, "Content"))) {
-                try {
-                    Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
-                } catch (IOException) {
-                    static void CopyDirectory(string src, string dst) {
-                        Directory.CreateDirectory(dst);
-
-                        foreach (string file in Directory.GetFiles(src))
-                            File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
-
-                        foreach (string dir in Directory.GetDirectories(src))
-                            CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
-                    }
-                    CopyDirectory(Path.Combine(PathGame, "Content"), Path.Combine(PathOrig, "Content"));
-                }
-            }
-
-            // Create a symlink for the saves folder for Windows installs
-            // We can't fall back to a copy for this one
-            if (Platform == InstallPlatform.Windows && !File.Exists(Path.Combine(PathOrig, "Saves")) && !Directory.Exists(Path.Combine(PathOrig, "Saves"))) {
-                try {
-                    Directory.CreateDirectory(Path.Combine(PathGame, "Saves"));
-                    Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Saves"), Path.Combine(PathGame, "Saves"));
-                } catch {
-                    LogErr($"Couldn't create symlinks for vanilla saves folder!");
-                }
-            }
-
             // Apply patch vanilla libraries
             string patchLibsDir = Path.Combine(PathEverestLib, "lib-vanilla");
             if (Directory.Exists(patchLibsDir)) {
@@ -323,6 +303,123 @@ namespace MiniInstaller {
                 ApplyVanillaPatchLibs(patchLibsDir, PathOrig);
                 Directory.Delete(patchLibsDir, true);
             }
+
+            //Create symlinks
+            try {
+                CreateBackupSymlinks();
+            } catch (IOException e) {
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || unchecked((uint) e.HResult) != 0x80070522U) // ERROR_PRIVILEGE_NOT_HELD
+                    throw;
+
+                LogLine("Failed to create backup symlinks - asking user if they want to retry with elevation");
+
+                // On Windows, offer to try again with elevation
+                if (!CreateBackupSymlinksWithElevation())
+                    throw;
+            }
+        }
+
+        [SupportedOSPlatform("windows")]
+        private static bool CreateBackupSymlinksWithElevation() {
+            switch (
+                MessageBox(0, """
+                An error occurred while linking the vanilla installation to the current one. 
+                On some versions of Windows, this requires elevation.
+                If denied, installation will continue, however saves will NOT be shared between vanilla and Everest.
+
+                Proceed with administrator privileges?
+                """.Trim(), "Everest Installation Error", 0x00000003U | 0x00000030U | 0x00010000U) // MB_YESNOCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
+            ) {
+                case 2: // IDCANCEL
+                    LogLine("User cancelled installation - rethrowing original error");
+                    return false;
+                case 6: // IDYES
+                    LogLine("User accepted elevation request - starting elevated process");
+
+                    //Create symlinks with elevation
+                    retry:;
+                    try {
+                        Process elevatedProc = Process.Start(new ProcessStartInfo() {
+                            FileName = "dotnet.exe",
+                            Verb = "RunAs",
+                            UseShellExecute = true,
+                            Arguments = $"\"{Assembly.GetEntryAssembly().Location}\" {nameof(CreateBackupSymlinksWithElevation)}_PostElevationRequest \"{PathGame}\" \"{PathOrig}\""
+                        });
+                        elevatedProc.WaitForExit();
+
+                        if (elevatedProc.ExitCode == 0) {
+                            LogLine("Succesfully created backup symlinks with elevation");
+                            break;
+                        }
+                    } catch (Win32Exception e) {
+                        if (e.NativeErrorCode == 1223 || unchecked((uint) e.HResult) == 0x800704c7) // ERROR_CANCELLED
+                            LogLine("User cancelled elevation request");
+                        else
+                            throw;
+                    }
+
+                    //Failed to create symlinks
+                    LogLine("Failed to create backup symlinks with elevation - offering user to retry");
+
+                    switch (
+                        MessageBox(0, """
+                        Failed to link the vanilla installation to the current one with elevated privileges.
+                        This could be caused by declining the elevation request.
+                        Without elevation, installation will proceed normally, however saves will NOT be shared between vanilla and Everest.
+
+                        Would you like to retry?
+                        """.Trim(), "Everest Installation Error", 0x00000006U | 0x00000010U | 0x00010000U) // MB_CANCELTRYCONTINUE | MB_ICONERROR | MB_SETFOREGROUND
+                    ) {
+                        case 2: // IDCANCEL
+                            LogLine("User cancelled installation - rethrowing original error");
+                            return false;
+                        case 10: // IDTRYAGAIN
+                            LogLine("Retrying elevated symlink creation");
+                            goto retry;
+                        case 11: // IDCONTINUE
+                            LogLine("User chose to contine installation - running fallback logic");
+                            CreateBackupSymlinksFallback();
+                            break;
+                        case 0: throw new Win32Exception();
+                    }
+
+                    break;
+                case 7: // IDNO
+                    // Run fallback logic
+                    LogLine("User denied elevation request - running fallback logic");
+                    CreateBackupSymlinksFallback();
+                    break;
+                case 0: throw new Win32Exception();
+            }
+
+            return true;
+        }
+
+        private static void CreateBackupSymlinks() {
+            if (!Directory.Exists(Path.Combine(PathOrig, "Content")))
+                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
+
+            if (!Directory.Exists(Path.Combine(PathOrig, "Saves"))) {
+                Directory.CreateDirectory(Path.Combine(PathGame, "Saves"));
+                Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Saves"), Path.Combine(PathGame, "Saves"));
+            }
+        }
+
+        private static void CreateBackupSymlinksFallback() {
+            if (!Directory.Exists(Path.Combine(PathOrig, "Content"))) {
+                static void CopyDirectory(string src, string dst) {
+                    Directory.CreateDirectory(dst);
+
+                    foreach (string file in Directory.GetFiles(src))
+                        File.Copy(file, Path.Combine(dst, Path.GetRelativePath(src, file)));
+
+                    foreach (string dir in Directory.GetDirectories(src))
+                        CopyDirectory(dir, Path.Combine(dst, Path.GetRelativePath(src, dir)));
+                }
+                CopyDirectory(Path.Combine(PathGame, "Content"), Path.Combine(PathOrig, "Content"));
+            }
+
+            // We can't have a fallback for the saves folder symlink
         }
 
         public static void BackupPEDeps(string path, string depFolder, HashSet<string> backedUpDeps = null) {
@@ -909,6 +1006,10 @@ namespace MiniInstaller {
 
             origDoc.InnerXml = "Vanilla Method. Use <see cref=\"" + cref + "\"/> instead.";
         }
+
+        [SupportedOSPlatform("windows")]
+        [DllImport("user32.dll", SetLastError=true, CharSet=CharSet.Auto)]
+        static extern int MessageBox(IntPtr hWnd, String text, String caption, uint type);
 
     }
 }
