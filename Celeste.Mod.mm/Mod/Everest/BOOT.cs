@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -129,9 +130,17 @@ namespace Celeste.Mod {
                 }
             }
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 SetDllDirectory(Path.Combine(AppContext.BaseDirectory, $"lib64-win-{(Environment.Is64BitProcess ? "x64" : "x86")}")); // Windows is the only platform with an API like this
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+
+                // Register an unmanaged DLL resolver so that we can take redirect fmod.dll to fmod64.dll
+                AssemblyLoadContext.Default.ResolvingUnmanagedDll += static (_, name) => {
+                    if (!name.Equals("fmod", StringComparison.OrdinalIgnoreCase) && !name.Equals("fmod.dll", StringComparison.OrdinalIgnoreCase))
+                        return IntPtr.Zero;
+
+                    return NativeLibrary.Load("fmod64.dll");
+                };
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 EnsureLibPathEnvVarSet("LD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-linux"));
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 EnsureLibPathEnvVarSet("DYLD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-osx"));
@@ -142,6 +151,7 @@ namespace Celeste.Mod {
                 proc.WaitForExit();
                 Environment.Exit(proc.ExitCode);
             }
+
         }
 
         [SupportedOSPlatform("windows")]
