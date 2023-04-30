@@ -112,6 +112,9 @@ namespace MiniInstaller {
 
                     MoveFilesFromUpdate();
 
+                    if (File.Exists(PathEverestDLL))
+                        File.Delete(PathEverestDLL);
+
                     DeleteSystemLibs();
                     SetupNativeLibs();
 
