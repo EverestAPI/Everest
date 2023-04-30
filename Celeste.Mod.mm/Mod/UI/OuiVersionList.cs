@@ -45,6 +45,9 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.Source currentSource = null;
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
+                if (source.Entries.Count <= 0)
+                    continue;
+
                 currentBranch.Add(source.Name.DialogCleanOrNull() ?? source.Name, source, source.Name == CoreModule.Settings.CurrentBranch);
                 if (source.Name == CoreModule.Settings.CurrentBranch)
                     currentSource = source;

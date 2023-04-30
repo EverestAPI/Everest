@@ -46,6 +46,8 @@ namespace Celeste.Mod {
 
                 public string Description;
 
+                public int MinimumBuild;
+
                 public UpdatePriority UpdatePriority = UpdatePriority.Low;
 
                 public Func<string> Index;
@@ -120,6 +122,11 @@ namespace Celeste.Mod {
                         }
                     }
 
+                    for (int i = 0; i < entries.Count; i++) {
+                        if (entries[i].Build < MinimumBuild)
+                            entries.RemoveAt(i--);
+                    }
+
                     Entries = new ReadOnlyCollection<Entry>(entries);
                     return this;
                 }
@@ -137,6 +144,32 @@ namespace Celeste.Mod {
             }
 
             public static List<Source> Sources = new List<Source>() {
+                new Source {
+                    Name = "updater_src_stable",
+                    Description = "updater_src_release_github",
+                    MinimumBuild = 3960,
+
+                    UpdatePriority = UpdatePriority.High,
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("stable")
+                },
+                new Source {
+                    Name = "updater_src_beta",
+                    Description = "updater_src_release_github",
+                    MinimumBuild = 3960,
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("beta")
+                },
+                new Source {
+                    Name = "updater_src_dev",
+                    Description = "updater_src_buildbot_azure",
+                    MinimumBuild = 3960,
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("dev")
+                },
                 new Source {
                     Name = "updater_src_core",
                     Description = "updater_src_buildbot_azure",
@@ -365,16 +398,13 @@ namespace Celeste.Mod {
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
 
+                bool isNative = true;
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
                     using (ZipFile zip = new ZipFile(zipPath)) {
-                        // .NET Core Everest versions only support native MiniInstaller binaries
-                        if (zip.ContainsEntry("MiniInstaller.exe") || zip.ContainsEntry("main/MiniInstaller.exe") || zip.ContainsEntry("main\\MiniInstaller.exe"))
-                            throw new Exception("Can't downgrade to legacy Everest builds from .NET Core versions");
-
                         progress.LogLine($"{zip.Entries.Count} {Dialog.Clean("EVERESTUPDATER_ZIPENTRIES")}");
                         progress.Progress = 0;
                         progress.ProgressMax = zip.Entries.Count;
@@ -388,6 +418,9 @@ namespace Celeste.Mod {
                             string entryName = entry.FileName;
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
+
+                            if (entryName == "MiniInstaller.exe")
+                                isNative = false;
 
                             string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
@@ -427,26 +460,45 @@ namespace Celeste.Mod {
 
                     // Start MiniInstaller in a separate process.
                     Process installer = new Process();
-                    installer.StartInfo.FileName = Path.Combine(extractedPath,
-                        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
-                            (RuntimeInformation.OSArchitecture == Architecture.X64 ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
-                        RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
-                        RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
-                        throw new Exception("Unknown OS platform")
-                    );
 
-                    if (!File.Exists(installer.StartInfo.FileName))
+                    string installerPath;
+                    if (!isNative) {
+                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
+                        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                            // Start MiniInstaller using mono
+                            installer.StartInfo.FileName = "mono";
+                            installer.StartInfo.Arguments = $"\"{installerPath}\"";
+                            if (File.Exists("/bin/sh")) {
+                                string pid = Process.GetCurrentProcess().Id.ToString();
+                                installer.StartInfo.FileName = "/bin/sh";
+                                string pathToMono = "mono";
+                                if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
+                                    pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+                                }
+                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
+                            }
+                        }
+                    } else {
+                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
+                            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+                                (RuntimeInformation.OSArchitecture == Architecture.X64 ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
+                            RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
+                            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
+                            throw new Exception("Unknown OS platform")
+                        );
+                        installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
+                    }
+
+                    if (!File.Exists(installerPath))
                         throw new Exception("Couldn't find MiniInstaller executable");
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    if (isNative && (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))) {
                         // Make MiniInstaller executable
                         Process chmodProc = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{installer.StartInfo.FileName}\""));
                         chmodProc.WaitForExit();
                         if (chmodProc.ExitCode != 0)
                             throw new Exception("Failed to set MiniInstaller executable flag");
                     }
-
-                    installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
 
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     installer.StartInfo.UseShellExecute = false;
