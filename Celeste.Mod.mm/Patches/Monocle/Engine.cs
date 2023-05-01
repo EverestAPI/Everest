@@ -1,4 +1,3 @@
-using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -23,11 +22,8 @@ namespace Monocle {
         public static void SetViewport(Viewport value) => Viewport = value;
 
 #pragma warning disable CS0649 // variable defined in vanilla
-#pragma warning disable CS0414
-        private Scene nextScene = default;
-        private static bool resizing = default;
+        private Scene nextScene;
 #pragma warning restore CS0649
-#pragma warning restore CS0414
 
         /// <summary>
         /// Allows to check which scene is next in methods like Entity.SceneEnd() or Scene.End().

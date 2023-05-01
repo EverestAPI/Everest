@@ -138,23 +138,6 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string TitleScreenType { get; set; }
 
-        [YamlIgnore]
-        [SettingInGame(false)]
-        public bool UseExclusiveFullscreen {
-            get => FNAForceExclusiveFullscreen;
-            set {
-                FNAForceExclusiveFullscreen = value;
-
-                if (Engine.Graphics.IsFullScreen) {
-                    Engine.SetWindowed(Engine.Graphics.PreferredBackBufferWidth, Engine.Graphics.PreferredBackBufferHeight);
-                    Engine.SetFullscreen();
-                }
-            }
-        }
-
-        [SettingIgnore]
-        private bool FNAForceExclusiveFullscreen { get; set; } = true;
-
         [SettingIgnore]
         public bool LazyLoading_Yes_I_Know_This_Can_Cause_Bugs { get; set; } = false;
         [SettingNeedsRelaunch]
