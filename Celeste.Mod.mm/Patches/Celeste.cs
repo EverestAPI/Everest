@@ -187,6 +187,11 @@ namespace Celeste {
             try {
                 Everest.ParseArgs(args);
                 ParseFNAArgs(args);
+
+                if (Environment.GetEnvironmentVariable("FNA3D_ENABLE_LATESWAPTEAR") == null)
+                    if (int.TryParse(Environment.GetEnvironmentVariable("FNA3D_DISABLE_LATESWAPTEAR") ?? "0", out int val) && val == 0)
+                        Environment.SetEnvironmentVariable("FNA3D_ENABLE_LATESWAPTEAR", "1");
+
                 orig_Main(args);
             } catch (Exception e) {
                 CriticalFailureHandler(e);
