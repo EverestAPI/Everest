@@ -84,6 +84,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Remove="..\lib-ext\.gitignore" />
+    <Content Remove="..\lib-ext\FNA3D.patch" />
   </ItemGroup>
 
   <ItemGroup>
