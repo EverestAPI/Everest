@@ -234,13 +234,17 @@ namespace MiniInstaller {
         }
 
         public static void DetermineInstallPlatform() {
-            // We can't use RuntimeInformation because of wine
-            if (PathOSXExecDir != null)
-                Platform = InstallPlatform.MacOS;
-            else if (File.Exists(Path.ChangeExtension(PathCelesteExe, null)))
-                Platform = InstallPlatform.Linux;
-            else
-                Platform = InstallPlatform.Windows;
+            if (Environment.GetEnvironmentVariable("MINIINSTALLER_PLATFORM") is string platformEnv && !string.IsNullOrEmpty(platformEnv))
+                Platform = Enum.Parse<InstallPlatform>(platformEnv, true);
+            else {
+                // We can't use RuntimeInformation because of wine
+                if (PathOSXExecDir != null)
+                    Platform = InstallPlatform.MacOS;
+                else if (File.Exists(Path.ChangeExtension(PathCelesteExe, null)))
+                    Platform = InstallPlatform.Linux;
+                else
+                    Platform = InstallPlatform.Windows;
+            }
 
             LogLine($"Determined install platform: {Platform}");
         }
