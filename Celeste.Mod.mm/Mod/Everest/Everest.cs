@@ -415,6 +415,9 @@ namespace Celeste.Mod {
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
 
+            string savePathFile = Path.Combine(PathEverest, "everest-savepath.txt");
+            File.WriteAllBytes(savePathFile, Encoding.UTF8.GetBytes(PathSettings));
+
             _DetourModManager = new DetourModManager();
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
