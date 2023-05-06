@@ -29,6 +29,10 @@ namespace Monocle {
         [MonoModIgnore]
         [PatchEntityListUpdate]
         internal extern void Update();
+
+        [MonoModIgnore]
+        [PatchEntityListUpdateLists]
+        internal extern void UpdateLists();
     }
     public static class EntityListExt {
 
@@ -51,6 +55,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdate))]
     class PatchEntityListUpdateAttribute : Attribute { }
 
+    /// <summary>
+    /// Improves performance by removing redundant Contains()
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdateLists))]
+    class PatchEntityListUpdateListsAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchEntityListUpdate(ILContext context, CustomAttribute attrib) {
@@ -68,6 +78,41 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldloc_1);
             cursor.Emit(OpCodes.Callvirt, entity_UpdateFinalizer);
             cursor.MarkLabel(branchMatch);
+        }
+
+        public static void PatchEntityListUpdateLists(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            // if (!current.Contains(entity)) {          if (current.Add(entity)) {
+            //     current.Add(entity);           ->         entities.Add(entity);
+            //     entities.Add(entity);                 }
+            // }
+            cursor.GotoNext(
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld(out _),
+                instr => instr.MatchLdloc(1),
+                instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("HashSet`1<Monocle.Entity>::Add"));
+            object hashAddOperand = cursor.Instrs[cursor.Index + 2].Next.Operand;
+            cursor.RemoveRange(5);
+            cursor.GotoPrev(instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("HashSet`1<Monocle.Entity>::Contains"));
+            cursor.Next.Operand = hashAddOperand;
+            cursor.Next.Next.OpCode = OpCodes.Brfalse_S;
+
+            // if (entities.Contains(entity)) {             if (current.Remove(entity)) {
+            //     current.Remove(entity);           ->         entities.Remove(entity);
+            //     entities.Remove(entity);                 }
+            // }
+            cursor.GotoNext(
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchLdfld(out _),
+                instr => instr.MatchLdloc(3),
+                instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("HashSet`1<Monocle.Entity>::Remove"));
+            object currentOperand = cursor.Next.Next.Operand;
+            object hashRemoveOperand = cursor.Instrs[cursor.Index + 2].Next.Operand;
+            cursor.RemoveRange(5);
+            cursor.GotoPrev(instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("List`1<Monocle.Entity>::Contains"));
+            cursor.Prev.Previous.Operand = currentOperand;
+            cursor.Next.Operand = hashRemoveOperand;
         }
 
     }
