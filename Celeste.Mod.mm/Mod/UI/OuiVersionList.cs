@@ -1,4 +1,6 @@
-﻿using FMOD.Studio;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
+using FMOD.Studio;
 using Microsoft.Xna.Framework;
 using Monocle;
 using System.Collections;
@@ -9,6 +11,8 @@ namespace Celeste.Mod.UI {
 
         private TextMenu menu;
 
+        private TextMenu.SubHeader currentBranchName;
+
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
 
@@ -16,86 +20,108 @@ namespace Celeste.Mod.UI {
 
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
 
-        private int buildsPerBranch = 4;
+        private int buildsPerBranch = 12;
 
         public OuiVersionList() {
         }
 
         public TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            menu = new TextMenu();
+            menu = new patch_TextMenu() {
+                CompactWidthMode = true
+            };
             items.Clear();
 
             menu.Add(new TextMenu.Header(Dialog.Clean("updater_versions_title")));
 
             menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("updater_versions_current").Replace("((version))", Everest.BuildString)));
 
-            ReloadItems();
+            var currentBranch = new TextMenu.Option<Everest.Updater.Source>(Dialog.Clean("UPDATER_CURRENT_BRANCH"));
+            menu.Add(currentBranch);
+
+            currentBranchName = new TextMenuExt.SubHeaderExt("") {
+                HeightExtra = 0f
+            };
+            menu.Add(currentBranchName);
+
+            Everest.Updater.Source currentSource = null;
+            foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
+                currentBranch.Add(source.Name.DialogCleanOrNull() ?? source.Name, source, source.Name == CoreModule.Settings.CurrentBranch);
+                if (source.Name == CoreModule.Settings.CurrentBranch)
+                    currentSource = source;
+            }
+            currentBranch.Change(ReloadItems);
+
+            ReloadItems(currentSource ?? currentBranch.Values[0].Item2);
 
             return menu;
         }
 
-        private void ReloadItems() {
+        private void ReloadItems(Everest.Updater.Source source) {
+            // Abuse using statements to avoid having to refactor again
+            using var scopeFinalizer = new ScopeFinalizer(() => {
+                // Do this afterwards as the menu has now properly updated its size.
+                for (int i = 0; i < items.Count; i++)
+                    Add(new Coroutine(FadeIn(i, items[i])));
+
+                if (menu.Height > menu.ScrollableMinSize) {
+                    menu.Position.Y = menu.ScrollTargetY;
+                }
+            });
+            using var batchModeContext = new TextMenuExt.BatchModeContext((patch_TextMenu) menu);
+
             foreach (TextMenu.Item item in items)
                 menu.Remove(item);
             items.Clear();
 
-            foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                TextMenuExt.SubHeaderExt header = new TextMenuExt.SubHeaderExt(source.NameDialog.DialogClean());
-                header.Alpha = 0f;
-                menu.Add(header);
-                items.Add(header);
+            currentBranchName.Title = source.Description.DialogCleanOrNull() ?? source.Description;
 
-                if (source.ErrorDialog != null) {
-                    string text = source.ErrorDialog.DialogClean();
-                    TextMenuExt.SubHeaderExt error = new TextMenuExt.SubHeaderExt(text);
-                    error.Alpha = 0f;
-                    menu.Add(error);
-                    items.Add(error);
-                    continue;
-                }
-
-                if (source.Entries == null) {
-                    TextMenuExt.SubHeaderExt info = new TextMenuExt.SubHeaderExt(Dialog.Clean("updater_versions_requesting"));
-                    info.Alpha = 0f;
-                    menu.Add(info);
-                    items.Add(info);
-                    continue;
-                }
-
-                string branch = null;
-                int count = 0;
-                foreach (Everest.Updater.Entry entry in source.Entries) {
-                    if (entry.Branch != branch) {
-                        branch = entry.Branch;
-                        count = 0;
-
-                        if (!string.IsNullOrEmpty(entry.Branch)) {
-                            TextMenuExt.SubHeaderExt headerBranch = new TextMenuExt.SubHeaderExt("branch: " + entry.Branch);
-                            headerBranch.Alpha = 0f;
-                            menu.Add(headerBranch);
-                            items.Add(headerBranch);
-                        }
-                    }
-                    if (count >= buildsPerBranch)
-                        continue;
-                    count++;
-                    TextMenuExt.ButtonExt item = new TextMenuExt.ButtonExt(entry.Name);
-                    item.Alpha = 0f;
-                    menu.Add(item.Pressed(() => {
-                        Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>(), entry);
-                    }));
-                    items.Add(item);
-                    continue;
-                }
-
+            if (source.ErrorDialog != null) {
+                string text = source.ErrorDialog.DialogClean();
+                TextMenuExt.SubHeaderExt error = new TextMenuExt.SubHeaderExt(text) {
+                    Alpha = 0f,
+                    AlwaysCenter = true,
+                };
+                menu.Add(error);
+                items.Add(error);
+                return;
             }
 
-            // Do this afterwards as the menu has now properly updated its size.
-            for (int i = 0; i < items.Count; i++)
-                Add(new Coroutine(FadeIn(i, items[i])));
+            if (source.Entries == null) {
+                TextMenuExt.SubHeaderExt info = new TextMenuExt.SubHeaderExt(Dialog.Clean("updater_versions_requesting")) {
+                    Alpha = 0f,
+                    AlwaysCenter = true,
+                };
+                menu.Add(info);
+                items.Add(info);
+                return;
+            }
 
-            if (menu.Height > menu.ScrollableMinSize) {
-                menu.Position.Y = menu.ScrollTargetY;
+            int count = 0;
+            foreach (Everest.Updater.Entry entry in source.Entries) {
+                if (count >= buildsPerBranch)
+                    continue;
+                count++;
+                TextMenuExt.ButtonExt item = new TextMenuExt.ButtonExt(entry.Name) {
+                    Alpha = 0f,
+                    AlwaysCenter = true,
+                };
+                menu.Add(item.Pressed(() => {
+                    Everest.Updater.Update(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>(), entry);
+                }));
+                items.Add(item);
+                if (!string.IsNullOrWhiteSpace(entry.Description)) {
+                    string description = entry.Description;
+                    // Recommended commit title max length
+                    if (description.Length > 50)
+                        description = description.Substring(0, 50) + "...";
+                    var info = new TextMenuExt.SubHeaderExt(description) {
+                        Alpha = 0f,
+                        HeightExtra = 0f,
+                        AlwaysCenter = true,
+                    };
+                    menu.Add(info);
+                    items.Add(info);
+                }
             }
         }
 

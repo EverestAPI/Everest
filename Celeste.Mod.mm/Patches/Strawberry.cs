@@ -24,7 +24,7 @@ namespace Celeste {
         public new void OnCollect() {
             orig_OnCollect();
             // "Patch hook", because maintaining a pre-Everest MMHOOK is too much work.
-            Everest.Discord.OnStrawberryCollect();
+            Everest.DiscordSDK.Instance?.UpdatePresence((Scene as Level)?.Session);
         }
 
         [MonoModIgnore]

@@ -307,7 +307,7 @@ namespace Celeste.Mod {
                     Loader.NameTemporaryBlacklist = queue.Dequeue();
 
                 else if (arg == "--loglevel" && queue.Count >= 1) {
-                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level)) 
+                    if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level))
                         Logger.SetLogLevelFromSettings("", level);
                 }
             }
@@ -415,6 +415,9 @@ namespace Celeste.Mod {
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
 
+            string savePathFile = Path.Combine(PathEverest, "everest-savepath.txt");
+            File.WriteAllBytes(savePathFile, Encoding.UTF8.GetBytes(Path.GetFullPath(PathSettings)));
+
             _DetourModManager = new DetourModManager();
             _DetourModManager.OnILHook += (owner, from, to) => {
                 _DetourOwners.Add(owner);
@@ -510,8 +513,13 @@ namespace Celeste.Mod {
             // Start requesting the version list ASAP.
             Updater.RequestAll();
 
+            // Check if an update failed
+            Updater.CheckForUpdateFailure();
+
             // Request the mod update list as well.
             ModUpdaterHelper.RunAsyncCheckForModUpdates(excludeBlacklist: true);
+
+            DiscordSDK.LoadRichPresenceIcons();
         }
 
         internal static bool _Initialized;

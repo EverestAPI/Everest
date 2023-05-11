@@ -201,6 +201,7 @@ namespace Celeste {
         public new void LoadLevel(Player.IntroTypes playerIntro, bool isFromLoader = false) {
             // Read player introType from metadata as player enter the C-Side
             if (Session.FirstLevel && Session.StartedFromBeginning && Session.JustStarted
+                && (!(Engine.Scene is LevelLoader loader) || !loader.PlayerIntroTypeOverride.HasValue)
                 && Session.Area.Mode == AreaMode.CSide
                 && AreaData.GetMode(Session.Area)?.GetMapMeta() is MapMeta mapMeta && (mapMeta.OverrideASideMeta ?? false)
                 && mapMeta.IntroType is Player.IntroTypes introType)
@@ -617,9 +618,9 @@ namespace MonoMod {
             //  Before: if (!this.Session.HeartGem || this.Session.Area.Mode != AreaMode.Normal)
             //  After:  if (!this.Session.HeartGem || this._PatchHeartGemBehavior(this.Session.Area.Mode) != AreaMode.Normal)
             cursor.GotoNext(
-                instr => instr.MatchLdfld("Celeste.Level", "Session"), 
-                instr => instr.MatchLdflda("Celeste.Session", "Area"), 
-                instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"), 
+                instr => instr.MatchLdfld("Celeste.Level", "Session"),
+                instr => instr.MatchLdflda("Celeste.Session", "Area"),
+                instr => instr.MatchLdfld("Celeste.AreaKey", "Mode"),
                 instr => instr.OpCode == OpCodes.Brfalse);
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Index += 3;

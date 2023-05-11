@@ -293,11 +293,6 @@ namespace Monocle {
             Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, GetRelativeRect(clip), color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, SpriteEffects.None, 0f);
         }
 
-        public void Draw(Vector2 position, Vector2 origin, Color color, float scale, float rotation, SpriteEffects flip, Rectangle absoluteClip) {
-            float scaleFix = ScaleFix;
-            Monocle.Draw.SpriteBatch.Draw(Texture.Texture, position, absoluteClip, color, rotation, (origin - DrawOffset) / scaleFix, scale * scaleFix, flip, 0f);
-        }
-
         #endregion
 
         #region DrawCentered

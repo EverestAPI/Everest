@@ -110,6 +110,7 @@ namespace Celeste.Mod {
                 } else {
                     using (StreamWriter writer = File.CreateText(PathBlacklist)) {
                         writer.WriteLine("# This is the blacklist. Lines starting with # are ignored.");
+                        writer.WriteLine("# Mod folders and archives listed in this file will be disabled.");
                         writer.WriteLine("ExampleFolder");
                         writer.WriteLine("SomeMod.zip");
                     }
