@@ -406,7 +406,7 @@ namespace MiniInstaller {
             if (!Directory.Exists(Path.Combine(PathOrig, "Content")))
                 Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Content"), Path.Combine(PathGame, "Content"));
 
-            if (!Directory.Exists(Path.Combine(PathOrig, "Saves"))) {
+            if (Platform == InstallPlatform.Windows && !Directory.Exists(Path.Combine(PathOrig, "Saves"))) {
                 Directory.CreateDirectory(Path.Combine(PathGame, "Saves"));
                 Directory.CreateSymbolicLink(Path.Combine(PathOrig, "Saves"), Path.Combine(PathGame, "Saves"));
             }
