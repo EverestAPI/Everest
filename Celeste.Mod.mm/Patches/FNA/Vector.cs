@@ -37,11 +37,14 @@ namespace Microsoft.Xna.Framework {
         }
 
         [MonoModReplace]
-        public static void Normalize(ref Vector2 v, out Vector2 o) => (o = v).Normalize();
+        public static void Normalize(ref Vector2 v, out Vector2 o) {
+            o = v;
+            o.Normalize();
+        }
 
         [MonoModReplace]
         public static float Distance(Vector2 a, Vector2 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
             return (float) Math.Sqrt(xD*xD + yD*yD);
         }
 
@@ -50,12 +53,30 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public static float DistanceSquared(Vector2 a, Vector2 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y;
             return (float) (xD*xD + yD*yD);
         }
 
         [MonoModReplace]
         public static void DistanceSquared(ref Vector2 a, ref Vector2 b, out float r) => r = DistanceSquared(a, b);
+
+        [MonoModReplace]
+        public static float Dot(Vector2 a, Vector2 b) => (float) ((double) a.X * b.X + (double) a.Y * b.Y);
+
+        [MonoModReplace]
+        public static void Dot(ref Vector2 a, ref Vector2 b, out float r) => r = (float) ((double) a.X * b.X + (double) a.Y * b.Y);
+
+        [MonoModReplace]
+        public static Vector2 Divide(Vector2 v, float s) => new Vector2(v.X / s, v.Y / s);
+
+        [MonoModReplace]
+        public static void Divide(ref Vector2 v, float s, out Vector2 r) {
+            r.X = v.X / s;
+            r.Y = v.Y / s;
+        }
+
+        [MonoModReplace]
+        public static Vector2 operator /(patch_Vector2 v, float s) => new Vector2(v.X / s, v.Y / s);
 
     }
 
@@ -85,11 +106,14 @@ namespace Microsoft.Xna.Framework {
         }
 
         [MonoModReplace]
-        public static void Normalize(ref Vector3 v, out Vector3 o) => (o = v).Normalize();
+        public static void Normalize(ref Vector3 v, out Vector3 o) {
+            o = v;
+            o.Normalize();
+        }
 
         [MonoModReplace]
         public static float Distance(Vector3 a, Vector3 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
             return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD);
         }
 
@@ -98,12 +122,31 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public static float DistanceSquared(Vector3 a, Vector3 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD =(float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z;
             return (float) (xD*xD + yD*yD + zD*zD);
         }
 
         [MonoModReplace]
         public static void DistanceSquared(ref Vector3 a, ref Vector3 b, out float r) => r = DistanceSquared(a, b);
+
+        [MonoModReplace]
+        public static float Dot(Vector3 a, Vector3 b) => (float) ((double) a.X * b.X + (double) a.Y * b.Y + (double) a.Z * b.Z);
+
+        [MonoModReplace]
+        public static void Dot(ref Vector3 a, ref Vector3 b, out float r) => r = (float) ((double) a.X * b.X + (double) a.Y * b.Y + (double) a.Z * b.Z);
+
+        [MonoModReplace]
+        public static Vector3 Divide(Vector3 v, float s) => new Vector3(v.X / s, v.Y / s, v.Z / s);
+
+        [MonoModReplace]
+        public static void Divide(ref Vector3 v, float s, out Vector3 r) {
+            r.X = v.X / s;
+            r.Y = v.Y / s;
+            r.Z = v.Z / s;
+        }
+
+        [MonoModReplace]
+        public static Vector3 operator /(patch_Vector3 v, float s) => new Vector3(v.X / s, v.Y / s, v.Z / s);
 
     }
 
@@ -135,11 +178,14 @@ namespace Microsoft.Xna.Framework {
         }
 
         [MonoModReplace]
-        public static void Normalize(ref Vector4 v, out Vector4 o) => (o = v).Normalize();
+        public static void Normalize(ref Vector4 v, out Vector4 o) {
+            o = v;
+            o.Normalize();
+        }
 
         [MonoModReplace]
         public static float Distance(Vector4 a, Vector4 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z), wD = (float) ((double) a.W - (double) b.W);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
             return (float) Math.Sqrt(xD*xD + yD*yD + zD*zD + wD*wD);
         }
 
@@ -148,12 +194,32 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModReplace]
         public static float DistanceSquared(Vector4 a, Vector4 b) {
-            double xD = (float) ((double) a.X - (double) b.X), yD = (float) ((double) a.Y - (double) b.Y), zD = (float) ((double) a.Z - (double) b.Z), wD = (float) ((double) a.W - (double) b.W);
+            double xD = (double) a.X - (double) b.X, yD = (double) a.Y - (double) b.Y, zD = (double) a.Z - (double) b.Z, wD = (double) a.W - (double) b.W;
             return (float) (xD*xD + yD*yD + zD*zD + wD*wD);
         }
 
         [MonoModReplace]
         public static void DistanceSquared(ref Vector4 a, ref Vector4 b, out float r) => r = DistanceSquared(a, b);
+
+        [MonoModReplace]
+        public static float Dot(Vector4 a, Vector4 b) => (float) ((double) a.X * b.X + (double) a.Y * b.Y + (double) a.Z * b.Z + (double) a.W * b.W);
+
+        [MonoModReplace]
+        public static void Dot(ref Vector4 a, ref Vector4 b, out float r) => r = (float) ((double) a.X * b.X + (double) a.Y * b.Y + (double) a.Z * b.Z + (double) a.W * b.W);
+
+        [MonoModReplace]
+        public static Vector4 Divide(Vector4 v, float s) => new Vector4(v.X / s, v.Y / s, v.Z / s, v.W / s);
+
+        [MonoModReplace]
+        public static void Divide(ref Vector4 v, float s, out Vector4 r) {
+            r.X = v.X / s;
+            r.Y = v.Y / s;
+            r.Z = v.Z / s;
+            r.W = v.W / s;
+        }
+
+        [MonoModReplace]
+        public static Vector4 operator /(patch_Vector4 v, float s) => new Vector4(v.X / s, v.Y / s, v.Z / s, v.W / s);
 
     }
 }
