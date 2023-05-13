@@ -544,6 +544,7 @@ namespace Celeste.Mod {
 
         internal static void Shutdown() {
             DebugRC.Shutdown();
+            TextInput.Shutdown();
             Events.Celeste.Shutdown();
         }
 
