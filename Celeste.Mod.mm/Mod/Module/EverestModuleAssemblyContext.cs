@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Threading;
 
@@ -20,13 +21,22 @@ namespace Celeste.Mod {
         /// <summary>
         /// A list of assembly names which must not be loaded by a mod. The list will be initialized upon first access (which is before any mods will have loaded).
         /// </summary>
-        /// <returns></returns>
         internal static string[] AssemblyLoadBlackList => _AssemblyLoadBlackList ?? (_AssemblyLoadBlackList = 
             AssemblyLoadContext.Default.Assemblies.Select(asm => asm.GetName().Name)
             .Append("Mono.Cecil.Pdb").Append("Mono.Cecil.Mdb") // These two aren't picked up by default for some reason
             .ToArray()
         );
         private static string[] _AssemblyLoadBlackList;
+
+        /// <summary>
+        /// The folder name where mod unmanaged assemblies will be loaded from.
+        /// </summary>
+        internal static string UnmanagedLibraryFolder = 
+            RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? (Environment.Is64BitOperatingSystem ? "lib-win-x64" : "lin-win-x86") :
+            RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "lib-linux" :
+            RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "lib-osx" :
+            null
+        ;
 
         internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
         internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
@@ -48,9 +58,11 @@ namespace Celeste.Mod {
         private readonly Dictionary<string, FileSystemWatcher> _AssemblyReloadWatchers = new Dictionary<string, FileSystemWatcher>();
 
         private readonly ConcurrentDictionary<string, Assembly> _AssemblyLoadCache = new ConcurrentDictionary<string, Assembly>();
+        private readonly ConcurrentDictionary<string, IntPtr> _AssemblyUnmanagedLoadCache = new ConcurrentDictionary<string, IntPtr>();
         private readonly ConcurrentDictionary<string, AssemblyDefinition> _AssemblyResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
 
         private readonly ConcurrentDictionary<string, Assembly> _LocalLoadCache = new ConcurrentDictionary<string, Assembly>();
+        private readonly ConcurrentDictionary<string, IntPtr> _LocalUnmanagedLoadCache = new ConcurrentDictionary<string, IntPtr>();
         private readonly ConcurrentDictionary<string, AssemblyDefinition> _LocalResolveCache = new ConcurrentDictionary<string, AssemblyDefinition>();
 
         private LinkedListNode<EverestModuleAssemblyContext> listNode;
@@ -271,7 +283,18 @@ namespace Celeste.Mod {
             return asm;
         }
 
-        protected override IntPtr LoadUnmanagedDll(string dllName) => IntPtr.Zero;
+        protected override IntPtr LoadUnmanagedDll(string name) {
+            // Lookup in the cache
+            if (_AssemblyUnmanagedLoadCache.TryGetValue(name, out IntPtr cachedHandle))
+                return cachedHandle;
+
+            // Try to load the unmanaged assembly locally (from this or dependency ALCs)
+            // If that fails, don't fallback to loading it globally - unmanaged dependencies have to be explicitly specified 
+            IntPtr handle = LoadUnmanagedLocal(name);
+
+            _AssemblyUnmanagedLoadCache.TryAdd(name, handle);
+            return handle;
+        }
 
         /// <summary>
         /// Resolves an assembly name reference to an assembly definition
@@ -321,6 +344,37 @@ namespace Celeste.Mod {
             }
 
             return null;
+        }
+
+        private IntPtr LoadUnmanagedLocal(string name) {
+            // Lookup in the cache
+            if (_LocalUnmanagedLoadCache.TryGetValue(name, out IntPtr cachedHandle))
+                return cachedHandle;
+
+            // Try to load the assembly from this mod
+            if (LoadUnmanagedFromThisMod(name) is IntPtr handle && handle != IntPtr.Zero) {
+                Unloading += _ => NativeLibrary.Free(handle);
+                _LocalUnmanagedLoadCache.TryAdd(name, handle);
+                return handle;
+            }
+
+            // Try to load the assembly from dependency assembly contexts
+            (_ActiveLocalLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
+            try {
+                foreach (EverestModuleAssemblyContext depCtx in DependencyContexts) {
+                    try {
+                        if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.LoadUnmanagedDll(name) is IntPtr depHandle && depHandle != IntPtr.Zero) {
+                            _LocalUnmanagedLoadCache.TryAdd(name, depHandle);
+                            return depHandle;
+                        }
+                    } catch {}
+                }
+            } finally {
+                if (_ActiveLocalLoadContexts.Pop() != this)
+                    patch_Celeste.CriticalFailureHandler(new Exception("Unexpected EverestModuleAssemblyContext on stack"));
+            }
+
+            return IntPtr.Zero;
         }
 
         private AssemblyDefinition ResolveLocal(AssemblyNameReference asmName) {
@@ -419,6 +473,61 @@ namespace Celeste.Mod {
                 return loadAsm;
 
             return null;
+        }
+
+        private IntPtr LoadUnmanagedFromThisMod(string name) {
+            if (_ModAsmDir == null)
+                return IntPtr.Zero;
+
+            // Determine the OS-specific name of the assembly
+            string osName =
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? $"{name}.dll" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? $"lib{name}.so" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? $"lib{name}.dylib" :
+                name
+            ;
+
+            // Try multiple paths to load the library from
+            foreach (string libName in new[] { name, osName }) {
+                if (!string.IsNullOrEmpty(ModuleMeta.PathArchive)) {
+                    // We have to unzip the native libs into the cache
+                    string cachePath = Path.Combine(Everest.Loader.PathCache, "unmanaged-libs", UnmanagedLibraryFolder, ModuleMeta.Name);
+
+                    string modHash = (ModuleMeta.Hash ?? ModuleMeta.Multimeta.First(meta => meta.Hash != null).Hash).ToHexadecimalString();
+                    if (Directory.Exists(cachePath) && (!File.Exists(cachePath + ".sum") || File.ReadAllText(cachePath + ".sum") != modHash))
+                        Directory.Delete(cachePath, true);
+
+                    if (!Directory.Exists(cachePath)) {
+                        // Unzip the native libs into the cache folder
+                        string zipPath = Path.Combine(_ModAsmDir, UnmanagedLibraryFolder).Replace('\\', '/') + "/";
+                        using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
+                            foreach (ZipEntry entry in zip) {
+                                if (!entry.FileName.StartsWith(zipPath) || entry.IsDirectory)
+                                    continue;
+
+                                string relPath = entry.FileName.Substring(zipPath.Length).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+                                if (relPath.Length <= 0)
+                                    continue;
+
+                                Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(cachePath, relPath)));
+                                using (Stream stream = File.Create(Path.Combine(cachePath, relPath)))
+                                    entry.Extract(stream);
+                            }
+                        }
+                        File.WriteAllText(cachePath + ".sum", modHash);
+                    }
+
+                    // Try to load the native library from cache
+                    if (NativeLibrary.TryLoad(Path.Combine(cachePath, libName), out IntPtr handle))
+                        return handle;
+                } else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
+                    // For unzipped mods, we can simply load directly from the file system
+                    if (NativeLibrary.TryLoad(Path.Combine(_ModAsmDir, UnmanagedLibraryFolder, libName), out IntPtr handle))
+                        return handle;
+                }
+            }
+
+            return IntPtr.Zero;
         }
 
         private AssemblyDefinition ResolveFromThisMod(AssemblyNameReference asmName) {
