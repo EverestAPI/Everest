@@ -25,7 +25,7 @@ namespace MiniInstaller {
         public static readonly string[] EverestCoreResidualFileNames = new string[] {
             "apphosts", "everest-lib",
             "lib64-win-x64", "lib64-win-x86", "lib64-linux", "lib64-osx",
-            "Celeste.dll", "Celeste.runtimeconfig.json",
+            "Celeste", "Celeste.dll", "Celeste.runtimeconfig.json",
             "Celeste.deps.json", "Celeste.Mod.mm.deps.json", "NETCoreifier.deps.json",
             "MiniInstaller-win.exe", "MiniInstaller-win64.exe", "MiniInstaller-linux", "MiniInstaller-osx", "MiniInstaller-win.exe.manifest",
             "MiniInstaller.dll", "MiniInstaller.runtimeconfig.json", "MiniInstaller.deps.json",
