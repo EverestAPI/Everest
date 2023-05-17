@@ -38,7 +38,7 @@ For information about mod development, check out the [Everest Wiki](https://gith
     - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
     - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
 - Copy everything in `MiniInstaller\bin\Release\net7.0\publish`, `Celeste.Mod.mm\bin\Release\net7.0\publish` and `NETCoreifier\bin\Release\net7.0\publish` to your Celeste directory
-    - macOS: `Celeste.app/Contents/MacOS`
+    - macOS: `Celeste.app/Contents/Resources`
 - Run `./MiniInstaller-linux` or `./MiniInstaller-osx`
 
 ## Contributing
