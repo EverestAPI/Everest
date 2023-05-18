@@ -115,6 +115,11 @@ namespace MiniInstaller {
                     if (File.Exists(PathEverestDLL))
                         File.Delete(PathEverestDLL);
 
+                    if (Platform == InstallPlatform.MacOS && !File.Exists(Path.Combine(PathGame, "Celeste.png")))
+                        File.Move(Path.Combine(PathGame, "Celeste-icon.png"), Path.Combine(PathGame, "Celeste.png"));
+                    else
+                        File.Delete(Path.Combine(PathGame, "Celeste-icon.png"));
+
                     DeleteSystemLibs();
                     SetupNativeLibs();
 
