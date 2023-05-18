@@ -81,8 +81,7 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
-                        using (WebClient wc = new WebClient()) {
-                            wc.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
+                        using (WebClient wc = new CompressedWebClient()) {
                             data = wc.DownloadString(Index());
                         }
                     } catch (Exception e) {
@@ -198,7 +197,7 @@ namespace Celeste.Mod {
             private static string _everestUpdaterDatabaseURL;
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
-                    using (WebClient wc = new WebClient()) {
+                    using (WebClient wc = new CompressedWebClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
                         _everestUpdaterDatabaseURL = wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim();
                     }

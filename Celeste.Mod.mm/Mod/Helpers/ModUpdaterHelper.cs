@@ -29,7 +29,7 @@ namespace Celeste.Mod.Helpers {
 
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (WebClient wc = new WebClient()) {
+                using (WebClient wc = new CompressedWebClient()) {
                     string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
@@ -62,7 +62,7 @@ namespace Celeste.Mod.Helpers {
 
                 Dictionary<string, EverestModuleMetadata> dependencyGraph = new Dictionary<string, EverestModuleMetadata>();
 
-                using (WebClient wc = new WebClient()) {
+                using (WebClient wc = new CompressedWebClient()) {
                     string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
                     Dictionary<string, DependencyGraphEntry> dependencyGraphUnparsed = YamlHelper.Deserializer.Deserialize<Dictionary<string, DependencyGraphEntry>>(yamlData);
 
@@ -189,7 +189,7 @@ namespace Celeste.Mod.Helpers {
         /// This should point to a running instance of https://github.com/maddie480/EverestUpdateCheckerServer.
         /// </summary>
         private static string getModUpdaterDatabaseUrl(string database) {
-            using (WebClient wc = new WebClient()) {
+            using (WebClient wc = new CompressedWebClient()) {
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", "Fetching mod updater database URL");
                 return wc.DownloadString("https://everestapi.github.io/" + database + ".txt").Trim();
             }

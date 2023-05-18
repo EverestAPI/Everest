@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -34,7 +35,10 @@ namespace Celeste.Mod {
 
             internal static void LoadRichPresenceIcons() {
                 new Task(() => {
-                    JArray list = JsonConvert.DeserializeObject<JArray>(new WebClient().DownloadString(IconBaseURL + "/rich-presence-icons/list.json"));
+                    JArray list;
+                    using (WebClient webClient = new CompressedWebClient()) {
+                        list = JsonConvert.DeserializeObject<JArray>(webClient.DownloadString(IconBaseURL + "/rich-presence-icons/list.json"));
+                    }
                     foreach (string element in list.Children<JValue>()) {
                         RichPresenceIcons.Add(element);
                     }
