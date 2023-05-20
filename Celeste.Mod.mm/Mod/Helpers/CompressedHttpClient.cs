@@ -27,7 +27,7 @@ namespace Celeste.Mod.Helpers {
             }
         };
 
-        public CompressedHttpClient() : base(handler) {
+        public CompressedHttpClient() : base(handler, disposeHandler: false) {
             DefaultRequestHeaders.Add("User-Agent", $"Everest/{Everest.VersionString}");
         }
     }
