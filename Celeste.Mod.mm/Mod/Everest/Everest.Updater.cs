@@ -84,10 +84,8 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
-                        using (HttpClient hc = new HttpClient()) {
-                            hc.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
+                        using (HttpClient hc = new CompressedHttpClient())
                             data = hc.GetStringAsync(Index()).Result;
-                        }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
@@ -216,7 +214,7 @@ namespace Celeste.Mod {
             private static string _everestUpdaterDatabaseURL;
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
-                    using (HttpClient hc = new HttpClient()) {
+                    using (HttpClient hc = new CompressedHttpClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
 
                         UriBuilder uri = new UriBuilder(hc.GetStringAsync("https://everestapi.github.io/everestupdater.txt").Result.Trim());
@@ -322,17 +320,17 @@ namespace Celeste.Mod {
 
             public static Entry Newest { get; internal set; }
             public static bool HasUpdate => Newest != null && Newest.Build > Build;
-            public static bool UpdateFailed { get; internal set;}
+            public static bool UpdateFailed { get; internal set; }
 
             internal static void CheckForUpdateFailure() {
                 string updateBuildPath = Path.Combine(PathGame, "everest-update", "update-build.txt");
-                if(!File.Exists(updateBuildPath))
+                if (!File.Exists(updateBuildPath))
                     return;
 
                 try {
                     if (Build != int.Parse(File.ReadAllText(updateBuildPath)))
                         UpdateFailed = true;
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "updater", "Exception when trying to determine update build number");
                     Logger.LogDetailed(e);
                     UpdateFailed = true;
@@ -482,8 +480,8 @@ namespace Celeste.Mod {
                         installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
                             RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
                                 (RuntimeInformation.OSArchitecture == Architecture.X64 ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
-                            RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "MiniInstaller-linux" :
-                            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "MiniInstaller-osx" :
+                            RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "MiniInstaller-linux" :
+                            RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "MiniInstaller-osx" :
                             throw new Exception("Unknown OS platform")
                         );
                         installer.StartInfo.Environment["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
@@ -526,75 +524,57 @@ namespace Celeste.Mod {
                 if (File.Exists(destPath))
                     File.Delete(destPath);
 
-                using (SocketsHttpHandler handler = new SocketsHttpHandler()) {
-                    // disable IPv6 for this request, as it is known to cause "the request has timed out" issues for some users
-                    handler.ConnectCallback = async delegate (SocketsHttpConnectionContext ctx, CancellationToken token) {
-                        if (ctx.DnsEndPoint.AddressFamily != AddressFamily.Unspecified && ctx.DnsEndPoint.AddressFamily != AddressFamily.InterNetwork) {
-                            throw new InvalidOperationException("no IPv4 address");
+                using (HttpClient client = new CompressedHttpClient()) {
+                    client.Timeout = TimeSpan.FromMilliseconds(10000);
+                    client.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
+                    client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
+
+                    // Manual buffered copy from web input to file output.
+                    // Allows us to measure speed and progress.
+                    using (HttpResponseMessage response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).Result)
+                    using (Stream input = response.Content.ReadAsStream())
+                    using (FileStream output = File.OpenWrite(destPath)) {
+                        if (input.CanTimeout)
+                            input.ReadTimeout = 10000;
+
+                        long length;
+                        if (input.CanSeek) {
+                            length = input.Length;
+                        } else {
+                            length = response.Content.Headers.ContentLength ?? 0;
                         }
 
-                        Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp) { NoDelay = true };
-                        try {
-                            await socket.ConnectAsync(new DnsEndPoint(ctx.DnsEndPoint.Host, ctx.DnsEndPoint.Port, AddressFamily.InterNetwork), token).ConfigureAwait(false);
-                            return new NetworkStream(socket, true);
-                        } catch(Exception) {
-                            socket.Dispose();
-                            throw;
-                        }
-                    };
-                    using (HttpClient client = new HttpClient(handler)) {
-                        client.Timeout = TimeSpan.FromMilliseconds(10000);
-                        client.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
-                        client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
+                        progressCallback(0, length, 0);
 
-                        // Manual buffered copy from web input to file output.
-                        // Allows us to measure speed and progress.
-                        using (HttpResponseMessage response = client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).Result)
-                        using (Stream input = response.Content.ReadAsStream())
-                        using (FileStream output = File.OpenWrite(destPath)) {                            
-                            if (input.CanTimeout)
-                                input.ReadTimeout = 10000;
+                        byte[] buffer = new byte[4096];
+                        DateTime timeLastSpeed = timeStart;
+                        int read = 1;
+                        int readForSpeed = 0;
+                        int pos = 0;
+                        int speed = 0;
+                        int count = 0;
+                        TimeSpan td;
+                        while (read > 0) {
+                            count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
+                            read = input.Read(buffer, 0, count);
+                            output.Write(buffer, 0, read);
+                            pos += read;
+                            readForSpeed += read;
 
-                            long length;
-                            if (input.CanSeek) {
-                                length = input.Length;
-                            } else {
-                                length = response.Content.Headers.ContentLength ?? 0;
+                            td = DateTime.Now - timeLastSpeed;
+                            if (td.TotalMilliseconds > 100) {
+                                speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
+                                readForSpeed = 0;
+                                timeLastSpeed = DateTime.Now;
                             }
 
-                            progressCallback(0, length, 0);
-
-                            byte[] buffer = new byte[4096];
-                            DateTime timeLastSpeed = timeStart;
-                            int read = 1;
-                            int readForSpeed = 0;
-                            int pos = 0;
-                            int speed = 0;
-                            int count = 0;
-                            TimeSpan td;
-                            while (read > 0) {
-                                count = length > 0 ? (int) Math.Min(buffer.Length, length - pos) : buffer.Length;
-                                read = input.Read(buffer, 0, count);
-                                output.Write(buffer, 0, read);
-                                pos += read;
-                                readForSpeed += read;
-
-                                td = DateTime.Now - timeLastSpeed;
-                                if (td.TotalMilliseconds > 100) {
-                                    speed = (int) ((readForSpeed / 1024D) / td.TotalSeconds);
-                                    readForSpeed = 0;
-                                    timeLastSpeed = DateTime.Now;
-                                }
-
-                                if (!progressCallback(pos, length, speed)) {
-                                    break;
-                                }
+                            if (!progressCallback(pos, length, speed)) {
+                                break;
                             }
                         }
                     }
                 }
             }
-
         }
     }
 }

@@ -58,12 +58,16 @@ namespace Celeste.Mod.UI {
             Everest.Updater.Entry everestVersionToInstall = null;
 
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
-            if (availableDownloads == null) {
+            Dictionary<string, EverestModuleMetadata> modDependencyGraph = ModUpdaterHelper.DownloadModDependencyGraph();
+
+            if (availableDownloads == null || modDependencyGraph == null) {
                 shouldAutoExit = false;
                 shouldRestart = false;
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
+                addTransitiveDependencies(modDependencyGraph);
+
                 // load information on all installed mods, so that we can spot blacklisted ones easily.
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
 
@@ -266,6 +270,36 @@ namespace Celeste.Mod.UI {
             } else {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK"));
             }
+        }
+
+        private static void addTransitiveDependencies(Dictionary<string, EverestModuleMetadata> modDependencyGraph) {
+            List<EverestModuleMetadata> newlyMissing = new List<EverestModuleMetadata>();
+            do {
+                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", "Checking for transitive dependencies...");
+
+                newlyMissing.Clear();
+
+                // All transitive dependencies must be either loaded or missing. If not, they're added as missing as well.
+                foreach (EverestModuleMetadata metadata in MissingDependencies) {
+                    if (!modDependencyGraph.TryGetValue(metadata.Name, out EverestModuleMetadata graphEntry)) {
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{metadata.Name} was not found in the graph");
+                    } else {
+                        foreach (EverestModuleMetadata dependency in graphEntry.Dependencies) {
+                            if (Everest.Loader.DependencyLoaded(dependency)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is loaded");
+                            } else if (MissingDependencies.Any(dep => dep.Name == dependency.Name) || newlyMissing.Any(dep => dep.Name == dependency.Name)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is already missing");
+                            } else {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} was added to the missing dependencies!");
+                                newlyMissing.Add(dependency);
+                            }
+                        }
+                    }
+                }
+
+                MissingDependencies.AddRange(newlyMissing);
+
+            } while (newlyMissing.Count > 0);
         }
 
         private static bool tryUnblacklist(EverestModuleMetadata dependency, Dictionary<EverestModuleMetadata, string> allModsInformation, HashSet<string> modsToUnblacklist) {
