@@ -526,7 +526,6 @@ namespace Celeste.Mod {
 
                 using (HttpClient client = new CompressedHttpClient()) {
                     client.Timeout = TimeSpan.FromMilliseconds(10000);
-                    client.DefaultRequestHeaders.Add("User-Agent", "Everest/" + Everest.VersionString);
                     client.DefaultRequestHeaders.Add("Accept", "application/octet-stream");
 
                     // Manual buffered copy from web input to file output.

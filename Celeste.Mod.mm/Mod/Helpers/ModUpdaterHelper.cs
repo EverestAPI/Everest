@@ -30,10 +30,7 @@ namespace Celeste.Mod.Helpers {
 
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (HttpClientHandler handler = new HttpClientHandler() { AutomaticDecompression = DecompressionMethods.All })
-                using (HttpClient hc = new HttpClient(handler)) {
-                    hc.DefaultRequestHeaders.Add("User-Agent", $"Everest/{Everest.VersionString}");
-
+                using (HttpClient hc = new CompressedHttpClient()) {
                     string yamlData = hc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
