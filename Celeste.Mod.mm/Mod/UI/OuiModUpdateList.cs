@@ -183,8 +183,8 @@ namespace Celeste.Mod.UI {
             });
             TextMenu.Button restartButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_RESTART"));
             restartButton.Pressed(() => Everest.QuickFullRestart());
-            menu.Add(shutdownButton);
-            menu.Add(restartButton);
+            menu.Add(restartButton); // Notice: order flipped
+            menu.Add(shutdownButton); // I thought it was more natural as restart was default
             restartMenuAdded = true;
         }
 
