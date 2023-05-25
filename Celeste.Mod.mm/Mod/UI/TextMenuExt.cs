@@ -1391,7 +1391,7 @@ namespace Celeste {
             private readonly float CharWidth;
             private readonly float BoxHight;
             private bool Typing = false;
-            private readonly Vector2 TextVerticalPadding;
+            private readonly Vector2 TextPadding;
 
             private readonly Vector2 TextScale = Vector2.One * 0.75f;
 
@@ -1400,7 +1400,7 @@ namespace Celeste {
                 CharHight = ActiveFont.LineHeight;
                 CharWidth = ActiveFont.Measure(' ').X;
                 BoxHight = CharHight;
-                TextVerticalPadding = new Vector2(CharWidth / 2, BoxHight / 2) * TextScale;
+                TextPadding = new Vector2(CharWidth * TextScale.X / 2, CharHight / 2);
                 Color searchBarColor = SearchBarColor;
                 searchBarColor.A = 80;
                 SearchBarColor = searchBarColor;
@@ -1418,12 +1418,16 @@ namespace Celeste {
             }
 
             private void StartTyping() {
+                // TODO: fix Audio.Play not working
+                Audio.Play(SFX.ui_main_button_toggle_on);
                 Container.Focused = false;
                 Typing = true;
                 TextInput.OnInput += OnTextInput;
             }
 
             private void StopTyping() {
+                // TODO: fix Audio.Play not working;
+                Audio.Play(SFX.ui_main_button_toggle_off);
                 Typing = false;
                 TextInput.OnInput -= OnTextInput;
                 Container.Focused = true;
@@ -1432,7 +1436,7 @@ namespace Celeste {
             private void HandleNewInputChar(char c) {
                 Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
                 // we pad from both the right and the left
-                Vector2 totalTextPadding = TextVerticalPadding * 2;
+                Vector2 totalTextPadding = TextPadding * 2;
 
                 if (!char.IsControl(c) &&
                     ActiveFont.FontSize.Characters.ContainsKey(c) &&
@@ -1452,6 +1456,7 @@ namespace Celeste {
                     return;
                 }
                 switch (c) {
+                    // backspace
                     case (char) 8: {
                             if (Text.Length > 0) {
                                 Text = Text.Remove(Text.Length - 1);
@@ -1459,25 +1464,27 @@ namespace Celeste {
                             }
                             break;
                         }
+                    // esc and enter
+                    case (char) 27:
+                    case (char) 10:
+                    case (char) 13: {
+                            StopTyping();
+                            break;
+                        }
                     default: {
                             HandleNewInputChar(c);
                             break;
                         }
                 }
+
             }
 
             public override void Update() {
-                if (Typing) {
+                if (!Typing) {
                     if (MInput.Keyboard.Pressed(Keys.Delete)) {
                         if (Text.Length > 0) {
                             Text = "";
                             Audio.Play(SFX.ui_main_rename_entry_backspace);
-                        } else {
-                            StopTyping();
-                        }
-                    } else {
-                        if (Input.ESC.Pressed) {
-                            StopTyping();
                         }
                     }
                 }
@@ -1487,7 +1494,7 @@ namespace Celeste {
             }
 
             public override void Render(Vector2 position, bool highlighted) {
-                Vector2 textPosition = position + TextVerticalPadding;
+                Vector2 textPosition = position + TextPadding;
 
                 Draw.Rect(position, Width, BoxHight, SearchBarColor);
                 ActiveFont.DrawOutline(Text + (Typing ? "_" : ""), textPosition, new Vector2(0f, 0.5f), TextScale, TextColor * Alpha, 2f, StrokeColor * (Alpha * Alpha * Alpha));

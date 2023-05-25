@@ -28,6 +28,8 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
 
+        private string filter = "";
+
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -185,16 +187,12 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
+
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
 
                     // remove the "loading..." message
                     menu.Remove(loading);
-                    TextMenuExt.TextBox textBox = new TextMenuExt.TextBox();
-                    menu.Add(textBox);
-                    textBox.OnTextChange += (string text) => {
-                        Logger.Log(LogLevel.Info, "MayMay", $"textBox.OnTextChange: {text}");
-                    };
 
                     // if there is a whitelist or temporary blacklist, warn the user that it will break those settings.
                     if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {
@@ -241,6 +239,17 @@ namespace Celeste.Mod.UI {
                         blacklistedMods = blacklistedModsOriginal;
                         onBackPressed(Overworld);
                     }));
+
+
+                    TextMenuExt.TextBox textBox = new TextMenuExt.TextBox();
+                    menu.Add(new patch_TextMenu.patch_SubHeader("Search"));
+                    menu.Add(textBox);
+                    textBox.OnTextChange += (string text) => {
+                        filter = text;
+                        updateHighlightedMods();
+                        menu.RecalculateSize();
+                        menu.Y = menu.ScrollTargetY;
+                    };
 
                     // reset the mods list
                     allMods = new List<string>();
@@ -344,6 +353,7 @@ namespace Celeste.Mod.UI {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
                 ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
+                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).Visible = toggle.Key.ToLower().Contains(filter.ToLower());
             }
 
             // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
