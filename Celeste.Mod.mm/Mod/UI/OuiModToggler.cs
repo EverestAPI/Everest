@@ -190,6 +190,11 @@ namespace Celeste.Mod.UI {
 
                     // remove the "loading..." message
                     menu.Remove(loading);
+                    TextMenuExt.TextBox textBox = new TextMenuExt.TextBox();
+                    menu.Add(textBox);
+                    textBox.OnTextChange += (string text) => {
+                        Logger.Log(LogLevel.Info, "MayMay", $"textBox.OnTextChange: {text}");
+                    };
 
                     // if there is a whitelist or temporary blacklist, warn the user that it will break those settings.
                     if (Everest.Loader.Whitelist != null || Everest.Loader.TemporaryBlacklist != null) {

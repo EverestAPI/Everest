@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections.Generic;
@@ -1351,6 +1353,146 @@ namespace Celeste {
             public void Dispose() {
                 menu.BatchMode = false;
             }
+        }
+
+
+        public class TextBox : TextMenu.Item, IItemExt {
+
+            public delegate void OnTextChangeHandler(string text);
+            public event OnTextChangeHandler OnTextChange;
+
+            private string _text = "";
+            public string Text {
+                get => _text; protected set {
+                    _text = value;
+                    OnTextChange?.Invoke(Text);
+                }
+            }
+
+            public new float Width {
+                get {
+                    if (Container != null) {
+                        return Container.Width / 3;
+                    }
+
+                    return CharWidth * 15;
+                }
+            }
+
+            public string Icon { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public float? IconWidth { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public bool IconOutline { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public Vector2 Offset { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public float Alpha { get; set; } = 1;
+            public Color TextColor { get; set; } = Color.White;
+            public Color StrokeColor { get; set; } = Color.Black;
+            public Color SearchBarColor { get; set; } = Color.DarkSlateGray;
+            private readonly float CharHight;
+            private readonly float CharWidth;
+            private readonly float BoxHight;
+            private bool Typing = false;
+            private readonly Vector2 TextVerticalPadding;
+
+            private readonly Vector2 TextScale = Vector2.One * 0.75f;
+
+
+            public TextBox() {
+                CharHight = ActiveFont.LineHeight;
+                CharWidth = ActiveFont.Measure(' ').X;
+                BoxHight = CharHight;
+                TextVerticalPadding = new Vector2(CharWidth / 2, BoxHight / 2) * TextScale;
+                Color searchBarColor = SearchBarColor;
+                searchBarColor.A = 80;
+                SearchBarColor = searchBarColor;
+
+                Selectable = true;
+            }
+
+
+            public override float Height() {
+                return BoxHight;
+            }
+
+            public override void ConfirmPressed() {
+                StartTyping();
+            }
+
+            private void StartTyping() {
+                Container.Focused = false;
+                Typing = true;
+                TextInput.OnInput += OnTextInput;
+            }
+
+            private void StopTyping() {
+                Typing = false;
+                TextInput.OnInput -= OnTextInput;
+                Container.Focused = true;
+            }
+
+            private void HandleNewInputChar(char c) {
+                Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
+                // we pad from both the right and the left
+                Vector2 totalTextPadding = TextVerticalPadding * 2;
+
+                if (!char.IsControl(c) &&
+                    ActiveFont.FontSize.Characters.ContainsKey(c) &&
+                    (newTextSize + totalTextPadding).X < Width) {
+                    Text += c;
+                    Audio.Play(SFX.ui_main_rename_entry_char);
+                    return;
+                }
+
+                Audio.Play(SFX.ui_main_button_invalid);
+            }
+
+
+
+            public void OnTextInput(char c) {
+                if (!Typing) {
+                    return;
+                }
+                switch (c) {
+                    case (char) 8: {
+                            if (Text.Length > 0) {
+                                Text = Text.Remove(Text.Length - 1);
+                                Audio.Play(SFX.ui_main_rename_entry_backspace);
+                            }
+                            break;
+                        }
+                    default: {
+                            HandleNewInputChar(c);
+                            break;
+                        }
+                }
+            }
+
+            public override void Update() {
+                if (Typing) {
+                    if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                        if (Text.Length > 0) {
+                            Text = "";
+                            Audio.Play(SFX.ui_main_rename_entry_backspace);
+                        } else {
+                            StopTyping();
+                        }
+                    } else {
+                        if (Input.ESC.Pressed) {
+                            StopTyping();
+                        }
+                    }
+                }
+
+
+                base.Update();
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 textPosition = position + TextVerticalPadding;
+
+                Draw.Rect(position, Width, BoxHight, SearchBarColor);
+                ActiveFont.DrawOutline(Text + (Typing ? "_" : ""), textPosition, new Vector2(0f, 0.5f), TextScale, TextColor * Alpha, 2f, StrokeColor * (Alpha * Alpha * Alpha));
+            }
+
         }
 
     }
