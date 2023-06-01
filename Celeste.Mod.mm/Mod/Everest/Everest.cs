@@ -104,6 +104,11 @@ namespace Celeste.Mod {
         /// </summary>
         public static string PathEverest { get; internal set; }
 
+        /// <summary>
+        /// Path to the log file. Defaults to log.txt, can be set via environment variable EVEREST_LOG_FILENAME.
+        /// </summary>
+        public static string PathLog { get; internal set; }
+
         internal static bool RestartVanilla;
 
         internal static bool _ContentLoaded;

@@ -288,14 +288,11 @@ namespace Celeste {
 
         [Command("openlog", "open log.txt file")]
         private static void CmdOpenLog() {
-            string logFile = Environment.GetEnvironmentVariable("EVEREST_LOG_FILENAME") ?? "log.txt";
-            if (!logFile.EndsWith(".txt"))
-                logFile += ".txt";
-
-            if (File.Exists(logFile))
-                Process.Start(logFile);
+            string pathLog = Everest.PathLog;
+            if (File.Exists(pathLog))
+                Process.Start(pathLog);
             else
-                Engine.Commands.Log($"{logFile} does not exist");
+                Engine.Commands.Log($"{pathLog} does not exist");
         }
     }
 }
