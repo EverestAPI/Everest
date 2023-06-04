@@ -33,7 +33,11 @@ namespace Celeste.Mod.UI {
         private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
 
+        // maps each filename to Everest modules
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
+
+        // maps each mode name to its Everest module
+        private Dictionary<string, EverestModuleMetadata> modNames;
 
 
         private Dictionary<string, TextMenu.OnOff> modToggles;
@@ -198,6 +202,7 @@ namespace Celeste.Mod.UI {
 
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
+                    modNames = buildModNames(modYamls);
 
                     // remove the "loading..." message
                     menu.Remove(loading);
@@ -387,6 +392,25 @@ namespace Celeste.Mod.UI {
             modToggles[file] = option;
         }
 
+        private Dictionary<string, EverestModuleMetadata> buildModNames(Dictionary<string, EverestModuleMetadata[]> modYamls) {
+            Dictionary<string, EverestModuleMetadata> modNames = new();
+
+            foreach (KeyValuePair<string, EverestModuleMetadata[]> pair in modYamls) {
+                foreach (EverestModuleMetadata currentModule in pair.Value) {
+                    if (modNames.TryGetValue(currentModule.Name, out EverestModuleMetadata previousModule)) {
+                        if (previousModule.Version < currentModule.Version) {
+                            modNames[currentModule.Name] = currentModule;
+                        }
+                    } else {
+                        modNames[currentModule.Name] = currentModule;
+                    }
+                }
+            }
+
+
+            return modNames;
+        }
+
         private void updateHighlightedMods() {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
@@ -450,28 +474,11 @@ namespace Celeste.Mod.UI {
             blacklistedMods.Remove(file);
             Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{file} was removed from the blacklist");
 
-            if (toggleDependencies && modYamls.TryGetValue(file, out EverestModuleMetadata[] metadatas)) {
+            if (toggleDependencies && TryGetModDependenciesFileNames(file, out List<string> dependencies)) {
                 // we should remove all of the mod's dependencies from the blacklist.
-                foreach (EverestModuleMetadata metadata in metadatas) {
-                    foreach (string dependency in metadata.Dependencies.Select(dep => dep.Name)) {
-                        // we want to go through all the other mods' info to found the one we want.
-                        KeyValuePair<string, EverestModuleMetadata>? found = null;
-                        foreach (KeyValuePair<string, EverestModuleMetadata[]> candidateMetadatas in modYamls) {
-                            foreach (EverestModuleMetadata candidateMetadata in candidateMetadatas.Value) {
-                                if (candidateMetadata.Name == dependency) {
-                                    // we found it!
-                                    if (found == null || found.Value.Value.Version < candidateMetadata.Version) {
-                                        found = new KeyValuePair<string, EverestModuleMetadata>(candidateMetadatas.Key, candidateMetadata);
-                                    }
-                                }
-                            }
-                        }
-                        if (found.HasValue) {
-                            // we found where the dependency is: activate it.
-                            removeFromBlacklist(found.Value.Key);
-                            modToggles[found.Value.Key].Index = 1;
-                        }
-                    }
+                foreach (string modFileName in dependencies) {
+                    removeFromBlacklist(modFileName);
+                    modToggles[modFileName].Index = 1;
                 }
             }
         }
@@ -549,7 +556,7 @@ namespace Celeste.Mod.UI {
                     Everest.Loader.Favorites = favoritedMods;
                     using (StreamWriter writer = File.CreateText(Everest.Loader.PathFavorites)) {
                         // header
-                        writer.WriteLine("# This is the favorites list. Lines starting with # are ignored.");
+                        writer.WriteLine("# This is the favorite list. Lines starting with # are ignored.");
                         writer.WriteLine("");
 
                         foreach (string mod in favoritedMods) {
@@ -581,30 +588,15 @@ namespace Celeste.Mod.UI {
         }
 
         private bool TryGetModDependenciesFileNames(string modFilename, out List<string> dependenciesFileNames) {
-            // TODO: This nested loop is taken from the removeFromBlacklist, this could be replaced by creating a HashMap between modName to EverestModule,
-            //       Right now it seems like we are ?needlessly? iterating n^2 times.
-
-            // iterate over all the dependencies
             if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
                 dependenciesFileNames = new List<string>();
 
+                // iterate over all everest modules under file
                 foreach (EverestModuleMetadata metadata in metadatas) {
                     // iterate over each loaded mod to ensure its present
                     foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
-                        KeyValuePair<string, EverestModuleMetadata>? found = null;
-                        foreach (KeyValuePair<string, EverestModuleMetadata[]> candidateMetadatas in modYamls) {
-                            foreach (EverestModuleMetadata candidateMetadata in candidateMetadatas.Value) {
-                                if (candidateMetadata.Name == dependencyName) {
-                                    // we found it!
-                                    if (found == null || found.Value.Value.Version < candidateMetadata.Version) {
-                                        found = new KeyValuePair<string, EverestModuleMetadata>(candidateMetadatas.Key, candidateMetadata);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (found != null) {
-                            dependenciesFileNames.Add(found.Value.Key);
+                        if (modNames.TryGetValue(dependencyName, out EverestModuleMetadata dependency)) {
+                            dependenciesFileNames.Add(Path.GetFileName(dependency.PathArchive ?? dependency.PathDirectory));
                         }
                     }
                 }
