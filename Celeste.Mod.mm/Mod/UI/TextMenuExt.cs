@@ -5,6 +5,7 @@ using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Celeste.patch_TextMenu;
 
 namespace Celeste {
     public static partial class TextMenuExt {
@@ -1357,7 +1358,6 @@ namespace Celeste {
 
 
         public class TextBox : TextMenu.Item, IItemExt {
-
             public delegate void OnTextChangeHandler(string text);
             public event OnTextChangeHandler OnTextChange;
 
@@ -1369,16 +1369,6 @@ namespace Celeste {
                 }
             }
 
-            public new float Width {
-                get {
-                    if (Container != null) {
-                        return Container.Width / 3;
-                    }
-
-                    return CharWidth * 15;
-                }
-            }
-
             public string Icon { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
             public float? IconWidth { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
             public bool IconOutline { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -1387,13 +1377,18 @@ namespace Celeste {
             public Color TextColor { get; set; } = Color.White;
             public Color StrokeColor { get; set; } = Color.Black;
             public Color SearchBarColor { get; set; } = Color.DarkSlateGray;
+            public Vector2 TextPadding { get; set; }
+            public Vector2 TextScale { get; set; } = Vector2.One * 0.75f;
+            public float WidthScale = 1;
             private readonly float CharHight;
             private readonly float CharWidth;
             private readonly float BoxHight;
             private bool Typing = false;
-            private readonly Vector2 TextPadding;
 
-            private readonly Vector2 TextScale = Vector2.One * 0.75f;
+
+            public Dictionary<char, Action> InputCharActions = new();
+
+            public Dictionary<Keys, Action> GeneralKeysActions = new();
 
 
             public TextBox() {
@@ -1408,6 +1403,13 @@ namespace Celeste {
                 Selectable = true;
             }
 
+            public override float LeftWidth() {
+                if (Container != null) {
+                    return Container.Width / WidthScale;
+                }
+                return 0;
+            }
+
 
             public override float Height() {
                 return BoxHight;
@@ -1417,7 +1419,11 @@ namespace Celeste {
                 StartTyping();
             }
 
-            private void StartTyping() {
+            public void Clear() {
+                Text = "";
+            }
+
+            public void StartTyping() {
                 // TODO: fix Audio.Play not working
                 Audio.Play(SFX.ui_main_button_toggle_on);
                 Container.Focused = false;
@@ -1425,7 +1431,7 @@ namespace Celeste {
                 TextInput.OnInput += OnTextInput;
             }
 
-            private void StopTyping() {
+            public void StopTyping() {
                 // TODO: fix Audio.Play not working;
                 Audio.Play(SFX.ui_main_button_toggle_off);
                 Typing = false;
@@ -1455,6 +1461,12 @@ namespace Celeste {
                 if (!Typing) {
                     return;
                 }
+
+                if (InputCharActions.TryGetValue(c, out Action action)) {
+                    action();
+                    return;
+                }
+
                 switch (c) {
                     // backspace
                     case (char) 8: {
@@ -1480,15 +1492,21 @@ namespace Celeste {
             }
 
             public override void Update() {
-                if (!Typing) {
-                    if (MInput.Keyboard.Pressed(Keys.Delete)) {
-                        if (Text.Length > 0) {
-                            Text = "";
-                            Audio.Play(SFX.ui_main_rename_entry_backspace);
+                if (Typing) {
+
+                    foreach (KeyValuePair<Keys, Action> pair in GeneralKeysActions) {
+                        if (MInput.Keyboard.Pressed(pair.Key)) {
+                            pair.Value();
                         }
                     }
                 }
 
+                if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                    if (Text.Length > 0) {
+                        Clear();
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    }
+                }
 
                 base.Update();
             }
@@ -1500,6 +1518,56 @@ namespace Celeste {
                 ActiveFont.DrawOutline(Text + (Typing ? "_" : ""), textPosition, new Vector2(0f, 0.5f), TextScale, TextColor * Alpha, 2f, StrokeColor * (Alpha * Alpha * Alpha));
             }
 
+        }
+
+        public class Modal : patch_Item {
+
+            private float AbsoluteY;
+            private TextMenu.Item item;
+            public Color BoxBorderColor { get; set; } = Color.White;
+            public Color BoxBackgroundColor { get; set; } = Color.Black * 0.8f;
+
+            public int BorderThickness { get; set; } = 2;
+
+            public bool CenterItem { get; set; } = true;
+
+            public Modal(float absoluteY, TextMenu.Item item) {
+                AboveAll = true;
+                Visible = false;
+                IncludeWidthInMeasurement = false;
+                AbsoluteY = absoluteY;
+                this.item = item;
+            }
+
+            public override void Added() {
+                base.Added();
+                item.Container = Container;
+                item.Added();
+            }
+
+            public override void Update() {
+                base.Update();
+                item.Update();
+            }
+
+            public override bool AlwaysRender => true;
+
+            public override float Height() {
+                if (Container != null) {
+                    return Container.ItemSpacing * -1;
+                } else {
+                    return 0;
+                }
+            }
+
+
+            public override void Render(Vector2 position, bool highlighted) {
+                for (int i = 1; i <= BorderThickness; i++) {
+                    Draw.HollowRect(position.X - i, AbsoluteY - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
+                }
+
+                item.Render(new Vector2(position.X, AbsoluteY), highlighted);
+            }
         }
 
     }

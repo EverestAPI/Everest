@@ -28,7 +28,7 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
 
-        private string filter = "";
+
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -240,15 +240,61 @@ namespace Celeste.Mod.UI {
                         onBackPressed(Overworld);
                     }));
 
+                    TextMenuExt.TextBox textBox = new();
+                    TextMenu.Button button = new("Search");
+                    TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
 
-                    TextMenuExt.TextBox textBox = new TextMenuExt.TextBox();
-                    menu.Add(new patch_TextMenu.patch_SubHeader("Search"));
-                    menu.Add(textBox);
-                    textBox.OnTextChange += (string text) => {
-                        filter = text;
+                    menu.Add(button);
+                    menu.Add(modal);
+
+                    Action searchNextMod = () => {
                         updateHighlightedMods();
-                        menu.RecalculateSize();
-                        menu.Y = menu.ScrollTargetY;
+
+                        int index = 0;
+                        int targetSelectionIndex = 0;
+                        patch_TextMenu.patch_Option<bool> targetTextMenuItem = null;
+                        string searchTarget = textBox.Text.ToLower();
+
+                        foreach (TextMenu.Item item in menu.GetItems()) {
+                            if (item.GetType() == typeof(TextMenu.OnOff) &&
+                                    modToggles.ContainsKey(((TextMenu.OnOff) item).Label) &&
+                                    ((TextMenu.OnOff) item).Label.ToLower().Contains(searchTarget)) {
+                                if (targetTextMenuItem == null) {
+                                    targetSelectionIndex = index;
+                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
+                                } else if (index > menu.Selection) {
+                                    targetSelectionIndex = index;
+                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
+                                    break;
+                                }
+                            }
+                            index++;
+                        }
+
+                        if (targetTextMenuItem != null) {
+                            menu.Selection = targetSelectionIndex;
+                            targetTextMenuItem.UnselectedColor = TextMenu.HighlightColorA;
+                        }
+                    };
+
+                    Action exitSearch = () => {
+                        textBox.StopTyping();
+                        modal.Visible = false;
+                        textBox.Clear();
+                        updateHighlightedMods();
+                    };
+
+                    textBox.InputCharActions['\t'] = searchNextMod;
+
+                    textBox.InputCharActions['\n'] = exitSearch;
+                    textBox.InputCharActions['\r'] = exitSearch;
+                    // for some reason windows and linux behave differently with the escape button so we want to cover all the options
+                    textBox.InputCharActions[(char) 27] = exitSearch;
+                    textBox.GeneralKeysActions[Microsoft.Xna.Framework.Input.Keys.Escape] = exitSearch;
+
+                    button.OnPressed += () => {
+                        modal.Visible = true;
+                        textBox.StartTyping();
                     };
 
                     // reset the mods list
@@ -353,7 +399,6 @@ namespace Celeste.Mod.UI {
             // adjust the mods' color if they are required dependencies for other mods
             foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
                 ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
-                ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).Visible = toggle.Key.ToLower().Contains(filter.ToLower());
             }
 
             // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
