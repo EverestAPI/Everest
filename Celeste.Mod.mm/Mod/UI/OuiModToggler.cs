@@ -260,15 +260,15 @@ namespace Celeste.Mod.UI {
                             if (item is TextMenu.OnOff off &&
                                     modToggles.ContainsKey(off.Label) &&
                                     off.Label.ToLower().Contains(searchTarget)) {
-                                if (targetTextMenuItem == null) {
-                                    // we want to find the first Option in case we are at the last one
-                                    targetSelectionIndex = index;
-                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
-                                } else if (index > menu.Selection) {
-                                    // if we already found the first Option find the first result that is bellow the current selection
+                                if (index > menu.Selection) {
+                                    // If we find a suitable Option we just use it
                                     targetSelectionIndex = index;
                                     targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
                                     break;
+                                } else if (targetTextMenuItem == null) {
+                                    // we want to find the first Option in case we are at the last one
+                                    targetSelectionIndex = index;
+                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
                                 }
                             }
                             index++;
