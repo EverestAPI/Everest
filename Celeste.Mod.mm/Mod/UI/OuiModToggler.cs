@@ -28,8 +28,6 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
 
-
-
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -187,7 +185,6 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
-
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
 
@@ -241,13 +238,17 @@ namespace Celeste.Mod.UI {
                     }));
 
                     TextMenuExt.TextBox textBox = new();
-                    TextMenu.Button button = new("Search");
                     TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
-
+                    TextMenu.Button button = new("Search");
                     menu.Add(button);
                     menu.Add(modal);
 
-                    Action searchNextMod = () => {
+                    button.OnPressed += () => {
+                        modal.Visible = true;
+                        textBox.StartTyping();
+                    };
+
+                    void searchNextMod() {
                         updateHighlightedMods();
 
                         int index = 0;
@@ -256,13 +257,15 @@ namespace Celeste.Mod.UI {
                         string searchTarget = textBox.Text.ToLower();
 
                         foreach (TextMenu.Item item in menu.GetItems()) {
-                            if (item.GetType() == typeof(TextMenu.OnOff) &&
-                                    modToggles.ContainsKey(((TextMenu.OnOff) item).Label) &&
-                                    ((TextMenu.OnOff) item).Label.ToLower().Contains(searchTarget)) {
+                            if (item is TextMenu.OnOff off &&
+                                    modToggles.ContainsKey(off.Label) &&
+                                    off.Label.ToLower().Contains(searchTarget)) {
                                 if (targetTextMenuItem == null) {
+                                    // we want to find the first Option in case we are at the last one
                                     targetSelectionIndex = index;
                                     targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
                                 } else if (index > menu.Selection) {
+                                    // if we already found the first Option find the first result that is bellow the current selection
                                     targetSelectionIndex = index;
                                     targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
                                     break;
@@ -275,27 +278,24 @@ namespace Celeste.Mod.UI {
                             menu.Selection = targetSelectionIndex;
                             targetTextMenuItem.UnselectedColor = TextMenu.HighlightColorA;
                         }
-                    };
+                    }
 
-                    Action exitSearch = () => {
+                    void exitSearch() {
                         textBox.StopTyping();
                         modal.Visible = false;
                         textBox.Clear();
                         updateHighlightedMods();
-                    };
+                    }
 
                     textBox.InputCharActions['\t'] = searchNextMod;
 
                     textBox.InputCharActions['\n'] = exitSearch;
                     textBox.InputCharActions['\r'] = exitSearch;
-                    // for some reason windows and linux behave differently with the escape button so we want to cover all the options
+
+                    // for some reason windows chapters Escape in OnTextInput and linux doesn't therefore we want to cover all options
                     textBox.InputCharActions[(char) 27] = exitSearch;
                     textBox.GeneralKeysActions[Microsoft.Xna.Framework.Input.Keys.Escape] = exitSearch;
 
-                    button.OnPressed += () => {
-                        modal.Visible = true;
-                        textBox.StartTyping();
-                    };
 
                     // reset the mods list
                     allMods = new List<string>();

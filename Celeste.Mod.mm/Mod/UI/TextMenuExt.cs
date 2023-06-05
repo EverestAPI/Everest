@@ -1358,6 +1358,8 @@ namespace Celeste {
 
 
         public class TextBox : TextMenu.Item, IItemExt {
+            private static readonly float DEFAULT_TEXT_SCALE = 1.10f;
+
             public delegate void OnTextChangeHandler(string text);
             public event OnTextChangeHandler OnTextChange;
 
@@ -1369,37 +1371,25 @@ namespace Celeste {
                 }
             }
 
-            public string Icon { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-            public float? IconWidth { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-            public bool IconOutline { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-            public Vector2 Offset { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+            public string Icon { get; set; }
+            public float? IconWidth { get; set; }
+            public bool IconOutline { get; set; }
+            public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1;
             public Color TextColor { get; set; } = Color.White;
+            public Vector2 TextJustify { get; set; } = new Vector2(0f, 0.5f);
+            public float StrokeSize { get; set; } = 2f;
             public Color StrokeColor { get; set; } = Color.Black;
-            public Color SearchBarColor { get; set; } = Color.DarkSlateGray;
-            public Vector2 TextPadding { get; set; }
-            public Vector2 TextScale { get; set; } = Vector2.One * 0.75f;
+            public Color SearchBarColor { get; set; } = Color.DarkSlateGray * 0.8f;
+            public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
+            public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
             public float WidthScale = 1;
-            private readonly float CharHight;
-            private readonly float CharWidth;
-            private readonly float BoxHight;
-            private bool Typing = false;
-
-
             public Dictionary<char, Action> InputCharActions = new();
-
             public Dictionary<Keys, Action> GeneralKeysActions = new();
 
+            private bool Typing = false;
 
             public TextBox() {
-                CharHight = ActiveFont.LineHeight;
-                CharWidth = ActiveFont.Measure(' ').X;
-                BoxHight = CharHight;
-                TextPadding = new Vector2(CharWidth * TextScale.X / 2, CharHight / 2);
-                Color searchBarColor = SearchBarColor;
-                searchBarColor.A = 80;
-                SearchBarColor = searchBarColor;
-
                 Selectable = true;
             }
 
@@ -1410,9 +1400,24 @@ namespace Celeste {
                 return 0;
             }
 
-
             public override float Height() {
-                return BoxHight;
+                return (ActiveFont.LineHeight * TextScale.Y) + (TextPadding.Y * 2);
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 textPosition = new(position.X + TextPadding.X, position.Y + (Height() / 2));
+
+                Draw.Rect(position, Width, Height(), SearchBarColor);
+
+                ActiveFont.DrawOutline(
+                    Text + (Typing ? "_" : ""),
+                    textPosition,
+                    TextJustify,
+                    TextScale,
+                    TextColor * Alpha,
+                    StrokeSize,
+                    StrokeColor * (Alpha * Alpha * Alpha)
+                );
             }
 
             public override void ConfirmPressed() {
@@ -1455,8 +1460,6 @@ namespace Celeste {
                 Audio.Play(SFX.ui_main_button_invalid);
             }
 
-
-
             public void OnTextInput(char c) {
                 if (!Typing) {
                     return;
@@ -1476,8 +1479,7 @@ namespace Celeste {
                             }
                             break;
                         }
-                    // esc and enter
-                    case (char) 27:
+                    // enter
                     case (char) 10:
                     case (char) 13: {
                             StopTyping();
@@ -1510,32 +1512,22 @@ namespace Celeste {
 
                 base.Update();
             }
-
-            public override void Render(Vector2 position, bool highlighted) {
-                Vector2 textPosition = position + TextPadding;
-
-                Draw.Rect(position, Width, BoxHight, SearchBarColor);
-                ActiveFont.DrawOutline(Text + (Typing ? "_" : ""), textPosition, new Vector2(0f, 0.5f), TextScale, TextColor * Alpha, 2f, StrokeColor * (Alpha * Alpha * Alpha));
-            }
-
         }
 
         public class Modal : patch_Item {
-
-            private float AbsoluteY;
-            private TextMenu.Item item;
             public Color BoxBorderColor { get; set; } = Color.White;
             public Color BoxBackgroundColor { get; set; } = Color.Black * 0.8f;
-
             public int BorderThickness { get; set; } = 2;
-
             public bool CenterItem { get; set; } = true;
+
+            private readonly float absoluteY;
+            private readonly TextMenu.Item item;
 
             public Modal(float absoluteY, TextMenu.Item item) {
                 AboveAll = true;
                 Visible = false;
                 IncludeWidthInMeasurement = false;
-                AbsoluteY = absoluteY;
+                this.absoluteY = absoluteY;
                 this.item = item;
             }
 
@@ -1560,13 +1552,12 @@ namespace Celeste {
                 }
             }
 
-
             public override void Render(Vector2 position, bool highlighted) {
                 for (int i = 1; i <= BorderThickness; i++) {
-                    Draw.HollowRect(position.X - i, AbsoluteY - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
+                    Draw.HollowRect(position.X - i, absoluteY - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
                 }
 
-                item.Render(new Vector2(position.X, AbsoluteY), highlighted);
+                item.Render(new Vector2(position.X, absoluteY), highlighted);
             }
         }
 
