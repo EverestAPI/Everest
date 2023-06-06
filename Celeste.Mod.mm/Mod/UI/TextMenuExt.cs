@@ -1429,7 +1429,6 @@ namespace Celeste {
             }
 
             public void StartTyping() {
-                // TODO: fix Audio.Play not working
                 Audio.Play(SFX.ui_main_button_toggle_on);
                 Container.Focused = false;
                 Typing = true;
@@ -1437,7 +1436,6 @@ namespace Celeste {
             }
 
             public void StopTyping() {
-                // TODO: fix Audio.Play not working;
                 Audio.Play(SFX.ui_main_button_toggle_off);
                 Typing = false;
                 TextInput.OnInput -= OnTextInput;
