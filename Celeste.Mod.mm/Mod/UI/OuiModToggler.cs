@@ -27,7 +27,6 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, HashSet<string>> favoritesDependenciesMods;
 
         private bool toggleDependencies = true;
-
         private bool disableAllIgnoresFavorites = true;
 
         private TextMenuExt.SubHeaderExt restartMessage1;
@@ -35,10 +34,8 @@ namespace Celeste.Mod.UI {
 
         // maps each filename to Everest modules
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
-
-        // maps each mode name to its Everest module
-        private Dictionary<string, EverestModuleMetadata> modNames;
-
+        // maps each mod name to its newest Everest module
+        private Dictionary<string, string> modFilenameByModName;
 
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
@@ -202,7 +199,7 @@ namespace Celeste.Mod.UI {
 
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
-                    modNames = buildModNames(modYamls);
+                    modFilenameByModName = buildModNames(modYamls);
 
                     // remove the "loading..." message
                     menu.Remove(loading);
@@ -248,6 +245,7 @@ namespace Celeste.Mod.UI {
                     TextMenu.Item toggleDependenciesButton;
                     menu.Add(toggleDependenciesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS"), true)
                         .Change(value => toggleDependencies = value));
+
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2"));
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
@@ -255,12 +253,12 @@ namespace Celeste.Mod.UI {
                     menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), disableAllIgnoresFavorites)
                         .Change(value => disableAllIgnoresFavorites = value));
 
-                    TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs> favoriteToolTip =
-                        new TextMenuExt.EaseInDecorator<TextMenuExt.SubMenuWithInputs>(
-                            new TextMenuExt.SubMenuWithInputs(
-                                string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE"), "|"), '|',
-                                new Monocle.VirtualButton[] { Input.MenuJournal }, () => Input.GuiInputController()) { TextColor = Color.Gray }
-                        , false, menu);
+                    TextMenuExt.EaseInSubMenuWithInputs favoriteToolTip = new TextMenuExt.EaseInSubMenuWithInputs(
+                        string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE"), "|"),
+                         '|',
+                         new Monocle.VirtualButton[] { Input.MenuJournal },
+                         false
+                        ) {TextColor = Color.Gray};
 
                     menu.Add(favoriteToolTip);
 
@@ -392,23 +390,25 @@ namespace Celeste.Mod.UI {
             modToggles[file] = option;
         }
 
-        private Dictionary<string, EverestModuleMetadata> buildModNames(Dictionary<string, EverestModuleMetadata[]> modYamls) {
-            Dictionary<string, EverestModuleMetadata> modNames = new();
+        private Dictionary<string, string> buildModNames(Dictionary<string, EverestModuleMetadata[]> modYamls) {
+            Dictionary<string, EverestModuleMetadata> everestModulesByModName = new();
 
             foreach (KeyValuePair<string, EverestModuleMetadata[]> pair in modYamls) {
                 foreach (EverestModuleMetadata currentModule in pair.Value) {
-                    if (modNames.TryGetValue(currentModule.Name, out EverestModuleMetadata previousModule)) {
+                    if (everestModulesByModName.TryGetValue(currentModule.Name, out EverestModuleMetadata previousModule)) {
                         if (previousModule.Version < currentModule.Version) {
-                            modNames[currentModule.Name] = currentModule;
+                            everestModulesByModName[currentModule.Name] = currentModule;
                         }
                     } else {
-                        modNames[currentModule.Name] = currentModule;
+                        everestModulesByModName[currentModule.Name] = currentModule;
                     }
                 }
             }
 
 
-            return modNames;
+            return everestModulesByModName
+                .Select(tuple => new KeyValuePair<string, string>(tuple.Key, Path.GetFileName(tuple.Value.PathArchive ?? tuple.Value.PathDirectory)))
+                .ToDictionary(x=> x.Key, x=>x.Value);
         }
 
         private void updateHighlightedMods() {
@@ -487,7 +487,6 @@ namespace Celeste.Mod.UI {
             favoritedMods.Add(modFileName);
             Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added to favorites");
 
-            // I guess we silently fail?
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
                 foreach (string dependenciesFileName in dependenciesFileNames) {
                     addToFavoritesDependencies(dependenciesFileName, modFileName);
@@ -511,7 +510,7 @@ namespace Celeste.Mod.UI {
             Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
 
 
-            // we want to add A as the favorite mod that is dependent on all of modFileName dependencies as well
+            // we want to walk the dependence graph and add all the sub-dependencies as dependencies of the original dependentModFileName  
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
                 foreach (string dependencyFileName in dependenciesFileNames) {
                     addToFavoritesDependencies(dependencyFileName, dependentModFileName);
@@ -595,8 +594,8 @@ namespace Celeste.Mod.UI {
                 foreach (EverestModuleMetadata metadata in metadatas) {
                     // iterate over each loaded mod to ensure its present
                     foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
-                        if (modNames.TryGetValue(dependencyName, out EverestModuleMetadata dependency)) {
-                            dependenciesFileNames.Add(Path.GetFileName(dependency.PathArchive ?? dependency.PathDirectory));
+                        if (modFilenameByModName.TryGetValue(dependencyName, out string dependencyFileName)) {
+                            dependenciesFileNames.Add(dependencyFileName);
                         }
                     }
                 }

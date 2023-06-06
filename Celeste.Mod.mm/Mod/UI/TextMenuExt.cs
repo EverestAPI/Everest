@@ -1365,10 +1365,7 @@ namespace Celeste {
             public bool IconOutline { get; set; }
             public Vector2 Offset { get; set; }
 
-            private Func<bool> controllerModeCallback;
-
-            public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons, Func<bool> controllerModeCallback) {
-                this.controllerModeCallback = controllerModeCallback;
+            public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons) {
 
                 string[] parts = text.Split(separator);
                 Items = new object[parts.Length * 2 - 1];
@@ -1402,7 +1399,7 @@ namespace Celeste {
                         VirtualButton virtualButton = item as VirtualButton;
                         MTexture buttonTexture = null;
 
-                        if (controllerModeCallback()) {
+                        if (Input.GuiInputController()) {
                             buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached);
                         } else if (virtualButton.Binding.Keyboard.Count > 0) {
                             buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0]);
@@ -1417,101 +1414,33 @@ namespace Celeste {
             }
         }
 
-        // this is full of boilerplate code might be replaceable with DispatchProxy once we upgrade .NET
-        // https://learn.microsoft.com/en-us/dotnet/api/system.reflection.dispatchproxy?view=net-7.0
-        public class EaseInDecorator<T> : TextMenu.Item, IItemExt where T : TextMenu.Item, IItemExt {
-            private T inner;
-            private float uneasedAlpha;
-            private TextMenu containingMenu;
-
+        // TODO: this was copy pasted from EaseInSubHeaderExt, find a way to abstract away the EaseIn behavior
+        public class EaseInSubMenuWithInputs : SubMenuWithInputs {
             public bool FadeVisible { get; set; } = true;
+            private float uneasedAlpha;
 
-            public EaseInDecorator(T inner, bool initiallyVisible, TextMenu containingMenu) {
-                this.inner = inner;
-                this.containingMenu = containingMenu;
-
+            public EaseInSubMenuWithInputs(
+                string text,
+                char separator,
+                VirtualButton[] buttons,
+                bool initiallyVisible
+            ) : base(text, separator, buttons) {
                 FadeVisible = initiallyVisible;
                 Alpha = FadeVisible ? 1 : 0;
                 uneasedAlpha = Alpha;
             }
 
-            public Color TextColor { get => inner.TextColor; set => inner.TextColor = value; }
-            public string Icon { get => inner.Icon; set => inner.Icon = value; }
-            public float? IconWidth { get => inner.IconWidth; set => inner.IconWidth = value; }
-            public bool IconOutline { get => inner.IconOutline; set => inner.IconOutline = value; }
-            public Vector2 Offset { get => inner.Offset; set => inner.Offset = value; }
-            public float Alpha { get => inner.Alpha; set => inner.Alpha = value; }
-            new public bool Selectable { get => inner.Selectable; set => inner.Selectable = value; }
-            new public bool Visible { get => inner.Visible; set => inner.Visible = value; }
-
-            new public bool Disabled { get => inner.Disabled; set => inner.Disabled = value; }
-            new public bool IncludeWidthInMeasurement { get => inner.IncludeWidthInMeasurement; set => inner.IncludeWidthInMeasurement = value; }
-            new public bool AboveAll { get => inner.AboveAll; set => inner.AboveAll = value; }
-            new public TextMenu Container { get => inner.Container; set => inner.Container = value; }
-            new public Wiggler SelectWiggler { get => inner.SelectWiggler; set => inner.SelectWiggler = value; }
-            new public Wiggler ValueWiggler { get => inner.ValueWiggler; set => inner.ValueWiggler = value; }
-            new public Action OnEnter { get => inner.OnEnter; set => inner.OnEnter = value; }
-            new public Action OnLeave { get => inner.OnLeave; set => inner.OnLeave = value; }
-            new public Action OnPressed { get => inner.OnPressed; set => inner.OnPressed = value; }
-            new public Action OnAltPressed { get => inner.OnAltPressed; set => inner.OnAltPressed = value; }
-            new public Action OnUpdate { get => inner.OnUpdate; set => inner.OnUpdate = value; }
-
-
-            new public float Width => inner.Width;
-
-            new public bool Hoverable => inner.Hoverable;
-
-
-            public override void Added() {
-                inner.Added();
-            }
-
-            public new TextMenu.Item AltPressed(Action onPressed) {
-                return inner.AltPressed(onPressed);
-            }
-
-            public override void ConfirmPressed() {
-                inner.ConfirmPressed();
-            }
-
-            public new TextMenu.Item Enter(Action onEnter) {
-                return inner.Enter(onEnter);
-            }
-
             public override float Height() {
-                return MathHelper.Lerp(-containingMenu.ItemSpacing, inner.Height(), inner.Alpha);
-            }
+                if (Container != null) {
+                    return MathHelper.Lerp(-Container.ItemSpacing, base.Height(), Alpha);
+                } else {
+                    return base.Height();
+                }
 
-            public new TextMenu.Item Leave(Action onLeave) {
-                return inner.Leave(onLeave);
-            }
-
-            public override void LeftPressed() {
-                inner.LeftPressed();
-            }
-
-            public override float LeftWidth() {
-                return inner.LeftWidth();
-            }
-
-            public new TextMenu.Item Pressed(Action onPressed) {
-                return inner.Pressed(onPressed);
-            }
-
-            public override void Render(Vector2 position, bool highlighted) {
-                inner.Render(position, highlighted);
-            }
-
-            public override void RightPressed() {
-                inner.RightPressed();
-            }
-
-            public override float RightWidth() {
-                return inner.RightWidth();
             }
 
             public override void Update() {
-                inner.Update();
+                base.Update();
 
                 // gradually make the sub-header fade in or out. (~333ms fade)
                 float targetAlpha = FadeVisible ? 1 : 0;
