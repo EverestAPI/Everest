@@ -239,7 +239,7 @@ namespace Celeste.Mod.UI {
 
                     TextMenuExt.TextBox textBox = new();
                     TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
-                    TextMenu.Button button = new("Search");
+                    TextMenu.Button button = new(Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCH"));
                     menu.Add(button);
                     menu.Add(modal);
 
@@ -277,6 +277,9 @@ namespace Celeste.Mod.UI {
                         if (targetTextMenuItem != null) {
                             menu.Selection = targetSelectionIndex;
                             targetTextMenuItem.UnselectedColor = TextMenu.HighlightColorA;
+                            Audio.Play(SFX.ui_main_roll_down);
+                        } else {
+                            Audio.Play(SFX.ui_main_button_invalid);
                         }
                     }
 

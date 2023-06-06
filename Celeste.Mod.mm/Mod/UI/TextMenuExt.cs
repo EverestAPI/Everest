@@ -1383,7 +1383,7 @@ namespace Celeste {
             public Color SearchBarColor { get; set; } = Color.DarkSlateGray * 0.8f;
             public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
             public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
-            public float WidthScale = 1;
+            public float WidthScale { get; set; } = 1;
             public Dictionary<char, Action> InputCharActions = new();
             public Dictionary<Keys, Action> GeneralKeysActions = new();
 
@@ -1395,7 +1395,7 @@ namespace Celeste {
 
             public override float LeftWidth() {
                 if (Container != null) {
-                    return Container.Width / WidthScale;
+                    return Container.Width * WidthScale;
                 }
                 return 0;
             }
