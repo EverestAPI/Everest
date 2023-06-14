@@ -248,7 +248,7 @@ namespace Celeste.Mod.UI {
                         textBox.StartTyping();
                     };
 
-                    void searchNextMod() {
+                    void searchNextMod(TextMenuExt.TextBox textBox) {
                         updateHighlightedMods();
 
                         int index = 0;
@@ -283,21 +283,21 @@ namespace Celeste.Mod.UI {
                         }
                     }
 
-                    void exitSearch() {
+                    void exitSearch(TextMenuExt.TextBox textBox) {
                         textBox.StopTyping();
                         modal.Visible = false;
-                        textBox.Clear();
+                        textBox.ClearText();
                         updateHighlightedMods();
                     }
 
-                    textBox.InputCharActions['\t'] = searchNextMod;
+                    textBox.OnTextInputCharActions['\t'] = searchNextMod;
 
-                    textBox.InputCharActions['\n'] = exitSearch;
-                    textBox.InputCharActions['\r'] = exitSearch;
+                    textBox.OnTextInputCharActions['\n'] = exitSearch;
+                    textBox.OnTextInputCharActions['\r'] = exitSearch;
 
                     // for some reason windows chapters Escape in OnTextInput and linux doesn't therefore we want to cover all options
-                    textBox.InputCharActions[(char) 27] = exitSearch;
-                    textBox.GeneralKeysActions[Microsoft.Xna.Framework.Input.Keys.Escape] = exitSearch;
+                    textBox.OnTextInputCharActions[(char) 27] = exitSearch;
+                    textBox.OnUpdateKeysActions[Microsoft.Xna.Framework.Input.Keys.Escape] = exitSearch;
 
 
                     // reset the mods list

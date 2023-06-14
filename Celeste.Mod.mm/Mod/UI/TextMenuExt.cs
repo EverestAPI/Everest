@@ -1357,7 +1357,7 @@ namespace Celeste {
         }
 
 
-        public class TextBox : TextMenu.Item, IItemExt {
+        public class TextBox : TextMenu.Item {
             private static readonly float DEFAULT_TEXT_SCALE = 1.10f;
 
             public delegate void OnTextChangeHandler(string text);
@@ -1371,10 +1371,6 @@ namespace Celeste {
                 }
             }
 
-            public string Icon { get; set; }
-            public float? IconWidth { get; set; }
-            public bool IconOutline { get; set; }
-            public Vector2 Offset { get; set; }
             public float Alpha { get; set; } = 1;
             public Color TextColor { get; set; } = Color.White;
             public Vector2 TextJustify { get; set; } = new Vector2(0f, 0.5f);
@@ -1384,8 +1380,29 @@ namespace Celeste {
             public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
             public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
             public float WidthScale { get; set; } = 1;
-            public Dictionary<char, Action> InputCharActions = new();
-            public Dictionary<Keys, Action> GeneralKeysActions = new();
+
+            public Dictionary<char, Action<TextBox>> OnTextInputCharActions = new() {
+                // backspace
+                {(char) 8, (textBox) => {
+                    if(textBox.DeleteLastCharacter()) {
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    }  else {
+                        Audio.Play(SFX.ui_main_button_invalid);
+                    }
+                }},
+                // enter
+                {'\n', (textBox) => textBox.StopTyping()},
+                {'\r', (textBox) => textBox.StopTyping()},
+            };
+
+            public Dictionary<Keys, Action<TextBox>> OnUpdateKeysActions = new() {
+                {Keys.Delete, (textBox) => {
+                    if (textBox.Text.Length > 0) {
+                        textBox.ClearText();
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
+                    }
+                }}
+            };
 
             private bool Typing = false;
 
@@ -1424,22 +1441,35 @@ namespace Celeste {
                 StartTyping();
             }
 
-            public void Clear() {
+            public void ClearText() {
                 Text = "";
             }
 
+            public bool DeleteLastCharacter() {
+                if (Text.Length > 0) {
+                    Text = Text.Remove(Text.Length - 1);
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
             public void StartTyping() {
-                Audio.Play(SFX.ui_main_button_toggle_on);
-                Container.Focused = false;
-                Typing = true;
-                TextInput.OnInput += OnTextInput;
+                if (!Typing) {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+                    Typing = true;
+                    Container.Focused = false;
+                    TextInput.OnInput += OnTextInput;
+                }
             }
 
             public void StopTyping() {
-                Audio.Play(SFX.ui_main_button_toggle_off);
-                Typing = false;
-                TextInput.OnInput -= OnTextInput;
-                Container.Focused = true;
+                if (Typing) {
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+                    Typing = false;
+                    Container.Focused = true;
+                    TextInput.OnInput -= OnTextInput;
+                }
             }
 
             private void HandleNewInputChar(char c) {
@@ -1452,63 +1482,29 @@ namespace Celeste {
                     (newTextSize + totalTextPadding).X < Width) {
                     Text += c;
                     Audio.Play(SFX.ui_main_rename_entry_char);
-                    return;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
                 }
-
-                Audio.Play(SFX.ui_main_button_invalid);
             }
 
             public void OnTextInput(char c) {
-                if (!Typing) {
-                    return;
+                if (Typing) {
+                    if (OnTextInputCharActions.TryGetValue(c, out Action<TextBox> action)) {
+                        action(this);
+                    } else {
+                        HandleNewInputChar(c);
+                    }
                 }
-
-                if (InputCharActions.TryGetValue(c, out Action action)) {
-                    action();
-                    return;
-                }
-
-                switch (c) {
-                    // backspace
-                    case (char) 8: {
-                            if (Text.Length > 0) {
-                                Text = Text.Remove(Text.Length - 1);
-                                Audio.Play(SFX.ui_main_rename_entry_backspace);
-                            }
-                            break;
-                        }
-                    // enter
-                    case (char) 10:
-                    case (char) 13: {
-                            StopTyping();
-                            break;
-                        }
-                    default: {
-                            HandleNewInputChar(c);
-                            break;
-                        }
-                }
-
             }
 
             public override void Update() {
-                if (Typing) {
-
-                    foreach (KeyValuePair<Keys, Action> pair in GeneralKeysActions) {
-                        if (MInput.Keyboard.Pressed(pair.Key)) {
-                            pair.Value();
-                        }
-                    }
-                }
-
-                if (MInput.Keyboard.Pressed(Keys.Delete)) {
-                    if (Text.Length > 0) {
-                        Clear();
-                        Audio.Play(SFX.ui_main_rename_entry_backspace);
-                    }
-                }
-
                 base.Update();
+
+                foreach (KeyValuePair<Keys, Action<TextBox>> pair in OnUpdateKeysActions) {
+                    if (MInput.Keyboard.Pressed(pair.Key)) {
+                        pair.Value(this);
+                    }
+                }
             }
         }
 
@@ -1558,6 +1554,5 @@ namespace Celeste {
                 item.Render(new Vector2(position.X, absoluteY), highlighted);
             }
         }
-
     }
 }
