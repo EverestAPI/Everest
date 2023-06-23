@@ -58,15 +58,18 @@ namespace Celeste.Mod.UI {
             Everest.Updater.Entry everestVersionToInstall = null;
 
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
-            Dictionary<string, EverestModuleMetadata> modDependencyGraph = ModUpdaterHelper.DownloadModDependencyGraph();
 
-            if (availableDownloads == null || modDependencyGraph == null) {
+            if (availableDownloads == null) {
                 shouldAutoExit = false;
                 shouldRestart = false;
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
-                addTransitiveDependencies(modDependencyGraph);
+                // add transitive dependencies to the list of dependencies to download, by using the mod dependency graph.
+                Dictionary<string, EverestModuleMetadata> modDependencyGraph = ModUpdaterHelper.DownloadModDependencyGraph();
+                if (modDependencyGraph != null) {
+                    addTransitiveDependencies(modDependencyGraph);
+                }
 
                 // load information on all installed mods, so that we can spot blacklisted ones easily.
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
@@ -406,10 +409,10 @@ namespace Celeste.Mod.UI {
 
                     if (source.UpdatePriority < updatePrio)
                         continue;
- 
+
                     if (source.UpdatePriority == updatePrio && entry.Build < updateEntry?.Build)
                         continue;
- 
+
                     updatePrio = source.UpdatePriority;
                     updateEntry = entry;
                 }
