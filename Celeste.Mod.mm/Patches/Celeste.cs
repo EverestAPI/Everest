@@ -172,21 +172,8 @@ namespace Celeste {
 
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter {
-                STDOUT = Console.Out,
-                File = fileWriter
-            }) {
-                try {
-                    Console.SetOut(logWriter);
-
-                    MainInner(args);
-                } finally {
-                    if (logWriter.STDOUT != null) {
-                        Console.SetOut(logWriter.STDOUT);
-                        logWriter.STDOUT = null;
-                    }
-                }
-            }
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+                MainInner(args);
 
         }
 
