@@ -245,11 +245,18 @@ namespace Celeste.Mod {
             ModuleDefinition mod = null;
             try {
                 // Load the module + assembly
+                // Don't load it directly using the path so that the file on disk isn't locked
                 mod = ModuleDefinition.ReadModule(path);
                 if (AssemblyLoadBlackList.Contains(mod.Assembly.Name.Name, StringComparer.OrdinalIgnoreCase))
                     throw new Exception($"Attempted load of blacklisted assembly {mod.Assembly.Name} from module '{ModuleMeta.Name}'");
 
-                Assembly asm = LoadFromAssemblyPath(path);
+                Assembly asm;
+                string symPath = Path.ChangeExtension(path, "pdb");
+                using(Stream asmStream = File.OpenRead(path)) {
+                    using(Stream symStream = File.Exists(symPath) ? File.OpenRead(symPath) : null) {
+                        asm = LoadFromStream(asmStream, symStream);
+                    }
+                }
 
                 // Insert into dictionaries
                 string asmName = asm.GetName().Name;
