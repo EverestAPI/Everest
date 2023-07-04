@@ -6,11 +6,19 @@ namespace Microsoft.Xna.Framework {
 
         // The following signatures existed in older versions of FNA when they shouldn't have.
 
-        [MonoModLinkFrom("System.Void Microsoft.Xna.Framework.Color::.ctor(Microsoft.Xna.Framework.Color,System.Int32)")]
-        public static Color NewColor(Color color, int alpha) => new Color(color.R, color.G, color.B, alpha);
+        [MonoModConstructor] // we want to call the original constructor
+        [MonoModIgnore] // this is necessary to prevent Monomod from generating redundant orig_ctor
+        public extern void ctor(int r, int g, int b, int alpha);
 
-        [MonoModLinkFrom("System.Void Microsoft.Xna.Framework.Color::.ctor(Microsoft.Xna.Framework.Color,System.Single)")]
-        public static Color NewColor(Color color, float alpha) => new Color(color.R, color.G, color.B, (byte) alpha * 255);
+        [MonoModConstructor]
+        public void ctor(Color color, int alpha) {
+            ctor(color.R, color.G, color.B, alpha);
+        }
+
+        [MonoModConstructor]
+        public void ctor(Color color, float alpha) {
+            ctor(color.R, color.G, color.B, (byte) alpha * 255);
+        }
 
     }
 }
