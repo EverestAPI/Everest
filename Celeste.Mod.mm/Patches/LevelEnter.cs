@@ -94,14 +94,14 @@ namespace Celeste {
             MapMeta areaMeta = areaData.GetMeta();
 
             string postCardDialogInfix = "";
-            int areaModIndex = 0;
+            int areaModeIndex = 0;
             
             if (session.Area.Mode == AreaMode.BSide) {
                 postCardDialogInfix = "_b";
-                areaModIndex = 1;
+                areaModeIndex = 1;
             } else if (session.Area.Mode == AreaMode.CSide) {
                 postCardDialogInfix = "_c";
-                areaModIndex = 2;
+                areaModeIndex = 2;
             }
 
             string postCardDialog = $"{areaData.Name}{postCardDialogInfix}_postcard";
@@ -109,7 +109,7 @@ namespace Celeste {
             if (areaMeta != null && areaData.GetLevelSet() != "Celeste" &&
                 Dialog.Has(postCardDialog) &&
                 session.StartedFromBeginning && !fromSaveData &&
-                (!SaveData.Instance.Areas[session.Area.ID].Modes[areaModIndex].Completed || SaveData.Instance.DebugMode)) {
+                (!SaveData.Instance.Areas[session.Area.ID].Modes[areaModeIndex].Completed || SaveData.Instance.DebugMode)) {
                 return EnterWithPostcardRoutine(Dialog.Get(postCardDialog), areaMeta.PostcardSoundID);
             }
 
