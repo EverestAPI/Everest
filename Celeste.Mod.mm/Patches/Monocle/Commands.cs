@@ -543,19 +543,14 @@ namespace MonoMod {
         public static void PatchCommandsProcessMethod(ILContext il, CustomAttribute attrib) {
             ILCursor cursor = new ILCursor(il);
 
-            TypeDefinition t_CultureInfo = MonoModRule.Modder.FindType("System.Globalization.CultureInfo").Resolve();
-            // import CultureInfo.InvariantCulture's getter as it's not in the Celeste assembly
-            MethodReference m_InvariantCulture_get = MonoModRule.Modder.Module.ImportReference(t_CultureInfo.FindProperty("InvariantCulture").GetMethod);
-
             TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
-            // import string.ToString(CultureInfo) as it's not in the Celeste assembly
-            MethodReference m_ToLower = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLower(System.Globalization.CultureInfo)"));
+            // import string.ToStringInvariant() as it's not in the Celeste assembly
+            MethodReference m_ToLowerInvariant = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLowerInvariant()"));
 
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Command", "Name"));
 
-            // call Command.Name.ToLower() with the invariant culture
-            cursor.Emit(OpCodes.Call, m_InvariantCulture_get);
-            cursor.Emit(OpCodes.Callvirt, m_ToLower);
+            // call Command.Name.ToLowerInvariant()
+            cursor.Emit(OpCodes.Callvirt, m_ToLowerInvariant);
         }
 
     }
