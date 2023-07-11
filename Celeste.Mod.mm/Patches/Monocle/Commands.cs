@@ -544,7 +544,7 @@ namespace MonoMod {
             ILCursor cursor = new ILCursor(il);
 
             TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
-            // import string.ToStringInvariant() as it's not in the Celeste assembly
+            // import string.ToLowerInvariant() as it's not in the Celeste assembly
             MethodReference m_ToLowerInvariant = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLowerInvariant()"));
 
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Command", "Name"));
