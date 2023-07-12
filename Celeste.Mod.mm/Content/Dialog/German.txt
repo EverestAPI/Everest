@@ -53,6 +53,7 @@
 	MODOPTIONS_COREMODULE_UPDATE= 							Everest-Update auf ((version))
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Fehlende benötigte Mods installieren
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Everest-Version wechseln
+	MODOPTIONS_COREMODULE_LEGACYREF=						Erstelle legacyRef Installation
 	MODOPTIONS_COREMODULE_TITLE= 							Everest-Kernfunktionen
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug-Modus
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Mit FMOD Live Update starten
@@ -134,6 +135,7 @@
 
 # Updater
 	UPDATER_TITLE= 					UPDATER
+	UPDATER_LEGACYREF_TITLE=		LEGACYREF SETUP
 	UPDATER_VERSIONS_TITLE= 		EVEREST-VERSION ÄNDERN
 	UPDATER_VERSIONS_CURRENT= 		Installiert: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Neu laden...
@@ -146,6 +148,7 @@
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	Updates werden auf dieser Plattform nicht unterstützt - Abbruch.
 	EVERESTUPDATER_NOUPDATE=		Kein Update - Abbruch.
+	EVERESTUPDATER_CREATINGLEGACYREF=	Erstelle legacyRef Basisinstallation
 	EVERESTUPDATER_UPDATING=		Update auf {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Download
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Download:

@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -358,14 +359,49 @@ namespace Celeste.Mod {
                 // The user has made their choice, so we will save the desired branch now.
                 CoreModule.Settings.CurrentBranch = version.Source.Name;
                 CoreModule.Instance.SaveSettings();
-                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
+                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => DoUpdate(progress, version, PathGame, true)), 0);
             }
-            private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
+
+            internal static void UpdateLegacyRef(OuiLoggedProgress progress) {
+                progress.Init<OuiModOptions>(Dialog.Clean("updater_legacyref_title"), new Task(async () => {
+                    // Create a legacyRef install if it doesn't exist
+                    string legacyRefInstall = Path.Combine(PathGame, "legacyRef");
+                    if (!Directory.Exists(legacyRefInstall)) {
+                        progress.LogLine(Dialog.Clean("EVERESTUPDATER_CREATINGLEGACYREF"));
+
+                        static void CopyInstallDir(string srcDir, string dstDir) {
+                            Directory.CreateDirectory(dstDir);
+                            foreach(string srcPath in Directory.EnumerateFiles(srcDir)) {
+                                string dstPath = Path.Combine(dstDir, Path.GetRelativePath(srcDir, srcPath));
+
+                                //Don't copy Content or Saves
+                                string entryName = Path.GetFileName(srcPath);
+                                if(entryName == "Content" || entryName == "Saves") continue;
+
+                                if(File.Exists(srcPath)) File.Copy(srcPath, dstPath);
+                                if(Directory.Exists(srcPath)) CopyInstallDir(srcPath, dstPath);
+                            }
+                        }
+                        CopyInstallDir(Path.Combine(PathGame, "orig"), legacyRefInstall);
+                    }
+
+                    // Find the latest non-core stable Everest version
+                    // TODO: For now we can just take the latest stable build, but once Core hits stable this will need to be reworked
+                    Source stableSrc = Sources.First(src => src.Name.Contains("stable"));
+                    stableSrc = await stableSrc.Request();
+                    Entry latestNonCoreStable = stableSrc.Entries.First();
+
+                    // Install Everest onto the legacyRef install
+                    DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
+                }), 0);
+            }
+
+            private static void DoUpdate(OuiLoggedProgress progress, Entry version, string installTarget, bool isUpdate) {
                 // Last line printed on error.
                 string errorHint = $"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}";
 
-                string zipPath = Path.Combine(PathGame, "everest-update.zip");
-                string extractedPath = Path.Combine(PathGame, "everest-update");
+                string zipPath = Path.Combine(installTarget, "everest-update.zip");
+                string extractedPath = isUpdate ? Path.Combine(installTarget, "everest-update") : installTarget;
 
                 progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Source.Name.DialogClean(), version.URL));
 
@@ -398,7 +434,7 @@ namespace Celeste.Mod {
 
                 bool isNative = true;
                 try {
-                    if (extractedPath != PathGame && Directory.Exists(extractedPath))
+                    if (extractedPath != installTarget && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
 
                     // Don't use zip.ExtractAll because we want to keep track of the progress.
@@ -441,20 +477,24 @@ namespace Celeste.Mod {
                     return;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
-
                 progress.Progress = 1;
                 progress.ProgressMax = 1;
-                string action = Dialog.Clean("EVERESTUPDATER_RESTARTING");
-                progress.LogLine(action);
-                for (int i = 3; i > 0; --i) {
-                    progress.Lines[progress.Lines.Count - 1] = string.Format(Dialog.Get("EVERESTUPDATER_RESTARTINGIN"), i);
-                    Thread.Sleep(1000);
+
+                if(isUpdate) {
+                    string action = Dialog.Clean("EVERESTUPDATER_RESTARTING");
+                    progress.LogLine(action);
+                    for (int i = 3; i > 0; --i) {
+                        progress.Lines[progress.Lines.Count - 1] = string.Format(Dialog.Get("EVERESTUPDATER_RESTARTINGIN"), i);
+                        Thread.Sleep(1000);
+                    }
+                    progress.Lines[progress.Lines.Count - 1] = action;
                 }
-                progress.Lines[progress.Lines.Count - 1] = action;
 
                 try {
-                    // Store the update version for later
-                    File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+                    if(isUpdate) {
+                        // Store the update version for later
+                        File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+                    }
 
                     // Start MiniInstaller in a separate process.
                     Process installer = new Process();
@@ -473,7 +513,11 @@ namespace Celeste.Mod {
                                 if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
                                     pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
                                 }
-                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
+                                if (isUpdate) {
+                                    installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
+                                } else {
+                                    installer.StartInfo.Arguments = $"-c \"{pathToMono} MiniInstaller.exe\"";
+                                }
                             }
                         }
                     } else {
