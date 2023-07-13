@@ -44,6 +44,7 @@ namespace MonoMod {
             Game, GameDependency, Mod
         }
 
+        public static readonly AssemblyNameReference CelesteAsmRef = new AssemblyNameReference("Celeste", new Version(1, 0, 0, 0));
         public static readonly PatchTarget RulesPatchTarget;
         public static readonly ModuleDefinition RulesModule;
 
@@ -139,9 +140,9 @@ namespace MonoMod {
             bool hasNewRef = modder.Module.AssemblyReferences.Any(asmRef => asmRef.Name == newRef.Name);
             if (!hasNewRef) {
                 AssemblyNameReference asmRef = new AssemblyNameReference(newRef.Name, newRef.Version);
+                modder.Log($"[Celeste.Mod.mm] Adding assembly reference to {asmRef.FullName}");
                 modder.Module.AssemblyReferences.Add(asmRef);
                 modder.MapDependency(modder.Module, asmRef);
-                modder.Log($"[Celeste.Mod.mm] Adding assembly reference to {asmRef.FullName}");
             }
 
             // Replace old references
@@ -153,10 +154,10 @@ namespace MonoMod {
                     continue;
 
                 // Remove dependency
+                modder.Log($"[Celeste.Mod.mm] Replacing assembly reference {asmRef.FullName} -> {newRef.FullName}");
                 modder.Module.AssemblyReferences.RemoveAt(i--);
                 modder.DependencyMap[modder.Module].RemoveAll(dep => dep.Assembly.FullName == asmRef.FullName);
                 modder.RelinkModuleMap[asmRef.Name] = newModule;
-                modder.Log($"[Celeste.Mod.mm] Replacing assembly reference {asmRef.FullName} -> {newRef.FullName}");
             }
 
             return !hasNewRef;

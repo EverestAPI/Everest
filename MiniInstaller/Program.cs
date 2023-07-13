@@ -135,6 +135,7 @@ namespace MiniInstaller {
 
                     string hookGenOutput = Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"));
                     RunHookGen(PathEverestExe, PathCelesteExe);
+                    RunMonoMod(hookGenOutput, dllPaths: mods); // We need to fix some MonoMod crimes, so relink it against the legacy MonoMod layer
 
                     MoveExecutable(PathEverestExe, PathEverestDLL);
                     CreateRuntimeConfigFiles(PathEverestDLL, new string[] { everestModDLL, hookGenOutput });
