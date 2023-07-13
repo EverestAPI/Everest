@@ -7,6 +7,18 @@ using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
+    internal static class LegacyMonoModCompatLayer {
+        public static void Initialize() {
+            LegacyDynamicDataCompatHooks.InstallHook();
+            Logger.Log(LogLevel.Info, "legacy-monomod", "Initialized legacy MonoMod compatibility layer");
+        }
+
+        public static void Uninitialize() {
+            LegacyDynamicDataCompatHooks.UninstallHook();
+            Logger.Log(LogLevel.Info, "legacy-monomod", "Uninitialized legacy MonoMod compatibility layer");
+        }
+    }
+
     public static class ILShims {
         [RelinkLegacyMonoMod("Mono.Cecil.Cil.Instruction MonoMod.Cil.ILLabel::Target")]
         public static Instruction ILLabel_GetTarget(ILLabel label) => label.Target; // This previously used to be a field

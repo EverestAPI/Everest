@@ -2,6 +2,7 @@
 using Celeste.Mod.Core;
 using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
+using Celeste.Mod.Helpers.LegacyMonoMod;
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Monocle;
@@ -392,6 +393,8 @@ namespace Celeste.Mod {
             };
             DetourManager.NativeDetourUndone += UnregisterModDetour;
 
+            LegacyMonoModCompatLayer.Initialize();
+
             // Before even initializing anything else, make sure to prepare any static flags.
             Flags.Initialize();
 
@@ -495,6 +498,7 @@ namespace Celeste.Mod {
             DebugRC.Shutdown();
             TextInput.Shutdown();
             Events.Celeste.Shutdown();
+            LegacyMonoModCompatLayer.Uninitialize();
         }
 
         internal static void Dispose(object sender, EventArgs args) {
