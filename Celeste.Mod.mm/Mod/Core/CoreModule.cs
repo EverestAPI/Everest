@@ -283,9 +283,11 @@ namespace Celeste.Mod.Core {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
 
-                menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_legacyref")).Pressed(() => {
+                TextMenu.Item setupLegacyRefBtn = new TextMenu.Button(Dialog.Clean("modoptions_coremodule_legacyref")).Pressed(() => {
                     Everest.Updater.UpdateLegacyRef(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
-                }));
+                });
+                menu.Insert(items.Count - 2, setupLegacyRefBtn);
+                setupLegacyRefBtn.AddDescription(menu, Dialog.Clean("modoptions_coremodule_legacyref_descr"));
 
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();

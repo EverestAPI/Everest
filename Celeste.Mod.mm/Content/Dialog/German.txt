@@ -54,6 +54,7 @@
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Fehlende benötigte Mods installieren
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Everest-Version wechseln
 	MODOPTIONS_COREMODULE_LEGACYREF=						Erstelle legacyRef Installation
+	MODOPTIONS_COREMODULE_LEGACYREF_DESCR=					Benötigt um nicht-Core code mods mit .NET Core Everest zu bauen
 	MODOPTIONS_COREMODULE_TITLE= 							Everest-Kernfunktionen
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug-Modus
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Mit FMOD Live Update starten
