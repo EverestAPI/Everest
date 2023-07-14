@@ -1,5 +1,6 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
+using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -27,6 +28,8 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
+        private Action startSearching;
+        private float searchEase;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -239,11 +242,9 @@ namespace Celeste.Mod.UI {
 
                     TextMenuExt.TextBox textBox = new();
                     TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
-                    TextMenu.Button button = new(Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCH"));
-                    menu.Add(button);
                     menu.Add(modal);
 
-                    button.OnPressed += () => {
+                    startSearching = () => {
                         modal.Visible = true;
                         textBox.StartTyping();
                     };
@@ -415,6 +416,15 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            searchEase = Calc.Approach(searchEase, Visible ? 1f : 0f, Engine.DeltaTime * 4f);
+
+            if (Selected && Focused) {
+                if (Input.QuickRestart.Pressed) {
+                    startSearching?.Invoke();
+                    return;
+                }
+            }
+
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
             base.Update();
         }
@@ -520,6 +530,15 @@ namespace Celeste.Mod.UI {
 
             // this mod has no yaml, and as such, can't be a dependency of anything.
             return false;
+        }
+
+
+        public override void Render() {
+            base.Render();
+            
+            Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchEase), 952f);
+            GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchEase));
+            Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
         }
 
         public override IEnumerator Leave(Oui next) {
