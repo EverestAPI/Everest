@@ -286,6 +286,12 @@ namespace Celeste.Mod.Core {
         }
 
         [SettingIgnore]
+        public bool UseInGameCrashHandler { get; set; } = true;
+
+        [SettingIgnore]
+        public bool CrashHandlerAlwaysTeabag { get; set; } = false; // The world is a cruel place, so we can't turn this on by default... ._.
+
+        [SettingIgnore]
         public string CurrentVersion { get; set; }
 
         [SettingIgnore]

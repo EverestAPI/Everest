@@ -1,3 +1,4 @@
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
@@ -39,6 +40,9 @@ namespace Celeste.Mod.UI {
         private static CriticalErrorHandler CurrentHandler;
 
         public static bool HandleCriticalError(Exception error) {
+            if (!CoreModule.Settings.UseInGameCrashHandler)
+                return false;
+
             Logger.Log(LogLevel.Error, "crit-error-handler", ">>>>>>>>>>>>>>> ENCOUNTERED A CRITICAL ERROR <<<<<<<<<<<<<<<");
             Logger.LogDetailed(error, "crit-error-handler");
 
@@ -243,9 +247,11 @@ namespace Celeste.Mod.UI {
         private PlayerSprite playerSprite;
         private PlayerHair playerHair;
         private VirtualRenderTarget playerRenderTarget;
+        private bool UsePlayerSprite => !disablePlayerSprite && State != DisplayState.BlueScreen;
+
+        private bool playerShouldTeabag;
         private bool isCrouched;
         private float crouchTimer;
-        private bool UsePlayerSprite => !disablePlayerSprite && State != DisplayState.BlueScreen;
 
         private CriticalErrorHandler(Exception error, string logFile, string logFileError) {
             Depth += 100; // Render below other overlays
@@ -258,6 +264,8 @@ namespace Celeste.Mod.UI {
             LogFileError = string.IsNullOrEmpty(logFile) ? logFileError : null;
 
             beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
+
+            playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && new Random().Next(0, 10) == 0);
 
             Add(new Coroutine(Routine()));
             Logger.Log(LogLevel.Info, "crit-error-handler", $"Created critical error handler for exception {error.GetType().FullName}: {error.Message}");
@@ -455,16 +463,39 @@ namespace Celeste.Mod.UI {
                 ovlHandler.Overlay = this; // Restore ourselves as the active overlay
             }
 
+            // Update the player state
             if (UsePlayerSprite && playerSprite != null && playerHair != null) {
-                // Update the player state
-                // Make them teabag so that the situation is a bit less dramatic
-                crouchTimer -= Celeste.DeltaTime;
-                if (crouchTimer <= 0) {
-                    playerSprite.Scale = isCrouched ? new Vector2(0.8f, 1.2f) : new Vector2(1.4f, 0.6f);
-                    isCrouched = !isCrouched;
-                    crouchTimer = 0.12f;
+                if (playerShouldTeabag) {
+                    if (playerSprite.CurrentAnimationID != "rollGetUp") {
+                        // Make them teabag so that the situation is a bit less dramatic
+                        // This is not the default behavior because people complained that it was too distracting ._.
+                        crouchTimer -= Celeste.DeltaTime;
+                        if (crouchTimer <= 0) {
+                            playerSprite.Scale = isCrouched ? new Vector2(0.8f, 1.2f) : new Vector2(1.4f, 0.6f);
+                            isCrouched = !isCrouched;
+                            crouchTimer = 0.12f;
+                        }
+                        playerSprite.Play(isCrouched ? "duck" : "idle");
+                    }
+                } else {
+                    // Boring fall animation ._.
+                    if (playerSprite.LastAnimationID != "roll")
+                        playerSprite.Play("roll");
+
+                    // If the player holds down left or right for 5s switch to teabagging
+                    // Recycle crouchTimer to keep track of this
+                    if (Input.MoveX.Value != 0 || Input.MenuLeft.Check || Input.MenuRight.Check)
+                        crouchTimer += Celeste.DeltaTime;
+                    else
+                        crouchTimer = 0;
+
+                    if (crouchTimer >= 5) {
+                        // Play the get-up animation first
+                        playerSprite.Play("rollGetUp");
+                        playerShouldTeabag = true;
+                        crouchTimer = 0;   
+                    }
                 }
-                playerSprite.Play(isCrouched ? "duck" : "idle");
 
                 playerSprite.Update();
                 playerHair.Update();
