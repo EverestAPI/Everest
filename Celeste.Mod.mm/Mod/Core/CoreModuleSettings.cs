@@ -288,8 +288,13 @@ namespace Celeste.Mod.Core {
         [SettingIgnore]
         public string CurrentVersion { get; set; }
 
+        private string _CurrentBranch;
+
         [SettingIgnore]
-        public string CurrentBranch { get; set; }
+        public string CurrentBranch {
+            get => _CurrentBranch;
+            set => _CurrentBranch = value is "dev" or "beta" or "stable" ? "updater_src_" + value : value; // branch names were changed at some point
+        }
 
         [SettingIgnore]
         public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
