@@ -487,7 +487,7 @@ namespace Celeste {
         }
 
         private void FixChaserStatesTimeStamp() {
-            if (unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
+            if (Session.Area.GetLevelSet() != "Celeste" && unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
                 float offset = Engine.DeltaTime;
 
                 // add one more frame at the end
