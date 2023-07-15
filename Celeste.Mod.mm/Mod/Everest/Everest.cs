@@ -90,10 +90,17 @@ namespace Celeste.Mod {
         /// The path to the Celeste /Saves directory.
         /// </summary>
         public static string PathSettings => patch_UserIO.GetSaveFilePath();
+
+        /// <summary>
+        /// The path to Everest's log file, or null if no log file is written.
+        /// </summary>
+        public static string PathLog { get; internal set; }
+
         /// <summary>
         /// Whether XDG paths should be used.
         /// </summary>
         public static bool XDGPaths { get; internal set; }
+
         /// <summary>
         /// Path to Everest base location. Defaults to the game directory.
         /// </summary>

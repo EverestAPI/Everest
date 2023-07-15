@@ -1,4 +1,5 @@
 using Celeste.Mod.Entities;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
@@ -8,6 +9,7 @@ using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
 using System.Linq;
+using System.Reflection;
 
 namespace Monocle {
     class patch_Engine : Engine {
@@ -35,11 +37,33 @@ namespace Monocle {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        private static readonly FieldInfo f_Game_RunApplication = typeof(Game).GetField("RunApplication", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo m_Game_RunLoop = typeof(Game).GetMethod("RunLoop", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo m_Game_AfterLoop = typeof(Game).GetMethod("AfterLoop", BindingFlags.NonPublic | BindingFlags.Instance);
+
         [MonoModReplace]
         public new void RunWithLogging() {
+            bool continueLoop = false;
+            restart:;
             try {
-                Run();
-            } catch (Exception e) {
+                if (!continueLoop)
+                    Run();
+                else {
+                    m_Game_RunLoop.Invoke(this, Array.Empty<object>());
+                    EndRun();
+                    m_Game_AfterLoop.Invoke(this, Array.Empty<object>());
+                }
+            } catch (Exception ex) {
+                if (continueLoop && ex is TargetInvocationException)
+                    ex = ex.InnerException;
+
+                // Try to handle the error by opening an in-game handler first (unless the exception occurred while exiting)
+                if ((bool) f_Game_RunApplication.GetValue(this) && CriticalErrorHandler.HandleCriticalError(ex)) {
+                    // Restart the update loop
+                    continueLoop = true;
+                    goto restart;
+                }
+
                 // Lazy loading can cause some issues, f.e. vanishing outlines on dust bunnies.
                 // It thus shouldn't be enabled automatically.
                 /*
@@ -49,7 +73,7 @@ namespace Monocle {
                 }
                 */
 
-                ErrorLog.Write(e);
+                ErrorLog.Write(ex);
                 ErrorLog.Open();
             }
         }

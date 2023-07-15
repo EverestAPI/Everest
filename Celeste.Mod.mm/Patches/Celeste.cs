@@ -7,7 +7,6 @@ using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.IO;
 using System.Linq;
@@ -162,6 +161,8 @@ namespace Celeste {
                 if (!logfile.EndsWith(".txt"))
                     logfile += ".txt";
             }
+
+            Everest.PathLog = logfile;
 
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
