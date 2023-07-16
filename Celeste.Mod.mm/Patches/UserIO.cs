@@ -15,7 +15,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
-using SDL2;
+using System.Runtime.InteropServices;
 
 namespace Celeste {
     static class patch_UserIO {
@@ -39,9 +39,7 @@ namespace Celeste {
                 return Path.Combine(env, dir);
 
             try {
-                // Original code (taken from FNA because it is completely missing on XNA)
-                string platform = SDL.SDL_GetPlatform();
-                if (platform.Equals("Linux") || platform.Equals("FreeBSD") || platform.Equals("OpenBSD") || platform.Equals("NetBSD")) {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                     string home = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
                     if (!string.IsNullOrEmpty(home))
                         return Path.Combine(home, "Celeste/" + dir);
@@ -49,13 +47,12 @@ namespace Celeste {
                     home = Environment.GetEnvironmentVariable("HOME");
                     if (!string.IsNullOrEmpty(home))
                         return Path.Combine(home, ".local/share/Celeste/" + dir);
-                } else if (platform.Equals("Mac OS X")) {
+                } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
                     string home = Environment.GetEnvironmentVariable("HOME");
                     if (!string.IsNullOrEmpty(home))
                         return Path.Combine(home, "Library/Application Support/Celeste/" + dir);
-                } else if (!platform.Equals("Windows"))
-                    return Path.Combine(SDL.SDL_GetPrefPath(null, "Celeste"), dir);
-
+                }
+                
                 return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dir);
             } catch (NotSupportedException) {
                 return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dir);
