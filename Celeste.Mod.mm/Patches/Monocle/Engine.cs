@@ -55,7 +55,8 @@ namespace Monocle {
                     m_Game_AfterLoop.Invoke(this, Array.Empty<object>());
                 }
             } catch (Exception ex) {
-                Debugger.Break();
+                if (Debugger.IsAttached)
+                    Debugger.Break();
 
                 if (continueLoop && ex is TargetInvocationException)
                     ex = ex.InnerException;

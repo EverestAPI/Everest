@@ -9,7 +9,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 using System.Runtime.Versioning;
@@ -47,20 +46,18 @@ namespace Celeste.Mod {
 
                 // Load the compatibility mode setting
                 Everest.CompatibilityMode = Everest.CompatMode.None;
-
-                string path = patch_UserIO.GetSaveFilePath("modsettings-Everest");
-                if (File.Exists(path)) {
-                    try {
+                try {
+                    string path = patch_UserIO.GetSaveFilePath("modsettings-Everest");
+                    if (File.Exists(path)) {
                         using Stream stream = File.OpenRead(path);
                         using StreamReader reader = new StreamReader(stream);
                         Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
                         if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val))
                             Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
-                    } catch (Exception ex) {
-                        Debugger.Break();
-                        Console.WriteLine("FAILED TO LOAD COMPATIBILITY MODE SETTING");
-                        ex.LogDetailed();
                     }
+                } catch (Exception ex) {
+                    LogError("COMPAT-MODE-LOAD", ex);
+                    goto Exit;
                 }
 
                 // Start vanilla if instructed to
@@ -101,6 +98,10 @@ namespace Celeste.Mod {
 
         public static void LogError(string tag, Exception e) {
             e.LogDetailed(tag);
+
+            if (Debugger.IsAttached)
+                Debugger.Break();
+
             try {
                 ErrorLog.Write(e.ToString());
                 ErrorLog.Open();
@@ -127,7 +128,7 @@ namespace Celeste.Mod {
         private static void SetupNativeLibPaths() {
             // MacOS SIP Steam overlay hack (taken from the Linux launcher script - is this required?)
             bool didApplySteamSIPHack = false;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) && 
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
                 !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("STEAM_DYLD_INSERT_LIBRARIES")) &&
                 string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DYLD_INSERT_LIBRARIES"))
             ) {
@@ -186,8 +187,8 @@ namespace Celeste.Mod {
 
             game.StartInfo.FileName = Path.Combine(gameDir,
                 RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Celeste.exe" :
-                RuntimeInformation.IsOSPlatform(OSPlatform.Linux)   ? "Celeste" :
-                RuntimeInformation.IsOSPlatform(OSPlatform.OSX)     ? "Celeste" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "Celeste" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "Celeste" :
                 throw new Exception("Unknown OS platform")
             );
             game.StartInfo.WorkingDirectory = gameDir;
