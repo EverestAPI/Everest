@@ -82,8 +82,8 @@ namespace Celeste.Mod.UI {
 
 
                 // Speedrunners
-                case 2:
-                    return new TextMenu() {
+                case 2: {
+                    TextMenu menu = new TextMenu() {
                         new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_SPEEDRUN")),
                         new patch_TextMenu.patch_SubHeader(""),
 
@@ -125,12 +125,16 @@ namespace Celeste.Mod.UI {
                             CoreModule.Settings.UseKeyboardForTextInput
                         ).Change(
                             value => CoreModule.Settings.UseKeyboardForTextInput = value
-                        ),
-
-                        new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")),
-                        new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit)
+                        )
                     };
 
+                    CoreModule.Settings.CreateCompatibilityModeEntry(menu, false);
+
+                    menu.Add(new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_MORE")));
+                    menu.Add(new Button(Dialog.Clean("OOBE_SETTINGS_OK")).Pressed(Exit));
+
+                    return menu;
+                }
 
                 // Modders / Mappers
                 case 3: {

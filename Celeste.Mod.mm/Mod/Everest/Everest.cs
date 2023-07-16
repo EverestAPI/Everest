@@ -111,6 +111,11 @@ namespace Celeste.Mod {
         /// </summary>
         public static bool ShareVanillaSaveFiles { get; internal set; }
 
+        /// <summary>
+        /// The active compatibility mode.
+        /// </summary>
+        public static CompatMode CompatibilityMode { get; internal set; }
+
         internal static bool RestartVanilla;
 
         internal static bool _ContentLoaded;
@@ -1070,6 +1075,12 @@ namespace Celeste.Mod {
         // A shared object a day keeps the GC away!
         public readonly static Type[] _EmptyTypeArray = new Type[0];
         public readonly static object[] _EmptyObjectArray = new object[0];
+
+        public enum CompatMode {
+            None,
+            LegacyXNA, // 61 FPS jank
+            LegacyFNA  // Artificial input latency
+        }
 
     }
 }

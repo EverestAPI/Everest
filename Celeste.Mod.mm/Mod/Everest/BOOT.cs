@@ -1,8 +1,10 @@
-﻿using Celeste.Mod.Helpers;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Monocle;
 using MonoMod;
 using Steamworks;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -13,6 +15,7 @@ using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
+using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -40,6 +43,24 @@ namespace Celeste.Mod {
                     if (RestartViaLauncher())
                         return;
                 } catch {
+                }
+
+                // Load the compatibility mode setting
+                Everest.CompatibilityMode = Everest.CompatMode.None;
+
+                string path = patch_UserIO.GetSaveFilePath("modsettings-Everest");
+                if (File.Exists(path)) {
+                    try {
+                        using Stream stream = File.OpenRead(path);
+                        using StreamReader reader = new StreamReader(stream);
+                        Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
+                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val))
+                            Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
+                    } catch (Exception ex) {
+                        Debugger.Break();
+                        Console.WriteLine("FAILED TO LOAD COMPATIBILITY MODE SETTING");
+                        ex.LogDetailed();
+                    }
                 }
 
                 // Start vanilla if instructed to

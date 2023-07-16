@@ -230,6 +230,8 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        public Everest.CompatMode CompatibilityMode { get; set; } = Everest.CompatMode.None; // TODO Better default logic
+
         [SettingInGame(false)]
         public bool UseKeyboardForTextInput { get; set; } = true;
 
@@ -416,6 +418,55 @@ namespace Celeste.Mod.Core {
                     })
                 );
             }
+        }
+
+        public void CreateCompatibilityModeEntry(TextMenu menu, bool inGame) {
+            if (inGame)
+                return;
+
+            TextMenu.Slider compatSlider = new TextMenu.Slider(Dialog.Clean("modoptions_coremodule_compatmode"),
+                i => Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) i)}"),
+                0, Enum.GetValues<Everest.CompatMode>().Length-1, (int) CompatibilityMode
+            );
+            compatSlider.OnValueChange += val => CompatibilityMode = (Everest.CompatMode) val;
+            menu.Add(compatSlider);
+            compatSlider.NeedsRelaunch(menu);
+
+            // We need to build our own description text as it is not static
+            TextMenuExt.EaseInSubHeaderExt descrTextA = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName(CompatibilityMode)}_descr_a"), false, menu) {
+                TextColor = Color.Gray,
+                HeightExtra = 0f
+            };
+            TextMenuExt.EaseInSubHeaderExt descrTextB = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName(CompatibilityMode)}_descr_b"), false, menu) {
+                TextColor = Color.DarkOrange,
+                HeightExtra = 0f
+            };
+            menu.Insert(menu.GetItems().IndexOf(compatSlider) + 1, descrTextA);
+            menu.Insert(menu.GetItems().IndexOf(compatSlider) + 2, descrTextB);
+
+            compatSlider.OnEnter += () => descrTextA.FadeVisible = descrTextB.FadeVisible = true;
+            compatSlider.OnLeave += () => descrTextA.FadeVisible = descrTextB.FadeVisible = false;
+            compatSlider.OnValueChange += val => {
+                descrTextA.Title = Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) val)}_descr_a");
+                descrTextB.Title = Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName((Everest.CompatMode) val)}_descr_b");
+                menu.RecalculateSize();
+            };
+
+            // Show a warning if it is incompatible with the vanilla framework
+            TextMenuExt.EaseInSubHeaderExt warningText = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_incompatible"), false, menu) {
+                TextColor = Color.OrangeRed,
+                HeightExtra = 0f
+            };
+            menu.Insert(menu.GetItems().IndexOf(descrTextB) + 1, warningText);
+
+            static bool IsCompatible(Everest.CompatMode mode) =>
+                (Everest.Flags.VanillaIsFNA && mode == Everest.CompatMode.LegacyXNA) ||
+                (Everest.Flags.VanillaIsXNA && mode == Everest.CompatMode.LegacyFNA)
+            ;
+
+            compatSlider.OnEnter += () => warningText.FadeVisible = IsCompatible(CompatibilityMode);
+            compatSlider.OnLeave += () => warningText.FadeVisible = false;
+            compatSlider.OnValueChange += val => warningText.FadeVisible = IsCompatible((Everest.CompatMode) val);
         }
 
         public void CreateDiscordRichPresenceEntry(TextMenu menu, bool inGame) {

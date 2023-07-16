@@ -8,6 +8,7 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -54,6 +55,8 @@ namespace Monocle {
                     m_Game_AfterLoop.Invoke(this, Array.Empty<object>());
                 }
             } catch (Exception ex) {
+                Debugger.Break();
+
                 if (continueLoop && ex is TargetInvocationException)
                     ex = ex.InnerException;
 
