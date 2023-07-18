@@ -52,12 +52,20 @@ namespace Celeste.Mod {
                         using Stream stream = File.OpenRead(path);
                         using StreamReader reader = new StreamReader(stream);
                         Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
-                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val))
+                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val)) {
                             Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
+                            Console.WriteLine($"Loaded compatibility mode setting: {Everest.CompatibilityMode}");
+                        }
                     }
                 } catch (Exception ex) {
                     LogError("COMPAT-MODE-LOAD", ex);
                     goto Exit;
+                }
+
+                // Handle the legacy FNA compatibility mode here, so that vanilla is also affected
+                if (Everest.CompatibilityMode == Everest.CompatMode.LegacyFNA) {
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_FLIP_MODEL", "1");
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_EXCLUSIVE_FULLSCREEN", "1");
                 }
 
                 // Start vanilla if instructed to

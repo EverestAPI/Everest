@@ -276,6 +276,9 @@ https://discord.gg/6qjaePQ");
             } else {
                 orig_ctor_Celeste();
             }
+
+            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+
             try {
                 Everest.Boot();
             } catch (Exception e) {
