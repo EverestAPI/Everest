@@ -1072,6 +1072,11 @@ namespace Celeste.Mod {
                 Logger.Log(level, "detours", line);
         }
 
+        [Obsolete("Use Type.EmptyTypes instead")]
+        public readonly static Type[] _EmptyTypeArray = new Type[0];
+        [Obsolete("Use Array.Empty<object> instead")]
+        public readonly static object[] _EmptyObjectArray = new object[0];
+
         public enum CompatMode {
             None,
             LegacyXNA, // 61 FPS jank
