@@ -33,6 +33,7 @@ namespace Celeste.Mod {
                 public readonly string URL;
                 public readonly int Build;
                 public readonly Source Source;
+                public bool? IsNativeBuild;
                 public Entry(string name, string url, int version, Source source) {
                     Name = name;
                     URL = url;
@@ -270,7 +271,8 @@ namespace Celeste.Mod {
                         if (release["branch"].ToString() == branch) {
                             int build = release["version"].ToObject<int>();
                             string url = release["mainDownload"].ToString();
-                            entries.Add(new Entry(build.ToString(), url, build, source));
+                            bool? isNative = release.TryGetValue("isNative", out JToken tok) ? tok.ToObject<bool>() : null;
+                            entries.Add(new Entry(build.ToString(), url, build, source) { IsNativeBuild = isNative });
                         }
                     }
                     return entries;
@@ -320,7 +322,7 @@ namespace Celeste.Mod {
                 };
 
             public static Entry Newest { get; internal set; }
-            public static bool HasUpdate => Newest != null && Newest.Build > Build;
+            public static bool HasUpdate => Newest != null && Build != 0 && Newest.Build > Build;
             public static bool UpdateFailed { get; internal set; }
 
             internal static void CheckForUpdateFailure() {
@@ -386,10 +388,9 @@ namespace Celeste.Mod {
                     }
 
                     // Find the latest non-core stable Everest version
-                    // TODO: For now we can just take the latest stable build, but once Core hits stable this will need to be reworked
                     Source stableSrc = Sources.First(src => src.Name.Contains("stable"));
                     stableSrc = await stableSrc.Request();
-                    Entry latestNonCoreStable = stableSrc.Entries.First();
+                    Entry latestNonCoreStable = stableSrc.Entries.First(entr => !entr.IsNativeBuild ?? false);
 
                     // Install Everest onto the legacyRef install
                     DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
