@@ -100,7 +100,7 @@ namespace Celeste.Mod {
             if (SettingsType == null)
                 return;
 
-            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
 
             string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
 
@@ -127,7 +127,7 @@ namespace Celeste.Mod {
             }
 
             if (_Settings == null)
-                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _SaveData.Index = index;
 
             if (data == null)
@@ -419,7 +419,7 @@ namespace Celeste.Mod {
             if (SessionType == null)
                 return;
 
-            _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Session = (EverestModuleSession) SessionType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _Session.Index = index;
 
             if (data == null)

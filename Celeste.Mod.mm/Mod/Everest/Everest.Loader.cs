@@ -524,7 +524,7 @@ namespace Celeste.Mod {
                         if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
                             foundModule = true;
                             if (!typeof(NullModule).IsAssignableFrom(type)) {
-                                mod = (EverestModule) type.GetConstructor(_EmptyTypeArray).Invoke(_EmptyObjectArray);
+                                mod = (EverestModule) type.GetConstructor(Type.EmptyTypes).Invoke(null);
                             }
                         }
                     } catch (TypeLoadException e) {
