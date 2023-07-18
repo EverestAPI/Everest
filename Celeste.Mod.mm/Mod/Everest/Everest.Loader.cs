@@ -560,7 +560,7 @@ namespace Celeste.Mod {
                         lock (Everest._Modules) {
                             // Create reverse dependency graph
                             Dictionary<string, List<EverestModule>> revDeps = new Dictionary<string, List<EverestModule>>();
-                            Everest._Modules.ForEach(mod => revDeps.Add(mod.Metadata.Name, new List<EverestModule>()));
+                            Everest._Modules.ForEach(mod => revDeps.TryAdd(mod.Metadata.Name, new List<EverestModule>()));
 
                             foreach (EverestModule mod in Everest._Modules)
                                 foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.DependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
