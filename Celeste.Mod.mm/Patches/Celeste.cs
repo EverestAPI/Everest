@@ -17,6 +17,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Reflection;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -114,6 +115,11 @@ namespace Celeste {
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 AllocConsole();
+
+                // Invalidate console streams
+                typeof(Console).GetField("_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("_err", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
             }
 
             if (args.Contains("--nolog")) {
