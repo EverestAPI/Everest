@@ -117,9 +117,9 @@ namespace Celeste {
                 AllocConsole();
 
                 // Invalidate console streams
-                typeof(Console).GetField("_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
-                typeof(Console).GetField("_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
-                typeof(Console).GetField("_err", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
             }
 
             if (args.Contains("--nolog")) {
