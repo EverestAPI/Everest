@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using Steamworks;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -188,7 +189,7 @@ namespace Celeste.Mod {
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool SetDllDirectory(string lpPathName);
 
-        public static Process StartCelesteProcess(string gameDir = null) {
+        public static Process StartCelesteProcess(string gameDir = null, bool clearFNAEnv = true) {
             gameDir ??= AppContext.BaseDirectory;
 
             Process game = new Process();
@@ -201,6 +202,16 @@ namespace Celeste.Mod {
             );
             game.StartInfo.WorkingDirectory = gameDir;
 
+            if (clearFNAEnv) {
+                game.StartInfo.Environment.Clear();
+                foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables()) {
+                    string name = (string) entry.Key;
+                    if (name.StartsWith("FNA_") || name.StartsWith("FNA3D_"))
+                        continue;
+                    game.StartInfo.Environment.Add(name, (string) entry.Value);
+                }
+            }
+
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
 
@@ -208,7 +219,7 @@ namespace Celeste.Mod {
             return game;
         }
 
-        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
+        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);
 
     }
 }
