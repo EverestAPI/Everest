@@ -560,7 +560,7 @@ namespace Celeste.Mod.UI {
             }
 
             // Draw the player render target to the screen
-            if (UsePlayerSprite) {
+            if (UsePlayerSprite && playerRenderTarget != null) {
                 HudRenderer.EndRender();
                 try {
                     HudRenderer.BeginRender(sampler: SamplerState.PointClamp);
