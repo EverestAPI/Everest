@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using Steamworks;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -52,12 +53,20 @@ namespace Celeste.Mod {
                         using Stream stream = File.OpenRead(path);
                         using StreamReader reader = new StreamReader(stream);
                         Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
-                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val))
+                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val)) {
                             Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
+                            Console.WriteLine($"Loaded compatibility mode setting: {Everest.CompatibilityMode}");
+                        }
                     }
                 } catch (Exception ex) {
                     LogError("COMPAT-MODE-LOAD", ex);
                     goto Exit;
+                }
+
+                // Handle the legacy FNA compatibility mode here, so that vanilla is also affected
+                if (Everest.CompatibilityMode == Everest.CompatMode.LegacyFNA) {
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_FLIP_MODEL", "1");
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_EXCLUSIVE_FULLSCREEN", "1");
                 }
 
                 // Start vanilla if instructed to
@@ -180,7 +189,7 @@ namespace Celeste.Mod {
         [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         private static extern bool SetDllDirectory(string lpPathName);
 
-        public static Process StartCelesteProcess(string gameDir = null) {
+        public static Process StartCelesteProcess(string gameDir = null, bool clearFNAEnv = true) {
             gameDir ??= AppContext.BaseDirectory;
 
             Process game = new Process();
@@ -193,6 +202,16 @@ namespace Celeste.Mod {
             );
             game.StartInfo.WorkingDirectory = gameDir;
 
+            if (clearFNAEnv) {
+                game.StartInfo.Environment.Clear();
+                foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables()) {
+                    string name = (string) entry.Key;
+                    if (name.StartsWith("FNA_") || name.StartsWith("FNA3D_"))
+                        continue;
+                    game.StartInfo.Environment.Add(name, (string) entry.Value);
+                }
+            }
+
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
 
@@ -200,7 +219,7 @@ namespace Celeste.Mod {
             return game;
         }
 
-        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"));
+        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);
 
     }
 }

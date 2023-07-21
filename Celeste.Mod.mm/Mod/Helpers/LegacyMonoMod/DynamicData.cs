@@ -6,7 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
-namespace Celeste.Mod.Helpers.LegacyMonoMod{
+namespace Celeste.Mod.Helpers.LegacyMonoMod {
     internal static class LegacyDynamicDataCompatHooks {
 
         private static readonly Type DynamicData_Cache = typeof(DynamicData).GetNestedType("_Cache_", BindingFlags.NonPublic);

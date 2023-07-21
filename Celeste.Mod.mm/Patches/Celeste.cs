@@ -17,6 +17,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Reflection;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -114,6 +115,11 @@ namespace Celeste {
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 AllocConsole();
+
+                // Invalidate console streams
+                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
             }
 
             if (args.Contains("--nolog")) {
@@ -276,6 +282,9 @@ https://discord.gg/6qjaePQ");
             } else {
                 orig_ctor_Celeste();
             }
+
+            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+
             try {
                 Everest.Boot();
             } catch (Exception e) {

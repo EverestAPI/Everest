@@ -587,9 +587,9 @@ namespace Celeste.Mod {
                             goto RegisterEntityLoader;
                         }
 
-                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        ctor = type.GetConstructor(Type.EmptyTypes);
                         if (ctor != null) {
-                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(null);
                             goto RegisterEntityLoader;
                         }
 
@@ -664,9 +664,9 @@ namespace Celeste.Mod {
                             goto RegisterCutsceneLoader;
                         }
 
-                        ctor = type.GetConstructor(_EmptyTypeArray);
+                        ctor = type.GetConstructor(Type.EmptyTypes);
                         if (ctor != null) {
-                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            loader = (trigger, player, eventID) => (Entity) ctor.Invoke(null);
                             goto RegisterCutsceneLoader;
                         }
 
@@ -1072,8 +1072,9 @@ namespace Celeste.Mod {
                 Logger.Log(level, "detours", line);
         }
 
-        // A shared object a day keeps the GC away!
+        [Obsolete("Use Type.EmptyTypes instead")]
         public readonly static Type[] _EmptyTypeArray = new Type[0];
+        [Obsolete("Use Array.Empty<object> instead")]
         public readonly static object[] _EmptyObjectArray = new object[0];
 
         public enum CompatMode {
