@@ -1,4 +1,5 @@
 ﻿using MonoMod;
+using System;
 
 namespace Monocle {
     class patch_SineWave : SineWave {
@@ -13,5 +14,12 @@ namespace Monocle {
         public void ctor(float frequency) {
             ctor(frequency, 0f);
         }
+
+        [MonoModReplace]
+        public new SineWave Randomize() {
+            Counter = (float) ((double) Calc.Random.NextFloat() * (double) (float) (Math.PI * 2f) * 2.0);
+            return this;
+        }
+
     }
 }
