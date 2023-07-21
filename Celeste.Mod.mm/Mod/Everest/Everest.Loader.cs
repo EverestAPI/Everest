@@ -482,7 +482,7 @@ namespace Celeste.Mod {
 
                 // Register a null module for content mods.
                 new NullModule(meta).Register();
-                return false;
+                return true;
             }
 
             /// <summary>
