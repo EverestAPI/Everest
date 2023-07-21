@@ -155,7 +155,7 @@ namespace Celeste.Mod {
                     Environment.SetEnvironmentVariable(envVar, $"{libPath}:{Environment.GetEnvironmentVariable(envVar)}");
                     Console.WriteLine($"Restarting with {envVar}=\"{Environment.GetEnvironmentVariable(envVar)}\"...");
 
-                    Process proc = StartCelesteProcess();
+                    Process proc = StartCelesteProcess(clearFNAEnv: false);
                     proc.WaitForExit();
                     Environment.Exit(proc.ExitCode);
                 }
@@ -178,7 +178,7 @@ namespace Celeste.Mod {
 
             // If we got here without restarting the process, restart it now if required
             if (didApplySteamSIPHack) {
-                Process proc = StartCelesteProcess();
+                Process proc = StartCelesteProcess(clearFNAEnv: false);
                 proc.WaitForExit();
                 Environment.Exit(proc.ExitCode);
             }
