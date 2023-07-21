@@ -17,7 +17,7 @@ namespace Microsoft.Xna.Framework {
 
         [MonoModConstructor]
         public void ctor(Color color, float alpha) {
-            ctor(color.R, color.G, color.B, (byte) alpha * 255);
+            ctor(color.R, color.G, color.B, (byte) (alpha * 255));
         }
 
     }
