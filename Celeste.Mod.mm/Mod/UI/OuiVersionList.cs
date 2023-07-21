@@ -16,6 +16,7 @@ namespace Celeste.Mod.UI {
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
 
+        private bool waitingForRequest;
         private float alpha = 0f;
 
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
@@ -166,9 +167,27 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
+            Visible = true;
+
+            if (!(Everest.Updater._VersionListRequestTask?.IsCompleted ?? false)) {
+                waitingForRequest = true;
+                alpha = 1f;
+
+                while (!(Everest.Updater._VersionListRequestTask?.IsCompleted ?? false)) {
+                    if (Input.MenuCancel.Pressed) {
+                        Audio.Play(SFX.ui_main_button_back);
+                        Overworld.Goto<OuiModOptions>();
+                        yield break;
+                    }
+                    yield return null;
+                }
+
+                waitingForRequest = false;
+            }
+
             ReloadMenu();
 
-            menu.Visible = (Visible = true);
+            menu.Visible = true;
             menu.Focused = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -181,18 +200,25 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play(SFX.ui_main_whoosh_large_out);
-            menu.Focused = false;
+            waitingForRequest = false;
+
+            if (menu != null) {
+                Audio.Play(SFX.ui_main_whoosh_large_out);
+                menu.Focused = false;
+            }
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
-                menu.X = onScreenX + 1920f * Ease.CubeIn(p);
+                if (menu != null)
+                    menu.X = onScreenX + 1920f * Ease.CubeIn(p);
                 alpha = 1f - Ease.CubeIn(p);
                 yield return null;
             }
 
-            menu.Visible = Visible = false;
-            menu.RemoveSelf();
-            menu = null;
+            if (menu != null) {
+                menu.Visible = Visible = false;
+                menu.RemoveSelf();
+                menu = null;
+            }
         }
 
         public override void Update() {
@@ -208,6 +234,8 @@ namespace Celeste.Mod.UI {
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+            if (waitingForRequest)
+                ActiveFont.Draw(Dialog.Clean("updater_versions_wait_request"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.White);
             base.Render();
         }
 

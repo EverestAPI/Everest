@@ -179,6 +179,7 @@ namespace Celeste.Mod {
                 },
             };
 
+            internal static Task _VersionListRequestTask;
             public static Task RequestAll() {
                 if (!Flags.SupportUpdatingEverest)
                     return new Task(() => { });
@@ -214,6 +215,7 @@ namespace Celeste.Mod {
             }
 
             private static string _everestUpdaterDatabaseURL;
+
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
                     using (HttpClient hc = new CompressedHttpClient()) {

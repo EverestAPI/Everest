@@ -164,7 +164,8 @@
 	UPDATER_VERSIONS_TITLE= 		CHANGE EVEREST VERSION
 	UPDATER_VERSIONS_CURRENT= 		Installed: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Refreshing...
-	
+
+	UPDATER_VERSIONS_WAIT_REQUEST=	Waiting for version list request...
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 

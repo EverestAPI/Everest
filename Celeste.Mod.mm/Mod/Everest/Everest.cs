@@ -467,7 +467,7 @@ namespace Celeste.Mod {
             }
 
             // Start requesting the version list ASAP.
-            Updater.RequestAll();
+            Updater._VersionListRequestTask = Updater.RequestAll();
 
             // Check if an update failed
             Updater.CheckForUpdateFailure();

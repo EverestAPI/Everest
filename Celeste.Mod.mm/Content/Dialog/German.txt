@@ -152,6 +152,7 @@
 	UPDATER_VERSIONS_CURRENT= 		Installiert: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Neu laden...
 	
+	UPDATER_VERSIONS_WAIT_REQUEST=	Warte auf Versionsliste...
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Versionsliste konnte nicht heruntergeladen werden.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unbekanntes Format.
 	
