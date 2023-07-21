@@ -55,8 +55,10 @@ namespace Monocle {
                     m_Game_AfterLoop.Invoke(this, Array.Empty<object>());
                 }
             } catch (Exception ex) {
-                if (Debugger.IsAttached)
+                if (Debugger.IsAttached) {
+                    Trace.WriteLine($">>> CRITICAL ERROR: {ex.ToString()}");
                     Debugger.Break();
+                }
 
                 if (continueLoop && ex is TargetInvocationException)
                     ex = ex.InnerException;
