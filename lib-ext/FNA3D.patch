@@ -1,4 +1,4 @@
-From 2f26c77c3e6102146427c3d067eec5014b2339f6 Mon Sep 17 00:00:00 2001
+From a90765da05793b72677cb14aae21a2367c2f4ab6 Mon Sep 17 00:00:00 2001
 From: Popax21 <popa21@popa21.at>
 Date: Tue, 18 Jul 2023 01:44:07 +0200
 Subject: [PATCH] [PATCH] Fix input latency by enabling use of exclusive
@@ -10,7 +10,7 @@ Subject: [PATCH] [PATCH] Fix input latency by enabling use of exclusive
  2 files changed, 304 insertions(+), 7 deletions(-)
 
 diff --git a/src/FNA3D_Driver_D3D11.c b/src/FNA3D_Driver_D3D11.c
-index 9322bd4..10d713a 100644
+index 9322bd4..aaccefc 100644
 --- a/src/FNA3D_Driver_D3D11.c
 +++ b/src/FNA3D_Driver_D3D11.c
 @@ -58,6 +58,18 @@
@@ -331,7 +331,7 @@ index 9322bd4..10d713a 100644
 +
 +		swapchainData->inExclusiveFullScreen = isFullScreen;
 +	}
-+	else if (!isFullScreen)
++	else if (isFullScreen)
 +	{
 +		FNA3D_LogWarn("Couldn't enter exclusive fullscreen! Error Code: %08X", res);
 +	}
