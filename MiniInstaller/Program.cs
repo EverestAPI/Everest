@@ -122,6 +122,7 @@ namespace MiniInstaller {
 
                     DeleteSystemLibs();
                     SetupNativeLibs();
+                    CopyControllerDB();
 
                     if (AsmMonoMod == null || AsmNETCoreifier == null)
                         LoadModders();
@@ -590,6 +591,11 @@ namespace MiniInstaller {
 
             if (PathOSXExecDir != null && Path.Exists(Path.Combine(PathOSXExecDir, "osx")))
                 Directory.Delete(Path.Combine(PathOSXExecDir, "osx"), true);
+        }
+
+        public static void CopyControllerDB() {
+            File.Copy(Path.Combine(PathEverestLib, "gamecontrollerdb.txt"), Path.Combine(PathGame, "gamecontrollerdb.txt"), true);
+            LogLine("Copied gamecontrollerdb.txt");
         }
 
         public static void LoadModders() {
