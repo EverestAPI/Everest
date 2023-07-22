@@ -46,7 +46,7 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.Source currentSource = null;
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                if (source.Entries.Count <= 0)
+                if ((source.Entries?.Count ?? 0) <= 0)
                     continue;
 
                 currentBranch.Add(source.Name.DialogCleanOrNull() ?? source.Name, source, source.Name == CoreModule.Settings.CurrentBranch);
@@ -173,7 +173,7 @@ namespace Celeste.Mod.UI {
                 waitingForRequest = true;
                 alpha = 1f;
 
-                while (!(Everest.Updater._VersionListRequestTask?.IsCompleted ?? false)) {
+                while (!(Everest.Updater._VersionListRequestTask?.IsCompletedSuccessfully ?? false)) {
                     if (Input.MenuCancel.Pressed) {
                         Audio.Play(SFX.ui_main_button_back);
                         Overworld.Goto<OuiModOptions>();
@@ -234,8 +234,14 @@ namespace Celeste.Mod.UI {
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
-            if (waitingForRequest)
-                ActiveFont.Draw(Dialog.Clean("updater_versions_wait_request"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.White);
+
+            if (waitingForRequest) {
+                if ((!Everest.Updater._VersionListRequestTask?.IsFaulted) ?? true)
+                    ActiveFont.Draw(Dialog.Clean("updater_versions_wait_request"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.White);
+                else
+                    ActiveFont.Draw(Dialog.Clean("updater_versions_err_download"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.OrangeRed);
+            }
+
             base.Render();
         }
 
