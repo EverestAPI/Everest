@@ -195,7 +195,7 @@ namespace Celeste {
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLoadingThreadAddEvent] // ... except for manually manipulating the method via MonoModRules
-        [PatchLoadingThreadAddSubHudRenderer] 
+        [PatchLoadingThreadAddSubHudRenderer]
         private extern void LoadingThread();
 
         private void LoadingThread_Safe() {
@@ -214,14 +214,14 @@ namespace Celeste {
                                 break;
                             }
                         }
-                        
+
                         string type = "";
                         if (e.TypeInStacktrace(typeof(SolidTiles))) {
                             type = "fg";
                         } else if (e.TypeInStacktrace(typeof(BackgroundTiles))) {
                             type = "bg";
                         }
-                        
+
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_badtileid")
                             .Replace("((type))", type).Replace("((id))", ex.ID.ToString()).Replace("((x))", ex.X.ToString())
                             .Replace("((y))", ex.Y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
@@ -240,8 +240,19 @@ namespace Celeste {
         [MonoModLinkTo("Monocle.Scene", "System.Void Update()")]
         public extern void base_Update();
 
-        [MonoModIgnore]
-        private extern void StartLevel();
+        private extern void orig_StartLevel();
+
+        private void StartLevel() {
+            try {
+                orig_StartLevel();
+            } catch (Exception e) {
+                string SID = session.Area.GetSID();
+                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", SID);
+                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed Starting Level at room {session.Level} of {SID}");
+                e.LogDetailed();
+                LevelEnter.Go(session, false);
+            }
+        }
 
         [MonoModReplace]
         public override void Update() {
@@ -249,8 +260,7 @@ namespace Celeste {
             if (Loaded && !started) {
                 if (patch_LevelEnter.ErrorMessage == null) {
                     StartLevel();
-                }
-                else {
+                } else {
                     LevelEnter.Go(session, false); // We encountered an error, so display the error screen
                 }
             }
