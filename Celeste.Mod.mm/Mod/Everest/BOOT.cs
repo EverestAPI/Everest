@@ -219,7 +219,16 @@ namespace Celeste.Mod {
             return game;
         }
 
-        public static void StartVanilla() => StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);
+        public static void StartVanilla() {
+            // Revert native library path to prevent accidentally messing with vanilla
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                SetDllDirectory(null);
+            else
+                Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", null);
+            
+            // Don't clear FNA vars to preserve FNA compat mode
+            StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);
+        }
 
     }
 }
