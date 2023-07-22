@@ -24,6 +24,10 @@ namespace MiniInstaller {
             "fmod.dll", "fmodstudio.dll", "CSteamworks.dll", "steam_api.dll", "FNA3D.dll", "SDL2.dll"
         });
 
+        public static readonly ReadOnlyCollection<string> EverestSystemLibs = Array.AsReadOnly(new string[] {
+            "System.Drawing.Common.dll", "System.Security.Permissions.dll", "System.Windows.Extensions.dll"
+        });
+
         public enum InstallPlatform {
             Windows, Linux, MacOS
         }
@@ -883,7 +887,7 @@ namespace MiniInstaller {
             if (Path.GetExtension(file) != ".dll")
                 return false;
 
-            if (Path.GetFileName(file).StartsWith("System."))
+            if (Path.GetFileName(file).StartsWith("System.") && !EverestSystemLibs.Contains(Path.GetFileName(file)))
                 return true;
 
             return new string[] {
