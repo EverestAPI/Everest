@@ -205,6 +205,8 @@ namespace MonoMod {
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
@@ -212,7 +214,12 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GetNextScene;
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("Call to OverworldLoader::.ctor not found in " + method.FullName + "!");
             }
         }
 

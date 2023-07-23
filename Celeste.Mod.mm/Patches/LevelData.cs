@@ -63,6 +63,8 @@ namespace MonoMod {
             TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
             MethodDefinition m_TrackableContains = t_StrawberryRegistry.FindMethod("System.Boolean TrackableContains(Celeste.BinaryPacker/Element)");
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
@@ -83,7 +85,12 @@ namespace MonoMod {
                     instrs[instri - 1].OpCode = OpCodes.Nop;
                     instrs[instri + 1].Operand = m_TrackableContains;
                     instri++;
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("No \"strawberry\" string found in " + method.FullName + "!");
             }
         }
 
