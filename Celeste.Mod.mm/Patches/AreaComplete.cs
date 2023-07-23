@@ -216,6 +216,8 @@ namespace MonoMod {
             ParameterDefinition paramMeta = new ParameterDefinition("meta", ParameterAttributes.None, MonoModRule.Modder.FindType("Celeste.Mod.Meta.MapMetaCompleteScreen"));
             method.Parameters.Add(paramMeta);
 
+            bool match = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -233,6 +235,11 @@ namespace MonoMod {
                 instr.Operand = calling.DeclaringType.Resolve().FindMethod("System.Void Celeste.CompleteRenderer::.ctor(System.Xml.XmlElement,Monocle.Atlas,System.Single,System.Action,Celeste.Mod.Meta.MapMetaCompleteScreen)");
 
                 instrs.Insert(instri++, il.Create(OpCodes.Ldarg, paramMeta));
+                match = true;
+            }
+
+            if (!match) {
+                throw new Exception("Unable to find call to CompleteRenderer in " + method.FullName + "!");
             }
 
             new ILContext(method).Invoke(il => {
