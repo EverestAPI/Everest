@@ -350,7 +350,7 @@ namespace MonoMod {
 
                 if (instri > 2 &&
                     instrs[instri - 3].MatchLdfld("Celeste.ModeProperties", "StrawberriesByCheckpoint") &&
-                    instr.MatchCallvirt("Celeste.EntityData[0...,0...]", "Celeste.EntityData Get(System.Int32,System.Int32)")
+                    instr.MatchCallOrCallvirt("Celeste.EntityData[0...,0...]", "Celeste.EntityData Get(System.Int32,System.Int32)")
                 ) {
                     instrs[instri - 3].OpCode = OpCodes.Ldflda;
                     instr.OpCode = OpCodes.Call;
