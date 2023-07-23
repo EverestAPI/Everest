@@ -61,6 +61,8 @@ namespace MonoMod {
             TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
             MethodDefinition m_IsFirst = t_StrawberryRegistry.FindMethod("System.Boolean IsFirstStrawberry(Monocle.Entity)");
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
@@ -70,7 +72,12 @@ namespace MonoMod {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_IsFirst;
                     instri++;
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("Call to Strawberry.get_IsFirstStrawberry not found in " + method.FullName + "!");
             }
         }
 

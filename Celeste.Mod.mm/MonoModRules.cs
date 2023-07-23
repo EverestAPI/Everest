@@ -195,10 +195,17 @@ namespace MonoMod {
         }
 
         public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
+            bool match = false;
+
             ILCursor c = new ILCursor(il);
             while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
                 c.Next.OpCode = OpCodes.Initblk;
                 c.Next.Operand = null;
+                match = true;
+            }
+
+            if (!match) {
+                throw new Exception("No call to _initblk found in " + il.Method.FullName + "!");
             }
         }
 

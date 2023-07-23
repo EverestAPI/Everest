@@ -527,8 +527,15 @@ namespace MonoMod {
             TypeDefinition t_Engine = MonoModRule.Modder.FindType("Monocle.Engine").Resolve();
             MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("System.Single get_RawDeltaTime()");
 
+            bool found = false;
+
             while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall("Monocle.Engine", "get_DeltaTime"))) {
                 cursor.Next.Operand = m_get_RawDeltaTime;
+                found = true;
+            }
+
+            if (!found) {
+                throw new Exception("No call to Engine.DeltaTime found in " + il.Method.FullName + "!");
             }
         }
 
