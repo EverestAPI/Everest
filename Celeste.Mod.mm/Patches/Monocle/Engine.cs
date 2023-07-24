@@ -11,6 +11,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace Monocle {
     class patch_Engine : Engine {
@@ -64,7 +65,12 @@ namespace Monocle {
                     ex = ex.InnerException;
 
                 // Try to handle the error by opening an in-game handler first (unless the exception occurred while exiting)
-                if ((bool) f_Game_RunApplication.GetValue(this) && CriticalErrorHandler.HandleCriticalError(ex)) {
+                if ((bool) f_Game_RunApplication.GetValue(this)) {
+                    ExceptionDispatchInfo dispatch = CriticalErrorHandler.HandleCriticalError(ExceptionDispatchInfo.Capture(ex));
+
+                    // Rethrow the exception if the handler failed
+                    dispatch?.Throw();
+
                     // Restart the update loop
                     continueLoop = true;
                     goto restart;

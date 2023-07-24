@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 
 namespace Celeste.Mod.UI {
@@ -39,26 +40,26 @@ namespace Celeste.Mod.UI {
 
         private static CriticalErrorHandler CurrentHandler;
 
-        public static bool HandleCriticalError(Exception error) {
+        public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) {
             if (!CoreModule.Settings.UseInGameCrashHandler)
-                return false;
+                return error;
 
             Logger.Log(LogLevel.Error, "crit-error-handler", ">>>>>>>>>>>>>>> ENCOUNTERED A CRITICAL ERROR <<<<<<<<<<<<<<<");
-            Logger.LogDetailed(error, "crit-error-handler");
+            Logger.LogDetailed(error.SourceException, "crit-error-handler");
 
             // If there's no error handler yet, create one
             if (CurrentHandler == null) {
-                CurrentHandler = new CriticalErrorHandler(error, BackupLogFile(error, out string logFileError), logFileError);
+                CurrentHandler = new CriticalErrorHandler(error, BackupLogFile(error.SourceException, out string logFileError), logFileError);
             } else {
                 CurrentHandler.EncounteredAdditionalErrors = true;
-                AmendLogFile(CurrentHandler.LogFile, "Encountered an additional critical error", error);
+                AmendLogFile(CurrentHandler.LogFile, "Encountered an additional critical error", error.SourceException);
             }
 
             // If this is a compatible scene, display as an overlay
             if (CurrentHandler.State < DisplayState.Overlay && Celeste.Scene is Level lvl) {
                 CurrentHandler.State = DisplayState.Overlay;
                 lvl.Add(CurrentHandler);
-                return true;
+                return null;
             }
 
             // If we are currently displaying as an overlay, switch to a separate scene to avoid it crashing again
@@ -85,7 +86,7 @@ namespace Celeste.Mod.UI {
                 errorScene.Entities.UpdateLists();
 
                 DoImmediateSceneSwitch(errorScene);
-                return true;
+                return null;
             }
 
             // If we aren't on a bluescreen scene, try that as a last resort
@@ -101,11 +102,11 @@ namespace Celeste.Mod.UI {
                 blueScreenScene.Entities.UpdateLists();
     
                 DoImmediateSceneSwitch(blueScreenScene);
-                return true;
+                return null;
             }
 
-            // The game is too instable to continue
-            return false;
+            // The game is too instable to continue - rethrow the original error
+            return CurrentHandler.Error;
         }
 
         private static void ResetErrorHandler() {
@@ -222,10 +223,10 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        public readonly Exception Error;
-        private readonly string errorMessage, errorStackTrace;
-        public readonly Session Session;
+        public readonly ExceptionDispatchInfo Error;
+        private readonly string errorType, errorMessage, errorStackTrace;
         public readonly string LogFile, LogFileError;
+        public readonly Session Session;
 
         public bool EncounteredAdditionalErrors;
         private readonly BeforeRenderInterceptor beforeRenderInterceptor;
@@ -253,22 +254,23 @@ namespace Celeste.Mod.UI {
         private bool isCrouched;
         private float crouchTimer;
 
-        private CriticalErrorHandler(Exception error, string logFile, string logFileError) {
+        private CriticalErrorHandler(ExceptionDispatchInfo error, string logFile, string logFileError) {
             Depth += 100; // Render below other overlays
+            Session = (Celeste.Scene as Level)?.Session;
 
             Error = error;
-            errorMessage = error.Message;
-            errorStackTrace = error.StackTrace;
-            Session = (Celeste.Scene as Level)?.Session;
+            errorType = error.SourceException.GetType().FullName;
+            errorMessage = error.SourceException.Message;
+            errorStackTrace = error.SourceException.StackTrace;
+
             LogFile = logFile;
             LogFileError = string.IsNullOrEmpty(logFile) ? logFileError : null;
 
-            beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
-
             playerShouldTeabag = CoreModule.Settings.CrashHandlerAlwaysTeabag || (!(Settings.Instance?.DisableFlashes ?? true) && new Random().Next(0, 10) == 0);
 
+            beforeRenderInterceptor = new BeforeRenderInterceptor(BeforeRender);
             Add(new Coroutine(Routine()));
-            Logger.Log(LogLevel.Info, "crit-error-handler", $"Created critical error handler for exception {error.GetType().FullName}: {error.Message}");
+            Logger.Log(LogLevel.Info, "crit-error-handler", $"Created critical error handler for exception {errorType}: {errorMessage}");
         }
 
         public void Dispose() {
@@ -634,7 +636,7 @@ namespace Celeste.Mod.UI {
 
             textPos.Y += 20;
 
-            DrawLineWrap($"Error Details: {Error.GetType().FullName}: {errorMessage}", 0.7f, Color.LightGray);
+            DrawLineWrap($"Error Details: {errorType}: {errorMessage}", 0.7f, Color.LightGray);
             textPos.X += 50;
             string[] btLines = (errorStackTrace ?? string.Empty).Split('\n').Select(l => l.Trim()).Where(l => !l.StartsWith("at Hook<") && !l.StartsWith("at DMD<")).ToArray();
             for (int i = 0; i < btLines.Length; i++) {
