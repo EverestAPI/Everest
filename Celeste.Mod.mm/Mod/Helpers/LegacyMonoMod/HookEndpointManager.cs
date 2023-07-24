@@ -14,7 +14,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.HookGen.HookEndpointManager")]
     public static class LegacyHookEndpointManager {
 
-        private static readonly DetourConfig EmptyConfig = new DetourConfig("MMHOOK_HOOK");
+        private static readonly DetourConfig EmptyConfig = new DetourConfig("MMHOOK_HOOK", 0);
 
         private static ConcurrentDictionary<(MethodBase, Delegate), Hook> Hooks = new ConcurrentDictionary<(MethodBase, Delegate), Hook>();
         private static ConcurrentDictionary<(MethodBase, Delegate), ILHook> ILHooks = new ConcurrentDictionary<(MethodBase, Delegate), ILHook>();
