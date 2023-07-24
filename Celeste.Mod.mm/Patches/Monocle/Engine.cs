@@ -67,13 +67,18 @@ namespace Monocle {
                 // Try to handle the error by opening an in-game handler first (unless the exception occurred while exiting)
                 if ((bool) f_Game_RunApplication.GetValue(this)) {
                     ExceptionDispatchInfo dispatch = CriticalErrorHandler.HandleCriticalError(ExceptionDispatchInfo.Capture(ex));
+                    if (dispatch.SourceException == null)  {
+                        // Restart the update loop
+                        try {
+                            Monocle.Draw.SpriteBatch.End(); // This prevents hard crash cascades
+                        } catch {}
 
-                    // Rethrow the exception if the handler failed
-                    dispatch?.Throw();
+                        continueLoop = true;
+                        goto restart;
+                    }
 
-                    // Restart the update loop
-                    continueLoop = true;
-                    goto restart;
+                    // The exception handling failed
+                    ex = dispatch.SourceException;
                 }
 
                 // Lazy loading can cause some issues, f.e. vanishing outlines on dust bunnies.
