@@ -124,6 +124,10 @@ namespace Celeste {
                         SpriteData valueMod = kvpBank.Value;
 
                         if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
+                            valueOrig.Sprite.Justify = valueMod.Sprite.Justify;
+                            valueOrig.Sprite.Origin = valueMod.Sprite.Origin;
+                            valueOrig.Sprite.Position = valueMod.Sprite.Position;
+                            
                             IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
                             IDictionary animsMod = valueMod.Sprite.GetAnimations();
                             foreach (DictionaryEntry kvpAnim in animsMod) {
