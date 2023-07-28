@@ -240,7 +240,7 @@ namespace Celeste.Mod.UI {
                         onBackPressed(Overworld);
                     }));
 
-                    TextMenuExt.TextBox textBox = new();
+                    TextMenuExt.TextBox textBox = new(Overworld);
                     TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
                     menu.Add(modal);
 

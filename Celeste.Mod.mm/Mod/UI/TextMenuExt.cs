@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod;
+using Celeste.Mod.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Monocle;
@@ -1404,10 +1405,19 @@ namespace Celeste {
                 }}
             };
 
-            private bool Typing = false;
+            public bool Typing { get; private set; } = false;
+
+            private Overworld overworld;
+            private bool previousMountainAllowUserRotation;
+
 
             public TextBox() {
                 Selectable = true;
+            }
+
+            public TextBox(Overworld overworld) {
+                Selectable = true;
+                this.overworld = overworld;
             }
 
             public override float LeftWidth() {
@@ -1460,6 +1470,12 @@ namespace Celeste {
                     Typing = true;
                     Container.Focused = false;
                     TextInput.OnInput += OnTextInput;
+                    Engine.Commands.Enabled = false;
+
+                    if (overworld != null) {
+                        previousMountainAllowUserRotation = overworld.Mountain.AllowUserRotation;
+                        overworld.Mountain.AllowUserRotation = false;
+                    }
                 }
             }
 
@@ -1469,6 +1485,11 @@ namespace Celeste {
                     Typing = false;
                     Container.Focused = true;
                     TextInput.OnInput -= OnTextInput;
+                    Engine.Commands.Enabled = Celeste.PlayMode == Celeste.PlayModes.Debug;
+
+                    if (overworld != null) {
+                        overworld.Mountain.AllowUserRotation = previousMountainAllowUserRotation;
+                    }
                 }
             }
 
@@ -1504,6 +1525,13 @@ namespace Celeste {
                     if (MInput.Keyboard.Pressed(pair.Key)) {
                         pair.Value(this);
                     }
+                }
+
+                // ensure the player never enters free cam while typing, so to cover the case our Update() gets called first we consume the input
+                // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
+                if (Typing) {
+                    ((patch_MountainRenderer) overworld?.Mountain)?.SetFreeCam(false);
+                    CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
                 }
             }
         }
