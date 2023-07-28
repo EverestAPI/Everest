@@ -252,33 +252,39 @@ namespace Celeste.Mod.UI {
                     void searchNextMod(TextMenuExt.TextBox textBox) {
                         updateHighlightedMods();
 
-                        int index = 0;
+                        int currentIndex = 0;
                         int targetSelectionIndex = 0;
-                        patch_TextMenu.patch_Option<bool> targetTextMenuItem = null;
+                        patch_TextMenu.patch_Option<bool> targetTextMenuOption = null;
                         string searchTarget = textBox.Text.ToLower();
 
-                        foreach (TextMenu.Item item in menu.GetItems()) {
-                            if (item is TextMenu.OnOff off &&
-                                    modToggles.ContainsKey(off.Label) &&
-                                    off.Label.ToLower().Contains(searchTarget)) {
-                                if (index > menu.Selection) {
-                                    // If we find a suitable Option we just use it
-                                    targetSelectionIndex = index;
-                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
+
+                        foreach (TextMenu.Item currentItem in menu.GetItems()) {
+                            if (currentItem is patch_TextMenu.patch_Option<bool> currentOption &&
+                                    modToggles.ContainsKey(currentOption.Label) &&
+                                    currentOption.Label.ToLower().Contains(searchTarget)) {
+                                // If we find a suitable option with index greater then the selected item we want to use it
+                                if (currentIndex > menu.Selection) {
+                                    targetSelectionIndex = currentIndex;
+                                    targetTextMenuOption = currentOption;
                                     break;
-                                } else if (targetTextMenuItem == null) {
-                                    // we want to find the first Option in case we are at the last one
-                                    targetSelectionIndex = index;
-                                    targetTextMenuItem = (patch_TextMenu.patch_Option<bool>) (object) item;
+                                } else if (targetTextMenuOption == null) {
+                                    // We want to store the first match incase we are currently selecting the last item so we could wrap around
+                                    targetSelectionIndex = currentIndex;
+                                    targetTextMenuOption = currentOption;
                                 }
                             }
-                            index++;
+                            currentIndex++;
                         }
 
-                        if (targetTextMenuItem != null) {
+                        if (targetTextMenuOption != null) {
+                            if (targetSelectionIndex >= menu.Selection) {
+                                Audio.Play(SFX.ui_main_roll_down);
+                            } else {
+                                Audio.Play(SFX.ui_main_roll_up);
+                            }
+
                             menu.Selection = targetSelectionIndex;
-                            targetTextMenuItem.UnselectedColor = TextMenu.HighlightColorA;
-                            Audio.Play(SFX.ui_main_roll_down);
+                            targetTextMenuOption.UnselectedColor = TextMenu.HighlightColorA;
                         } else {
                             Audio.Play(SFX.ui_main_button_invalid);
                         }
@@ -416,6 +422,7 @@ namespace Celeste.Mod.UI {
         }
 
         public override void Update() {
+            canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
             searchEase = Calc.Approach(searchEase, Visible ? 1f : 0f, Engine.DeltaTime * 4f);
 
             if (Selected && Focused) {
@@ -425,7 +432,6 @@ namespace Celeste.Mod.UI {
                 }
             }
 
-            canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
             base.Update();
         }
 
@@ -535,7 +541,7 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             base.Render();
-            
+
             Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchEase), 952f);
             GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchEase));
             Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
