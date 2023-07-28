@@ -69,11 +69,18 @@ namespace MonoMod {
         public static void PatchFontsPrepare(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetFiles = method.DeclaringType.FindMethod("System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 if (instrs[instri].MatchCall("System.IO.Directory", "GetFiles")) {
                     instrs[instri].Operand = m_GetFiles;
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("No call to Directory.GetFiles found in " + method.FullName + "!");
             }
         }
 

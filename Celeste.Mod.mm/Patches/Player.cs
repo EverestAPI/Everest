@@ -293,6 +293,8 @@ namespace MonoMod {
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
             ILProcessor il = context.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count - 4; instri++) {
@@ -315,7 +317,13 @@ namespace MonoMod {
                     instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
                     instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
+                    found = true;
                 }
+            }
+
+
+            if (!found) {
+                throw new Exception("Call to Player.Speed.Y not found in " + context.Method.FullName + "!");
             }
         }
 
