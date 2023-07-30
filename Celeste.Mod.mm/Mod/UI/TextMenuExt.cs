@@ -1409,6 +1409,7 @@ namespace Celeste {
 
             private Overworld overworld;
             private bool previousMountainAllowUserRotation;
+            private bool previousEngineCommandsEnabled;
 
 
             public TextBox() {
@@ -1470,6 +1471,8 @@ namespace Celeste {
                     Typing = true;
                     Container.Focused = false;
                     TextInput.OnInput += OnTextInput;
+
+                    previousEngineCommandsEnabled = Engine.Commands.Enabled;
                     Engine.Commands.Enabled = false;
 
                     if (overworld != null) {
@@ -1485,7 +1488,7 @@ namespace Celeste {
                     Typing = false;
                     Container.Focused = true;
                     TextInput.OnInput -= OnTextInput;
-                    Engine.Commands.Enabled = Celeste.PlayMode == Celeste.PlayModes.Debug;
+                    Engine.Commands.Enabled = previousEngineCommandsEnabled;
 
                     if (overworld != null) {
                         overworld.Mountain.AllowUserRotation = previousMountainAllowUserRotation;
