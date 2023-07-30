@@ -348,6 +348,7 @@ namespace Celeste.Mod {
                 if (!Flags.SupportUpdatingEverest) {
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTSUPPORTED"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
@@ -357,6 +358,7 @@ namespace Celeste.Mod {
                     // Exit immediately.
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOUPDATE"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
@@ -367,7 +369,7 @@ namespace Celeste.Mod {
             }
 
             internal static void UpdateLegacyRef(OuiLoggedProgress progress) {
-                progress.Init<OuiModOptions>(Dialog.Clean("updater_legacyref_title"), new Task(async () => {
+                progress.Init<OuiModOptions>(Dialog.Clean("updater_legacyref_title"), Task.Run(async () => {
                     // Create a legacyRef install if it doesn't exist
                     string legacyRefInstall = Path.Combine(PathGame, "legacyRef");
                     if (!Directory.Exists(legacyRefInstall)) {
@@ -395,11 +397,40 @@ namespace Celeste.Mod {
                     Entry latestNonCoreStable = stableSrc.Entries.First(entr => !entr.IsNativeBuild ?? false);
 
                     // Install Everest onto the legacyRef install
-                    DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
+                    Process installerProc = DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
+                    if (installerProc == null)
+                        return;
+
+                    // Wait for MiniInstaller
+                    progress.LogLine(Dialog.Clean("EVERESTUPDATER_WAITFORINSTALLER"));
+
+                    int numDots = 1;
+                    string baseLine = progress.Lines[^1].ToString();
+                    while (!installerProc.HasExited) {
+                        progress.Lines[^1] = baseLine + new string('.', numDots);
+                        installerProc.WaitForExit(700);
+                        numDots = (numDots % 3) + 1;
+                    }
+                    progress.Lines[^1] = baseLine;
+
+                    if (installerProc.ExitCode != 0) {
+                        Logger.Log(LogLevel.Warn, "updater", $"LegacyRef update failed: MiniInstaller exited with code {installerProc.ExitCode}");
+                        progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_INSTALLERFAILED"), installerProc.ExitCode));
+                        progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
+                        progress.WaitForConfirmOnFinish = true;
+                        return;
+                    }
+
+                    // We have to create BuildIsXYZ.txt manually, as this "install" will never actually be run
+                    File.Delete(Path.Combine(legacyRefInstall, "BuildIsFNA.txt"));
+                    File.Delete(Path.Combine(legacyRefInstall, "BuildIsXNA.txt"));
+                    File.WriteAllText(Path.Combine(legacyRefInstall, Flags.VanillaIsFNA ? "BuildIsFNA.txt" : "BuildIsXNA.txt"), string.Empty);
                 }), 0);
             }
 
-            private static void DoUpdate(OuiLoggedProgress progress, Entry version, string installTarget, bool isUpdate) {
+            private static Process DoUpdate(OuiLoggedProgress progress, Entry version, string installTarget, bool isUpdate) {
                 // Last line printed on error.
                 string errorHint = $"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}";
 
@@ -429,7 +460,8 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    progress.WaitForConfirmOnFinish = true;
+                    return null;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
@@ -477,7 +509,8 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    progress.WaitForConfirmOnFinish = true;
+                    return null;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
                 progress.Progress = 1;
@@ -548,12 +581,15 @@ namespace Celeste.Mod {
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     installer.StartInfo.UseShellExecute = false;
                     installer.Start();
+                    return installer;
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
+                    progress.WaitForConfirmOnFinish = true;
+                    return null;
                 }
             }
 

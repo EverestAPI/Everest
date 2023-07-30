@@ -173,6 +173,8 @@
 	EVERESTUPDATER_EXTRACTIONFINISHED=	Entpacken abgeschlossen.
 	EVERESTUPDATER_RESTARTING=		Neustart
 	EVERESTUPDATER_RESTARTINGIN=	Neustart in {0}
+	EVERESTUPDATER_WAITFORINSTALLER=	Warte auf Installationsprozess
+	EVERESTUPDATER_INSTALLERFAILED=	Installation schlug fehl: exit code {0}
 	EVERESTUPDATER_STARTINGFAILED=	Installer konnte nicht gestartet werden!
 	EVERESTUPDATER_ERRORHINT1=		Bitte erstelle einen neuen Issue auf GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		oder tritt dem Kanal #modding_help auf Discord bei (Einladung im Repo).

@@ -18,6 +18,7 @@ namespace Celeste.Mod.UI {
         public int Progress;
         public int ProgressMax;
 
+        public bool WaitForConfirmOnFinish;
         public event Action OnFinish;
 
         private float alpha = 0f;
@@ -117,8 +118,10 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Task != null && (Task.IsCompleted || Task.IsCanceled || Task.IsFaulted)) {
-                OnFinish?.Invoke();
-                Task = null;
+                if (!WaitForConfirmOnFinish || Input.MenuConfirm.Pressed) {
+                    OnFinish?.Invoke();
+                    Task = null;
+                }
             }
 
             time += Engine.DeltaTime;
