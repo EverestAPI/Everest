@@ -591,6 +591,16 @@ namespace Celeste {
                 }
             }
 
+            public bool ContainsDelayedAddItem(TextMenu.Item item) {
+                return Container == null && delayedAddItems.Contains(item);
+            }
+
+            public SubMenu InsertDelayedAddItem(TextMenu.Item item, TextMenu.Item after) {
+                if (Container == null && delayedAddItems.Contains(after))
+                    delayedAddItems.Insert(delayedAddItems.IndexOf(after) + 1, item);
+                return this;
+            }
+
             /// <summary>
             /// Remove any non-submenu <see cref="TextMenu.Item"/> from the Submenu
             /// </summary>
