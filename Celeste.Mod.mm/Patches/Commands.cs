@@ -4,6 +4,7 @@ using Monocle;
 using MonoMod;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -243,7 +244,7 @@ namespace Celeste {
         private static void CmdMainMenu() {
             Engine.Scene = new OverworldLoader(Overworld.StartMode.MainMenu);
         }
-        
+
         [Command("returntomap", "return to map")]
         private static void ReturnToMap() {
             if (SaveData.Instance == null) {
@@ -283,6 +284,15 @@ namespace Celeste {
                     }
                 }
             }
+        }
+
+        [Command("openlog", "open log.txt file")]
+        private static void CmdOpenLog() {
+            string pathLog = Everest.PathLog;
+            if (File.Exists(pathLog))
+                Process.Start(pathLog);
+            else
+                Engine.Commands.Log($"{pathLog} does not exist");
         }
     }
 }
