@@ -19,23 +19,24 @@ namespace Celeste.Mod.UI {
         // list of blacklisted mods when the menu was open
         private HashSet<string> blacklistedModsOriginal;
 
-        // list of currently favorited mods
+        // list of currently favorite mods
         private HashSet<string> favoritedMods;
-        // list of favorited mods when the menu was open
+        // list of favorite mods when the menu was open
         private HashSet<string> favoritedModsOriginal;
         // dictionary mapping between the dependencies and the dependents
-        private Dictionary<string, HashSet<string>> favoritesDependenciesMods;
+        private Dictionary<string, HashSet<string>> favoriteDependencies;
 
         private bool toggleDependencies = true;
-        private bool disableAllIgnoresFavorites = true;
+
+        private bool protectFavorites = true;
 
         private TextMenuExt.SubHeaderExt restartMessage1;
         private TextMenuExt.SubHeaderExt restartMessage2;
 
-        // maps each filename to Everest modules
+        // maps each filename to its Everest modules
         private Dictionary<string, EverestModuleMetadata[]> modYamls;
         // maps each mod name to its newest Everest module
-        private Dictionary<string, string> modFilenameByModName;
+        private Dictionary<string, string> modFilename;
 
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
@@ -199,7 +200,7 @@ namespace Celeste.Mod.UI {
 
                 MainThreadHelper.Do(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
-                    modFilenameByModName = buildModNames(modYamls);
+                    modFilename = BuildModFilenameDictionary(modYamls);
 
                     // remove the "loading..." message
                     menu.Remove(loading);
@@ -230,8 +231,8 @@ namespace Celeste.Mod.UI {
                     menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_DISABLEALL")).Pressed(() => {
                         blacklistedMods.Clear();
                         foreach (KeyValuePair<string, TextMenu.OnOff> toggle in modToggles) {
-                            bool isFavorite = favoritedMods.Contains(toggle.Key) || favoritesDependenciesMods.ContainsKey(toggle.Key);
-                            if (disableAllIgnoresFavorites && isFavorite) {
+                            bool isFavoriteOrDependent = favoritedMods.Contains(toggle.Key) || favoriteDependencies.ContainsKey(toggle.Key);
+                            if (protectFavorites && isFavoriteOrDependent) {
                                 continue;
                             }
 
@@ -249,24 +250,24 @@ namespace Celeste.Mod.UI {
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2"));
                     toggleDependenciesButton.AddDescription(menu, Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1"));
 
-                    TextMenu.Item toggleFavoritesButton;
-                    menu.Add(toggleFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES"), disableAllIgnoresFavorites)
-                        .Change(value => disableAllIgnoresFavorites = value));
+                    TextMenu.Item toggleProtectFavoritesButton;
+                    menu.Add(toggleProtectFavoritesButton = new TextMenu.OnOff(Dialog.Clean("MODOPTIONS_MODTOGGLE_PROTECTFAVORITES"), protectFavorites)
+                        .Change(value => protectFavorites = value));
 
                     TextMenuExt.EaseInSubMenuWithInputs favoriteToolTip = new TextMenuExt.EaseInSubMenuWithInputs(
-                        string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_TOGGLEFAVORITES_MESSAGE"), "|"),
+                        string.Format(Dialog.Get("MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE"), '|'),
                          '|',
                          new Monocle.VirtualButton[] { Input.MenuJournal },
                          false
-                        ) {TextColor = Color.Gray};
+                        ) { TextColor = Color.Gray };
 
                     menu.Add(favoriteToolTip);
 
-                    toggleFavoritesButton.OnEnter += delegate {
+                    toggleProtectFavoritesButton.OnEnter += () => {
                         // make the description appear.
                         favoriteToolTip.FadeVisible = true;
                     };
-                    toggleFavoritesButton.OnLeave += delegate {
+                    toggleProtectFavoritesButton.OnLeave += () => {
                         // make the description disappear.
                         favoriteToolTip.FadeVisible = false;
                     };
@@ -276,7 +277,7 @@ namespace Celeste.Mod.UI {
                     menu.Add(new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_CANCEL")).Pressed(() => {
                         blacklistedMods = blacklistedModsOriginal;
                         favoritedMods = favoritedModsOriginal;
-                        favoritesDependenciesMods = null;
+                        favoriteDependencies = null;
                         onBackPressed(Overworld);
                     }));
 
@@ -284,7 +285,7 @@ namespace Celeste.Mod.UI {
                     allMods = new List<string>();
                     blacklistedMods = new HashSet<string>();
                     favoritedMods = new HashSet<string>();
-                    favoritesDependenciesMods = new Dictionary<string, HashSet<string>>();
+                    favoriteDependencies = new Dictionary<string, HashSet<string>>();
 
                     string[] files;
                     bool headerInserted;
@@ -384,13 +385,14 @@ namespace Celeste.Mod.UI {
                 blacklistedMods.Add(file);
             }
             if (favorite) {
+                // because we don't store the dependencies of favorite mods we want to call addToFavorites to walk the dependencies graph
                 addToFavorites(file);
             }
 
             modToggles[file] = option;
         }
 
-        private Dictionary<string, string> buildModNames(Dictionary<string, EverestModuleMetadata[]> modYamls) {
+        private Dictionary<string, string> BuildModFilenameDictionary(Dictionary<string, EverestModuleMetadata[]> modYamls) {
             Dictionary<string, EverestModuleMetadata> everestModulesByModName = new();
 
             foreach (KeyValuePair<string, EverestModuleMetadata[]> pair in modYamls) {
@@ -407,8 +409,7 @@ namespace Celeste.Mod.UI {
 
 
             return everestModulesByModName
-                .Select(tuple => new KeyValuePair<string, string>(tuple.Key, Path.GetFileName(tuple.Value.PathArchive ?? tuple.Value.PathDirectory)))
-                .ToDictionary(x=> x.Key, x=>x.Value);
+                .ToDictionary(dictEntry => dictEntry.Key, dictEntry => Path.GetFileName(dictEntry.Value.PathArchive ?? dictEntry.Value.PathDirectory));
         }
 
         private void updateHighlightedMods() {
@@ -417,7 +418,7 @@ namespace Celeste.Mod.UI {
                 Color unselectedColor = Color.White;
                 if (favoritedMods.Contains(toggle.Key)) {
                     unselectedColor = Color.DeepPink;
-                } else if (favoritesDependenciesMods.ContainsKey(toggle.Key)) {
+                } else if (favoriteDependencies.ContainsKey(toggle.Key)) {
                     unselectedColor = Color.LightPink;
                 } else if (modHasDependencies(toggle.Key)) {
                     unselectedColor = Color.Goldenrod;
@@ -495,18 +496,19 @@ namespace Celeste.Mod.UI {
         }
 
         private void addToFavoritesDependencies(string modFileName, string dependentModFileName) {
-            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow we reach ourself.
-            if ((favoritesDependenciesMods.ContainsKey(modFileName) && favoritesDependenciesMods[modFileName].Contains(dependentModFileName))
-                    || modFileName.Equals(dependentModFileName)) {
+            bool existsInFavoriteDependencies = favoriteDependencies.TryGetValue(modFileName, out HashSet<string> dependents);
+
+            // If we have a cyclical dependencies we want to stop after the first occurrence of a mod, or if somehow a mod reached itself.
+            if ((existsInFavoriteDependencies && dependents.Contains(dependentModFileName)) || modFileName == dependentModFileName) {
                 return;
             }
 
-            if (!favoritesDependenciesMods.ContainsKey(modFileName)) {
-                favoritesDependenciesMods[modFileName] = new HashSet<string>();
+            if (!existsInFavoriteDependencies) {
+                dependents = favoriteDependencies[modFileName] = new HashSet<string>();
             }
 
             // Add dependent mod
-            favoritesDependenciesMods[modFileName].Add(dependentModFileName);
+            dependents.Add(dependentModFileName);
             Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
 
 
@@ -530,13 +532,13 @@ namespace Celeste.Mod.UI {
         }
 
         private void removeFromFavoritesDependencies(string modFileName, string dependentModFileName) {
-            if (favoritesDependenciesMods.ContainsKey(modFileName) && favoritesDependenciesMods[modFileName].Contains(dependentModFileName)) {
+            if (favoriteDependencies.TryGetValue(modFileName, out HashSet<string> dependents) && dependents.Contains(dependentModFileName)) {
 
-                favoritesDependenciesMods[modFileName].Remove(dependentModFileName);
+                dependents.Remove(dependentModFileName);
                 Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from being a favorite dependency of {dependentModFileName}");
 
-                if (favoritesDependenciesMods[modFileName].Count == 0) {
-                    favoritesDependenciesMods.Remove(modFileName);
+                if (dependents.Count == 0) {
+                    favoriteDependencies.Remove(modFileName);
                     Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} is no longer a favorite dependency");
                 }
 
@@ -590,11 +592,9 @@ namespace Celeste.Mod.UI {
             if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
                 dependenciesFileNames = new List<string>();
 
-                // iterate over all everest modules under file
                 foreach (EverestModuleMetadata metadata in metadatas) {
-                    // iterate over each loaded mod to ensure its present
                     foreach (string dependencyName in metadata.Dependencies.Select((dep) => dep.Name)) {
-                        if (modFilenameByModName.TryGetValue(dependencyName, out string dependencyFileName)) {
+                        if (this.modFilename.TryGetValue(dependencyName, out string dependencyFileName)) {
                             dependenciesFileNames.Add(dependencyFileName);
                         }
                     }
@@ -638,13 +638,14 @@ namespace Celeste.Mod.UI {
             restartMessage1 = null;
             restartMessage2 = null;
             modYamls = null;
+            modFilename = null;
             modToggles = null;
             modLoadingTask = null;
             toggleDependencies = true;
-            disableAllIgnoresFavorites = false;
+            protectFavorites = false;
             favoritedMods = null;
             favoritedModsOriginal = null;
-            favoritesDependenciesMods = null;
+            favoriteDependencies = null;
         }
     }
 }

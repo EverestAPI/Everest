@@ -1354,7 +1354,6 @@ namespace Celeste {
         }
 
         public class SubMenuWithInputs : TextMenu.Item, IItemExt {
-            public object[] Items { get; set; }
             public Color TextColor { get; set; } = Color.Gray;
             public Color ButtonColor { get; set; } = Color.White;
             public Color StrokeColor { get; set; } = Color.White;
@@ -1364,6 +1363,7 @@ namespace Celeste {
             public float? IconWidth { get; set; }
             public bool IconOutline { get; set; }
             public Vector2 Offset { get; set; }
+            private readonly object[] Items;
 
             public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons) {
 
@@ -1387,7 +1387,7 @@ namespace Celeste {
 
             public override void Render(Vector2 position, bool highlighted) {
                 Vector2 lineOffset = position;
-                Vector2 justify = new Vector2(0f, 0.5f);
+                Vector2 justify = new(0f, 0.5f);
                 float strokeAlpha = Alpha * Alpha * Alpha;
 
 
@@ -1397,7 +1397,7 @@ namespace Celeste {
                         lineOffset.X += ActiveFont.Measure(item as string).X * Scale;
                     } else if (item is VirtualButton) {
                         VirtualButton virtualButton = item as VirtualButton;
-                        MTexture buttonTexture = null;
+                        MTexture buttonTexture;
 
                         if (Input.GuiInputController()) {
                             buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached);
@@ -1436,7 +1436,6 @@ namespace Celeste {
                 } else {
                     return base.Height();
                 }
-
             }
 
             public override void Update() {
