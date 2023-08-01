@@ -225,7 +225,7 @@ namespace Celeste {
                     }
                 }
 
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of {Session.Area.GetSID()}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.Level} of {Session.Area.GetSID()}");
                 e.LogDetailed();
                 return;
             }
