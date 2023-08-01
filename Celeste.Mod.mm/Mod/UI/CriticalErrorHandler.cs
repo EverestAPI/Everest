@@ -13,7 +13,7 @@ using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
 
 namespace Celeste.Mod.UI {
-    internal sealed class CriticalErrorHandler : Overlay, IDisposable {
+    public sealed class CriticalErrorHandler : Overlay, IDisposable {
 
         private static readonly FieldInfo f_Engine_scene = typeof(Engine).GetField("scene", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly FieldInfo f_Engine_nextScene = typeof(Engine).GetField("nextScene", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -38,11 +38,16 @@ namespace Celeste.Mod.UI {
             ReturnToMainMenu
         }
 
-        private static CriticalErrorHandler CurrentHandler;
+        public static CriticalErrorHandler CurrentHandler { get; private set; }
 
         public static ExceptionDispatchInfo HandleCriticalError(ExceptionDispatchInfo error) {
             if (!CoreModule.Settings.UseInGameCrashHandler)
                 return error;
+
+            if (Debugger.IsAttached) {
+                Trace.WriteLine($">>> CRITICAL ERROR: {error.SourceException.ToString()}");
+                Debugger.Break();
+            }
 
             Logger.Log(LogLevel.Error, "crit-error-handler", ">>>>>>>>>>>>>>> ENCOUNTERED A CRITICAL ERROR <<<<<<<<<<<<<<<");
             Logger.LogDetailed(error.SourceException, "crit-error-handler");
@@ -55,6 +60,9 @@ namespace Celeste.Mod.UI {
                 AmendLogFile(CurrentHandler.LogFile, "Encountered an additional critical error", error.SourceException);
             }
 
+            // Invoke the critical error event
+            Everest.Events.CriticalError(CurrentHandler);
+
             // If this is a compatible scene, display as an overlay
             if (CurrentHandler.State < DisplayState.Overlay && Celeste.Scene is Level lvl) {
                 CurrentHandler.State = DisplayState.Overlay;
@@ -66,11 +74,25 @@ namespace Celeste.Mod.UI {
             static void DoImmediateSceneSwitch(Scene newScene) {
                 Celeste.TimeRate = 1;
                 Celeste.DashAssistFreeze = false;
+                Celeste.OverloadGameLoop = null;
 
                 f_Engine_nextScene.SetValue(Celeste.Instance, newScene);
-                Celeste.Scene?.End();
+
+                try {
+                    Celeste.Scene?.End();
+                } catch (Exception ex) {
+                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error executing scene End function on immediate scene switch:");
+                    Logger.LogDetailed(ex, "crit-error-handler");
+                }
+
                 f_Engine_scene.SetValue(Celeste.Instance, newScene);
-                Celeste.Scene?.Begin();
+
+                try {
+                    Celeste.Scene?.Begin();
+                } catch (Exception ex) {
+                    Logger.Log(LogLevel.Error, "crit-error-handler", "Error executing scene Begin function on immediate scene switch:");
+                    Logger.LogDetailed(ex, "crit-error-handler");
+                }
             }
 
             if (CurrentHandler.State < DisplayState.CleanScene) {
@@ -112,6 +134,7 @@ namespace Celeste.Mod.UI {
         private static void ResetErrorHandler() {
             Logger.Log(LogLevel.Info, "crit-error-handler", "Resetting critical error handler");
             CurrentHandler?.Dispose();
+            CurrentHandler?.OnClose?.Invoke();
             CurrentHandler = null;
         }
 
@@ -228,7 +251,7 @@ namespace Celeste.Mod.UI {
         public readonly string LogFile, LogFileError;
         public readonly Session Session;
 
-        public bool EncounteredAdditionalErrors;
+        public bool EncounteredAdditionalErrors { get; private set; }
         private readonly BeforeRenderInterceptor beforeRenderInterceptor;
         private TextMenu optMenu;
         private readonly HashSet<UserChoice> failedChoices = new HashSet<UserChoice>();
@@ -237,12 +260,14 @@ namespace Celeste.Mod.UI {
         private DisplayState state = DisplayState.Initial;
         public DisplayState State {
             get => state;
-            set {
+            private set {
                 state = value;
                 if (optMenu != null)
                     ConfigureOptionsMenu();                
             }
         }
+
+        public event Action OnClose;
 
         private bool disablePlayerSprite;
         private PlayerSprite playerSprite;
@@ -261,7 +286,11 @@ namespace Celeste.Mod.UI {
             Error = error;
             errorType = error.SourceException.GetType().FullName;
             errorMessage = error.SourceException.Message;
-            errorStackTrace = error.SourceException.StackTrace;
+            if (error.SourceException is AggregateException aggrEx)
+                // At least report the first stack trace
+                errorStackTrace = aggrEx.InnerException.StackTrace;
+            else
+                errorStackTrace = error.SourceException.StackTrace;
 
             LogFile = logFile;
             LogFileError = string.IsNullOrEmpty(logFile) ? logFileError : null;

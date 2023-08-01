@@ -185,7 +185,7 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
-                MainThreadHelper.Do(() => {
+                MainThreadHelper.Schedule(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
 
                     // remove the "loading..." message

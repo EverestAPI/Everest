@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.UI;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
@@ -14,6 +15,21 @@ namespace Celeste.Mod {
         /// Events that are called at various points in the game.
         /// </summary>
         public static class Events {
+
+            public static event Action<CriticalErrorHandler> OnCriticalError;
+            internal static void CriticalError(CriticalErrorHandler handler) {
+                if (OnCriticalError == null)
+                    return;
+
+                foreach (Action<CriticalErrorHandler> deleg in OnCriticalError.GetInvocationList()) {
+                    try {
+                        deleg(handler);
+                    } catch (Exception ex) {
+                        Logger.Log(LogLevel.Error, "crit-error-handler", $"Error invoking critical error event handler {deleg.Method}:");
+                        Logger.LogDetailed(ex, "crit-error-handler");
+                    }
+                }
+            }
 
             public static class Celeste {
                 /// <summary>

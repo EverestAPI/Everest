@@ -587,15 +587,14 @@ header {
                             Array.Copy(commandAndArgs, 1, args, 0, args.Length);
 
                             StringBuilder output = new StringBuilder();
-                            MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
+                            MainThreadHelper.Schedule(() => { // prevent interfering with commands run from ingame console
                                 try {
                                     ((Monocle.patch_Commands) Engine.Commands).debugRClog = output;
                                     Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
                                 } finally {
                                     ((Monocle.patch_Commands) Engine.Commands).debugRClog = null;
                                 }
-                                return null;
-                            }).GetResult(); // wait for command to finish before writing output
+                            }).AsTask().Wait(); // wait for command to finish before writing output
                             Write(c, output.ToString());
                         }
                     }

@@ -21,6 +21,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using Celeste.Mod.Helpers;
+using System.Runtime.CompilerServices;
 
 namespace Celeste {
     class patch_Level : Level {
@@ -32,9 +33,31 @@ namespace Celeste {
         private static HashSet<string> _LoadStrings; // Generated in MonoModRules.PatchLevelLoader
 
         public SubHudRenderer SubHudRenderer;
-        public static Player NextLoadedPlayer;
-        public static int SkipScreenWipes;
-        public static bool ShouldAutoPause = false;
+
+        public class LoadOverride {
+
+            public Player NextLoadedPlayer = null;
+            public int SkipScreenWipes = 0;
+            public bool ShouldAutoPause = false;
+
+            public bool HasOverrides => NextLoadedPlayer != null || SkipScreenWipes != 0 || ShouldAutoPause;
+
+        }
+
+        private static readonly ConditionalWeakTable<Level, LoadOverride> LoadOverrides = new ConditionalWeakTable<Level, LoadOverride>();
+
+        /// <summary>
+        /// Registers an override of some level load parameters. Only one
+        /// override can be registered for each level.
+        /// </summary>
+        /// <param name="level">The level for which to register the override</param>
+        /// <param name="loadOverride">The override data to register</param>
+        public static void RegisterLoadOverride(Level level, LoadOverride loadOverride)
+            => LoadOverrides.Add(level, loadOverride);
+
+        [Obsolete("Use RegisterLoadOverride instead")] public static Player NextLoadedPlayer;
+        [Obsolete("Use RegisterLoadOverride instead")] public static int SkipScreenWipes;
+        [Obsolete("Use RegisterLoadOverride instead")] public static bool ShouldAutoPause = false;
 
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
@@ -104,9 +127,21 @@ namespace Celeste {
         /// <param name="onComplete"></param>
         /// <param name="hiresSnow"></param>
         public new void DoScreenWipe(bool wipeIn, Action onComplete = null, bool hiresSnow = false) {
-            if (onComplete == null && !hiresSnow && SkipScreenWipes > 0) {
-                SkipScreenWipes--;
-                return;
+            if (onComplete == null && !hiresSnow) {
+                // Check if we should skip the screen wipe
+#pragma warning disable 0618
+                if (SkipScreenWipes > 0) {
+                    SkipScreenWipes--;
+                    return;
+                }
+#pragma warning restore 0618
+
+                if (LoadOverrides.TryGetValue(this, out LoadOverride ovr) && ovr.SkipScreenWipes > 0) {
+                    ovr.SkipScreenWipes--;
+                    if (!ovr.HasOverrides)
+                        LoadOverrides.Remove(this);
+                    return;
+                }
             }
 
             orig_DoScreenWipe(wipeIn, onComplete, hiresSnow);
@@ -212,8 +247,20 @@ namespace Celeste {
 
                 orig_LoadLevel(playerIntro, isFromLoader);
 
+                // Check if we should auto-pause
+#pragma warning disable 0618
+                Player player = NextLoadedPlayer;
                 if (ShouldAutoPause) {
                     ShouldAutoPause = false;
+                    Pause();
+                }
+#pragma warning restore 0618
+
+                if (LoadOverrides.TryGetValue(this, out LoadOverride ovr) && ovr.ShouldAutoPause) {
+                    ovr.ShouldAutoPause = false;
+                    if (!ovr.HasOverrides)
+                        LoadOverrides.Remove(this);
+
                     Pause();
                 }
             } catch (Exception e) {
@@ -251,10 +298,22 @@ namespace Celeste {
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
-        private static Player LoadNewPlayer(Vector2 position, PlayerSpriteMode spriteMode) {
+        private static Player LoadNewPlayer(Vector2 position, PlayerSpriteMode spriteMode, Level lvl) {
+            // Check if there is a player override
+#pragma warning disable 0618
             Player player = NextLoadedPlayer;
             if (player != null) {
                 NextLoadedPlayer = null;
+                return player;
+            }
+#pragma warning restore 0618
+
+            if (LoadOverrides.TryGetValue(lvl, out LoadOverride ovr) && ovr.NextLoadedPlayer != null) {
+                player = ovr.NextLoadedPlayer;
+                ovr.NextLoadedPlayer = null;
+
+                if (!ovr.HasOverrides)
+                    LoadOverrides.Remove(lvl);
                 return player;
             }
 
@@ -567,7 +626,7 @@ namespace MonoMod {
             FieldReference f_Session = context.Method.DeclaringType.FindField("Session");
             FieldReference f_Session_RestartedFromGolden = f_Session.FieldType.Resolve().FindField("RestartedFromGolden");
             MethodDefinition m_cctor = context.Method.DeclaringType.FindMethod(".cctor");
-            MethodDefinition m_LoadNewPlayer = context.Method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode)");
+            MethodDefinition m_LoadNewPlayer = context.Method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode,Celeste.Level)");
             MethodDefinition m_LoadCustomEntity = context.Method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
             MethodDefinition m_PatchHeartGemBehavior = context.Method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)");
 
@@ -628,8 +687,9 @@ namespace MonoMod {
 
             // Patch Player creation so we avoid ever loading more than one at the same time
             //  Before: Player player = new Player(this.Session.RespawnPoint.Value, spriteMode);
-            //  After:  Player player = Level.LoadNewPlayer(this.Session.RespawnPoint.Value, spriteMode);
+            //  After:  Player player = Level.LoadNewPlayer(this.Session.RespawnPoint.Value, spriteMode, this);
             cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Player"));
+            cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Call;
             cursor.Next.Operand = m_LoadNewPlayer;
 

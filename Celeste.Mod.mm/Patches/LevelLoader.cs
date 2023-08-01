@@ -25,7 +25,7 @@ namespace Celeste {
 
         private bool started;
         private Session session;
-        public bool Loaded { get; private set; }
+        public bool Loaded { [MonoModIgnore] get; [MonoModIgnore] private set; }
 
         private static WeakReference<Thread> LastLoadingThread;
 
@@ -47,7 +47,7 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LazyLoading) {
-                MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+                MainThreadHelper.Schedule(() => VirtualContentExt.UnloadOverworld());
             }
 
             // Vanilla TileToIndex mappings.
