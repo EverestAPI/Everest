@@ -598,7 +598,7 @@ namespace Celeste.Mod {
                             if (!LoadMod(loadMod))
                                 Logger.Log(LogLevel.Warn, "loader", $"-> failed to reload mod '{loadMod.Name}'!");
                         }
-                    }, AssetReloadHelper.ReloadLevel);
+                    }, static () => AssetReloadHelper.ReloadLevel(true));
                 });
             }
 

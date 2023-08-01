@@ -52,8 +52,10 @@ namespace Celeste {
         /// </summary>
         /// <param name="level">The level for which to register the override</param>
         /// <param name="loadOverride">The override data to register</param>
-        public static void RegisterLoadOverride(Level level, LoadOverride loadOverride)
-            => LoadOverrides.Add(level, loadOverride);
+        public static void RegisterLoadOverride(Level level, LoadOverride loadOverride) {
+            if (loadOverride.HasOverrides)
+                LoadOverrides.Add(level, loadOverride);
+        }
 
         [Obsolete("Use RegisterLoadOverride instead")] public static Player NextLoadedPlayer;
         [Obsolete("Use RegisterLoadOverride instead")] public static int SkipScreenWipes;
