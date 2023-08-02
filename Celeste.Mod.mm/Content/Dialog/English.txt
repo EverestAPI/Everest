@@ -180,6 +180,8 @@
 	EVERESTUPDATER_RESTARTING=		Restarting
 	EVERESTUPDATER_RESTARTINGIN=	Restarting in {0}
 	EVERESTUPDATER_STARTINGFAILED=	Starting installer failed!
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Installing .NET Core Everest requires the .NET 7.0 runtime
+	EVERESTUPDATER_MISSINGRUNTIME_B=	You can download it from the following page: {0}
 	EVERESTUPDATER_ERRORHINT1=		Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		or join the #modding_help channel on Discord (invite in the repo).
 	EVERESTUPDATER_ERRORHINT3=		Make sure to upload your log.txt
