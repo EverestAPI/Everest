@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
@@ -50,6 +51,7 @@ namespace Monocle {
         // redirects command logs to the StringBuilder when not null, only set this from main thread
         internal StringBuilder debugRClog;
 
+        [PatchCommandsProcessMethod]
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
             try {
@@ -519,6 +521,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches Commands.ProcessMethod to lowercase command names when building the command list.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsProcessMethod))]
+    class PatchCommandsProcessMethodAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
@@ -537,6 +545,19 @@ namespace MonoMod {
             if (!found) {
                 throw new Exception("No call to Engine.DeltaTime found in " + il.Method.FullName + "!");
             }
+        }
+
+        public static void PatchCommandsProcessMethod(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            // import string.ToLowerInvariant() as it's not in the Celeste assembly
+            MethodReference m_ToLowerInvariant = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLowerInvariant()"));
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Command", "Name"));
+
+            // call Command.Name.ToLowerInvariant()
+            cursor.Emit(OpCodes.Callvirt, m_ToLowerInvariant);
         }
 
     }

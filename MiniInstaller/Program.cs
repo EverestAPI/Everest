@@ -100,13 +100,7 @@ namespace MiniInstaller {
                 File.Delete(PathLog);
             using (Stream fileStream = File.OpenWrite(PathLog))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter {
-                STDOUT = Console.Out,
-                File = fileWriter
-            }) {
-                Console.SetOut(logWriter);
-                Console.SetError(logWriter);
-
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter)) {
                 try {
                     WaitForGameExit();
 
@@ -173,9 +167,6 @@ namespace MiniInstaller {
                     Environment.SetEnvironmentVariable("MONOMOD_MODS", "");
                     Environment.SetEnvironmentVariable("MONOMOD_DEPENDENCY_MISSING_THROW", "");
                 }
-
-                Console.SetOut(logWriter.STDOUT);
-                logWriter.STDOUT = null;
             }
 
             return 0;

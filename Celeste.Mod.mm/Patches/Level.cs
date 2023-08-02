@@ -274,7 +274,7 @@ namespace Celeste {
                     }
                 }
 
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of {Session.Area.GetSID()}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.Level} of {Session.Area.GetSID()}");
                 e.LogDetailed();
                 return;
             }
@@ -548,7 +548,7 @@ namespace Celeste {
         }
 
         private void FixChaserStatesTimeStamp() {
-            if (unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
+            if (Session.Area.GetLevelSet() != "Celeste" && unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
                 float offset = Engine.DeltaTime;
 
                 // add one more frame at the end

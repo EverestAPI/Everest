@@ -6,7 +6,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -365,7 +365,10 @@ namespace Celeste.Mod {
                 // The user has made their choice, so we will save the desired branch now.
                 CoreModule.Settings.CurrentBranch = version.Source.Name;
                 CoreModule.Instance.SaveSettings();
-                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => DoUpdate(progress, version, PathGame, true)), 0);
+                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => {
+                    if (DoUpdate(progress, version, PathGame, true) == null)
+                        progress.SwitchGoto<OuiModOptions>().WaitForConfirmOnFinish = true;
+                }), 0);
             }
 
             internal static void UpdateLegacyRef(OuiLoggedProgress progress) {
@@ -398,8 +401,10 @@ namespace Celeste.Mod {
 
                     // Install Everest onto the legacyRef install
                     Process installerProc = DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
-                    if (installerProc == null)
+                    if (installerProc == null) {
+                        progress.WaitForConfirmOnFinish = true;
                         return;
+                    }
 
                     // Wait for MiniInstaller
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_WAITFORINSTALLER"));
@@ -460,7 +465,6 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    progress.WaitForConfirmOnFinish = true;
                     return null;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
@@ -509,7 +513,6 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    progress.WaitForConfirmOnFinish = true;
                     return null;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
@@ -527,11 +530,6 @@ namespace Celeste.Mod {
                 }
 
                 try {
-                    if(isUpdate) {
-                        // Store the update version for later
-                        File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
-                    }
-
                     // Start MiniInstaller in a separate process.
                     Process installer = new Process();
 
@@ -578,6 +576,11 @@ namespace Celeste.Mod {
                             throw new Exception("Failed to set MiniInstaller executable flag");
                     }
 
+                    // Store the update version for later
+                    if (isUpdate)
+                        File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+
+                    // Start MiniInstaller
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     installer.StartInfo.UseShellExecute = false;
                     installer.Start();
@@ -588,7 +591,6 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    progress.WaitForConfirmOnFinish = true;
                     return null;
                 }
             }
