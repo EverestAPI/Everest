@@ -229,9 +229,11 @@ namespace MiniInstaller {
 
         public static void WaitForGameExit() {
             if (int.TryParse(Environment.GetEnvironmentVariable("EVEREST_UPDATE_CELESTE_PID"), out int celestePid)) {
-                Process celesteProc = Process.GetProcessById(celestePid);
-                celesteProc.Kill(false);
-                celesteProc.WaitForExit();
+                try {
+                    Process celesteProc = Process.GetProcessById(celestePid);
+                    celesteProc.Kill(false);
+                    celesteProc.WaitForExit();
+                } catch {}
             }
 
             if (
