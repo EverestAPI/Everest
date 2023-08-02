@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Helpers;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Ionic.Zip;
 using MAB.DotIgnore;
@@ -17,7 +17,7 @@ using System.Threading;
 namespace Celeste.Mod {
 
     /// <summary>
-    /// Special meta type for assets. 
+    /// Special meta type for assets.
     /// A ModAsset with a Type field that subclasses from this will not log path conflicts.
     /// </summary>
     public abstract class AssetTypeNonConflict { }
@@ -531,7 +531,7 @@ namespace Celeste.Mod {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
-                Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
+                PathDUMP = Path.Combine(PathEverest, "ModDUMP");
 
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
                     Name = "Everest",
@@ -632,7 +632,7 @@ namespace Celeste.Mod {
                     if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) || (i == 0 && BlacklistRootFolders.Contains(pathSplit[0])))
                         return false;
                 }
-                
+
                 if (metadata != null &&
                     (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
                     return false;
@@ -715,7 +715,7 @@ namespace Celeste.Mod {
             /// </summary>
             public static event TypeGuesser OnGuessType;
             /// <summary>
-            /// Guess the file type and format based on its path. 
+            /// Guess the file type and format based on its path.
             /// </summary>
             /// <param name="file">The relative asset path.</param>
             /// <param name="type">The file type.</param>
@@ -727,7 +727,7 @@ namespace Celeste.Mod {
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
-                // Assign game asset types 
+                // Assign game asset types
                 if (format == "dll") {
                     type = typeof(AssetTypeAssembly);
 
