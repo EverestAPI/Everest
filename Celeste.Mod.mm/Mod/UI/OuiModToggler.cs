@@ -249,34 +249,47 @@ namespace Celeste.Mod.UI {
                         textBox.StartTyping();
                     };
 
-                    void searchNextMod(TextMenuExt.TextBox textBox) {
-                        updateHighlightedMods();
+                    bool tryFindNextModIndex(List<TextMenu.Item> menuItems, string searchTarget, int currentSelection, out int nextModIndex) {
+                        bool foundValidItem = false;
+                        nextModIndex = 0;
 
-                        int currentIndex = 0;
-                        int targetSelectionIndex = 0;
-                        patch_TextMenu.patch_Option<bool> targetTextMenuOption = null;
-                        string searchTarget = textBox.Text.ToLower();
-
-
-                        foreach (TextMenu.Item currentItem in menu.GetItems()) {
-                            if (currentItem is patch_TextMenu.patch_Option<bool> currentOption &&
+                        for (int currentIndex = 0; currentIndex < menuItems.Count; currentIndex++) {
+                            if (menuItems[currentIndex] is patch_TextMenu.patch_Option<bool> currentOption &&
                                     modToggles.ContainsKey(currentOption.Label) &&
                                     currentOption.Label.ToLower().Contains(searchTarget)) {
                                 // If we find a suitable option with index greater then the selected item we want to use it
-                                if (currentIndex > menu.Selection) {
-                                    targetSelectionIndex = currentIndex;
-                                    targetTextMenuOption = currentOption;
-                                    break;
-                                } else if (targetTextMenuOption == null) {
+                                if (currentIndex > currentSelection) {
+                                    nextModIndex = currentIndex;
+                                    return true;
+                                } else if (!foundValidItem) {
                                     // We want to store the first match incase we are currently selecting the last item so we could wrap around
-                                    targetSelectionIndex = currentIndex;
-                                    targetTextMenuOption = currentOption;
+                                    foundValidItem = true;
+                                    nextModIndex = currentIndex;
                                 }
                             }
-                            currentIndex++;
                         }
 
-                        if (targetTextMenuOption != null) {
+                        return foundValidItem;
+                    }
+
+                    Action<TextMenuExt.TextBox> searchNextMod(bool reverse) => (TextMenuExt.TextBox textBox) => {
+                        updateHighlightedMods();
+
+                        string searchTarget = textBox.Text.ToLower();
+                        List<TextMenu.Item> menuItems = menu.GetItems();
+                        int currentSelection = menu.Selection;
+
+                        if (reverse) {
+                            currentSelection = menuItems.Count - menu.Selection - 1;
+                            menuItems = new(menuItems);
+                            menuItems.Reverse();
+                        }
+
+                        if (tryFindNextModIndex(menuItems, searchTarget, currentSelection, out int targetSelectionIndex)) {
+                            if (reverse) {
+                                targetSelectionIndex = menuItems.Count - targetSelectionIndex - 1;
+                            }
+
                             if (targetSelectionIndex >= menu.Selection) {
                                 Audio.Play(SFX.ui_main_roll_down);
                             } else {
@@ -284,11 +297,11 @@ namespace Celeste.Mod.UI {
                             }
 
                             menu.Selection = targetSelectionIndex;
-                            targetTextMenuOption.UnselectedColor = TextMenu.HighlightColorA;
+                            (menu.GetItems()[targetSelectionIndex] as patch_TextMenu.patch_Option<bool>).UnselectedColor = TextMenu.HighlightColorA;
                         } else {
                             Audio.Play(SFX.ui_main_button_invalid);
                         }
-                    }
+                    };
 
                     void exitSearch(TextMenuExt.TextBox textBox) {
                         textBox.StopTyping();
@@ -297,14 +310,36 @@ namespace Celeste.Mod.UI {
                         updateHighlightedMods();
                     }
 
-                    textBox.OnTextInputCharActions['\t'] = searchNextMod;
+                    textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
 
                     textBox.OnTextInputCharActions['\n'] = exitSearch;
                     textBox.OnTextInputCharActions['\r'] = exitSearch;
 
-                    // for some reason windows chapters Escape in OnTextInput and linux doesn't therefore we want to cover all options
-                    textBox.OnTextInputCharActions[(char) 27] = exitSearch;
-                    textBox.OnUpdateKeysActions[Microsoft.Xna.Framework.Input.Keys.Escape] = exitSearch;
+
+                    textBox.OnUpdate = () => {
+                        if (textBox.Typing) {
+                            if (Input.MenuDown.Pressed) {
+                                searchNextMod(false)(textBox);
+                            } else if (Input.MenuUp.Pressed) {
+                                searchNextMod(true)(textBox);
+                            }
+
+                            if (Input.ESC.Pressed) {
+                                exitSearch(textBox);
+                            }
+
+                            if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                                && currentOption.UnselectedColor == TextMenu.HighlightColorA) {
+                                if (Input.MenuLeft.Pressed) {
+                                    currentOption.LeftPressed();
+                                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                                } else if (Input.MenuRight.Pressed) {
+                                    currentOption.RightPressed();
+                                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                                }
+                            }
+                        }
+                    };
 
 
                     // reset the mods list

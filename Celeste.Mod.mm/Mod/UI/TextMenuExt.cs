@@ -1396,15 +1396,6 @@ namespace Celeste {
                 {'\r', (textBox) => textBox.StopTyping()},
             };
 
-            public Dictionary<Keys, Action<TextBox>> OnUpdateKeysActions = new() {
-                {Keys.Delete, (textBox) => {
-                    if (textBox.Text.Length > 0) {
-                        textBox.ClearText();
-                        Audio.Play(SFX.ui_main_rename_entry_backspace);
-                    }
-                }}
-            };
-
             public bool Typing { get; private set; } = false;
 
             private Overworld overworld;
@@ -1523,10 +1514,12 @@ namespace Celeste {
 
             public override void Update() {
                 base.Update();
+                OnUpdate?.Invoke();
 
-                foreach (KeyValuePair<Keys, Action<TextBox>> pair in OnUpdateKeysActions) {
-                    if (MInput.Keyboard.Pressed(pair.Key)) {
-                        pair.Value(this);
+                if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                    if (Text.Length > 0) {
+                        ClearText();
+                        Audio.Play(SFX.ui_main_rename_entry_backspace);
                     }
                 }
 
