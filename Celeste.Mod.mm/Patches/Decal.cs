@@ -239,7 +239,7 @@ namespace Celeste {
         }
 
         public void MakeAnimation(int[] frames) {
-            textures = frames.Select(i => textures[i]).ToArray();
+            textures = frames.Select(i => textures[i]).ToList();
         }
 
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
