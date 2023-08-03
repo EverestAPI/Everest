@@ -32,15 +32,15 @@ namespace Monocle {
 
         [MonoModIgnore]
         [PatchEntityListUpdateLists]
-        internal extern void UpdateLists();
+        public extern void UpdateLists();
 
         [MonoModIgnore]
         [PatchEntityListAddAndRemove]
-        internal extern void Add(Entity entity);
+        public extern void Add(Entity entity);
 
         [MonoModIgnore]
         [PatchEntityListAddAndRemove]
-        internal extern void Remove(Entity entity);
+        public extern void Remove(Entity entity);
     }
 
     public static class EntityListExt {
