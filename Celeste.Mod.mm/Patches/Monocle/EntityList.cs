@@ -33,7 +33,16 @@ namespace Monocle {
         [MonoModIgnore]
         [PatchEntityListUpdateLists]
         internal extern void UpdateLists();
+
+        [MonoModIgnore]
+        [PatchEntityListAddAndRemove]
+        internal extern void Add(Entity entity);
+
+        [MonoModIgnore]
+        [PatchEntityListAddAndRemove]
+        internal extern void Remove(Entity entity);
     }
+
     public static class EntityListExt {
 
         // Mods can't access patch_ classes directly.
@@ -60,6 +69,13 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListUpdateLists))]
     class PatchEntityListUpdateListsAttribute : Attribute { }
+
+    /// <summary>
+    /// Make Add(entity) and Remove(entity) methods to crash when entity is null
+    /// so modders can catch bugs in time
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListAddAndRemove))]
+    class PatchEntityListAddAndRemoveAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -113,6 +129,25 @@ namespace MonoMod {
             cursor.GotoPrev(instr => instr.OpCode == OpCodes.Callvirt && (instr.Operand as MethodReference).GetID().Contains("List`1<Monocle.Entity>::Contains"));
             cursor.Prev.Previous.Operand = currentOperand;
             cursor.Next.Operand = hashRemoveOperand;
+        }
+
+        public static void PatchEntityListAddAndRemove(ILContext context, CustomAttribute attrib) {
+            // insert the following code at the beginning of the method
+            // if (entity == null) throw new ArgumentNullException("entity")
+
+            TypeDefinition t_ArgumentNullException = MonoModRule.Modder.FindType("System.ArgumentNullException").Resolve();
+            MethodReference ctor_ArgumentNullException = MonoModRule.Modder.Module.ImportReference(t_ArgumentNullException.FindMethod("System.Void .ctor(System.String)"));
+
+            ILCursor cursor = new ILCursor(context);
+            ILLabel label = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Ldarg_1);
+            cursor.Emit(OpCodes.Ldnull);
+            cursor.Emit(OpCodes.Ceq);
+            cursor.Emit(OpCodes.Brfalse_S, label);
+            cursor.Emit(OpCodes.Ldstr, "entity");
+            cursor.Emit(OpCodes.Newobj, ctor_ArgumentNullException);
+            cursor.Emit(OpCodes.Throw);
+            cursor.MarkLabel(label);
         }
 
     }
