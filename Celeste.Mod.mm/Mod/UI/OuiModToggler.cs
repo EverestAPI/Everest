@@ -357,28 +357,34 @@ namespace Celeste.Mod.UI {
         }
 
         private void addFileToMenu(TextMenu menu, string file) {
-            TextMenu.OnOff option;
-
             bool enabled = !Everest.Loader.Blacklist.Contains(file);
             bool favorite = Everest.Loader.Favorites.Contains(file);
-            menu.Add(option = (TextMenu.OnOff) new TextMenu.OnOff(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled)
-                .Change(b => {
-                    if (b) {
-                        removeFromBlacklist(file);
-                    } else {
-                        addToBlacklist(file);
-                    }
 
-                    updateHighlightedMods();
-                }).AltPressed(() => {
-                    if (favoritedMods.Contains(file)) {
-                        removeFromFavorites(file);
-                    } else {
-                        addToFavorites(file);
-                    }
+            TextMenu.OnOff option = new TextMenu.OnOff(file.Length > 40 ? file.Substring(0, 40) + "..." : file, enabled);
 
-                    updateHighlightedMods();
-                }));
+            option.Change(b => {
+                if (b) {
+                    removeFromBlacklist(file);
+                } else {
+                    addToBlacklist(file);
+                }
+
+                updateHighlightedMods();
+            }).AltPressed(() => {
+                if (!favoritedMods.Contains(file)) {
+                    Audio.Play(SFX.ui_main_button_toggle_on);
+                    addToFavorites(file);
+                } else {
+                    Audio.Play(SFX.ui_main_button_toggle_off);
+                    removeFromFavorites(file);
+                }
+
+                option.SelectWiggler.Start();
+
+                updateHighlightedMods();
+            });
+
+            menu.Add(option);
 
             allMods.Add(file);
             if (!enabled) {
