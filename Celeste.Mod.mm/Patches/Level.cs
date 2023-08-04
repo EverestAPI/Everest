@@ -299,9 +299,13 @@ namespace Celeste {
             }
         }
 
-        // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
-        private static Player LoadNewPlayer(Vector2 position, PlayerSpriteMode spriteMode, Level lvl) {
-            // Check if there is a player override
+        [ThreadStatic] private static Player _PlayerOverride;
+
+        [Obsolete("Use LoadNewPlayerForLevel instead")] // Some mods hook this method ._.
+        private static Player LoadNewPlayer(Vector2 position, PlayerSpriteMode spriteMode) {
+            if (_PlayerOverride != null)
+                return _PlayerOverride;
+
 #pragma warning disable 0618
             Player player = NextLoadedPlayer;
             if (player != null) {
@@ -310,16 +314,44 @@ namespace Celeste {
             }
 #pragma warning restore 0618
 
+            return new Player(position, spriteMode);
+        }
+
+        // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
+        private static Player LoadNewPlayerForLevel(Vector2 position, PlayerSpriteMode spriteMode, Level lvl) {
+            // Check if there is a player override
             if (LoadOverrides.TryGetValue(lvl, out LoadOverride ovr) && ovr.NextLoadedPlayer != null) {
-                player = ovr.NextLoadedPlayer;
+                Player player = ovr.NextLoadedPlayer;
+
+                // Oh wait, you think we can just return the player override now?
+                // Some mods might depend on the old method being called! ._.
+                // (They might also depend on the exact semantics of NextLoadedPlayer holding the new player, but screw them in that case)
+                // (Their fault for hooking into a private Everest-internal method)
+#pragma warning disable 0618
+                try {
+                    _PlayerOverride = player;
+
+                    Player actualPlayer = LoadNewPlayer(position, spriteMode);
+                    if (actualPlayer != player)
+                        return actualPlayer;
+                } finally {
+                    _PlayerOverride = null;
+                }
+#pragma warning restore 0618
+
+                // The old method didn't object, actually apply the override now
                 ovr.NextLoadedPlayer = null;
 
                 if (!ovr.HasOverrides)
                     LoadOverrides.Remove(lvl);
+
                 return player;
             }
 
-            return new Player(position, spriteMode);
+            // Fall back to the obsolete overload
+#pragma warning disable 0618
+            return LoadNewPlayer(position, spriteMode);
+#pragma warning restore 0618
         }
 
         /// <summary>
@@ -628,7 +660,7 @@ namespace MonoMod {
             FieldReference f_Session = context.Method.DeclaringType.FindField("Session");
             FieldReference f_Session_RestartedFromGolden = f_Session.FieldType.Resolve().FindField("RestartedFromGolden");
             MethodDefinition m_cctor = context.Method.DeclaringType.FindMethod(".cctor");
-            MethodDefinition m_LoadNewPlayer = context.Method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayer(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode,Celeste.Level)");
+            MethodDefinition m_LoadNewPlayer = context.Method.DeclaringType.FindMethod("Celeste.Player LoadNewPlayerForLevel(Microsoft.Xna.Framework.Vector2,Celeste.PlayerSpriteMode,Celeste.Level)");
             MethodDefinition m_LoadCustomEntity = context.Method.DeclaringType.FindMethod("System.Boolean LoadCustomEntity(Celeste.EntityData,Celeste.Level)");
             MethodDefinition m_PatchHeartGemBehavior = context.Method.DeclaringType.FindMethod("Celeste.AreaMode _PatchHeartGemBehavior(Celeste.AreaMode)");
 
@@ -689,7 +721,7 @@ namespace MonoMod {
 
             // Patch Player creation so we avoid ever loading more than one at the same time
             //  Before: Player player = new Player(this.Session.RespawnPoint.Value, spriteMode);
-            //  After:  Player player = Level.LoadNewPlayer(this.Session.RespawnPoint.Value, spriteMode, this);
+            //  After:  Player player = Level.LoadNewPlayerForLevel(this.Session.RespawnPoint.Value, spriteMode, this);
             cursor.GotoNext(instr => instr.MatchNewobj("Celeste.Player"));
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Call;
