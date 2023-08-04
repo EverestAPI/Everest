@@ -247,6 +247,10 @@ namespace Celeste.Mod.UI {
                     startSearching = () => {
                         modal.Visible = true;
                         textBox.StartTyping();
+
+                        if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption) {
+                            currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                        }
                     };
 
                     bool tryFindNextModIndex(List<TextMenu.Item> menuItems, string searchTarget, int currentSelection, out int nextModIndex) {
@@ -577,9 +581,11 @@ namespace Celeste.Mod.UI {
         public override void Render() {
             base.Render();
 
-            Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchEase), 952f);
-            GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchEase));
-            Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+            if (modLoadingTask == null) {
+                Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchEase), 952f);
+                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchEase));
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+            }
         }
 
         public override IEnumerator Leave(Oui next) {

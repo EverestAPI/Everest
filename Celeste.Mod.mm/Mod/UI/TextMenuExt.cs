@@ -1381,6 +1381,7 @@ namespace Celeste {
             public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
             public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
             public float WidthScale { get; set; } = 1;
+            public bool TextBoxConsumedInput { get; private set; } = false;
 
             public Dictionary<char, Action<TextBox>> OnTextInputCharActions = new() {
                 // backspace
@@ -1487,7 +1488,7 @@ namespace Celeste {
                 }
             }
 
-            private void HandleNewInputChar(char c) {
+            private bool HandleNewInputChar(char c) {
                 Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
                 // we pad from both the right and the left
                 Vector2 totalTextPadding = TextPadding * 2;
@@ -1497,8 +1498,10 @@ namespace Celeste {
                     (newTextSize + totalTextPadding).X < Width) {
                     Text += c;
                     Audio.Play(SFX.ui_main_rename_entry_char);
+                    return true;
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
+                    return false;
                 }
             }
 
@@ -1506,22 +1509,30 @@ namespace Celeste {
                 if (Typing) {
                     if (OnTextInputCharActions.TryGetValue(c, out Action<TextBox> action)) {
                         action(this);
+                        TextBoxConsumedInput = true;
                     } else {
-                        HandleNewInputChar(c);
+                        TextBoxConsumedInput = HandleNewInputChar(c);
                     }
                 }
             }
 
             public override void Update() {
-                base.Update();
+                if (Typing) {
+                    if (MInput.Keyboard.Pressed(Keys.Delete)) {
+                        if (Text.Length > 0) {
+                            ClearText();
+                            Audio.Play(SFX.ui_main_rename_entry_backspace);
+                        }
+                        TextBoxConsumedInput = true;
+                    }
+                    // We need to disable all other inputs in case the textBox consumed that input,
+                    // this covers the case of menu inputs that are bound to valid characters for the textBox
+                    MInput.Disabled = TextBoxConsumedInput;
+                }
+                TextBoxConsumedInput = false;
+
                 OnUpdate?.Invoke();
 
-                if (MInput.Keyboard.Pressed(Keys.Delete)) {
-                    if (Text.Length > 0) {
-                        ClearText();
-                        Audio.Play(SFX.ui_main_rename_entry_backspace);
-                    }
-                }
 
                 // ensure the player never enters free cam while typing, so to cover the case our Update() gets called first we consume the input
                 // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
