@@ -555,11 +555,13 @@ namespace Celeste.Mod.UI {
                     Celeste.Instance.GraphicsDevice.Clear(Color.Transparent);
                     Draw.SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone, null, Matrix.CreateTranslation(16, 32, 0));
 
-                    playerHair.AfterUpdate();
-                    playerHair.Render();
-                    playerSprite.Render();
-
-                    Draw.SpriteBatch.End();
+                    try {
+                        playerHair.AfterUpdate();
+                        playerHair.Render();
+                        playerSprite.Render();
+                    } finally {
+                        Draw.SpriteBatch.End();
+                    }
                 } catch (Exception ex) {
                     Logger.Log(LogLevel.Error, "crit-error-handler", "Error while rendering player sprite:");
                     Logger.LogDetailed(ex, "crit-error-handler");
