@@ -1,6 +1,8 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using System;
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -12,6 +14,10 @@ namespace Celeste {
     class patch_FinalBoss : FinalBoss {
 
         private bool canChangeMusic;
+
+        private int nodeIndex;
+
+        private Vector2[] nodes;
 
         public patch_FinalBoss(EntityData e, Vector2 offset)
             : base(e, offset) {
@@ -30,6 +36,22 @@ namespace Celeste {
         [PatchBadelineBossOnPlayer] // ... except for manually manipulating the method via MonoModRules
         public new extern void OnPlayer(Player player);
 
+        private extern void orig_PushPlayer(Player player);
+
+        private void PushPlayer(Player player) {
+            // ensure we are not hitting the last node
+            if (nodeIndex >= nodes.Length) {
+                Logger.Log(LogLevel.Warn, "FinalBoss",
+                    "FinalBoss entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.");
+                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_bosslastnodehit");
+
+                // we want to call LevelEnter.Go explicitly instant of letting CheckForErrors call it to prevent double triggers of postcard
+                LevelEnter.Go((Scene as Level).Session, false);
+            } else {
+                orig_PushPlayer(player);
+            }
+        }
+
         public bool CanChangeMusic(bool value) {
             Level level = Scene as Level;
             if (level.Session.Area.GetLevelSet() == "Celeste")
@@ -37,7 +59,6 @@ namespace Celeste {
 
             return canChangeMusic;
         }
-
     }
 }
 
