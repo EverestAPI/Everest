@@ -35,9 +35,9 @@ namespace Celeste {
         [PatchBadelineBossOnPlayer] // ... except for manually manipulating the method via MonoModRules
         public new extern void OnPlayer(Player player);
 
-        public extern void orig_PushPlayer(Player player);
+        private extern void orig_PushPlayer(Player player);
 
-        public void PushPlayer(Player player) {
+        private void PushPlayer(Player player) {
             // ensure we are not hitting the last node
             if (nodeIndex >= nodes.Length) {
                 Logger.Log(LogLevel.Warn, "FinalBoss",
