@@ -1,7 +1,6 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 
 using System;
-using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -13,10 +12,6 @@ namespace Celeste {
     class patch_FinalBoss : FinalBoss {
 
         private bool canChangeMusic;
-
-        private int nodeIndex;
-
-        private Vector2[] nodes;
 
         public patch_FinalBoss(EntityData e, Vector2 offset)
             : base(e, offset) {
@@ -31,22 +26,9 @@ namespace Celeste {
             canChangeMusic = data.Bool("canChangeMusic", true);
         }
 
-        [PatchBadelineBossOnPlayer]
-        public extern void orig_OnPlayer(Player player);
-
-        public void OnPlayer(Player player) {
-            // ensure we are not hitting the last node, we run before nodeIndex is incremented so we need to do it ourself
-            if (nodeIndex + 1 >= nodes.Length) {
-                Logger.Log(LogLevel.Warn, "FinalBoss",
-                    "FinalBoss entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.");
-                patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_bosslastnodehit");
-
-                // we want to call LevelEnter.Go explicitly instant of letting CheckForErrors call it to prevent double triggers of postcard
-                LevelEnter.Go((Scene as Level).Session, false);
-            } else {
-                orig_OnPlayer(player);
-            }
-        }
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchBadelineBossOnPlayer] // ... except for manually manipulating the method via MonoModRules
+        public new extern void OnPlayer(Player player);
 
         public bool CanChangeMusic(bool value) {
             Level level = Scene as Level;
@@ -55,6 +37,7 @@ namespace Celeste {
 
             return canChangeMusic;
         }
+
     }
 }
 
