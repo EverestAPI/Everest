@@ -44,9 +44,6 @@ namespace Celeste {
                 Logger.Log(LogLevel.Warn, "FinalBoss",
                     "FinalBoss entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.");
                 patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_bosslastnodehit");
-
-                // we want to call LevelEnter.Go explicitly instant of letting CheckForErrors call it to prevent double triggers of postcard
-                LevelEnter.Go((Scene as Level).Session, false);
             } else {
                 orig_PushPlayer(player);
             }
