@@ -14,6 +14,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -222,6 +223,33 @@ namespace Celeste {
         [PatchOuiChapterPanelOptionBg]
         [PatchOuiChapterPanelReset]
         private extern void Reset();
+
+        private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
+        private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
+            // adjust the checkpoint index for checkpoints that were not unlocked.
+            List<string> unlockedCheckpoints = _GetCheckpoints(SaveData.Instance, Area)
+                .Select(c => c.Contains("|") ? c : $"{Area.GetSID()}|{c}").ToList();
+            List<string> allCheckpoints = getAllCheckpoints(Area);
+
+            int skippedCheckpoints = 0;
+            for (int i = 0; i < checkpointIndex; i++) {
+                if (!unlockedCheckpoints.Contains(allCheckpoints[i])) {
+                    skippedCheckpoints++;
+                }
+            }
+
+            orig_DrawCheckpoint(center, option, checkpointIndex + skippedCheckpoints);
+        }
+
+        private static List<string> getAllCheckpoints(AreaKey area) {
+            AreaData areaData = AreaData.Areas[area.ID];
+            ModeProperties mode = areaData.Mode[(int) area.Mode];
+            List<string> filteredList = new List<string>();
+            if (mode.Checkpoints != null)
+                foreach (CheckpointData cp in mode.Checkpoints)
+                    filteredList.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+            return filteredList;
+        }
 
         private string _ModAreaselectTexture(string textureName) {
             // First, check for area (chapter) specific textures.
