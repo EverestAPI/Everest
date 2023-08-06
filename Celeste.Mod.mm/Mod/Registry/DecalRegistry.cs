@@ -111,6 +111,11 @@ namespace Celeste.Mod {
 
                 ((patch_Decal)decal).MakeStaticMover(x, y, width, height);
             }},
+            { "animation", delegate(Decal decal, XmlAttributeCollection attrs) {
+                int[] frames = Calc.ReadCSVIntWithTricks(attrs["frames"]?.Value ?? "0");
+
+                ((patch_Decal)decal).MakeAnimation(frames);
+            }},
             { "scared", delegate(Decal decal, XmlAttributeCollection attrs) {
                 int hideRange = 32;
                 int showRange = 48;
@@ -259,7 +264,7 @@ namespace Celeste.Mod {
                     registeredPath = registeredPath.TrimEnd('*');
                     foreach (string decalPath in localDecals) {
                         // Wildcard matches must be longer than the subpath, and don't match on decals in subfolders
-                        if (decalPath.StartsWith(registeredPath) && decalPath.Length > registeredPath.Length 
+                        if (decalPath.StartsWith(registeredPath) && decalPath.Length > registeredPath.Length
                             && decalPath.LastIndexOf('/') <= registeredPath.Length - 1) {
                             RegisterDecal(decalPath, info);
                             found = true;
@@ -268,8 +273,8 @@ namespace Celeste.Mod {
                 } else if (localDecals.Contains(registeredPath)) {
                     RegisterDecal(registeredPath, info);
                     found = true;
-                } 
-                
+                }
+
                 if (!found) {
                     Logger.Log(LogLevel.Warn, "Decal Registry", $"Could not find any decals in {decalRegistry.Source.Name} under path {decalRegistration.Key}");
                 }
@@ -299,8 +304,8 @@ namespace Celeste.Mod {
                         continue;
                     }
 
-                    DecalInfo info = new DecalInfo { 
-                        CustomProperties = new List<KeyValuePair<string, XmlAttributeCollection>>() 
+                    DecalInfo info = new DecalInfo {
+                        CustomProperties = new List<KeyValuePair<string, XmlAttributeCollection>>()
                     };
 
                     foreach (XmlNode node2 in decal.ChildNodes) {

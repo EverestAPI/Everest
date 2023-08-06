@@ -238,6 +238,10 @@ namespace Celeste {
             Add(staticMover);
         }
 
+        public void MakeAnimation(int[] frames) {
+            textures = frames.Select(i => textures[i]).ToList();
+        }
+
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
             Sprite sprite = (Sprite) (image = new Sprite(null, null));
             sprite.AddLoop("hidden", 0.1f, hiddenFrames.Select(i => textures[i]).ToArray());
