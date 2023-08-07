@@ -32,7 +32,6 @@ namespace Celeste.Mod.UI {
 
         private static List<ModUpdateHolder> updatableMods = null;
 
-
         private static bool ongoingUpdateCancelled = false;
 
         private static bool isFetchingDone = false;
@@ -186,6 +185,9 @@ namespace Celeste.Mod.UI {
             menu.Add(restartButton); // Notice: order flipped
             menu.Add(shutdownButton); // I thought it was more natural as restart was default
             restartMenuAdded = true;
+            if (updatableMods.Count == 0) { // nudge selection to the first possible if no mods are left
+                menu.FirstSelection();
+            }
         }
 
         private void checkForUpdates() {
@@ -309,6 +311,10 @@ namespace Celeste.Mod.UI {
 
                     // remove this mod from the updatable mods list (it won't be updated by the "update all mods" button)
                     updatableMods.Remove(modHolder);
+                    if (updatableMods.Count == 0 && updateAllButton != null) {
+                        updateAllButton.Disabled = true;
+                        updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL_DONE");
+                    }
                 } else {
                     // re-enable the button to allow the user to try again.
                     modHolder.button.Disabled = false;
