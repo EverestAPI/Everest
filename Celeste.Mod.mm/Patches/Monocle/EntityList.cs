@@ -140,14 +140,12 @@ namespace MonoMod {
 
             ILCursor cursor = new ILCursor(context);
             ILLabel label = cursor.DefineLabel();
-            cursor.Emit(OpCodes.Ldarg_1);
-            cursor.Emit(OpCodes.Ldnull);
-            cursor.Emit(OpCodes.Ceq);
-            cursor.Emit(OpCodes.Brfalse_S, label);
-            cursor.Emit(OpCodes.Ldstr, "entity");
-            cursor.Emit(OpCodes.Newobj, ctor_ArgumentNullException);
-            cursor.Emit(OpCodes.Throw);
-            cursor.MarkLabel(label);
+            cursor.Emit(OpCodes.Ldarg_1)
+                .Emit(OpCodes.Brtrue_S, label)
+                .Emit(OpCodes.Ldstr, "entity")
+                .Emit(OpCodes.Newobj, ctor_ArgumentNullException)
+                .Emit(OpCodes.Throw)
+                .MarkLabel(label);
         }
 
     }
