@@ -334,12 +334,12 @@ namespace MiniInstaller {
         private static bool CreateBackupSymlinksWithElevation() {
             switch (
                 MessageBox(0, """
-                An error occurred while linking the vanilla installation to the current one. 
-                On some versions of Windows, this requires elevation.
-                If denied, installation will continue, however saves will NOT be shared between vanilla and Everest.
+                The installer requires administrator privileges to link the vanilla installation to the modded one. 
+                This is required to share save data with the "restart into vanilla" feature.
+                If denied, installation will continue, but saves will NOT be shared between vanilla and Everest.
 
                 Proceed with administrator privileges?
-                """.Trim(), "Everest Installation Error", 0x00000003U | 0x00000030U | 0x00010000U) // MB_YESNOCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
+                """.Trim(), "Everest Installation Elevation Request", 0x00000003U | 0x00000030U | 0x00010000U) // MB_YESNOCANCEL | MB_ICONWARNING | MB_SETFOREGROUND
             ) {
                 case 2: // IDCANCEL
                     LogLine("User cancelled installation - rethrowing original error");
@@ -374,9 +374,9 @@ namespace MiniInstaller {
 
                     switch (
                         MessageBox(0, """
-                        Failed to link the vanilla installation to the current one with elevated privileges.
+                        Failed to link the vanilla installation to the modded one with elevated privileges.
                         This could be caused by declining the elevation request.
-                        Without elevation, installation will proceed normally, however saves will NOT be shared between vanilla and Everest.
+                        Without elevation, installation will proceed normally, but saves will NOT be shared between vanilla and Everest.
 
                         Would you like to retry?
                         """.Trim(), "Everest Installation Error", 0x00000006U | 0x00000010U | 0x00010000U) // MB_CANCELTRYCONTINUE | MB_ICONERROR | MB_SETFOREGROUND
