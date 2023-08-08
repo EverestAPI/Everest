@@ -248,7 +248,8 @@ namespace Celeste.Mod.UI {
                         modal.Visible = true;
                         textBox.StartTyping();
 
-                        if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption) {
+                        if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption 
+                            && modToggles.ContainsKey(currentOption.Label)) {
                             currentOption.UnselectedColor = TextMenu.HighlightColorA;
                         }
                     };
@@ -320,7 +321,7 @@ namespace Celeste.Mod.UI {
                     textBox.OnTextInputCharActions['\r'] = exitSearch;
 
 
-                    textBox.OnUpdate = () => {
+                    textBox.AfterInputUpdate = () => {
                         if (textBox.Typing) {
                             if (Input.MenuDown.Pressed) {
                                 searchNextMod(false)(textBox);

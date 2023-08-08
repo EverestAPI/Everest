@@ -1392,12 +1392,11 @@ namespace Celeste {
                         Audio.Play(SFX.ui_main_button_invalid);
                     }
                 }},
-                // enter
-                {'\n', (textBox) => textBox.StopTyping()},
-                {'\r', (textBox) => textBox.StopTyping()},
             };
 
             public bool Typing { get; private set; } = false;
+
+            public Action AfterInputUpdate;
 
             private Overworld overworld;
             private bool previousMountainAllowUserRotation;
@@ -1531,8 +1530,7 @@ namespace Celeste {
                 }
                 TextBoxConsumedInput = false;
 
-                OnUpdate?.Invoke();
-
+                AfterInputUpdate?.Invoke();
 
                 // ensure the player never enters free cam while typing, so to cover the case our Update() gets called first we consume the input
                 // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
@@ -1568,6 +1566,7 @@ namespace Celeste {
 
             public override void Update() {
                 base.Update();
+                item.OnUpdate?.Invoke();
                 item.Update();
             }
 
