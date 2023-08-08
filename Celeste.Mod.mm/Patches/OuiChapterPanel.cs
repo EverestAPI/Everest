@@ -33,6 +33,7 @@ namespace Celeste {
             public string ID;
             public MTexture Icon;
             public MTexture Bg;
+            public string CheckpointLevelName;
         }
 
         [MonoModReplace]
@@ -226,19 +227,23 @@ namespace Celeste {
 
         private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
         private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
-            // adjust the checkpoint index for checkpoints that were not unlocked.
-            List<string> unlockedCheckpoints = _GetCheckpoints(SaveData.Instance, Area)
-                .Select(c => c.Contains("|") ? c : $"{Area.GetSID()}|{c}").ToList();
-            List<string> allCheckpoints = getAllCheckpoints(Area);
+            // search for the actual checkpoint index, since checkpointIndex might not be correct if checkpoints are skipped.
+            AreaData areaData = AreaData.Areas[Area.ID];
+            ModeProperties mode = areaData.Mode[(int) Area.Mode];
+            if (mode.Checkpoints != null) {
+                for (int i = 0; i < mode.Checkpoints.Length; i++) {
+                    CheckpointData cp = mode.Checkpoints[i];
 
-            int skippedCheckpoints = 0;
-            for (int i = 0; i < checkpointIndex; i++) {
-                if (!unlockedCheckpoints.Contains(allCheckpoints[i])) {
-                    skippedCheckpoints++;
+                    if (option.CheckpointLevelName == cp.Level
+                        || option.CheckpointLevelName == $"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}") {
+
+                        checkpointIndex = i + 1;
+                        break;
+                    }
                 }
             }
 
-            orig_DrawCheckpoint(center, option, checkpointIndex + skippedCheckpoints);
+            orig_DrawCheckpoint(center, option, checkpointIndex);
         }
 
         private static List<string> getAllCheckpoints(AreaKey area) {
