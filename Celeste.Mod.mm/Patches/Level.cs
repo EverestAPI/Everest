@@ -595,10 +595,13 @@ namespace Celeste {
             }
         }
 
-        private void CheckForErrors() {
-            if (patch_LevelEnter.ErrorMessage != null) {
+        private bool CheckForErrors() {
+            bool errorPresent = patch_LevelEnter.ErrorMessage != null;
+            if (errorPresent) {
                 LevelEnter.Go(Session, false);
             }
+
+            return errorPresent;
         }
     }
 
@@ -798,6 +801,8 @@ namespace MonoMod {
 
             // Insert CheckForErrors() at the beginning so we can display an error screen if needed
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
+            // Insert an if statement that returns if we find an error at CheckForErrors
+            cursor.Emit(OpCodes.Brfalse, cursor.Next).Emit(OpCodes.Ret);
 
             // insert FixChaserStatesTimeStamp()
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);

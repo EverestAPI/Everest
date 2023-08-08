@@ -14,6 +14,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -32,6 +33,7 @@ namespace Celeste {
             public string ID;
             public MTexture Icon;
             public MTexture Bg;
+            public string CheckpointLevelName;
         }
 
         [MonoModReplace]
@@ -222,6 +224,37 @@ namespace Celeste {
         [PatchOuiChapterPanelOptionBg]
         [PatchOuiChapterPanelReset]
         private extern void Reset();
+
+        private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
+        private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
+            // search for the actual checkpoint index, since checkpointIndex might not be correct if checkpoints are skipped.
+            AreaData areaData = AreaData.Areas[Area.ID];
+            ModeProperties mode = areaData.Mode[(int) Area.Mode];
+            if (mode.Checkpoints != null) {
+                for (int i = 0; i < mode.Checkpoints.Length; i++) {
+                    CheckpointData cp = mode.Checkpoints[i];
+
+                    if (option.CheckpointLevelName == cp.Level
+                        || option.CheckpointLevelName == $"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}") {
+
+                        checkpointIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            orig_DrawCheckpoint(center, option, checkpointIndex);
+        }
+
+        private static List<string> getAllCheckpoints(AreaKey area) {
+            AreaData areaData = AreaData.Areas[area.ID];
+            ModeProperties mode = areaData.Mode[(int) area.Mode];
+            List<string> filteredList = new List<string>();
+            if (mode.Checkpoints != null)
+                foreach (CheckpointData cp in mode.Checkpoints)
+                    filteredList.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+            return filteredList;
+        }
 
         private string _ModAreaselectTexture(string textureName) {
             // First, check for area (chapter) specific textures.
