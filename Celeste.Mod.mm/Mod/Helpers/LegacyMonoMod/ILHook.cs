@@ -177,7 +177,8 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             actualHook?.Dispose();
             if (IsApplied) {
-                actualHook = new ILHook(Method, Manipulator, new DetourConfig(ID, Priority, Before, After));
+                // Before/After are swapped on reorg ._.
+                actualHook = new ILHook(Method, Manipulator, new DetourConfig(ID, Priority, After, Before));
                 GC.SuppressFinalize(actualHook);
             } else
                 actualHook = null;
