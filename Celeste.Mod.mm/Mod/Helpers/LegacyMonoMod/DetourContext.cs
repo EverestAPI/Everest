@@ -33,10 +33,13 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                         MonoModPolice.ReportMonoModCrime($"Conflicting wildcard '*' in both DetourContext '{LegacyDetourContext.ID}' Before/After");
                 }
 
-                if (prio != 0)
-                    Logger.Log("legacy-monomod", $"Discarding DetourContext '{LegacyDetourContext.ID}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
+                if (wcPrio != 0) {
+                    prio = wcPrio;
+                    if (prio != 0) {
+                        Logger.Log("legacy-monomod", $"Discarding DetourContext '{LegacyDetourContext.ID}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
+                    }
+                }
 
-                prio = wcPrio;
 
                 // Before / After are switched on reorg ._.
                 config = new DetourConfig(LegacyDetourContext.ID, prio, LegacyDetourContext.After, LegacyDetourContext.Before);
@@ -63,7 +66,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
                 // Find the most recently added valid context, remove invalid ones after it
                 int valCtxIdx = Contexts.FindLastIndex(ctx => ctx.IsValid);
-                Contexts.RemoveRange(valCtxIdx+1, Contexts.Count - (valCtxIdx+1));
+                Contexts.RemoveRange(valCtxIdx + 1, Contexts.Count - (valCtxIdx + 1));
                 return Last = ((valCtxIdx >= 0) ? Contexts[valCtxIdx] : null);
             }
         }
@@ -141,9 +144,9 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             contextScope = new ReorgContext(this).Use();
         }
 
-        public LegacyDetourContext(string id) : this(0, id) {}
-        public LegacyDetourContext(int priority) : this(priority, null) {}
-        public LegacyDetourContext() : this(0, null) {}
+        public LegacyDetourContext(string id) : this(0, id) { }
+        public LegacyDetourContext(int priority) : this(priority, null) { }
+        public LegacyDetourContext() : this(0, null) { }
 
         public void Dispose() {
             if (IsDisposed)

@@ -10,7 +10,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     //This exists for two reasons:
     // - to give all hooks an (empty) config to bypass some hook ordering jank
     // - to "fix" the MonoMod crime of double hooks
-    [ExternalGameDependencyPatchAttribute("MMHOOK_Celeste")]
+    [ExternalGameDependencyPatch("MMHOOK_Celeste")]
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.HookGen.HookEndpointManager")]
     public static class LegacyHookEndpointManager {
 
