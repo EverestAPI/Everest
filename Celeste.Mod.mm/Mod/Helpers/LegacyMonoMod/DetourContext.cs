@@ -12,6 +12,31 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourContext")]
     public sealed class LegacyDetourContext : IDisposable {
 
+        internal static DetourConfig GetLegacyDetourConfig(string id, int prio, IEnumerable<string> before, IEnumerable<string> after, bool legacyILHook) {
+            // Handle wildcard Before / After
+            int wcPrio = 0;
+
+            if (before.Contains("*"))
+                wcPrio = int.MinValue;
+
+            if (after.Contains("*")) {
+                if (wcPrio == 0)
+                    wcPrio = int.MaxValue;
+                else
+                    MonoModPolice.ReportMonoModCrime($"Conflicting wildcard '*' in both DetourConfig '{id}' Before/After");
+            }
+
+            if (wcPrio != 0) {
+                if (prio != 0)
+                    Logger.Log(LogLevel.Warn, "legacy-monomod", $"Discarding DetourConfig '{id}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
+
+                prio = wcPrio;
+            }
+
+            // Before / After are switched on reorg ._.
+            return new DetourConfig(id, prio, after, before);
+        }
+
         private sealed class ReorgContext : DetourContext {
 
             public readonly LegacyDetourContext LegacyDetourContext;
@@ -19,27 +44,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             public ReorgContext(LegacyDetourContext legacyDetourCtx) => LegacyDetourContext = legacyDetourCtx;
 
             protected override bool TryGetConfig(out DetourConfig config) {
-                // Handle wildcard Before / After
-                int prio = LegacyDetourContext.Priority;
-                int wcPrio = 0;
-
-                if (LegacyDetourContext.Before.Contains("*"))
-                    wcPrio = int.MinValue;
-
-                if (LegacyDetourContext.After.Contains("*")) {
-                    if (wcPrio == 0)
-                        wcPrio = int.MaxValue;
-                    else
-                        MonoModPolice.ReportMonoModCrime($"Conflicting wildcard '*' in both DetourContext '{LegacyDetourContext.ID}' Before/After");
-                }
-
-                if (prio != 0)
-                    Logger.Log("legacy-monomod", $"Discarding DetourContext '{LegacyDetourContext.ID}' priority {prio} in favor of Before/After wildcard emulation priority {wcPrio}");
-
-                prio = wcPrio;
-
-                // Before / After are switched on reorg ._.
-                config = new DetourConfig(LegacyDetourContext.ID, prio, LegacyDetourContext.After, LegacyDetourContext.Before);
+                config = GetLegacyDetourConfig(LegacyDetourContext.ID, LegacyDetourContext.Priority, LegacyDetourContext.Before, LegacyDetourContext.After, true);
                 return true;
             }
 

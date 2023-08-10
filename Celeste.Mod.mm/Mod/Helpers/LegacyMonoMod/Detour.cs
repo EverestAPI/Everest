@@ -242,8 +242,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             actualHook?.Dispose();
             if (IsApplied) {
-                // Before/After are swapped on reorg ._.
-                actualHook = new Hook(Method, (MethodInfo) Target, new DetourConfig(ID, Priority, After, Before));
+                actualHook = new Hook(Method, (MethodInfo) Target, LegacyDetourContext.GetLegacyDetourConfig(ID, Priority, Before, After, false));
                 GC.SuppressFinalize(actualHook);
 
                 // Update the trampoline detour
