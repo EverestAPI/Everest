@@ -15,6 +15,7 @@ namespace NETCoreifier {
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
         public bool SharedAssemblyResolver, SharedDependencies;
+        public bool PreventInlining = true;
         private ModuleDefinition _CoreifierModule;
 
         private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
@@ -91,7 +92,7 @@ namespace NETCoreifier {
 
             // The CoreCLR JIT is much more aggressive about inlining, so explicitly force it to not inline in some cases
             // The performance penalty isn't that bad, and it makes modding easier
-            if ((method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0 && method.Body is MethodBody body && !CanInlineLegacyCode(body))
+            if (PreventInlining && (method.ImplAttributes & MethodImplAttributes.AggressiveInlining) == 0 && method.Body is MethodBody body && !CanInlineLegacyCode(body))
                 method.ImplAttributes |= MethodImplAttributes.NoInlining;
 
             // Resolve uninstantiated generic typeref/def tokens inside of member methods by replacing them with generic type instances

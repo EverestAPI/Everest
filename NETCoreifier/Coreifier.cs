@@ -10,8 +10,8 @@ using CustomAttributeNamedArgument = Mono.Cecil.CustomAttributeNamedArgument;
 namespace NETCoreifier {
     public static class Coreifier {
 
-        public static void ConvertToNetCore(MonoModder modder, bool sharedDeps = false)
-            => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps);
+        public static void ConvertToNetCore(MonoModder modder, bool sharedDeps = false, bool preventInlining = true)
+            => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps, preventInlining);
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
             ModuleDefinition module = null;
@@ -38,7 +38,7 @@ namespace NETCoreifier {
             }
         }
 
-        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false) {
+        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false, bool preventInlining = true) {
             module.RuntimeVersion = System.Reflection.Assembly.GetExecutingAssembly().ImageRuntimeVersion;
 
             // Clear 32 bit flags
@@ -83,6 +83,7 @@ namespace NETCoreifier {
                     modder.MissingDependencyThrow = false;
 
                     modder.SharedDependencies = sharedDeps;
+                    modder.PreventInlining = preventInlining;
 
                     modder.MapDependencies();
                     modder.AutoPatch();

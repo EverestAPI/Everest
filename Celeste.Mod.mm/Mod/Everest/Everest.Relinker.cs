@@ -273,7 +273,7 @@ namespace Celeste.Mod {
                     modder.AutoPatch();
 
                     if (!meta.IsNetCoreOnlyMod)
-                        NETCoreifier.Coreifier.ConvertToNetCore(modder, sharedDeps: true);
+                        NETCoreifier.Coreifier.ConvertToNetCore(modder, sharedDeps: true, preventInlining: false);
 
                     // Write patched assembly and debug symbols back to disk (always as portable PDBs though)
                     // Fall back to a temporary output path if the given one is unavailable for some reason
