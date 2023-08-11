@@ -120,7 +120,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             _GlobalIndex = _GlobalIndexNext++;
 
             _Priority = config.Priority;
-            _ID = config.ID;
+            _ID = string.IsNullOrEmpty(config.ID) ? Manipulator.Method.GetID(simple: true) : config.ID;
             if (config.Before != null)
                 _Before.AddRange(config.Before);
             if (config.After != null)

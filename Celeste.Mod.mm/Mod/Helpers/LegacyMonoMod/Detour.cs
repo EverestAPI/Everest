@@ -138,7 +138,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             _GlobalIndex = _GlobalIndexNext++;
 
             _Priority = config.Priority;
-            _ID = config.ID;
+            _ID = string.IsNullOrEmpty(config.ID) ? Target.GetID(simple: true) : config.ID;
 
             if (config.Before != null)
                 _Before.AddRange(config.Before);
