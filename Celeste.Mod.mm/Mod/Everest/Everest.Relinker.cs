@@ -169,30 +169,7 @@ namespace Celeste.Mod {
                     } else
                         asm = cacheAsm;
 
-                    // Log the assembly load and dependencies
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {asm.FullName}");
-
-                    // Check that the assembly only references DLLs from the global or dependency contexts
-                    HashSet<string> validRefAsmNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                    validRefAsmNames.UnionWith(AssemblyLoadContext.Default.Assemblies.Select(asm => asm.GetName().Name));
-                    validRefAsmNames.UnionWith(meta.AssemblyContext.Assemblies.Select(asm => asm.GetName().Name));
-
-                    lock (Everest._Modules) {
-                        foreach (EverestModuleMetadata dep in meta.Dependencies)
-                            if (EverestModuleAssemblyContext._ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
-                                validRefAsmNames.UnionWith(alc.Assemblies.Select(asm => asm.GetName().Name));
-
-                        foreach (EverestModuleMetadata dep in meta.OptionalDependencies)
-                            if (EverestModuleAssemblyContext._ContextsByName.TryGetValue(dep.Name, out EverestModuleAssemblyContext alc))
-                                validRefAsmNames.UnionWith(alc.Assemblies.Select(asm => asm.GetName().Name));
-                    }
-
-                    foreach (AssemblyName asmRef in asm.GetReferencedAssemblies()) {
-                        if (!validRefAsmNames.Contains(asmRef.Name))
-                            Logger.Log(LogLevel.Warn, "relinker", $"Failed to resolve dependency {asm.GetName().Name}.dll -> {asmRef.Name}.dll for mod '{meta.Name}'! Ensure the referenced DLL is contained in either the base game, this mod, or a dependency mod");
-                    }
-
                     return asm;
                 }
             }
