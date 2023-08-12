@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -11,7 +12,7 @@ namespace NETCoreifier {
     public static class Coreifier {
 
         public static void ConvertToNetCore(MonoModder modder, bool sharedDeps = false, bool preventInlining = true)
-            => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps, preventInlining);
+            => ConvertToNetCore(modder.Module, modder.AssemblyResolver, sharedDeps, preventInlining, msg => modder.Log("[NETCoreifier] " + msg), msg => modder.LogVerbose("[NETCoreifier] " + msg));
 
         public static void ConvertToNetCore(string inputAsm, string outputAsm = null) {
             ModuleDefinition module = null;
@@ -38,7 +39,7 @@ namespace NETCoreifier {
             }
         }
 
-        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false, bool preventInlining = true) {
+        public static void ConvertToNetCore(ModuleDefinition module, IAssemblyResolver asmResolver = null, bool sharedDeps = false, bool preventInlining = true, Action<string> logCb = null, Action<string> logVerboseCb = null) {
             module.RuntimeVersion = System.Reflection.Assembly.GetExecutingAssembly().ImageRuntimeVersion;
 
             // Clear 32 bit flags
@@ -72,19 +73,20 @@ namespace NETCoreifier {
                 }
 
                 // Relink legacy framework code
-                using (NetFrameworkModder modder = new NetFrameworkModder()) {
-                    modder.Module = module;
+                using (NetFrameworkModder modder = new NetFrameworkModder() {
+                    Module = module,
 
-                    if (asmResolver != null) {
-                        modder.AssemblyResolver = asmResolver;
-                        modder.SharedAssemblyResolver = true;
-                    } else
-                        modder.SharedAssemblyResolver = false;
-                    modder.MissingDependencyThrow = false;
+                    MissingDependencyThrow = false,
+                    SharedDependencies = sharedDeps,
 
-                    modder.SharedDependencies = sharedDeps;
-                    modder.PreventInlining = preventInlining;
+                    AssemblyResolver = asmResolver,
+                    SharedAssemblyResolver = asmResolver != null,
 
+                    PreventInlining = preventInlining,
+
+                    LogCallback = logCb,
+                    LogVerboseCallback = logVerboseCb
+                }) {
                     modder.MapDependencies();
                     modder.AutoPatch();
                 }

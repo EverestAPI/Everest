@@ -14,11 +14,12 @@ namespace NETCoreifier {
 
         // Patching RNG doesn't seem to be required (yet), as .NET Framework and .NET Core share their RNG implementation
 
+        private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
+
+        public Action<string> LogCallback, LogVerboseCallback;
         public bool SharedAssemblyResolver, SharedDependencies;
         public bool PreventInlining = true;
         private ModuleDefinition _CoreifierModule;
-
-        private static readonly HashSet<string> _PrivateSystemLibs = new HashSet<string>() { "System.Private.CoreLib" };
 
         public override void Dispose() {
             // Don't dispose the main module
@@ -38,6 +39,12 @@ namespace NETCoreifier {
 
             base.Dispose();
         }
+
+        public override void Log(string text)
+            => LogCallback?.Invoke(text);
+
+        public override void LogVerbose(string text)
+            => LogVerboseCallback?.Invoke(text);
 
         public void AddReferenceIfMissing(AssemblyName asmName) {
             if (!Module.AssemblyReferences.Any(asmRef => asmRef.Name == asmName.Name)) {

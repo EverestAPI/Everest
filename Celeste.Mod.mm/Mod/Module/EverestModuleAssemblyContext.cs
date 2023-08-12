@@ -40,7 +40,7 @@ namespace Celeste.Mod {
 
         internal static readonly ReaderWriterLockSlim _AllContextsLock = new ReaderWriterLockSlim();
         internal static readonly LinkedList<EverestModuleAssemblyContext> _AllContexts = new LinkedList<EverestModuleAssemblyContext>();
-        private static readonly Dictionary<string, EverestModuleAssemblyContext> _ContextsByName = new Dictionary<string, EverestModuleAssemblyContext>();
+        internal static readonly Dictionary<string, EverestModuleAssemblyContext> _ContextsByName = new Dictionary<string, EverestModuleAssemblyContext>();
 
         private static readonly Dictionary<string, AssemblyDefinition> _GlobalAssemblyResolveCache = new Dictionary<string, AssemblyDefinition>();
 
@@ -283,7 +283,7 @@ namespace Celeste.Mod {
             // If that fails, try to load the assembly globally (from non-dependency mods / game assemblies)
             Assembly asm = LoadLocal(asmName) ?? LoadGlobal(asmName);
 
-            if (asm == null)
+            if (asm == null && (_ActiveLocalLoadContexts?.Count ?? 0) == 0)
                 Logger.Log(LogLevel.Warn, "modasmctx", $"Failed to load assembly '{asmName.FullName}' for module '{ModuleMeta.Name}'");
 
             _AssemblyLoadCache.TryAdd(asmName.Name, asm);
