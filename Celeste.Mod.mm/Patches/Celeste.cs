@@ -18,6 +18,8 @@ using MonoMod.Cil;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Reflection;
+using System.Runtime.Versioning;
+using System.ComponentModel;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -194,29 +196,30 @@ namespace Celeste {
             Everest.Shutdown();
         }
 
-        [MonoModIgnore]
-        private static extern void ParseFNAArgs(string[] args);
+        private static void ParseFNAArgs(string[] args) {
+            // FNA's main function already does this, but it doesn't work on Linux because the runtime doesn't call setenv :catassault:
 
-        [MonoModReplace]
-        [MonoModIfFlag("DontRelinkXNA")]
-        [MonoModPatch("ParseFNAArgs")]
-        private static void ParseFNAArgs_FNA(string[] args) {
-            // FNA's main function already does this
-        }
+            static void SetEnvVar(string name, string value) {
+                Environment.SetEnvironmentVariable(name, value);
 
-        [MonoModReplace]
-        [MonoModIfFlag("RelinkXNA")]
-        [MonoModPatch("ParseFNAArgs")]
-        private static void ParseFNAArgs_XNA(string[] args) {
-            Environment.SetEnvironmentVariable("FNA_AUDIO_DISABLE_SOUND", "1");
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    if (setenv(name, value, 1) != 0)
+                        throw new Win32Exception();
+            }
+
+            SetEnvVar("FNA_AUDIO_DISABLE_SOUND", "1");
             for (int i = 0; i < args.Length; i++) {
                 if (args[i] == "--graphics" && i < args.Length - 1) {
-                    Environment.SetEnvironmentVariable("FNA3D_FORCE_DRIVER", args[i + 1]);
+                    SetEnvVar("FNA3D_FORCE_DRIVER", args[i + 1]);
                     i++;
-                } else if (args[i] == "--disable-lateswaptear")
-                    Environment.SetEnvironmentVariable("FNA3D_DISABLE_LATESWAPTEAR", "1");
+                }
+                // No --disable-lateswaptear as that is now explicitly opt-in
             }
         }
+
+        [SupportedOSPlatform("linux")]
+        [DllImport("libc", CallingConvention=CallingConvention.Cdecl, SetLastError=true)]
+        private extern static int setenv(string name, string val, int overwrite);
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
             if (e.IsTerminating) {
