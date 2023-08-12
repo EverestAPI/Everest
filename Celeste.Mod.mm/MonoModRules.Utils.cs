@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using System.Linq;
 
 namespace MonoMod {
     static partial class MonoModRules {
@@ -90,6 +91,18 @@ namespace MonoMod {
 
         public static void SetupLegacyMonoModRelinking(MonoModder modder) {
             modder.Log($"[Celeste.Mod.mm] Relinking legacy MonoMod to glue code layer");
+
+            // Ensure the module has a reference to Celeste.dll
+            if (!(modder.Module.AssemblyReferences.FirstOrDefault(asmRef => asmRef.Name.Equals(CelesteAsmRef.Name)) is AssemblyNameReference celesteRef)) {
+                modder.Module.AssemblyReferences.Add(celesteRef = CelesteAsmRef);
+                modder.MapDependency(modder.Module, CelesteAsmRef);
+            }
+
+            // Add a RelinkedMonoModLegacyAttribute to the assembly
+            MethodReference attrCtor = RulesModule.GetType("Celeste.Mod.Helpers.LegacyMonoMod.RelinkedMonoModLegacyAttribute").Methods.First(m => m.IsConstructor);
+            attrCtor = modder.Module.ImportReference(attrCtor);
+            attrCtor.DeclaringType.Scope = celesteRef; // The scope of the reference is wrong by default (it references Celeste.Mod.mm.dll instead of just Celeste.dll)
+            modder.Module.Assembly.CustomAttributes.Add(new CustomAttribute(attrCtor));
 
             // Replace assembly references which changed
             ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"));

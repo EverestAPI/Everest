@@ -7,6 +7,9 @@ using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public sealed class RelinkedMonoModLegacyAttribute : Attribute {}
+
     internal static class LegacyMonoModCompatLayer {
         public static void Initialize() {
             LegacyDynamicDataCompatHooks.InstallHook();
