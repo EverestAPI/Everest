@@ -220,7 +220,7 @@ namespace Celeste.Mod {
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
-                    
+
                     // Load the assembly and the module definition
                     ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
                     try {
@@ -235,7 +235,7 @@ namespace Celeste.Mod {
 
                         return asm;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname}");
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly {meta} - {asmname}");
                         e.LogDetailed();
                         return null;
                     } finally {
