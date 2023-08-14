@@ -158,6 +158,7 @@ namespace Celeste.Mod {
                 enforceOptionalDependencies = true;
 
                 string[] files = Directory.GetFiles(PathMods);
+                Array.Sort(files); //Prevent inode loading jank
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
                     if (!file.EndsWith(".zip") || !ShouldLoadFile(file))
@@ -166,6 +167,7 @@ namespace Celeste.Mod {
                 }
 
                 files = Directory.GetDirectories(PathMods);
+                Array.Sort(files); //Prevent inode loading jank
                 for (int i = 0; i < files.Length; i++) {
                     string file = Path.GetFileName(files[i]);
                     if (file == "Cache" || !ShouldLoadFile(file))
