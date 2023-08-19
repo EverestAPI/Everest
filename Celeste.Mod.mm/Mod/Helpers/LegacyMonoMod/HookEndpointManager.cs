@@ -1,7 +1,10 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
+using System.Runtime.Loader;
 using MonoMod;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
@@ -14,14 +17,21 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.HookGen.HookEndpointManager")]
     public static class LegacyHookEndpointManager {
 
-        private static readonly DetourConfig EmptyConfig = new DetourConfig("MMHOOK_HOOK", 0);
-
         private static ConcurrentDictionary<(MethodBase, Delegate), Hook> Hooks = new ConcurrentDictionary<(MethodBase, Delegate), Hook>();
         private static ConcurrentDictionary<(MethodBase, Delegate), ILHook> ILHooks = new ConcurrentDictionary<(MethodBase, Delegate), ILHook>();
 
+        private static bool IsLegacyMMCaller() {
+            foreach (StackFrame frame in new StackTrace().GetFrames())
+                if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext)
+                    // Check if the mod was relinked from legacy MonoMod
+                    return asm.CustomAttributes.Any(attr => attr.AttributeType == typeof(RelinkedMonoModLegacyAttribute));
+                    
+            return false;
+        }
+
         public static void Add<T>(MethodBase method, Delegate hookDelegate) where T : Delegate => Add(method, hookDelegate);
         public static void Add(MethodBase method, Delegate hookDelegate) {
-            Hook hook = new Hook(method, hookDelegate, DetourContext.CurrentConfig ?? EmptyConfig);
+            Hook hook = new Hook(method, hookDelegate, LegacyDetourContext.GetCurrentDetourConfig(false, IsLegacyMMCaller()));
             if (Hooks.TryAdd((method, hookDelegate), hook))
                 return;
             hook.Dispose();
@@ -39,7 +49,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         public static void Modify<T>(MethodBase method, Delegate callback) where T : Delegate => Modify(method, callback);
         public static void Modify(MethodBase method, Delegate callback) {
-            ILHook hook = new ILHook(method, (ILContext.Manipulator) callback, DetourContext.CurrentConfig ?? EmptyConfig);
+            ILHook hook = new ILHook(method, (ILContext.Manipulator) callback, LegacyDetourContext.GetCurrentDetourConfig(true, IsLegacyMMCaller()));
             if (ILHooks.TryAdd((method, callback), hook))
                 return;
 

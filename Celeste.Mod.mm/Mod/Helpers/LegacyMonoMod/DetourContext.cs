@@ -12,7 +12,21 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourContext")]
     public sealed class LegacyDetourContext : IDisposable {
 
-        internal static DetourConfig GetLegacyDetourConfig(string id, int prio, IEnumerable<string> before, IEnumerable<string> after, bool legacyILHook) {
+        public static DetourConfig GetCurrentDetourConfig(bool forILHook, bool legacyDefault) {
+            if (DetourContext.Current is LegacyDetourContext.ReorgContext legacyCtx)
+                // Match legacy detour config behavior
+                return legacyCtx.GetLegacyDetourConfig(forILHook ? LegacyILHook.AcquireGlobalIndex() : LegacyDetour.AcquireGlobalIndex(), forILHook);
+            else if (DetourContext.CurrentConfig is DetourConfig reorgConfig)
+                return reorgConfig;
+            else if (!legacyDefault)
+                return null;
+
+            // Create a new empty legacy detour config
+            uint globalIdx = forILHook ? LegacyILHook.AcquireGlobalIndex() : LegacyDetour.AcquireGlobalIndex();
+            return CreateLegacyDetourConfig($"UNKNOWN_{(forILHook ? "ILHOOK" : "DETOUR")}${globalIdx}", 0, Enumerable.Empty<string>(), Enumerable.Empty<string>(), globalIdx, forILHook);
+        }
+
+        internal static DetourConfig CreateLegacyDetourConfig(string id, int prio, IEnumerable<string> before, IEnumerable<string> after, uint globalIdx, bool flipOrder = false) {
             // Handle wildcard Before / After
             int wcPrio = 0;
 
@@ -33,8 +47,15 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 prio = wcPrio;
             }
 
+            // Flip priorities in case the hook order should be flipped (e.g. to emulate legacy ILHooks)
+            if (flipOrder) {
+                prio = unchecked(int.MaxValue - (prio - int.MinValue));
+                globalIdx = uint.MaxValue - globalIdx;
+                (before, after) = (after, before);
+            }
+
             // Before / After are switched on reorg ._.
-            return new DetourConfig(id, prio, after, before);
+            return new DetourConfig(id, prio, after, before, unchecked(int.MinValue + (int) globalIdx));
         }
 
         private sealed class ReorgContext : DetourContext {
@@ -43,8 +64,11 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             public ReorgContext(LegacyDetourContext legacyDetourCtx) => LegacyDetourContext = legacyDetourCtx;
 
+            public DetourConfig GetLegacyDetourConfig(uint globalIdx, bool flipOrder)
+                => LegacyDetourContext.CreateLegacyDetourConfig(LegacyDetourContext.ID, LegacyDetourContext.Priority, LegacyDetourContext.Before, LegacyDetourContext.After, globalIdx, flipOrder);
+
             protected override bool TryGetConfig(out DetourConfig config) {
-                config = GetLegacyDetourConfig(LegacyDetourContext.ID, LegacyDetourContext.Priority, LegacyDetourContext.Before, LegacyDetourContext.After, true);
+                config = GetLegacyDetourConfig(0, false);
                 return true;
             }
 

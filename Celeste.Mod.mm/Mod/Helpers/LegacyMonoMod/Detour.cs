@@ -10,6 +10,7 @@ using MonoMod.RuntimeDetour;
 using MonoMod.Core.Platforms;
 using System.Linq;
 using MonoMod.Core;
+using System.Threading;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.DetourConfig")]
@@ -22,7 +23,9 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.Detour")]
     public class LegacyDetour : ILegacySortableDetour {
+
         private static uint _GlobalIndexNext = uint.MinValue;
+        internal static uint AcquireGlobalIndex() => Interlocked.Increment(ref _GlobalIndexNext)-1;
 
         public static Func<LegacyDetour, MethodBase, MethodBase, bool> OnDetour;
         public static Func<LegacyDetour, bool> OnUndo;
@@ -135,8 +138,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             Target = to;
             TargetReal = PlatformTriple.Current.GetRealDetourTarget(from, to);
 
-            _GlobalIndex = _GlobalIndexNext++;
-
+            _GlobalIndex = AcquireGlobalIndex();
             _Priority = config.Priority;
             _ID = string.IsNullOrEmpty(config.ID) ? Target.GetID(simple: true) : config.ID;
 
@@ -242,7 +244,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             actualHook?.Dispose();
             if (IsApplied) {
-                actualHook = new Hook(Method, (MethodInfo) Target, LegacyDetourContext.GetLegacyDetourConfig(ID, Priority, Before, After, false));
+                actualHook = new Hook(Method, (MethodInfo) Target, LegacyDetourContext.CreateLegacyDetourConfig(ID, Priority, Before, After, GlobalIndex));
                 GC.SuppressFinalize(actualHook);
 
                 // Update the trampoline detour

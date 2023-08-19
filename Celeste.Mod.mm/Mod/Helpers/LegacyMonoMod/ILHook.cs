@@ -8,6 +8,7 @@ using System.Globalization;
 using MonoMod;
 using MonoMod.RuntimeDetour;
 using System.Linq;
+using System.Threading;
 
 namespace Celeste.Mod.Helpers.LegacyMonoMod {
     [RelinkLegacyMonoMod("MonoMod.RuntimeDetour.ILHookConfig")]
@@ -27,7 +28,9 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         // Still here in case a mod tries to access it using reflection
         private static LegacyILHookConfig ILDetourConfig = new LegacyILHookConfig() { Priority = int.MinValue / 8, Before = new string[] { "*" } };
+
         private static uint _GlobalIndexNext = uint.MinValue;
+        internal static uint AcquireGlobalIndex() => Interlocked.Increment(ref _GlobalIndexNext)-1;
 
         private ILHook actualHook;
 
@@ -117,8 +120,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             Method = from;
             Manipulator = manipulator;
 
-            _GlobalIndex = _GlobalIndexNext++;
-
+            _GlobalIndex = AcquireGlobalIndex();
             _Priority = config.Priority;
             _ID = string.IsNullOrEmpty(config.ID) ? Manipulator.Method.GetID(simple: true) : config.ID;
             if (config.Before != null)
@@ -177,7 +179,7 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
             actualHook?.Dispose();
             if (IsApplied) {
-                actualHook = new ILHook(Method, Manipulator, LegacyDetourContext.GetLegacyDetourConfig(ID, Priority, Before, After, true));
+                actualHook = new ILHook(Method, Manipulator, LegacyDetourContext.CreateLegacyDetourConfig(ID, Priority, Before, After, GlobalIndex, true));
                 GC.SuppressFinalize(actualHook);
             } else
                 actualHook = null;
