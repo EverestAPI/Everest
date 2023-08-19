@@ -1,4 +1,4 @@
-[submodule "external/MonoMod/"]
+[submodule "external/MonoMod"]
 	path = external/MonoMod
 	url = https://github.com/Popax21/MonoMod
 	branch = reorganize
