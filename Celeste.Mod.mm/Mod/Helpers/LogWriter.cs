@@ -61,21 +61,25 @@ namespace Celeste.Mod.Helpers {
         public override void Write(string value) {
             Stream.Write(value);
             Writer.File.Write(value);
+            Writer.File.Flush();
         }
 
         public override void WriteLine(string value) {
             Stream.WriteLine(value);
             Writer.File.WriteLine(value);
+            Writer.File.Flush();
         }
 
         public override void Write(char value) {
             Stream.Write(value);
             Writer.File.Write(value);
+            Writer.File.Flush();
         }
 
         public override void Write(char[] buffer, int index, int count) {
             Stream.Write(buffer, index, count);
             Writer.File.Write(buffer, index, count);
+            Writer.File.Flush();
         }
 
         public override void Flush() {
