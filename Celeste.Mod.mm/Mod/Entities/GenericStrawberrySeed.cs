@@ -197,7 +197,7 @@ namespace Celeste.Mod.Entities {
 
         public void OnAllCollected() {
             finished = true;
-            follower.Leader.LoseFollower(follower);
+            follower.Leader?.LoseFollower(follower);
             Depth = -2000002;
             Tag = Tags.FrozenUpdate;
             wiggler.Start();
