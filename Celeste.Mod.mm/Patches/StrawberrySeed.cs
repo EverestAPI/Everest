@@ -80,7 +80,6 @@ namespace MonoMod {
             cursor.MarkLabel(beforeLoseFollower);
             
             cursor.GotoNext(MoveType.After, inst => inst.MatchCallvirt("Celeste.Leader", "LoseFollower"));
-            cursor.GotoNext();
             cursor.MarkLabel(afterLoseFollower);
         }
 
