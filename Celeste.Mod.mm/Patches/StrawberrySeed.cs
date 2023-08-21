@@ -30,7 +30,7 @@ namespace Celeste {
 
         [MonoModIgnore]
         [PatchPatchStrawberrySeedOnAllCollected]
-        private extern new void OnAllCollected();
+        public new extern void OnAllCollected();
 
         private void OnPlayer(Player player) {
             orig_OnPlayer(player);
