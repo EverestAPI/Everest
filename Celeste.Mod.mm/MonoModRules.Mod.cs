@@ -30,8 +30,8 @@ namespace MonoMod {
                 }
             }
 
-            // If this is legacy MonoMod, relink against modern MonoMod
-            if (isMonoMod && isLegacyMonoMod) {
+            // If this is legacy MonoMod or a mod that only uses MMHOOK_Celeste, relink against modern MonoMod
+            if (!isMonoMod || isLegacyMonoMod) {
                 SetupLegacyMonoModRelinking(modder);
             } else
                 isLegacyMonoMod = false;
