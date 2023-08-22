@@ -8,7 +8,7 @@ namespace MonoMod {
     /// </summary>
     [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
     public class RelinkLegacyMonoMod : Attribute {
-        public RelinkLegacyMonoMod(string linkFromName) {}
+        public RelinkLegacyMonoMod(string linkFromName) { }
     }
 
     static partial class MonoModRules {
@@ -19,19 +19,15 @@ namespace MonoMod {
             RelinkAgainstFNA(modder);
 
             // Determine if the mod uses (legacy) MonoMod
-            bool isMonoMod = false, isLegacyMonoMod = true;
+            bool isLegacyMonoMod = true;
             foreach (AssemblyNameReference name in modder.Module.AssemblyReferences) {
-                if (name.Name.StartsWith("MonoMod.")) {
-                    isMonoMod = true;
-
-                    // MonoMod version numbers are actually date codes - safe to say no legacy build will come out post 2023
-                    if (name.Version.Major >= 23)
-                        isLegacyMonoMod = false;
+                if (name.Name.StartsWith("MonoMod.") && name.Version.Major >= 23) {
+                    isLegacyMonoMod = false;
                 }
             }
 
             // If this is legacy MonoMod or a mod that only uses MMHOOK_Celeste, relink against modern MonoMod
-            if (!isMonoMod || isLegacyMonoMod) {
+            if (isLegacyMonoMod) {
                 SetupLegacyMonoModRelinking(modder);
             } else
                 isLegacyMonoMod = false;
