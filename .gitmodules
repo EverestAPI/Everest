@@ -1,6 +1,6 @@
 [submodule "external/MonoMod"]
 	path = external/MonoMod
-	url = https://github.com/Popax21/MonoMod
+	url = https://github.com/MonoMod/MonoMod
 	branch = reorganize
 [submodule "external/NLua"]
 	path = external/NLua
