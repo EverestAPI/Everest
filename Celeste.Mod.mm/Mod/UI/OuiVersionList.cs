@@ -46,7 +46,7 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.Source currentSource = null;
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                if ((source.Entries?.Count ?? 0) <= 0)
+                if ((source.Entries?.Count ?? 0) <= 0 && string.IsNullOrWhiteSpace(source.ErrorDialog))
                     continue;
 
                 currentBranch.Add(source.Name.DialogCleanOrNull() ?? source.Name, source, source.Name == CoreModule.Settings.CurrentBranch);
@@ -55,7 +55,10 @@ namespace Celeste.Mod.UI {
             }
             currentBranch.Change(ReloadItems);
 
-            ReloadItems(currentSource ?? currentBranch.Values[0].Item2);
+            if (currentSource != null)
+                ReloadItems(currentSource);
+            else if (currentBranch.Values.Count > 0)
+                ReloadItems(currentBranch.Values[0].Item2);
 
             return menu;
         }
