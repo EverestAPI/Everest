@@ -187,6 +187,7 @@
 	EVERESTUPDATER_NOTSUPPORTED=	Updating not supported on this platform - cancelling.
 	EVERESTUPDATER_NOUPDATE=		No update - cancelling.
 	EVERESTUPDATER_CREATINGLEGACYREF=	Creating base legacyRef install
+	EVERESTUPDATER_NOTAVAILABLE=	Required Everest build not available!
 	EVERESTUPDATER_UPDATING=		Updating to {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Downloading
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Downloading:

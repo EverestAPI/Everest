@@ -162,6 +162,7 @@
 	EVERESTUPDATER_NOTSUPPORTED=	Updates werden auf dieser Plattform nicht unterstützt - Abbruch.
 	EVERESTUPDATER_NOUPDATE=		Kein Update - Abbruch.
 	EVERESTUPDATER_CREATINGLEGACYREF=	Erstelle legacyRef Basisinstallation
+	EVERESTUPDATER_NOTAVAILABLE=	Benötigter Everest-Build nicht verfügbar!
 	EVERESTUPDATER_UPDATING=		Update auf {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Download
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Download:

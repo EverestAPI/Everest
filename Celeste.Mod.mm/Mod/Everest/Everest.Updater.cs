@@ -397,7 +397,25 @@ namespace Celeste.Mod {
                     // Find the latest non-core stable Everest version
                     Source stableSrc = Sources.First(src => src.Name.Contains("stable"));
                     stableSrc = await stableSrc.Request();
-                    Entry latestNonCoreStable = stableSrc.Entries.First(entr => !entr.IsNativeBuild ?? false);
+
+                    if(!string.IsNullOrEmpty(stableSrc.ErrorDialog)) {
+                        progress.LogLine(stableSrc.ErrorDialog.DialogClean());
+                        progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
+                        progress.WaitForConfirmOnFinish = true;
+                        return;
+                    }
+
+                    Entry latestNonCoreStable = stableSrc.Entries.FirstOrDefault(entr => !entr.IsNativeBuild ?? false);
+                    if(latestNonCoreStable == null) {
+                        progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTAVAILABLE"));
+                        progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
+                        progress.Progress = 0;
+                        progress.ProgressMax = 1;
+                        progress.WaitForConfirmOnFinish = true;
+                        return;
+                    }
 
                     // Install Everest onto the legacyRef install
                     Process installerProc = DoUpdate(progress, latestNonCoreStable, legacyRefInstall, false);
