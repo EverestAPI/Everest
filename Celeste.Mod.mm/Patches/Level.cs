@@ -69,6 +69,10 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
+        [MonoModIgnore]
+        [PatchLevelEnforceBounds]
+        public extern new void EnforceBounds(Player player);
+
         [MonoModReplace]
         public new void RegisterAreaComplete() {
             bool completed = Completed;
@@ -510,6 +514,15 @@ namespace Celeste {
 
             return errorPresent;
         }
+
+        private static void BlockUpTransitionsWithoutHoldable(TheoCrystal entity, Player player, Rectangle bounds) {
+            // we want to emulate the base game behavior of letting the player transition with any holdable item and not just TheoCrystal
+            // So we wont check what the player is holding.
+            if (entity != null && player.Top < (bounds.Top + 1) && (!player.Holding?.IsHeld ?? true)) {
+                player.Top = bounds.Top + 1;
+                player.OnBoundsV();
+            }
+        }
     }
 
     public static class LevelExt {
@@ -563,6 +576,9 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelCanPause))]
     class PatchLevelCanPauseAttribute : Attribute { }
+
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelEnforceBounds))]
+    class PatchLevelEnforceBoundsAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -781,5 +797,22 @@ namespace MonoMod {
             c.Emit(OpCodes.Ldc_I4_0);
         }
 
+
+        public static void PatchLevelEnforceBounds(MethodDefinition method, CustomAttribute attrib) {
+
+            MethodDefinition m_BlockUpTransitionsWithoutHoldable = method.DeclaringType.FindMethod("BlockUpTransitionsWithoutHoldable");
+
+            new ILContext(method).Invoke(il => {
+                ILCursor curser = new(il);
+
+                curser.GotoNext(MoveType.After, 
+                    instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
+                    instr => instr.MatchStloc(2));
+                curser.Emit(OpCodes.Ldloc_2);
+                curser.Emit(OpCodes.Ldarg_1);
+                curser.Emit(OpCodes.Ldloc_0);
+                curser.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
+            });
+        }
     }
 }

@@ -220,6 +220,21 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerStarFlyReturnToNormalHitbox]
         private extern void StarFlyReturnToNormalHitbox();
+
+
+        public extern bool orig_get_CanUnDuck();
+
+        public bool get_CanUnDuck() {
+            bool origValue = orig_get_CanUnDuck();
+            bool theoBlockingUpTransition = false;
+
+            if (origValue && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
+                Collider normalHitbox = (Collider) new DynamicData(this).Get("normalHitbox");
+                theoBlockingUpTransition = normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
+            }
+
+            return origValue && !theoBlockingUpTransition;
+        }
     }
     public static class PlayerExt {
 
@@ -281,7 +296,7 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
     class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
-    
+
     /// <summary>
     /// Patches the method to fix puffer boosts breaking on respawn.
     /// </summary>
