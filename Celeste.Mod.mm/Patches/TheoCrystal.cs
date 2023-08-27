@@ -34,9 +34,9 @@ namespace Celeste {
             bool isPlayerHoldingItem = false;
             bool isUpTransition = false;
 
-            if (new DynamicData(theoCrystal).Get<Level>("Level") is { } level && level.Tracker.GetEntity<Player>() is { } player) {
+            if (new DynamicData(theoCrystal).Get<Level>("Level") is patch_Level level && level.Tracker.GetEntity<Player>() is Player player) {
                 isPlayerHoldingItem = player.Holding?.IsHeld ?? false;
-                isUpTransition = level.Transitioning && player.CenterY < level.Bounds.Top;
+                isUpTransition = level.Transitioning && level.TransitionDirection == -Vector2.UnitY;
             }
 
             return isPlayerHoldingItem && isUpTransition;

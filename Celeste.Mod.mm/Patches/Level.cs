@@ -36,6 +36,8 @@ namespace Celeste {
         public static int SkipScreenWipes;
         public static bool ShouldAutoPause = false;
 
+        public Vector2 TransitionDirection { get; private set; } = new();
+
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
 
@@ -148,6 +150,7 @@ namespace Celeste {
 
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
         public new void TransitionTo(LevelData next, Vector2 direction) {
+            TransitionDirection = direction;
             orig_TransitionTo(next, direction);
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
@@ -197,6 +200,7 @@ namespace Celeste {
 
                 yield return orig.Current;
             }
+            TransitionDirection = new();
         }
 
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
