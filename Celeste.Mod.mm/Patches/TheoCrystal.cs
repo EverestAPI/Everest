@@ -27,21 +27,28 @@ namespace Celeste {
         }
 
         [MonoModIgnore]
-        [PatchTheoCrystalUpdateAttribute]
+        [PatchTheoCrystalUpdate]
         public extern new void Update();
 
         private static bool IsPlayerHoldingItemAndTransitioningUp(TheoCrystal theoCrystal) {
+            bool isPlayerHoldingItem = false;
+            bool isUpTransition = false;
+
             if (new DynamicData(theoCrystal).Get<Level>("Level") is { } level && level.Tracker.GetEntity<Player>() is { } player) {
-                return player.Holding?.IsHeld ?? false && level.Transitioning && player.CenterY < level.Bounds.Top;
-            } else {
-                return false;
+                isPlayerHoldingItem = player.Holding?.IsHeld ?? false;
+                isUpTransition = level.Transitioning && player.CenterY < level.Bounds.Top;
             }
+
+            return isPlayerHoldingItem && isUpTransition;
         }
     }
 }
 
 namespace MonoMod {
 
+    /// <summary>
+    /// A patch for the Update method that keeps the player alive on up transition and item held
+    /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTheoCrystalUpdate))]
     class PatchTheoCrystalUpdateAttribute : Attribute { }
 

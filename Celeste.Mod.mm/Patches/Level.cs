@@ -69,8 +69,8 @@ namespace Celeste {
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
 
-        [MonoModIgnore]
-        [PatchLevelEnforceBounds]
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [PatchLevelEnforceBounds] // ... except for manually manipulating the method via MonoModRules
         public extern new void EnforceBounds(Player player);
 
         [MonoModReplace]
@@ -516,8 +516,7 @@ namespace Celeste {
         }
 
         private static void BlockUpTransitionsWithoutHoldable(TheoCrystal entity, Player player, Rectangle bounds) {
-            // we want to emulate the base game behavior of letting the player transition with any holdable item and not just TheoCrystal
-            // So we wont check what the player is holding.
+            // we stay consistent with base game, so we let the player transition with any holdable item and not just TheoCrystal
             if (entity != null && player.Top < (bounds.Top + 1) && (!player.Holding?.IsHeld ?? true)) {
                 player.Top = bounds.Top + 1;
                 player.OnBoundsV();
@@ -577,6 +576,9 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelCanPause))]
     class PatchLevelCanPauseAttribute : Attribute { }
 
+    /// <summary>
+    /// A patch for the EnforceBounds method that checks if the player can transition up with Theo in the room.
+    /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelEnforceBounds))]
     class PatchLevelEnforceBoundsAttribute : Attribute { }
 
@@ -805,7 +807,7 @@ namespace MonoMod {
             new ILContext(method).Invoke(il => {
                 ILCursor curser = new(il);
 
-                curser.GotoNext(MoveType.After, 
+                curser.GotoNext(MoveType.After,
                     instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
                     instr => instr.MatchStloc(2));
                 curser.Emit(OpCodes.Ldloc_2);

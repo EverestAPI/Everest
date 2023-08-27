@@ -225,15 +225,15 @@ namespace Celeste {
         public extern bool orig_get_CanUnDuck();
 
         public bool get_CanUnDuck() {
-            bool origValue = orig_get_CanUnDuck();
+            bool origCanUnDuck = orig_get_CanUnDuck();
             bool theoBlockingUpTransition = false;
 
-            if (origValue && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
-                Collider normalHitbox = (Collider) new DynamicData(this).Get("normalHitbox");
+            if (origCanUnDuck && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
+                Collider normalHitbox = new DynamicData(this).Get<Collider>("normalHitbox");
                 theoBlockingUpTransition = normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
             }
 
-            return origValue && !theoBlockingUpTransition;
+            return origCanUnDuck && !theoBlockingUpTransition;
         }
     }
     public static class PlayerExt {
