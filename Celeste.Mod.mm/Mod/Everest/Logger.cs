@@ -92,12 +92,50 @@ namespace Celeste.Mod {
         // TODO: Allow displaying mod log in future ImGui UI
 
         /// <summary>
+        /// Log a string to the console and to log.txt, using LogLevel.Verbose
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Verbose(string tag, string str)
+            => Log(LogLevel.Verbose, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using LogLevel.Debug
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Debug(string tag, string str)
+            => Log(LogLevel.Debug, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using LogLevel.Info
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Info(string tag, string str)
+            => Log(LogLevel.Info, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using LogLevel.Warn
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Warn(string tag, string str)
+            => Log(LogLevel.Warn, tag, str);
+        /// <summary>
+        /// Log a string to the console and to log.txt, using LogLevel.Error
+        /// </summary>
+        /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
+        /// <param name="str">The string / message to log.</param>
+        public static void Error(string tag, string str)
+            => Log(LogLevel.Error, tag, str);
+
+        /// <summary>
         /// Log a string to the console and to log.txt
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
+        [Obsolete("Use Logger.Verbose instead")]
         public static void Log(string tag, string str)
             => Log(LogLevel.Verbose, tag, str);
+
         /// <summary>
         /// Log a string to the console and to log.txt
         /// </summary>
