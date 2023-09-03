@@ -504,6 +504,7 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
             // ...and replace the draw call to accept it
             cursor.Emit(OpCodes.Callvirt, m_Draw_new);
+            cursor.Remove();
 
             // go back to the start
             cursor.Index = 0;
