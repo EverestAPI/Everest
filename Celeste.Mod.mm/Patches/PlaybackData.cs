@@ -81,7 +81,7 @@ namespace Celeste {
                 try {
                     return ImportVerbose(buffer);
                 } catch (Exception e) {
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     return null;
                 }
             }

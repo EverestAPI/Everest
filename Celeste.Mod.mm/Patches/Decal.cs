@@ -299,7 +299,7 @@ namespace Celeste {
                         } catch (Exception e) {
                             patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_decalregerror").Replace("((property))", property.Key).Replace("((decal))", text);
                             Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
-                            e.LogDetailed();
+                            Logger.LogDetailed(e);
                         }
 
                     } else {

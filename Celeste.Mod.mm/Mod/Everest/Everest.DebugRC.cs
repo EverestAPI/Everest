@@ -43,7 +43,7 @@ namespace Celeste.Mod {
                     Listener.Prefixes.Add($"http://localhost:{CoreModule.Settings.DebugRCPort}/");
                     Listener.Start();
                 } catch (Exception e) {
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     try {
                         Listener?.Stop();
                     } catch { }

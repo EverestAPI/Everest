@@ -162,7 +162,7 @@ namespace Celeste.Mod {
                         string sid = level.Session?.Area.GetSID() ?? "NULL";
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
                         Logger.Log(LogLevel.Warn, "reload", $"Failed reloading map {sid}");
-                        e.LogDetailed();
+                        Logger.LogDetailed(e);
 
                         if (patch_Level.NextLoadedPlayer != null) {
                             patch_Level.NextLoadedPlayer = null;

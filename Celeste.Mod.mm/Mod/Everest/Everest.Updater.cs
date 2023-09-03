@@ -383,7 +383,7 @@ namespace Celeste.Mod {
                     });
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFAILED"));
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
@@ -430,7 +430,7 @@ namespace Celeste.Mod {
                     }
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFAILED"));
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
@@ -569,7 +569,7 @@ namespace Celeste.Mod {
                     return true;
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;

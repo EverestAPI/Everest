@@ -191,7 +191,7 @@ namespace Celeste.Mod {
                     AutoLoadNewMods = true;
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {PathMods}");
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     Watcher?.Dispose();
                     Watcher = null;
                 }
@@ -521,7 +521,7 @@ namespace Celeste.Mod {
                         watcher.EnableRaisingEvents = true;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
-                        e.LogDetailed();
+                        Logger.LogDetailed(e);
                         meta.DevWatcher?.Dispose();
                         meta.DevWatcher = null;
                     }
@@ -539,7 +539,7 @@ namespace Celeste.Mod {
                     types = asm.GetTypesSafe();
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     return;
                 }
 

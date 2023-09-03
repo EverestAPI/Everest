@@ -248,7 +248,7 @@ https://discord.gg/6qjaePQ");
             try {
                 Everest.Boot();
             } catch (Exception e) {
-                e.LogDetailed();
+                Logger.LogDetailed(e);
                 /*
                 ErrorLog.Write(e);
                 ErrorLog.Open();

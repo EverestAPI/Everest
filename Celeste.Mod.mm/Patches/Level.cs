@@ -226,7 +226,7 @@ namespace Celeste {
                 }
 
                 Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.Level} of {Session.Area.GetSID()}");
-                e.LogDetailed();
+                Logger.LogDetailed(e);
                 return;
             }
             Everest.Events.Level.LoadLevel(this, playerIntro, isFromLoader);

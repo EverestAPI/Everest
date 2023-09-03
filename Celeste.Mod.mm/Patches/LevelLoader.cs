@@ -169,7 +169,7 @@ namespace Celeste {
                     }
                 }
                 Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
-                e.LogDetailed();
+                Logger.LogDetailed(e);
             }
 
             orig_ctor(session, startPosition);
@@ -231,7 +231,7 @@ namespace Celeste {
                     }
                 }
                 Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
-                e.LogDetailed();
+                Logger.LogDetailed(e);
                 Loaded = true;
             }
         }
@@ -254,7 +254,7 @@ namespace Celeste {
                         string SID = session.Area.GetSID();
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", SID);
                         Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed Starting Level at room {session.Level} of {SID}");
-                        e.LogDetailed();
+                        Logger.LogDetailed(e);
                         LevelEnter.Go(session, false);
                     }
                 } else {

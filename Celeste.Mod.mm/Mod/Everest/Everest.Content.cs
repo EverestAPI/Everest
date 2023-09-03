@@ -181,7 +181,7 @@ namespace Celeste.Mod {
                 watcher.EnableRaisingEvents = true;
             } catch (Exception e) {
                 Logger.Log(LogLevel.Warn, "content", $"Failed watching folder: {path}");
-                e.LogDetailed();
+                Logger.LogDetailed(e);
                 watcher?.Dispose();
                 watcher = null;
             }

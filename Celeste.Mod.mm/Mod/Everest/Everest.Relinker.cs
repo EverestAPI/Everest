@@ -236,7 +236,7 @@ namespace Celeste.Mod {
                         return asm;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly {meta} - {asmname}");
-                        e.LogDetailed();
+                        Logger.LogDetailed(e);
                         return null;
                     } finally {
                         mod?.Dispose();
@@ -363,7 +363,7 @@ namespace Celeste.Mod {
                     module = modder.Module;
                 } catch (Exception e) {
                     Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
-                    e.LogDetailed();
+                    Logger.LogDetailed(e);
                     return null;
                 } finally {
                     // Clean up modder
@@ -415,7 +415,7 @@ namespace Celeste.Mod {
                         return asm;
                     } catch (Exception e) {
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname} - {module.Assembly.Name}");
-                        e.LogDetailed();
+                        Logger.LogDetailed(e);
                         return null;
                     }
                 } finally {

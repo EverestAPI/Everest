@@ -40,7 +40,7 @@ namespace Celeste {
 
             } catch (ThreadAbortException e) {
                 Logger.Log(LogLevel.Warn, "RunThread", $"Background thread {Thread.CurrentThread?.Name ?? "???"} aborted");
-                e.LogDetailed();
+                Logger.LogDetailed(e);
 
             } catch (Exception e) {
                 ErrorLog.Write(e);
