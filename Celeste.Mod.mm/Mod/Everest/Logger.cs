@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
+using MonoMod.Utils;
 
 namespace Celeste.Mod {
     public static class Logger {
@@ -245,6 +246,9 @@ namespace Celeste.Mod {
 
         internal static void SetupColoredLogging() {
             if (colorMode == LogColorMode.On) {
+                if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                    TryEnableWindowsVTSupport();
+                }
                 useColors = true;
             } else if (colorMode == LogColorMode.Off) {
                 useColors = false;
@@ -256,25 +260,28 @@ namespace Celeste.Mod {
                     useColors = false;
                     return;
                 }
-                // Try to enable color support on Windows
-                // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
                 if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                    var handle = GetStdHandle(STD_OUTPUT_HANDLE);
-
-                    if (!GetConsoleMode(handle, out var consoleMode)) {
-                        // Could fallback to slow Windows API if console mode can't be accessed, but we just disable colors
-                        return;
-                    }
-
-                    if ((consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0) {
-                        SetConsoleMode(handle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
-                        useColors = true;
-                    }
-                    return;
+                    useColors = TryEnableWindowsVTSupport();
                 }
                 // On Unix most terminals support ANSI colors
                 useColors = true;
             }
+        }
+        private static bool TryEnableWindowsVTSupport() {
+            // Try to enable color support on Windows
+            // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
+            var handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+            if (!GetConsoleMode(handle, out var consoleMode)) {
+                // Could fallback to slow Windows API if console mode can't be accessed, but we just disable colors
+                return false;
+            }
+
+            if ((consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0) {
+                SetConsoleMode(handle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                return true;
+            }
+            return false;
         }
     }
     public enum LogLevel {
