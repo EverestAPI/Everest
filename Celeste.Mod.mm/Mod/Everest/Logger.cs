@@ -93,35 +93,35 @@ namespace Celeste.Mod {
         // TODO: Allow displaying mod log in future ImGui UI
 
         /// <summary>
-        /// Log a string to the console and to log.txt, using LogLevel.Verbose
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Verbose"/>
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Verbose(string tag, string str)
             => Log(LogLevel.Verbose, tag, str);
         /// <summary>
-        /// Log a string to the console and to log.txt, using LogLevel.Debug
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Debug"/>
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Debug(string tag, string str)
             => Log(LogLevel.Debug, tag, str);
         /// <summary>
-        /// Log a string to the console and to log.txt, using LogLevel.Info
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Info"/>
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Info(string tag, string str)
             => Log(LogLevel.Info, tag, str);
         /// <summary>
-        /// Log a string to the console and to log.txt, using LogLevel.Warn
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Warn"/>
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Warn(string tag, string str)
             => Log(LogLevel.Warn, tag, str);
         /// <summary>
-        /// Log a string to the console and to log.txt, using LogLevel.Error
+        /// Log a string to the console and to log.txt, using <see cref="LogLevel.Error"/>
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
@@ -268,7 +268,7 @@ namespace Celeste.Mod {
             }
         }
         private static bool TryEnableWindowsVTSupport() {
-            // Try to enable color support on Windows
+            // Try to enable color support on Windows. Returns whether it was succesful.
             // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
             var handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
