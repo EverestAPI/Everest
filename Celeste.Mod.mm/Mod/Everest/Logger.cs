@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,6 +8,11 @@ using System.Runtime.CompilerServices;
 
 namespace Celeste.Mod {
     public static class Logger {
+
+        // Console.Out will get mirrored to the log file, however we need to write to the log file ourselves,
+        // to avoid including color escape sequences in it.
+        internal static TextWriter outWriter;
+        internal static TextWriter logWriter;
 
         private static Dictionary<string, LogLevel> minimumLevels = new Dictionary<string, LogLevel>();
         private static Dictionary<string, LogLevel> minimumLevelsFromEverestSettings = new Dictionary<string, LogLevel>();
@@ -97,9 +103,31 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
+                const string colorReset = "\u001b[0m";
+                // Keep LogLevel.Info as white
+                string colorLevel = level switch {
+                    LogLevel.Verbose => "\u001b[35m",
+                    LogLevel.Debug => "\u001b[34m",
+                    LogLevel.Info => colorReset,
+                    LogLevel.Warn => "\u001b[33m",
+                    LogLevel.Error => "\u001b[31m",
+                    _ => ""
+                };
+                string colorText = level switch {
+                    LogLevel.Verbose => "\u001b[95m",
+                    LogLevel.Debug => "\u001b[94m",
+                    LogLevel.Info => colorReset,
+                    LogLevel.Warn => "\u001b[93m",
+                    LogLevel.Error => "\u001b[91m",
+                    _ => ""
+                };
+
                 // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
                 // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
-                Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
+                string now_str = DateTime.Now.ToString();
+                string level_str = level.FastToString();
+                outWriter.WriteLine($"({now_str}) [Everest] {colorLevel}[{level_str}] [{tag}] {colorText}{str}{colorReset}");
+                logWriter.WriteLine($"({now_str}) [Everest] [{level_str}] [{tag}] {str}");
             }
         }
 

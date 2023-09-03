@@ -173,9 +173,11 @@ namespace Celeste {
             Everest.PathLog = logfile;
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter)) {
+                Logger.outWriter = logWriter.STDOUT.Stream;
+                Logger.logWriter = logWriter.File;
                 MainInner(args);
-
+            }
         }
 
         private static void MainInner(string[] args) {
