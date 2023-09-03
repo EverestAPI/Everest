@@ -318,11 +318,11 @@ namespace Celeste.Mod {
                 else if (arg == "--color" && queue.Count >= 1) {
                     string opt = queue.Dequeue();
                     if (opt == "on")
-                        Logger.colorMode = Logger.ColorMode.On;
+                        Logger.colorMode = LogColorMode.On;
                     else if (opt == "off")
-                        Logger.colorMode = Logger.ColorMode.Off;
+                        Logger.colorMode = LogColorMode.Off;
                     else if (opt == "auto")
-                        Logger.colorMode = Logger.ColorMode.Auto;
+                        Logger.colorMode = LogColorMode.Auto;
                 }
             }
 
