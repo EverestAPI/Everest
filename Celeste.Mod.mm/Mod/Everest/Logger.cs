@@ -258,7 +258,7 @@ namespace Celeste.Mod {
                 }
                 // Try to enable color support on Windows
                 // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
                     var handle = GetStdHandle(STD_OUTPUT_HANDLE);
 
                     if (!GetConsoleMode(handle, out var consoleMode)) {
