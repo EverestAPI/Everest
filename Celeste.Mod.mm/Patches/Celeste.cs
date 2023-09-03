@@ -71,6 +71,9 @@ namespace Celeste {
                     writer.WriteLine();
                     writer.WriteLine("# Change default log level (verbose will print all logs).");
                     writer.WriteLine("#--loglevel verbose");
+                    writer.WriteLine();
+                    writer.WriteLine("# Overwrite the default color detecting logic: on/off/auto(default).");
+                    writer.WriteLine("#--color on");
 
                     if (File.Exists("launch.txt")) {
                         using (StreamReader reader = File.OpenText("launch.txt")) {

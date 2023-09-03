@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 namespace Celeste.Mod {
     public static class Logger {
 
+        internal static ColorMode colorMode = ColorMode.Auto;
+        private static bool useColors = false;
         // Console.Out will get mirrored to the log file, however we need to write to the log file ourselves,
         // to avoid including color escape sequences in it.
         internal static TextWriter outWriter;
@@ -103,27 +105,32 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                const string colorReset = "\u001b[0m";
+                if (!useColors) {
+                    // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
+                    // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
+                    Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
+                    return;
+                }
+
+                const string colorReset = "\x1b[0m";
                 // Keep LogLevel.Info as white
                 string colorLevel = level switch {
-                    LogLevel.Verbose => "\u001b[35m",
-                    LogLevel.Debug => "\u001b[34m",
-                    LogLevel.Info => colorReset,
-                    LogLevel.Warn => "\u001b[33m",
-                    LogLevel.Error => "\u001b[31m",
+                    LogLevel.Verbose => "\x1b[35m",
+                    LogLevel.Debug => "\x1b[34m",
+                    LogLevel.Info => "",
+                    LogLevel.Warn => "\x1b[33m",
+                    LogLevel.Error => "\x1b[31m",
                     _ => ""
                 };
                 string colorText = level switch {
-                    LogLevel.Verbose => "\u001b[95m",
-                    LogLevel.Debug => "\u001b[94m",
-                    LogLevel.Info => colorReset,
-                    LogLevel.Warn => "\u001b[93m",
-                    LogLevel.Error => "\u001b[91m",
+                    LogLevel.Verbose => "\x1b[95m",
+                    LogLevel.Debug => "\x1b[94m",
+                    LogLevel.Info => "",
+                    LogLevel.Warn => "\x1b[93m",
+                    LogLevel.Error => "\x1b[91m",
                     _ => ""
                 };
 
-                // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
-                // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
                 string now_str = DateTime.Now.ToString();
                 string level_str = level.FastToString();
                 outWriter.WriteLine($"({now_str}) [Everest] {colorLevel}[{level_str}] [{tag}] {colorText}{str}{colorReset}");
@@ -181,6 +188,51 @@ namespace Celeste.Mod {
             }
         }
 
+        private const int STD_OUTPUT_HANDLE = -11;
+        private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
+
+        [DllImport("kernel32.dll")]
+		private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+		[DllImport("kernel32.dll")]
+		private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern IntPtr GetStdHandle(int nStdHandle);
+
+        internal static void SetupColoredLogging() {
+            if (colorMode == ColorMode.On) {
+                useColors = true;
+            } else if (colorMode == ColorMode.Off) {
+                useColors = false;
+            } else if (colorMode == ColorMode.Auto) {
+                // Autodetect wheather to use ANSI colors
+
+                // Honor https://no-color.org
+                if (Environment.GetEnvironmentVariable("NO_COLOR") != null) {
+                    useColors = false;
+                    continue;
+                }
+                // Try to enable color support on Windows
+                // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    var handle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+                    if (!GetConsoleMode(handle, out var consoleMode)) {
+                        // Could fallback to slow Windows API if console mode can't be accessed, but we just disable colors
+                        continue;
+                    }
+
+                    if ((consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0) {
+                        SetConsoleMode(handle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                        useColors = true;
+                    }
+                    continue;
+                }
+                // On Unix most terminals support ANSI colors
+                useColors = true;
+            }
+        }
     }
     public enum LogLevel {
         Verbose,
@@ -188,6 +240,11 @@ namespace Celeste.Mod {
         Info,
         Warn,
         Error
+    }
+    internal enum ColorMode {
+        On,
+        Off,
+        Auto,
     }
 
     public static class LogLevelExtensions {
