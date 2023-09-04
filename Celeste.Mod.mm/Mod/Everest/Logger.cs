@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
 using MonoMod.Utils;
+using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
     public static class Logger {
@@ -144,7 +145,7 @@ namespace Celeste.Mod {
         /// <param name="str">The string / message to log.</param>
         public static void Log(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
-                if (!useColors) {
+                if (!CoreModule.Settings.ColorizedLogging) {
                     // Despite what your IDE might be telling you, DO NOT omit the manual .ToString() call, as this will cause unnecessary boxing.
                     // On modern runtimes string interpolation is much smarter and omitting that call reduces allocations, but not on Framework.
                     Console.WriteLine($"({DateTime.Now.ToString()}) [Everest] [{level.FastToString()}] [{tag}] {str}");
@@ -180,7 +181,7 @@ namespace Celeste.Mod {
         public static void LogDetailed(LogLevel level, string tag, string str) {
             if (shouldLog(tag, level)) {
                 Log(level, tag, str);
-                if (!useColors) {
+                if (!CoreModule.Settings.ColorizedLogging) {
                     Console.WriteLine(new StackTrace(1, true).ToString());
                     return;
                 }
@@ -197,7 +198,7 @@ namespace Celeste.Mod {
         /// Print the exception to the console, including extended loading / reflection data useful for mods.
         /// </summary>
         public static void LogDetailed(/*this*/ Exception e, string tag = null) {
-            if (useColors) {
+            if (CoreModule.Settings.ColorizedLogging) {
                 string colorText = LogLevel.Error.GetAnsiEscapeCodeForText();
                 outWriter.Write(colorText);
             }
@@ -225,7 +226,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            if (useColors) {
+            if (CoreModule.Settings.ColorizedLogging) {
                 const string colorReset = "\x1b[0m";
                 outWriter.Write(colorReset);
             }

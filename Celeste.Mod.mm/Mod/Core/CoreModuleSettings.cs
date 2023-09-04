@@ -250,6 +250,10 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        [SettingSubText("MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC")]
+        [SettingInGame(false)]
+        public bool ColorizedLogging { get; set; } = false;
+
         public bool DiscordRichPresence { get; set; } = true;
 
         [SettingIgnore]
