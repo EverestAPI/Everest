@@ -315,18 +315,7 @@ namespace Celeste.Mod {
                     if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level))
                         Logger.SetLogLevelFromSettings("", level);
                 }
-                else if (arg == "--color" && queue.Count >= 1) {
-                    string opt = queue.Dequeue();
-                    if (opt == "on")
-                        Logger.colorMode = LogColorMode.On;
-                    else if (opt == "off")
-                        Logger.colorMode = LogColorMode.Off;
-                    else if (opt == "auto")
-                        Logger.colorMode = LogColorMode.Auto;
-                }
             }
-
-            Logger.SetupColoredLogging();
         }
 
         internal static void Boot() {

@@ -12,8 +12,6 @@ using Celeste.Mod.Core;
 namespace Celeste.Mod {
     public static class Logger {
 
-        internal static LogColorMode colorMode = LogColorMode.Auto;
-        private static bool useColors = false;
         // Console.Out will get mirrored to the log file, however we need to write to the log file ourselves,
         // to avoid including color escape sequences in it.
         internal static TextWriter outWriter;
@@ -244,29 +242,6 @@ namespace Celeste.Mod {
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern IntPtr GetStdHandle(int nStdHandle);
 
-        internal static void SetupColoredLogging() {
-            if (colorMode == LogColorMode.On) {
-                if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                    TryEnableWindowsVTSupport();
-                }
-                useColors = true;
-            } else if (colorMode == LogColorMode.Off) {
-                useColors = false;
-            } else if (colorMode == LogColorMode.Auto) {
-                // Autodetect wheather to use ANSI colors
-
-                // Honor https://no-color.org
-                if (Environment.GetEnvironmentVariable("NO_COLOR") != null) {
-                    useColors = false;
-                    return;
-                }
-                if (PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                    useColors = TryEnableWindowsVTSupport();
-                }
-                // On Unix most terminals support ANSI colors
-                useColors = true;
-            }
-        }
         private static bool TryEnableWindowsVTSupport() {
             // Try to enable color support on Windows. Returns whether it was succesful.
             // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
@@ -290,11 +265,6 @@ namespace Celeste.Mod {
         Info,
         Warn,
         Error
-    }
-    internal enum LogColorMode {
-        On,
-        Off,
-        Auto,
     }
 
     public static class LogLevelExtensions {
