@@ -133,7 +133,6 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
-        [Obsolete("Use Logger.Verbose instead")]
         public static void Log(string tag, string str)
             => Log(LogLevel.Verbose, tag, str);
 
