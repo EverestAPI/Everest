@@ -86,7 +86,7 @@ namespace Monocle {
                         XmlNode existingNode = sprites.SelectSingleNode(node.Name);
                         if (existingNode != null) {
                             // Unfortuately we don't know what spritebank added the element that's being replaced
-                            Logger.Log(LogLevel.Warn, "Content", $"CONFLICT in {modPath}{Path.DirectorySeparatorChar}{filename}: Overriding element {node.Name}.");
+                            Logger.Warn("Content", $"CONFLICT in {modPath}{Path.DirectorySeparatorChar}{filename}: Overriding element {node.Name}.");
                             sprites.ReplaceChild(importedNode, existingNode);
                         } else
                             sprites.AppendChild(importedNode);
@@ -120,7 +120,7 @@ namespace Monocle {
                         pendingDeletion.Add(modNode);
                     } else {
                         // mod XML different from vanilla, keep it.
-                        Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{modNode.Name}\" will be overridden with {path}.");
+                        Logger.Verbose("SpriteBank", $"Sprite \"{modNode.Name}\" will be overridden with {path}.");
 
                         // if it copies another sprite, keep its name so that we do not delete it.
                         string copy = modNode.Attributes["copy"]?.Value;
@@ -130,14 +130,14 @@ namespace Monocle {
                     }
                 } else {
                     // sprite doesn't exist in vanilla.
-                    Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{modNode.Name}\" will be added from {path}.");
+                    Logger.Verbose("SpriteBank", $"Sprite \"{modNode.Name}\" will be added from {path}.");
                 }
             }
 
             // delete all sprites marked for deletion, except ones that are copied by sprites we want to keep (because this would break the XML).
             foreach (XmlNode toDelete in pendingDeletion.ToArray()) {
                 if (doNotDelete.Contains(toDelete.Name)) {
-                    Logger.Log(LogLevel.Verbose, "SpriteBank", $"Sprite \"{toDelete.Name}\" will be overridden with {path}, because it is copied by another sprite.");
+                    Logger.Verbose("SpriteBank", $"Sprite \"{toDelete.Name}\" will be overridden with {path}, because it is copied by another sprite.");
                 } else {
                     modSprites.RemoveChild(toDelete);
                 }

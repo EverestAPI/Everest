@@ -66,7 +66,7 @@ namespace Celeste.Mod {
                             return _RequestStart();
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_download";
-                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading version list");
+                            Logger.Warn("updater", "Uncaught exception while loading version list");
                             Logger.LogDetailed(e);
                             return this;
                         }
@@ -80,13 +80,13 @@ namespace Celeste.Mod {
 
                     string data;
                     try {
-                        Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
+                        Logger.Debug("updater", "Attempting to download update list from source: " + Index);
                         using (WebClient wc = new CompressedWebClient()) {
                             data = wc.DownloadString(Index());
                         }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
-                        Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
+                        Logger.Warn("updater", "Failed requesting index: " + e.ToString());
                         return this;
                     }
 
@@ -96,7 +96,7 @@ namespace Celeste.Mod {
                             entries.AddRange(ParseData(this, data));
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_format";
-                            Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
+                            Logger.Warn("updater", "Failed parsing index: " + e.ToString());
                             return this;
                         }
                     } else {
@@ -112,7 +112,7 @@ namespace Celeste.Mod {
                                     entries.Add(entry);
                             } catch (Exception e) {
                                 ErrorDialog = "updater_versions_err_format";
-                                Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
+                                Logger.Warn("updater", "Failed parsing index: " + e.ToString());
                                 return this;
                             }
                         }
@@ -207,7 +207,7 @@ namespace Celeste.Mod {
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
                     using (WebClient wc = new CompressedWebClient()) {
-                        Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
+                        Logger.Verbose("updater", "Fetching everest updater database URL");
                         
                         UriBuilder uri = new UriBuilder(wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim());
                         if ((uri.Query?.Length ?? 0) > 1)
@@ -323,7 +323,7 @@ namespace Celeste.Mod {
                     if (Build != int.Parse(File.ReadAllText(updateBuildPath)))
                         UpdateFailed = true;
                 } catch(Exception e) {
-                    Logger.Log(LogLevel.Warn, "updater", "Exception when trying to determine update build number");
+                    Logger.Warn("updater", "Exception when trying to determine update build number");
                     Logger.LogDetailed(e);
                     UpdateFailed = true;
                 } finally {

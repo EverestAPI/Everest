@@ -173,11 +173,11 @@ namespace Celeste.Mod {
                 }
 
                 enforceOptionalDependencies = false;
-                Logger.Log(LogLevel.Info, "loader", "Loading mods with unsatisfied optional dependencies (if any)");
+                Logger.Info("loader", "Loading mods with unsatisfied optional dependencies (if any)");
                 Everest.CheckDependenciesOfDelayedMods();
 
                 watch.Stop();
-                Logger.Log(LogLevel.Verbose, "loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
+                Logger.Verbose("loader", $"ALL MODS LOADED IN {watch.ElapsedMilliseconds}ms");
 
                 try {
                     Watcher = new FileSystemWatcher {
@@ -190,7 +190,7 @@ namespace Celeste.Mod {
                     Watcher.EnableRaisingEvents = true;
                     AutoLoadNewMods = true;
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {PathMods}");
+                    Logger.Warn("loader", $"Failed watching folder: {PathMods}");
                     Logger.LogDetailed(e);
                     Watcher?.Dispose();
                     Watcher = null;
@@ -201,7 +201,7 @@ namespace Celeste.Mod {
                 if (!AutoLoadNewMods)
                     return;
 
-                Logger.Log(LogLevel.Info, "loader", $"Possible new mod container: {e.FullPath}");
+                Logger.Info("loader", $"Possible new mod container: {e.FullPath}");
                 QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_LOADINGNEWMOD")} {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
                     if (Directory.Exists(e.FullPath))
                         LoadDir(e.FullPath);
@@ -217,7 +217,7 @@ namespace Celeste.Mod {
             /// <param name="archive">The path to the mod .zip archive.</param>
             public static void LoadZip(string archive) {
                 if (!Flags.SupportRuntimeMods) {
-                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    Logger.Warn("loader", "Loader disabled!");
                     return;
                 }
 
@@ -226,7 +226,7 @@ namespace Celeste.Mod {
                 if (!File.Exists(archive)) // It just doesn't exist.
                     return;
 
-                Logger.Log(LogLevel.Verbose, "loader", $"Loading mod .zip: {archive}");
+                Logger.Verbose("loader", $"Loading mod .zip: {archive}");
 
                 EverestModuleMetadata[] multimetas = null;
 
@@ -238,7 +238,7 @@ namespace Celeste.Mod {
                     foreach (ZipEntry entry in zip.Entries) {
                         if (entry.FileName is "everest.yaml" or "everest.yml") {
                             if (metaParsed) {
-                                Logger.Log(LogLevel.Warn, "loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FileName}.");
+                                Logger.Warn("loader", $"{archive} has both everest.yaml and everest.yml. Ignoring {entry.FileName}.");
                                 continue;
                             }
                             using (MemoryStream stream = entry.ExtractStream())
@@ -252,7 +252,7 @@ namespace Celeste.Mod {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"Failed parsing {entry.FileName} in {archive}: {e}");
+                                    Logger.Warn("loader", $"Failed parsing {entry.FileName} in {archive}: {e}");
                                     FilesWithMetadataLoadFailures.Add(archive);
                                 }
                             }
@@ -315,7 +315,7 @@ namespace Celeste.Mod {
             /// <param name="dir">The path to the mod directory.</param>
             public static void LoadDir(string dir) {
                 if (!Flags.SupportRuntimeMods) {
-                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    Logger.Warn("loader", "Loader disabled!");
                     return;
                 }
 
@@ -324,7 +324,7 @@ namespace Celeste.Mod {
                 if (!Directory.Exists(dir)) // It just doesn't exist.
                     return;
 
-                Logger.Log(LogLevel.Verbose, "loader", $"Loading mod directory: {dir}");
+                Logger.Verbose("loader", $"Loading mod directory: {dir}");
 
                 EverestModuleMetadata[] multimetas = null;
 
@@ -332,7 +332,7 @@ namespace Celeste.Mod {
                 if (!File.Exists(metaPath)) {
                     metaPath = Path.Combine(dir, "everest.yml");
                 } else if (File.Exists(Path.Combine(dir, "everest.yml"))) {
-                    Logger.Log(LogLevel.Warn, "loader", $"{dir} has both everest.yaml and everest.yml. Ignoring everest.yml.");
+                    Logger.Warn("loader", $"{dir} has both everest.yaml and everest.yml. Ignoring everest.yml.");
                 }
                 if (File.Exists(metaPath))
                     using (StreamReader reader = new StreamReader(metaPath)) {
@@ -345,7 +345,7 @@ namespace Celeste.Mod {
                                 }
                             }
                         } catch (Exception e) {
-                            Logger.Log(LogLevel.Warn, "loader", $"Failed parsing everest.yaml in {dir}: {e}");
+                            Logger.Warn("loader", $"Failed parsing everest.yaml in {dir}: {e}");
                             FilesWithMetadataLoadFailures.Add(dir);
                         }
                     }
@@ -397,7 +397,7 @@ namespace Celeste.Mod {
             /// <param name="callback">Callback to be executed after the mod has been loaded. Executed immediately if meta == null.</param>
             public static void LoadModDelayed(EverestModuleMetadata meta, Action callback) {
                 if (!Flags.SupportRuntimeMods) {
-                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    Logger.Warn("loader", "Loader disabled!");
                     return;
                 }
 
@@ -407,13 +407,13 @@ namespace Celeste.Mod {
                 }
 
                 if (Modules.Any(module => module.Metadata.Name == meta.Name)) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Mod {meta.Name} already loaded!");
+                    Logger.Warn("loader", $"Mod {meta.Name} already loaded!");
                     return;
                 }
 
                 foreach (EverestModuleMetadata dep in meta.Dependencies)
                     if (!DependencyLoaded(dep)) {
-                        Logger.Log(LogLevel.Info, "loader", $"Dependency {dep} of mod {meta} not loaded! Delaying.");
+                        Logger.Info("loader", $"Dependency {dep} of mod {meta} not loaded! Delaying.");
                         lock (Delayed) {
                             Delayed.Add(Tuple.Create(meta, callback));
                         }
@@ -422,7 +422,7 @@ namespace Celeste.Mod {
 
                 foreach (EverestModuleMetadata dep in meta.OptionalDependencies) {
                     if (!DependencyLoaded(dep) && (enforceOptionalDependencies || Everest.Modules.Any(module => module.Metadata?.Name == dep.Name))) {
-                        Logger.Log(LogLevel.Info, "loader", $"Optional dependency {dep} of mod {meta} not loaded! Delaying.");
+                        Logger.Info("loader", $"Optional dependency {dep} of mod {meta} not loaded! Delaying.");
                         lock (Delayed) {
                             Delayed.Add(Tuple.Create(meta, callback));
                         }
@@ -441,7 +441,7 @@ namespace Celeste.Mod {
             /// <param name="meta">Metadata of the mod to load.</param>
             public static void LoadMod(EverestModuleMetadata meta) {
                 if (!Flags.SupportRuntimeMods) {
-                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    Logger.Warn("loader", "Loader disabled!");
                     return;
                 }
 
@@ -500,7 +500,7 @@ namespace Celeste.Mod {
             /// <param name="asm">The mod assembly, preferably relinked.</param>
             public static void LoadModAssembly(EverestModuleMetadata meta, Assembly asm) {
                 if (!Flags.SupportRuntimeMods) {
-                    Logger.Log(LogLevel.Warn, "loader", "Loader disabled!");
+                    Logger.Warn("loader", "Loader disabled!");
                     return;
                 }
 
@@ -520,7 +520,7 @@ namespace Celeste.Mod {
 
                         watcher.EnableRaisingEvents = true;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
+                        Logger.Warn("loader", $"Failed watching folder: {Path.GetDirectoryName(meta.DLL)}");
                         Logger.LogDetailed(e);
                         meta.DevWatcher?.Dispose();
                         meta.DevWatcher = null;
@@ -538,7 +538,7 @@ namespace Celeste.Mod {
                 try {
                     types = asm.GetTypesSafe();
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "loader", $"Failed reading assembly: {e}");
+                    Logger.Warn("loader", $"Failed reading assembly: {e}");
                     Logger.LogDetailed(e);
                     return;
                 }
@@ -557,7 +557,7 @@ namespace Celeste.Mod {
                         }
                     } catch (TypeLoadException e) {
                         // The type likely depends on a base class from a missing optional dependency
-                        Logger.Log(LogLevel.Warn, "loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
+                        Logger.Warn("loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
                     }
 
                    if (mod != null) {
@@ -568,14 +568,14 @@ namespace Celeste.Mod {
 
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
                 if (!foundModule)
-                    Logger.Log(LogLevel.Warn, "loader", "Assembly doesn't contain an EverestModule!");
+                    Logger.Warn("loader", "Assembly doesn't contain an EverestModule!");
             }
 
             internal static void ReloadModAssembly(object source, FileSystemEventArgs e, bool retrying = false) {
                 if (!File.Exists(e.FullPath))
                     return;
 
-                Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
+                Logger.Info("loader", $"Reloading mod assembly: {e.FullPath}");
                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
                     EverestModule module = _Modules.FirstOrDefault(m => m.Metadata.DLL == e.FullPath);
                     if (module == null)
@@ -600,7 +600,7 @@ namespace Celeste.Mod {
 
                         // be sure to save this module's save data and session before reloading it, so that they are not lost.
                         if (SaveData.Instance != null) {
-                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                            Logger.Verbose("core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                             if (module.SaveDataAsync) {
                                 module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                             } else {
@@ -612,7 +612,7 @@ namespace Celeste.Mod {
                             }
 
                             if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                Logger.Verbose("core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                                 if (module.SaveDataAsync) {
                                     module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
                                 } else {

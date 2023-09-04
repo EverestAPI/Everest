@@ -14,13 +14,13 @@ namespace Monocle {
 
         [MonoModReplace]
         public new PixelFontSize AddFontSize(string path, Atlas atlas = null, bool outline = false) {
-            Logger.Log(LogLevel.Verbose, "PixelFont", $"Loading font: {path}");
+            Logger.Verbose("PixelFont", $"Loading font: {path}");
 
             PixelFontSize loadedSize = null;
 
             // load the vanilla font if it exists.
             if (patch_Calc.orig_XMLExists(path)) {
-                Logger.Log(LogLevel.Verbose, "PixelFont", "=> vanilla font file");
+                Logger.Verbose("PixelFont", "=> vanilla font file");
                 XmlElement data = patch_Calc.orig_LoadXML(path)["font"];
                 loadedSize = AddFontSize(path, data, atlas, outline);
                 Sizes.Remove(loadedSize);
@@ -33,7 +33,7 @@ namespace Monocle {
                 .Where(map => map.ContainsKey(modPath))
                 .Select(map => map[modPath])) {
 
-                Logger.Log(LogLevel.Verbose, "PixelFont", $"=> mod font file from {modAsset.Source.Name}");
+                Logger.Verbose("PixelFont", $"=> mod font file from {modAsset.Source.Name}");
                 XmlElement data = loadXMLFromModAsset(modAsset)["font"];
                 PixelFontSize newFontSize = AddFontSize(path, data, atlas, outline);
                 Sizes.Remove(newFontSize);
@@ -73,7 +73,7 @@ namespace Monocle {
             // associate the textures for the new font to the existing font.
             originalSize.Textures.AddRange(newSize.Textures);
 
-            Logger.Log(LogLevel.Verbose, "PixelFont", $"==> Imported {newCharacterCount} new characters");
+            Logger.Verbose("PixelFont", $"==> Imported {newCharacterCount} new characters");
             return originalSize;
         }
     }

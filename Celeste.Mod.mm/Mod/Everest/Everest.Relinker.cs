@@ -54,7 +54,7 @@ namespace Celeste.Mod {
                             if (name.StartsWith("Celeste."))
                                 _SharedRelinkModuleMap[nameNeutral] = StaticRelinkModuleCache["Celeste"];
                             else {
-                                Logger.Log(LogLevel.Warn, "relinker", $"Found unknown {name}");
+                                Logger.Warn("relinker", $"Found unknown {name}");
                                 int dot = name.IndexOf('.');
                                 if (dot < 0)
                                     continue;
@@ -67,7 +67,7 @@ namespace Celeste.Mod {
                                     relinked = ModuleDefinition.ReadModule(pathRelinked, new ReaderParameters(ReadingMode.Immediate));
                                     StaticRelinkModuleCache[nameRelinkedNeutral] = relinked;
                                 }
-                                Logger.Log(LogLevel.Verbose, "relinker", $"Remapped to {nameRelinked}");
+                                Logger.Verbose("relinker", $"Remapped to {nameRelinked}");
                                 _SharedRelinkModuleMap[nameNeutral] = relinked;
                             }
                         }
@@ -196,7 +196,7 @@ namespace Celeste.Mod {
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
                 if (!Flags.SupportRelinkingMods) {
-                    Logger.Log(LogLevel.Warn, "relinker", "Relinker disabled!");
+                    Logger.Warn("relinker", "Relinker disabled!");
                     return null;
                 }
 
@@ -219,7 +219,7 @@ namespace Celeste.Mod {
                 // Try to load a cached assembly if it exists and the checksums match
                 if (File.Exists(cachedPath) && File.Exists(cachedChecksumPath) &&
                     ChecksumsEqual(checksums, File.ReadAllLines(cachedChecksumPath))) {
-                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
+                    Logger.Verbose("relinker", $"Loading cached assembly for {meta} - {asmname}");
 
                     // Load the assembly and the module definition
                     ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
@@ -231,11 +231,11 @@ namespace Celeste.Mod {
                             _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
                             mod = null;
                         } else
-                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
+                            Logger.Warn("relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
 
                         return asm;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly {meta} - {asmname}");
+                        Logger.Warn("relinker", $"Failed loading cached assembly {meta} - {asmname}");
                         Logger.LogDetailed(e);
                         return null;
                     } finally {
@@ -362,7 +362,7 @@ namespace Celeste.Mod {
 
                     module = modder.Module;
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "relinker", $"Failed relinking {meta} - {asmname}");
+                    Logger.Warn("relinker", $"Failed relinking {meta} - {asmname}");
                     Logger.LogDetailed(e);
                     return null;
                 } finally {
@@ -392,13 +392,13 @@ namespace Celeste.Mod {
                     }
 
                     // Log the assembly load and dependencies
-                    Logger.Log(LogLevel.Verbose, "relinker", $"Loading assembly for {meta} - {asmname} - {module.Assembly.Name}");
+                    Logger.Verbose("relinker", $"Loading assembly for {meta} - {asmname} - {module.Assembly.Name}");
                     if (Modder != null)
                         foreach(AssemblyNameReference aref in module.AssemblyReferences) {
                             if (Modder.DependencyCache.ContainsKey(aref.FullName))
-                                Logger.Log(LogLevel.Verbose, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) found");
+                                Logger.Verbose("relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) found");
                             else
-                                Logger.Log(LogLevel.Warn, "relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) NOT FOUND");
+                                Logger.Warn("relinker", $"dep. {module.Name} -> (({aref.FullName}), ({aref.Name})) NOT FOUND");
                         }
 
                     try {
@@ -410,11 +410,11 @@ namespace Celeste.Mod {
                             _RelinkedModules.Add(module.Assembly.Name.Name, module);
                             module = null;
                         } else
-                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {module.Assembly.Name}");
+                            Logger.Warn("relinker", $"Encountered module name conflict loading assembly {meta} - {asmname} - {module.Assembly.Name}");
 
                         return asm;
                     } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading {meta} - {asmname} - {module.Assembly.Name}");
+                        Logger.Warn("relinker", $"Failed loading {meta} - {asmname} - {module.Assembly.Name}");
                         Logger.LogDetailed(e);
                         return null;
                     }
@@ -445,7 +445,7 @@ namespace Celeste.Mod {
                             }
                         }
 
-                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+                        Logger.Warn("relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
                         return null;
                     };
                 }
@@ -465,7 +465,7 @@ namespace Celeste.Mod {
                         if (File.Exists(path))
                             return ModuleDefinition.ReadModule(path, mod.GenReaderParameters(false, path));
 
-                        Logger.Log(LogLevel.Warn, "relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
+                        Logger.Warn("relinker", $"Relinker couldn't find dependency {main.Name} -> (({fullName}), ({name}))");
                         return null;
                     };
                 }

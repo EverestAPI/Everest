@@ -39,7 +39,7 @@ namespace Celeste {
                 method();
 
             } catch (ThreadAbortException e) {
-                Logger.Log(LogLevel.Warn, "RunThread", $"Background thread {Thread.CurrentThread?.Name ?? "???"} aborted");
+                Logger.Warn("RunThread", $"Background thread {Thread.CurrentThread?.Name ?? "???"} aborted");
                 Logger.LogDetailed(e);
 
             } catch (Exception e) {
@@ -80,7 +80,7 @@ namespace Celeste {
                             timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
                         if ((DateTime.UtcNow - timeout.Value).Ticks >= 0) {
                             lock (threads) {
-                                Logger.Log(LogLevel.Verbose, "RunThread.WaitAll", $"Background thread taking too long, discarding it.\n{threadInfos[0]}");
+                                Logger.Verbose("RunThread.WaitAll", $"Background thread taking too long, discarding it.\n{threadInfos[0]}");
                                 threads.RemoveAt(0);
                                 threadTimes.RemoveAt(0);
                                 threadInfos.RemoveAt(0);

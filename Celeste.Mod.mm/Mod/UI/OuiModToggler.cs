@@ -89,7 +89,7 @@ namespace Celeste.Mod.UI {
 
             // our list is complete!
             stopwatch.Stop();
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"Found {allModYamls.Count} mod(s) with yaml files, took {stopwatch.ElapsedMilliseconds} ms");
+            Logger.Verbose("OuiModToggler", $"Found {allModYamls.Count} mod(s) with yaml files, took {stopwatch.ElapsedMilliseconds} ms");
             return allModYamls;
         }
 
@@ -125,7 +125,7 @@ namespace Celeste.Mod.UI {
                     }
                 }
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "loader", $"Failed loading everest.yaml in archive {archive}: {e}");
+                Logger.Warn("loader", $"Failed loading everest.yaml in archive {archive}: {e}");
             }
 
             return null;
@@ -159,7 +159,7 @@ namespace Celeste.Mod.UI {
                         }
                     }
             } catch (Exception e) {
-                Logger.Log(LogLevel.Warn, "loader", $"Failed loading everest.yaml in directory {dir}: {e}");
+                Logger.Warn("loader", $"Failed loading everest.yaml in directory {dir}: {e}");
             }
 
             return null;
@@ -363,7 +363,7 @@ namespace Celeste.Mod.UI {
             }
 
             blacklistedMods.Add(file);
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{file} was added to the blacklist");
+            Logger.Verbose("OuiModToggler", $"{file} was added to the blacklist");
 
             if (toggleDependencies && modYamls.TryGetValue(file, out EverestModuleMetadata[] metadatas)) {
                 // we should blacklist all mods that has this mod as a dependency.
@@ -388,7 +388,7 @@ namespace Celeste.Mod.UI {
             }
 
             blacklistedMods.Remove(file);
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{file} was removed from the blacklist");
+            Logger.Verbose("OuiModToggler", $"{file} was removed from the blacklist");
 
             if (toggleDependencies && modYamls.TryGetValue(file, out EverestModuleMetadata[] metadatas)) {
                 // we should remove all of the mod's dependencies from the blacklist.

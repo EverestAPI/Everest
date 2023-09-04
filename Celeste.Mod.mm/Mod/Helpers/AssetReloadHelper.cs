@@ -69,7 +69,7 @@ namespace Celeste.Mod {
             } else if (silent) {
                 string threadName = Thread.CurrentThread.Name ?? "<null>";
                 if (!SilentThreadList.Contains(threadName)) {
-                    Logger.Log(LogLevel.Warn, "reload", $"Tried to silently reload on non-whitelisted thread {threadName}: {text}");
+                    Logger.Warn("reload", $"Tried to silently reload on non-whitelisted thread {threadName}: {text}");
                     silent = false;
                 }
             }
@@ -161,7 +161,7 @@ namespace Celeste.Mod {
                     } catch (Exception e) {
                         string sid = level.Session?.Area.GetSID() ?? "NULL";
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
-                        Logger.Log(LogLevel.Warn, "reload", $"Failed reloading map {sid}");
+                        Logger.Warn("reload", $"Failed reloading map {sid}");
                         Logger.LogDetailed(e);
 
                         if (patch_Level.NextLoadedPlayer != null) {

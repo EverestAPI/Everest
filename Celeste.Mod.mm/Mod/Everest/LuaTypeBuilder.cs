@@ -24,16 +24,16 @@ namespace Celeste.Mod {
             try {
                 string pathOverride = Path.Combine(PathEverest, "typebuilder.lua");
                 if (File.Exists(pathOverride)) {
-                    Logger.Log(LogLevel.Info, "Everest.LuaTypeBuilder", "Found external Lua typebuilder script.");
+                    Logger.Info("Everest.LuaTypeBuilder", "Found external Lua typebuilder script.");
                     stream = new FileStream(pathOverride, FileMode.Open, FileAccess.Read);
 
                 } else if (Content.TryGet<AssetTypeLua>("Lua/typebuilder", out ModAsset asset)) {
-                    Logger.Log(LogLevel.Verbose, "Everest.LuaTypeBuilder", "Found built-in Lua typebuilder script.");
+                    Logger.Verbose("Everest.LuaTypeBuilder", "Found built-in Lua typebuilder script.");
                     stream = asset.Stream;
                 }
 
                 if (stream == null) {
-                    Logger.Log(LogLevel.Warn, "Everest.LuaTypeBuilder", "Lua typebuilder script not found, disabling LuaTypeBuilder.");
+                    Logger.Warn("Everest.LuaTypeBuilder", "Lua typebuilder script not found, disabling LuaTypeBuilder.");
                     Count = -2;
                     return;
                 }

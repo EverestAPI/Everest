@@ -319,10 +319,10 @@ namespace Celeste.Mod {
         }
 
         internal static void Boot() {
-            Logger.Log(LogLevel.Info, "core", "Booting Everest");
-            Logger.Log(LogLevel.Info, "core", $"AppDomain: {AppDomain.CurrentDomain.FriendlyName ?? "???"}");
-            Logger.Log(LogLevel.Info, "core", $"VersionCelesteString: {VersionCelesteString}");
-            Logger.Log(LogLevel.Info, "core", $"SystemMemoryMB: {SystemMemoryMB:F3} MB");
+            Logger.Info("core", "Booting Everest");
+            Logger.Info("core", $"AppDomain: {AppDomain.CurrentDomain.FriendlyName ?? "???"}");
+            Logger.Info("core", $"VersionCelesteString: {VersionCelesteString}");
+            Logger.Info("core", $"SystemMemoryMB: {SystemMemoryMB:F3} MB");
 
             if (Type.GetType("Mono.Runtime") != null) {
                 // Mono hates HTTPS.
@@ -415,7 +415,7 @@ namespace Celeste.Mod {
             string modSettingsOld = Path.Combine(PathEverest, "ModSettings");
             string modSettingsRIP = Path.Combine(PathEverest, "ModSettings-OBSOLETE");
             if (Directory.Exists(modSettingsOld) || Directory.Exists(modSettingsRIP)) {
-                Logger.Log(LogLevel.Warn, "core", "THE ModSettings FOLDER IS OBSOLETE AND WILL NO LONGER BE USED!");
+                Logger.Warn("core", "THE ModSettings FOLDER IS OBSOLETE AND WILL NO LONGER BE USED!");
                 if (Directory.Exists(modSettingsOld) && !Directory.Exists(modSettingsRIP))
                     Directory.Move(modSettingsOld, modSettingsRIP);
             }
@@ -606,7 +606,7 @@ namespace Celeste.Mod {
                             genName = split[1];
 
                         } else {
-                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                            Logger.Warn("core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                             continue;
                         }
 
@@ -650,7 +650,7 @@ namespace Celeste.Mod {
 
                         RegisterEntityLoader:
                         if (loader == null) {
-                            Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
+                            Logger.Warn("core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
                             continue;
                         }
                         patch_Level.EntityLoaders[id] = loader;
@@ -663,7 +663,7 @@ namespace Celeste.Mod {
                         foreach (string idFull in nameAttrib.IDs) {
                             string[] split = idFull.Split('=');
                             if (split.Length == 0) {
-                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                Logger.Warn("core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
                             names.Add(split[0]);
@@ -695,7 +695,7 @@ namespace Celeste.Mod {
                             genName = split[1];
 
                         } else {
-                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
+                            Logger.Warn("core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
                             continue;
                         }
 
@@ -727,7 +727,7 @@ namespace Celeste.Mod {
 
                         RegisterCutsceneLoader:
                         if (loader == null) {
-                            Logger.Log(LogLevel.Warn, "core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
+                            Logger.Warn("core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
                             continue;
                         }
                         patch_EventTrigger.CutsceneLoaders[id] = loader;
@@ -748,7 +748,7 @@ namespace Celeste.Mod {
                             id = split[0];
                             genName = split[1];
                         } else {
-                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
+                            Logger.Warn("core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
                             continue;
                         }
 
@@ -774,7 +774,7 @@ namespace Celeste.Mod {
 
                         RegisterBackdropLoader:
                         if (loader == null) {
-                            Logger.Log(LogLevel.Warn, "core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
+                            Logger.Warn("core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
                             continue;
                         }
                         patch_MapData.BackdropLoaders[id] = loader;
@@ -795,7 +795,7 @@ namespace Celeste.Mod {
 
                 if (SaveData.Instance != null) {
                     // we are in a save. we are expecting the save data to already be loaded at this point
-                    Logger.Log(LogLevel.Verbose, "core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                    Logger.Verbose("core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
                     if (module.SaveDataAsync) {
                         module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
                     } else {
@@ -806,7 +806,7 @@ namespace Celeste.Mod {
 
                     if (SaveData.Instance.CurrentSession?.InArea ?? false) {
                         // we are in a level. we are expecting the session to already be loaded at this point
-                        Logger.Log(LogLevel.Verbose, "core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                        Logger.Verbose("core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
                         if (module.SaveDataAsync) {
                             module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
                         } else {
@@ -820,7 +820,7 @@ namespace Celeste.Mod {
                 // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
                 // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
                 if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
+                    Logger.Verbose("core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
                     AssetReloadHelper.ReloadAllMaps();
                 }
             }
@@ -830,7 +830,7 @@ namespace Celeste.Mod {
                 Type[] types = FakeAssembly.GetFakeEntryAssembly().GetTypesSafe();
                 foreach (Type type in types) {
                     if (typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract && !overworld.UIs.Any(ui => ui.GetType() == type)) {
-                        Logger.Log(LogLevel.Verbose, "core", $"Instantiating UI from {module.Metadata}: {type.FullName}");
+                        Logger.Verbose("core", $"Instantiating UI from {module.Metadata}: {type.FullName}");
 
                         Oui oui = (Oui) Activator.CreateInstance(type);
                         oui.Visible = false;
@@ -850,7 +850,7 @@ namespace Celeste.Mod {
                 patch_Audio.IngestNewBanks();
             }
 
-            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
+            Logger.Info("core", $"Module {module.Metadata} registered.");
             Events.Everest.RegisterModule(module);
 
             CheckDependenciesOfDelayedMods();
@@ -877,11 +877,11 @@ namespace Celeste.Mod {
                                     didDelayOptionalDependencies = true;
                                 } else {
                                     // all dependencies are loaded, all optional dependencies are either loaded or won't load => we're good to go!
-                                    Logger.Log(LogLevel.Info, "core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
+                                    Logger.Info("core", $"Dependencies of mod {entry.Item1} are now satisfied: loading");
 
                                     if (Everest.Modules.Any(mod => mod.Metadata.Name == entry.Item1.Name)) {
                                         // a duplicate of the mod was loaded while it was sitting in the delayed list.
-                                        Logger.Log(LogLevel.Warn, "core", $"Mod {entry.Item1.Name} already loaded!");
+                                        Logger.Warn("core", $"Mod {entry.Item1.Name} already loaded!");
                                     } else {
                                         // actually load the mod.
                                         entry.Item2?.Invoke();
@@ -898,7 +898,7 @@ namespace Celeste.Mod {
                             if (i == Loader.Delayed.Count - 1 && didDelayOptionalDependencies) {
                                 // we considered all mods, but we delayed some of them because they had an optional dependency that "could be loaded"... yet nothing got loaded.
                                 // that's probably a circular optional dependency case, so we should just reconsider everything again ignoring optional dependencies.
-                                Logger.Log(LogLevel.Warn, "core", $"Mods with unsatisfied optional dependencies were delayed but never loaded (probably due to circular optional dependencies), forcing them to load!");
+                                Logger.Warn("core", $"Mods with unsatisfied optional dependencies were delayed but never loaded (probably due to circular optional dependencies), forcing them to load!");
                                 enforceTransitiveOptionalDependencies = false;
 
                                 i = -1;
@@ -968,7 +968,7 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
-            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
+            Logger.Info("core", $"Module {module.Metadata} unregistered.");
         }
 
         /// <summary>

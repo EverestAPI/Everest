@@ -38,7 +38,7 @@ namespace Celeste {
         public extern void orig_ctor(Session session, Vector2? startPosition = default);
         [MonoModConstructor]
         public void ctor(Session session, Vector2? startPosition = default) {
-            Logger.Log(LogLevel.Info, "LevelLoader", $"Loading {session?.Area.GetSID() ?? "NULL"}");
+            Logger.Info("LevelLoader", $"Loading {session?.Area.GetSID() ?? "NULL"}");
 
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
@@ -160,15 +160,15 @@ namespace Celeste {
                 if (patch_LevelEnter.ErrorMessage == null) {
                     if (e is XmlException) {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_xmlerror").Replace("((path))", path);
-                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing {path}");
+                        Logger.Warn("LevelLoader", $"Failed parsing {path}");
                     } else if (e.TypeInStacktrace(typeof(Autotiler))) {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_tilexmlerror").Replace("((path))", path);
-                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed parsing tileset tag in {path}");
+                        Logger.Warn("LevelLoader", $"Failed parsing tileset tag in {path}");
                     } else {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
                     }
                 }
-                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
+                Logger.Warn("LevelLoader", $"Failed loading {sid}");
                 Logger.LogDetailed(e);
             }
 
@@ -225,12 +225,12 @@ namespace Celeste {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_badtileid")
                             .Replace("((type))", type).Replace("((id))", ex.ID.ToString()).Replace("((x))", ex.X.ToString())
                             .Replace("((y))", ex.Y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
-                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Undefined tile id '{ex.ID}' at ({ex.X}, {ex.Y}) in room {room}");
+                        Logger.Warn("LevelLoader", $"Undefined tile id '{ex.ID}' at ({ex.X}, {ex.Y}) in room {room}");
                     } else {
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
                     }
                 }
-                Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed loading {sid}");
+                Logger.Warn("LevelLoader", $"Failed loading {sid}");
                 Logger.LogDetailed(e);
                 Loaded = true;
             }
@@ -253,7 +253,7 @@ namespace Celeste {
                     } catch (Exception e) {
                         string SID = session.Area.GetSID();
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", SID);
-                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed Starting Level at room {session.Level} of {SID}");
+                        Logger.Warn("LevelLoader", $"Failed Starting Level at room {session.Level} of {SID}");
                         Logger.LogDetailed(e);
                         LevelEnter.Go(session, false);
                     }

@@ -41,7 +41,7 @@ namespace Celeste {
                     Everest.Events.Level.Enter(session, fromSaveData);
                 } catch (Exception e) {
                     string sid = session?.Area.GetSID() ?? "???";
-                    Logger.Log(LogLevel.Warn, "LevelEnter", $"Failed entering map {sid}");
+                    Logger.Warn("LevelEnter", $"Failed entering map {sid}");
                     Logger.LogDetailed(e);
 
                     ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", sid);
@@ -84,7 +84,7 @@ namespace Celeste {
             }
 
             if (AreaData.Get(session) == null) {
-                Logger.Log(LogLevel.Warn, "LevelEnter", $"Failed to find map");
+                Logger.Warn("LevelEnter", $"Failed to find map");
                 return ErrorRoutine(Dialog.Get("postcard_levelgone")
                     .Replace("((player))", SaveData.Instance.Name)
                     .Replace("((sid))", session.Area.GetSID()));

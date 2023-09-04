@@ -170,14 +170,14 @@ namespace Celeste {
 
             // skip creating a backup if we are on a develop build
             if (previousVersion == new Version(0, 0, 0)) {
-                Logger.Log(LogLevel.Verbose, "core", "Previous Everest version was a development build, skipping backup.");
+                Logger.Verbose("core", "Previous Everest version was a development build, skipping backup.");
                 return;
             }
 
             if (previousVersion < new Version(1, 2109, 0)) {
                 // user just upgraded: create mod save data backups.
                 // (this is very similar to OverworldLoader.CheckVariantsPostcardAtLaunch)
-                Logger.Log(LogLevel.Verbose, "core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
+                Logger.Verbose("core", $"User just upgraded from version {previousVersion}: creating mod save data backups.");
 
                 for (int i = 0; i < 3; i++) { // only the first 3 saves really matter.
                     if (!UserIO.Exists(SaveData.GetFilename(i))) {

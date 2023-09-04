@@ -298,12 +298,12 @@ namespace Celeste {
                             DecalRegistry.PropertyHandlers[property.Key].Invoke(this, property.Value);
                         } catch (Exception e) {
                             patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_decalregerror").Replace("((property))", property.Key).Replace("((decal))", text);
-                            Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
+                            Logger.Warn("Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
                             Logger.LogDetailed(e);
                         }
 
                     } else {
-                        Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
+                        Logger.Warn("Decal Registry", $"Unknown property {property.Key} in decal {text}");
                     }
                 }
 

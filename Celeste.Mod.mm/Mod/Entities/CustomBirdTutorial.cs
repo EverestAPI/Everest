@@ -77,10 +77,10 @@ namespace Celeste.Mod.Entities {
                         if (val?.Button != null) {
                             controls[i] = val.Button;
                         } else {
-                            Logger.Log(LogLevel.Warn, "CustomBird", $"Public ButtonBinding property not found in {module.SettingsType}. ControlString: {controlString}");
+                            Logger.Warn("CustomBird", $"Public ButtonBinding property not found in {module.SettingsType}. ControlString: {controlString}");
                         }
                     } else {
-                        Logger.Log(LogLevel.Warn, "CustomBird", "EverestModule or EverestModule.SettingsType not found. ControlString: " + controlString);
+                        Logger.Warn("CustomBird", "EverestModule or EverestModule.SettingsType not found. ControlString: " + controlString);
                     }
                 } else if (GFX.Gui.Has(controlString)) {
                     // this is a texture.

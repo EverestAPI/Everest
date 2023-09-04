@@ -204,7 +204,7 @@ namespace Celeste.Mod.UI {
 
 
             // 3. Render on screen
-            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
+            Logger.Verbose("OuiModUpdateList", "Rendering updates");
 
             
             if (updateCatalog == null) {
@@ -347,7 +347,7 @@ namespace Celeste.Mod.UI {
                 downloadMod(update, button, zipPath);
 
                 if (ongoingUpdateCancelled) {
-                    Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Update was cancelled");
+                    Logger.Verbose("OuiModUpdateList", "Update was cancelled");
 
                     // try to delete mod-update.zip if it still exists.
                     ModUpdaterHelper.TryDelete(zipPath);
@@ -374,7 +374,7 @@ namespace Celeste.Mod.UI {
             } catch (Exception e) {
                 // update failed
                 button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_FAILED")})";
-                Logger.Log(LogLevel.Warn, "OuiModUpdateList", $"Updating {update.Name} failed");
+                Logger.Warn("OuiModUpdateList", $"Updating {update.Name} failed");
                 Logger.LogDetailed(e);
 
                 // try to delete mod-update.zip if it still exists.
@@ -390,7 +390,7 @@ namespace Celeste.Mod.UI {
         /// <param name="button">The button for that mod shown on the interface</param>
         /// <param name="zipPath">The path to the zip the update will be downloaded to</param>
         private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
-            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
+            Logger.Verbose("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
             Func<int, long, int, bool> progressCallback = (position, length, speed) => {
                 if (ongoingUpdateCancelled) {
@@ -408,7 +408,7 @@ namespace Celeste.Mod.UI {
             try {
                 Everest.Updater.DownloadFileWithProgress(update.URL, zipPath, progressCallback);
             } catch (WebException e) {
-                Logger.Log(LogLevel.Warn, "OuiModUpdateList", $"Download failed, trying mirror {update.MirrorURL}");
+                Logger.Warn("OuiModUpdateList", $"Download failed, trying mirror {update.MirrorURL}");
                 Logger.LogDetailed(e);
                 Everest.Updater.DownloadFileWithProgress(update.MirrorURL, zipPath, progressCallback);
             }

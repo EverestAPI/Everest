@@ -40,7 +40,7 @@ namespace Celeste {
             }
 
             if (!_LoadStrings.Contains(eventID)) {
-                Logger.Log(LogLevel.Warn, "EventTrigger", $"Event '{eventID}' does not exist!");
+                Logger.Warn("EventTrigger", $"Event '{eventID}' does not exist!");
                 return true; //To a avoid hard crash on missing event
             }
 

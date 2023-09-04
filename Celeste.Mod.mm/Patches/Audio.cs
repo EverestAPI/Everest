@@ -107,7 +107,7 @@ namespace Celeste {
         /// Loads an FMOD Bank from the given asset.
         /// </summary>
         public static Bank IngestBank(ModAsset asset) {
-            Logger.Log(LogLevel.Verbose, "Audio.IngestBank", asset.PathVirtual);
+            Logger.Verbose("Audio.IngestBank", asset.PathVirtual);
             ingestedModBankPaths.Add(asset.PathVirtual);
 
             Bank bank;
@@ -137,7 +137,7 @@ namespace Celeste {
             }
 
             if (loadResult == RESULT.ERR_EVENT_ALREADY_LOADED) {
-                Logger.Log(LogLevel.Warn, "Audio.IngestBank", $"Cannot load {asset.PathVirtual} due to conflicting events!");
+                Logger.Warn("Audio.IngestBank", $"Cannot load {asset.PathVirtual} due to conflicting events!");
                 return null;
             }
 
@@ -158,7 +158,7 @@ namespace Celeste {
         /// Loads an FMOD GUID table from the given asset.
         /// </summary>
         public static void IngestGUIDs(ModAsset asset) {
-            Logger.Log(LogLevel.Verbose, "Audio.IngestGUIDs", asset.PathVirtual);
+            Logger.Verbose("Audio.IngestGUIDs", asset.PathVirtual);
             using (Stream stream = asset.Stream)
             using (StreamReader reader = new StreamReader(asset.Stream)) {
                 string line;
@@ -264,7 +264,7 @@ namespace Celeste {
 
             } else if (status == RESULT.ERR_EVENT_NOTFOUND) {
                 if (path is not ("null" or "event:/none")) {
-                    Logger.Log(LogLevel.Warn, "Audio", $"Event not found: {path}");
+                    Logger.Warn("Audio", $"Event not found: {path}");
                 }
 
             } else {

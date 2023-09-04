@@ -20,7 +20,7 @@ namespace Celeste {
                 orig_ctor(e, offset);
             } else {
                 patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_missingtutorial").Replace("((tutorial))", tutorialName);
-                Logger.Log(LogLevel.Warn, "PlayerPlayback", $"Failed to load tutorial '{tutorialName}'");
+                Logger.Warn("PlayerPlayback", $"Failed to load tutorial '{tutorialName}'");
                 throw new KeyNotFoundException();
             }
         }

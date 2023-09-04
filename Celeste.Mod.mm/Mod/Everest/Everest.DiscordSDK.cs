@@ -42,7 +42,7 @@ namespace Celeste.Mod {
                     foreach (string element in list.Children<JValue>()) {
                         RichPresenceIcons.Add(element);
                     }
-                    Logger.Log(LogLevel.Debug, "discord-game-sdk", $"Retrieved {RichPresenceIcons.Count} existing icon hashes.");
+                    Logger.Debug("discord-game-sdk", $"Retrieved {RichPresenceIcons.Count} existing icon hashes.");
                 }).Start();
             }
 
@@ -62,11 +62,11 @@ namespace Celeste.Mod {
             private DiscordSDK(Game game) : base(game) {
                 UpdateOrder = -500000;
 
-                Logger.Log(LogLevel.Verbose, "discord-game-sdk", $"Initializing Discord Game SDK...");
+                Logger.Verbose("discord-game-sdk", $"Initializing Discord Game SDK...");
                 try {
                     DiscordInstance = new Discord.Discord(430794114037055489L, (ulong) Discord.CreateFlags.NoRequireDiscord);
                 } catch (Exception e) {
-                    Logger.Log(LogLevel.Warn, "discord-game-sdk", "Could not initialize Discord Game SDK!");
+                    Logger.Warn("discord-game-sdk", "Could not initialize Discord Game SDK!");
                     Logger.LogDetailed(e, "discord-game-sdk");
                     return;
                 }
@@ -74,7 +74,7 @@ namespace Celeste.Mod {
 
                 DiscordInstance.GetUserManager().OnCurrentUserUpdate += () => {
                     Discord.User user = DiscordInstance.GetUserManager().GetCurrentUser();
-                    Logger.Log(LogLevel.Verbose, "discord-game-sdk", $"Connected user is {user.Username}#{user.Discriminator}");
+                    Logger.Verbose("discord-game-sdk", $"Connected user is {user.Username}#{user.Discriminator}");
                 };
 
                 Events.Celeste.OnExiting += OnGameExit;
@@ -84,7 +84,7 @@ namespace Celeste.Mod {
 
                 Celeste.Instance.Components.Add(this);
 
-                Logger.Log(LogLevel.Info, "discord-game-sdk", "Discord Game SDK initialized!");
+                Logger.Info("discord-game-sdk", "Discord Game SDK initialized!");
             }
 
             protected override void Dispose(bool disposing) {
@@ -100,19 +100,19 @@ namespace Celeste.Mod {
                 Instance = null;
                 Celeste.Instance.Components.Remove(this);
 
-                Logger.Log(LogLevel.Info, "discord-game-sdk", "Discord Game SDK disposed");
+                Logger.Info("discord-game-sdk", "Discord Game SDK disposed");
             }
 
             public override void Update(GameTime gameTime) {
                 if (MustUpdatePresence) {
-                    Logger.Log(LogLevel.Verbose, "discord-game-sdk", $"Changing activity: state='{NextPresence.State}', " +
+                    Logger.Verbose("discord-game-sdk", $"Changing activity: state='{NextPresence.State}', " +
                     $"details='{NextPresence.Details}', image='{NextPresence.Assets.LargeImage}', text='{NextPresence.Assets.LargeText}', timestamp='{NextPresence.Timestamps.Start}'");
 
                     DiscordInstance.GetActivityManager().UpdateActivity(NextPresence, (result) => {
                         if (result == Discord.Result.Ok) {
-                            Logger.Log(LogLevel.Verbose, "discord-game-sdk", "Presence changed successfully!");
+                            Logger.Verbose("discord-game-sdk", "Presence changed successfully!");
                         } else {
-                            Logger.Log(LogLevel.Warn, "discord-game-sdk", $"Failed to change presence: {result}");
+                            Logger.Warn("discord-game-sdk", $"Failed to change presence: {result}");
                         }
                     });
 
@@ -123,7 +123,7 @@ namespace Celeste.Mod {
                     DiscordInstance.RunCallbacks();
                 } catch (Discord.ResultException e) {
                     if (e.Message == nameof(Discord.Result.NotRunning)) {
-                        Logger.Log(LogLevel.Warn, "discord-game-sdk", "Discord was shut down! Disposing Game SDK.");
+                        Logger.Warn("discord-game-sdk", "Discord was shut down! Disposing Game SDK.");
                         Dispose();
                     } else {
                         throw e;

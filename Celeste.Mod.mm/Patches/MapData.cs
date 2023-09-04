@@ -71,7 +71,7 @@ namespace Celeste {
                 if (parentMode != null) {
                     MapData parentMapData = parentMode.MapData;
                     if (parentMapData == null) {
-                        Logger.Log(LogLevel.Warn, "MapData", $"Failed auto-assigning data from {Area} to its unloaded parent");
+                        Logger.Warn("MapData", $"Failed auto-assigning data from {Area} to its unloaded parent");
                         return;
                     }
 
@@ -105,7 +105,7 @@ namespace Celeste {
                 }
 
             } catch (Exception e) when (e is not OutOfMemoryException) { // OOM errors are currently unrecoverable
-                Logger.Log(LogLevel.Warn, "MapData", $"Failed loading MapData {Area}");
+                Logger.Warn("MapData", $"Failed loading MapData {Area}");
                 Logger.LogDetailed(e);
             }
         }
@@ -147,7 +147,7 @@ namespace Celeste {
                 if (!levelsByName.ContainsKey(level.Name)) {
                     levelsByName.Add(level.Name, level);
                 } else {
-                    Logger.Log(LogLevel.Warn, "MapData", $"Failed to load duplicate room name {level.Name}");
+                    Logger.Warn("MapData", $"Failed to load duplicate room name {level.Name}");
                 }
             }
         }

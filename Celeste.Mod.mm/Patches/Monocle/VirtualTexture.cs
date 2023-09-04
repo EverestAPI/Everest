@@ -853,17 +853,17 @@ namespace Monocle {
             using (BinaryReader reader = new BinaryReader(stream)) {
                 ulong magic = reader.ReadUInt64();
                 if (magic != 0x0A1A0A0D474E5089U) {
-                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected magic to be 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected magic to be 0x0A1A0A0D474E5089, got 0x{magic.ToString("X16")} - {Path}");
                     return false;
                 }
                 uint length = reader.ReadUInt32();
                 if (length != 0x0D000000U) {
-                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected first chunk length to be 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected first chunk length to be 0x0D000000, got 0x{length.ToString("X8")} - {Path}");
                     return false;
                 }
                 uint chunk = reader.ReadUInt32();
                 if (chunk != 0x52444849U) {
-                    Logger.Log(LogLevel.Error, "vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
+                    Logger.Error("vtex", $"Failed preloading PNG: Expected IHDR marker 0x52444849, got 0x{chunk.ToString("X8")} - {Path}");
                     return false;
                 }
                 Width = SwapEndian(reader.ReadInt32());
