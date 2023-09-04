@@ -242,7 +242,10 @@ namespace Celeste.Mod {
 		[DllImport("kernel32.dll", SetLastError = true)]
 		private static extern IntPtr GetStdHandle(int nStdHandle);
 
-        private static bool TryEnableWindowsVTSupport() {
+        private static bool enabledVTSupport = false;
+        internal static bool TryEnableWindowsVTSupport() {
+            if (enabledVTSupport) return true;
+
             // Try to enable color support on Windows. Returns whether it was succesful.
             // Taken from https://github.com/steamcore/TinyLogger/blob/ee4de5369db75b4da259768c7950c2cb53be665d/src/TinyLogger/Console/AnsiSupport.cs#L10-L24
             var handle = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -254,6 +257,7 @@ namespace Celeste.Mod {
 
             if ((consoleMode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0) {
                 SetConsoleMode(handle, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+                enabledVTSupport = true;
                 return true;
             }
             return false;

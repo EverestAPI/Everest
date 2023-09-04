@@ -470,6 +470,10 @@ namespace Celeste.Mod {
             // Register our core module and load any other modules.
             new CoreModule().Register();
 
+            if (CoreModule.Settings.ColorizedLogging && PlatformHelper.Is(MonoMod.Utils.Platform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
+                Logger.Error("core", "Failed to enalbe Windows VT support!");
+            }
+
             // Note: Everest fulfills some mod dependencies by itself.
             new NullModule(new EverestModuleMetadata() {
                 Name = "Celeste",

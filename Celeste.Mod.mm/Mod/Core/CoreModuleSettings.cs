@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
+using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
@@ -250,9 +251,18 @@ namespace Celeste.Mod.Core {
             }
         }
 
+        private bool _ColorizedLogging = true;
         [SettingSubText("MODOPTIONS_COREMODULE_COLORIZEDLOGGING_DESC")]
         [SettingInGame(false)]
-        public bool ColorizedLogging { get; set; } = false;
+        public bool ColorizedLogging { 
+            get => _ColorizedLogging;
+            set {
+                if (value && PlatformHelper.Is(MonoMod.Utils.Platform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
+                    Logger.Error("core", "Failed to enalbe Windows VT support!");
+                }
+                _ColorizedLogging = value;
+            }
+        }
 
         public bool DiscordRichPresence { get; set; } = true;
 
