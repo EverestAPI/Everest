@@ -23,7 +23,7 @@
 	POSTCARD_LEVELLOADFAILED=	{big}Przykro mi!{/big}{n}Ale nie udało się załadować {#ff1144}((sid)){#}.{n}Wyślij swój {#44adf7}log.txt{#}{n}do twórcy mapy.
 	POSTCARD_LEVELNOSPAWN=		{big}Ups!{/big}{n}Ktoś zagubił {#44adf7}punkt startowy!{#}{n}Sprawdź, czy twoja mapa{n}zawiera obiekt typu {#44adf7}Player{#}.
 	POSTCARD_BADTILEID=			{big}Ups!{/big}{n}Znaleziono niezdefiniowany kafelek ((type)) o id {#ff1144}((id)){#} w punkcie{n}{#ff1144}(((x)), ((y))){#} w pokoju {#ff1144}((room)){#}.{n}Sprawdź swój {#44adf7}log.txt{#} by uzyskać więcej informacji.
-	POSTCARD_DECALREGERROR=		{big}Ups!{/big}{n}Wystąpił błąd podczas zastosowywania{n}własności {#ff1144}((property)){#} dla {#ff1144}((decal)){#}{n}Być może masz brakującą lub nieprawidłową własność w swoim {#44adf7}Rejestrze Kalkomanii{#}.
+	POSTCARD_DECALREGERROR=		{big}Ups!{/big}{n}Wystąpił błąd podczas zastosowywania{n}własności {#ff1144}((property)){#} dla {#ff1144}((decal)){#}{n}Być może masz brakującą lub nieprawidłową własność w swoim {#44adf7}Decal Registry{#}.
 	POSTCARD_MISSINGTUTORIAL=	{big}Ups!{/big}{n}Samouczek playbackowy {#ff1144}((tutorial)){#} nie mógł być znaleziony.{n}Sprawdź swój {#44adf7}log.txt{#} by uzyskać więcej informacji.
 	POSTCARD_TILEXMLERROR=		{big}Ups!{/big}{n}Wystąpił błąd podczas analizowania zestawu kafelków w {#ff1144}((path)){#}{n}Sprawdź swój {#44adf7}log.txt{#} by uzyskać więcej informacji.
 	POSTCARD_XMLERROR=			{big}Ups!{/big}{n}{#ff1144}((path)){#} zawiera błąd składniowy.{n}Sprawdź swój {#44adf7}log.txt{#} by uzyskać więcej informacji.
