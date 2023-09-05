@@ -568,7 +568,7 @@ namespace Celeste.Mod {
                                 if (isUpdate) {
                                     installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                                 } else {
-                                    installer.StartInfo.Arguments = $"-c \"{pathToMono} MiniInstaller.exe\"";
+                                    installer.StartInfo.Arguments = $"-c \"unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                                 }
                             }
                         }
