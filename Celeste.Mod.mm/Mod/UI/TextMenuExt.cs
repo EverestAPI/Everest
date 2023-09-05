@@ -1396,7 +1396,7 @@ namespace Celeste {
 
             public bool Typing { get; private set; } = false;
 
-            public Action AfterInputUpdate;
+            public Action AfterInputConsumed;
 
             private Overworld overworld;
             private bool previousMountainAllowUserRotation;
@@ -1489,7 +1489,7 @@ namespace Celeste {
 
             private bool HandleNewInputChar(char c) {
                 Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
-                // we pad from both the right and the left
+                // We pad from both the right and the left (so we multiply padding by 2)
                 Vector2 totalTextPadding = TextPadding * 2;
 
                 if (!char.IsControl(c) &&
@@ -1524,20 +1524,17 @@ namespace Celeste {
                         }
                         TextBoxConsumedInput = true;
                     }
-                    // We need to disable all other inputs in case the textBox consumed that input,
-                    // this covers the case of menu inputs that are bound to valid characters for the textBox
+                    // We need to disable all other inputs if the textBox consumed that an input,
                     MInput.Disabled = TextBoxConsumedInput;
-                }
-                TextBoxConsumedInput = false;
 
-                AfterInputUpdate?.Invoke();
-
-                // ensure the player never enters free cam while typing, so to cover the case our Update() gets called first we consume the input
-                // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
-                if (Typing) {
+                    // ensure the player never enters free cam while typing, so to cover the case our Update() gets called we consume the input
+                    // and if we get called afterwards we set ToggleMountainFreeCam to false before the next Render() call to MountainRenderer
                     ((patch_MountainRenderer) overworld?.Mountain)?.SetFreeCam(false);
-                    CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
+
+                    AfterInputConsumed?.Invoke();
                 }
+
+                TextBoxConsumedInput = false;
             }
         }
 

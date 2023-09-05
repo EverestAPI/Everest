@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
         private Action startSearching;
-        private float searchEase;
+        private float searchIconEase;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -240,112 +240,7 @@ namespace Celeste.Mod.UI {
                         onBackPressed(Overworld);
                     }));
 
-                    TextMenuExt.TextBox textBox = new(Overworld);
-                    TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
-                    menu.Add(modal);
-
-                    startSearching = () => {
-                        modal.Visible = true;
-                        textBox.StartTyping();
-
-                        if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption 
-                            && modToggles.ContainsKey(currentOption.Label)) {
-                            currentOption.UnselectedColor = TextMenu.HighlightColorA;
-                        }
-                    };
-
-                    bool tryFindNextModIndex(List<TextMenu.Item> menuItems, string searchTarget, int currentSelection, out int nextModIndex) {
-                        bool foundValidItem = false;
-                        nextModIndex = 0;
-
-                        for (int currentIndex = 0; currentIndex < menuItems.Count; currentIndex++) {
-                            if (menuItems[currentIndex] is patch_TextMenu.patch_Option<bool> currentOption &&
-                                    modToggles.ContainsKey(currentOption.Label) &&
-                                    currentOption.Label.ToLower().Contains(searchTarget)) {
-                                // If we find a suitable option with index greater then the selected item we want to use it
-                                if (currentIndex > currentSelection) {
-                                    nextModIndex = currentIndex;
-                                    return true;
-                                } else if (!foundValidItem) {
-                                    // We want to store the first match incase we are currently selecting the last item so we could wrap around
-                                    foundValidItem = true;
-                                    nextModIndex = currentIndex;
-                                }
-                            }
-                        }
-
-                        return foundValidItem;
-                    }
-
-                    Action<TextMenuExt.TextBox> searchNextMod(bool reverse) => (TextMenuExt.TextBox textBox) => {
-                        updateHighlightedMods();
-
-                        string searchTarget = textBox.Text.ToLower();
-                        List<TextMenu.Item> menuItems = menu.GetItems();
-                        int currentSelection = menu.Selection;
-
-                        if (reverse) {
-                            currentSelection = menuItems.Count - menu.Selection - 1;
-                            menuItems = new(menuItems);
-                            menuItems.Reverse();
-                        }
-
-                        if (tryFindNextModIndex(menuItems, searchTarget, currentSelection, out int targetSelectionIndex)) {
-                            if (reverse) {
-                                targetSelectionIndex = menuItems.Count - targetSelectionIndex - 1;
-                            }
-
-                            if (targetSelectionIndex >= menu.Selection) {
-                                Audio.Play(SFX.ui_main_roll_down);
-                            } else {
-                                Audio.Play(SFX.ui_main_roll_up);
-                            }
-
-                            menu.Selection = targetSelectionIndex;
-                            (menu.GetItems()[targetSelectionIndex] as patch_TextMenu.patch_Option<bool>).UnselectedColor = TextMenu.HighlightColorA;
-                        } else {
-                            Audio.Play(SFX.ui_main_button_invalid);
-                        }
-                    };
-
-                    void exitSearch(TextMenuExt.TextBox textBox) {
-                        textBox.StopTyping();
-                        modal.Visible = false;
-                        textBox.ClearText();
-                        updateHighlightedMods();
-                    }
-
-                    textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
-
-                    textBox.OnTextInputCharActions['\n'] = exitSearch;
-                    textBox.OnTextInputCharActions['\r'] = exitSearch;
-
-
-                    textBox.AfterInputUpdate = () => {
-                        if (textBox.Typing) {
-                            if (Input.MenuDown.Pressed) {
-                                searchNextMod(false)(textBox);
-                            } else if (Input.MenuUp.Pressed) {
-                                searchNextMod(true)(textBox);
-                            }
-
-                            if (Input.ESC.Pressed) {
-                                exitSearch(textBox);
-                            }
-
-                            if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
-                                && currentOption.UnselectedColor == TextMenu.HighlightColorA) {
-                                if (Input.MenuLeft.Pressed) {
-                                    currentOption.LeftPressed();
-                                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
-                                } else if (Input.MenuRight.Pressed) {
-                                    currentOption.RightPressed();
-                                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
-                                }
-                            }
-                        }
-                    };
-
+                    AddSearchBox(menu);
 
                     // reset the mods list
                     allMods = new List<string>();
@@ -422,6 +317,104 @@ namespace Celeste.Mod.UI {
             modLoadingTask.Start();
         }
 
+        private static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
+            int step = inReverse ? -1 : 1;
+
+            if (startIndex > items.Count) {
+                nextModIndex = 0;
+                return false;
+            }
+
+            for (int currentIndex = (startIndex + step) % items.Count; currentIndex != startIndex; currentIndex = (currentIndex + step) % items.Count) {
+                if (currentIndex < 0) {
+                    currentIndex = items.Count - 1;
+                }
+
+                if (predicate(items[currentIndex])) {
+                    nextModIndex = currentIndex;
+                    return true;
+                }
+            }
+
+            nextModIndex = startIndex;
+            return false;
+        }
+
+        private void AddSearchBox(TextMenu menu) {
+            TextMenuExt.TextBox textBox = new(Overworld);
+            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            menu.Add(modal);
+
+            startSearching = () => {
+                modal.Visible = true;
+                textBox.StartTyping();
+
+                if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                    && modToggles.ContainsKey(currentOption.Label)) {
+                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                }
+            };
+
+            Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
+                updateHighlightedMods();
+
+                string searchTarget = textBox.Text.ToLower();
+                List<TextMenu.Item> menuItems = menu.GetItems();
+                int currentSelection = menu.Selection;
+
+                bool searchPredicate(TextMenu.Item item) => item is patch_TextMenu.patch_Option<bool> currentOption
+                                                            && modToggles.ContainsKey(currentOption.Label)
+                                                            && currentOption.Label.ToLower().Contains(searchTarget);
+
+                if (WrappingLinearSearch(menuItems, searchPredicate, menu.Selection, inReverse, out int targetSelectionIndex)) {
+
+                    if (targetSelectionIndex >= menu.Selection) {
+                        Audio.Play(SFX.ui_main_roll_down);
+                    } else {
+                        Audio.Play(SFX.ui_main_roll_up);
+                    }
+
+                    menu.Selection = targetSelectionIndex;
+                    (menuItems[targetSelectionIndex] as patch_TextMenu.patch_Option<bool>).UnselectedColor = TextMenu.HighlightColorA;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                }
+            };
+
+            void exitSearch(TextMenuExt.TextBox textBox) {
+                textBox.StopTyping();
+                modal.Visible = false;
+                textBox.ClearText();
+                updateHighlightedMods();
+            }
+
+            textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\n'] = exitSearch;
+            textBox.OnTextInputCharActions['\r'] = exitSearch;
+
+            textBox.AfterInputConsumed = () => {
+                if (textBox.Typing) {
+                    if (Input.ESC.Pressed) {
+                        exitSearch(textBox);
+                    } else if (Input.MenuDown.Pressed) {
+                        searchNextMod(false)(textBox);
+                    } else if (Input.MenuUp.Pressed) {
+                        searchNextMod(true)(textBox);
+                    } else if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                               && currentOption.UnselectedColor == TextMenu.HighlightColorA) {
+                        if (Input.MenuLeft.Pressed) {
+                            currentOption.LeftPressed();
+                        } else if (Input.MenuRight.Pressed) {
+                            currentOption.RightPressed();
+
+                        }
+
+                        currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                    }
+                }
+            };
+        }
+
         private void addFileToMenu(TextMenu menu, string file) {
             TextMenu.OnOff option;
 
@@ -463,7 +456,7 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
-            searchEase = Calc.Approach(searchEase, Visible ? 1f : 0f, Engine.DeltaTime * 4f);
+            searchIconEase = Calc.Approach(searchIconEase, Visible ? 1f : 0f, Engine.DeltaTime * 4f);
 
             if (Selected && Focused) {
                 if (Input.QuickRestart.Pressed) {
@@ -583,9 +576,9 @@ namespace Celeste.Mod.UI {
             base.Render();
 
             if (modLoadingTask == null) {
-                Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchEase), 952f);
-                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchEase));
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchEase));
+                Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchIconEase), 952f);
+                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchIconEase));
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchIconEase));
             }
         }
 
