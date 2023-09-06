@@ -119,14 +119,20 @@ namespace MonoMod {
             if (type.IsCompilerGeneratedEnumerator())
                 FixEnumeratorDecompile(type);
 
-            // Fix short-long opcodes
-            foreach (MethodDefinition method in type.Methods)
+            foreach (MethodDefinition method in type.Methods) {
+                // Run method processors
+                OnPostProcessMethod?.Invoke(modder, method);
+
+                // Fix short-long opcodes
                 method.FixShortLongOps();
+            }
 
             // Post-process nested types
             foreach (TypeDefinition nested in type.NestedTypes)
                 PostProcessType(modder, nested);
         }
+
+        private static event Action<MonoModder, MethodDefinition> OnPostProcessMethod;
 
 #region Commmon Helper Methods
         public static AssemblyName GetRulesAssemblyRef(string name) => Assembly.GetExecutingAssembly().GetReferencedAssemblies().First(asm => asm.Name.Equals(name));

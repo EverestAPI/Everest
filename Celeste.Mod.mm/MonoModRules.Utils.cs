@@ -107,6 +107,9 @@ namespace MonoMod {
             // Replace assembly references which changed
             ReplaceAssemblyRefs(modder, static asm => asm.Name.Equals("MonoMod"), GetRulesAssemblyRef("MonoMod.Patcher"));
 
+            // Setup MonoMod.Patcher hackfixes (please just let it be rewritten already I have suffered enough ._.)
+            SetupLegacyMonoModPatcherHackfixes(modder);
+
             // Convert all RelinkLegacyMonoMod attributes to MonoModLinkFrom attributes
             foreach (TypeDefinition type in RulesModule.Types)
                 SetupLegacyMonoModRelinking(modder, type);

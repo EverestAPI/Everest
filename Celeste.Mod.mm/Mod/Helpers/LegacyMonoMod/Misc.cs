@@ -1,3 +1,4 @@
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
@@ -24,13 +25,8 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     }
 
     public static class ILShims {
-        [RelinkLegacyMonoMod("Mono.Cecil.Cil.Instruction MonoMod.Cil.ILLabel::Target")]
-        public static Instruction ILLabel_GetTarget(ILLabel label) => label.Target; // This previously used to be a field
-
-        [RelinkLegacyMonoMod("System.Int32 MonoMod.Cil.ILCursor::AddReference<T>()")]
+        //Relinking is done using a MonoModder hackfix because the methods are generic ._.
         public static int ILCursor_AddReference<T>(ILCursor cursor, T t) => cursor.AddReference(in t); // Reorg expects an in-argument
-
-        [RelinkLegacyMonoMod("System.Int32 MonoMod.Cil.ILCursor::EmitReference<T>()")]
         public static int ILCursor_EmitReference<T>(ILCursor cursor, T t) => cursor.EmitReference(in t); // Reorg expects an in-argument
     }
 
@@ -113,5 +109,45 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
                 throw new MonoModCrimeException(descr);
         }
 
+    }
+}
+
+namespace MonoMod {
+    partial class MonoModRules {
+        private static void SetupLegacyMonoModPatcherHackfixes(MonoModder modder) {
+            // Dear MonoMod.Patcher,
+            // What the f*ck is this supposed to be!?!?!?
+            // Sincerely, me :)
+            // (yes this tells MonoMod to relink ILLabel::Target to ILLabel::Target, and yes this is required)
+            modder.RelinkMap["Mono.Cecil.Cil.Instruction MonoMod.Cil.ILLabel::Target"] = new RelinkMapEntry("MonoMod.Cil.ILLabel", "Target");
+
+            OnPostProcessMethod += static (modder, method) => {
+                if (!method.HasBody)
+                    return;
+
+                // We have to do our own relinking because who the heck would ever want to relink a generic method???????
+                TypeDefinition ilShimsType = RulesModule.GetType("Celeste.Mod.Helpers.LegacyMonoMod.ILShims");
+                foreach (Instruction instr in method.Body.Instructions) {
+                    if (!(instr.Operand is MethodReference mref))
+                        continue;
+
+                    // Check if this is the correct method
+                    if (!mref.HasThis || !(mref.IsGenericInstance || mref.HasGenericParameters) || mref.Parameters.Count != 1)
+                        continue;
+
+                    if (mref.DeclaringType.FullName != "MonoMod.Cil.ILCursor")
+                        continue;
+
+                    if (mref.Name != "AddReference" && mref.Name != "EmitReference")
+                        continue;
+
+                    if (mref.Parameters[0].ParameterType.IsByReference)
+                        continue;
+
+                    // Relink the reference
+                    instr.Operand = modder.Module.ImportReference(ilShimsType.FindMethod($"ILCursor_{mref.Name}"));
+                }
+            };
+        }
     }
 }
