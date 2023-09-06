@@ -1,6 +1,7 @@
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
+using MonoMod.Utils;
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -25,6 +26,12 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     public static class ILShims {
         [RelinkLegacyMonoMod("Mono.Cecil.Cil.Instruction MonoMod.Cil.ILLabel::Target")]
         public static Instruction ILLabel_GetTarget(ILLabel label) => label.Target; // This previously used to be a field
+
+        [RelinkLegacyMonoMod("System.Int32 MonoMod.Cil.ILCursor::AddReference<T>()")]
+        public static int ILCursor_AddReference<T>(ILCursor cursor, T t) => cursor.AddReference(in t); // Reorg expects an in-argument
+
+        [RelinkLegacyMonoMod("System.Int32 MonoMod.Cil.ILCursor::EmitReference<T>()")]
+        public static int ILCursor_EmitReference<T>(ILCursor cursor, T t) => cursor.EmitReference(in t); // Reorg expects an in-argument
     }
 
     [RelinkLegacyMonoMod("MonoMod.Utils.PlatformHelper")]
