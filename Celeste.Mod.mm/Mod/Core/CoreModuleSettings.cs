@@ -296,8 +296,13 @@ namespace Celeste.Mod.Core {
             set => _CurrentBranch = value is "dev" or "beta" or "stable" ? "updater_src_" + value : value; // branch names were changed at some point
         }
 
+        private Dictionary<string, LogLevel> _LogLevels = new Dictionary<string, LogLevel>();
+
         [SettingIgnore]
-        public Dictionary<string, LogLevel> LogLevels { get; set; } = new Dictionary<string, LogLevel>();
+        public Dictionary<string, LogLevel> LogLevels {
+            get => _LogLevels;
+            set => _LogLevels = value ?? new Dictionary<string, LogLevel>();
+        }
 
         [SettingSubHeader("MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER")]
         [SettingInGame(false)]
