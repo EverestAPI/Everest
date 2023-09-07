@@ -4,6 +4,7 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
@@ -114,14 +115,14 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
 namespace MonoMod {
     partial class MonoModRules {
-        private static void SetupLegacyMonoModPatcherHackfixes(MonoModder modder) {
+        private static void SetupLegacyMonoModPatcherHackfixes(MonoModder modder, AssemblyNameReference celesteRef) {
             // Dear MonoMod.Patcher,
             // What the f*ck is this supposed to be!?!?!?
             // Sincerely, me :)
             // (yes this tells MonoMod to relink ILLabel::Target to ILLabel::Target, and yes this is required)
             modder.RelinkMap["Mono.Cecil.Cil.Instruction MonoMod.Cil.ILLabel::Target"] = new RelinkMapEntry("MonoMod.Cil.ILLabel", "Target");
 
-            OnPostProcessMethod += static (modder, method) => {
+            OnPostProcessMethod += (modder, method) => {
                 if (!method.HasBody)
                     return;
 
@@ -145,7 +146,9 @@ namespace MonoMod {
                         continue;
 
                     // Relink the reference
-                    instr.Operand = modder.Module.ImportReference(ilShimsType.FindMethod($"ILCursor_{mref.Name}"));
+                    mref = modder.Module.ImportReference(ilShimsType.FindMethod($"ILCursor_{mref.Name}"));
+                    mref.DeclaringType.Scope = celesteRef;
+                    instr.Operand = mref;
                 }
             };
         }
