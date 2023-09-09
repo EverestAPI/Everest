@@ -133,7 +133,10 @@ namespace MonoMod {
                         continue;
 
                     // Check if this is the correct method
-                    if (!mref.HasThis || !(mref.IsGenericInstance || mref.HasGenericParameters) || mref.Parameters.Count != 1)
+                    if (!mref.HasThis || !mref.IsGenericInstance || mref.Parameters.Count != 1)
+                        continue;
+
+                    if (!(mref is GenericInstanceMethod mrefGenInst) || mrefGenInst.GenericArguments.Count != 1)
                         continue;
 
                     if (mref.DeclaringType.FullName != "MonoMod.Cil.ILCursor")
@@ -146,8 +149,11 @@ namespace MonoMod {
                         continue;
 
                     // Relink the reference
-                    mref = modder.Module.ImportReference(ilShimsType.FindMethod($"ILCursor_{mref.Name}"));
-                    mref.DeclaringType.Scope = celesteRef;
+                    GenericInstanceMethod genericInst = new GenericInstanceMethod(ilShimsType.FindMethod($"ILCursor_{mref.Name}"));
+                    genericInst.GenericArguments.AddRange(mrefGenInst.GenericArguments);
+
+                    mref = modder.Module.ImportReference(genericInst);
+                    mref.DeclaringType.Scope = celesteRef; // Fix the reference scope: Celeste.Mod.mm.dll -> Celeste.dll
                     instr.Operand = mref;
                 }
             };
