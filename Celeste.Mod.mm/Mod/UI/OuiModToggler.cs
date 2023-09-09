@@ -351,7 +351,7 @@ namespace Celeste.Mod.UI {
 
                 if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
                     && modToggles.ContainsKey(currentOption.Label)) {
-                    currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                    currentOption.UnselectedColor = currentOption.Container.HighlightColor;
                 }
             };
 
@@ -375,7 +375,9 @@ namespace Celeste.Mod.UI {
                     }
 
                     menu.Selection = targetSelectionIndex;
-                    (menuItems[targetSelectionIndex] as patch_TextMenu.patch_Option<bool>).UnselectedColor = TextMenu.HighlightColorA;
+                    if (menuItems[targetSelectionIndex] is patch_TextMenu.patch_Option<bool> currentOption) {
+                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
+                    }
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
                 }
@@ -401,15 +403,14 @@ namespace Celeste.Mod.UI {
                     } else if (Input.MenuUp.Pressed) {
                         searchNextMod(true)(textBox);
                     } else if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
-                               && currentOption.UnselectedColor == TextMenu.HighlightColorA) {
+                               && currentOption.UnselectedColor == currentOption.Container.HighlightColor) {
                         if (Input.MenuLeft.Pressed) {
                             currentOption.LeftPressed();
                         } else if (Input.MenuRight.Pressed) {
                             currentOption.RightPressed();
-
                         }
 
-                        currentOption.UnselectedColor = TextMenu.HighlightColorA;
+                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
                     }
                 }
             };
