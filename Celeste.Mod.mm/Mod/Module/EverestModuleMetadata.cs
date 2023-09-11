@@ -97,7 +97,7 @@ namespace Celeste.Mod {
         /// Perform a few basic post-parsing operations. For example, make the DLL path absolute if the mod is in a directory.
         /// </summary>
         public void PostParse() {
-            if (!string.IsNullOrEmpty(DLL) && !string.IsNullOrEmpty(PathDirectory) && !File.Exists(DLL))
+            if (!string.IsNullOrEmpty(DLL) && !string.IsNullOrEmpty(PathDirectory))
                 DLL = Path.Combine(PathDirectory, DLL.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
 
             // Add dependency to API 1.0 if missing.
