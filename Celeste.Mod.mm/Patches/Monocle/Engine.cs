@@ -7,7 +7,6 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
-using System.Linq;
 
 namespace Monocle {
     class patch_Engine : Engine {
@@ -59,12 +58,16 @@ namespace Monocle {
         protected override extern void Update(GameTime gameTime);
 
         private static float GetTimeRateComponentMultiplier(Scene scene) {
-            return scene?.Tracker.GetComponents<TimeRateModifier>()
-                                 .Cast<TimeRateModifier>()
-                                 .Where(trm => trm.Enabled)
-                                 .Select(trm => trm.Multiplier)
-                                 .Aggregate(1f, (acc, val) => acc * val)
-                   ?? 1;
+            if (scene == null)
+                return 1f;
+
+            float result = 1f;
+            foreach (TimeRateModifier trm in scene.Tracker.GetComponents<TimeRateModifier>()) {
+                if (trm.Enabled)
+                    result *= trm.Multiplier;
+            }
+
+            return result;
         }
 
     }
@@ -104,19 +107,19 @@ namespace Monocle {
 }
 
 namespace MonoMod {
-    
+
     /// <summary>
     /// Patch the method to apply TimeRateModifier multipliers.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEngineUpdate))]
     class PatchEngineUpdateAttribute : Attribute { }
-    
+
     static partial class MonoModRules {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
-            
+
             ILCursor cursor = new ILCursor(context);
             // multiply time rate with GetTimeRateComponentMultiplier(scene)
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),
