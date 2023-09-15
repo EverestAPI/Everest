@@ -84,7 +84,6 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRender]
             public extern override void Render();
 
         }
