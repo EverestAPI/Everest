@@ -1,6 +1,7 @@
 ﻿using System;
 using MonoMod;
 using Celeste.Mod.Entities;
+using Celeste;
 
 namespace Monocle {
     class patch_Entity : Entity {
@@ -11,6 +12,7 @@ namespace Monocle {
             private set;
         }
 
+        public EntityData __EntityData;
         public event Action<Entity> PreUpdate;
         public event Action<Entity> PostUpdate;
 

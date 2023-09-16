@@ -466,7 +466,7 @@ namespace Celeste.Mod {
 
             MainThreadHelper.Instance = new MainThreadHelper(Celeste.Instance);
             STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
-
+            TypeHelper.BakeVanillaEntityData(); // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
             // Register our core module and load any other modules.
             new CoreModule().Register();
 
@@ -497,7 +497,7 @@ namespace Celeste.Mod {
             }).Register();
 
             LuaLoader.Initialize();
-
+            TypeHelper.entityDataNameToType = new();
             Loader.LoadAuto();
 
             if (!Flags.IsHeadless) {
@@ -623,24 +623,32 @@ namespace Celeste.Mod {
                         ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                TypeHelper.entityDataNameToType[id] = type;
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                TypeHelper.entityDataNameToType[id] = type;
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                TypeHelper.entityDataNameToType[id] = type;
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(_EmptyTypeArray);
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                TypeHelper.entityDataNameToType[id] = type;
                             goto RegisterEntityLoader;
                         }
 
