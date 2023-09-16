@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public static class TypeHelper {
-        internal static Dictionary<string, Type> entityDataNameToType;
+        private static Dictionary<string, Type> entityDataNameToType;
 
         /// <summary>
         /// Gets a raw type from a CustomEntityAttribute name (i.e. "spinner" => typeof(CrystalStaticSpinner)). 
@@ -222,7 +222,7 @@ namespace Celeste.Mod.Helpers {
             };
         }
 
-        public static void AddToEntityData_Type_Map(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
+        public static void AddToDataNameType(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
             foreach(var kvp in entityDataNameToType) {
                 if(overwrite || !entityDataNameToType.ContainsKey(kvp.Key))
                     entityDataNameToType[kvp.Key] = kvp.Value;
