@@ -315,6 +315,10 @@ namespace Celeste.Mod {
                     if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level))
                         Logger.SetLogLevelFromSettings("", level);
                 }
+                
+                else if (arg == "--use-scancodes") {
+                    Environment.SetEnvironmentVariable("FNA_KEYBOARD_USE_SCANCODES", "1");
+                }
             }
         }
 
