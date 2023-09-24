@@ -8,7 +8,7 @@ using MonoMod;
 using System;
 using System.Collections;
 
-namespace Celeste.Patches {
+namespace Celeste {
     public class patch_AngryOshiro : AngryOshiro {
 
         // We're effectively in AngryOshiro, but still need to "expose" private fields to our mod.

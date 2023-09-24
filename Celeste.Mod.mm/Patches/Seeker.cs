@@ -8,7 +8,7 @@ using MonoMod;
 using System;
 using System.Collections;
 
-namespace Celeste.Patches {
+namespace Celeste {
     public class patch_Seeker : Seeker {
 
         // We're effectively in Seeker, but still need to "expose" private fields to our mod.
