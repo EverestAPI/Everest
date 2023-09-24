@@ -55,8 +55,40 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MonoModConstructor]
-        [PatchPlayerCtorOnFrameChange]
+        [PatchPlayerCtor]
         public extern void ctor(Vector2 position, PlayerSpriteMode spriteMode);
+
+        private void PostCtor() {
+            // setup vanilla state names
+            ((patch_StateMachine) StateMachine).SetStateName(StNormal, "Normal");
+            ((patch_StateMachine) StateMachine).SetStateName(StClimb, "Climb");
+            ((patch_StateMachine) StateMachine).SetStateName(StDash, "Dash");
+            ((patch_StateMachine) StateMachine).SetStateName(StSwim, "Swim");
+            ((patch_StateMachine) StateMachine).SetStateName(StBoost, "Boost");
+            ((patch_StateMachine) StateMachine).SetStateName(StRedDash, "RedDash");
+            ((patch_StateMachine) StateMachine).SetStateName(StHitSquash, "HitSquash");
+            ((patch_StateMachine) StateMachine).SetStateName(StLaunch, "Launch");
+            ((patch_StateMachine) StateMachine).SetStateName(StPickup, "Pickup");
+            ((patch_StateMachine) StateMachine).SetStateName(StDreamDash, "DreamDash");
+            ((patch_StateMachine) StateMachine).SetStateName(StSummitLaunch, "SummitLaunch");
+            ((patch_StateMachine) StateMachine).SetStateName(StDummy, "Dummy");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroWalk, "IntroWalk");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroJump, "IntroJump");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroRespawn, "IntroRespawn");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroWakeUp, "IntroWakeUp");
+            ((patch_StateMachine) StateMachine).SetStateName(StBirdDashTutorial, "BirdDashTutorial");
+            ((patch_StateMachine) StateMachine).SetStateName(StFrozen, "Frozen");
+            ((patch_StateMachine) StateMachine).SetStateName(StReflectionFall, "ReflectionFall");
+            ((patch_StateMachine) StateMachine).SetStateName(StStarFly, "StarFly");
+            ((patch_StateMachine) StateMachine).SetStateName(StTempleFall, "TempleFall");
+            ((patch_StateMachine) StateMachine).SetStateName(StCassetteFly, "CassetteFly");
+            ((patch_StateMachine) StateMachine).SetStateName(StAttract, "Attract");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroMoonJump, "IntroMoonJump");
+            ((patch_StateMachine) StateMachine).SetStateName(StFlingBird, "FlingBird");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroThinkForABit, "IntroThinkForABit");
+            // then allow mods to register new ones
+            Everest.Events.Player.RegisterStates(this);
+        }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -293,10 +325,11 @@ namespace MonoMod {
     class PatchPlayerOrigWallJumpAttribute : Attribute { }
 
     /// <summary>
-    /// Patches the method to un-hardcode the FMOD event string used to play the footstep and grab sound effect.
+    /// Patches the method to un-hardcode the FMOD event string used to play the footstep and grab sound effect,
+    /// and handle player state management.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
-    class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtor))]
+    class PatchPlayerCtorAttribute : Attribute { }
     
     /// <summary>
     /// Patches the method to fix puffer boosts breaking on respawn.
@@ -439,7 +472,18 @@ namespace MonoMod {
             cursor.Remove();
         }
 
-        public static void PatchPlayerCtorOnFrameChange(MethodDefinition method, CustomAttribute attrib) {
+        public static void PatchPlayerCtor(MethodDefinition method, CustomAttribute attrib) {
+            // We need to run player state management code just after the constructor, but can't use regular hooking
+            // as many mods IL hook the constructor already.
+            new ILContext(method).Invoke(il => {
+                MethodDefinition m_Player_PostCtor = il.Module.GetType("Celeste.Player").FindMethod("PostCtor");
+                ILCursor cursor = new ILCursor(il);
+                cursor.Index = -1;
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Callvirt, m_Player_PostCtor);
+            });
+
+            // then hook another method given the context available.
             method = method.DeclaringType.FindMethod("<.ctor>b__280_1");
 
             new ILContext(method).Invoke(il => {

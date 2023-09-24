@@ -7,6 +7,8 @@ using _Level = Celeste.Level;
 using _OuiJournal = Celeste.OuiJournal;
 using _OuiMainMenu = Celeste.OuiMainMenu;
 using _Player = Celeste.Player;
+using _Seeker = Celeste.Seeker;
+using _AngryOshiro = Celeste.AngryOshiro;
 
 namespace Celeste.Mod {
     public static partial class Everest {
@@ -168,6 +170,22 @@ namespace Celeste.Mod {
                 public static event Action<_Player> OnDie;
                 internal static void Die(_Player player)
                     => OnDie?.Invoke(player);
+
+                public static event Action<_Player> OnRegisterStates;
+                internal static void RegisterStates(_Player player)
+                    => OnRegisterStates?.Invoke(player);
+            }
+
+            public static class Seeker {
+                public static event Action<_Seeker> OnRegisterStates;
+                internal static void RegisterStates(_Seeker seeker)
+                    => OnRegisterStates?.Invoke(seeker);
+            }
+
+            public static class AngryOshiro {
+                public static event Action<_AngryOshiro> OnRegisterStates;
+                internal static void RegisterStates(_AngryOshiro oshiro)
+                    => OnRegisterStates?.Invoke(oshiro);
             }
 
             public static class Input {

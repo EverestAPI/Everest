@@ -1,7 +1,10 @@
-﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
 
+using Celeste.Mod;
 using Microsoft.Xna.Framework;
 using Monocle;
+using MonoMod;
 using System;
 using System.Collections;
 
@@ -15,11 +18,27 @@ namespace Celeste.Patches {
             : base(data, offset) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
+        
+        public extern void orig_ctor(Vector2 position, bool fromCutscene);
+        [MonoModConstructor]
+        public void ctor(Vector2 position, bool fromCutscene) {
+            orig_ctor(position, fromCutscene);
+
+            // setup vanilla state names
+            ((patch_StateMachine) state).SetStateName(0, "Chase");
+            ((patch_StateMachine) state).SetStateName(1, "ChargeUp");
+            ((patch_StateMachine) state).SetStateName(2, "Attack");
+            ((patch_StateMachine) state).SetStateName(3, "Dummy");
+            ((patch_StateMachine) state).SetStateName(4, "Waiting");
+            ((patch_StateMachine) state).SetStateName(5, "Hurt");
+            // then allow mods to register new ones
+            Everest.Events.AngryOshiro.RegisterStates(this);
+        }
 
         /// <summary>
         /// Adds a new state to this oshiro with the given behaviour, and returns the index of the new state.
         ///
-        /// States should always be added at the end of the <c>AngryOshiro(Vector2, bool)</c> constructor.
+        /// States should always be added during the <c>Events.AngryOshiro.OnRegisterStates</c> event.
         /// </summary>
         /// <param name="name">The name of this state, for display purposes by mods only.</param>
         /// <param name="onUpdate">A function to run every frame during this state, returning the index of the state that should be switched to next frame.</param>
