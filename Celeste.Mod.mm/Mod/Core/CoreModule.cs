@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -110,10 +111,10 @@ namespace Celeste.Mod.Core {
                 if (!(Engine.Scene is Level level))
                     return;
 
-                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
+                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), _ => {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
-                });
-                AssetReloadHelper.ReloadLevel();
+                    return Task.CompletedTask;
+                }).ContinueWith(_ => AssetReloadHelper.ReloadLevel());
             };
         }
 

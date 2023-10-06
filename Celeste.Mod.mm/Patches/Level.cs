@@ -251,7 +251,6 @@ namespace Celeste {
 
                 // Check if we should auto-pause
 #pragma warning disable 0618
-                Player player = NextLoadedPlayer;
                 if (ShouldAutoPause) {
                     ShouldAutoPause = false;
                     Pause();

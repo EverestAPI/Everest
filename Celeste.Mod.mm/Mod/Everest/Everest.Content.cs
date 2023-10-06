@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod {
 
@@ -862,19 +863,19 @@ namespace Celeste.Mod {
                             .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
 
                         if (mode != null) {
-                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAPNAME")} {name}", () => {
+                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAPNAME")} {name}", _ => {
                                 mode.MapData.Reload();
-                            });
-
-                            if (levelPrev?.Session.MapData == mode.MapData)
-                                AssetReloadHelper.ReloadLevel();
-
+                                return Task.CompletedTask;
+                            }).ContinueWith(_ => MainThreadHelper.Schedule(() => {
+                                if (levelPrev?.Session.MapData == mode.MapData)
+                                    AssetReloadHelper.ReloadLevel();
+                            }));
                         } else {
                             // What can go wrong?
-                            AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), () => {
+                            AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), _ => {
                                 AssetReloadHelper.ReloadAllMaps();
-                            });
-                            AssetReloadHelper.ReloadLevel();
+                                return Task.CompletedTask;
+                            }).ContinueWith(_ => AssetReloadHelper.ReloadLevel());
                         }
 
                     } else if (next.Type == typeof(AssetTypeXml) || next.Type == typeof(AssetTypeSpriteBank)) {
