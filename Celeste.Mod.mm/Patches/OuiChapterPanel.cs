@@ -225,6 +225,7 @@ namespace Celeste {
         [PatchOuiChapterPanelReset]
         private extern void Reset();
 
+        [PatchStrawberryWidthInChapterPanel]
         private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
         private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
             // search for the actual checkpoint index, since checkpointIndex might not be correct if checkpoints are skipped.
@@ -302,6 +303,27 @@ namespace Celeste {
             float mapNameSize = ActiveFont.Measure(Dialog.Clean(AreaData.Get(Area).Name)).X;
             return vanillaValue - Math.Max(0f, mapNameSize + vanillaValue - 490f);
         }
+
+
+        private static float vanillaOffsetForStrawberryWidth = 0;
+
+        private float getStrawberryWidth(float vanillaValue, int strawberryCount, int checkpointIndex) {
+            bool hasCassette = (Area.Mode == AreaMode.Normal && Data.CassetteCheckpointIndex == checkpointIndex);
+            float maxWidth = hasCassette ? 440 : 520;
+
+            float modifiedValue = vanillaValue;
+            if (vanillaValue * strawberryCount > maxWidth) {
+                modifiedValue = maxWidth / strawberryCount;
+            }
+
+            vanillaOffsetForStrawberryWidth = vanillaValue - modifiedValue;
+            return modifiedValue;
+        }
+
+        private static Vector2 correctInitialStrawberryOffset(Vector2 initialOffset, Vector2 directionVector) {
+            initialOffset -= directionVector * vanillaOffsetForStrawberryWidth;
+            return initialOffset;
+        }
     }
 }
 
@@ -329,6 +351,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelReset))]
     class PatchOuiChapterPanelResetAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches chapter panel tab rendering to allow for custom backpack/cassette icons.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryWidthInChapterPanel))]
+    class PatchStrawberryWidthInChapterPanelAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -463,5 +491,30 @@ namespace MonoMod {
             }
         }
 
+
+        public static void PatchStrawberryWidthInChapterPanel(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getStrawberryWidth = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::getStrawberryWidth(System.Single,System.Int32,System.Int32)");
+            MethodDefinition m_correctInitialStrawberryOffset = context.Method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Vector2 Celeste.OuiChapterPanel::correctInitialStrawberryOffset(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)");
+            int boolArrayIndex = context.Body.Variables.Where(var => var.VariableType.FullName == "System.Boolean[]").First().Index;
+
+            ILCursor cursor = new ILCursor(context);
+
+            for (int i = 0; i < 2; i++) {
+                cursor.GotoNext(instr => instr.MatchLdcR4(44f));
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Ldloc, boolArrayIndex);
+                cursor.Emit(OpCodes.Ldlen);
+                cursor.Emit(OpCodes.Ldarg_3);
+                cursor.Emit(OpCodes.Call, m_getStrawberryWidth);
+
+                if (i == 0) {
+                    cursor.GotoNext(instr => instr.OpCode == OpCodes.Stloc_S);
+                    int vectorIndex = (cursor.Next.Operand as VariableReference).Index;
+                    cursor.Emit(OpCodes.Ldloc, vectorIndex - 1);
+                    cursor.Emit(OpCodes.Call, m_correctInitialStrawberryOffset);
+                }
+            }
+        }
     }
 }

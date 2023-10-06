@@ -36,8 +36,11 @@ namespace Celeste {
         private static HashSet<string> ingestedModBankPaths = new HashSet<string>();
         public static bool AudioInitialized { get; private set; } = false;
 
-        [MonoModIgnore]
-        internal static extern void CheckFmod(RESULT result);
+        [MonoModReplace]
+        internal static void CheckFmod(RESULT result) {
+            if (result != RESULT.OK)
+                throw new Exception($"FMOD Failed: {result} ({Error.String(result)})");
+        }
 
         [MonoModIfFlag("RelinkXNA")]
         [DllImport("fmod_SDL", CallingConvention = CallingConvention.Cdecl)]
