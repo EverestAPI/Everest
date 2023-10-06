@@ -907,10 +907,6 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
-            // Unload mod assemblies
-            module.Metadata.AssemblyContext.Dispose();
-            module.Metadata.AssemblyContext = null;
-
             Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
         }
 
