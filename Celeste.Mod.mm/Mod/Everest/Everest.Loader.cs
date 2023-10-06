@@ -565,7 +565,7 @@ namespace Celeste.Mod {
                             Everest._Modules.ForEach(mod => revDeps.TryAdd(mod.Metadata.Name, new List<EverestModule>()));
 
                             foreach (EverestModule mod in Everest._Modules)
-                                foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.DependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
+                                foreach (EverestModuleAssemblyContext depAsmCtx in mod.Metadata.AssemblyContext?.ActiveDependencyContexts ?? Enumerable.Empty<EverestModuleAssemblyContext>())
                                     revDeps.GetValueOrDefault(depAsmCtx.ModuleMeta.Name)?.Add(mod);
 
                             // Run a DFS over the reverse dependency graph to determine the reload order
