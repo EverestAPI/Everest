@@ -27,6 +27,7 @@
 	POSTCARD_MISSINGTUTORIAL=	{big}しまった！{/big}{n}プレイバックチュートリアル{n}{#ff1144}((tutorial)){#}が{n}見つからなかったよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
 	POSTCARD_TILEXMLERROR=		{big}しまった！{/big}{n}{#ff1144}((path)){#}の{n}タイルセット解析中にエラーが見つかっちゃった。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
 	POSTCARD_XMLERROR=			{big}しまった！{/big}{n}{#ff1144}((path)){#}に構文エラーがあるよ。{n}詳しくは{#44adf7}log.txt{#}をチェックしてね。
+	POSTCARD_BOSSLASTNODEHIT=	{big}しまった！{/big}{n}{#ff1144}バデリンボス{#}の実体が最後のノードに到達したよ。{n}プレイヤーが触れないよう、{n}現在の部屋の外にノードを追加してね。 
 
 # Main Menu
 	MENU_TITLETOUCH= 		タッチ
@@ -34,12 +35,13 @@
 	MENU_MODOPTIONS= 		MOD設定
 	MENU_PAUSE_MODOPTIONS= 	MOD設定
 	
-	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1つのMODをロードできません
-	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0}つのMODをロードできません
+	MENU_MODOPTIONS_UPDATE_FAILED=				Everestのアップデートに失敗しました
+	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1個のMODをロードできません
+	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0}個のMODをロードできません
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yamlをロードできません
-	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Everestのアップデートが可能です
-	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		1つのMODがアップデート可能です
-	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		{0}つのMODがアップデート可能です
+	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Everestがアップデート可能です
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		1個のMODがアップデート可能です
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		{0}個のMODがアップデート可能です
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= オリジナルのCeleste.exeを起動します
@@ -50,7 +52,7 @@
 
 # Mod Options
 	MODOPTIONS_TITLE= 										EVEREST
-	MODOPTIONS_NEEDSRELAUNCH=								変更を反映させるのに再起動が必要です
+	MODOPTIONS_NEEDSRELAUNCH=								変更を反映させるのにCelesteの再起動が必要です
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Everestを((version))にバージョンアップする
@@ -80,7 +82,6 @@
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			テキストの入力にキーボードを使用する
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yamlのエラー表示
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		MOD制作者用オプションです
-	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				DiscordのRich Presence機能
 	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				メニュー画面の移動
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						メニュー画面での前ページ移動
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						メニュー画面での後ページ移動
@@ -100,6 +101,16 @@
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						サウンドテスト
 	MODOPTIONS_COREMODULE_OOBE= 							初期設定画面を表示する
 	MODOPTIONS_COREMODULE_TOGGLEMODS=						ロードするMODを管理する
+	
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				DiscordのRich Presence機能
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Rich Presenceの設定
+	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					アイコンの表示
+	MODOPTIONS_COREMODULE_DISCORDSHOWMAP=					マップ名表示
+	MODOPTIONS_COREMODULE_DISCORDSHOWSIDE=					面（A, B...）の表示
+	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					部屋名表示
+	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				ストロベリーの個数表示
+	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				デス数表示
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					Discordに接続できませんでした。一度OFFにして、もう一度試してください。
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						MODをロードするのに失敗しました。
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						詳細はlog.txtを確認してください。
@@ -127,8 +138,8 @@
 	MAPLIST_SEARCH=			検索
 	MAPLIST_SEARCH_MATCH=	クイックマッチ
 	MAPLIST_TYPE_EVERYTHING=  すべて
-	MAPLIST_RESULTS_SINGULAR= {0}つのマップが見つかりました  
-	MAPLIST_RESULTS_PLURAL=   {0}つのマップが見つかりました
+	MAPLIST_RESULTS_SINGULAR= {0}個のマップが見つかりました  
+	MAPLIST_RESULTS_PLURAL=   {0}個のマップが見つかりました
 
 	LEVELSET_CELESTE= 		Celeste
 	LEVELSET_= 				未分類
@@ -141,9 +152,20 @@
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	バージョンリストのダウンロードに失敗しました。
 	UPDATER_VERSIONS_ERR_FORMAT= 	フォーマットが読み取れません。
+
+	UPDATER_CURRENT_BRANCH=			現在のブランチ
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		タグ付きリリース (GitHub)
+	UPDATER_SRC_BUILDBOT_AZURE=		自動ビルド (Azure)
 	
+# currently unused
 	UPDATER_SRC_BUILDBOT= 			自動ビルド
-	
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	このプラットフォームではサポートされていません - キャンセルします
 	EVERESTUPDATER_NOUPDATE=		アップデートが見つかりません - キャンセルします
@@ -156,9 +178,11 @@
 	EVERESTUPDATER_ZIPENTRIES=		エントリー
 	EVERESTUPDATER_EXTRACTIONFAILED=	ファイルの抽出に失敗しました！
 	EVERESTUPDATER_EXTRACTIONFINISHED=	ファイルの抽出が完了しました。
-	EVERESTUPDATER_RESTARTING=		再起動します
-	EVERESTUPDATER_RESTARTINGIN=	再起動まで{0}
+	EVERESTUPDATER_RESTARTING=		Celesteを再起動します
+	EVERESTUPDATER_RESTARTINGIN=	Celesteの再起動まで{0}
 	EVERESTUPDATER_STARTINGFAILED=	インストーラーの起動に失敗しました！
+	EVERESTUPDATER_MISSINGRUNTIME_A=	.NET Core Everestをインストールするのに.NET 7.0ランタイムが必要です
+	EVERESTUPDATER_MISSINGRUNTIME_B=	次のページからダウンロードできます: {0}
 	EVERESTUPDATER_ERRORHINT1=		GitHub @ https://github.com/EverestAPI/Everest 上で新しくissueを作成するか、
 	EVERESTUPDATER_ERRORHINT2=		Discord上の#modding_help チャンネルに参加してください（上記レポジトリで招待を受けられます）。
 	EVERESTUPDATER_ERRORHINT3=		log.txtも忘れずにアップロードしてください
@@ -174,12 +198,15 @@
 	MODUPDATECHECKER_INSTALLING=	インストール中…
 	MODUPDATECHECKER_FAILED=		アップデートに失敗しました！
 	MODUPDATECHECKER_CANCELLING=	アップデートをキャンセルしています…
-	MODUPDATECHECKER_CANCELLED=		アップデートがキャンセルされました
+	MODUPDATECHECKER_CANCELLED=		アップデートをキャンセルしました
 	MODUPDATECHECKER_WILLRESTART=	もどるボタンを押して、Celesteを再起動してください
 	MODUPDATECHECKER_UPDATE_ALL=	すべてのMODをアップデートする
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	すべてのMODをアップデートしています…
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	すべてのMODをアップデートしました。
+	MODUPDATECHECKER_RESTARTNEEDED= 引き続きプレイするにはCelesteの再起動が必要になります
+	MODUPDATECHECKER_MENU_HEADER_RESTART= 選択してください
 	MODUPDATECHECKER_SHUTDOWN= おわる
+	MODUPDATECHECKER_RESTART= Celesteを再起動する
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		MODのアップデートをチェックしています…
@@ -196,17 +223,18 @@
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						必要なMODをインストール
 	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		MODのデータベースをダウンロードしています…
-	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	インストール済みMODの情報を集めています…
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	インストール済みMOD情報を集めています…
 	DEPENDENCYDOWNLOADER_DONE=						完了。
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	エラー： データベースのダウンロードに失敗しました。詳しくはlog.txtを確認してください。
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		注意： MODをロードするのにEverestをアップデートする必要があります。「Everestのバージョンを変更する」からアップデートしてください。 
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		注意: MODをロードするのに（現在WIPの）Everest .NET Coreビルドが必要です。「Everestのバージョンを変更する」からアップデートしてください。
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			MODを動かすためにEverestを{0}にアップデートします。OKボタンを押して続けます。
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				エラー： データベース中に{0}が見つかりませんでした。このMODを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			エラー： MODを動かすのに最新バージョンのCelesteが必要です。Celesteをアップデートしてください。
 	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	エラー： {0}に複数のバージョンが見つかったため、自動インストールができませんでした。このMODを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			エラー： {0}のバージョン{1}が必要ですが、バージョン{2}しか見つかりませんでした。新しいバージョンを手動でインストールしてください。
 	DEPENDENCYDOWNLOADER_RESTARTING=				Celesteを再起動します。
-	DEPENDENCYDOWNLOADER_RESTARTING_IN=				再起動します… {0}
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Celesteを再起動します… {0}
 	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		もどるボタンを押して、Celesteを再起動してください。
 	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		もどるボタンを押すと、MOD設定画面に戻ります。
 	DEPENDENCYDOWNLOADER_DOWNLOADING=				{1}から{0}をダウンロードしています…
@@ -238,12 +266,12 @@
 
 # Mod Toggle Menu
 	MODOPTIONS_MODTOGGLE=				ロードするMODの管理
-	MODOPTIONS_MODTOGGLE_LOADING=		MODの情報をロードしています…
+	MODOPTIONS_MODTOGGLE_LOADING=		MOD情報をロードしています…
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	必要なMODを自動的に切り替える
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	あるMODをロードすると、必要なすべてのMODもロードされます。
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	あるMODをアンロードすると、そのMODに依存しているすべてのMODもアンロードされます。
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		MODをロード・アンロードすると、blacklist.txtが上書きされ、
-	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するため、Celesteが再起動されます。
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		変更を適用するためCelesteを再起動します。
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		色がついているMODは、ほかにロードされているMODを動かすのに必要です。
 	MODOPTIONS_MODTOGGLE_WHITELISTWARN= これらの設定を正しく適用するためには、ホワイトリストを無効にしてください。
 	MODOPTIONS_MODTOGGLE_ENABLEALL=		すべてロードする
