@@ -20,5 +20,9 @@ namespace Celeste.Mod {
         public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
         }
 
+        public override void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Module {Metadata} registered without code.");
+        }
+
     }
 }
