@@ -428,10 +428,10 @@ namespace Celeste.Mod {
             base.Update();
 
             // Update the cogwheel rotation
-            cogwheelRot += 4 * Engine.DeltaTime;
+            cogwheelRot += 4 * Engine.RawDeltaTime;
 
             // Update the in-out lerp timer
-            transitionTimer += Engine.DeltaTime;
+            transitionTimer += Engine.RawDeltaTime;
             if (transitionTimer > (outTransition ? TimeOut : TimeIn))
                 transitionTimer = (outTransition ? TimeOut : TimeIn);
 
