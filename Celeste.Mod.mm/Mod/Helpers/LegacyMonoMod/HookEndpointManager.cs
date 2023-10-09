@@ -20,6 +20,14 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         private static ConcurrentDictionary<(MethodBase, Delegate), Hook> Hooks = new ConcurrentDictionary<(MethodBase, Delegate), Hook>();
         private static ConcurrentDictionary<(MethodBase, Delegate), ILHook> ILHooks = new ConcurrentDictionary<(MethodBase, Delegate), ILHook>();
 
+        private static bool IsEverestInternalMethod(MethodBase method) {
+            for (Type type = method.DeclaringType; type != null; type = type.DeclaringType)
+                if (type.Namespace.StartsWith("Celeste.Mod"))
+                    return true;
+
+            return false;
+        }
+
         private static bool IsLegacyMMCaller() {
             foreach (StackFrame frame in new StackTrace().GetFrames())
                 if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext ctx)
@@ -29,8 +37,19 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             return false;
         }
 
+        private static bool IsCoreModCaller() {
+            foreach (StackFrame frame in new StackTrace().GetFrames())
+                if (frame.HasMethod() && frame.GetMethod()?.DeclaringType?.Assembly is Assembly asm && AssemblyLoadContext.GetLoadContext(asm) is EverestModuleAssemblyContext ctx)
+                    return ctx.ModuleMeta.IsNetCoreOnlyMod;
+                    
+            return false;
+        }
+
         public static void Add<T>(MethodBase method, Delegate hookDelegate) where T : Delegate => Add(method, hookDelegate);
         public static void Add(MethodBase method, Delegate hookDelegate) {
+            if (IsEverestInternalMethod(method) && IsCoreModCaller())
+                throw new InvalidOperationException("Core mods may not add hooks to Everest internal methods");
+
             Hook hook = new Hook(method, hookDelegate, LegacyDetourContext.GetCurrentDetourConfig(false, IsLegacyMMCaller()));
             if (Hooks.TryAdd((method, hookDelegate), hook))
                 return;
@@ -42,13 +61,19 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
         }
 
         public static void Remove<T>(MethodBase method, Delegate hookDelegate) where T : Delegate => Remove(method, hookDelegate);
-        public static void Remove(MethodBase method, Delegate hookDelegate){
+        public static void Remove(MethodBase method, Delegate hookDelegate) {
+            if (IsEverestInternalMethod(method) && IsCoreModCaller())
+                throw new InvalidOperationException("Core mods may not remove hooks from Everest internal methods");
+
             if (Hooks.TryRemove((method, hookDelegate), out Hook hook))
                 hook.Dispose();
         }
 
         public static void Modify<T>(MethodBase method, Delegate callback) where T : Delegate => Modify(method, callback);
         public static void Modify(MethodBase method, Delegate callback) {
+            if (IsEverestInternalMethod(method) && IsCoreModCaller())
+                throw new InvalidOperationException("Core mods may not add hooks to Everest internal methods");
+
             ILHook hook = new ILHook(method, (ILContext.Manipulator) callback, LegacyDetourContext.GetCurrentDetourConfig(true, IsLegacyMMCaller()));
             if (ILHooks.TryAdd((method, callback), hook))
                 return;
@@ -60,6 +85,9 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
 
         public static void Unmodify<T>(MethodBase method, Delegate callback) => Unmodify(method, callback);
         public static void Unmodify(MethodBase method, Delegate callback) {
+            if (IsEverestInternalMethod(method) && IsCoreModCaller())
+                throw new InvalidOperationException("Core mods may not remove hooks from Everest internal methods");
+
             if (ILHooks.TryRemove((method, callback), out ILHook hook))
                 hook.Dispose();
         }

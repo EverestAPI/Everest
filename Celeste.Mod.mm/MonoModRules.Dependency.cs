@@ -23,6 +23,28 @@ namespace MonoMod {
 
         // Init rules for patching game dependency DLLs
         private static void InitDependencyRules(MonoModder modder) {
+            // If this is the MMHook assembly, deprecate On./IL. hooks for the Celeste.Mod namespace
+            if (modder.Module.Name.StartsWith("MMHOOK_")) {
+                MethodReference obsoleteAttrCtor = modder.Module.ImportReference(typeof(ObsoleteAttribute).GetConstructor(new Type[] { typeof(string), typeof(bool) }));
+                foreach (TypeDefinition type in modder.Module.Types) {
+                    if (!type.Namespace.StartsWith("On.Celeste.Mod") && !type.Namespace.StartsWith("IL.Celeste.Mod"))
+                        continue;
+
+                    type.CustomAttributes.Add(new CustomAttribute(obsoleteAttrCtor) {
+                        ConstructorArguments = {
+                            new CustomAttributeArgument(modder.Module.TypeSystem.String,
+                                """
+                                Hooks on Everest-internal types (=types in the Celeste.Mod namespace) are deprecated and unsupported.
+                                If you have a legitimate need for creating them, please reach out so that it can be added to the official API!
+                                Attempting to uses On. / IL. hookgen helpers to create such hooks will fail for Core mods.
+                                """.Replace('\n', ' ')
+                            ),
+                            new CustomAttributeArgument(modder.Module.TypeSystem.Boolean, true)
+                        }
+                    });
+                }
+            }
+
             for (int i = 0; i < RulesModule.Types.Count; i++) {
                 TypeDefinition type = RulesModule.Types[i];
                 if (type.FullName.StartsWith("MonoMod."))
