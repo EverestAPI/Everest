@@ -126,9 +126,24 @@ namespace Celeste.Mod {
             /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
             /// <returns>The loaded, relinked assembly.</returns>
             public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream,
+                MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null)
+                => GetRelinkedAssembly(meta, asmname, stream, null, depResolver, checksumsExtra, prePatch);
+
+            /// <summary>
+            /// Relink a .dll to point towards Celeste.exe and FNA / XNA properly at runtime, then load it.
+            /// </summary>
+            /// <param name="meta">The mod metadata, used for caching, among other things.</param>
+            /// <param name="asmname"></param>
+            /// <param name="stream">The stream to read the .dll from.</param>
+            /// <param name="symStream">The stream to read the .dll debug symbols from (or null if there are no symbols).</param>
+            /// <param name="depResolver">An optional dependency resolver.</param>
+            /// <param name="checksumsExtra">Any optional checksums</param>
+            /// <param name="prePatch">An optional step executed before patching, but after MonoMod has loaded the input assembly.</param>
+            /// <returns>The loaded, relinked assembly.</returns>
+            public static Assembly GetRelinkedAssembly(EverestModuleMetadata meta, string asmname, Stream stream, Stream symStream,
                 MissingDependencyResolver depResolver = null, string[] checksumsExtra = null, Action<MonoModder> prePatch = null) {
                 lock (RelinkerLock) {
-                    // Write the stream to a temporary file if it isn't a file stream
+                    // Write the streams to a temporary file if it isn't a file stream
                     string inPath;
                     if (stream is FileStream fs)
                         inPath = fs.Name;
@@ -138,6 +153,17 @@ namespace Celeste.Mod {
                             stream.CopyTo(tmpFs);
                     }
 
+                    string inSymPath = null;
+                    if (symStream != null) {
+                        if (symStream is FileStream symFs)
+                            inSymPath = symFs.Name;
+                        else {
+                            inSymPath = Path.GetTempFileName();
+                            using (FileStream tmpFs = File.OpenWrite(inSymPath))
+                                symStream.CopyTo(tmpFs);
+                        }
+                    }
+
                     // Determine cache paths
                     string cachePath = GetCachedPath(meta, asmname);
                     string cacheChecksumPath = Path.ChangeExtension(cachePath, ".sum");
@@ -145,14 +171,14 @@ namespace Celeste.Mod {
                     Assembly asm = null;
 
                     // Try to load the assembly from the cache
-                    if (TryLoadCachedAssembly(meta, asmname, inPath, cachePath, cacheChecksumPath, checksumsExtra, out string[] checksums) is not Assembly cacheAsm) {
+                    if (TryLoadCachedAssembly(meta, asmname, inPath, inSymPath, cachePath, cacheChecksumPath, checksumsExtra, out string[] checksums) is not Assembly cacheAsm) {
                         // Delete cached files
                         File.Delete(cachePath);
                         File.Delete(cacheChecksumPath);
 
                         try {
                             // Relink the assembly                
-                            if (RelinkAssembly(meta, asmname, inPath, cachePath, depResolver, prePatch, out string tmpOutPath) is not Assembly relinkedAsm)
+                            if (RelinkAssembly(meta, asmname, inPath, inSymPath, cachePath, depResolver, prePatch, out string tmpOutPath) is not Assembly relinkedAsm)
                                 return null;
                             else
                                 asm = relinkedAsm;
@@ -174,11 +200,13 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string inPath, string cachePath, string cacheChecksumsPath, string[] extraChecksums, out string[] curChecksums) {
+            private static Assembly TryLoadCachedAssembly(EverestModuleMetadata meta, string asmName, string inPath, string inSymPath, string cachePath, string cacheChecksumsPath, string[] extraChecksums, out string[] curChecksums) {
                 // Calculate checksums
                 List<string> checksums = new List<string>();
                 checksums.Add(GameChecksum);
                 checksums.Add(Everest.GetChecksum(inPath).ToHexadecimalString());
+                if (inSymPath != null)
+                    checksums.Add(Everest.GetChecksum(inSymPath).ToHexadecimalString());
 
                 if (extraChecksums != null)
                     checksums.AddRange(extraChecksums);
@@ -204,7 +232,7 @@ namespace Celeste.Mod {
                 }
             }
 
-            private static Assembly RelinkAssembly(EverestModuleMetadata meta, string asmname, string inPath, string outPath, MissingDependencyResolver depResolver, Action<MonoModder> prePatch, out string tmpOutPath) {
+            private static Assembly RelinkAssembly(EverestModuleMetadata meta, string asmname, string inPath, string inSymPath, string outPath, MissingDependencyResolver depResolver, Action<MonoModder> prePatch, out string tmpOutPath) {
                 tmpOutPath = null;
 
                 // Check if the assembly name is on the blacklist
@@ -234,16 +262,9 @@ namespace Celeste.Mod {
                     InitMMFlags(modder);
 
                     // Read and setup debug symbols (if they exist)
-                    modder.ReaderParameters.ReadSymbols = true;
-                    modder.ReaderParameters.SymbolStream = OpenStream(meta, out _, Path.ChangeExtension(meta.DLL, ".pdb"), Path.ChangeExtension(meta.DLL, ".mdb"));
-                    try {
-                        modder.Read();
-                    } catch {
-                        modder.ReaderParameters.ReadSymbols = false;
-                        modder.ReaderParameters.SymbolStream?.Dispose();
-                        modder.ReaderParameters.SymbolStream = null;
-
-                        // Try again
+                    using (FileStream symStream = inSymPath != null ? File.OpenRead(inSymPath) : null) {
+                        modder.ReaderParameters.ReadSymbols = symStream != null;
+                        modder.ReaderParameters.SymbolStream = symStream;
                         modder.Read();
                     }
 
@@ -337,36 +358,6 @@ namespace Celeste.Mod {
 
                 // Load the module
                 return _RuntimeRulesModule = ModuleDefinition.ReadModule(rulesPath, new ReaderParameters(ReadingMode.Immediate));
-            }
-
-            private static Stream OpenStream(EverestModuleMetadata meta, out string result, params string[] names) {
-                if (!string.IsNullOrEmpty(meta.PathArchive)) {
-                    using (ZipFile zip = new ZipFile(meta.PathArchive)) {
-                        foreach (ZipEntry entry in zip.Entries) {
-                            if (!names.Contains(entry.FileName))
-                                continue;
-                            result = entry.FileName;
-                            return entry.ExtractStream();
-                        }
-                    }
-                    result = null;
-                    return null;
-                }
-
-                if (!string.IsNullOrEmpty(meta.PathDirectory)) {
-                    foreach (string name in names) {
-                        string path = name;
-                        if (!File.Exists(path))
-                            path = Path.Combine(meta.PathDirectory, name);
-                        if (!File.Exists(path))
-                            continue;
-                        result = path;
-                        return File.OpenRead(path);
-                    }
-                }
-
-                result = null;
-                return null;
             }
 
             /// <summary>

@@ -152,8 +152,9 @@ namespace Celeste.Mod {
                     throw new ObjectDisposedException(nameof(EverestModuleAssemblyContext));
 
                 // Determine the default assembly name
+                string osSepPath = path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
                 if (asmName == null)
-                    asmName = Path.GetFileNameWithoutExtension(path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar));
+                    asmName = Path.GetFileNameWithoutExtension(osSepPath);
 
                 // Check if the assembly has already been loaded
                 string asmPath = path.Replace('\\', '/');
@@ -171,18 +172,25 @@ namespace Celeste.Mod {
                 try {
                     if (!string.IsNullOrEmpty(ModuleMeta.PathArchive))
                         using (ZipFile zip = new ZipFile(ModuleMeta.PathArchive)) {
-                            // Try to find + load the entry
-                            path = path.Replace('\\', '/');
-                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == path);
+                            // Try to find + load the (symbol) entry
+                            string entryPath = osSepPath.Replace(Path.DirectorySeparatorChar, '/');
+                            ZipEntry entry = zip.Entries.FirstOrDefault(entry => entry.FileName == entryPath);
+
+                            string symEntryPath = Path.ChangeExtension(osSepPath, ".pdb").Replace(Path.DirectorySeparatorChar, '/');
+                            ZipEntry symEntry = zip.Entries.FirstOrDefault(entry => entry.FileName == symEntryPath);
 
                             if (entry != null)
                                 using (Stream stream = entry.ExtractStream())
-                                    asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                                using (Stream symStream = symEntry?.ExtractStream())
+                                    asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream, symStream);
                         }
-                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory))
+                    else if (!string.IsNullOrEmpty(ModuleMeta.PathDirectory)) {
+                        string symPath = Path.ChangeExtension(path, ".pdb");
                         if (File.Exists(path))
                             using (Stream stream = File.OpenRead(path))
-                                asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream);
+                            using (Stream symStream = File.Exists(symPath) ? File.OpenRead(symPath) : null)
+                                asm = Everest.Relinker.GetRelinkedAssembly(ModuleMeta, asmName, stream, symStream);
+                    }
                 } finally {
                     _ActiveLocalLoadContexts = prevCtxs;
                 }
