@@ -1,4 +1,4 @@
-From 1e43cb9171dd377624555e0ae9ff07971347c7e0 Mon Sep 17 00:00:00 2001
+From 975126e2a26de0d54aa4b004851bfc29f8179029 Mon Sep 17 00:00:00 2001
 From: Popax21 <popa21@popa21.at>
 Date: Tue, 18 Jul 2023 01:44:07 +0200
 Subject: [PATCH] [PATCH] Fix input latency by enabling use of exclusive
@@ -10,7 +10,7 @@ Subject: [PATCH] [PATCH] Fix input latency by enabling use of exclusive
  2 files changed, 316 insertions(+), 7 deletions(-)
 
 diff --git a/src/FNA3D_Driver_D3D11.c b/src/FNA3D_Driver_D3D11.c
-index df61e27..97b384d 100644
+index c12ebd9..993f2ae 100644
 --- a/src/FNA3D_Driver_D3D11.c
 +++ b/src/FNA3D_Driver_D3D11.c
 @@ -56,6 +56,18 @@
@@ -370,8 +370,8 @@ index df61e27..97b384d 100644
  	FNA3D_Renderer *driverData,
  	FNA3D_PresentationParameters *presentationParameters
 @@ -5118,6 +5379,12 @@ static FNA3D_Device* D3D11_CreateDevice(
- 		? D3D_DRIVER_TYPE_UNKNOWN /* Must be UNKNOWN if adapter is non-null according to spec */
- 		: D3D_DRIVER_TYPE_WARP;
+ 		? D3D_DRIVER_TYPE_WARP
+ 		: D3D_DRIVER_TYPE_UNKNOWN; /* Must be UNKNOWN if adapter is non-null according to spec */
  
 +	/* Force debug mode if the user set the hint */
 +	if (SDL_GetHintBoolean("FNA3D_D3D11_FORCE_DEBUG", SDL_FALSE))
