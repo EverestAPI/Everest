@@ -348,7 +348,7 @@ namespace Celeste.Mod {
             try {
                 foreach (EverestModuleAssemblyContext depCtx in DependencyContexts) {
                     try {
-                        if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.LoadFromAssemblyName(asmName) is Assembly depAsm) {
+                        if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.LoadFromThisMod(asmName) is Assembly depAsm) {
                             _LocalLoadCache.TryAdd(asmName.Name, depAsm);
                             ActiveDependencyContexts.Add(depCtx);
                             return depAsm;
@@ -410,7 +410,7 @@ namespace Celeste.Mod {
             (_ActiveLocalLoadContexts ??= new Stack<EverestModuleAssemblyContext>()).Push(this);
             try {
                 foreach (EverestModuleAssemblyContext depCtx in DependencyContexts)
-                    if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.Resolve(asmName) is AssemblyDefinition depAsm) {
+                    if (!_ActiveLocalLoadContexts.Contains(depCtx) && depCtx.ResolveFromThisMod(asmName) is AssemblyDefinition depAsm) {
                         _LocalResolveCache.TryAdd(asmName.Name, depAsm);
                         return depAsm;
                     }
