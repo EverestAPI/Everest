@@ -105,7 +105,7 @@ namespace Celeste {
         /// Get the SID (string ID) of the area.
         /// </summary>
         [Obsolete("Use AreaStats.SID instead.")]
-        public static string VerySpecificString(this AreaStats self)
+        public static string GetSID(this AreaStats self)
             => ((patch_AreaStats) self).SID;
         /// <summary>
         /// Set the SID (string ID) of the area.
