@@ -1,0 +1,147 @@
+trigger:
+  branches:
+    include:
+    - 'stable'
+    - 'beta'
+
+schedules:
+- cron: '0 0 1 */2 *'
+  branches:
+    include:
+    - 'stable'
+- cron: '0 0 1,15 * *'
+  branches:
+    include:
+    - 'beta'
+
+
+variables:
+  # Use format accepted by `date` command (ex: `date -d "1 month 15 days ago"`)
+  ${{ if eq(variables['Build.SourceBranchName'], 'stable') }}:
+    Commit_Buffer: '2 months'
+    Backdate: '2 months'
+  ${{ if eq(variables['Build.SourceBranchName'], 'beta') }}:
+    Commit_Buffer: '1 month'
+    Backdate: '0 months'
+
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+
+jobs:
+- job: merge_changes
+  displayName: Update branch
+  steps:
+  - checkout: self
+    fetchDepth: 0
+    persistCredentials: true
+
+  - task: ShellScript@2
+    inputs:
+      scriptPath: .azure-pipelines/scripts/apply-hotfixes.sh
+    displayName: Merge hotfixes
+    name: apply_hotfixes
+    env:
+      BRANCH_NAME: $(Build.SourceBranchName)
+
+  - script: |
+      echo "Force pushing changes to remote..."
+      git push -f origin 'HEAD:$(Build.SourceBranchName)'
+    displayName: Update origin
+    condition: ne(variables['waitForManualValidation'], 'true')
+
+
+- job: report_issues
+  displayName: Report issues
+  dependsOn: merge_changes
+  # Job condition applied to task to ensure all dependant jobs run with default "successful()" condition.
+  variables:
+    waitForValidation: $[ dependencies.Foo.outputs['apply_hotfixes.waitForManualValidation'] ]
+
+  pool: server # ManualValidation task requires an agentless job
+
+  steps:
+    - task: ManualValidation@0
+      condition: eq(variables['waitForValidation'], 'true')
+      inputs:
+        notifyUsers:
+
+- job: prebuild
+  displayName: Pre-build
+  dependsOn: report_issues
+  steps:
+  - checkout: self
+    fetchDepth: 0
+
+  # Output variables: `version`, `shortVersion`
+  - task: ShellScript@2
+    name: compute_version
+    displayName: Compute version
+    inputs:
+      scriptPath: .azure-pipelines/scripts/release-version.sh
+    env:
+      HOST: 'azure'
+      COMMIT_HASH: $(Build.SourceVersion)
+      BRANCH_NAME: $(Build.SourceBranchName)
+      OFFSET: $(BuildIdOffset)
+
+
+- template: 'build.yml'
+  parameters:
+    version: $[ dependencies.prebuild.outputs['compute_version.version'] ]
+    dependsOn: 'prebuild'
+
+
+- deployment: deploy_release
+  displayName: Deploy ${{ variables['Build.SourceBranchName'] }} release
+
+  dependsOn:
+    - prebuild
+    - build # job name in build.yml
+
+  variables:
+    version: $[ dependencies.prebuild.outputs['compute_version.shortVersion'] ]
+
+  environment: $(Build.SourceBranchName)
+  strategy:
+    runOnce:
+      deploy:
+
+        steps:
+        - task: DownloadBuildArtifacts@1
+          inputs:
+            buildType: current
+            downloadType: specific
+            downloadPath: $(Build.ArtifactStagingDirectory)
+
+        - script: |
+            cd $(Build.ArtifactStagingDirectory)
+            zip -9r main.zip ./main/
+            zip -9r olympus-meta.zip olympus-meta
+            zip -9r olympus-build.zip olympus-build
+            [ -d lib-stripped ] && zip -9r lib-stripped.zip lib-stripped
+            exit 0
+          displayName: Package artifacts
+
+        # Create GitHub release for new stable versions.
+        - task: GitHubRelease@1
+          displayName: 'Create GitHub Release'
+          condition: succeeded()
+          inputs:
+            githubConnection: 0x0ade-bot
+            repositoryName: '$(Build.Repository.Name)'
+            action: 'create'
+            target: '$(Build.SourceVersion)'
+            tagSource: 'userSpecifiedTag'
+            tag: '$(Build.SourceBranchName)-$(version)'
+            title: '$(Build.SourceBranchName) release $(version)'
+            isPreRelease: ${{ ne(variables['Build.SourceBranchName'], 'stable') }}
+            assets: |
+              $(Build.ArtifactStagingDirectory)/*.zip
+
+        # Announce new stable versions on Discord (#modding_updates).
+        - script: |
+            curl -H "Content-Type: application/json" -d "{\"content\": \"**A new Everest $(Build.SourceBranchName) was just released!**\nThe latest $(Build.SourceBranchName) version is now **$(version)**.\"}" $(WEBHOOK_URL)
+          displayName: 'Celeste Discord webhook'
+          condition: succeeded()
