@@ -33,6 +33,8 @@ namespace Celeste {
 
         public float Rotation = 0f;
 
+        public Color Color;
+
         private bool scaredAnimal;
 
         private float hideRange;
@@ -57,7 +59,7 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
+            [PatchDecalImageRender]
             public extern override void Render();
 
         }
@@ -70,7 +72,7 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
+            [PatchDecalImageRender]
             public extern override void Render();
 
         }
@@ -82,7 +84,6 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
             public extern override void Render();
 
         }
@@ -108,8 +109,11 @@ namespace Celeste {
             }
 
             public override void Render() {
-                if (activeTextures.Count > 0)
-                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale, Decal.Rotation);
+                if (activeTextures.Count > 0) {
+                    MTexture texture = activeTextures[(int) frame % activeTextures.Count];
+                    Vector2 offset = new Vector2(texture.Center.X * Decal.scale.X % 1, texture.Center.Y * Decal.scale.X % 1);
+                    texture.DrawCentered(Decal.Position + offset, Decal.Color, Decal.scale, Decal.Rotation);
+                }
             }
         }
 
@@ -123,14 +127,21 @@ namespace Celeste {
             hideRange = 32f;
             showRange = 48f;
             solids = new List<Solid>();
+            Color = Color.White;
 
             orig_ctor(texture, position, scale, depth);
         }
 
         [MonoModConstructor]
-        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation) {
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation, Color color) {
             ctor(texture, position, scale, depth);
             Rotation = MathHelper.ToRadians(rotation);
+            Color = color;
+        }
+
+        [MonoModConstructor]
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation, string color_hex) {
+            ctor(texture, position, scale, depth, rotation, patch_Calc.HexToColorWithAlpha(color_hex));
         }
 
         [MonoModIgnore]
@@ -143,15 +154,15 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MonoModPublic]
-        [PatchMirrorMaskRotation]
+        [PatchMirrorMaskRender]
         public extern void MakeMirror(string path, bool keepOffsetsClose);
 
         [MonoModIgnore]
-        [PatchMirrorMaskRotation]
+        [PatchMirrorMaskRender]
         private extern void MakeMirror(string path, Vector2 offset);
 
         [MonoModIgnore]
-        [PatchMirrorMaskRotation]
+        [PatchMirrorMaskRender]
         private extern void MakeMirrorSpecialCase(string path, Vector2 offset);
 
         [MonoModIgnore]
@@ -217,7 +228,7 @@ namespace Celeste {
                 },
                 OnShake = v => Position += v,
                 OnAttach = p => {
-                    p.Add(new EntityRemovedListener(() => { 
+                    p.Add(new EntityRemovedListener(() => {
                         RemoveSelf();
                         solids.ForEach(s => s.RemoveSelf());
                     }));
@@ -227,6 +238,10 @@ namespace Celeste {
             if (jumpThrus)
                 staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
             Add(staticMover);
+        }
+
+        public void MakeAnimation(int[] frames) {
+            textures = frames.Select(i => textures[i]).ToList();
         }
 
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
@@ -288,7 +303,7 @@ namespace Celeste {
                             Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
                             e.LogDetailed();
                         }
-                        
+
                     } else {
                         Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
                     }
@@ -337,16 +352,16 @@ namespace MonoMod {
     class PatchDecalUpdateAttribute : Attribute { }
 
     /// <summary>
-    /// Allow decal images to be rotated.
+    /// Allow decal images to be rotated and correct rendering of images with non-even dimensions.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRotation))]
-    class PatchDecalImageRotationAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRender))]
+    class PatchDecalImageRenderAttribute : Attribute { }
 
     /// <summary>
-    /// Allow mirror masks to be rotated.
+    /// Allow mirror masks to be rotated and correct rendering of masks with non-even dimensions.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMirrorMaskRotation))]
-    class PatchMirrorMaskRotationAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchMirrorMaskRender))]
+    class PatchMirrorMaskRenderAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -366,21 +381,123 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_showRange);
         }
 
-        public static void PatchDecalImageRotation(ILContext context, CustomAttribute attrib) {
+        public static void PatchDecalImageRender(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
             TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+            TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+            TypeDefinition t_Matrix = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Matrix").Resolve();
+
+            // This is not allowed to be a TypeDefinition for ?? reasons
+            TypeReference t_float = MonoModRule.Modder.Module.ImportReference(MonoModRule.Modder.FindType("System.Single").Resolve());
+            
             FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
+            FieldReference f_Decal_Color = t_Decal.FindField("Color");
+            FieldReference f_Decal_scale = t_Decal.FindField("scale");
+            
+            MethodReference m_get_Center = t_MTexture.FindProperty("Center").GetMethod;
+            
+            MethodReference m_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindMethod("System.Void .ctor(System.Single,System.Single)"));
+            MethodReference m_Vector2_Transform = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindMethod("Microsoft.Xna.Framework.Vector2 Transform(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Matrix)"));
+            FieldReference f_Vector2_X = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("X"));
+            FieldReference f_Vector2_Y = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("Y"));
+            
+            MethodReference m_Matrix_CreateRotationZ = MonoModRule.Modder.Module.ImportReference(t_Matrix.FindMethod("Microsoft.Xna.Framework.Matrix CreateRotationZ(System.Single)"));
+
+            // These methods vary based on what class we're patching
             MethodReference m_get_Decal = null;
             MethodReference m_Draw_old = null;
 
+            // Create some extra locals to make the math easier
+            VariableDefinition v_vector = new VariableDefinition(MonoModRule.Modder.Module.ImportReference(t_Vector2));
+            VariableDefinition v_X = new VariableDefinition(t_float);
+            VariableDefinition v_Y = new VariableDefinition(t_float);
+            context.Body.Variables.Add(v_vector);
+            context.Body.Variables.Add(v_X);
+            context.Body.Variables.Add(v_Y);
+
             ILCursor cursor = new ILCursor(context);
 
-            // move to just after the decal's scale is obtained, but just before the draw call.
-            // also get references to the Decal getter and to the draw call itself
+            // Part one: fix rendering for decals with non-integer centers (i.e. non-even dimensions) 
+            
+            // Jump to just after the decal texture is put on the stack.
+            // Because the various decal components have different methods of finding their texture,
+            // it's not possible to match the instruction that loads the texture itself.
+            // Instead, we can just look for the instructions that put the decal position on the stack,
+            // and put our cursor just before that, since the decal texture immediately precedes position
+            // in the arguments being made to MTexture.Draw().
+            // Also, we collect the MethodReference for the Decal getter for this component type.
+            cursor.GotoNext(MoveType.Before,
+                instr => instr.MatchLdarg(0),
+                instr => instr.MatchCallvirt(out m_get_Decal),
+                instr => instr.MatchLdfld("Monocle.Entity", "Position")
+            );
+            
+            // Duplicate the texture reference on the stack so we leave a copy to be used as an argument to Draw().
+            // Then get MTexture.Center, multiply it by a rotation matrix based on decal rotation, and store it in our Vector2 local.
+            cursor.Emit(OpCodes.Dup);
+            cursor.Emit(OpCodes.Call, m_get_Center);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+            cursor.Emit(OpCodes.Ldc_R4, (float) Math.PI / 180);
+            cursor.Emit(OpCodes.Mul);
+            cursor.Emit(OpCodes.Call, m_Matrix_CreateRotationZ);
+            cursor.Emit(OpCodes.Call, m_Vector2_Transform);
+            cursor.Emit(OpCodes.Stloc_S, v_vector);
+            
+            // Get our stored Vector2 back, then get the X component as a float, and store the non-integer component
+            // of that float in our first float local. This will be used to offset the "real" position when the decal
+            // renders if the decal's Center is a non-integer. (If the Center is an integer, the offset will be 0.)
+            cursor.Emit(OpCodes.Ldloc_S, v_vector);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_scale);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+            cursor.Emit(OpCodes.Mul);
+            cursor.Emit(OpCodes.Ldc_R4, 1f);
+            cursor.Emit(OpCodes.Rem);
+            cursor.Emit(OpCodes.Stloc_S, v_X);
+            
+            // Same thing but for the Y.
+            cursor.Emit(OpCodes.Ldloc_S, v_vector);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_Y);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_scale);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_Y);
+            cursor.Emit(OpCodes.Mul);
+            cursor.Emit(OpCodes.Ldc_R4, 1f);
+            cursor.Emit(OpCodes.Rem);
+            cursor.Emit(OpCodes.Stloc_S, v_Y);
+            
+            // Now jump after the position has been put on the stack, so we can store and then modify it.
             cursor.GotoNext(MoveType.After,
-                            instr => instr.MatchCallvirt(out m_get_Decal),
-                            instr => instr.MatchLdfld("Celeste.Decal", "scale"),
-                            instr => instr.MatchCallvirt(out m_Draw_old));
+                instr => instr.MatchLdfld("Monocle.Entity", "Position"));
+            cursor.Emit(OpCodes.Stloc_S, v_vector);
+            
+            // Get our stored position back, get the position's X component, and add it to our calculated offset.
+            cursor.Emit(OpCodes.Ldloc_S, v_vector);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+            cursor.Emit(OpCodes.Ldloc_S, v_X);
+            cursor.Emit(OpCodes.Add);
+            
+            // And again for Y.
+            cursor.Emit(OpCodes.Ldloc_S, v_vector);
+            cursor.Emit(OpCodes.Ldfld, f_Vector2_Y);
+            cursor.Emit(OpCodes.Ldloc_S, v_Y);
+            cursor.Emit(OpCodes.Add);
+            
+            // Use our offsetted position values to create a new "adjusted" position, which will be used instead.
+            cursor.Emit(OpCodes.Newobj, m_Vector2_ctor);
+            
+            // Part two: inject decal rotation
+            
+            // move to just after the decal's scale is obtained, but just before the draw call.
+            // also get a reference to the draw call itself
+            cursor.GotoNext(MoveType.After,
+                instr => instr.MatchLdfld("Celeste.Decal", "scale"),
+                instr => instr.MatchCallvirt(out m_Draw_old));
             cursor.Index--;
 
             // find an appropriate draw method; it should have the same signature, but also take a float for the rotation as its last argument
@@ -393,12 +510,41 @@ namespace MonoMod {
             // ...and replace the draw call to accept it
             cursor.Emit(OpCodes.Callvirt, m_Draw_new);
             cursor.Remove();
+
+            // go back to the start
+            cursor.Index = 0;
+
+            // move to just before the colour white is obtained, and replace it with some other colour
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCallOrCallvirt(out MethodReference method)
+                                                   && method.FullName == "Microsoft.Xna.Framework.Color Microsoft.Xna.Framework.Color::get_White()");
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_Color);
+            cursor.Remove();
         }
 
-        public static void PatchMirrorMaskRotation(ILContext context, CustomAttribute attrib) {
+        public static void PatchMirrorMaskRender(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
             TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
-            FieldDefinition f_Decal_Rotation = context.Method.DeclaringType.FindField("Rotation");
+            TypeDefinition t_Vector2 = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Vector2").Resolve();
+            TypeDefinition t_Entity = MonoModRule.Modder.FindType("Monocle.Entity").Resolve();
+            TypeDefinition t_Matrix = MonoModRule.Modder.FindType("Microsoft.Xna.Framework.Matrix").Resolve();
+
+            FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
+            FieldReference f_Decal_scale = t_Decal.FindField("scale");
+
+            FieldReference f_Entity_Position = t_Entity.FindField("Position");
+            
+            MethodReference m_get_Center = t_MTexture.FindProperty("Center").GetMethod;
             MethodDefinition m_DrawCentered = t_MTexture.FindMethod("System.Void DrawCentered(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Color,Microsoft.Xna.Framework.Vector2,System.Single)");
+
+            MethodReference m_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindMethod("System.Void .ctor(System.Single,System.Single)"));
+            MethodReference m_Vector2_Transform = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindMethod("Microsoft.Xna.Framework.Vector2 Transform(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Matrix)"));
+            FieldReference f_Vector2_X = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("X"));
+            FieldReference f_Vector2_Y = MonoModRule.Modder.Module.ImportReference(t_Vector2.FindField("Y"));
+            
+            MethodReference m_Matrix_CreateRotationZ = MonoModRule.Modder.Module.ImportReference(t_Matrix.FindMethod("Microsoft.Xna.Framework.Matrix CreateRotationZ(System.Single)"));
+            
             MethodReference r_OnRender = null;
 
             ILCursor cursor = new ILCursor(context);
@@ -411,8 +557,82 @@ namespace MonoMod {
                 // Some of the patched methods use closure locals so search for those
                 FieldDefinition f_locals = m_OnRender.DeclaringType.FindField("CS$<>8__locals1");
                 FieldReference f_this = null;
+                FieldReference f_mask = null;
 
                 ILCursor cursor = new ILCursor(il);
+                
+                // Copies the IL strategy from PatchDecalImageRotationAndCentering, modified to avoid adding locals
+                
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld(out f_mask),
+                    instr => instr.MatchLdarg(0)
+                );
+
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchLdfld(out f_this),
+                    instr => instr.MatchLdfld("Monocle.Entity", "Position")
+                );
+                
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_mask);
+                cursor.Emit(OpCodes.Call, m_get_Center);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+                cursor.Emit(OpCodes.Ldc_R4, (float) Math.PI / 180);
+                cursor.Emit(OpCodes.Mul);
+                cursor.Emit(OpCodes.Call, m_Matrix_CreateRotationZ);
+                cursor.Emit(OpCodes.Call, m_Vector2_Transform);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_scale);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+                cursor.Emit(OpCodes.Mul);
+                cursor.Emit(OpCodes.Ldc_R4, 1f);
+                cursor.Emit(OpCodes.Rem);
+                cursor.Emit(OpCodes.Add);
+                
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Entity_Position);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_Y);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_mask);
+                cursor.Emit(OpCodes.Call, m_get_Center);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
+                cursor.Emit(OpCodes.Ldc_R4, (float) Math.PI / 180);
+                cursor.Emit(OpCodes.Mul);
+                cursor.Emit(OpCodes.Call, m_Matrix_CreateRotationZ);
+                cursor.Emit(OpCodes.Call, m_Vector2_Transform);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_Y);
+                cursor.Emit(OpCodes.Ldarg_0);
+                if (f_locals != null)
+                    cursor.Emit(OpCodes.Ldfld, f_locals);
+                cursor.Emit(OpCodes.Ldfld, f_this);
+                cursor.Emit(OpCodes.Ldfld, f_Decal_scale);
+                cursor.Emit(OpCodes.Ldfld, f_Vector2_X);
+                cursor.Emit(OpCodes.Mul);
+                cursor.Emit(OpCodes.Ldc_R4, 1f);
+                cursor.Emit(OpCodes.Rem);
+                cursor.Emit(OpCodes.Add);
+                
+                cursor.Emit(OpCodes.Newobj, m_Vector2_ctor);
 
                 // Grab the function's decal reference and move to just before the draw call
                 cursor.GotoNext(MoveType.After,

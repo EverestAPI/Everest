@@ -152,6 +152,7 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Mettre à jour tous les mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Mise à jour des mods en cours...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	Tous les mods ont été mis à jour.
+	MODUPDATECHECKER_SHUTDOWN= Quitter
 
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Vérification des mises à jour des mods...

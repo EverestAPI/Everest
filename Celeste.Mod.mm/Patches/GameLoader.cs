@@ -168,6 +168,12 @@ namespace Celeste {
                 previousVersion = new Version(0, 0, 0);
             }
 
+            // skip creating a backup if we are on a develop build
+            if (previousVersion == new Version(0, 0, 0)) {
+                Logger.Log(LogLevel.Verbose, "core", "Previous Everest version was a development build, skipping backup.");
+                return;
+            }
+
             if (previousVersion < new Version(1, 2109, 0)) {
                 // user just upgraded: create mod save data backups.
                 // (this is very similar to OverworldLoader.CheckVariantsPostcardAtLaunch)
@@ -205,6 +211,8 @@ namespace MonoMod {
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
@@ -212,7 +220,12 @@ namespace MonoMod {
                 if (instr.OpCode == OpCodes.Newobj && (instr.Operand as MethodReference)?.GetID() == "System.Void Celeste.OverworldLoader::.ctor(Celeste.Overworld/StartMode,Celeste.HiresSnow)") {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GetNextScene;
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("Call to OverworldLoader::.ctor not found in " + method.FullName + "!");
             }
         }
 

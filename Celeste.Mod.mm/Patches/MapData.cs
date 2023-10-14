@@ -325,6 +325,10 @@ namespace MonoMod {
             MethodDefinition m_Process = method.DeclaringType.FindMethod("Celeste.BinaryPacker/Element _Process(Celeste.BinaryPacker/Element,Celeste.MapData)");
             MethodDefinition m_GrowAndGet = method.DeclaringType.FindMethod("Celeste.EntityData _GrowAndGet(Celeste.EntityData[0...,0...]&,System.Int32,System.Int32)");
 
+            bool corruptedLevelDataFound = false;
+            bool binaryPackerFound = false;
+            bool strawberriesByCheckpointFound = false;
+
             bool pop = false;
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
@@ -338,6 +342,7 @@ namespace MonoMod {
                 if (pop && instr.OpCode == OpCodes.Throw) {
                     instr.OpCode = OpCodes.Pop;
                     pop = false;
+                    corruptedLevelDataFound = true;
                 }
 
                 if (instr.MatchCall("Celeste.BinaryPacker", "FromBinary")) {
@@ -345,6 +350,7 @@ namespace MonoMod {
 
                     instrs.Insert(instri++, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri++, il.Create(OpCodes.Call, m_Process));
+                    binaryPackerFound = true;
                 }
 
                 if (instri > 2 &&
@@ -355,7 +361,18 @@ namespace MonoMod {
                     instr.OpCode = OpCodes.Call;
                     instr.Operand = m_GrowAndGet;
                     instri++;
+                    strawberriesByCheckpointFound = true;
                 }
+            }
+
+            if (!corruptedLevelDataFound) {
+                throw new Exception("\"Corrupted Level Data\" not found in " + method.FullName + "!");
+            }
+            if (!binaryPackerFound) {
+                throw new Exception("No call to BinaryPacker.FromBinary found in " + method.FullName + "!");
+            }
+            if (!strawberriesByCheckpointFound) {
+                throw new Exception("No call to StrawberriesByCheckpoint found in " + method.FullName + "!");
             }
         }
 

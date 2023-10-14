@@ -225,7 +225,7 @@ namespace Celeste {
                     }
                 }
 
-                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.LevelData.Name} of {Session.Area.GetSID()}");
+                Logger.Log(LogLevel.Warn, "LoadLevel", $"Failed loading room {Session.Level} of {Session.Area.GetSID()}");
                 e.LogDetailed();
                 return;
             }
@@ -487,7 +487,7 @@ namespace Celeste {
         }
 
         private void FixChaserStatesTimeStamp() {
-            if (unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
+            if (Session.Area.GetLevelSet() != "Celeste" && unpauseTimer > 0f && Tracker.GetEntity<Player>()?.ChaserStates is { } chaserStates) {
                 float offset = Engine.DeltaTime;
 
                 // add one more frame at the end
@@ -502,10 +502,13 @@ namespace Celeste {
             }
         }
 
-        private void CheckForErrors() {
-            if (patch_LevelEnter.ErrorMessage != null) {
+        private bool CheckForErrors() {
+            bool errorPresent = patch_LevelEnter.ErrorMessage != null;
+            if (errorPresent) {
                 LevelEnter.Go(Session, false);
             }
+
+            return errorPresent;
         }
     }
 
@@ -531,7 +534,7 @@ namespace MonoMod {
     class PatchLevelLoaderAttribute : Attribute { }
 
     /// <summary>
-    /// Patch leevel loading method to copy decal rotations from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
+    /// Patch level loading method to copy decal rotation and color from <see cref="Celeste.DecalData" /> instances into newly created <see cref="Celeste.Decal" /> entities.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelLoaderDecalCreation))]
     class PatchLevelLoaderDecalCreationAttribute : Attribute { }
@@ -660,8 +663,11 @@ namespace MonoMod {
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_DecalData = MonoModRule.Modder.FindType("Celeste.DecalData").Resolve();
             TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
+
             FieldDefinition f_DecalData_Rotation = t_DecalData.FindField("Rotation");
-            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single)");
+            FieldDefinition f_DecalData_ColorHex = t_DecalData.FindField("ColorHex");
+
+            MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single,System.String)");
 
             ILCursor cursor = new ILCursor(context);
 
@@ -673,12 +679,11 @@ namespace MonoMod {
                                       instr => instr.MatchLdfld("Celeste.DecalData", "Scale"),
                                       instr => instr.MatchLdcI4(Celeste.Depths.FGDecals)
                                             || instr.MatchLdcI4(Celeste.Depths.BGDecals))) {
-                // we are trying to get:
-                //   decal = new Decal()
-
                 // load the rotation from the DecalData
                 cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
                 cursor.Emit(OpCodes.Ldfld, f_DecalData_Rotation);
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
+                cursor.Emit(OpCodes.Ldfld, f_DecalData_ColorHex);
                 // and replace the Decal constructor to accept it
                 cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
                 cursor.Remove();
@@ -701,6 +706,8 @@ namespace MonoMod {
 
             // Insert CheckForErrors() at the beginning so we can display an error screen if needed
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_CheckForErrors);
+            // Insert an if statement that returns if we find an error at CheckForErrors
+            cursor.Emit(OpCodes.Brfalse, cursor.Next).Emit(OpCodes.Ret);
 
             // insert FixChaserStatesTimeStamp()
             cursor.Emit(OpCodes.Ldarg_0).Emit(OpCodes.Call, m_FixChaserStatesTimeStamp);

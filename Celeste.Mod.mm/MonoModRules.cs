@@ -205,6 +205,8 @@ namespace MonoMod {
             TypeDefinition t_FileProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.FileProxy")?.Resolve();
             TypeDefinition t_DirectoryProxy = MonoModRule.Modder.FindType("Celeste.Mod.Helpers.DirectoryProxy")?.Resolve();
 
+            bool match = false;
+
             foreach (Instruction instr in method.Body.Instructions) {
                 // System.IO.File.* calls are always static calls.
                 if (instr.OpCode != OpCodes.Call)
@@ -231,12 +233,19 @@ namespace MonoMod {
 
                 // Replace the called method with our replacement.
                 instr.Operand = replacement;
+                match = true;
+            }
+
+            if (!match) {
+                throw new Exception("No file calls to proxy were found in " + method.FullName + "!");
             }
         }
 
         public static void PatchTrackableStrawberryCheck(MethodDefinition method, CustomAttribute attrib) {
             TypeDefinition t_StrawberryRegistry = MonoModRule.Modder.FindType("Celeste.Mod.StrawberryRegistry")?.Resolve();
             MethodDefinition m_TrackableContains = t_StrawberryRegistry.FindMethod("System.Boolean TrackableContains(System.String)");
+
+            bool match = false;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -247,7 +256,12 @@ namespace MonoMod {
                     instri++;
                     instrs[instri].OpCode = OpCodes.Call;
                     instrs[instri].Operand = m_TrackableContains;
+                    match = true;
                 }
+            }
+
+            if (!match) {
+                throw new Exception("No \"strawberry\" string was found in " + method.FullName + "!");
             }
         }
 
@@ -324,13 +338,20 @@ namespace MonoMod {
                 member.Name = (string) attrib.ConstructorArguments[0].Value;
         }
 
-        
-        
+
+
         public static void PatchInitblk(ILContext il, CustomAttribute attrib) {
+            bool match = false;
+
             ILCursor c = new ILCursor(il);
             while (c.TryGotoNext(i => i.MatchCall(out MethodReference mref) && mref.Name == "_initblk")) {
                 c.Next.OpCode = OpCodes.Initblk;
                 c.Next.Operand = null;
+                match = true;
+            }
+
+            if (!match) {
+                throw new Exception("No call to _initblk found in " + il.Method.FullName + "!");
             }
         }
 

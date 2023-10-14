@@ -27,7 +27,9 @@ namespace Celeste.Mod.UI {
             // if the update check failed or isn't done yet, assume there are no updates (no message in main menu).
             int modUpdatesAvailable = ModUpdaterHelper.IsAsyncUpdateCheckingDone() ? (ModUpdaterHelper.GetAsyncLoadedModUpdates()?.Count ?? 0) : 0;
 
-            if (delayedModCount > 1) {
+            if (Everest.Updater.UpdateFailed) {
+                subText = Dialog.Clean("MENU_MODOPTIONS_UPDATE_FAILED");
+            } else if (delayedModCount > 1) {
                 subText = string.Format(Dialog.Get("MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD"), delayedModCount);
             } else if (delayedModCount == 1) {
                 subText = Dialog.Clean("MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD");

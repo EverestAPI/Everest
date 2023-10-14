@@ -1,4 +1,5 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using Ionic.Zip;
 using MonoMod.Utils;
@@ -6,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -17,34 +19,40 @@ using System.Threading.Tasks;
 namespace Celeste.Mod {
     public static partial class Everest {
         // TODO: General purpose updater for both Everest itself and any runtime mods.
-        internal static class Updater {
+        public static class Updater {
+
+            public enum UpdatePriority {
+                None, Low, High
+            }
 
             public class Entry {
                 public readonly string Name;
-                public readonly string Branch;
+                public string Description;
                 public readonly string URL;
                 public readonly int Build;
-                public Entry(string name, string branch, string url, int version) {
+                public readonly Source Source;
+                public Entry(string name, string url, int version, Source source) {
                     Name = name;
-                    Branch = branch ?? "";
                     URL = url;
                     Build = version;
+                    Source = source;
                 }
             }
 
             public class Source {
 
-                public string NameDialog;
+                public string Name;
 
-                public string Index;
+                public string Description;
 
-                public Func<bool> IsCurrent;
+                public UpdatePriority UpdatePriority = UpdatePriority.Low;
 
-                public Func<string, List<Entry>> ParseData;
+                public Func<string> Index;
+
+                public Func<Source, string, List<Entry>> ParseData;
 #pragma warning disable CS0649
                 public Func<string, Entry> ParseLine;
 #pragma warning restore CS0649
-
                 public virtual ReadOnlyCollection<Entry> Entries { get; protected set; }
 
                 public string ErrorDialog { get; protected set; }
@@ -58,7 +66,7 @@ namespace Celeste.Mod {
                             return _RequestStart();
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_download";
-                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading Everest version list");
+                            Logger.Log(LogLevel.Warn, "updater", "Uncaught exception while loading version list");
                             Logger.LogDetailed(e);
                             return this;
                         }
@@ -72,8 +80,10 @@ namespace Celeste.Mod {
 
                     string data;
                     try {
-                        using (WebClient wc = new WebClient())
-                            data = wc.DownloadString(Index);
+                        Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
+                        using (WebClient wc = new CompressedWebClient()) {
+                            data = wc.DownloadString(Index());
+                        }
                     } catch (Exception e) {
                         ErrorDialog = "updater_versions_err_download";
                         Logger.Log(LogLevel.Warn, "updater", "Failed requesting index: " + e.ToString());
@@ -83,7 +93,7 @@ namespace Celeste.Mod {
                     List<Entry> entries = new List<Entry>();
                     if (ParseData != null) {
                         try {
-                            entries.AddRange(ParseData(data));
+                            entries.AddRange(ParseData(this, data));
                         } catch (Exception e) {
                             ErrorDialog = "updater_versions_err_format";
                             Logger.Log(LogLevel.Warn, "updater", "Failed parsing index: " + e.ToString());
@@ -108,40 +118,6 @@ namespace Celeste.Mod {
                         }
                     }
 
-                    // Highly convoluted scientific method to determine the entry order:
-                    // - Order by first occurence of branch
-                    // - Order by version inside branch
-                    Dictionary<string, int> branchFirsts = new Dictionary<string, int>();
-                    // Force stable, then beta, then dev branches to appear first.
-                    branchFirsts["stable"] = int.MaxValue;
-                    branchFirsts["beta"] = int.MaxValue - 3;
-                    branchFirsts["dev"] = int.MaxValue - 4;
-
-                    // Make sure that the branch we're on appears between stable and beta.
-                    // This ensures that people don't miss out on important stability updates,
-                    // but don't get dragged onto another branch by accident.
-                    foreach (Entry entry in entries) {
-                        if (entry.Build == Build) {
-                            CoreModule.Settings.CurrentBranch = entry.Branch;
-                            break;
-                        }
-                    }
-
-                    if (CoreModule.Settings.CurrentBranch != null) {
-                        branchFirsts[CoreModule.Settings.CurrentBranch] = int.MaxValue - 2;
-                    }
-
-                    for (int i = 0; i < entries.Count; i++) {
-                        Entry entry = entries[i];
-                        if (!branchFirsts.ContainsKey(entry.Branch))
-                            branchFirsts[entry.Branch] = i;
-                    }
-
-                    entries.Sort((a, b) => {
-                        if (a.Branch != b.Branch)
-                            return -(branchFirsts[a.Branch].CompareTo(branchFirsts[b.Branch]));
-                        return -a.Build.CompareTo(b.Build);
-                    });
                     Entries = new ReadOnlyCollection<Entry>(entries);
                     return this;
                 }
@@ -160,14 +136,37 @@ namespace Celeste.Mod {
 
             public static List<Source> Sources = new List<Source>() {
                 new Source {
-                    NameDialog = "updater_src_buildbot",
+                    Name = "updater_src_stable",
+                    Description = "updater_src_release_github",
 
-                    Index = "https://dev.azure.com/EverestAPI/Everest/_apis/build/builds?definitions=3&api-version=5.0",
+                    UpdatePriority = UpdatePriority.High,
 
-                    IsCurrent = () => VersionSuffix.StartsWith("azure-"),
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("stable")
+                },
+                new Source {
+                    Name = "updater_src_beta",
+                    Description = "updater_src_release_github",
 
-                    ParseData = AzureDataParser("https://dev.azure.com/EverestAPI/Everest/_apis/build/builds/{0}/artifacts?artifactName=main&api-version=5.0&%24format=zip", 700)
-                }
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("beta")
+                },
+                new Source {
+                    Name = "updater_src_dev",
+                    Description = "updater_src_buildbot_azure",
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("dev")
+                },
+                new Source {
+                    Name = "updater_src_core",
+                    Description = "updater_src_buildbot_azure",
+
+                    UpdatePriority = UpdatePriority.None,
+
+                    Index = GetEverestUpdaterDatabaseURL,
+                    ParseData = UpdateListParser("core")
+                },
             };
 
             public static Task RequestAll() {
@@ -181,7 +180,7 @@ namespace Celeste.Mod {
                 return Task.Factory.ContinueWhenAll(tasks, finished => {
                     List<Entry> all = new List<Entry>();
                     foreach (Source source in Sources) {
-                        if (source.Entries == null || !source.IsCurrent())
+                        if (source.Entries == null || source.Name != CoreModule.Settings.CurrentBranch)
                             continue;
                         all.AddRange(source.Entries);
                     }
@@ -204,8 +203,25 @@ namespace Celeste.Mod {
                 });
             }
 
-            private static Func<string, Entry> CommonLineParser(string root)
-                => (line) => {
+            private static string _everestUpdaterDatabaseURL;
+            private static string GetEverestUpdaterDatabaseURL() {
+                if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
+                    using (WebClient wc = new CompressedWebClient()) {
+                        Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
+                        
+                        UriBuilder uri = new UriBuilder(wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim());
+                        if ((uri.Query?.Length ?? 0) > 1)
+                            uri.Query = uri.Query.Substring(1) + "&supportsNativeBuilds=true";
+                        else
+                            uri.Query = "supportsNativeBuilds=true";
+                        _everestUpdaterDatabaseURL = uri.ToString();
+                    }
+                }
+                return _everestUpdaterDatabaseURL;
+            }
+
+            private static Func<Source, string, Entry> CommonLineParser(string root)
+                => (source, line) => {
                     string[] split = line.Split(' ');
                     if (split.Length < 2 || split.Length > 3)
                         throw new Exception("Version list format incompatible!");
@@ -233,27 +249,62 @@ namespace Celeste.Mod {
                         name = name.Substring(0, indexOfBranch);
                     }
 
-                    return new Entry(name, branch, url, int.Parse(Regex.Match(split[1], @"\d+").Value));
+                    return new Entry(name, url, int.Parse(Regex.Match(split[1], @"\d+").Value), source);
                 };
 
-            private static Func<string, List<Entry>> AzureDataParser(string artifactFormat, int offset)
-                => (dataRaw) => {
+            public static Func<Source, string, List<Entry>> UpdateListParser(string branch)
+                => (source, dataRaw) => {
+                    List<Entry> entries = new List<Entry>();
+
+                    JArray list = JArray.Parse(dataRaw);
+                    foreach (JObject release in list) {
+                        if (release["branch"].ToString() == branch) {
+                            int build = release["version"].ToObject<int>();
+                            string url = release["mainDownload"].ToString();
+                            entries.Add(new Entry(build.ToString(), url, build, source));
+                        }
+                    }
+                    return entries;
+                };
+
+            public static Func<Source, string, List<Entry>> AzureBuildsParser(string artifactFormat, int offset)
+                => (source, dataRaw) => {
                     List<Entry> entries = new List<Entry>();
 
                     JObject root = JObject.Parse(dataRaw);
                     JArray list = root["value"] as JArray;
                     foreach (JObject build in list) {
-                        if (build["status"].ToObject<string>() != "completed" || build["result"].ToObject<string>() != "succeeded")
-                            continue;
-
-                        string reason = build["reason"].ToObject<string>();
-                        if (reason != "manual" && reason != "individualCI")
-                            continue;
-
                         int id = build["id"].ToObject<int>();
-                        string branch = build["sourceBranch"].ToObject<string>().Replace("refs/heads/", "");
                         string url = string.Format(artifactFormat, id);
-                        entries.Add(new Entry((id + offset).ToString(), branch, url, id + offset));
+                        Entry entry = new Entry((id + offset).ToString(), url, id + offset, source);
+                        try { entry.Description = build.SelectToken("triggerInfo['ci.message']").ToString().Split('\n')[0]; } catch { }
+                        entries.Add(entry);
+                    }
+
+                    return entries;
+                };
+
+            public static Func<Source, string, List<Entry>> GitHubReleasesParser(int offset, bool prerelease = false)
+                => (source, dataRaw) => {
+                    List<Entry> entries = new List<Entry>();
+
+                    JArray list = JArray.Parse(dataRaw);
+                    foreach (JObject release in list) {
+                        if (prerelease != release["prerelease"].ToObject<bool>())
+                            continue;
+
+                        string build = Regex.Match(release["name"].ToString(), @"\d+$").Value;
+                        string url = null;
+                        foreach (JObject asset in release["assets"] as JArray) {
+                            if (asset["name"].ToString() == "main.zip") {
+                                url = asset["browser_download_url"].ToString();
+                                break;
+                            }
+                        }
+                        if (url is null)
+                            throw new Exception("main.zip asset not found for release");
+
+                        entries.Add(new Entry(build, url, int.Parse(build), source));
                     }
 
                     return entries;
@@ -261,11 +312,30 @@ namespace Celeste.Mod {
 
             public static Entry Newest { get; internal set; }
             public static bool HasUpdate => Newest != null && Newest.Build > Build;
+            public static bool UpdateFailed { get; internal set;}
+
+            internal static void CheckForUpdateFailure() {
+                string updateBuildPath = Path.Combine(PathGame, "everest-update", "update-build.txt");
+                if(!File.Exists(updateBuildPath))
+                    return;
+
+                try {
+                    if (Build != int.Parse(File.ReadAllText(updateBuildPath)))
+                        UpdateFailed = true;
+                } catch(Exception e) {
+                    Logger.Log(LogLevel.Warn, "updater", "Exception when trying to determine update build number");
+                    Logger.LogDetailed(e);
+                    UpdateFailed = true;
+                } finally {
+                    File.Delete(updateBuildPath);
+                }
+            }
 
             public static void Update(OuiLoggedProgress progress, Entry version = null) {
                 if (!Flags.SupportUpdatingEverest) {
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTSUPPORTED"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
@@ -275,19 +345,26 @@ namespace Celeste.Mod {
                     // Exit immediately.
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOUPDATE"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
-                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
+                // The user has made their choice, so we will save the desired branch now.
+                CoreModule.Settings.CurrentBranch = version.Source.Name;
+                CoreModule.Instance.SaveSettings();
+                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => {
+                    if (!_UpdateStart(progress, version))
+                        progress.SwitchGoto<OuiModOptions>().WaitForConfirmOnFinish = true;
+                }), 0);
             }
-            private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
+            private static bool _UpdateStart(OuiLoggedProgress progress, Entry version) {
                 // Last line printed on error.
                 string errorHint = $"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}";
 
                 string zipPath = Path.Combine(PathGame, "everest-update.zip");
                 string extractedPath = Path.Combine(PathGame, "everest-update");
 
-                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Branch, version.URL));
+                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_UPDATING"), version.Name, version.Source.Name.DialogClean(), version.URL));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADING"));
                 try {
@@ -310,11 +387,12 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    return false;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTING"));
+                bool isNative = true;
                 try {
                     if (extractedPath != PathGame && Directory.Exists(extractedPath))
                         Directory.Delete(extractedPath, true);
@@ -334,6 +412,10 @@ namespace Celeste.Mod {
                             string entryName = entry.FileName;
                             if (entryName.StartsWith("main/"))
                                 entryName = entryName.Substring(5);
+
+                            if (entryName == "MiniInstaller.exe")
+                                isNative = false;
+
                             string fullPath = Path.Combine(extractedPath, entryName);
                             string fullDir = Path.GetDirectoryName(fullPath);
                             if (!Directory.Exists(fullDir))
@@ -352,7 +434,7 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    return false;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
 
@@ -366,24 +448,117 @@ namespace Celeste.Mod {
                 }
                 progress.Lines[progress.Lines.Count - 1] = action;
 
-                // Start MiniInstaller in a separate process.
                 try {
+                    // Start MiniInstaller in a separate process.
                     Process installer = new Process();
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
                     installer.StartInfo.FileName = installerPath;
-                    if (Type.GetType("Mono.Runtime") != null) {
-                        installer.StartInfo.FileName = "mono";
-                        installer.StartInfo.Arguments = $"\"{installerPath}\"";
-                        if (File.Exists("/bin/sh")) {
-                            string pid = Process.GetCurrentProcess().Id.ToString();
-                            installer.StartInfo.FileName = "/bin/sh";
-                            string pathToMono = "mono";
-                            if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
-                                pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+
+                    if (!isNative) {
+                        if (Type.GetType("Mono.Runtime") != null) {
+                            // Start MiniInstaller using mono
+                            installer.StartInfo.FileName = "mono";
+                            installer.StartInfo.Arguments = $"\"{installerPath}\"";
+                            if (File.Exists("/bin/sh")) {
+                                string pid = Process.GetCurrentProcess().Id.ToString();
+                                installer.StartInfo.FileName = "/bin/sh";
+                                string pathToMono = "mono";
+                                if (File.Exists("/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono")) {
+                                    pathToMono = "/Library/Frameworks/Mono.framework/Versions/Current/Commands/mono";
+                                }
+                                installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                             }
-                            installer.StartInfo.Arguments = $"-c \"kill -0 {pid}; while [ $? = \\\"0\\\" ]; do sleep 1; kill -0 {pid}; done; unset MONO_PATH LD_LIBRARY_PATH LC_ALL MONO_CONFIG; {pathToMono} MiniInstaller.exe\"";
                         }
+                    } else {
+                        // Check if the .NET runtime is installed
+                        Process dotnetProc = null;
+                        try {
+                            dotnetProc = Process.Start(new ProcessStartInfo() {
+                                FileName = "dotnet",
+                                Arguments = "--list-runtimes",
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true
+                            });
+                        } catch (Win32Exception) {
+                            // Fallback to the default runtime path
+                            string dotnetPath = null;
+                            if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                                if (Environment.Is64BitOperatingSystem)
+                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles") ?? string.Empty) + "\\dotnet";
+                                else
+                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? string.Empty) + "\\dotnet";
+                            } else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux))
+                                dotnetPath = "/usr/share/dotnet";
+                            else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))
+                                dotnetPath = "/usr/local/share/dotnet";
+
+                            if (File.Exists(dotnetPath)) {
+                                try {
+                                    dotnetProc = Process.Start(new ProcessStartInfo() {
+                                        FileName = dotnetPath,
+                                        Arguments = "--list-runtimes",
+                                        UseShellExecute = false,
+                                        RedirectStandardOutput = true
+                                    });
+                                } catch (Win32Exception) {
+                                    dotnetProc = null;
+                                }
+                            } else
+                                dotnetProc = null;
+                        }
+
+                        dotnetProc?.WaitForExit();
+                        string runtimeOut = dotnetProc?.ExitCode == 0 ? dotnetProc?.StandardOutput?.ReadToEnd() : null;
+
+                        if (!(runtimeOut?.Contains("Microsoft.NETCore.App 7.") ?? false)) {
+                            // The .NET Runtime is not installed
+                            string installerLink = 
+                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
+                                    (Environment.Is64BitOperatingSystem ?
+                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x64-installer" :
+                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x86-installer"
+                                    ) :
+                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) ?
+                                    "https://learn.microsoft.com/en-us/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website"
+                                : MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS) ?
+                                    "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-macos-x64-installer"
+                                : "https://dotnet.microsoft.com/en-us/download/dotnet/7.0";
+
+                            progress.LogLine(string.Empty);
+                            progress.LogLine(Dialog.Clean("EVERESTUPDATER_MISSINGRUNTIME_A"));
+                            progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_MISSINGRUNTIME_B"), installerLink));
+                            progress.Progress = 0;
+                            progress.ProgressMax = 1;
+                            return false;
+                        }
+
+                        // This build ships with native MiniInstaller binaries
+                        installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
+                                (Environment.Is64BitOperatingSystem ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
+                            MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
+                            throw new Exception("Unknown OS platform")
+                        );
+                        installer.StartInfo.UseShellExecute = false;
+                        installer.StartInfo.EnvironmentVariables["EVEREST_UPDATE_CELESTE_PID"] = Process.GetCurrentProcess().Id.ToString();
                     }
+
+                    if (!File.Exists(installerPath))
+                        throw new Exception("Couldn't find MiniInstaller executable");
+
+                    if (isNative && (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) || MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))) {
+                        // Make MiniInstaller executable
+                        Process chmodProc = Process.Start(new ProcessStartInfo("chmod", $"u+x \"{installerPath}\""));
+                        chmodProc.WaitForExit();
+                        if (chmodProc.ExitCode != 0)
+                            throw new Exception("Failed to set MiniInstaller executable flag");
+                    }
+
+                    // Store the update version for later
+                    File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+
+                    // Start MiniInstaller
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
@@ -391,12 +566,14 @@ namespace Celeste.Mod {
                     } else {
                         installer.Start();
                     }
+                    return true;
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
+                    return false;
                 }
             }
 
@@ -415,6 +592,8 @@ namespace Celeste.Mod {
                     File.Delete(destPath);
 
                 HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                request.UserAgent = "Everest/" + Everest.VersionString;
+                request.Accept = "application/octet-stream";
                 request.Timeout = 10000;
                 request.ReadWriteTimeout = 10000;
 
@@ -472,6 +651,7 @@ namespace Celeste.Mod {
             private static long _ContentLength(string url) {
                 try {
                     HttpWebRequest request = (HttpWebRequest) WebRequest.Create(url);
+                    request.UserAgent = "Everest/" + Everest.VersionString;
                     request.Method = "HEAD";
                     request.Timeout = 10000;
                     request.ReadWriteTimeout = 10000;

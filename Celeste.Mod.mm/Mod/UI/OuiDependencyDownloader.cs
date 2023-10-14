@@ -58,12 +58,19 @@ namespace Celeste.Mod.UI {
             Everest.Updater.Entry everestVersionToInstall = null;
 
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
+
             if (availableDownloads == null) {
                 shouldAutoExit = false;
                 shouldRestart = false;
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
+                // add transitive dependencies to the list of dependencies to download, by using the mod dependency graph.
+                Dictionary<string, EverestModuleMetadata> modDependencyGraph = ModUpdaterHelper.DownloadModDependencyGraph();
+                if (modDependencyGraph != null) {
+                    addTransitiveDependencies(modDependencyGraph);
+                }
+
                 // load information on all installed mods, so that we can spot blacklisted ones easily.
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
 
@@ -97,6 +104,9 @@ namespace Celeste.Mod.UI {
                 // Everest should be updated to satisfy a dependency on Everest
                 bool shouldUpdateEverestManually = false;
 
+                // a mod is .NET Core Everest only
+                bool requiresNetCoreEverest = false;
+
                 // these mods are absent from the database
                 HashSet<string> modsNotFound = new HashSet<string>();
 
@@ -129,6 +139,13 @@ namespace Celeste.Mod.UI {
                                 shouldUpdateEverestManually = true;
                             }
                         }
+                    } else if (dependency.Name == "EverestCore") {
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} requires .NET Core Everest");
+                        shouldUpdateEverestManually = true;
+                        everestVersionToInstall = null;
+                        requiresNetCoreEverest = true;
+                        shouldAutoExit = false;
+
                     } else if (tryUnblacklist(dependency, allModsInformation, modFilenamesToUnblacklist)) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
 
@@ -216,7 +233,9 @@ namespace Celeste.Mod.UI {
                 }
 
                 // display all mods that couldn't be accounted for
-                if (shouldUpdateEverestManually)
+                if (requiresNetCoreEverest)
+                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST"));
+                else if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
                 foreach (string mod in modsNotFound) {
@@ -266,6 +285,36 @@ namespace Celeste.Mod.UI {
             } else {
                 LogLine("\n" + Dialog.Clean("DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK"));
             }
+        }
+
+        private static void addTransitiveDependencies(Dictionary<string, EverestModuleMetadata> modDependencyGraph) {
+            List<EverestModuleMetadata> newlyMissing = new List<EverestModuleMetadata>();
+            do {
+                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", "Checking for transitive dependencies...");
+
+                newlyMissing.Clear();
+
+                // All transitive dependencies must be either loaded or missing. If not, they're added as missing as well.
+                foreach (EverestModuleMetadata metadata in MissingDependencies) {
+                    if (!modDependencyGraph.TryGetValue(metadata.Name, out EverestModuleMetadata graphEntry)) {
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{metadata.Name} was not found in the graph");
+                    } else {
+                        foreach (EverestModuleMetadata dependency in graphEntry.Dependencies) {
+                            if (Everest.Loader.DependencyLoaded(dependency)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is loaded");
+                            } else if (MissingDependencies.Any(dep => dep.Name == dependency.Name) || newlyMissing.Any(dep => dep.Name == dependency.Name)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is already missing");
+                            } else {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} was added to the missing dependencies!");
+                                newlyMissing.Add(dependency);
+                            }
+                        }
+                    }
+                }
+
+                MissingDependencies.AddRange(newlyMissing);
+
+            } while (newlyMissing.Count > 0);
         }
 
         private static bool tryUnblacklist(EverestModuleMetadata dependency, Dictionary<EverestModuleMetadata, string> allModsInformation, HashSet<string> modsToUnblacklist) {
@@ -358,20 +407,30 @@ namespace Celeste.Mod.UI {
         }
 
         private Everest.Updater.Entry findEverestVersionToInstall(int requestedBuild) {
+            // Find the entry with the highest build number and the highest priority
+            Everest.Updater.UpdatePriority updatePrio = Everest.Updater.UpdatePriority.None;
+            Everest.Updater.Entry updateEntry = null;
+
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
-                if (source?.Entries == null)
+                if (source?.Entries == null || source?.UpdatePriority is Everest.Updater.UpdatePriority.None)
                     continue;
 
                 foreach (Everest.Updater.Entry entry in source.Entries) {
-                    if (entry.Build >= requestedBuild) {
-                        // we found a suitable build! return it.
-                        return entry;
-                    }
+                    if (entry.Build < requestedBuild)
+                        continue;
+
+                    if (source.UpdatePriority < updatePrio)
+                        continue;
+
+                    if (source.UpdatePriority == updatePrio && entry.Build < updateEntry?.Build)
+                        continue;
+
+                    updatePrio = source.UpdatePriority;
+                    updateEntry = entry;
                 }
             }
 
-            // we checked the whole version list and didn't find anything suitable, so...
-            return null;
+            return updateEntry;
         }
 
         private void downloadDependency(ModUpdateInfo mod, EverestModuleMetadata installedVersion) {

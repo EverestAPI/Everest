@@ -382,7 +382,7 @@ namespace Celeste {
                 List<string> currentContent = Values.Select(val => val.Item1).ToList();
                 if (!cachedRightWidthContent.SequenceEqual(currentContent)) {
                     // contents changed, or the width wasn't computed yet.
-                    cachedRightWidth = orig_RightWidth();
+                    cachedRightWidth = orig_RightWidth() * 0.8f + 44f;
                     cachedRightWidthContent = currentContent;
                 }
                 return cachedRightWidth;
@@ -558,7 +558,7 @@ namespace MonoMod {
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
         }
-    
+
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
             MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
             FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");

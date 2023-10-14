@@ -27,6 +27,7 @@
 	POSTCARD_MISSINGTUTORIAL=	{big}Oops!{/big}{n}The playback tutorial {#ff1144}((tutorial)){#} could not be found.{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_TILEXMLERROR=		{big}Oops!{/big}{n}There was an error parsing a tileset in {#ff1144}((path)){#}{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_XMLERROR=			{big}Oops!{/big}{n}{#ff1144}((path)){#} has a syntax error.{n}Check your {#44adf7}log.txt{#} for more info.
+	POSTCARD_BOSSLASTNODEHIT=	{big}Oops!{/big}{n}{#ff1144}Badeline Boss{#} entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
@@ -34,6 +35,7 @@
 	MENU_MODOPTIONS= 		Mod Options
 	MENU_PAUSE_MODOPTIONS= 	Mod Options
 	
+	MENU_MODOPTIONS_UPDATE_FAILED=				Failed to install Everest Update
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yaml load errors occurred
@@ -150,9 +152,20 @@
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
+
+	UPDATER_CURRENT_BRANCH=			Current branch
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
+	UPDATER_SRC_BUILDBOT_AZURE=		Automatic builds (Azure)
 	
+# currently unused
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
-	
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	Updating not supported on this platform - cancelling.
 	EVERESTUPDATER_NOUPDATE=		No update - cancelling.
@@ -168,6 +181,8 @@
 	EVERESTUPDATER_RESTARTING=		Restarting
 	EVERESTUPDATER_RESTARTINGIN=	Restarting in {0}
 	EVERESTUPDATER_STARTINGFAILED=	Starting installer failed!
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Installing .NET Core Everest requires the .NET 7.0 runtime
+	EVERESTUPDATER_MISSINGRUNTIME_B=	You can download it from the following page: {0}
 	EVERESTUPDATER_ERRORHINT1=		Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		or join the #modding_help channel on Discord (invite in the repo).
 	EVERESTUPDATER_ERRORHINT3=		Make sure to upload your log.txt
@@ -188,6 +203,10 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Update all mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Updating all mods...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	All mods have been updated.
+	MODUPDATECHECKER_RESTARTNEEDED= Celeste needs to restart to continue
+	MODUPDATECHECKER_MENU_HEADER_RESTART= Choose an action
+	MODUPDATECHECKER_SHUTDOWN= Exit
+	MODUPDATECHECKER_RESTART= Restart
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
@@ -208,6 +227,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						done.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERROR: Downloading the database failed. Please check your log.txt for more info.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNING: An updated Everest version is required for some mods to load. Install it from the Change Everest Version menu.
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		WARNING: A (currently WIP) .NET Core build of Everest is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest will be updated to {0} to make some mods work. Press Confirm to continue.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERROR: {0} could not be found in the database. Please install this mod manually.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ERROR: Some of your mods require a more recent version of Celeste to work. Please update your game.

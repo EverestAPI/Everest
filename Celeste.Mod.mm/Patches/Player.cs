@@ -43,7 +43,7 @@ namespace Celeste {
         public bool IsIntroState {
             get {
                 int state = StateMachine.State;
-                return StIntroWalk <= state && state <= StIntroWakeUp;
+                return state is >= StIntroWalk and <= StIntroWakeUp or StIntroMoonJump or StIntroThinkForABit;
             }
         }
 
@@ -162,20 +162,10 @@ namespace Celeste {
         [PatchPlayerClimbBegin]
         private extern void ClimbBegin();
 
-        [MonoModIgnore]
         [PatchPlayerOrigWallJump]
         private extern void orig_WallJump(int dir);
         private void WallJump(int dir) {
-            if ((Scene as Level).Session.Area.GetLevelSet() != "Celeste") {
-                // Fix vertical boost from upwards-moving solids not being applied correctly when dir != -1
-                if (LiftSpeed == Vector2.Zero) {
-                    Solid solid = CollideFirst<Solid>(Position + Vector2.UnitX * 3f * -dir);
-                    if (solid != null) {
-                        LiftSpeed = solid.LiftSpeed;
-                    }
-                }
-            }
-            orig_WallJump(dir);
+            orig_WallJump(dir); // for backwards compatibility with hooks
         }
 
         /// <summary>
@@ -290,11 +280,19 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
     class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the method to fix puffer boosts breaking on respawn.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
+    class PatchPlayerExplodeLaunchAttribute : Attribute { }
 
     static partial class MonoModRules {
 
         public static void PatchPlayerOrigUpdate(ILContext context, CustomAttribute attrib) {
             MethodDefinition m_IsOverWater = context.Method.DeclaringType.FindMethod("System.Boolean _IsOverWater()");
+
+            bool found = false;
 
             Mono.Collections.Generic.Collection<Instruction> instrs = context.Body.Instructions;
             ILProcessor il = context.Body.GetILProcessor();
@@ -318,7 +316,13 @@ namespace MonoMod {
                     instrs.Insert(instri + 5, il.Create(OpCodes.Ldarg_0));
                     instrs.Insert(instri + 6, il.Create(OpCodes.Call, m_IsOverWater));
                     instrs.Insert(instri + 7, il.Create(OpCodes.Brfalse, instrs[instri + 4].Operand));
+                    found = true;
                 }
+            }
+
+
+            if (!found) {
+                throw new Exception("Call to Player.Speed.Y not found in " + context.Method.FullName + "!");
             }
         }
 
@@ -426,6 +430,16 @@ namespace MonoMod {
                 PatchPlaySurfaceIndex(cursor, "/footstep");
                 PatchPlaySurfaceIndex(cursor, "/handhold");
             });
+        }
+
+        public static void PatchPlayerExplodeLaunch(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_SetPlayerWasExplodeLaunchedThisFrame = context.Method.DeclaringType.FindMethod("_SetPlayerWasExplodeLaunchedThisFrame");
+
+            ILCursor cursor = new ILCursor(context);
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchStfld("Celeste.Player", "explodeLaunchBoostSpeed"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
     }

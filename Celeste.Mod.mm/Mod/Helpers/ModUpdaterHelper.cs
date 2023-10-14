@@ -7,18 +7,6 @@ using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public class ModUpdaterHelper {
-        private class CompressedWebClient : WebClient {
-            protected override WebRequest GetWebRequest(Uri address) {
-                // In order to compress the response, Accept-Encoding and User-Agent both have to contain "gzip":
-                // https://cloud.google.com/appengine/docs/standard/java/how-requests-are-handled#response_compression
-                HttpWebRequest request = (HttpWebRequest) base.GetWebRequest(address);
-                request.AutomaticDecompression = DecompressionMethods.GZip;
-                request.UserAgent = "Everest/" + Everest.VersionString + "; gzip";
-
-                return request;
-            }
-        }
-
         private class MostRecentUpdatedFirst : IComparer<ModUpdateInfo> {
             public int Compare(ModUpdateInfo x, ModUpdateInfo y) {
                 if (x.LastUpdate != y.LastUpdate) {
@@ -37,7 +25,7 @@ namespace Celeste.Mod.Helpers {
             Dictionary<string, ModUpdateInfo> updateCatalog = null;
 
             try {
-                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl();
+                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl("modupdater");
 
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
@@ -55,6 +43,61 @@ namespace Celeste.Mod.Helpers {
             }
 
             return updateCatalog;
+        }
+
+        private class DependencyGraphEntry {
+            public List<ModUpdateInfo> Dependencies { get; set; }
+            public List<ModUpdateInfo> OptionalDependencies { get; set; }
+        }
+
+        /// <summary>
+        /// Downloads the mod dependency graph from the update checker server.
+        /// Returns null if the download fails for any reason.
+        /// </summary>
+        public static Dictionary<string, EverestModuleMetadata> DownloadModDependencyGraph() {
+            try {
+                string modUpdaterDatabaseUrl = getModUpdaterDatabaseUrl("modgraph");
+
+                Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloading mod dependency graph from {modUpdaterDatabaseUrl}");
+
+                Dictionary<string, EverestModuleMetadata> dependencyGraph = new Dictionary<string, EverestModuleMetadata>();
+
+                using (WebClient wc = new CompressedWebClient()) {
+                    string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
+                    Dictionary<string, DependencyGraphEntry> dependencyGraphUnparsed = YamlHelper.Deserializer.Deserialize<Dictionary<string, DependencyGraphEntry>>(yamlData);
+
+                    foreach (KeyValuePair<string, DependencyGraphEntry> entry in dependencyGraphUnparsed) {
+                        EverestModuleMetadata result = new EverestModuleMetadata { Name = entry.Key };
+
+                        // ArgumentExceptions may happen if any of the dependencies have invalid version numbers.
+
+                        foreach (ModUpdateInfo info in entry.Value.Dependencies) {
+                            try {
+                                result.Dependencies.Add(new EverestModuleMetadata { Name = info.Name, VersionString = info.Version });
+                            } catch (ArgumentException) {
+                                continue;
+                            }
+                        }
+
+                        foreach (ModUpdateInfo info in entry.Value.OptionalDependencies) {
+                            try {
+                                result.OptionalDependencies.Add(new EverestModuleMetadata { Name = info.Name, VersionString = info.Version });
+                            } catch (ArgumentException) {
+                                continue;
+                            }
+                        }
+
+                        dependencyGraph[entry.Key] = result;
+                    }
+
+                    Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", $"Downloaded {dependencyGraph.Count} item(s)");
+                    return dependencyGraph;
+                }
+            } catch (Exception e) {
+                Logger.Log(LogLevel.Warn, "ModUpdaterHelper", $"Downloading dependency graph failed!");
+                Logger.LogDetailed(e);
+                return null;
+            }
         }
 
         /// <summary>
@@ -143,12 +186,12 @@ namespace Celeste.Mod.Helpers {
 
         /// <summary>
         /// Retrieves the mod updater database location from everestapi.github.io.
-        /// This should point to a running instance of https://github.com/max4805/EverestUpdateCheckerServer.
+        /// This should point to a running instance of https://github.com/maddie480/EverestUpdateCheckerServer.
         /// </summary>
-        private static string getModUpdaterDatabaseUrl() {
-            using (WebClient wc = new WebClient()) {
+        private static string getModUpdaterDatabaseUrl(string database) {
+            using (WebClient wc = new CompressedWebClient()) {
                 Logger.Log(LogLevel.Verbose, "ModUpdaterHelper", "Fetching mod updater database URL");
-                return wc.DownloadString("https://everestapi.github.io/modupdater.txt").Trim();
+                return wc.DownloadString("https://everestapi.github.io/" + database + ".txt").Trim();
             }
         }
 

@@ -4,6 +4,7 @@ namespace Celeste {
     class patch_DecalData : DecalData {
 
         public float Rotation;
+        public string ColorHex;
 
     }
 }

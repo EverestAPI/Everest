@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
@@ -13,11 +14,18 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
+using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
 
-        private bool instantClose = false;
+        private bool instantClose;
+        private List<Option> modes;
 
         // Make private fields accessible to our mod.
         [MonoModIgnore]
@@ -29,9 +37,21 @@ namespace Celeste {
             public string Label;
             public string ID;
             public MTexture Icon;
+            public MTexture Bg;
+            public string CheckpointLevelName;
         }
-        [MonoModIgnore]
-        private extern Option AddRemixButton();
+
+        [MonoModReplace]
+        private Option AddRemixButton() {
+            Option option = new Option {
+                Label = Dialog.Clean("overworld_remix"),
+                Icon = GFX.Gui[_ModMenuTexture("menu/remix")],
+                ID = "B",
+                Bg = GFX.Gui[_ModAreaselectTexture("areaselect/tab")]
+            };
+            modes.Insert(1, option);
+            return option;
+        }
 
         [MonoModReplace]
         public static new string GetCheckpointPreviewName(AreaKey area, string level) {
@@ -82,8 +102,9 @@ namespace Celeste {
                 // we are coming back from a C-side we did not unlock. Force-add it.
                 options.Add(new Option {
                     Label = Dialog.Clean("overworld_remix2"),
-                    Icon = GFX.Gui["menu/rmx2"],
-                    ID = "C"
+                    Icon = GFX.Gui[_ModMenuTexture("menu/rmx2")],
+                    ID = "C",
+                    Bg = GFX.Gui[_ModAreaselectTexture("areaselect/tab")]
                 });
             }
 
@@ -204,6 +225,43 @@ namespace Celeste {
         [PatchOuiChapterPanelRender] // ... except for manually manipulating the method via MonoModRules
         public new extern void Render();
 
+        [MonoModIgnore]
+        [PatchOuiChapterPanelOptionBg]
+        [PatchOuiChapterPanelReset]
+        private extern void Reset();
+
+        [PatchStrawberryWidthInChapterPanel]
+        private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
+        private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
+            // search for the actual checkpoint index, since checkpointIndex might not be correct if checkpoints are skipped.
+            AreaData areaData = AreaData.Areas[Area.ID];
+            ModeProperties mode = areaData.Mode[(int) Area.Mode];
+            if (mode.Checkpoints != null) {
+                for (int i = 0; i < mode.Checkpoints.Length; i++) {
+                    CheckpointData cp = mode.Checkpoints[i];
+
+                    if (option.CheckpointLevelName == cp.Level
+                        || option.CheckpointLevelName == $"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}") {
+
+                        checkpointIndex = i + 1;
+                        break;
+                    }
+                }
+            }
+
+            orig_DrawCheckpoint(center, option, checkpointIndex);
+        }
+
+        private static List<string> getAllCheckpoints(AreaKey area) {
+            AreaData areaData = AreaData.Areas[area.ID];
+            ModeProperties mode = areaData.Mode[(int) area.Mode];
+            List<string> filteredList = new List<string>();
+            if (mode.Checkpoints != null)
+                foreach (CheckpointData cp in mode.Checkpoints)
+                    filteredList.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+            return filteredList;
+        }
+
         private string _ModAreaselectTexture(string textureName) {
             // First, check for area (chapter) specific textures.
             string area = AreaData.Areas[Area.ID].Name;
@@ -225,9 +283,51 @@ namespace Celeste {
             return textureName;
         }
 
+        private string _ModMenuTexture(string textureName) {
+            // First, check for area (chapter) specific textures.
+            string area = AreaData.Areas[Area.ID].Name;
+            string areaTextureName = textureName.Replace("menu/", $"menu/{area}_");
+            if (GFX.Gui.Has(areaTextureName)) {
+                textureName = areaTextureName;
+                return textureName;
+            }
+
+            // If none are found, fall back to levelset textures.
+            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            string levelSetTextureName = textureName.Replace("menu/", $"menu/{levelSet}/");
+            if (GFX.Gui.Has(levelSetTextureName)) {
+                textureName = levelSetTextureName;
+                return textureName;
+            }
+
+            // If that doesn't exist either, return without changing anything.
+            return textureName;
+        }
+
         private float _FixTitleLength(float vanillaValue) {
             float mapNameSize = ActiveFont.Measure(Dialog.Clean(AreaData.Get(Area).Name)).X;
             return vanillaValue - Math.Max(0f, mapNameSize + vanillaValue - 490f);
+        }
+
+
+        private static float vanillaOffsetForStrawberryWidth = 0;
+
+        private float getStrawberryWidth(float vanillaValue, int strawberryCount, int checkpointIndex) {
+            bool hasCassette = (Area.Mode == AreaMode.Normal && Data.CassetteCheckpointIndex == checkpointIndex);
+            float maxWidth = hasCassette ? 440 : 520;
+
+            float modifiedValue = vanillaValue;
+            if (vanillaValue * strawberryCount > maxWidth) {
+                modifiedValue = maxWidth / strawberryCount;
+            }
+
+            vanillaOffsetForStrawberryWidth = vanillaValue - modifiedValue;
+            return modifiedValue;
+        }
+
+        private static Vector2 correctInitialStrawberryOffset(Vector2 initialOffset, Vector2 directionVector) {
+            initialOffset -= directionVector * vanillaOffsetForStrawberryWidth;
+            return initialOffset;
         }
     }
 }
@@ -245,12 +345,32 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelRender))]
     class PatchOuiChapterPanelRenderAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches various methods to customize the chapter panel tabs.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelOptionBg))]
+    class PatchOuiChapterPanelOptionBgAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches chapter panel tab rendering to allow for custom backpack/cassette icons.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelReset))]
+    class PatchOuiChapterPanelResetAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches chapter panel tab rendering to allow for custom backpack/cassette icons.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryWidthInChapterPanel))]
+    class PatchStrawberryWidthInChapterPanelAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchChapterPanelSwapRoutine(MethodDefinition method, CustomAttribute attrib) {
             MethodDefinition m_GetCheckpoints = method.DeclaringType.FindMethod("System.Collections.Generic.HashSet`1<System.String> _GetCheckpoints(Celeste.SaveData,Celeste.AreaKey)");
             FieldDefinition f_Area = method.DeclaringType.FindField("Area");
             MethodDefinition m_GetStartName = MonoModRule.Modder.FindType("Celeste.AreaData").Resolve().FindMethod("System.String GetStartName(Celeste.AreaKey)");
+            TypeDefinition t_OuiChapterPanel = MonoModRule.Modder.FindType("Celeste.OuiChapterPanel").Resolve();
+            MethodDefinition m_ModAreaselectTexture = t_OuiChapterPanel.FindMethod("System.String Celeste.OuiChapterPanel::_ModAreaselectTexture(System.String)");
 
             // The routine is stored in a compiler-generated method.
             method = method.GetEnumeratorMoveNext();
@@ -268,6 +388,25 @@ namespace MonoMod {
                 cursor.Emit(OpCodes.Ldloc_1);
                 cursor.Emit(OpCodes.Ldfld, f_Area);
                 cursor.Next.Operand = m_GetStartName;
+
+                // wrap "areaselect/" texture paths in _ModAreaselectTexture
+                cursor.Index = 0;
+                int matches = 0;
+                while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("areaselect/"))) {
+                    // Push chapter panel
+                    cursor.Emit(OpCodes.Ldloc_1);
+                    // Move after ldstr
+                    cursor.Goto(cursor.Next, MoveType.After);
+                    // Insert method call to modify the string.
+                    cursor.Emit(OpCodes.Call, m_ModAreaselectTexture);
+                    matches++;
+                }
+                if (matches != 2) {
+                    throw new Exception("Incorrect number of matches for string starting with \"areaselect/\".");
+                }
+
+                // apply patch for changing Option.Bg
+                PatchOuiChapterPanelOptionBg(il, null);
             });
         }
 
@@ -306,5 +445,81 @@ namespace MonoMod {
             }
         }
 
+        public static void PatchOuiChapterPanelReset(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_ModMenuTexture = context.Method.DeclaringType.FindMethod("System.String Celeste.OuiChapterPanel::_ModMenuTexture(System.String)");
+
+            ILCursor cursor = new ILCursor(context);
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdstr(out string str) && str.StartsWith("menu/"))) {
+                // Move to before the string is loaded, but before the labels, so we can redirect break targets to a new instruction.
+                // Push this.
+                cursor.Emit(OpCodes.Ldarg_0);
+                // Move after ldstr
+                cursor.Goto(cursor.Next, MoveType.After);
+                // Insert method call to modify the string.
+                cursor.Emit(OpCodes.Call, m_ModMenuTexture);
+                matches++;
+            }
+            if (matches != 2) {
+                throw new Exception("Incorrect number of matches for string starting with \"menu/\".");
+            }
+        }
+
+        public static void PatchOuiChapterPanelOptionBg(ILContext context, CustomAttribute attrib) {
+            TypeDefinition t_Atlas = MonoModRule.Modder.FindType("Monocle.Atlas").Resolve();
+            MethodDefinition m_Atlas_GetItem = t_Atlas.FindMethod("Monocle.MTexture Monocle.Atlas::get_Item(System.String)");
+            TypeDefinition t_GFX = MonoModRule.Modder.FindType("Celeste.GFX").Resolve();
+            FieldDefinition f_Gui = t_GFX.FindField("Gui");
+            TypeDefinition t_OuiChapterPanel = MonoModRule.Modder.FindType("Celeste.OuiChapterPanel").Resolve();
+            MethodDefinition m_ModAreaselectTexture = t_OuiChapterPanel.FindMethod("System.String Celeste.OuiChapterPanel::_ModAreaselectTexture(System.String)");
+            TypeDefinition t_OuiChapterPanel_Option = MonoModRule.Modder.FindType("Celeste.OuiChapterPanel/Option").Resolve();
+            FieldDefinition f_Bg = t_OuiChapterPanel_Option.FindField("Bg");
+
+            ILCursor cursor = new ILCursor(context);
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.After, instr => instr.MatchNewobj("Celeste.OuiChapterPanel/Option"))) {
+                // add the following to initializer:
+                // Bg = GFX.Gui[_ModAreaselectTexture("areaselect/tab")]
+                cursor.Emit(OpCodes.Dup);
+                cursor.Emit(OpCodes.Ldsfld, f_Gui);
+                // null attribute gets passed from SwapRoutine patch; actual method being patched is MoveNext of nested type, which has the OuiChapterPanel object in local var 1
+                cursor.Emit(attrib == null ? OpCodes.Ldloc_1 : OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldstr, "areaselect/tab");
+                cursor.Emit(OpCodes.Call, m_ModAreaselectTexture);
+                cursor.Emit(OpCodes.Callvirt, m_Atlas_GetItem);
+                cursor.Emit(OpCodes.Stfld, f_Bg);
+
+                matches++;
+            }
+            if (matches != (context.Method.Name == "AddRemixButton" ? 1 : 2)) { // AddRemixButton has 1 instance, the others have 2 each
+                throw new Exception($"Incorrect number of matches for \"areaselect/tab\" in {context.Method.Name}.");
+            }
+        }
+
+
+        public static void PatchStrawberryWidthInChapterPanel(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getStrawberryWidth = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::getStrawberryWidth(System.Single,System.Int32,System.Int32)");
+            MethodDefinition m_correctInitialStrawberryOffset = context.Method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Vector2 Celeste.OuiChapterPanel::correctInitialStrawberryOffset(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)");
+            int boolArrayIndex = context.Body.Variables.Where(var => var.VariableType.FullName == "System.Boolean[]").First().Index;
+
+            ILCursor cursor = new ILCursor(context);
+
+            for (int i = 0; i < 2; i++) {
+                cursor.GotoNext(instr => instr.MatchLdcR4(44f));
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Ldloc, boolArrayIndex);
+                cursor.Emit(OpCodes.Ldlen);
+                cursor.Emit(OpCodes.Ldarg_3);
+                cursor.Emit(OpCodes.Call, m_getStrawberryWidth);
+
+                if (i == 0) {
+                    cursor.GotoNext(instr => instr.OpCode == OpCodes.Stloc_S);
+                    int vectorIndex = (cursor.Next.Operand as VariableReference).Index;
+                    cursor.Emit(OpCodes.Ldloc, vectorIndex - 1);
+                    cursor.Emit(OpCodes.Call, m_correctInitialStrawberryOffset);
+                }
+            }
+        }
     }
 }
