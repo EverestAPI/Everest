@@ -160,10 +160,18 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? ThreadedGL { get; set; } = null;
 
+        [YamlMember(Alias = "FastTextureLoading")]
+        [SettingIgnore]
+        public bool? _FastTextureLoading { get; set; } = null;
+
+        [YamlIgnore]
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool? FastTextureLoading { get; set; } = null;
+        public bool? FastTextureLoading {
+            get => Everest.Content.DumpOnLoad || Everest.Content._DumpAll ? false : _FastTextureLoading;
+            set => _FastTextureLoading = value;
+        }
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
