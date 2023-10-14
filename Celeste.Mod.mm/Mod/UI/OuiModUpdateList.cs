@@ -34,7 +34,7 @@ namespace Celeste.Mod.UI {
 
         private static bool ongoingUpdateCancelled = false;
 
-        private static bool isFetchingDone => ModUpdaterHelper.updateCheckTask.IsCompleted;
+        private static bool isFetchingDone => ModUpdaterHelper.IsAsyncUpdateCheckingDone();
 
         private bool menuOnScreen = false;
 
@@ -193,10 +193,11 @@ namespace Celeste.Mod.UI {
         private void generateAllButtons() {
             // 3. Render on screen
             Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
-            ModUpdaterHelper.updateCheckTask.Wait();
+            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdates =
+                ModUpdaterHelper.GetAsyncLoadedModUpdates();
             if (menu == null) return;
             
-            if (ModUpdaterHelper.availableUpdates == null) {
+            if (availableUpdates == null) {
                 // display an error message
                 renderButtonsTask = new Task(() => {
                     menu.Remove(fetchingButton);
@@ -209,7 +210,7 @@ namespace Celeste.Mod.UI {
                 return;
             }
             
-            if (ModUpdaterHelper.availableUpdates.Count == 0) {
+            if (availableUpdates.Count == 0) {
                 // display a dummy "no update available" button
                 renderButtonsTask = new Task(() => {
                     menu.Remove(fetchingButton);
@@ -224,7 +225,7 @@ namespace Celeste.Mod.UI {
             List<TextMenu.Button> queuedItems = new List<TextMenu.Button>();
 
             // if there are multiple updates...
-            if (ModUpdaterHelper.availableUpdates.Count > 1) {
+            if (availableUpdates.Count > 1) {
                 // display an "update all" button at the top of the list
                 updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
                 updateAllButton.Pressed(() => downloadAllMods());
@@ -233,8 +234,8 @@ namespace Celeste.Mod.UI {
             }
 
             // then, display one button per update
-            foreach (ModUpdateInfo update in ModUpdaterHelper.availableUpdates.Keys) {
-                EverestModuleMetadata metadata = ModUpdaterHelper.availableUpdates[update];
+            foreach (ModUpdateInfo update in availableUpdates.Keys) {
+                EverestModuleMetadata metadata = availableUpdates[update];
 
                 string versionUpdate = metadata.VersionString;
                 if (metadata.VersionString != update.Version)

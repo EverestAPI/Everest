@@ -195,8 +195,8 @@ namespace Celeste.Mod.Helpers {
             }
         }
 
-        public static Task updateCheckTask = null;
-        public static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdates = null;
+        private static Task updateCheckTask = null;
+        private static SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdates = null;
 
         /// <summary>
         /// Run a check for mod updates asynchronously.
