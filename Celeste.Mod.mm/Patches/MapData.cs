@@ -159,12 +159,17 @@ namespace Celeste {
         }
 
         private BinaryPacker.Element Process(BinaryPacker.Element root) {
-            if (root.Children == null)
+            if (root.Children == null) {
+                ProcessMeta(null);
                 return root;
+            }
 
             // make sure parse meta first, because checkpoint entity needs to read meta
-            if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta)
+            if (root.Children.Find(element => element.Name == "meta") is BinaryPacker.Element meta) {
                 ProcessMeta(meta);
+            } else {
+                ProcessMeta(null);
+            }
 
             new MapDataFixup(this).Process(root);
 
@@ -175,8 +180,35 @@ namespace Celeste {
             AreaData area = AreaData.Get(Area);
             AreaMode mode = Area.Mode;
 
+            MapMeta metaParsedFromFile = null;
+            MapMeta metaParsed = null;
+
+            var path = $"Maps/{area.Mode[(int)mode].Path}";
+            if (Everest.Content.TryGet(path, out var asset)) {
+                metaParsedFromFile = asset.GetMeta<MapMeta>();
+                if (metaParsedFromFile != null) {
+                    if (metaParsedFromFile.Modes == null) {
+                        metaParsedFromFile.Modes = new MapMetaModeProperties[3];
+                    }
+                    if (metaParsedFromFile.Modes.Length < 3) {
+                        metaParsedFromFile.Modes = metaParsedFromFile.Modes.Concat(new MapMetaModeProperties[3 - metaParsedFromFile.Modes.Length]).ToArray();
+                    }
+                    metaParsedFromFile.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsedFromFile.Mode, metaParsedFromFile.Modes[(int)mode]);
+                    metaParsedFromFile.Mode = null;
+                }
+            }
+
+            if (meta != null) {
+                metaParsed = new MapMeta(meta);
+                metaParsed.Modes[(int)mode] = MapMetaModeProperties.Add(metaParsed.Mode, metaParsed.Modes[(int)mode]);
+                metaParsed.Mode = null;
+            }
+
+            metaParsed = MapMeta.Add(metaParsedFromFile, metaParsed);
+
             if (mode == AreaMode.Normal) {
-                new MapMeta(meta).ApplyTo(area);
+                metaParsed.ApplyTo(area);
+                metaParsed.Modes[(int)mode].ApplyTo(area, mode);
                 Area = area.ToKey();
 
                 // Backup A-Side's Metadata. Only back up useful data.
@@ -189,20 +221,10 @@ namespace Celeste {
                     CoreMode = area.CoreMode,
                     Dreaming = area.Dreaming
                 });
-            }
-
-            BinaryPacker.Element modeMeta = meta.Children?.FirstOrDefault(el => el.Name == "mode");
-            if (modeMeta == null)
-                return;
-
-            new MapMetaModeProperties(modeMeta).ApplyTo(area, mode);
-
-            // Metadata for B-Side and C-Side are parsed and stored.
-            if (mode != AreaMode.Normal) {
-                MapMeta mapMeta = new MapMeta(meta) {
-                    Modes = area.GetMeta().Modes
-                };
-                area.Mode[(int) mode].SetMapMeta(mapMeta);
+            } else {
+                MapMeta combinedMeta = MapMeta.Add(metaParsed, area.GetMeta());
+                area.Mode[(int)mode].SetMapMeta(combinedMeta);
+                combinedMeta.Modes[(int)mode].ApplyTo(area, mode);
             }
         }
 

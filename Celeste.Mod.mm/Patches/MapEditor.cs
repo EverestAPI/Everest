@@ -85,7 +85,7 @@ namespace Celeste.Editor {
             }
 
             session.Level = level.Name;
-            session.RespawnPoint = customRespawnPoint ? at : null;
+            session.RespawnPoint = customRespawnPoint ? at : new Vector2?();
             session.FirstLevel = false;
             session.StartedFromBeginning = false;
 
