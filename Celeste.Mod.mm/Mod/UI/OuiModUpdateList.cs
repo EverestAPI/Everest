@@ -34,7 +34,7 @@ namespace Celeste.Mod.UI {
 
         private static bool ongoingUpdateCancelled = false;
 
-        private static bool isFetchingDone = false;
+        private static bool isFetchingDone => ModUpdaterHelper.updateCheckTask.IsCompleted;
 
         private bool menuOnScreen = false;
 
@@ -50,11 +50,11 @@ namespace Celeste.Mod.UI {
             
             if (updatableMods == null) {
                 updatableMods = new List<ModUpdateHolder>();
-                task = new Task(() => {checkForUpdates(); isFetchingDone = true;});
-                task.Start();
                 fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
                 fetchingButton.Disabled = true;
                 menu.Add(fetchingButton);
+                task = new Task(generateAllButtons);
+                task.Start();
             } else if (isFetchingDone) { // mods have been already fetched
                 fetchingButton = null;
                 // if there are multiple updates...
@@ -65,7 +65,7 @@ namespace Celeste.Mod.UI {
                     menu.Add(updateAllButton);
                 }
                 foreach (ModUpdateHolder modHolder in updatableMods) {
-                    menu.Add(modHolder.button); // buttons should get automatically generated
+                    menu.Add(modHolder.GetButton(this)); // buttons should get automatically generated
                 }
             } else { // fetching button without task
                 fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
@@ -190,24 +190,13 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void checkForUpdates() {
-            // 1. Download the mod updates database
-            Dictionary<string, ModUpdateInfo> updateCatalog = null;
-            updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
-
-            // 2. Find out what actually has been updated
-            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
-            if (updateCatalog != null) {
-                availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
-            }
-
-
-
+        private void generateAllButtons() {
             // 3. Render on screen
             Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
-
+            ModUpdaterHelper.updateCheckTask.Wait();
+            if (menu == null) return;
             
-            if (updateCatalog == null) {
+            if (ModUpdaterHelper.availableUpdates == null) {
                 // display an error message
                 renderButtonsTask = new Task(() => {
                     menu.Remove(fetchingButton);
@@ -216,10 +205,11 @@ namespace Celeste.Mod.UI {
                     button.Disabled = true;
                     menu.Add(button);
                 });
-                isFetchingDone = false;
                 updatableMods = null;
                 return;
-            } else if (availableUpdatesCatalog.Count == 0) {
+            }
+            
+            if (ModUpdaterHelper.availableUpdates.Count == 0) {
                 // display a dummy "no update available" button
                 renderButtonsTask = new Task(() => {
                     menu.Remove(fetchingButton);
@@ -234,7 +224,7 @@ namespace Celeste.Mod.UI {
             List<TextMenu.Button> queuedItems = new List<TextMenu.Button>();
 
             // if there are multiple updates...
-            if (availableUpdatesCatalog.Count > 1) {
+            if (ModUpdaterHelper.availableUpdates.Count > 1) {
                 // display an "update all" button at the top of the list
                 updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
                 updateAllButton.Pressed(() => downloadAllMods());
@@ -243,38 +233,40 @@ namespace Celeste.Mod.UI {
             }
 
             // then, display one button per update
-            foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
-                EverestModuleMetadata metadata = availableUpdatesCatalog[update];
+            foreach (ModUpdateInfo update in ModUpdaterHelper.availableUpdates.Keys) {
+                EverestModuleMetadata metadata = ModUpdaterHelper.availableUpdates[update];
 
                 string versionUpdate = metadata.VersionString;
                 if (metadata.VersionString != update.Version)
                     versionUpdate = $"{metadata.VersionString} > {update.Version}";
                 
-                ModUpdateHolder holder = new ModUpdateHolder(update: update, metadata: metadata, buttonGenerator: () => null);
-                
-                Func<TextMenu.Button> buttonGenerator = new Func<TextMenu.Button>(() => {
+                ModUpdateHolder holder = new ModUpdateHolder(update: update, metadata: metadata, buttonGenerator: _ => null);
 
+                // NOTE TO FUTURE MAINTAINERS
+                // This piece here has to be handled very carefully
+                // The `buttonGenerator` may be called from different `OuiModUpdateList` instances and because of this
+                // if we capture this we will get bad behaviors so BE CAREFUL! (by someone who totally did not spend to much time figuring this out)
+                holder.buttonGenerator = instance => {
                     TextMenu.Button button = new TextMenu.Button(
                         $"{ModUpdaterHelper.FormatModName(metadata.Name)} " +
                         $"| v. {versionUpdate} " +
                         $"({new DateTime(1970, 1, 1, 0, 0, 0, 0).AddSeconds(update.LastUpdate):yyyy-MM-dd})");
                     button.Pressed(() => {
                         // make the menu non-interactive
-                        menu.Focused = false;
+                        instance.menu.Focused = false;
                         button.Disabled = true;
 
                         // trigger the update download
-                        downloadModUpdate(holder);
+                        downloadModUpdate(instance, holder);
                     });
                     // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
                     // if there isn't, add it to the list of mods that can be updated via "update all"
                     if (update.xxHash.Count > 1) {
                         button.Disabled = true;
-                    } 
-                    return button;
-                });
+                    }
 
-                holder.buttonGenerator = buttonGenerator;
+                    return button;
+                };
 
                 // if there is more than one hash, it means there is multiple downloads for this mod. Thus, we can't update it manually.
                 // if there isn't, add it to the list of mods that can be updated via "update all"
@@ -282,7 +274,7 @@ namespace Celeste.Mod.UI {
                     updatableMods.Add(holder);
                 }
 
-                queuedItems.Add(holder.button);
+                queuedItems.Add(holder.GetButton(this));
                 
             }
             renderButtonsTask = new Task(() => {
@@ -297,44 +289,55 @@ namespace Celeste.Mod.UI {
         /// <summary>
         /// Downloads and installs a mod update.
         /// </summary>
+        /// <param name="instance">The current instance</param>
         /// <param name="modHolder">The relevant info for the mod</param>
-        private void downloadModUpdate(ModUpdateHolder modHolder) {
-            task = new Task(() => {
-                bool updateSuccess = doDownloadModUpdate(modHolder.update, modHolder.metadata, modHolder.button);
+        private static void downloadModUpdate(OuiModUpdateList instance, ModUpdateHolder modHolder) {
+            instance.task = new Task(() => {
+                try {
+                    bool updateSuccess =
+                        doDownloadModUpdate(instance, modHolder.update, modHolder.metadata, modHolder.GetButton(instance));
+                    TextMenu currentMenu = instance.menu;
+                    TextMenu.Button updateAllButton = instance.updateAllButton;
 
-                if (updateSuccess) {
-                    // select another enabled option: the next one, or the last one if there is no next one.
-                    if (menu.Selection + 1 > menu.LastPossibleSelection)
-                        menu.Selection = menu.LastPossibleSelection;
-                    else
-                        menu.MoveSelection(1);
+                    if (updateSuccess) {
+                        // select another enabled option: the next one, or the last one if there is no next one.
+                        if (currentMenu.Selection + 1 > currentMenu.LastPossibleSelection) {
+                            currentMenu.Selection = currentMenu.LastPossibleSelection;
+                        } else {
+                            currentMenu.MoveSelection(1);
+                        }
 
-                    // remove this mod from the updatable mods list (it won't be updated by the "update all mods" button)
-                    updatableMods.Remove(modHolder);
-                    if (updatableMods.Count == 0 && updateAllButton != null) {
-                        updateAllButton.Disabled = true;
-                        updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL_DONE");
+                        // remove this mod from the updatable mods list (it won't be updated by the "update all mods" button)
+                        updatableMods.Remove(modHolder);
+                        if (updatableMods.Count == 0 && updateAllButton != null) {
+                            updateAllButton.Disabled = true;
+                            updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL_DONE");
+                        }
+                    } else {
+                        // re-enable the button to allow the user to try again.
+                        modHolder.GetButton(instance).Disabled = false;
                     }
-                } else {
-                    // re-enable the button to allow the user to try again.
-                    modHolder.button.Disabled = false;
-                }
 
-                // give the menu control back to the player
-                menu.Focused = true;
+                    // give the menu control back to the player
+                    currentMenu.Focused = true;
+                } catch (Exception ex) {
+                    Logger.Log(LogLevel.Error, "OuiModUpdateList", "Starting mod update failed!" );
+                    Logger.LogDetailed(ex);
+                }
             });
 
-            task.Start();
+            instance.task.Start();
         }
 
         /// <summary>
-        /// Does the actual downloading of the mod. This is it's own function, to avoid double code
+        /// Does the actual downloading of the mod. This is it's own function, to avoid duplicating the code
         /// </summary>
+        /// <param name="instance">The instance to work on</param>
         /// <param name="update">The update info coming from the update server</param>
         /// <param name="mod">The mod metadata from Everest for the installed mod</param>
         /// <param name="button">The button for that mod shown on the interface</param>
-        /// <returns>Bool wether the update failed or not</returns>
-        private bool doDownloadModUpdate(ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
+        /// <returns>Bool whether the update failed or not</returns>
+        private static bool doDownloadModUpdate(OuiModUpdateList instance, ModUpdateInfo update, EverestModuleMetadata mod, TextMenu.Button button) {
             // first, reset the "cancelled" flag.
             ongoingUpdateCancelled = false;
 
@@ -361,7 +364,7 @@ namespace Celeste.Mod.UI {
                 ModUpdaterHelper.VerifyChecksum(update, zipPath);
 
                 // mark restarting as required, as we will do weird stuff like closing zips afterwards.
-                shouldRestart = true;
+                instance.shouldRestart = true;
 
                 // install it
                 button.Label = $"{ModUpdaterHelper.FormatModName(update.Name)} ({Dialog.Clean("MODUPDATECHECKER_INSTALLING")})";
@@ -426,7 +429,7 @@ namespace Celeste.Mod.UI {
 
                 // disable all mod update buttons
                 foreach (ModUpdateHolder modupdate in updatableMods) {
-                    modupdate.button.Disabled = true;
+                    modupdate.GetButton(this).Disabled = true;
                 }
 
                 menu.Focused = false;
@@ -434,9 +437,9 @@ namespace Celeste.Mod.UI {
                     ModUpdateHolder modupdate = updatableMods[i];
 
                     // focus on the mod being updated, to ensure it is on-screen.
-                    focusOn(modupdate.button);
+                    focusOn(modupdate.GetButton(this));
 
-                    if (doDownloadModUpdate(modupdate.update, modupdate.metadata, modupdate.button)) {
+                    if (doDownloadModUpdate(this, modupdate.update, modupdate.metadata, modupdate.GetButton(this))) {
                         // if update is successful, remove this mod from the "update all" list
                         updatableMods.Remove(modupdate);
                         i--;
@@ -451,7 +454,7 @@ namespace Celeste.Mod.UI {
 
                 // enable all (remaining) mod update buttons + the "update all" button if any mod is left to update
                 foreach (ModUpdateHolder modupdate in updatableMods) {
-                    modupdate.button.Disabled = false;
+                    modupdate.GetButton(this).Disabled = false;
                 }
                 if (updatableMods.Count != 0) {
                     updateAllButton.Label = Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL");
@@ -476,23 +479,20 @@ namespace Celeste.Mod.UI {
         private class ModUpdateHolder {
             public ModUpdateInfo update;
             public EverestModuleMetadata metadata;
-            public Func<TextMenu.Button> buttonGenerator;
-
-            public TextMenu.Button button {
-                get {
-                    if (_button == null) {
-                        _button = buttonGenerator();
-                    }
-                    return _button;
-                }
-            }
+            public Func<OuiModUpdateList, TextMenu.Button> buttonGenerator;
 
             private TextMenu.Button _button;
 
-            public ModUpdateHolder(ModUpdateInfo update, EverestModuleMetadata metadata, Func<TextMenu.Button> buttonGenerator) {
+            public ModUpdateHolder(ModUpdateInfo update, EverestModuleMetadata metadata, Func<OuiModUpdateList, TextMenu.Button> buttonGenerator) {
                 this.update = update;
                 this.metadata = metadata;
                 this.buttonGenerator = buttonGenerator;
+            }
+
+            public TextMenu.Button GetButton(OuiModUpdateList instance) {
+                if (_button == null)
+                    _button = buttonGenerator(instance);
+                return _button;
             }
 
             public void RemoveButton() {
