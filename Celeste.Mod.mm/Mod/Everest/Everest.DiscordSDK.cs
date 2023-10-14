@@ -172,7 +172,7 @@ namespace Celeste.Mod {
                     }
                 } else {
                     Language english = Dialog.Languages["english"];
-                    AreaData area = AreaData.Get(session);
+                    patch_AreaData area = patch_AreaData.Get(session);
 
                     // the displayed info if "show map" was disabled: just "Playing a map"
                     string mapName = "a map";
@@ -197,7 +197,7 @@ namespace Celeste.Mod {
                         }
 
                         if (!IsOnlyMapInLevelSet(area)) {
-                            fullName = FilterEmojiFrom(area.GetLevelSet().DialogCleanOrNull(english) ?? area.GetLevelSet())
+                            fullName = FilterEmojiFrom(area.LevelSet.DialogCleanOrNull(english) ?? area.LevelSet)
                                 + " | " + (session.Area.ChapterIndex >= 0 ? "Chapter " + session.Area.ChapterIndex + " - " : "") + mapName;
                         } else {
                             fullName = mapName;
@@ -241,9 +241,9 @@ namespace Celeste.Mod {
                 return Regex.Replace(Emoji.Apply(s), "[" + Emoji.Start + "-" + Emoji.End + "]", "").Trim();
             }
 
-            private bool IsOnlyMapInLevelSet(AreaData area) {
-                foreach (AreaData otherArea in AreaData.Areas) {
-                    if (area.GetLevelSet() == otherArea.GetLevelSet() && area.GetSID() != otherArea.GetSID()) {
+            private bool IsOnlyMapInLevelSet(patch_AreaData area) {
+                foreach (patch_AreaData otherArea in AreaData.Areas) {
+                    if (area.LevelSet == otherArea.LevelSet && area.SID != otherArea.SID) {
                         return false;
                     }
                 }

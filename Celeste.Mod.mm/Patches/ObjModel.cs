@@ -168,10 +168,8 @@ namespace Celeste {
 
     public static class ObjModelExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_ObjModel.CreateFromStream(Stream, string)"/>
+        [Obsolete("Use ObjModel.CreateFromStream instead.")]
         public static ObjModel CreateFromStream(Stream stream, string fname) {
             return patch_ObjModel.CreateFromStream(stream, fname);
         }

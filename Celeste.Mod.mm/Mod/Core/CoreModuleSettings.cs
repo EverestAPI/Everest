@@ -160,10 +160,18 @@ namespace Celeste.Mod.Core {
         [SettingIgnore] // TODO: Show as advanced setting.
         public bool? ThreadedGL { get; set; } = null;
 
+        [YamlMember(Alias = "FastTextureLoading")]
+        [SettingIgnore]
+        public bool? _FastTextureLoading { get; set; } = null;
+
+        [YamlIgnore]
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
         [SettingIgnore] // TODO: Show as advanced setting.
-        public bool? FastTextureLoading { get; set; } = null;
+        public bool? FastTextureLoading {
+            get => Everest.Content.DumpOnLoad || Everest.Content._DumpAll ? false : _FastTextureLoading;
+            set => _FastTextureLoading = value;
+        }
 
         [SettingNeedsRelaunch]
         [SettingInGame(false)]
@@ -378,7 +386,7 @@ namespace Celeste.Mod.Core {
             List<string> inputGuiPrefixes = new List<string> {
                 "" // Auto
             };
-            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
+            foreach (KeyValuePair<string, MTexture> kvp in ((patch_Atlas) GFX.Gui).Textures) {
                 string path = kvp.Key;
                 if (!path.StartsWith("controls/"))
                     continue;
@@ -435,7 +443,7 @@ namespace Celeste.Mod.Core {
             );
             compatSlider.OnValueChange += val => CompatibilityMode = (Everest.CompatMode) val;
             menu.Add(compatSlider);
-            compatSlider.NeedsRelaunch(menu);
+            compatSlider.NeedsRelaunch((patch_TextMenu) menu);
 
             // We need to build our own description text as it is not static
             TextMenuExt.EaseInSubHeaderExt descrTextA = new TextMenuExt.EaseInSubHeaderExt(Dialog.Clean($"modoptions_coremodule_compatmode_{Enum.GetName(CompatibilityMode)}_descr_a"), false, menu) {
@@ -446,8 +454,8 @@ namespace Celeste.Mod.Core {
                 TextColor = Color.DarkOrange,
                 HeightExtra = 0f
             };
-            menu.Insert(menu.GetItems().IndexOf(compatSlider) + 1, descrTextA);
-            menu.Insert(menu.GetItems().IndexOf(compatSlider) + 2, descrTextB);
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(compatSlider) + 1, descrTextA);
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(compatSlider) + 2, descrTextB);
 
             compatSlider.OnEnter += () => descrTextA.FadeVisible = descrTextB.FadeVisible = true;
             compatSlider.OnLeave += () => descrTextA.FadeVisible = descrTextB.FadeVisible = false;
@@ -462,7 +470,7 @@ namespace Celeste.Mod.Core {
                 TextColor = Color.OrangeRed,
                 HeightExtra = 0f
             };
-            menu.Insert(menu.GetItems().IndexOf(descrTextB) + 1, warningText);
+            ((patch_TextMenu) menu).Insert(((patch_TextMenu) menu).Items.IndexOf(descrTextB) + 1, warningText);
 
             static bool IsCompatible(Everest.CompatMode mode) =>
                 (Everest.Flags.VanillaIsFNA && mode == Everest.CompatMode.LegacyXNA) ||

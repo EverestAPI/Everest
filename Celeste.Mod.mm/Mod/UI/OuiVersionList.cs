@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace Celeste.Mod.UI {
     public class OuiVersionList : Oui, OuiModOptions.ISubmenu {
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
 
         private TextMenu.SubHeader currentBranchName;
 
@@ -159,7 +159,7 @@ namespace Celeste.Mod.UI {
                 Scene.Remove(menu);
             }
 
-            menu = CreateMenu(false, null);
+            menu = (patch_TextMenu) CreateMenu(false, null);
 
             if (selected >= 0) {
                 menu.Selection = selected;
