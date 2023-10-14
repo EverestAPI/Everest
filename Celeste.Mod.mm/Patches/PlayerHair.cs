@@ -101,7 +101,7 @@ namespace Celeste {
             => ((patch_PlayerHair) self).GetHairTexture(index);
 
         /// <inheritdoc cref="patch_PlayerHair.GetHairScale(int)"/>
-        [Obsolete("Use PlayerHair.GetHairTexture instead.")]
+        [Obsolete("Use PlayerHair.PublicGetHairScale instead.")]
         public static Vector2 GetHairScale(this PlayerHair self, int index)
             => ((patch_PlayerHair) self).PublicGetHairScale(index);
 
