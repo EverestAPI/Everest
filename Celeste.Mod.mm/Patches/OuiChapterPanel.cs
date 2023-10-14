@@ -14,12 +14,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
-using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -241,7 +235,7 @@ namespace Celeste {
                     CheckpointData cp = mode.Checkpoints[i];
 
                     if (option.CheckpointLevelName == cp.Level
-                        || option.CheckpointLevelName == $"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}") {
+                        || option.CheckpointLevelName == $"{((patch_AreaData) (AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData)).SID}|{cp.Level}") {
 
                         checkpointIndex = i + 1;
                         break;
@@ -258,7 +252,7 @@ namespace Celeste {
             List<string> filteredList = new List<string>();
             if (mode.Checkpoints != null)
                 foreach (CheckpointData cp in mode.Checkpoints)
-                    filteredList.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+                    filteredList.Add($"{((patch_AreaData) (AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData)).SID}|{cp.Level}");
             return filteredList;
         }
 
@@ -293,7 +287,7 @@ namespace Celeste {
             }
 
             // If none are found, fall back to levelset textures.
-            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            string levelSet = ((patch_SaveData) SaveData.Instance)?.LevelSet ?? "Celeste";
             string levelSetTextureName = textureName.Replace("menu/", $"menu/{levelSet}/");
             if (GFX.Gui.Has(levelSetTextureName)) {
                 textureName = levelSetTextureName;

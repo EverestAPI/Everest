@@ -152,7 +152,7 @@ namespace Celeste.Mod.UI {
                 Scene.Remove(menu);
             }
 
-            menu = CreateMenu(false, null);
+            menu = (patch_TextMenu) CreateMenu(false, null);
 
             if (selected >= 0) {
                 menu.Selection = selected;
