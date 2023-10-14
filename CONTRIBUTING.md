@@ -13,6 +13,7 @@ Contributions are very welcome and greatly appreciated! Make sure to join the [C
   - [Adding Content](#adding-content)
   - [Patching](#patching)
     - [`patch_` classes](#patch_-classes)
+    - [`Ext` classes](#ext-classes)
     - [MonoModRules](#monomodrules)
   - [Miscellaneous](#miscellaneous)
     - [Warnings](#warnings)
@@ -89,6 +90,19 @@ There are a few attributes that can be applied to members of the class with diff
 - `[MonoModIgnore]` ignore this member, do not patch it except for MonoMod custom attributes.
 - `[MonoModConstructor]` treat this method as a constructor - [why this is needed](https://github.com/MonoMod/MonoMod/issues/51#issuecomment-496115932). 
 - `[MonoModReplace]` replace this method entirely, do not generate an `orig_` method.
+
+### `Ext` classes
+Code mods were previously created with Everest as a git submodule, which meant that any additions from Everest in `patch_` classes were not available to those mods at build time.
+
+The recommended practice has since been updated to build against a patched version of Celeste, making `Ext` classes relatively obsolete.
+
+In most cases, **new `patch_` members should not be added to their associated `Ext` class, and new `Ext` classes should not be created.**
+
+Exceptions are made when the `Ext` class contains significant additions that are not within the scope of the original class (ex: `TextMenuExt`).
+
+Existing `Ext` classes will also be kept in the following cases:
+- An associated `patch_` class member was not made public (ex: `patch_Audio.CheckFmod`)
+- Useful extension methods are defined (ex: `AreaDataExt.ToKey`)
 
 ### MonoModRules
 :information_source: **The recommended practices for MonoModRules have recently been changed as described in [this PR](https://github.com/EverestAPI/Everest/pull/351).**

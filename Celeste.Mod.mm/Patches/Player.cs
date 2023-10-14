@@ -138,7 +138,7 @@ namespace Celeste {
 
         private extern void orig_BoostBegin();
         private void BoostBegin() {
-            if (SceneAs<Level>()?.Session.MapData.GetMeta()?.TheoInBubble ?? false) {
+            if (((patch_MapData) SceneAs<patch_Level>()?.Session.MapData).Meta?.TheoInBubble ?? false) {
                 RefillDash();
                 RefillStamina();
             } else {
@@ -223,16 +223,15 @@ namespace Celeste {
     }
     public static class PlayerExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_Player.GetCurrentTrailColor"/>
+        [Obsolete("Use Player.GetCurrentTrailColor instead.")]
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
 
         /// <summary>
         /// Get whether the player is in an intro state or not.
         /// </summary>
+        [Obsolete("Use Player.IsIntroState instead.")]
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
 

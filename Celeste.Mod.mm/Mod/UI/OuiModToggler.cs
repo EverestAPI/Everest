@@ -169,7 +169,7 @@ namespace Celeste.Mod.UI {
             backToParentMenu = onBackPressed;
         }
 
-        protected override void addOptionsToMenu(TextMenu menu) {
+        protected override void addOptionsToMenu(patch_TextMenu menu) {
             // for now, display a "loading" message.
             TextMenu.Button loading = new TextMenu.Button(Dialog.Clean("MODOPTIONS_MODTOGGLE_LOADING")) { Disabled = true };
             menu.Add(loading);

@@ -40,7 +40,7 @@ namespace Celeste {
                 return;
             }
 
-            LevelSetStats stats = SaveData.Instance.GetLevelSetStats();
+            LevelSetStats stats = patch_SaveData.Instance.LevelSetStats;
             Engine.Commands.Log($"** Level Set Stats: {stats.Name} **");
             Engine.Commands.Log($"Max strawberry count = {stats.MaxStrawberries}");
             Engine.Commands.Log($"Max golden strawberry count = {stats.MaxGoldenStrawberries}");
@@ -262,12 +262,12 @@ namespace Celeste {
         [MonoModReplace]
         [Command("hearts", "sets the amount of obtained hearts for the specified level set to a given number (default all hearts and current level set)")]
         private static void CmdHearts(int amount = int.MaxValue, string levelSet = null) {
-            patch_SaveData saveData = SaveData.Instance as patch_SaveData;
+            patch_SaveData saveData = patch_SaveData.Instance;
             if (saveData == null)
                 return;
 
             if (string.IsNullOrEmpty(levelSet))
-                levelSet = saveData.GetLevelSet();
+                levelSet = saveData.LevelSet;
 
             int num = 0;
             foreach (patch_AreaStats areaStats in saveData.Areas_Safe.Cast<patch_AreaStats>().Where(stats => stats.LevelSet == levelSet)) {

@@ -370,7 +370,7 @@ namespace Celeste.Mod.Core {
             List<string> inputGuiPrefixes = new List<string> {
                 "" // Auto
             };
-            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures()) {
+            foreach (KeyValuePair<string, MTexture> kvp in ((patch_Atlas) GFX.Gui).Textures) {
                 string path = kvp.Key;
                 if (!path.StartsWith("controls/"))
                     continue;

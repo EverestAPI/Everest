@@ -246,7 +246,7 @@ namespace Monocle {
                             // SID matching
                             tabPrefix = currentText.Substring(0, 5);
                             string startOfSid = currentText.Substring(5);
-                            tabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                            tabResults = patch_AreaData.Areas.Select(area => area.SID).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                         } else {
                             // command matching
                             tabPrefix = "";

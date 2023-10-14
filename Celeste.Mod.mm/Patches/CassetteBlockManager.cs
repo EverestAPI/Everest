@@ -32,7 +32,7 @@ namespace Celeste {
 
         public extern void orig_Awake(Scene scene);
         public override void Awake(Scene scene) {
-            AreaData area = AreaData.Get(scene);
+            patch_AreaData area = patch_AreaData.Get(scene);
             if (area.CassetteSong == "-" || string.IsNullOrWhiteSpace(area.CassetteSong))
                 area.CassetteSong = null;
 
@@ -42,7 +42,7 @@ namespace Celeste {
             ticksPerSwap = 2;
             beatIndexMax = 256;
 
-            MapMetaCassetteModifier meta = area.GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = area.Meta?.CassetteModifier;
             if (meta != null) {
                 if (meta.OldBehavior) {
                     tempoMult = meta.TempoMult;
@@ -130,7 +130,7 @@ namespace Celeste {
         [MonoModReplace]
         public new void OnLevelStart() {
             Level level = Scene as Level;
-            MapMetaCassetteModifier meta = AreaData.Get(level.Session).GetMeta()?.CassetteModifier;
+            MapMetaCassetteModifier meta = patch_AreaData.Get(level.Session).Meta?.CassetteModifier;
 
             if (meta != null && meta.OldBehavior) {
                 currentIndex = maxBeat - 1 - ((beatIndex / beatsPerTick) % maxBeat);

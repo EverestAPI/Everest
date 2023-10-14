@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CS0649 // Field is never assigned to, and will always have its default value
 
 using MonoMod;
+using System;
 using System.Collections.Generic;
 
 namespace Monocle {
@@ -27,6 +28,7 @@ namespace Monocle {
     }
     public static class SpriteExt {
 
+        [Obsolete("Use Sprite.Animations instead.")]
         public static Dictionary<string, patch_Sprite.Animation> GetAnimations(this Sprite self)
             => ((patch_Sprite) self).Animations;
 

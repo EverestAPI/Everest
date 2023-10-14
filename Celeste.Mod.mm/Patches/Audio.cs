@@ -358,9 +358,6 @@ namespace Celeste {
     }
     public static class AudioExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         public static Dictionary<string, Bank> Banks => patch_Audio.patch_Banks.Banks;
 
         /// <summary>
