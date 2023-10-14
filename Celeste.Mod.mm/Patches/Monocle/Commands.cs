@@ -51,6 +51,8 @@ namespace Monocle {
         // redirects command logs to the StringBuilder when not null, only set this from main thread
         internal StringBuilder debugRClog;
 
+        private bool printedInfoMessage;
+
         [PatchCommandsProcessMethod]
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
@@ -75,6 +77,10 @@ namespace Monocle {
                     // this should realistically be done in the constructor. if we ever patch the ctor move it there!
                     installedListener = true;
                     TextInput.OnInput += HandleChar;
+                }
+                if (!printedInfoMessage) {
+                    Log("Type in 'help' for a list of debug commands or 'q' to close the console. Confirm commands with Enter.");
+                    printedInfoMessage = true;
                 }
             }
 
