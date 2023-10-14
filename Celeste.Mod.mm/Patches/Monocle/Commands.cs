@@ -366,10 +366,6 @@ namespace Monocle {
             if (!Open) {
                 return;
             }
-            if (key == '~' || key == '`') { // closing fallback using vanilla characters, which are unlikely to be used as part of commands
-                Open = canOpen = false;
-                return;
-            }
             if (char.IsControl(key)) {
                 return;
             }
