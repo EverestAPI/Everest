@@ -79,7 +79,7 @@ namespace Monocle {
                     TextInput.OnInput += HandleChar;
                 }
                 if (!printedInfoMessage) {
-                    Log("Type in 'help' for a list of debug commands or 'q' to close the console. Confirm commands with Enter.");
+                    Log("Use the 'help' command for a list of debug commands. Press Esc or use the 'q' command to close the console.");
                     printedInfoMessage = true;
                 }
             }
@@ -209,6 +209,10 @@ namespace Monocle {
         [MonoModReplace]  // don't create an orig_ method
         private void HandleKey(Keys key) {
             // this method handles all control characters, which go through the XNA Keys API
+            if (key == Keys.Escape) {
+                Open = canOpen = false;
+                return;
+            }
             underscore = true;
             underscoreCounter = 0f;
             bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
