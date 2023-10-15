@@ -43,12 +43,12 @@ namespace Celeste {
             // misplaced, as the checkpoint entity wasn't visible in-game.
             // Decals were used instead, so let's just move the entity.
 
-            foreach (Decal decal in level.Entities.FindAll<Decal>()) {
+            foreach (patch_Decal decal in level.Entities.FindAll<Decal>()) {
                 if (decal.Name.IndexOf("checkpoint", StringComparison.InvariantCultureIgnoreCase) == -1)
                     continue;
 
                 Depth = decal.Depth - 1;
-                Vector2 scale = sprite.Scale = flash.Scale = decal.GetScale();
+                Vector2 scale = sprite.Scale = flash.Scale = decal.Scale;
                 Position = decal.Position + (
                     decal.Name == "decals/1-forsakencity/checkpoint" ? new Vector2(0f, 13f) :
                     new Vector2(0f, 12f)

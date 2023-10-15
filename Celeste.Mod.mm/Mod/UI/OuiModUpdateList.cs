@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.UI {
     class OuiModUpdateList : Oui, OuiModOptions.ISubmenu {
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenuExt.SubHeaderExt subRestartHeader;
         private TextMenu.Button fetchingButton;
@@ -41,7 +41,7 @@ namespace Celeste.Mod.UI {
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
 
-            menu = new TextMenu();
+            menu = new patch_TextMenu();
 
             // display the title and a dummy "Fetching" button
             menu.Add(new TextMenu.Header(Dialog.Clean("MODUPDATECHECKER_MENU_TITLE")));
@@ -467,7 +467,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void focusOn(TextMenu.Button button) {
-            int index = menu.GetItems().IndexOf(button);
+            int index = menu.Items.IndexOf(button);
             if (index != -1) {
                 menu.Selection = index;
             }

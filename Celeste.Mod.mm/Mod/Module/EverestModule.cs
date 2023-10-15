@@ -634,7 +634,7 @@ namespace Celeste.Mod {
         /// <param name="menu">Menu to add the section to.</param>
         /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
         /// <param name="snapshot">The Level.PauseSnapshot</param>
-        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public virtual void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
             if (type == null || settings == null)

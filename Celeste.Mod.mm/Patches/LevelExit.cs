@@ -35,7 +35,7 @@ namespace Celeste {
         [MonoModConstructor]
         public void ctor(Mode mode, Session session, HiresSnow snow = null) {
             // Restore to metadata of A-Side.
-            AreaData.Get(session).RestoreASideAreaData();
+            patch_AreaData.Get(session).RestoreASideAreaData();
 
             orig_ctor(mode, session, snow);
             Everest.Events.Level.Exit(Engine.Scene as Level, this, mode, session, snow);
@@ -43,9 +43,9 @@ namespace Celeste {
 
         [MonoModReplace]
         private void LoadCompleteThread() {
-            AreaData area = AreaData.Get(session);
+            patch_AreaData area = patch_AreaData.Get(session);
 
-            if ((completeMeta = area.GetMeta()?.CompleteScreen) != null && completeMeta.Atlas != null) {
+            if ((completeMeta = area.Meta?.CompleteScreen) != null && completeMeta.Atlas != null) {
                 completeAtlas = Atlas.FromAtlas(Path.Combine("Graphics", "Atlases", completeMeta.Atlas), Atlas.AtlasDataFormat.PackerNoAtlas);
 
             } else if ((completeXml = area.CompleteScreenXml) != null && completeXml.HasAttr("atlas")) {
@@ -65,7 +65,7 @@ namespace Celeste {
 
         // returns true if there is custom music, false otherwise.
         private bool playCustomCompleteScreenMusic() {
-            string[] completeScreenMusic = AreaData.Get(session.Area)?.GetMeta()?.CompleteScreen?.MusicBySide;
+            string[] completeScreenMusic = patch_AreaData.Get(session.Area)?.Meta?.CompleteScreen?.MusicBySide;
             if (completeScreenMusic != null && completeScreenMusic.Length > (int) session.Area.Mode) {
                 Audio.SetMusic(completeScreenMusic[(int) session.Area.Mode]);
                 return true;

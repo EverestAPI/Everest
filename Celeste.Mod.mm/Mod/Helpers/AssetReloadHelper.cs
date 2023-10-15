@@ -264,7 +264,7 @@ namespace Celeste.Mod {
                 // ChapterSelect only updates the ID.
                 // Note: SaveData.Instance.LastArea is reset by AreaData.Interlude_Safe -> SaveData.LevelSetStats realizing that AreaOffset == -1
                 // Store the "resolved" last selected area in a local variable, then re-set it after reloading.
-                string lastAreaSID = AreaData.Get(saveData?.LastArea.ID ?? -1)?.ToKey().GetSID() ?? AreaKey.Default.GetSID();
+                string lastAreaSID = patch_AreaData.Get(saveData?.LastArea.ID ?? -1)?.ToKey().GetSID() ?? AreaKey.Default.GetSID();
 
                 // Reload AreaData
                 AreaData.Unload();
@@ -273,7 +273,7 @@ namespace Celeste.Mod {
 
                 // Fake a save data reload to resync the save data to the new area list.
                 if (saveData != null) {
-                    saveData.LastArea = AreaDataExt.Get(lastAreaSID)?.ToKey() ?? AreaKey.Default;
+                    saveData.LastArea = patch_AreaData.Get(lastAreaSID)?.ToKey() ?? AreaKey.Default;
                     saveData.BeforeSave();
                     saveData.AfterInitialize();
                 }

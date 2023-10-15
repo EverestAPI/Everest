@@ -20,7 +20,7 @@ namespace Celeste.Mod {
         public override void Unload() {
         }
 
-        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public override void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
         }
 
     }

@@ -130,7 +130,7 @@ namespace Celeste.Mod.Core {
             // Check if the current input GUI override is still valid. If so, apply it.
             if (!string.IsNullOrEmpty(Settings.InputGui)) {
                 string inputGuiPath = $"controls/{Settings.InputGui}/";
-                if (GFX.Gui.GetTextures().Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
+                if (((patch_Atlas) GFX.Gui).Textures.Any(kvp => kvp.Key.StartsWith(inputGuiPath))) {
                     Input.OverrideInputPrefix = Settings.InputGui;
                 } else {
                     Settings.InputGui = "";
@@ -206,10 +206,10 @@ namespace Celeste.Mod.Core {
 
             // Find the options button and place our button below it.
             index = buttons.FindIndex(_ => {
-                MainMenuSmallButton other = (_ as MainMenuSmallButton);
+                patch_MainMenuSmallButton other = (_ as patch_MainMenuSmallButton);
                 if (other == null)
                     return false;
-                return other.GetLabelName() == "menu_options" && other.GetIconName() == "menu/options";
+                return other.LabelName == "menu_options" && other.IconName == "menu/options";
             });
             if (index != -1)
                 index++;
@@ -224,11 +224,11 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public void CreatePauseMenuButtons(Level level, TextMenu menu, bool minimal) {
+        public void CreatePauseMenuButtons(Level level, patch_TextMenu menu, bool minimal) {
             if (!Settings.ShowModOptionsInGame)
                 return;
 
-            List<TextMenu.Item> items = menu.GetItems();
+            List<TextMenu.Item> items = menu.Items;
             int index;
 
             // Find the options button and place our button below it.
@@ -261,8 +261,8 @@ namespace Celeste.Mod.Core {
                         level.Pause(returnIndex, minimal, false);
 
                         // adjust the Mod Options menu position, in case it moved (pause menu entries added/removed after changing mod options).
-                        TextMenu textMenu = level.Entities.GetToAdd().FirstOrDefault((Entity e) => e is TextMenu) as TextMenu;
-                        TextMenu.Button modOptionsButton = textMenu?.GetItems().OfType<TextMenu.Button>()
+                        patch_TextMenu textMenu = ((patch_EntityList) (object) level.Entities).ToAdd.FirstOrDefault((Entity e) => e is TextMenu) as patch_TextMenu;
+                        TextMenu.Button modOptionsButton = textMenu?.Items.OfType<TextMenu.Button>()
                             .FirstOrDefault(button => button.Label == Dialog.Clean("menu_pause_modoptions"));
                         if (modOptionsButton != null) {
                             textMenu.Selection = textMenu.IndexOf(modOptionsButton);
@@ -282,14 +282,14 @@ namespace Celeste.Mod.Core {
             }));
         }
 
-        public override void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public override void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             // Optional - reload mod settings when entering the mod options.
             // LoadSettings();
 
             base.CreateModMenuSection(menu, inGame, snapshot);
 
             if (!inGame) {
-                List<TextMenu.Item> items = menu.GetItems();
+                List<TextMenu.Item> items = menu.Items;
 
                 // insert extra options before the "key config" options
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_oobe")).Pressed(() => {
