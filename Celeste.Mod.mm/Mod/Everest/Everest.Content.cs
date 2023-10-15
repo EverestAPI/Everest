@@ -17,7 +17,7 @@ using System.Threading;
 namespace Celeste.Mod {
 
     /// <summary>
-    /// Special meta type for assets. 
+    /// Special meta type for assets.
     /// A ModAsset with a Type field that subclasses from this will not log path conflicts.
     /// </summary>
     public abstract class AssetTypeNonConflict { }
@@ -632,7 +632,7 @@ namespace Celeste.Mod {
                     if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) || (i == 0 && BlacklistRootFolders.Contains(pathSplit[0])))
                         return false;
                 }
-                
+
                 if (metadata != null &&
                     (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
                     return false;
@@ -709,13 +709,21 @@ namespace Celeste.Mod {
             public static void Add(string path, ModAsset metadata)
                 => TryAdd(path, metadata);
 
+            private static readonly string[] METADATA_YAML_NAMES = {
+                "metadata", "multimetadata", "everest"
+            };
+
+            private static readonly string[] SPRITEBANK_XML_NAMES = {
+                "Graphics/Sprites", "Graphics/SpritesGui", "Graphics/Portraits"
+            };
+
             /// <summary>
             /// Invoked when GuessType can't guess the asset type.
             /// Subscribe to this event to register your own custom types.
             /// </summary>
             public static event TypeGuesser OnGuessType;
             /// <summary>
-            /// Guess the file type and format based on its path. 
+            /// Guess the file type and format based on its path.
             /// </summary>
             /// <param name="file">The relative asset path.</param>
             /// <param name="type">The file type.</param>
@@ -723,11 +731,11 @@ namespace Celeste.Mod {
             /// <returns>The passed asset path, trimmed if required.</returns>
             public static string GuessType(string file, out Type type, out string format) {
                 type = typeof(object);
-                format = Path.GetExtension(file) ?? "";
+                format = Path.GetExtension(file).ToLowerInvariant() ?? "";
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
-                // Assign game asset types 
+                // Assign game asset types
                 if (format == "dll") {
                     type = typeof(AssetTypeAssembly);
 
@@ -739,20 +747,20 @@ namespace Celeste.Mod {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".obj.export")) {
+                } else if (file.EndsWith(".obj.export", StringComparison.InvariantCultureIgnoreCase)) {
                     type = typeof(AssetTypeObjModelExport);
                     file = file.Substring(0, file.Length - 7);
 
-                } else if (file == "metadata.yaml" || file == "multimetadata.yaml" || file == "everest.yaml" || file == "everest.yml") {
+                } else if ((format == "yaml" || format == "yml") && METADATA_YAML_NAMES.Contains(file.Substring(0, file.Length - format.Length - 1))) {
                     type = typeof(AssetTypeMetadataYaml);
                     file = file.Substring(0, file.Length - format.Length - 1);
                     format = "yml";
 
-                } else if (file == "DecalRegistry.xml") {
+                } else if (format == "xml" && file.Substring(0, file.Length - 4) == "DecalRegistry") {
                     type = typeof(AssetTypeDecalRegistry);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file == "Graphics/Sprites.xml" || file == "Graphics/SpritesGui.xml" || file == "Graphics/Portraits.xml") {
+                } else if (format == "xml" && SPRITEBANK_XML_NAMES.Contains(file.Substring(0, file.Length - 4))) {
                     type = typeof(AssetTypeSpriteBank);
                     file = file.Substring(0, file.Length - 4);
 
@@ -760,9 +768,10 @@ namespace Celeste.Mod {
                     if (format == "txt") {
                         type = typeof(AssetTypeDialog);
                         file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".txt.export")) {
+                    } else if (file.EndsWith(".txt.export", StringComparison.InvariantCultureIgnoreCase)) {
                         type = typeof(AssetTypeDialogExport);
-                        file = file.Substring(0, file.Length - 7);
+                        file = file.Substring(0, file.Length - 7 - 4);
+                        file += ".txt";
                     } else if (format == "fnt") {
                         type = typeof(AssetTypeFont);
                         file = file.Substring(0, file.Length - 4);
@@ -780,10 +789,7 @@ namespace Celeste.Mod {
                     if (format == "bank") {
                         type = typeof(AssetTypeBank);
                         file = file.Substring(0, file.Length - 5);
-                    } else if (file.EndsWith(".guids.txt")) {
-                        type = typeof(AssetTypeGUIDs);
-                        file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".GUIDs.txt")) { // Default FMOD casing
+                    } else if (file.EndsWith(".guids.txt", StringComparison.InvariantCultureIgnoreCase)) {
                         type = typeof(AssetTypeGUIDs);
                         file = file.Substring(0, file.Length - 4 - 6);
                         file += ".guids";

@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
 #pragma warning disable CS0649 // Field is never assigned to, and will always have its default value null
 
 // #define FTL_DEBUG
@@ -603,7 +603,7 @@ namespace Monocle {
                 byte[] buffer = null;
                 IntPtr bufferPtr = IntPtr.Zero;
                 bool bufferStolen = false;
-                switch (System.IO.Path.GetExtension(Path)) {
+                switch (System.IO.Path.GetExtension(Path).ToLowerInvariant()) {
                     case ".data":
                         using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path))) {
                             // Vanilla has got a static readonly byte[] bytes of fixed length - currently 524288
@@ -783,7 +783,7 @@ namespace Monocle {
         private bool CanPreload {
             get {
                 if (!string.IsNullOrEmpty(Path)) {
-                    string extension = System.IO.Path.GetExtension(Path);
+                    string extension = System.IO.Path.GetExtension(Path).ToLowerInvariant();
                     if (extension == ".data") {
                         return true;
                     } else if (extension == ".png") {
@@ -813,7 +813,7 @@ namespace Monocle {
             // Preload the width / height, and if needed, the entire texture.
 
             if (!string.IsNullOrEmpty(Path)) {
-                string extension = System.IO.Path.GetExtension(Path);
+                string extension = System.IO.Path.GetExtension(Path).ToLowerInvariant();
                 if (extension == ".data") {
                     // Easy.
                     using (FileStream stream = File.OpenRead(System.IO.Path.Combine(Engine.ContentDirectory, Path)))
