@@ -210,6 +210,7 @@ namespace Monocle {
         private void HandleKey(Keys key) {
             // this method handles all control characters, which go through the XNA Keys API
             if (key == Keys.Escape) {
+                MInput.Keyboard.CurrentState = new KeyboardState(Keys.Escape);
                 Open = canOpen = false;
                 return;
             }
