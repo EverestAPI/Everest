@@ -35,12 +35,8 @@ namespace Monocle {
         public extern void UpdateLists();
 
         [MonoModIgnore]
-        [PatchEntityListAddAndRemove]
+        [PatchEntityListAdd]
         public extern void Add(Entity entity);
-
-        [MonoModIgnore]
-        [PatchEntityListAddAndRemove]
-        public extern void Remove(Entity entity);
     }
 
     public static class EntityListExt {
@@ -69,11 +65,11 @@ namespace MonoMod {
     class PatchEntityListUpdateListsAttribute : Attribute { }
 
     /// <summary>
-    /// Make Add(entity) and Remove(entity) methods to crash when entity is null
+    /// Make Add(entity) method to crash when entity is null
     /// so modders can catch bugs in time
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListAddAndRemove))]
-    class PatchEntityListAddAndRemoveAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEntityListAdd))]
+    class PatchEntityListAddAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -129,7 +125,7 @@ namespace MonoMod {
             cursor.Next.Operand = hashRemoveOperand;
         }
 
-        public static void PatchEntityListAddAndRemove(ILContext context, CustomAttribute attrib) {
+        public static void PatchEntityListAdd(ILContext context, CustomAttribute attrib) {
             // insert the following code at the beginning of the method
             // if (entity == null) throw new ArgumentNullException("entity")
 
