@@ -18,17 +18,17 @@ namespace Celeste.Mod {
 
         public List<Buttons> Buttons {
             get => Binding.Controller;
-            set => Binding.Controller = value;
+            set => Binding.Controller = value ?? new List<Buttons>();
         }
 
         public List<Keys> Keys {
             get => Binding.Keyboard;
-            set => Binding.Keyboard = value;
+            set => Binding.Keyboard = value ?? new List<Keys>();
         }
 
         public List<patch_MInput.patch_MouseData.MouseButtons> MouseButtons {
             get => ((patch_Binding) Binding).Mouse;
-            set => ((patch_Binding) Binding).Mouse = value;
+            set => ((patch_Binding) Binding).Mouse = value ?? new List<patch_MInput.patch_MouseData.MouseButtons>();
         }
 
         private Binding _Binding;
