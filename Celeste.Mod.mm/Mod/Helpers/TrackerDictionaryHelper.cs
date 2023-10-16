@@ -7,7 +7,7 @@ namespace Celeste.Mod {
 
         public class TypeNameEqualityComparer : IEqualityComparer<Type> {
             public bool Equals(Type x, Type y) {
-                return (x == y) || x.FullName.Equals(y.FullName, StringComparison.OrdinalIgnoreCase);
+                return (x == y) || x.FullName.Equals(y.FullName, StringComparison.Ordinal);
             }
 
             public int GetHashCode(Type type) => type.FullName.GetHashCode();
