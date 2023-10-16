@@ -13,11 +13,19 @@ namespace Celeste.Mod {
             public int GetHashCode(Type type) => type.FullName.GetHashCode();
         }
 
-        public static Dictionary<Type, List<Entity>> MakeEqualityComparerDictionaryForEntityTracker(int capacity)
-            => new Dictionary<Type, List<Entity>>(capacity, new TypeNameEqualityComparer());
+        public static Dictionary<Type, List<Entity>> MakeDictionaryForEntityTracker(int capacity) {
+            if (Debugger.IsAttached)
+                return new Dictionary<Type, List<Entity>>(capacity, new TypeNameEqualityComparer());
 
-        public static Dictionary<Type, List<Component>> MakeEqualityComparerDictionaryForComponentTracker(int capacity)
-            => new Dictionary<Type, List<Component>>(capacity, new TypeNameEqualityComparer());
+            return new Dictionary<Type, List<Entity>>(capacity);
+        }
+
+        public static Dictionary<Type, List<Component>> MakeDictionaryForComponentTracker(int capacity) {
+            if (Debugger.IsAttached)
+                return new Dictionary<Type, List<Component>>(capacity, new TypeNameEqualityComparer());
+
+            return new Dictionary<Type, List<Component>>(capacity);
+        }
 
     }
 }

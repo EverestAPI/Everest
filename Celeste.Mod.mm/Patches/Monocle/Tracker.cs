@@ -124,8 +124,8 @@ namespace MonoMod {
 
             TypeDefinition t_TrackerDictionaryHelper = MonoModRule.Modder.FindType("Celeste.Mod.TrackerDictionaryHelper").Resolve();
 
-            MethodDefinition m_MakeEntityDictionary = t_TrackerDictionaryHelper.FindMethod("MakeEqualityComparerDictionaryForEntityTracker", true);
-            MethodDefinition m_MakeComponentDictionary = t_TrackerDictionaryHelper.FindMethod("MakeEqualityComparerDictionaryForComponentTracker", true);
+            MethodDefinition m_MakeEntityDictionary = t_TrackerDictionaryHelper.FindMethod("MakeDictionaryForEntityTracker", true);
+            MethodDefinition m_MakeComponentDictionary = t_TrackerDictionaryHelper.FindMethod("MakeDictionaryForComponentTracker", true);
 
             cursor.GotoNext(instr => instr.MatchNewobj("System.Collections.Generic.Dictionary`2<System.Type,System.Collections.Generic.List`1<Monocle.Entity>>"));
             cursor.Remove();
