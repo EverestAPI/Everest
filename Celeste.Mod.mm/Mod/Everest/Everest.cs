@@ -293,6 +293,12 @@ namespace Celeste.Mod {
 
                 else if (arg == "--debugger")
                     Debugger.Launch();
+                    
+                else if (arg == "--debugger-attach") {
+                    Logger.Log(LogLevel.Info, "Everest", "Waiting for debugger to attach...");
+                    while (!Debugger.IsAttached) { }
+                    Logger.Log(LogLevel.Info, "Everest", "Debugger attached");
+                }
 
                 else if (arg == "--dump")
                     Content.DumpOnLoad = true;
