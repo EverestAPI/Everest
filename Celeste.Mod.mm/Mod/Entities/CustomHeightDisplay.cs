@@ -57,7 +57,7 @@ namespace Celeste.Mod.Entities {
                 Target = target;
                 Approach = from;
 
-                int idx = Text.IndexOf("{x}", StringComparison.InvariantCultureIgnoreCase);
+                int idx = Text.IndexOf("{x}", StringComparison.OrdinalIgnoreCase);
                 if (idx != -1) {
                     hasCount = true;
                     displaySound = SFX.game_07_altitudecount;

@@ -747,7 +747,7 @@ namespace Celeste.Mod {
                     type = typeof(ObjModel);
                     file = file.Substring(0, file.Length - 4);
 
-                } else if (file.EndsWith(".obj.export", StringComparison.InvariantCultureIgnoreCase)) {
+                } else if (file.EndsWith(".obj.export", StringComparison.OrdinalIgnoreCase)) {
                     type = typeof(AssetTypeObjModelExport);
                     file = file.Substring(0, file.Length - 7);
 
@@ -768,7 +768,7 @@ namespace Celeste.Mod {
                     if (format == "txt") {
                         type = typeof(AssetTypeDialog);
                         file = file.Substring(0, file.Length - 4);
-                    } else if (file.EndsWith(".txt.export", StringComparison.InvariantCultureIgnoreCase)) {
+                    } else if (file.EndsWith(".txt.export", StringComparison.OrdinalIgnoreCase)) {
                         type = typeof(AssetTypeDialogExport);
                         file = file.Substring(0, file.Length - 7 - 4);
                         file += ".txt";
@@ -789,7 +789,7 @@ namespace Celeste.Mod {
                     if (format == "bank") {
                         type = typeof(AssetTypeBank);
                         file = file.Substring(0, file.Length - 5);
-                    } else if (file.EndsWith(".guids.txt", StringComparison.InvariantCultureIgnoreCase)) {
+                    } else if (file.EndsWith(".guids.txt", StringComparison.OrdinalIgnoreCase)) {
                         type = typeof(AssetTypeGUIDs);
                         file = file.Substring(0, file.Length - 4 - 6);
                         file += ".guids";
