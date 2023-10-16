@@ -1,6 +1,7 @@
 using Monocle;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Celeste.Mod {
     public static class TrackerDictionaryHelper {
