@@ -70,7 +70,7 @@ namespace Monocle {
             if (!canOpen) {
                 canOpen = true;
             // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
-            } else if (CoreModule.Settings.OpenDebugConsole.Pressed || CoreModule.Settings.ToggleDebugConsole.Pressed) {
+            } else if (CoreModule.Settings.DebugConsole.Pressed || CoreModule.Settings.ToggleDebugConsole.Pressed) {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {

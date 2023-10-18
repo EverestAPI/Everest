@@ -326,7 +326,7 @@ namespace Celeste.Mod.Core {
 
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemPeriod)]
-        public ButtonBinding OpenDebugConsole { get; set; }
+        public ButtonBinding DebugConsole { get; set; }
 
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.F6)]

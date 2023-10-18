@@ -238,7 +238,7 @@ namespace Celeste {
             }
             Input.Initialize();
             CoreModule.Settings.ToggleDebugConsole.ConsumePress();
-            CoreModule.Settings.OpenDebugConsole.ConsumePress();
+            CoreModule.Settings.DebugConsole.ConsumePress();
             CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
         }
 
