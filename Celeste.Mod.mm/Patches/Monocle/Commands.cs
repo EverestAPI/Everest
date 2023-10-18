@@ -70,7 +70,7 @@ namespace Monocle {
             if (!canOpen) {
                 canOpen = true;
             // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
-            } else if (CoreModule.Settings.DebugConsole.Pressed) {
+            } else if (CoreModule.Settings.OpenDebugConsole.Pressed || CoreModule.Settings.ToggleDebugConsole.Pressed) {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {
@@ -209,8 +209,8 @@ namespace Monocle {
         [MonoModReplace]  // don't create an orig_ method
         private void HandleKey(Keys key) {
             // this method handles all control characters, which go through the XNA Keys API
-            if (key == Keys.Escape) {
-                MInput.Keyboard.CurrentState = new KeyboardState(Keys.Escape);
+            if (key == Keys.Escape || CoreModule.Settings.ToggleDebugConsole.Keys.Contains(key)) {
+                MInput.Keyboard.CurrentState = currentState;
                 Open = canOpen = false;
                 return;
             }
@@ -372,6 +372,11 @@ namespace Monocle {
                 return;
             }
             if (char.IsControl(key)) {
+                return;
+            }
+
+            KeyboardState keyboardState = Keyboard.GetState();
+            if (CoreModule.Settings.ToggleDebugConsole.Keys.Any(k => keyboardState.IsKeyDown(k))) {
                 return;
             }
 

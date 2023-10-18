@@ -237,7 +237,8 @@ namespace Celeste {
                 remappingBinding.Keyboard.RemoveAt(0);
             }
             Input.Initialize();
-            CoreModule.Settings.DebugConsole.ConsumePress();
+            CoreModule.Settings.ToggleDebugConsole.ConsumePress();
+            CoreModule.Settings.OpenDebugConsole.ConsumePress();
             CoreModule.Settings.ToggleMountainFreeCam.ConsumePress();
         }
 

@@ -321,8 +321,12 @@ namespace Celeste.Mod.Core {
 
         [SettingSubHeader("MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER")]
         [SettingInGame(false)]
+        [DefaultButtonBinding(0, Keys.OemTilde)]
+        public ButtonBinding ToggleDebugConsole { get; set; }
+
+        [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.OemPeriod)]
-        public ButtonBinding DebugConsole { get; set; }
+        public ButtonBinding OpenDebugConsole { get; set; }
 
         [SettingInGame(false)]
         [DefaultButtonBinding(0, Keys.F6)]
