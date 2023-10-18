@@ -2,16 +2,14 @@
 using Celeste.Mod.Helpers;
 using Celeste.Mod.UI;
 using FMOD.Studio;
-using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -21,9 +19,9 @@ namespace Celeste.Mod {
 
         /// <summary>
         /// Used by Everest itself to store any module metadata.
-        /// 
+        ///
         /// The metadata is usually parsed from meta.yaml in the archive.
-        /// 
+        ///
         /// You can override this property to provide dynamic metadata at runtime.
         /// Doing so isn't advised though unless you absolutely know what you're doing.
         /// Note that this doesn't affect mod loading.
@@ -182,7 +180,7 @@ namespace Celeste.Mod {
         /// <summary>
         /// Save the mod save data. Saves the save data to {UserIO.GetSavePath("Saves")}/{SaveData.GetFilename(index)}-modsave-{Metadata.Name}.celeste by default.
         /// </summary>
-        /// 
+        ///
         [Obsolete("Override SerializeSaveData and WriteSaveData instead.")]
         public virtual void SaveSaveData(int index) {
             ForceSaveDataAsync = true;
@@ -549,13 +547,17 @@ namespace Celeste.Mod {
                         binding.Binding.Add(defaults.Button);
                     if (defaults.Key != 0)
                         binding.Binding.Add(defaults.Key);
+                    if (defaults.Buttons != null)
+                        binding.Binding.Add(defaults.Buttons.Where(b => b != 0).ToArray());
+                    if (defaults.Keys != null)
+                        binding.Binding.Add(defaults.Keys.Where(k => k != 0).ToArray());
                 }
 
                 prop.SetValue(settings, binding);
             }
 
             binding.Button = (patch_VirtualButton) new VirtualButton(binding.Binding, Input.Gamepad, 0.08f, 0.2f);
-            ((patch_VirtualButton) (VirtualButton) binding.Button).AutoConsumeBuffer = true;
+            binding.Button.AutoConsumeBuffer = true;
         }
 
         public virtual void OnInputDeregister() {

@@ -136,6 +136,16 @@ namespace Celeste.Mod {
         public Keys Key;
 
         /// <summary>
+        /// The default Buttons binding.
+        /// </summary>
+        public Buttons[] Buttons;
+
+        /// <summary>
+        /// The default Keys binding.
+        /// </summary>
+        public Keys[] Keys;
+
+        /// <summary>
         /// Whether the default Button should always be bound.
         /// </summary>
         [Obsolete("This is no longer respected by the new input system.")]
@@ -155,6 +165,16 @@ namespace Celeste.Mod {
         public DefaultButtonBindingAttribute(Buttons button, Keys key) {
             Button = button;
             Key = key;
+        }
+
+        /// <summary>
+        /// Sets the default <see cref="Buttons"/> and <see cref="Keys"/> of a <see cref="ButtonBinding"/> setting.
+        /// </summary>
+        /// <param name="buttons">The default Buttons binding.</param>
+        /// <param name="keys">The default Keys binding.</param>
+        public DefaultButtonBindingAttribute(Buttons[] buttons, Keys[] keys) {
+            Buttons = buttons;
+            Keys = keys;
         }
 
     }
