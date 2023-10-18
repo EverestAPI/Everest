@@ -704,7 +704,6 @@ namespace MonoMod {
                 }
                 cursor.Index++;
             }
-            Console.WriteLine(context);
         }
 
         public static void PatchLevelLoaderDecalCreation(ILContext context, CustomAttribute attrib) {
