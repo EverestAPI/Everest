@@ -1,16 +1,23 @@
-﻿# Check English.txt for up-to-date notes.
+﻿﻿# Check English.txt for up-to-date notes.
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Merci ((player)) !{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.
 	POSTCARD_LEVELLOADFAILED= 	{big}Désolé !{/big}{n}Mais {#ff1144}((sid)){#}{n}n'a pas pu être chargé.{n}Envoyez votre {#44adf7}log.txt{#}{n}au créateur de la map.
 	POSTCARD_LEVELNOSPAWN= 		{big}Oups !{/big}{n}Quelqu'un a mal placé{n}votre {#44adf7}point de départ !{#}{n}Vérifiez que votre map{n}contient une entité {#44adf7}Player{#}.
+	POSTCARD_BADTILEID=			{big}Oups !{/big}{n}Une ((type))tile inexistante dont l'id est {#ff1144}((id)){#} est présente à la position{n}{#ff1144}(((x)), ((y))){#} dans la salle {#ff1144}((room)){#}{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_DECALREGERROR=		{big}Oups !{/big}{n}Il y a eu une erreur lors de l'application de la propriété{n}{#ff1144}((property)){#} à {#ff1144}((decal)){#}{n}Vous avez peut-être un attribut manquant ou invalide dans votre fichier {#44adf7}DecalRegistry.xml{#}.
+	POSTCARD_MISSINGTUTORIAL=	{big}Oups !{/big}{n}Le tutorial {#ff1144}((tutorial)){#} est introuvable.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_TILEXMLERROR=		{big}Oups !{/big}{n}Une erreur est survenue lors de la lecture d'un tileset dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_XMLERROR=			{big}Oups !{/big}{n}Il y a une erreur de syntaxe dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_BOSSLASTNODEHIT=	{big}Oups !{/big}{n}Le dernier noeud de l'entité {#ff1144}Badeline Boss{#} a été touché, veuillez ajouter un autre noeud en-dehors de la salle de façon à ce que le joueur ne puisse pas l'atteindre.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
 	MENU_MAPLIST= 			Liste des maps
 	MENU_MODOPTIONS= 		Options des mods
 	MENU_PAUSE_MODOPTIONS= 	Options des mods
-	
+
+	MENU_MODOPTIONS_UPDATE_FAILED=				L'installation de la mise à jour d'Everest a échoué
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		Erreurs de chargement de everest.yaml
@@ -19,7 +26,7 @@
 	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
 	
 # Title Screen
-	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
+	MENU_TITLESCREEN_RESTART_VANILLA= Lancement du jeu non modifié
 
 # Extra Key Mapping
 	KEY_CONFIG_ADDING= APPUYEZ SUR LA TOUCHE SUPPLÉMENTAIRE POUR
@@ -57,8 +64,23 @@
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Utiliser le clavier pour saisir du texte
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Avertir en cas d'erreur sur everest.yaml
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Utile pour les créateurs de mods
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				NAVIGATION DANS LES MENUS
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page précédente (menus)
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page suivante (menus)
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				MODE DEBUG
+	MODOPTIONS_COREMODULE_TOGGLEDEBUGCONSOLE=				Ouvrir/Fermer la console de debug
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Ouvrir la console de debug
+	MODOPTIONS_COREMODULE_DEBUGMAP=							Ouvrir la carte de debug
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			CAMERA DANS LE MENU PRINCIPAL
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					Avancer
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					Reculer
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						Droite
+	MODOPTIONS_COREMODULE_CAMERALEFT=						Gauche
+	MODOPTIONS_COREMODULE_CAMERAUP=							Haut
+	MODOPTIONS_COREMODULE_CAMERADOWN=						Bas
+	MODOPTIONS_COREMODULE_CAMERASLOW=						Ralentir
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						Ecrire la position dans les logs
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			Activer la Free Cam
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
@@ -115,8 +137,19 @@
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Erreur de chargement de la liste des versions.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Format inconnu.
 	
-	UPDATER_SRC_BUILDBOT= 			Constructions automatiques
+	UPDATER_CURRENT_BRANCH=			Branche actuelle
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		Versions publiées sur GitHub
+	UPDATER_SRC_BUILDBOT_AZURE=		Versions compilées automatiquement par Azure
 	
+# currently unused
+	UPDATER_SRC_BUILDBOT= 			Versions compilées automatiquement
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	La mise à jour n'est pas supportée sur cette plateforme - annulation.
 	EVERESTUPDATER_NOUPDATE=		Pas de mise à jour à installer - annulation.
@@ -132,6 +165,8 @@
 	EVERESTUPDATER_RESTARTING=		Redémarrage
 	EVERESTUPDATER_RESTARTINGIN=	Redémarrage dans {0}
 	EVERESTUPDATER_STARTINGFAILED=	Le lancement de l'installateur a échoué.
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Vous devez avoir installé le runtime .NET 7.0 pour pouvoir installer la version .NET Core d'Everest.
+	EVERESTUPDATER_MISSINGRUNTIME_B=	Vous pouvez télécharger le runtime ici : {0}
 	EVERESTUPDATER_ERRORHINT1=		Merci de créer une "issue" sur GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		ou de rejoindre le salon #modding_help sur Discord (invitation sur le dépôt GitHub),
 	EVERESTUPDATER_ERRORHINT3=		et envoyez votre log.txt.
@@ -152,7 +187,10 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Mettre à jour tous les mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Mise à jour des mods en cours...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	Tous les mods ont été mis à jour.
-	MODUPDATECHECKER_SHUTDOWN= Quitter
+	MODUPDATECHECKER_RESTARTNEEDED= Celeste doit redémarrer pour continuer
+	MODUPDATECHECKER_MENU_HEADER_RESTART= Choisissez une action
+	MODUPDATECHECKER_SHUTDOWN= Fermer
+	MODUPDATECHECKER_RESTART= Redémarrer
 
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Vérification des mises à jour des mods...
@@ -173,6 +211,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						terminé.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ERREUR: Le téléchargement de la base de données a échoué. Vérifiez votre log.txt pour plus d'informations.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ATTENTION: Certains de vos mods demandent une version plus récente d'Everest. Installez-la depuis le menu "Changer de version d'Everest".
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		ATTENTION: Certains de vos mods nécessite une version .NET Core d'Everest (en développement). Installez-la depuis le menu "Changer de version d'Everest".
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest va être mis à jour vers la version {0} pour que certains mods puissent fonctionner. Appuyez sur Confirmer pour continuer.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ERREUR: Certains de vos mods ont besoin d'une version plus récente de Celeste pour fonctionner. Merci de mettre à jour votre jeu.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ERREUR: {0} n'a pas été trouvé dans la base de données. Merci de l'installer manuellement.
