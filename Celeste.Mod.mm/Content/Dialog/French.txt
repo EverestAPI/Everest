@@ -1,4 +1,4 @@
-﻿# Check English.txt for up-to-date notes.
+﻿﻿# Check English.txt for up-to-date notes.
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Merci ((player)) !{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.
