@@ -26,6 +26,10 @@ namespace Celeste.Mod {
         public override void LogRegistration() {
             Logger.Log(LogLevel.Info, "core", $"Lua module {Metadata} registered.");
         }
+        
+        public override void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Lua module {Metadata} unregistered.");
+        }
 
     }
 }

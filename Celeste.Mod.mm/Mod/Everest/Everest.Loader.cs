@@ -839,7 +839,6 @@ namespace Celeste.Mod {
                         MainThreadHelper.Do(() => _DetourModManager.Unload(oldAsm));
                         _RelinkedAssemblies.Remove(oldAsm);
                         
-
                         LoadModAssembly(modules[0].Metadata, newAsm);
                     });
                     AssetReloadHelper.ReloadLevel();

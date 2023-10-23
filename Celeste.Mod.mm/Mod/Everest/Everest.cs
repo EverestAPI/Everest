@@ -770,7 +770,7 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
-            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {module.GetType().FullName} for module {module.Metadata}.");
+            module.LogUnregistration();
             
         }
 
