@@ -108,6 +108,7 @@ namespace Celeste.Mod.UI {
                 yield return null;
             }
 
+            OnFinish = null;
             Visible = false;
         }
 

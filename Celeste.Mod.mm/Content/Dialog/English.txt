@@ -271,8 +271,8 @@
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Toggle Dependencies Automatically
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	When you enable a mod, all its dependencies will be enabled.
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	When you disable a mod, all mods that depend on it will be disabled.
-	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you enable or disable mods, your blacklist.txt will be replaced,
-	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes.
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you toggle mods, your blacklist.txt will be replaced,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes if any mods are disabled.
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Highlighted mods are used by other enabled mods as a dependency.
 	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Disable your whitelist for these settings to be applied properly.
 	MODOPTIONS_MODTOGGLE_ENABLEALL=		Enable All
@@ -281,6 +281,13 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Zip Files
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Directories
 	MODOPTIONS_MODTOGGLE_BINS=			Map Bin Files
+	
+# Mod Toggle Progress Menu
+    MODOPTIONS_MODTOGGLE_PROGRESS_TITLE=                    ENABLING MODS
+    MODOPTIONS_MODTOGGLE_PROGRESS_OPTIONAL=           Loading mods with unsatisfied optional dependencies (if any)...
+    MODOPTIONS_MODTOGGLE_PROGRESS_FAILED_LOAD=        Failed to load some mods! Check Mod Options menu for more info.
+    MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU=           Going to main menu
+    MODOPTIONS_MODTOGGLE_PROGRESS_MAINMENU_COUNTDOWN= Going to main menu in {0}...
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map

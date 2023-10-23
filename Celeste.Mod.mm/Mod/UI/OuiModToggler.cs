@@ -341,8 +341,8 @@ namespace Celeste.Mod.UI {
                 ((patch_TextMenu.patch_Option<bool>) (object) toggle.Value).UnselectedColor = modHasDependencies(toggle.Key) ? Color.Goldenrod : Color.White;
             }
 
-            // turn the warning text about restarting/overwriting blacklist.txt orange/red if something was changed (so pressing Back will trigger a restart).
-            if (blacklistedModsOriginal.SetEquals(blacklistedMods)) {
+            // turn the warning text about restarting/overwriting blacklist.txt orange/red if a mod was disabled (so pressing Back will trigger a restart).
+            if (blacklistedModsOriginal.IsSupersetOf(blacklistedMods)) {
                 restartMessage1.TextColor = Color.Gray;
                 restartMessage2.TextColor = Color.Gray;
             } else {
@@ -436,21 +436,55 @@ namespace Celeste.Mod.UI {
                         }
                     }
 
-                    // restart the game
+                    // does the modified blacklist contain strictly un-blacklisted mods?
+                    if (Everest.Flags.SupportRuntimeMods && blacklistedMods.IsSubsetOf(blacklistedModsOriginal)) {
+                        var newMods = blacklistedModsOriginal.Except(blacklistedMods).ToList();
+
+                        foreach (string mod in newMods) {
+                            // If any enabled mod has this mod as an optional dependency,
+                            // we need to restart Everest, since properly satisfying this would involve unloading
+                            // the original mod and reloading it (with the optional dependency).
+                            if (!modHasDependencies(mod, true, true)) 
+                                continue;
+                            
+                            Logger.Log(LogLevel.Info, "OuiModToggler", $"Mod {mod} has newly satisfied optional dependency -- restarting to reload all mods");
+                            Everest.QuickFullRestart();
+                            return;
+                        }
+
+                        overworld.Goto<OuiModTogglerProgress>().Init(newMods);
+                        return;
+                    }
+                        
+                    // some mods disabled -- restart the game
+                    Logger.Log(LogLevel.Info, "OuiModToggler", "New blacklist contains disabled mods (or runtime mod loading is unsupported) -- restarting");
                     Everest.QuickFullRestart();
                 }
             }
         }
 
-        private bool modHasDependencies(string modFilename) {
+        private bool modHasDependencies(string modFilename, bool optional=false, bool onlyPreviouslyEnabledMods=false) {
             if (modYamls.TryGetValue(modFilename, out EverestModuleMetadata[] metadatas)) {
                 // this mod has a yaml, check all of the metadata entries (99% of the time there is one only).
                 return metadatas.Any(metadata => {
                     string modName = metadata.Name;
 
                     // we want to check if a non-blacklisted mod has this mod as a dependency (by name).
-                    return modYamls.Any(mod => !blacklistedMods.Contains(mod.Key) && modFilename != mod.Key
-                        && mod.Value.Any(yaml => yaml.Dependencies.Any(dependency => dependency.Name == modName)));
+                    return modYamls.Any(mod => {
+                        if (modFilename == mod.Key)
+                            return false;
+                        
+                        bool nonBlacklisted = onlyPreviouslyEnabledMods
+                            ? !blacklistedModsOriginal.Contains(mod.Key)
+                            : !blacklistedMods.Contains(mod.Key);
+
+                        bool hasDependency = mod.Value.Any(yaml =>
+                            optional
+                                ? yaml.OptionalDependencies.Any(dependency => dependency.Name == modName)
+                                : yaml.Dependencies.Any(dependency => dependency.Name == modName));
+
+                        return nonBlacklisted && hasDependency;
+                    });
                 });
 
             }
