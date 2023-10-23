@@ -752,10 +752,6 @@ namespace Celeste.Mod {
             module.OnInputDeregister();
             module.Unload();
 
-            Assembly asm = module.GetType().Assembly;
-            MainThreadHelper.Do(() => _DetourModManager.Unload(asm));
-            _RelinkedAssemblies.Remove(asm);
-
             // TODO: Unload from LuaLoader
             // TODO: Unload from EntityLoaders
             // TODO: Undo event listeners
@@ -774,7 +770,8 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
-            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {module.GetType().FullName} for module {module.Metadata}.");
+            
         }
 
         /// <summary>

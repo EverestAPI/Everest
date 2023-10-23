@@ -785,16 +785,14 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
-                    EverestModule module = _Modules.FirstOrDefault(m => m.Metadata.DLL == e.FullPath);
-                    if (module == null)
-                        return;
-
                     AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
-                        Assembly asm = null;
+                        List<EverestModule> modules = _Modules.FindAll(m => m.Metadata.DLL == e.FullPath);
+                        
+                        Assembly newAsm;
                         using (FileStream stream = File.OpenRead(e.FullPath))
-                            asm = Relinker.GetRelinkedAssembly(module.Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
+                            newAsm = Relinker.GetRelinkedAssembly(modules[0].Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
 
-                        if (asm == null) {
+                        if (newAsm == null) {
                             if (!retrying) {
                                 // Retry.
                                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
@@ -805,36 +803,44 @@ namespace Celeste.Mod {
                         }
 
                         ((FileSystemWatcher) source).Dispose();
-
-                        // be sure to save this module's save data and session before reloading it, so that they are not lost.
-                        if (SaveData.Instance != null) {
-                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                            if (module.SaveDataAsync) {
-                                module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
-                            } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                                if (CoreModule.Settings.SaveDataFlush ?? false)
-                                    module.ForceSaveDataFlush++;
-                                module.SaveSaveData(SaveData.Instance.FileSlot);
-#pragma warning restore CS0618
-                            }
-
-                            if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                        
+                        foreach (EverestModule module in modules) {
+                            // be sure to save this module's save data and session before reloading it, so that they are not lost.
+                            if (SaveData.Instance != null) {
+                                Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                                 if (module.SaveDataAsync) {
-                                    module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
+                                    module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
                                     if (CoreModule.Settings.SaveDataFlush ?? false)
                                         module.ForceSaveDataFlush++;
-                                    module.SaveSession(SaveData.Instance.FileSlot);
+                                    module.SaveSaveData(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
                                 }
-                            }
-                        }
 
-                        Unregister(module);
-                        LoadModAssembly(module.Metadata, asm);
+                                if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                                    Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                    if (module.SaveDataAsync) {
+                                        module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
+                                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                        if (CoreModule.Settings.SaveDataFlush ?? false)
+                                            module.ForceSaveDataFlush++;
+                                        module.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                                    }
+                                }
+                            }
+
+                            Unregister(module);
+                        }
+                        
+                        Assembly oldAsm = modules[0].GetType().Assembly;
+                        MainThreadHelper.Do(() => _DetourModManager.Unload(oldAsm));
+                        _RelinkedAssemblies.Remove(oldAsm);
+                        
+
+                        LoadModAssembly(modules[0].Metadata, newAsm);
                     });
                     AssetReloadHelper.ReloadLevel();
                 });
