@@ -25,6 +25,9 @@ using Celeste.Mod.Helpers;
 namespace Celeste {
     class patch_Level : Level {
 
+        // This is used within Level.LoadEntity and Level.orig_LoadLevel so that entityData can be passed to ClutterBlocks being added to the scene.
+        internal static EntityData temporaryEntityData = null;
+
         // We're effectively in GameLoader, but still need to "expose" private fields to our mod.
         private static EventInstance PauseSnapshot;
         public static EventInstance _PauseSnapshot => PauseSnapshot;
@@ -262,7 +265,7 @@ namespace Celeste {
         }
 
         // Called from LoadLevel, patched via MonoModRules.PatchLevelLoader
-        private static Entity RegisterEntityDataWithEntity(Entity e, EntityData d) {
+        public static Entity RegisterEntityDataWithEntity(Entity e, EntityData d) {
             (e as patch_Entity).__EntityData = d;
             return e;
         }
@@ -278,7 +281,7 @@ namespace Celeste {
         public static bool LoadCustomEntity(EntityData entityData, Level level) {
             LevelData levelData = level.Session.LevelData;
             Vector2 offset = new Vector2(levelData.Bounds.Left, levelData.Bounds.Top);
-
+            // Theoretically possible to solve some cases of old helper EntityData referencing
             if (Everest.Events.Level.LoadEntity(level, levelData, offset, entityData))
                 return true;
             Entity loaded;
@@ -532,6 +535,966 @@ namespace Celeste {
 
             return errorPresent;
         }
+
+        [MonoModIgnore]
+        private extern bool GotCollectables(EntityData data);
+
+       
+        public bool LoadEntity(EntityData entity3, bool useCurrentRoom = true) {
+            LevelData levelData = useCurrentRoom ? Session.LevelData : (entity3.Level ?? Session.LevelData);
+            Vector2 vector = levelData.Position;
+            int iD = entity3.ID;
+            EntityID entityID = new EntityID(levelData.Name, iD);
+            if (Session.DoNotLoad.Contains(entityID)) {
+                return false;
+            } else if(LoadCustomEntity(entity3, this)) {
+                return true;
+            } else {
+                Entity e = null;
+                switch (entity3.Name) {
+                    case "jumpThru":
+                        Add(e = new JumpthruPlatform(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "refill":
+                        Add(e = new Refill(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "infiniteStar":
+                        Add(e = new FlyFeather(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "strawberry":
+                        Add(e = new Strawberry(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "memorialTextController":
+                        if (Session.Dashes == 0 && (Session.StartedFromBeginning || (this.Session as patch_Session).RestartedFromGolden)) {
+                            Add(e = new Strawberry(entity3, vector, entityID));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "goldenBerry": {
+                            bool cheatMode = SaveData.Instance.CheatMode;
+                            bool flag4 = Session.FurthestSeenLevel == Session.Level || Session.Deaths == 0;
+                            bool flag5 = SaveData.Instance.UnlockedModes >= 3 || SaveData.Instance.DebugMode;
+                            bool completed = (SaveData.Instance as patch_SaveData).Areas_Safe[Session.Area.ID].Modes[(int) Session.Area.Mode].Completed;
+                            if ((cheatMode || (flag5 && completed)) && flag4) {
+                                Add(e = new Strawberry(entity3, vector, entityID));
+                                (e as patch_Entity).__EntityData = entity3;
+                            }
+                            break;
+                        }
+                    case "summitgem":
+                        Add(e = new SummitGem(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "blackGem":
+                        if (!Session.HeartGem || _PatchHeartGemBehavior(Session.Area.Mode) != 0) {
+                            Add(e = new HeartGem(entity3, vector));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "dreamHeartGem":
+                        if (!Session.HeartGem) {
+                            Add(e = new DreamHeartGem(entity3, vector));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "spring":
+                        Add(e = new Spring(entity3, vector, Spring.Orientations.Floor));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "wallSpringLeft":
+                        Add(e = new Spring(entity3, vector, Spring.Orientations.WallLeft));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "wallSpringRight":
+                        Add(e = new Spring(entity3, vector, Spring.Orientations.WallRight));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fallingBlock":
+                        Add(e = new FallingBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "zipMover":
+                        Add(e = new ZipMover(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "crumbleBlock":
+                        Add(e = new CrumblePlatform(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "dreamBlock":
+                        Add(e = new DreamBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "touchSwitch":
+                        Add(e = new TouchSwitch(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "switchGate":
+                        Add(e = new SwitchGate(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "negaBlock":
+                        Add(e = new NegaBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "key":
+                        Add(e = new Key(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lockBlock":
+                        Add(e = new LockBlock(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "movingPlatform":
+                        Add(e = new MovingPlatform(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "rotatingPlatforms": {
+                            Vector2 vector2 = entity3.Position + vector;
+                            Vector2 vector3 = entity3.Nodes[0] + vector;
+                            int width = entity3.Width;
+                            int num2 = entity3.Int("platforms");
+                            bool clockwise = entity3.Bool("clockwise");
+                            float length = (vector2 - vector3).Length();
+                            float num3 = (vector2 - vector3).Angle();
+                            float num4 = (float) Math.PI * 2f / (float) num2;
+                            for (int j = 0; j < num2; j++) {
+                                float angleRadians = num3 + num4 * (float) j;
+                                angleRadians = Calc.WrapAngle(angleRadians);
+                                Vector2 position2 = vector3 + Calc.AngleToVector(angleRadians, length);
+                                Add(e = new RotatingPlatform(position2, width, vector3, clockwise));
+                                (e as patch_Entity).__EntityData = entity3;
+                            }
+                            break;
+                        }
+                    case "blockField":
+                        Add(e = new BlockField(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cloud":
+                        Add(e = new Cloud(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "booster":
+                        Add(e = new Booster(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "moveBlock":
+                        Add(e = new MoveBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "light":
+                        Add(e = new PropLight(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "switchBlock":
+                    case "swapBlock":
+                        Add(e = new SwapBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "dashSwitchH":
+                    case "dashSwitchV":
+                        Add(e = DashSwitch.Create(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeGate":
+                        Add(e = new TempleGate(entity3, vector, levelData.Name));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "torch":
+                        Add(e = new Torch(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeCrackedBlock":
+                        Add(e = new TempleCrackedBlock(entityID, entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "seekerBarrier":
+                        Add(e = new SeekerBarrier(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "theoCrystal":
+                        Add(e = new TheoCrystal(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "glider":
+                        Add(e = new Glider(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "theoCrystalPedestal":
+                        Add(e = new TheoCrystalPedestal(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "badelineBoost":
+                        Add(e = new BadelineBoost(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cassette":
+                        if (!Session.Cassette) {
+                            Add(e = new Cassette(entity3, vector));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "cassetteBlock": {
+                            CassetteBlock cassetteBlock = new CassetteBlock(entity3, vector, entityID);
+                            Add(e = cassetteBlock);
+                            (e as patch_Entity).__EntityData = entity3;
+                            HasCassetteBlocks = true;
+                            if (CassetteBlockTempo == 1f) {
+                                CassetteBlockTempo = cassetteBlock.Tempo;
+                            }
+                            CassetteBlockBeats = Math.Max(cassetteBlock.Index + 1, CassetteBlockBeats);
+                            if (base.Tracker.GetEntity<CassetteBlockManager>() == null && (Session.Area.Mode != AreaMode.Normal || !Session.Cassette)) {
+                                Add(new CassetteBlockManager());
+                            }
+                            break;
+                        }
+                    case "wallBooster":
+                        Add(e = new WallBooster(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bounceBlock":
+                        Add(e = new BounceBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "coreModeToggle":
+                        Add(e = new CoreModeToggle(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "iceBlock":
+                        Add(e = new IceBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fireBarrier":
+                        Add(e = new FireBarrier(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "eyebomb":
+                        Add(e = new Puffer(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "flingBird":
+                        Add(e = new FlingBird(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "flingBirdIntro":
+                        Add(e = new FlingBirdIntro(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "birdPath":
+                        Add(e = new BirdPath(entityID, entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lightningBlock":
+                        Add(e = new LightningBreakerBox(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spikesUp":
+                        Add(e = new Spikes(entity3, vector, Spikes.Directions.Up));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spikesDown":
+                        Add(e = new Spikes(entity3, vector, Spikes.Directions.Down));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spikesLeft":
+                        Add(e = new Spikes(entity3, vector, Spikes.Directions.Left));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spikesRight":
+                        Add(e = new Spikes(entity3, vector, Spikes.Directions.Right));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "triggerSpikesUp":
+                        Add(e = new TriggerSpikes(entity3, vector, TriggerSpikes.Directions.Up));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "triggerSpikesDown":
+                        Add(e = new TriggerSpikes(entity3, vector, TriggerSpikes.Directions.Down));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "triggerSpikesRight":
+                        Add(e = new TriggerSpikes(entity3, vector, TriggerSpikes.Directions.Right));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "triggerSpikesLeft":
+                        Add(e = new TriggerSpikes(entity3, vector, TriggerSpikes.Directions.Left));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "darkChaser":
+                        Add(e = new BadelineOldsite(entity3, vector, Tracker.CountEntities<BadelineOldsite>()));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "rotateSpinner":
+                        if (Session.Area.ID == 10) {
+                            Add(e = new StarRotateSpinner(entity3, vector));
+                        } else if (Session.Area.ID == 3 || (Session.Area.ID == 7 && Session.Level.StartsWith("d-"))) {
+                            Add(e = new DustRotateSpinner(entity3, vector));
+                        } else {
+                            Add(e = new BladeRotateSpinner(entity3, vector));
+                        }
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "trackSpinner":
+                        if (Session.Area.ID == 10) {
+                            Add(e = new StarTrackSpinner(entity3, vector));
+                        } else if (Session.Area.ID == 3 || (Session.Area.ID == 7 && Session.Level.StartsWith("d-"))) {
+                            Add(e = new DustTrackSpinner(entity3, vector));
+                        } else {
+                            Add(e = new BladeTrackSpinner(entity3, vector));
+                        }
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spinner": {
+                            if (Session.Area.ID == 3 || (Session.Area.ID == 7 && Session.Level.StartsWith("d-"))) {
+                                Add(e = new DustStaticSpinner(entity3, vector));
+                                (e as patch_Entity).__EntityData = entity3;
+                                break;
+                            }
+                            CrystalColor color = CrystalColor.Blue;
+                            if (Session.Area.ID == 5) {
+                                color = CrystalColor.Red;
+                            } else if (Session.Area.ID == 6) {
+                                color = CrystalColor.Purple;
+                            } else if (Session.Area.ID == 10) {
+                                color = CrystalColor.Rainbow;
+                            }
+                            Add(e = new CrystalStaticSpinner(entity3, vector, color));
+                            (e as patch_Entity).__EntityData = entity3;
+                            break;
+                        }
+                    case "sinkingPlatform":
+                        Add(e = new SinkingPlatform(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "friendlyGhost":
+                        Add(e = new AngryOshiro(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "seeker":
+                        Add(e = new Seeker(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "seekerStatue":
+                        Add(e = new SeekerStatue(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "slider":
+                        Add(e = new Slider(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeBigEyeball":
+                        Add(e = new TempleBigEyeball(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "crushBlock":
+                        Add(e = new CrushBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bigSpinner":
+                        Add(e = new Bumper(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "starJumpBlock":
+                        Add(e = new StarJumpBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "floatySpaceBlock":
+                        Add(e = new FloatySpaceBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "glassBlock":
+                        Add(e = new GlassBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "goldenBlock":
+                        Add(e = new GoldenBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fireBall":
+                        Add(e = new FireBall(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "risingLava":
+                        Add(e = new RisingLava(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "sandwichLava":
+                        Add(e = new SandwichLava(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "killbox":
+                        Add(e = new Killbox(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fakeHeart":
+                        Add(e = new FakeHeart(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lightning":
+                        if (entity3.Bool("perLevel") || !Session.GetFlag("disable_lightning")) {
+                            Add(e = new Lightning(entity3, vector));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "finalBoss":
+                        Add(e = new FinalBoss(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "finalBossFallingBlock":
+                        Add(e = FallingBlock.CreateFinalBossBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "finalBossMovingBlock":
+                        Add(e = new FinalBossMovingBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fakeWall":
+                        Add(e = new FakeWall(entityID, entity3, vector, FakeWall.Modes.Wall));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "fakeBlock":
+                        Add(e = new FakeWall(entityID, entity3, vector, FakeWall.Modes.Block));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "dashBlock":
+                        Add(e = new DashBlock(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "invisibleBarrier":
+                        Add(e = new InvisibleBarrier(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "exitBlock":
+                        Add(e = new ExitBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "conditionBlock": {
+                            string conditionBlockModes = entity3.Attr("condition", "Key");
+                            EntityID none = EntityID.None;
+                            string[] array = entity3.Attr("conditionID").Split(':');
+                            none.Level = array[0];
+                            none.ID = Convert.ToInt32(array[1]);
+                            if (conditionBlockModes.ToLowerInvariant() switch {
+                                "button" => Session.GetFlag(DashSwitch.GetFlagName(none)),
+                                "key" => Session.DoNotLoad.Contains(none),
+                                "strawberry" => Session.Strawberries.Contains(none),
+                                _ => throw new Exception("Condition type not supported!"),
+                            }) {
+                                Add(e = new ExitBlock(entity3, vector));
+                                (e as patch_Entity).__EntityData = entity3;
+                            }
+                            break;
+                        }
+                    case "coverupWall":
+                        Add(e = new CoverupWall(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "crumbleWallOnRumble":
+                        Add(e = new CrumbleWallOnRumble(entity3, vector, entityID));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "ridgeGate":
+                        if (GotCollectables(entity3)) {
+                            Add(e = new RidgeGate(entity3, vector));
+                            (e as patch_Entity).__EntityData = entity3;
+                        }
+                        break;
+                    case "tentacles":
+                        Add(e = new ReflectionTentacles(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "starClimbController":
+                        Add(e = new StarJumpController());
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "playerSeeker":
+                        Add(e = new PlayerSeeker(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "chaserBarrier":
+                        Add(e = new ChaserBarrier(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "introCrusher":
+                        Add(e = new IntroCrusher(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bridge":
+                        Add(e = new Bridge(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bridgeFixed":
+                        Add(e = new BridgeFixed(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bird":
+                        Add(e = new BirdNPC(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "introCar":
+                        Add(e = new IntroCar(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "memorial":
+                        Add(e = new Memorial(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "wire":
+                        Add(e = new Wire(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cobweb":
+                        Add(e = new Cobweb(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lamp":
+                        Add(e = new Lamp(vector + entity3.Position, entity3.Bool("broken")));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "hanginglamp":
+                        Add(e = new HangingLamp(entity3, vector + entity3.Position));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "hahaha":
+                        Add(e = new Hahaha(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bonfire":
+                        Add(e = new Bonfire(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "payphone":
+                        Add(e = new Payphone(vector + entity3.Position));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "colorSwitch":
+                        Add(e = new ClutterSwitch(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "clutterDoor":
+                        Add(e = new ClutterDoor(entity3, vector, Session));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "dreammirror":
+                        Add(e = new DreamMirror(vector + entity3.Position));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "resortmirror":
+                        Add(e = new ResortMirror(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "towerviewer":
+                        Add(e = new Lookout(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "picoconsole":
+                        Add(e = new PicoConsole(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "wavedashmachine":
+                        Add(e = new WaveDashTutorialMachine(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "yellowBlocks":
+                        ClutterBlockGenerator.Init(this);
+                        temporaryEntityData = entity3;
+                        ClutterBlockGenerator.Add((int) (entity3.Position.X / 8f), (int) (entity3.Position.Y / 8f), entity3.Width / 8, entity3.Height / 8, ClutterBlock.Colors.Yellow);
+                        patch_Level.temporaryEntityData = null;
+                        break;
+                    case "redBlocks":
+                        ClutterBlockGenerator.Init(this);
+                        temporaryEntityData = entity3;
+                        ClutterBlockGenerator.Add((int) (entity3.Position.X / 8f), (int) (entity3.Position.Y / 8f), entity3.Width / 8, entity3.Height / 8, ClutterBlock.Colors.Red);
+                        temporaryEntityData = null;
+                        break;
+                    case "greenBlocks":
+                        ClutterBlockGenerator.Init(this);
+                        temporaryEntityData = entity3;
+                        ClutterBlockGenerator.Add((int) (entity3.Position.X / 8f), (int) (entity3.Position.Y / 8f), entity3.Width / 8, entity3.Height / 8, ClutterBlock.Colors.Green);
+                        temporaryEntityData = null;
+                        break;
+                    case "oshirodoor":
+                        Add(e = new MrOshiroDoor(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeMirrorPortal":
+                        Add(e = new TempleMirrorPortal(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "reflectionHeartStatue":
+                        Add(e = new ReflectionHeartStatue(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "resortRoofEnding":
+                        Add(e = new ResortRoofEnding(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "gondola":
+                        Add(e = new Gondola(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "birdForsakenCityGem":
+                        Add(e = new ForsakenCitySatellite(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "whiteblock":
+                        Add(e = new WhiteBlock(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "plateau":
+                        Add(e = new Plateau(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "soundSource":
+                        Add(e = new SoundSourceEntity(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeMirror":
+                        Add(e = new TempleMirror(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "templeEye":
+                        Add(e = new TempleEye(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "clutterCabinet":
+                        Add(e = new ClutterCabinet(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "floatingDebris":
+                        Add(e = new FloatingDebris(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "foregroundDebris":
+                        Add(e = new ForegroundDebris(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "moonCreature":
+                        Add(e = new MoonCreature(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lightbeam":
+                        Add(e = new LightBeam(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "door":
+                        Add(e = new Door(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "trapdoor":
+                        Add(e = new Trapdoor(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "resortLantern":
+                        Add(e = new ResortLantern(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "water":
+                        Add(e = new Water(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "waterfall":
+                        Add(e = new WaterFall(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bigWaterfall":
+                        Add(e = new BigWaterfall(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "clothesline":
+                        Add(e = new Clothesline(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cliffflag":
+                        Add(e = new CliffFlags(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cliffside_flag":
+                        Add(e = new CliffsideWindFlag(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "flutterbird":
+                        Add(e = new FlutterBird(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "SoundTest3d":
+                        Add(e = new _3dSoundTest(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "SummitBackgroundManager":
+                        Add(e = new AscendManager(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "summitGemManager":
+                        Add(e = new SummitGemManager(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "heartGemDoor":
+                        Add(e = new HeartGemDoor(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "summitcheckpoint":
+                        Add(e = new SummitCheckpoint(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "summitcloud":
+                        Add(e = new SummitCloud(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "coreMessage":
+                        Add(e = new CoreMessage(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "playbackTutorial":
+                        Add(e = new PlayerPlayback(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "playbackBillboard":
+                        Add(e = new PlaybackBillboard(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cutsceneNode":
+                        Add(e = new CutsceneNode(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "kevins_pc":
+                        Add(e = new KevinsPC(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "powerSourceNumber":
+                        Add(e = new PowerSourceNumber(entity3.Position + vector, entity3.Int("number", 1), GotCollectables(entity3)));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "npc":
+                        string text = entity3.Attr("npc").ToLower();
+                        Vector2 position = entity3.Position + vector;
+                        switch (text) {
+                            case "granny_00_house":
+                                Add(e = new NPC00_Granny(position));
+                                break;
+                            case "theo_01_campfire":
+                                Add(e = new NPC01_Theo(position));
+                                break;
+                            case "theo_02_campfire":
+                                Add(e = new NPC02_Theo(position));
+                                break;
+                            case "theo_03_escaping":
+                                if (!Session.GetFlag("resort_theo")) {
+                                    Add(e = new NPC03_Theo_Escaping(position));
+                                }
+                                break;
+                            case "theo_03_vents":
+                                Add(e = new NPC03_Theo_Vents(position));
+                                break;
+                            case "oshiro_03_lobby":
+                                Add(e = new NPC03_Oshiro_Lobby(position));
+                                break;
+                            case "oshiro_03_hallway":
+                                Add(e = new NPC03_Oshiro_Hallway1(position));
+                                break;
+                            case "oshiro_03_hallway2":
+                                Add(e = new NPC03_Oshiro_Hallway2(position));
+                                break;
+                            case "oshiro_03_bigroom":
+                                Add(e = new NPC03_Oshiro_Cluttter(entity3, vector));
+                                break;
+                            case "oshiro_03_breakdown":
+                                Add(e = new NPC03_Oshiro_Breakdown(position));
+                                break;
+                            case "oshiro_03_suite":
+                                Add(e = new NPC03_Oshiro_Suite(position));
+                                break;
+                            case "oshiro_03_rooftop":
+                                Add(e = new NPC03_Oshiro_Rooftop(position));
+                                break;
+                            case "granny_04_cliffside":
+                                Add(e = new NPC04_Granny(position));
+                                break;
+                            case "theo_04_cliffside":
+                                Add(e = new NPC04_Theo(position));
+                                break;
+                            case "theo_05_entrance":
+                                Add(e = new NPC05_Theo_Entrance(position));
+                                break;
+                            case "theo_05_inmirror":
+                                Add(e = new NPC05_Theo_Mirror(position));
+                                break;
+                            case "evil_05":
+                                Add(e = new NPC05_Badeline(entity3, vector));
+                                break;
+                            case "theo_06_plateau":
+                                Add(e = new NPC06_Theo_Plateau(entity3, vector));
+                                break;
+                            case "granny_06_intro":
+                                Add(e = new NPC06_Granny(entity3, vector));
+                                break;
+                            case "badeline_06_crying":
+                                Add(e = new NPC06_Badeline_Crying(entity3, vector));
+                                break;
+                            case "granny_06_ending":
+                                Add(e = new NPC06_Granny_Ending(entity3, vector));
+                                break;
+                            case "theo_06_ending":
+                                Add(e = new NPC06_Theo_Ending(entity3, vector));
+                                break;
+                            case "granny_07x":
+                                Add(e = new NPC07X_Granny_Ending(entity3, vector));
+                                break;
+                            case "theo_08_inside":
+                                Add(e = new NPC08_Theo(entity3, vector));
+                                break;
+                            case "granny_08_inside":
+                                Add(e = new NPC08_Granny(entity3, vector));
+                                break;
+                            case "granny_09_outside":
+                                Add(e = new NPC09_Granny_Outside(entity3, vector));
+                                break;
+                            case "granny_09_inside":
+                                Add(e = new NPC09_Granny_Inside(entity3, vector));
+                                break;
+                            case "gravestone_10":
+                                Add(e = new NPC10_Gravestone(entity3, vector));
+                                break;
+                            case "granny_10_never":
+                                Add(e = new NPC07X_Granny_Ending(entity3, vector, ch9EasterEgg: true));
+                                break;
+                        }
+                        if (e != null)
+                            (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "eventTrigger":
+                        Add(e = new EventTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "musicFadeTrigger":
+                        Add(e = new MusicFadeTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "musicTrigger":
+                        Add(e = new MusicTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "altMusicTrigger":
+                        Add(e = new AltMusicTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cameraOffsetTrigger":
+                        Add(e = new CameraOffsetTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lightFadeTrigger":
+                        Add(e = new LightFadeTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "bloomFadeTrigger":
+                        Add(e = new BloomFadeTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "cameraTargetTrigger": {
+                            string text2 = entity3.Attr("deleteFlag");
+                            if (string.IsNullOrEmpty(text2) || !Session.GetFlag(text2)) {
+                                Add(e = new CameraTargetTrigger(entity3, vector));
+                                (e as patch_Entity).__EntityData = entity3;
+                            }
+                            break;
+                        }
+                    case "cameraAdvanceTargetTrigger":
+                        Add(e = new CameraAdvanceTargetTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "respawnTargetTrigger":
+                        Add(e = new RespawnTargetTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "changeRespawnTrigger":
+                        Add(e = new ChangeRespawnTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "windTrigger":
+                        Add(e = new WindTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "windAttackTrigger":
+                        Add(e = new WindAttackTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "minitextboxTrigger":
+                        Add(e = new MiniTextboxTrigger(entity3, vector, new EntityID(levelData.Name, entity3.ID + 10000000)));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "oshiroTrigger":
+                        Add(e = new OshiroTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "interactTrigger":
+                        Add(e = new InteractTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "checkpointBlockerTrigger":
+                        Add(e = new CheckpointBlockerTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "lookoutBlocker":
+                        Add(e = new LookoutBlocker(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "stopBoostTrigger":
+                        Add(e = new StopBoostTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "noRefillTrigger":
+                        Add(e = new NoRefillTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "ambienceParamTrigger":
+                        Add(e = new AmbienceParamTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "creditsTrigger":
+                        Add(e = new CreditsTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "goldenBerryCollectTrigger":
+                        Add(e = new GoldBerryCollectTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "moonGlitchBackgroundTrigger":
+                        Add(e = new MoonGlitchBackgroundTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "blackholeStrength":
+                        Add(e = new BlackholeStrengthTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "rumbleTrigger":
+                        Add(e = new RumbleTrigger(entity3, vector, new EntityID(levelData.Name, entity3.ID + 10000000)));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "birdPathTrigger":
+                        Add(e = new BirdPathTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "spawnFacingTrigger":
+                        Add(e = new SpawnFacingTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    case "detachFollowersTrigger":
+                        Add(e = new DetachStrawberryTrigger(entity3, vector));
+                        (e as patch_Entity).__EntityData = entity3;
+                        break;
+                    default:
+                        return false;
+
+                }
+                return true;
+            }
+
+        }
     }
 
     public static class LevelExt {
@@ -545,7 +1508,6 @@ namespace Celeste {
             => ((patch_Level) self).SubHudRenderer;
         public static void SetSubHudRenderer(this Level self, SubHudRenderer value)
             => ((patch_Level) self).SubHudRenderer = value;
-
     }
 }
 
@@ -607,6 +1569,7 @@ namespace MonoMod {
             VariableDefinition entityData1 = context.Body.Variables.First(v => v.VariableType.FullName == "Celeste.EntityData");
             VariableDefinition entityData2 = context.Body.Variables.Last(v => v.VariableType.FullName == "Celeste.EntityData");
             VariableDefinition entityDataEnumerator = context.Body.Variables.First(v => v.VariableType.FullName == "System.Collections.Generic.List`1/Enumerator<Celeste.EntityData>");
+            FieldReference f_temporaryEntityData = context.Method.DeclaringType.FindField("temporaryEntityData");
             ILCursor cursor = new ILCursor(context);
 
             // Insert our custom entity loader and use it for levelData.Entities and levelData.Triggers
@@ -684,6 +1647,8 @@ namespace MonoMod {
                 );
                 cctorCursor.Emit(OpCodes.Stsfld, f_LoadStrings);
             });
+
+            // EntityData patch: replaces all instances of adding a vanilla entity with that same entity with a reference to its entityData
             // Reset to apply EntityData patch
             cursor.Index = 0;
             int idx = entityData1.Index;
@@ -693,6 +1658,13 @@ namespace MonoMod {
                 if (cursor.Next.OpCode == OpCodes.Call && cursor.Next.Operand is MethodReference mr && mr.FullName == "System.Void Monocle.Scene::Add(Monocle.Entity)") { // This is the first thing that worked all night.
                     cursor.Emit(OpCodes.Ldloc, idx);
                     cursor.Emit(OpCodes.Call, m_RegisterEntityDataWithEntity);
+                } else if(cursor.Next.OpCode == OpCodes.Call && cursor.Next.Operand is MethodReference mr2 && mr2.FullName == "System.Void Celeste.ClutterBlockGenerator::Init(Celeste.Level)") {
+                    cursor.Index++; // Go after
+                    cursor.Emit(OpCodes.Ldloc, idx);
+                    cursor.Emit(OpCodes.Stsfld, f_temporaryEntityData);
+                    cursor.GotoNext(MoveType.Before, i=>i.MatchBr(out _)); // This is stupid but since it's Everest directly it's fiiiiiine
+                    cursor.Emit(OpCodes.Ldnull);
+                    cursor.Emit(OpCodes.Stsfld, f_temporaryEntityData);
                 }
                 cursor.Index++;
             }

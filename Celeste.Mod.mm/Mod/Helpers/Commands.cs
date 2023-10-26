@@ -37,5 +37,16 @@ namespace Celeste.Mod.Helpers {
         public static void ToggleShowModOptions() {
             Core.CoreModule.Settings.ShowModOptionsInGame = !Core.CoreModule.Settings.ShowModOptionsInGame;
         }
+
+        [Command("typefinder", "Takes in a text field of one of the following forms:\n" +
+                    ": EntityData Name, e.g. `Everest/FlagTrigger`\n" +
+                    ": Class FullName, e.g. `Everest.Entities.FlagTrigger`\n" +
+                    ": Class Name + Mod Source, e.g. `FlagTrigger Everest`\n" +
+                    "and returns all of the other formats.")]
+        public static void TypeFinder(string type, string modHint = null) {
+            string ret = TypeHelper.GetTypesFromMod(type, modHint);
+            Logger.Log(LogLevel.Info, "Everest", ret);
+            Engine.Commands.Log(ret);
+        }
     }
 }

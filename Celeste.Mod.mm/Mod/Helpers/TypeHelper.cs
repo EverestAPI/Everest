@@ -1,32 +1,23 @@
-﻿using Celeste.Mod.Entities;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
 using Monocle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
     public static class TypeHelper {
-        private static Dictionary<string, Type> entityDataNameToType;
 
+        public static Dictionary<string, Type> typeFullNameToTypeCache;
+
+        public static Dictionary<string, Type> entityDataNameToType;
         /// <summary>
-        /// Gets a raw type from a CustomEntityAttribute name (i.e. "spinner" => typeof(CrystalStaticSpinner)). 
-        /// Does not guarantee a CustomEntityAttribute will be referenced on load, due to CustomEntity Manual methods.
-        /// If you know an Entity came from a specific name, use GetCSTypeFromEntityDataName
+        /// Bakes the vanilla EntityData names to their corresponding types
         /// </summary>
-        /// <param name="name">the EntityData name</param>
-        /// <param name="type">the output C# type</param>
-        /// <returns></returns>
-        public static bool GetRawTypeFromCustomEntityAttribute(string name, out Type type) {
-            type = null;
-            if (entityDataNameToType.ContainsKey(name)) {
-                type = entityDataNameToType[name];
-                return true;
-            }
-            return false;
-        }
-
         internal static void BakeVanillaEntityData() {
             entityDataNameToType = new Dictionary<string, Type>() {
                 ["checkpoint"] = typeof(Checkpoint),
@@ -222,8 +213,13 @@ namespace Celeste.Mod.Helpers {
             };
         }
 
-        public static void AddToDataNameType(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
-            foreach(var kvp in entityDataNameToType) {
+        public static void Add_DataNameTypeMap(string name, Type type, bool overwrite = false) {
+            if (overwrite || !entityDataNameToType.ContainsKey(name))
+                entityDataNameToType[name] = type;
+        }
+
+        public static void Add_DataNameTypeMap(Dictionary<string, Type> entityDataNameToType, bool overwrite = false) {
+            foreach(KeyValuePair<string,Type> kvp in entityDataNameToType) {
                 if(overwrite || !entityDataNameToType.ContainsKey(kvp.Key))
                     entityDataNameToType[kvp.Key] = kvp.Value;
             }
@@ -233,22 +229,88 @@ namespace Celeste.Mod.Helpers {
             return entityDataNameToType.TryGetValue(entityDataName, out type);
         }
 
-        public static bool CheckEntityFromDataName(Entity entity, string entityDataName, out Type type) {
-            type = null;
-            if ((entity as patch_Entity).__EntityData is { } ed && ed.Name == entityDataName) {
-                type = entity.GetType();
-                return true;
-            }
-            return false;
+        public static bool CheckEntityByDataName(Entity entity, string entityDataName) {
+            return (entity as patch_Entity).__EntityData is { } ed && ed.Name == entityDataName;
         }
 
-        public static bool CheckEntityFromData(Entity entity, Predicate<EntityData> predicate, out Type type) {
-            type = null;
-            if ((entity as patch_Entity).__EntityData is { } ed && predicate(ed)) {
-                type = entity.GetType();
-                return true;
+        public static bool CheckEntityByData(Entity entity, Predicate<EntityData> predicate) {
+            return (entity as patch_Entity).__EntityData is { } ed && predicate(ed);
+        }
+        public static Type GetType(string fullname, bool cache = true) {
+            if(typeFullNameToTypeCache.ContainsKey(fullname)) { return typeFullNameToTypeCache[fullname]; }
+            Type type = FakeAssembly.GetFakeEntryAssembly().GetType(fullname);
+            if(type != null) {
+                typeFullNameToTypeCache[fullname] = type;
+                return type;
             }
-            return false;
+            return null;
+        }
+
+        /// <summary>
+        /// NOT MEANT FOR CODE MODDERS - 
+        /// Debug Command method for retrieving the Class name (and mod name it comes from), Class FullName, and CustomEntityAttribute name,
+        /// given 1 of them (and a mod name if needed) Useful for mappers.
+        /// </summary>
+        /// <param name="name">Any of CustomEntityAttribute Name, Class Name, or Class FullName</param>
+        /// <param name="modName">Optional: The mod that the class you are searching for is from</param>
+        /// <returns></returns>
+        internal static string GetTypesFromMod(string name, string modName = null) {
+            if (string.IsNullOrWhiteSpace(name))
+                return "Takes in a text field of one of the following forms:\n" +
+                    ": EntityData Name, e.g. `Everest/FlagTrigger`\n" +
+                    ": Class FullName, e.g. `Everest.Entities.FlagTrigger`\n" +
+                    ": Class Name + Mod Source, e.g. `FlagTrigger Everest`\n" +
+                    "and returns all of the other formats.";
+            string EntityDataName = null;
+            Type type = null;
+            EverestModule mod = null;
+            //Check for CustomEntityAttribute first, since that is the main cached item
+            if (entityDataNameToType.ContainsKey(name)) {
+                EntityDataName = name;
+                type = entityDataNameToType[name];
+            } else if (name.Contains('/')) { } // Eliminates the large chance of unknown CustomEntityAttribute names
+              else if (name.Contains('.')) { // Checks the fullname case for the majority of entities (any that are in a namespace lol)
+
+                if (typeFullNameToTypeCache.ContainsKey(name)) {
+                    type = typeFullNameToTypeCache[name];
+                } else {
+                    try {
+                        type = FakeAssembly.GetFakeEntryAssembly().GetType(name);
+                        if (type != null)
+                            typeFullNameToTypeCache[name] = type;
+                    }
+                    catch { }
+                }
+                    
+            } else if (modName != null) {
+                mod = Everest.Modules.FirstOrDefault(m => m.Metadata.Name == modName);
+                if (mod != null && mod is not NullModule && mod is not LuaModule) {
+                    Assembly asm = mod.GetType().Assembly;
+                    type = asm.GetTypes().FirstOrDefault(t => t.Name == name);
+                }
+            }
+            string ret = null;
+            if (type == null) {
+                ret = $"Error: the class related to \"{name}\" could not be found. Try checking your spelling";
+                if (name != null && modName == null)
+                    ret += ", and type the name of the Mod this class is coming from after it.";
+                else
+                    ret += ".";
+                return ret;
+            }
+            if(mod == null) {
+                mod = (EverestModule) type.Assembly.GetTypes().FirstOrDefault(t => typeof(EverestModule).IsAssignableFrom(t)).GetField("Instance", BindingFlags.Static | BindingFlags.Public).GetValue(null);                
+            }
+            if (EntityDataName == null) {
+                List<string> strings = new List<string>();
+                foreach(KeyValuePair<string, Type> kvp in entityDataNameToType) {
+                    if(kvp.Value.FullName == type.FullName) {
+                        strings.Add(kvp.Key);
+                    }
+                }
+                EntityDataName = string.Join(", ", strings);
+            }
+            return $"C# Class: {type.Name}, FullName: {type.FullName}\nSource Mod: {mod.Metadata.Name}\nEntityData Names: {EntityDataName}";
         }
     }
 }

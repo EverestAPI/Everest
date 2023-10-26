@@ -23,5 +23,7 @@ namespace Monocle {
         internal void _PreUpdate() => PreUpdate?.Invoke(this);
 
         internal void _PostUpdate() => PostUpdate?.Invoke(this);
+
+        public EntityID __EntityID => new EntityID(__EntityData.Level.Name, __EntityData.ID);
     }
 }

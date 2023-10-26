@@ -3,7 +3,15 @@
 using MonoMod;
 
 namespace Celeste {
-    public class patch_Session {
+    public class patch_Session : Session {
+
+        [MonoModIgnore] // We don't want to change anything about the method...
+        [MonoModConstructor]
+        public patch_Session(AreaKey area, string checkpoint = null, AreaStats oldStats = null)
+            : base(area, checkpoint, oldStats) {
+            // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
         public bool RestartedFromGolden;
 
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
