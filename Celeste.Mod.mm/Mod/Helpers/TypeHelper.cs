@@ -230,11 +230,11 @@ namespace Celeste.Mod.Helpers {
         }
 
         public static bool CheckEntityByDataName(Entity entity, string entityDataName) {
-            return (entity as patch_Entity).__EntityData is { } ed && ed.Name == entityDataName;
+            return (entity as patch_Entity).EntityData is { } ed && ed.Name == entityDataName;
         }
 
         public static bool CheckEntityByData(Entity entity, Predicate<EntityData> predicate) {
-            return (entity as patch_Entity).__EntityData is { } ed && predicate(ed);
+            return (entity as patch_Entity).EntityData is { } ed && predicate(ed);
         }
         public static Type GetType(string fullname, bool cache = true) {
             if(typeFullNameToTypeCache.ContainsKey(fullname)) { return typeFullNameToTypeCache[fullname]; }

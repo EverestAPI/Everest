@@ -618,7 +618,7 @@ namespace Celeste.Mod {
                         if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
                             loader = (level, levelData, offset, entityData) => {
                                 Entity e = (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
-                                (e as patch_Entity).__EntityData = entityData;
+                                (e as patch_Entity).EntityData = entityData;
                                 return e;
                             };
                             goto RegisterEntityLoader;
@@ -628,7 +628,7 @@ namespace Celeste.Mod {
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => {
                                 Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
-                                (e as patch_Entity).__EntityData = entityData;
+                                (e as patch_Entity).EntityData = entityData;
                                 return e;
                             };
                             if (!TypeHelper.entityDataNameToType.ContainsKey(id))
@@ -640,7 +640,7 @@ namespace Celeste.Mod {
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => { 
                                 Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset });
-                                (e as patch_Entity).__EntityData = entityData;
+                                (e as patch_Entity).EntityData = entityData;
                                 return e;
                             };
                             if (!TypeHelper.entityDataNameToType.ContainsKey(id))
@@ -652,7 +652,7 @@ namespace Celeste.Mod {
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => {
                                 Entity e = (Entity) ctor.Invoke(new object[] { offset });
-                                (e as patch_Entity).__EntityData = entityData;
+                                (e as patch_Entity).EntityData = entityData;
                                 return e;
                             };
                             if (!TypeHelper.entityDataNameToType.ContainsKey(id))
@@ -664,7 +664,7 @@ namespace Celeste.Mod {
                         if (ctor != null) {
                             loader = (level, levelData, offset, entityData) => { 
                                 Entity e = (Entity) ctor.Invoke(_EmptyObjectArray);
-                                (e as patch_Entity).__EntityData = entityData;
+                                (e as patch_Entity).EntityData = entityData;
                                 return e;
                             };
                             if (!TypeHelper.entityDataNameToType.ContainsKey(id))
