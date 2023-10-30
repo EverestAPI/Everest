@@ -1,4 +1,4 @@
-﻿# Check English.txt for up-to-date notes.
+﻿﻿# Check English.txt for up-to-date notes.
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Merci ((player)) !{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.
@@ -82,8 +82,9 @@
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page précédente (menus)
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page suivante (menus)
 	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				MODE DEBUG
-	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Console de debug
-	MODOPTIONS_COREMODULE_DEBUGMAP=							Carte de debug
+	MODOPTIONS_COREMODULE_TOGGLEDEBUGCONSOLE=				Ouvrir/Fermer la console de debug
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Ouvrir la console de debug
+	MODOPTIONS_COREMODULE_DEBUGMAP=							Ouvrir la carte de debug
 	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			CAMERA DANS LE MENU PRINCIPAL
 	MODOPTIONS_COREMODULE_CAMERAFORWARD=					Avancer
 	MODOPTIONS_COREMODULE_CAMERABACKWARD=					Reculer
