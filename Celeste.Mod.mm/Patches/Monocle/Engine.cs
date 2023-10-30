@@ -68,6 +68,8 @@ namespace Monocle {
                             Monocle.Draw.SpriteBatch.End(); // This prevents hard crash cascades
                         } catch {}
 
+                        (Scene as patch_Scene)?.ClearOnEndOfFrame();
+
                         continueLoop = true;
                         goto restart;
                     }

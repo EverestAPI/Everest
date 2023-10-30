@@ -67,6 +67,17 @@ namespace Celeste.Mod.UI {
             if (CurrentHandler.State < DisplayState.Overlay && Celeste.Scene is Level lvl) {
                 CurrentHandler.State = DisplayState.Overlay;
                 lvl.Add(CurrentHandler);
+
+                // Remove any screen wipes
+                if (lvl.Wipe != null) {
+                    lvl.RendererList.Remove(lvl.Wipe);
+                    lvl.Wipe = null;
+                }
+
+                foreach (Renderer renderer in lvl.RendererList.Renderers.ToArray())
+                    if (renderer is ScreenWipe)
+                        lvl.RendererList.Remove(renderer);
+
                 return null;
             }
 
