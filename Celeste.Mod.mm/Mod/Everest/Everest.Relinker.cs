@@ -222,8 +222,16 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
 
                     // Load the assembly and the module definition
+                    ModuleDefinition mod = null;
+                    bool successfullyLoadedModule = false;
                     try {
-                        ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
+                        mod = ModuleDefinition.ReadModule(cachedPath);
+                        successfullyLoadedModule = true;
+                    } catch (Exception) {
+                        // Exceptions from inside ReadModule are often cache corruption, we should try loading from the non-cached assembly
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading module from cache {meta} - {asmname}, trying non-cached file");
+                    }
+                    if (successfullyLoadedModule) {
                         try {
                             Assembly asm = Assembly.LoadFrom(cachedPath);
                             _RelinkedAssemblies.Add(asm);
@@ -242,9 +250,6 @@ namespace Celeste.Mod {
                         } finally {
                             mod?.Dispose();
                         }
-                    } catch (Exception) {
-                        // Exceptions from inside ReadModule are often cache corruption, we should try loading from the non-cached assembly
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading module from cache {meta} - {asmname}, trying non-cached file");
                     }
                 }
 
