@@ -222,24 +222,29 @@ namespace Celeste.Mod {
                     Logger.Log(LogLevel.Verbose, "relinker", $"Loading cached assembly for {meta} - {asmname}");
 
                     // Load the assembly and the module definition
-                    ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
                     try {
-                        Assembly asm = Assembly.LoadFrom(cachedPath);
-                        _RelinkedAssemblies.Add(asm);
+                        ModuleDefinition mod = ModuleDefinition.ReadModule(cachedPath);
+                        try {
+                            Assembly asm = Assembly.LoadFrom(cachedPath);
+                            _RelinkedAssemblies.Add(asm);
 
-                        if (!_RelinkedModules.ContainsKey(mod.Assembly.Name.Name)) {
-                            _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
-                            mod = null;
-                        } else
-                            Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
+                            if (!_RelinkedModules.ContainsKey(mod.Assembly.Name.Name)) {
+                                _RelinkedModules.Add(mod.Assembly.Name.Name, mod);
+                                mod = null;
+                            } else
+                                Logger.Log(LogLevel.Warn, "relinker", $"Encountered module name conflict loading cached assembly {meta} - {asmname} - {mod.Assembly.Name}");
 
-                        return asm;
-                    } catch (Exception e) {
-                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly {meta} - {asmname}");
-                        e.LogDetailed();
-                        return null;
-                    } finally {
-                        mod?.Dispose();
+                            return asm;
+                        } catch (Exception e) {
+                            Logger.Log(LogLevel.Warn, "relinker", $"Failed loading cached assembly {meta} - {asmname}");
+                            e.LogDetailed();
+                            return null;
+                        } finally {
+                            mod?.Dispose();
+                        }
+                    } catch (Exception) {
+                        // Exceptions from inside ReadModule are often cache corruption, we should try loading from the non-cached assembly
+                        Logger.Log(LogLevel.Warn, "relinker", $"Failed loading module from cache {meta} - {asmname}, trying non-cached file");
                     }
                 }
 
