@@ -223,15 +223,13 @@ namespace Celeste.Mod {
 
                     // Load the assembly and the module definition
                     ModuleDefinition mod = null;
-                    bool successfullyLoadedModule = false;
                     try {
                         mod = ModuleDefinition.ReadModule(cachedPath);
-                        successfullyLoadedModule = true;
                     } catch (Exception) {
                         // Exceptions from inside ReadModule are often cache corruption, we should try loading from the non-cached assembly
                         Logger.Log(LogLevel.Warn, "relinker", $"Failed loading module from cache {meta} - {asmname}, trying non-cached file");
                     }
-                    if (successfullyLoadedModule) {
+                    if (mod != null) {
                         try {
                             Assembly asm = Assembly.LoadFrom(cachedPath);
                             _RelinkedAssemblies.Add(asm);
