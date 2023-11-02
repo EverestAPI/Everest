@@ -83,7 +83,7 @@ namespace Celeste {
                 data.Debris = xml.Attr("debris");
 
             if (xml.HasAttr("unignores")) {
-                string[] array = item.Attr("unignores").Split(',');
+                string[] array = xml.Attr("unignores").Split(',');
 
                 foreach (string text in array)
 					if (text.Length > 0)
@@ -413,9 +413,6 @@ namespace Celeste {
             public Dictionary<byte, string> whitelists;
             public Dictionary<byte, string> blacklists;
 
-            [MonoModIgnore]
-            public extern bool Ignore(char c);
-
             public extern void orig_ctor(char id);
             [MonoModConstructor]
             public void ctor(char id) {
@@ -427,7 +424,7 @@ namespace Celeste {
                 blacklists = new Dictionary<byte, string>();
             }
 
-            public extern void orig_Ignore(char c);
+            public extern bool orig_Ignore(char c);
             public bool Ignore(char c) {
                 return orig_Ignore(c) && !Unignores.Contains(c);
             }
