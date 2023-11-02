@@ -65,7 +65,7 @@ namespace Celeste.Mod {
 
                 // Handle the legacy FNA compatibility mode here, so that vanilla is also affected
                 if (Everest.CompatibilityMode == Everest.CompatMode.LegacyFNA) {
-                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_FLIP_MODEL", "1");
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_FORCE_BITBLT", "1");
                     Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_EXCLUSIVE_FULLSCREEN", "1");
                 }
 
