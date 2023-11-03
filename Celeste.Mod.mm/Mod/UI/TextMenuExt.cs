@@ -1384,9 +1384,8 @@ namespace Celeste {
             public bool TextBoxConsumedInput { get; private set; } = false;
 
             public Dictionary<char, Action<TextBox>> OnTextInputCharActions = new() {
-                // backspace
-                {(char) 8, (textBox) => {
-                    if(textBox.DeleteLastCharacter()) {
+                {'\b', (textBox) => {
+                    if(textBox.DeleteCharacter()) {
                         Audio.Play(SFX.ui_main_rename_entry_backspace);
                     }  else {
                         Audio.Play(SFX.ui_main_button_invalid);
@@ -1447,7 +1446,7 @@ namespace Celeste {
                 Text = "";
             }
 
-            public bool DeleteLastCharacter() {
+            public bool DeleteCharacter() {
                 if (Text.Length > 0) {
                     Text = Text.Remove(Text.Length - 1);
                     return true;
@@ -1478,6 +1477,8 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_off);
                     Typing = false;
                     Container.Focused = true;
+                    TextBoxConsumedInput = false;
+                    MInput.Disabled = false;
                     TextInput.OnInput -= OnTextInput;
                     Engine.Commands.Enabled = previousEngineCommandsEnabled;
 
@@ -1492,9 +1493,7 @@ namespace Celeste {
                 // We pad from both the right and the left (so we multiply padding by 2)
                 Vector2 totalTextPadding = TextPadding * 2;
 
-                if (!char.IsControl(c) &&
-                    ActiveFont.FontSize.Characters.ContainsKey(c) &&
-                    (newTextSize + totalTextPadding).X < Width) {
+                if (!char.IsControl(c) && ActiveFont.FontSize.Characters.ContainsKey(c) && (newTextSize + totalTextPadding).X < Width) {
                     Text += c;
                     Audio.Play(SFX.ui_main_rename_entry_char);
                     return true;

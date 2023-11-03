@@ -29,7 +29,7 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
         private Action startSearching;
-        private float searchIconEase;
+        private bool textBoxConsumedMenuCancel = false;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -388,11 +388,20 @@ namespace Celeste.Mod.UI {
                 modal.Visible = false;
                 textBox.ClearText();
                 updateHighlightedMods();
+                textBoxConsumedMenuCancel = true;
             }
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
             textBox.OnTextInputCharActions['\n'] = exitSearch;
             textBox.OnTextInputCharActions['\r'] = exitSearch;
+            textBox.OnTextInputCharActions['\b'] = (textBox) => {
+                if (textBox.DeleteCharacter()) {
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                } else {
+                    exitSearch(textBox);
+                }
+            };
+
 
             textBox.AfterInputConsumed = () => {
                 if (textBox.Typing) {
@@ -457,13 +466,17 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
-            searchIconEase = Calc.Approach(searchIconEase, Visible ? 1f : 0f, Engine.DeltaTime * 4f);
 
             if (Selected && Focused) {
                 if (Input.QuickRestart.Pressed) {
                     startSearching?.Invoke();
                     return;
                 }
+            }
+
+            if (textBoxConsumedMenuCancel) {
+                textBoxConsumedMenuCancel = false;
+                Input.MenuCancel.ConsumePress();
             }
 
             base.Update();
@@ -577,9 +590,9 @@ namespace Celeste.Mod.UI {
             base.Render();
 
             if (modLoadingTask == null) {
-                Vector2 searchIconLocation = new Vector2(128f * Ease.CubeOut(searchIconEase), 952f);
-                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White * Ease.CubeOut(searchIconEase));
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White * Ease.CubeOut(searchIconEase));
+                Vector2 searchIconLocation = new(128f, 952f);
+                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White);
             }
         }
 
