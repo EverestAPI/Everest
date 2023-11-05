@@ -22,6 +22,14 @@ namespace Celeste.Mod {
 
         public override void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
         }
+        
+        public override void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Lua module {Metadata} registered.");
+        }
+        
+        public override void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Lua module {Metadata} unregistered.");
+        }
 
     }
 }

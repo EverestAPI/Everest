@@ -892,5 +892,13 @@ namespace Celeste.Mod {
         public virtual void PrepareMapDataProcessors(MapDataFixup context) {
         }
 
+        public virtual void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Registered code module {GetType().FullName} for module {Metadata}.");
+        }
+
+        public virtual void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {GetType().FullName} for module {Metadata}.");
+        }
+
     }
 }
