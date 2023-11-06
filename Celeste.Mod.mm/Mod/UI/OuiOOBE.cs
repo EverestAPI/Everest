@@ -135,7 +135,7 @@ namespace Celeste.Mod.UI {
                 // Modders / Mappers
                 case 3: {
                         Item fmod;
-                        TextMenu menu = new TextMenu() {
+                        patch_TextMenu menu = new patch_TextMenu() {
                             new patch_TextMenu.patch_SubHeader(Dialog.Clean("OOBE_SETTINGS_CREATE")),
                             new patch_TextMenu.patch_SubHeader(""),
 

@@ -27,13 +27,14 @@
 	POSTCARD_MISSINGTUTORIAL=	{big}Oops!{/big}{n}The playback tutorial {#ff1144}((tutorial)){#} could not be found.{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_TILEXMLERROR=		{big}Oops!{/big}{n}There was an error parsing a tileset in {#ff1144}((path)){#}{n}Check your {#44adf7}log.txt{#} for more info.
 	POSTCARD_XMLERROR=			{big}Oops!{/big}{n}{#ff1144}((path)){#} has a syntax error.{n}Check your {#44adf7}log.txt{#} for more info.
+	POSTCARD_BOSSLASTNODEHIT=	{big}Oops!{/big}{n}{#ff1144}Badeline Boss{#} entity was hit on its last node, please add an additional node outside of the current room to ensure the player never hits it.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
 	MENU_MAPLIST= 			Map List
 	MENU_MODOPTIONS= 		Mod Options
 	MENU_PAUSE_MODOPTIONS= 	Mod Options
-	
+
 	MENU_MODOPTIONS_UPDATE_FAILED=				Failed to install Everest Update
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod failed to load
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods failed to load
@@ -44,7 +45,7 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Restarting into orig/Celeste.exe
-    
+
 # Extra Key Mapping
     KEY_CONFIG_ADDING= PRESS ADDITIONAL KEY FOR
     KEY_CONFIG_ADDITION_HINT= Press SHIFT + CONFIRM to add or remove additional keys
@@ -85,7 +86,8 @@
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page Up in Menus
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page Down in Menus
 	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				DEBUG MODE
-	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Debug Console
+	MODOPTIONS_COREMODULE_TOGGLEDEBUGCONSOLE=				Toggle Debug Console
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Open Debug Console
 	MODOPTIONS_COREMODULE_DEBUGMAP=							Debug Map
 	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			OVERWORLD MOUNTAIN CAMERA
 	MODOPTIONS_COREMODULE_CAMERAFORWARD=					Camera Forward
@@ -100,7 +102,7 @@
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Sound Test
 	MODOPTIONS_COREMODULE_OOBE= 							Redo Initial Setup
 	MODOPTIONS_COREMODULE_TOGGLEMODS=						Enable or Disable Mods
-	
+
 	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
 	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Rich Presence Options
 	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					Show Icon
@@ -137,7 +139,7 @@
 	MAPLIST_SEARCH=			Search
 	MAPLIST_SEARCH_MATCH=	Quick Match
 	MAPLIST_TYPE_EVERYTHING=  Everything
-	MAPLIST_RESULTS_SINGULAR= {0} result found  
+	MAPLIST_RESULTS_SINGULAR= {0} result found
 	MAPLIST_RESULTS_PLURAL=   {0} results found
 
 	LEVELSET_CELESTE= 		Celeste
@@ -148,7 +150,7 @@
 	UPDATER_VERSIONS_TITLE= 		CHANGE EVEREST VERSION
 	UPDATER_VERSIONS_CURRENT= 		Installed: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Refreshing...
-	
+
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Failed downloading version list.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unknown format.
 
@@ -161,7 +163,7 @@
 
 	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
 	UPDATER_SRC_BUILDBOT_AZURE=		Automatic builds (Azure)
-	
+
 # currently unused
 	UPDATER_SRC_BUILDBOT= 			Automatic builds
 
@@ -180,6 +182,8 @@
 	EVERESTUPDATER_RESTARTING=		Restarting
 	EVERESTUPDATER_RESTARTINGIN=	Restarting in {0}
 	EVERESTUPDATER_STARTINGFAILED=	Starting installer failed!
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Installing .NET Core Everest requires the .NET 7.0 runtime
+	EVERESTUPDATER_MISSINGRUNTIME_B=	You can download it from the following page: {0}
 	EVERESTUPDATER_ERRORHINT1=		Please create a new issue on GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		or join the #modding_help channel on Discord (invite in the repo).
 	EVERESTUPDATER_ERRORHINT3=		Make sure to upload your log.txt
@@ -200,7 +204,11 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Update all mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Updating all mods...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	All mods have been updated.
-	
+	MODUPDATECHECKER_RESTARTNEEDED= Celeste needs to restart to continue
+	MODUPDATECHECKER_MENU_HEADER_RESTART= Choose an action
+	MODUPDATECHECKER_SHUTDOWN= Exit
+	MODUPDATECHECKER_RESTART= Restart
+
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Checking for mod updates...
 	AUTOUPDATECHECKER_UPDATING=		Auto-updating
@@ -258,21 +266,23 @@
 	OOBE_SETTINGS_OK=			OK
 
 # Mod Toggle Menu
-	MODOPTIONS_MODTOGGLE=				TOGGLE MODS
-	MODOPTIONS_MODTOGGLE_LOADING=		Loading mod information...
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Toggle Dependencies Automatically
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	When you enable a mod, all its dependencies will be enabled.
-	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	When you disable a mod, all mods that depend on it will be disabled.
-	MODOPTIONS_MODTOGGLE_MESSAGE_1=		If you enable or disable mods, your blacklist.txt will be replaced,
-	MODOPTIONS_MODTOGGLE_MESSAGE_2=		and Celeste will restart to apply changes.
-	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Highlighted mods are used by other enabled mods as a dependency.
-	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Disable your whitelist for these settings to be applied properly.
-	MODOPTIONS_MODTOGGLE_ENABLEALL=		Enable All
-	MODOPTIONS_MODTOGGLE_DISABLEALL=	Disable All
-	MODOPTIONS_MODTOGGLE_CANCEL=		Cancel
-	MODOPTIONS_MODTOGGLE_ZIPS=			Zip Files
-	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Directories
-	MODOPTIONS_MODTOGGLE_BINS=			Map Bin Files
+	MODOPTIONS_MODTOGGLE=							TOGGLE MODS
+	MODOPTIONS_MODTOGGLE_LOADING=					Loading mod information...
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=				Toggle Dependencies Automatically
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=		When you enable a mod, all its dependencies will be enabled.
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=		When you disable a mod, all mods that depend on it will be disabled.
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES=			Protect Favorites
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE=	Press {0} to add or remove mods from your favorite list.
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=					If you enable or disable mods, your blacklist.txt will be replaced,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=					and Celeste will restart to apply changes.
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=					Highlighted mods are used by other enabled mods as a dependency.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= 			Disable your whitelist for these settings to be applied properly.
+	MODOPTIONS_MODTOGGLE_ENABLEALL=					Enable All
+	MODOPTIONS_MODTOGGLE_DISABLEALL=				Disable All
+	MODOPTIONS_MODTOGGLE_CANCEL=					Cancel
+	MODOPTIONS_MODTOGGLE_ZIPS=						Zip Files
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=				Directories
+	MODOPTIONS_MODTOGGLE_BINS=						Map Bin Files
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map

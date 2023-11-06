@@ -170,23 +170,11 @@ namespace Celeste {
                     logfile += ".txt";
             }
 
+            Everest.PathLog = logfile;
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
-            using (LogWriter logWriter = new LogWriter {
-                STDOUT = Console.Out,
-                File = fileWriter
-            }) {
-                try {
-                    Console.SetOut(logWriter);
-
-                    MainInner(args);
-                } finally {
-                    if (logWriter.STDOUT != null) {
-                        Console.SetOut(logWriter.STDOUT);
-                        logWriter.STDOUT = null;
-                    }
-                }
-            }
+            using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter))
+                MainInner(args);
 
         }
 
@@ -285,7 +273,7 @@ https://discord.gg/6qjaePQ");
              * Loading in a new thread with texture -> GPU ops on the main thread helps barely.
              * Spawning a new thread just to wait for it to end doesn't make much sense,
              * BUT delaying the slow texture load ops to happen lazy-async gets the game window to appear sooner.
-             * 
+             *
              * Note that on XNA, this dies both with and without threaded GL due to OOM exceptions.
              * -ade
              */

@@ -56,14 +56,14 @@ namespace Celeste {
 
         public static bool PlayCustomVignette(Session session, bool fromSaveData) {
             bool playVignette = !fromSaveData && session.StartedFromBeginning;
-            AreaData area = AreaData.Get(session);
+            patch_AreaData area = patch_AreaData.Get(session);
             MapMetaCompleteScreen screen;
             MapMetaTextVignette text;
 
-            if (playVignette && (screen = area.GetMeta()?.LoadingVignetteScreen) != null && screen.Atlas != null) {
+            if (playVignette && (screen = area.Meta?.LoadingVignetteScreen) != null && screen.Atlas != null) {
                 Engine.Scene = new CustomScreenVignette(session, meta: screen);
                 return true;
-            } else if (playVignette && (text = area.GetMeta()?.LoadingVignetteText) != null && text.Dialog != null) {
+            } else if (playVignette && (text = area.Meta?.LoadingVignetteText) != null && text.Dialog != null) {
                 if (Engine.Scene is not Overworld { Snow: HiresSnow snow }) {
                     snow = null;
                 }
@@ -90,8 +90,8 @@ namespace Celeste {
                     .Replace("((sid))", session.Area.GetSID()));
             }
 
-            AreaData areaData = AreaData.Get(session);
-            MapMeta areaMeta = areaData.GetMeta();
+            patch_AreaData areaData = patch_AreaData.Get(session);
+            MapMeta areaMeta = areaData.Meta;
 
             string postCardDialogInfix = "";
             int areaModeIndex = 0;
@@ -184,10 +184,8 @@ namespace Celeste {
     }
     public static class LevelEnterExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_LevelEnter.ErrorMessage"/>
+        [Obsolete("Use LevelEnter.ErrorMessage instead.")]
         public static string ErrorMessage {
             get {
                 return patch_LevelEnter.ErrorMessage;

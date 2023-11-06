@@ -78,6 +78,8 @@ namespace MonoMod {
             FieldDefinition f_top = method.DeclaringType.FindField("top");
             FieldDefinition f_bottom = method.DeclaringType.FindField("bottom");
 
+            bool found = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             ILProcessor il = method.Body.GetILProcessor();
             for (int instri = 0; instri < instrs.Count; instri++) {
@@ -122,7 +124,13 @@ namespace MonoMod {
                     instri += instrCopy.Length;
 
                     instri += 8;
+
+                    found = true;
                 }
+            }
+
+            if (!found) {
+                throw new Exception("Instructions to copy were not found in " + method.FullName + "!");
             }
         }
 

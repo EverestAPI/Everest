@@ -12,7 +12,7 @@ namespace Celeste {
         private extern void orig_SetRunAnim();
 
         private void SetRunAnim() {
-            if (Renderer.Area < 0 || AreaData.Get(Renderer.Area).IsOfficialLevelSet()) {
+            if (Renderer.Area < 0 || patch_AreaData.Get(Renderer.Area).IsOfficialLevelSet()) {
                 orig_SetRunAnim();
             } else if (AreaData.Get(Renderer.Area).Mode[0].Inventory.Dashes > 1) {
                 frames = MTN.Mountain.GetAtlasSubtextures("marker/runNoBackpack");

@@ -634,7 +634,7 @@ namespace Celeste.Mod {
         /// <param name="menu">Menu to add the section to.</param>
         /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
         /// <param name="snapshot">The Level.PauseSnapshot</param>
-        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public virtual void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
             if (type == null || settings == null)
@@ -823,8 +823,18 @@ namespace Celeste.Mod {
                         }
 
                         TextMenu.Item subMenuItem = CreateItem(subTypeProp, settingsObject: propObject);
-                        if (subMenuItem != null)
-                            subMenu.Add(subMenuItem);
+                        if (subMenuItem == null)
+                            continue;
+
+                        string subsubheader = subTypeProp.GetCustomAttribute<SettingSubHeaderAttribute>()?.SubHeader;
+                        if (subsubheader != null)
+                            subMenu.Add(new TextMenu.SubHeader(subsubheader.DialogCleanOrNull() ?? subsubheader, false));
+
+                        subMenu.Add(subMenuItem);
+
+                        string subdescription = subTypeProp.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
+                        if (subdescription != null)
+                            subMenuItem.AddDescription(subMenu, menu, subdescription.DialogCleanOrNull() ?? subdescription);
                     }
                     item = subMenu;
                 }
@@ -844,11 +854,11 @@ namespace Celeste.Mod {
                 menu.Add(item);
 
                 if (prop.GetCustomAttribute<SettingNeedsRelaunchAttribute>() != null)
-                    item = item.NeedsRelaunch(menu);
+                    item.NeedsRelaunch(menu);
 
                 string description = prop.GetCustomAttribute<SettingSubTextAttribute>()?.Description;
                 if (description != null)
-                    item = item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
+                    item.AddDescription(menu, description.DialogCleanOrNull() ?? description);
             }
 
             foreach (PropertyInfo prop in type.GetProperties()) {
@@ -880,6 +890,14 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="context">The context to add the processors to.</param>
         public virtual void PrepareMapDataProcessors(MapDataFixup context) {
+        }
+
+        public virtual void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Registered code module {GetType().FullName} for module {Metadata}.");
+        }
+
+        public virtual void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {GetType().FullName} for module {Metadata}.");
         }
 
     }

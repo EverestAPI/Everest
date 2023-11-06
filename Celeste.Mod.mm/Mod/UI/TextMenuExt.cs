@@ -591,6 +591,16 @@ namespace Celeste {
                 }
             }
 
+            public bool ContainsDelayedAddItem(TextMenu.Item item) {
+                return Container == null && delayedAddItems.Contains(item);
+            }
+
+            public SubMenu InsertDelayedAddItem(TextMenu.Item item, TextMenu.Item after) {
+                if (Container == null && delayedAddItems.Contains(after))
+                    delayedAddItems.Insert(delayedAddItems.IndexOf(after) + 1, item);
+                return this;
+            }
+
             /// <summary>
             /// Remove any non-submenu <see cref="TextMenu.Item"/> from the Submenu
             /// </summary>
@@ -1353,5 +1363,107 @@ namespace Celeste {
             }
         }
 
+        public class SubMenuWithInputs : TextMenu.Item, IItemExt {
+            public Color TextColor { get; set; } = Color.Gray;
+            public Color ButtonColor { get; set; } = Color.White;
+            public Color StrokeColor { get; set; } = Color.White;
+            public float Alpha { get; set; } = 1f;
+            public float Scale { get; set; } = 0.6f;
+            public string Icon { get; set; }
+            public float? IconWidth { get; set; }
+            public bool IconOutline { get; set; }
+            public Vector2 Offset { get; set; }
+            private readonly object[] Items;
+
+            public SubMenuWithInputs(string text, char separator, VirtualButton[] buttons) {
+
+                string[] parts = text.Split(separator);
+                Items = new object[parts.Length * 2 - 1];
+
+                for (int index = 0; index < Items.Length; index++) {
+                    if (index % 2 == 0) {
+                        // add text
+                        Items[index] = parts[index / 2];
+                    } else {
+                        // add VirtualButton
+                        Items[index] = buttons[index / 2];
+                    }
+                }
+            }
+
+            public override float Height() {
+                return ActiveFont.LineHeight;
+            }
+
+            public override void Render(Vector2 position, bool highlighted) {
+                Vector2 lineOffset = position;
+                Vector2 justify = new(0f, 0.5f);
+                float strokeAlpha = Alpha * Alpha * Alpha;
+
+
+                foreach (object item in Items) {
+                    if (item is string) {
+                        ActiveFont.DrawOutline(item as string, lineOffset, justify, Vector2.One * Scale, TextColor * Alpha, 2f, Color.Black * strokeAlpha);
+                        lineOffset.X += ActiveFont.Measure(item as string).X * Scale;
+                    } else if (item is VirtualButton) {
+                        VirtualButton virtualButton = item as VirtualButton;
+                        MTexture buttonTexture;
+
+                        if (Input.GuiInputController()) {
+                            buttonTexture = Input.GuiButton(virtualButton, Input.PrefixMode.Attached);
+                        } else if (virtualButton.Binding.Keyboard.Count > 0) {
+                            buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0]);
+                        } else {
+                            buttonTexture = Input.GuiKey(Microsoft.Xna.Framework.Input.Keys.None);
+                        }
+
+                        buttonTexture.DrawJustified(lineOffset, justify, ButtonColor * strokeAlpha, Scale);
+                        lineOffset.X += buttonTexture.Width * Scale;
+                    }
+                }
+            }
+        }
+
+        // TODO: this was copy pasted from EaseInSubHeaderExt, find a way to abstract away the EaseIn behavior
+        public class EaseInSubMenuWithInputs : SubMenuWithInputs {
+            public bool FadeVisible { get; set; } = true;
+            private float uneasedAlpha;
+
+            public EaseInSubMenuWithInputs(
+                string text,
+                char separator,
+                VirtualButton[] buttons,
+                bool initiallyVisible
+            ) : base(text, separator, buttons) {
+                FadeVisible = initiallyVisible;
+                Alpha = FadeVisible ? 1 : 0;
+                uneasedAlpha = Alpha;
+            }
+
+            public override float Height() {
+                if (Container != null) {
+                    return MathHelper.Lerp(-Container.ItemSpacing, base.Height(), Alpha);
+                } else {
+                    return base.Height();
+                }
+            }
+
+            public override void Update() {
+                base.Update();
+
+                // gradually make the sub-header fade in or out. (~333ms fade)
+                float targetAlpha = FadeVisible ? 1 : 0;
+                if (uneasedAlpha != targetAlpha) {
+                    uneasedAlpha = Calc.Approach(uneasedAlpha, targetAlpha, Engine.RawDeltaTime * 3f);
+
+                    if (FadeVisible)
+                        Alpha = Ease.SineOut(uneasedAlpha);
+                    else
+                        Alpha = Ease.SineIn(uneasedAlpha);
+                }
+
+                Visible = Alpha != 0;
+            }
+        }
     }
 }

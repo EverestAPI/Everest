@@ -134,7 +134,7 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area) {
+        public void ApplyTo(patch_AreaData area) {
             if (!string.IsNullOrEmpty(Icon) && GFX.Gui.Has(Icon))
                 area.Icon = Icon;
 
@@ -192,16 +192,16 @@ namespace Celeste.Mod.Meta {
             area.MountainCursor = Mountain?.Cursor?.ToVector3() ?? area.MountainCursor;
             area.MountainState = Mountain?.State ?? area.MountainState;
 
-            ModeProperties[] modes = area.Mode;
+            patch_ModeProperties[] modes = area.Mode;
             area.Mode = Convert(Modes) ?? modes;
             if (modes != null)
                 for (int i = 0; i < area.Mode.Length && i < modes.Length; i++)
                     if (area.Mode[i] == null)
                         area.Mode[i] = modes[i];
 
-            MapMeta meta = area.GetMeta();
+            MapMeta meta = area.Meta;
             if (meta == null) {
-                area.SetMeta(this);
+                area.Meta = this;
             } else {
                 if (!string.IsNullOrEmpty(Parent))
                     meta.Parent = Parent;
@@ -270,10 +270,10 @@ namespace Celeste.Mod.Meta {
                 area.CoreMode = CoreMode.Value;
         }
 
-        public static ModeProperties[] Convert(MapMetaModeProperties[] meta) {
+        public static patch_ModeProperties[] Convert(MapMetaModeProperties[] meta) {
             if (meta == null || meta.Length == 0)
                 return null;
-            ModeProperties[] data = new ModeProperties[meta.Length];
+            patch_ModeProperties[] data = new patch_ModeProperties[meta.Length];
             for (int i = 0; i < meta.Length; i++)
                 data[i] = meta[i]?.Convert();
             return data;
@@ -332,8 +332,8 @@ namespace Celeste.Mod.Meta {
         public bool? SeekerSlowdown { get; set; }
         public bool? TheoInBubble { get; set; }
 
-        public ModeProperties Convert()
-            => new ModeProperties() {
+        public patch_ModeProperties Convert()
+            => new patch_ModeProperties() {
                 AudioState = AudioState?.Convert() ?? new AudioState(SFX.music_city, SFX.env_amb_01_main),
                 Checkpoints = MapMeta.Convert(Checkpoints), // Can be null.
                 IgnoreLevelAudioLayerData = IgnoreLevelAudioLayerData ?? false,
@@ -367,9 +367,9 @@ namespace Celeste.Mod.Meta {
             }
         }
 
-        public void ApplyTo(AreaData area, AreaMode mode) {
-            area.GetMeta().Modes[(int) mode] = this;
-            ModeProperties props = area.Mode[(int) mode];
+        public void ApplyTo(patch_AreaData area, AreaMode mode) {
+            area.Meta.Modes[(int) mode] = this;
+            patch_ModeProperties props = area.Mode[(int) mode];
             if (props != null) {
                 props.AudioState = AudioState?.Convert() ?? props.AudioState;
                 props.Checkpoints = MapMeta.Convert(Checkpoints) ?? props.Checkpoints;

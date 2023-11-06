@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
@@ -50,6 +51,9 @@ namespace Monocle {
         // redirects command logs to the StringBuilder when not null, only set this from main thread
         internal StringBuilder debugRClog;
 
+        private bool printedInfoMessage;
+
+        [PatchCommandsProcessMethod]
         private extern void orig_ProcessMethod(MethodInfo method);
         private void ProcessMethod(MethodInfo method) {
             try {
@@ -65,14 +69,18 @@ namespace Monocle {
         internal void UpdateClosed() {
             if (!canOpen) {
                 canOpen = true;
-            // Original code only checks OemTillde and Oem8, leaving QWERTZ users in the dark...
-            } else if (MInput.Keyboard.Pressed(Keys.OemTilde, Keys.Oem8) || CoreModule.Settings.DebugConsole.Pressed) {
+            // Original code only checks OemTilde and Oem8, leaving QWERTZ users in the dark...
+            } else if (CoreModule.Settings.DebugConsole.Pressed || CoreModule.Settings.ToggleDebugConsole.Pressed) {
                 Open = true;
                 currentState = Keyboard.GetState();
                 if (!installedListener) {
                     // this should realistically be done in the constructor. if we ever patch the ctor move it there!
                     installedListener = true;
                     TextInput.OnInput += HandleChar;
+                }
+                if (!printedInfoMessage) {
+                    Log("Use the 'help' command for a list of debug commands. Press Esc or use the 'q' command to close the console.");
+                    printedInfoMessage = true;
                 }
             }
 
@@ -201,6 +209,11 @@ namespace Monocle {
         [MonoModReplace]  // don't create an orig_ method
         private void HandleKey(Keys key) {
             // this method handles all control characters, which go through the XNA Keys API
+            if (key == Keys.Escape || CoreModule.Settings.ToggleDebugConsole.Keys.Contains(key)) {
+                MInput.Keyboard.CurrentState = currentState;
+                Open = canOpen = false;
+                return;
+            }
             underscore = true;
             underscoreCounter = 0f;
             bool shift = currentState[Keys.LeftShift] == KeyState.Down || currentState[Keys.RightShift] == KeyState.Down;
@@ -244,7 +257,7 @@ namespace Monocle {
                             // SID matching
                             tabPrefix = currentText.Substring(0, 5);
                             string startOfSid = currentText.Substring(5);
-                            tabResults = AreaData.Areas.Select(area => area.GetSID()).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
+                            tabResults = patch_AreaData.Areas.Select(area => area.SID).Where(sid => sid.StartsWith(startOfSid, StringComparison.InvariantCultureIgnoreCase)).ToArray();
                         } else {
                             // command matching
                             tabPrefix = "";
@@ -358,11 +371,12 @@ namespace Monocle {
             if (!Open) {
                 return;
             }
-            if (key == '~' || key == '`') {
-                Open = canOpen = false;
+            if (char.IsControl(key)) {
                 return;
             }
-            if (char.IsControl(key)) {
+
+            KeyboardState keyboardState = Keyboard.GetState();
+            if (CoreModule.Settings.ToggleDebugConsole.Keys.Any(k => keyboardState.IsKeyDown(k))) {
                 return;
             }
 
@@ -519,6 +533,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsUpdateOpen))]
     class PatchCommandsUpdateOpenAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches Commands.ProcessMethod to lowercase command names when building the command list.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCommandsProcessMethod))]
+    class PatchCommandsProcessMethodAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchCommandsUpdateOpen(ILContext il, CustomAttribute attrib) {
@@ -527,9 +547,29 @@ namespace MonoMod {
             TypeDefinition t_Engine = MonoModRule.Modder.FindType("Monocle.Engine").Resolve();
             MethodReference m_get_RawDeltaTime = t_Engine.FindMethod("System.Single get_RawDeltaTime()");
 
+            bool found = false;
+
             while (cursor.TryGotoNext(MoveType.Before, instr => instr.MatchCall("Monocle.Engine", "get_DeltaTime"))) {
                 cursor.Next.Operand = m_get_RawDeltaTime;
+                found = true;
             }
+
+            if (!found) {
+                throw new Exception("No call to Engine.DeltaTime found in " + il.Method.FullName + "!");
+            }
+        }
+
+        public static void PatchCommandsProcessMethod(ILContext il, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(il);
+
+            TypeDefinition t_String = MonoModRule.Modder.FindType("System.String").Resolve();
+            // import string.ToLowerInvariant() as it's not in the Celeste assembly
+            MethodReference m_ToLowerInvariant = MonoModRule.Modder.Module.ImportReference(t_String.FindMethod("System.String ToLowerInvariant()"));
+
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdloc(1), instr => instr.MatchLdfld("Monocle.Command", "Name"));
+
+            // call Command.Name.ToLowerInvariant()
+            cursor.Emit(OpCodes.Callvirt, m_ToLowerInvariant);
         }
 
     }

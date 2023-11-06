@@ -156,6 +156,8 @@
 	EVERESTUPDATER_RESTARTING=		Neustart
 	EVERESTUPDATER_RESTARTINGIN=	Neustart in {0}
 	EVERESTUPDATER_STARTINGFAILED=	Installer konnte nicht gestartet werden!
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Die Installation von .NET Core Everest benötigt die .NET 7.0 runtime
+	EVERESTUPDATER_MISSINGRUNTIME_B=	Diese kann von der folgenden Seite heruntergeladen werden: {0}
 	EVERESTUPDATER_ERRORHINT1=		Bitte erstelle einen neuen Issue auf GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		oder tritt dem Kanal #modding_help auf Discord bei (Einladung im Repo).
 	EVERESTUPDATER_ERRORHINT3=		Stelle sicher, log.txt hochzuladen
@@ -176,6 +178,8 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Alle Mods updaten
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Update alle Mods...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	Alle Mods wurden geupdatet.
+	MODUPDATECHECKER_SHUTDOWN= Beenden
+	
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Überprüfe auf Mod-Updates...

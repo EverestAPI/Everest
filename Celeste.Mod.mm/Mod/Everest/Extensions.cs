@@ -197,7 +197,7 @@ namespace Celeste.Mod {
         /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
         /// <param name="needsRelaunch">This method does nothing if this is set to false.</param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, TextMenu containingMenu, bool needsRelaunch = true) {
+        public static TextMenu.Item NeedsRelaunch(this TextMenu.Item option, patch_TextMenu containingMenu, bool needsRelaunch = true) {
             if (!needsRelaunch)
                 return option;
 
@@ -207,7 +207,7 @@ namespace Celeste.Mod {
                 HeightExtra = 0f
             };
 
-            List<TextMenu.Item> items = containingMenu.GetItems();
+            List<TextMenu.Item> items = containingMenu.Items;
             if (items.Contains(option)) {
                 // insert the text after the option that needs relaunch.
                 containingMenu.Insert(items.IndexOf(option) + 1, needsRelaunchText);
@@ -232,17 +232,53 @@ namespace Celeste.Mod {
         /// <param name="containingMenu">The menu containing the TextMenu.Item option.</param>
         /// <param name="description"></param>
         /// <returns>The passed option.</returns>
-        public static TextMenu.Item AddDescription(this TextMenu.Item option, TextMenu containingMenu, string description) {
+        public static TextMenu.Item AddDescription(this TextMenu.Item option, patch_TextMenu containingMenu, string description) {
             // build the description menu entry
             TextMenuExt.EaseInSubHeaderExt descriptionText = new TextMenuExt.EaseInSubHeaderExt(description, false, containingMenu) {
                 TextColor = Color.Gray,
                 HeightExtra = 0f
             };
 
-            List<TextMenu.Item> items = containingMenu.GetItems();
+            List<TextMenu.Item> items = containingMenu.Items;
             if (items.Contains(option)) {
                 // insert the description after the option.
                 containingMenu.Insert(items.IndexOf(option) + 1, descriptionText);
+            }
+
+            option.OnEnter += delegate {
+                // make the description appear.
+                descriptionText.FadeVisible = true;
+            };
+            option.OnLeave += delegate {
+                // make the description disappear.
+                descriptionText.FadeVisible = false;
+            };
+
+            return option;
+        }
+
+
+        /// <summary>
+        /// Add an Enter and Leave handler, displaying a description if selected.
+        /// </summary>
+        /// <param name="option">The input TextMenu.Item option.</param>
+        /// <param name="containingSubMenu">The submenu containing the TextMenu.Item option.</param>
+        /// <param name="parentContainer">The menu that the submenu is or will be part of.</param>
+        /// <param name="description"></param>
+        /// <returns>The passed option.</returns>
+        public static TextMenu.Item AddDescription(this TextMenu.Item option, TextMenuExt.SubMenu containingSubMenu, TextMenu parentContainer, string description) {
+            // build the description menu entry
+            TextMenuExt.EaseInSubHeaderExt descriptionText = new TextMenuExt.EaseInSubHeaderExt(description, false, parentContainer) {
+                TextColor = Color.Gray,
+                HeightExtra = 0f
+            };
+
+            if (containingSubMenu.Items.Contains(option)) {
+                // insert the description into item list after the option.
+                containingSubMenu.Insert(containingSubMenu.Items.IndexOf(option) + 1, descriptionText);
+            } else if (containingSubMenu.ContainsDelayedAddItem(option)) {
+                // insert the description into "delayed add" item list, when necessary
+                containingSubMenu.InsertDelayedAddItem(descriptionText, option);
             }
 
             option.OnEnter += delegate {

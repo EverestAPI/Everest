@@ -44,7 +44,7 @@ namespace Celeste.Mod {
                 return;
             Initialized = true;
 
-            foreach (KeyValuePair<string, MTexture> kvp in GFX.Gui.GetTextures())
+            foreach (KeyValuePair<string, MTexture> kvp in ((patch_Atlas) GFX.Gui).Textures)
                 if (kvp.Key.StartsWith("emoji/"))
                     Register(kvp.Key.Substring(6), kvp.Value);
 
