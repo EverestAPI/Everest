@@ -272,6 +272,8 @@
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	(Dés)activer les dépendances automatiquement
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	Si vous activez un mod, toutes ses dépendances seront également activées.
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	Si vous désactivez un mod, tous les mods qui l'utilisent comme dépendance seront désactivés.
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES=			Protéger les mods favoris
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE=	Appuyez sur {0} pour ajouter/supprimer des mods de la liste des favoris.
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Si vous activez ou désactivez des mods, votre blacklist.txt sera remplacé,
 	MODOPTIONS_MODTOGGLE_MESSAGE_2=		et Celeste va redémarrer pour appliquer les changements.
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Les mods mis en surbrillance sont utilisés par d'autres mods activés comme des dépendances.

@@ -64,7 +64,7 @@ namespace Celeste {
                 Engine.Scene = new CustomScreenVignette(session, meta: screen);
                 return true;
             } else if (playVignette && (text = area.Meta?.LoadingVignetteText) != null && text.Dialog != null) {
-                if (Engine.Scene is not Overworld {Snow: HiresSnow snow}) {
+                if (Engine.Scene is not Overworld { Snow: HiresSnow snow }) {
                     snow = null;
                 }
 
@@ -92,12 +92,25 @@ namespace Celeste {
 
             patch_AreaData areaData = patch_AreaData.Get(session);
             MapMeta areaMeta = areaData.Meta;
+
+            string postCardDialogInfix = "";
+            int areaModeIndex = 0;
+            
+            if (session.Area.Mode == AreaMode.BSide) {
+                postCardDialogInfix = "_b";
+                areaModeIndex = 1;
+            } else if (session.Area.Mode == AreaMode.CSide) {
+                postCardDialogInfix = "_c";
+                areaModeIndex = 2;
+            }
+
+            string postCardDialog = $"{areaData.Name}{postCardDialogInfix}_postcard";
+
             if (areaMeta != null && areaData.LevelSet != "Celeste" &&
-                Dialog.Has(areaData.Name + "_postcard") &&
+                Dialog.Has(postCardDialog) &&
                 session.StartedFromBeginning && !fromSaveData &&
-                session.Area.Mode == AreaMode.Normal &&
-                (!SaveData.Instance.Areas[session.Area.ID].Modes[0].Completed || SaveData.Instance.DebugMode)) {
-                return EnterWithPostcardRoutine(Dialog.Get(areaData.Name + "_postcard"), areaMeta.PostcardSoundID);
+                (!SaveData.Instance.Areas[session.Area.ID].Modes[areaModeIndex].Completed || SaveData.Instance.DebugMode)) {
+                return EnterWithPostcardRoutine(Dialog.Get(postCardDialog), areaMeta.PostcardSoundID);
             }
 
             return orig_Routine();
