@@ -647,7 +647,7 @@ namespace Celeste.Mod.UI {
             modToggles = null;
             modLoadingTask = null;
             toggleDependencies = true;
-            protectFavorites = false;
+            protectFavorites = true;
             favoriteMods = null;
             favoriteModsOriginal = null;
             favoriteModDependencies = null;
