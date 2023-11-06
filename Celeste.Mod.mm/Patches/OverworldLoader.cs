@@ -9,6 +9,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using System.Linq;
+
 
 namespace Celeste {
     class patch_OverworldLoader : OverworldLoader {
@@ -24,7 +26,23 @@ namespace Celeste {
 
         [MonoModIgnore] // don't change anything in the method...
         [PatchTotalHeartGemCSidePostcard] // except for replacing TotalHeartGems with TotalHeartGemsInVanilla through MonoModRules
+        [PatchCSidePostcardText] // and checking for a custom C-side unlock postcard through MonoModRules
         private extern IEnumerator Routine(Session session);
+
+
+        /// <summary>
+        /// A helper function that is called from <c>Routine</c> to determent which c-side unlock postcard to display
+        /// </summary>
+        private static string GetCSidePostcard(Session session) {
+            patch_AreaData areaData = patch_AreaData.Get(session);
+            string customLevelCSidePostcardDialog = $"{areaData.Name}_CSIDES_POSTCARD";
+
+            if (areaData.LevelSet == "Celeste" || !Dialog.Has(customLevelCSidePostcardDialog)) {
+                return "POSTCARD_CSIDES";
+            } else {
+                return customLevelCSidePostcardDialog;
+            }
+        }
     }
 }
 
@@ -34,6 +52,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchTotalHeartGemCSidePostcard))]
     class PatchTotalHeartGemCSidePostcardAttribute : Attribute { }
+
+    /// <summary>
+    /// Patch Routine to get the dialog for the C-side unlock instead of the constant "POSTCARD_CSIDES"
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchCSidePostcardText))]
+    class PatchCSidePostcardTextAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -60,5 +84,22 @@ namespace MonoMod {
             });
         }
 
+        public static void PatchCSidePostcardText(MethodDefinition method, CustomAttribute attrib) {
+            MethodDefinition m_OverworldLoader_GetCSidePostcard = method.Module.GetType("Celeste.OverworldLoader").FindMethod("System.String GetCSidePostcard(Celeste.Session)");
+
+            method = method.GetEnumeratorMoveNext();
+
+            FieldDefinition f_session = method.DeclaringType.Fields.FirstOrDefault(f => f.FieldType.Name == "Session");
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new ILCursor(il);
+
+                cursor.GotoNext(MoveType.Before, instr => instr.MatchLdstr("POSTCARD_CSIDES"));
+                cursor.Remove();
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Ldfld, f_session);
+                cursor.Emit(OpCodes.Call, m_OverworldLoader_GetCSidePostcard);
+            });
+        }
     }
 }
