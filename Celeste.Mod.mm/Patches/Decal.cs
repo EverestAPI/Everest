@@ -238,6 +238,10 @@ namespace Celeste {
             Add(staticMover);
         }
 
+        public void MakeAnimation(int[] frames) {
+            textures = frames.Select(i => textures[i]).ToList();
+        }
+
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
             Sprite sprite = (Sprite) (image = new Sprite(null, null));
             sprite.AddLoop("hidden", 0.1f, hiddenFrames.Select(i => textures[i]).ToArray());
@@ -328,8 +332,10 @@ namespace Celeste {
 
     public static class DecalExt {
 
+        [Obsolete("Use Decal.Scale instead.")]
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
+        [Obsolete("Use Decal.Scale instead.")]
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
 

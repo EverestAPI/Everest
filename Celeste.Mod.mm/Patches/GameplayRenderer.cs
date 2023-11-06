@@ -1,5 +1,6 @@
 ﻿using Monocle;
 using MonoMod;
+using System;
 
 namespace Celeste {
     class patch_GameplayRenderer : GameplayRenderer {
@@ -19,9 +20,7 @@ namespace Celeste {
     }
     public static class GameplayRendererExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
+        [Obsolete("Use GameplayRenderer.RenderDebug instead.")]
         public static bool RenderDebug {
             get {
                 return patch_GameplayRenderer.RenderDebug;

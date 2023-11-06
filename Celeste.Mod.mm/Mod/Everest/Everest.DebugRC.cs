@@ -383,7 +383,7 @@ header {
                             return;
                         }
 
-                        AreaData area = AreaDataExt.Get(sid);
+                        AreaData area = patch_AreaData.Get(sid);
                         if (area == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Chapter not found: {sid}");
@@ -484,7 +484,7 @@ header {
                             return;
                         }
 
-                        AreaData area = AreaDataExt.Get(sid);
+                        patch_AreaData area = patch_AreaData.Get(sid);
                         if (area == null) {
                             c.Response.StatusCode = (int) HttpStatusCode.BadRequest;
                             Write(c, $"ERROR: Chapter not found: {sid}");

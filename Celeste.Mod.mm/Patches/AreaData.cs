@@ -12,7 +12,15 @@ using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Celeste {
-    class patch_AreaData : AreaData {
+    public class patch_AreaData : AreaData {
+
+#pragma warning disable CS0108 // Hides inherited member
+
+        // Required to reference this class in other files
+        public static List<patch_AreaData> Areas;
+        public patch_ModeProperties[] Mode;
+
+# pragma warning restore CS0108
 
         private static Regex ParseNameRegex = new Regex(@"^(?:(?<order>\d+)(?<side>[ABCHX]?)\-)?(?<name>.+?)(?:\-(?<sideAlt>[ABCHX]?))?$", RegexOptions.Compiled);
         private static Dictionary<string, Match> ParseNameCache = new Dictionary<string, Match>();
@@ -103,7 +111,7 @@ namespace Celeste {
             get {
                 return
                     Interlude_Unsafe ||
-                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() != LevelSet);
+                    (SaveData.Instance != null && patch_SaveData.Instance.LevelSet != LevelSet);
             }
             set {
                 Interlude_Unsafe = value;
@@ -121,7 +129,7 @@ namespace Celeste {
             get {
                 return
                     IsFinal_Unsafe &&
-                    (SaveData.Instance != null && SaveData.Instance.GetLevelSet() == LevelSet);
+                    (SaveData.Instance != null && patch_SaveData.Instance.LevelSet == LevelSet);
             }
             set {
                 IsFinal_Unsafe = value;
@@ -129,8 +137,8 @@ namespace Celeste {
         }
 
         [MonoModReplace]
-        public static new AreaData Get(Scene scene) {
-            AreaData result;
+        public static new patch_AreaData Get(Scene scene) {
+            patch_AreaData result;
             if (scene != null && scene is Level) {
                 result = Get(((Level) scene).Session.Area);
             } else {
@@ -140,8 +148,8 @@ namespace Celeste {
         }
 
         [MonoModReplace]
-        public static new AreaData Get(Session session) {
-            AreaData result;
+        public static new patch_AreaData Get(Session session) {
+            patch_AreaData result;
             if (session != null) {
                 result = Get(session.Area);
             } else {
@@ -151,14 +159,14 @@ namespace Celeste {
         }
 
         [MonoModReplace]
-        public static new AreaData Get(AreaKey area) {
+        public static new patch_AreaData Get(AreaKey area) {
             if (area.GetSID() == null)
                 return Get(area.ID);
             return Get(area.GetSID());
         }
 
         [MonoModReplace]
-        public static new AreaData Get(int id) {
+        public static new patch_AreaData Get(int id) {
             if (id < 0)
                 return null;
 
@@ -167,15 +175,15 @@ namespace Celeste {
             }
         }
 
-        public static AreaData Get(AreaStats stats) {
-            if (stats.GetSID() == null)
+        public static patch_AreaData Get(patch_AreaStats stats) {
+            if (stats.SID == null)
                 return Get(stats.ID);
-            return Get(stats.GetSID());
+            return Get(stats.SID);
         }
 
-        public static AreaData Get(string sid) {
+        public static patch_AreaData Get(string sid) {
             lock (AssetReloadHelper.AreaReloadLock) {
-                return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.GetSID() == sid);
+                return string.IsNullOrEmpty(sid) ? null : Areas.Find(area => area.SID == sid);
             }
         }
 
@@ -184,32 +192,32 @@ namespace Celeste {
             orig_Load();
 
             // assign SIDs and CheckpointData.Area for vanilla maps.
-            foreach (AreaData area in Areas) {
-                area.SetSID("Celeste/" + area.Mode[0].Path);
+            foreach (patch_AreaData area in Areas) {
+                area.SID = "Celeste/" + area.Mode[0].Path;
 
                 for (int modeId = 0; modeId < area.Mode.Length; modeId++) {
                     ModeProperties mode = area.Mode[modeId];
                     if (mode?.Checkpoints == null)
                         continue;
 
-                    foreach (CheckpointData checkpoint in mode.Checkpoints) {
-                        checkpoint.SetArea(area.ToKey((AreaMode) modeId));
+                    foreach (patch_CheckpointData checkpoint in mode.Checkpoints) {
+                        checkpoint.Area = area.ToKey((AreaMode) modeId);
                     }
                 }
             }
 
             // Separate array as we sort it afterwards.
-            List<AreaData> modAreas = new List<AreaData>();
+            List<patch_AreaData> modAreas = new List<patch_AreaData>();
 
             lock (Everest.Content.Map) {
                 foreach (ModAsset asset in Everest.Content.Map.Values.Where(asset => asset.Type == typeof(AssetTypeMap))) {
                     string path = asset.PathVirtual.Substring(5);
 
-                    AreaData area = new AreaData();
+                    patch_AreaData area = new patch_AreaData();
 
                     // Default values.
 
-                    area.SetSID(path);
+                    area.SID = path;
                     area.Name = path;
                     area.Icon = "areas/" + path.ToLowerInvariant();
                     if (!GFX.Gui.Has(area.Icon))
@@ -227,8 +235,8 @@ namespace Celeste {
                     area.Dreaming = false;
                     area.ColorGrade = null;
 
-                    area.Mode = new ModeProperties[] {
-                        new ModeProperties {
+                    area.Mode = new patch_ModeProperties[] {
+                        new patch_ModeProperties {
                             Inventory = PlayerInventory.Default,
                             AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                         }
@@ -251,7 +259,7 @@ namespace Celeste {
                     meta.ApplyTo(area);
                     MapMeta metaLoaded = asset.GetMeta<MapMeta>();
                     if (metaLoaded != null) {
-                        area.SetMeta(null);
+                        area.Meta = null;
                         metaLoaded.ApplyTo(area);
                         meta = metaLoaded;
                     }
@@ -269,22 +277,22 @@ namespace Celeste {
                         meta.Modes = larger;
                     }
                     if (area.Mode.Length < 3) {
-                        ModeProperties[] larger = new ModeProperties[3];
+                        patch_ModeProperties[] larger = new patch_ModeProperties[3];
                         for (int i = 0; i < area.Mode.Length; i++)
                             larger[i] = area.Mode[i];
                         area.Mode = larger;
                     }
 
                     // Celeste levelset always appears first.
-                    if (area.GetLevelSet() == "Celeste")
+                    if (area.LevelSet == "Celeste")
                         Areas.Add(area);
                     else
                         modAreas.Add(area);
 
                     // Some special handling.
                     area.OnLevelBegin = (level) => {
-                        MapMeta levelMeta = AreaData.Get(level.Session).GetMeta();
-                        MapMetaModeProperties levelMetaMode = level.Session.MapData.GetMeta();
+                        MapMeta levelMeta = patch_AreaData.Get(level.Session).Meta;
+                        MapMetaModeProperties levelMetaMode = ((patch_MapData) level.Session.MapData).Meta;
 
                         if (levelMetaMode?.SeekerSlowdown ?? false)
                             level.Add(new SeekerEffectsController());
@@ -298,8 +306,8 @@ namespace Celeste {
 
             // Find duplicates and remove any earlier copies.
             for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
-                int otherIndex = Areas.FindIndex(other => other.GetSID() == area.GetSID());
+                patch_AreaData area = Areas[i];
+                int otherIndex = Areas.FindIndex(other => other.SID == area.SID);
                 if (otherIndex < i) {
                     Areas[otherIndex] = area;
                     Areas.RemoveAt(i);
@@ -313,7 +321,7 @@ namespace Celeste {
             // Remove AreaDatas which are now a mode of another AreaData.
             // This can happen late as the map data (.bin) can contain additional metadata.
             for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
+                patch_AreaData area = Areas[i];
                 string path = area.Mode[0].Path;
                 int otherIndex = Areas.FindIndex(other => other.Mode.Any(otherMode => otherMode?.Path == path));
                 if (otherIndex != -1 && otherIndex != i) {
@@ -326,13 +334,13 @@ namespace Celeste {
 
                 // Also check for .bins possibly belonging to A side .bins by their path and lack of existing modes.
                 for (int ii = 0; ii < Areas.Count; ii++) {
-                    AreaData other = Areas[ii];
+                    patch_AreaData other = Areas[ii];
                     ParseName(other.Mode[0].Path, out int? otherOrder, out AreaMode otherSide, out string otherName);
 
-                    if (area.GetLevelSet() == other.GetLevelSet() && order == otherOrder && name == otherName && side != otherSide &&
+                    if (area.LevelSet == other.LevelSet && order == otherOrder && name == otherName && side != otherSide &&
                         !other.HasMode(side)) {
                         if (other.Mode[(int) side] == null)
-                            other.Mode[(int) side] = new ModeProperties {
+                            other.Mode[(int) side] = new patch_ModeProperties {
                                 Inventory = PlayerInventory.Default,
                                 AudioState = new AudioState(SFX.music_city, SFX.env_amb_00_main)
                             };
@@ -345,7 +353,7 @@ namespace Celeste {
             }
 
             for (int i = 0; i < Areas.Count; i++) {
-                AreaData area = Areas[i];
+                patch_AreaData area = Areas[i];
                 area.ID = i;
 
                 // Clean up non-existing modes.
@@ -357,7 +365,7 @@ namespace Celeste {
                 }
                 Array.Resize(ref area.Mode, modei);
 
-                Logger.Log(LogLevel.Verbose, "AreaData", $"{i}: {area.GetSID()} - {area.Mode.Length} sides");
+                Logger.Log(LogLevel.Verbose, "AreaData", $"{i}: {area.SID} - {area.Mode.Length} sides");
 
                 // Update old MapData areas and load any new areas.
 
@@ -365,18 +373,18 @@ namespace Celeste {
                 if (area.Mode[0].MapData != null)
                     area.Mode[0].MapData.Area = area.ToKey();
                 else
-                    area.Mode[0].MapData = new MapData(area.ToKey());
+                    area.Mode[0].MapData = new patch_MapData(area.ToKey());
 
                 if (area.IsInterludeUnsafe())
                     continue;
 
                 // A and (some) B sides have PoemIDs. Can be overridden via empty PoemID.
                 if (area.Mode[0].PoemID == null)
-                    area.Mode[0].PoemID = area.GetSID().DialogKeyify() + "_A";
+                    area.Mode[0].PoemID = area.SID.DialogKeyify() + "_A";
                 if (area.Mode.Length > 1 &&
                     area.Mode[1] != null &&
                     area.Mode[1].PoemID == null) {
-                    area.Mode[1].PoemID = area.GetSID().DialogKeyify() + "_B";
+                    area.Mode[1].PoemID = area.SID.DialogKeyify() + "_B";
                 }
 
                 // Update all other existing mode's area keys.
@@ -386,7 +394,7 @@ namespace Celeste {
                     if (area.Mode[mode].MapData != null)
                         area.Mode[mode].MapData.Area = area.ToKey((AreaMode) mode);
                     else
-                        area.Mode[mode].MapData = new MapData(area.ToKey((AreaMode) mode));
+                        area.Mode[mode].MapData = new patch_MapData(area.ToKey((AreaMode) mode));
                 }
             }
 
@@ -396,13 +404,13 @@ namespace Celeste {
             MTNExt.LoadModData();
         }
 
-        private static int AreaComparison(AreaData a, AreaData b) {
-            string aSet = a.GetLevelSet();
-            string aSID = a.GetSID();
-            MapMeta aMeta = a.GetMeta();
-            string bSet = b.GetLevelSet();
-            string bSID = b.GetSID();
-            MapMeta bMeta = b.GetMeta();
+        private static int AreaComparison(patch_AreaData a, patch_AreaData b) {
+            string aSet = a.LevelSet;
+            string aSID = a.SID;
+            MapMeta aMeta = a.Meta;
+            string bSet = b.LevelSet;
+            string bSID = b.SID;
+            MapMeta bMeta = b.Meta;
 
             // Celeste appears before everything else.
             if (aSet == "Celeste" && bSet != "Celeste")
@@ -453,7 +461,7 @@ namespace Celeste {
 
         public static string GetStartName(AreaKey area) {
             string start_key = $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/start";
-            if (AreaData.Get(area).GetLevelSet() == "Celeste" || !Dialog.Has(start_key))
+            if (patch_AreaData.Get(area).LevelSet == "Celeste" || !Dialog.Has(start_key))
                 return Dialog.Clean("overworld_start");
             return Dialog.Clean(start_key);
         }
@@ -469,85 +477,93 @@ namespace Celeste {
         }
 
     }
+
+    [Obsolete("Use AreaData members instead.")]
     public static class AreaDataExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
-        public static AreaData Get(AreaStats stats)
+        [Obsolete("Use AreaData.Get(AreaStats) instead.")]
+        public static AreaData Get(patch_AreaStats stats)
             => patch_AreaData.Get(stats);
+        [Obsolete("Use AreaData.Get(string) instead.")]
         public static AreaData Get(string sid)
             => patch_AreaData.Get(sid);
 
         /// <summary>
         /// Check if the AreaData is an interlude (like Prologue and Epilogue).
         /// </summary>
-        public static bool IsInterludeUnsafe(this AreaData self)
-            => ((patch_AreaData) self).Interlude_Unsafe;
+        public static bool IsInterludeUnsafe(this patch_AreaData self)
+            => self.Interlude_Unsafe;
 
         /// <summary>
         /// Get an AreaKey for this area.
         /// </summary>
-        public static AreaKey ToKey(this AreaData self, AreaMode mode = AreaMode.Normal)
-            => new AreaKey(self.ID, mode).SetSID(self.GetSID());
+        public static AreaKey ToKey(this patch_AreaData self, AreaMode mode = AreaMode.Normal)
+            => new AreaKey(self.ID, mode).SetSID(self.SID);
 
         /// <summary>
         /// Get the name of the level set this area belongs to.
         /// </summary>
-        public static string GetLevelSet(this AreaData self)
-            => ((patch_AreaData) self).LevelSet;
+        [Obsolete("Use AreaData.LevelSet instead.")]
+        public static string GetLevelSet(this patch_AreaData self)
+            => self.LevelSet;
 
         /// <summary>
         /// Check if the area is official.
         /// </summary>
-        public static bool IsOfficialLevelSet(this AreaData self)
-            => ((patch_AreaData) self).LevelSet == "Celeste";
+        public static bool IsOfficialLevelSet(this patch_AreaData self)
+            => self.LevelSet == "Celeste";
 
         /// <summary>
         /// Get the SID (string ID) of the area.
         /// </summary>
-        public static string GetSID(this AreaData self)
-            => ((patch_AreaData) self).SID;
+        [Obsolete("Use AreaData.SID instead.")]
+        public static string GetSID(this patch_AreaData self)
+            => self.SID;
         /// <summary>
         /// Set the SID (string ID) of the area.
         /// </summary>
-        public static AreaData SetSID(this AreaData self, string value) {
-            ((patch_AreaData) self).SID = value;
+        [Obsolete("Use AreaData.SID instead.")]
+        public static AreaData SetSID(this patch_AreaData self, string value) {
+            self.SID = value;
             return self;
         }
 
         /// <summary>
         /// Get the custom metadata if it has been loaded from the .meta or set otherwise.
         /// </summary>
-        public static MapMeta GetMeta(this AreaData self)
-            => ((patch_AreaData) self).Meta;
+        [Obsolete("Use AreaData.Meta instead.")]
+        public static MapMeta GetMeta(this patch_AreaData self)
+            => self.Meta;
         /// <summary>
         /// Set the custom metadata.
         /// </summary>
-        public static AreaData SetMeta(this AreaData self, MapMeta value) {
-            ((patch_AreaData) self).Meta = value;
+        [Obsolete("Use AreaData.Meta instead.")]
+        public static AreaData SetMeta(this patch_AreaData self, MapMeta value) {
+            self.Meta = value;
             return self;
         }
 
         /// <summary>
         /// Get the A-Side's area data backup.
         /// </summary>
-        public static AreaData GetASideAreaDataBackup(this AreaData self)
-            => ((patch_AreaData) self).ASideAreaDataBackup;
+        [Obsolete("Use AreaData.ASideAreaDataBackup instead.")]
+        public static AreaData GetASideAreaDataBackup(this patch_AreaData self)
+            => self.ASideAreaDataBackup;
 
         /// <summary>
         /// Set the A-Side's area data backup.
         /// </summary>
-        public static AreaData SetASideAreaDataBackup(this AreaData self, AreaData value) {
-            ((patch_AreaData) self).ASideAreaDataBackup = value;
+        [Obsolete("Use AreaData.ASideAreaDataBackup instead.")]
+        public static AreaData SetASideAreaDataBackup(this patch_AreaData self, AreaData value) {
+            self.ASideAreaDataBackup = value;
             return self;
         }
 
         /// <summary>
         /// Restore A-Side's area data from backup.
         /// </summary>
-        public static void RestoreASideAreaData(this AreaData self) {
-            AreaData backup = self.GetASideAreaDataBackup();
+        public static void RestoreASideAreaData(this patch_AreaData self) {
+            AreaData backup = self.ASideAreaDataBackup;
             if (backup == null)
                 return;
 
@@ -563,22 +579,20 @@ namespace Celeste {
         /// <summary>
         /// Get the custom metadata of the mode if OverrideASideMeta is enabled. 
         /// </summary>
-        public static MapMeta GetModeMeta(this AreaData self, AreaMode value) {
+        public static MapMeta GetModeMeta(this patch_AreaData self, AreaMode value) {
             if (self.Mode[(int) value]?.GetMapMeta() is MapMeta mapMeta) {
                 if (value != AreaMode.Normal && (mapMeta.OverrideASideMeta ?? false))
                     return mapMeta;
             }
 
-            return self.GetMeta();
+            return self.Meta;
         }
 
         /// <summary>
         /// Apply the metadata of the mode to the area if OverrideASideMeta is enabled.
         /// </summary>
-        public static void OverrideASideMeta(this AreaData self, AreaMode value) {
-            patch_AreaData areaData = (patch_AreaData) self;
-
-            if (areaData.LevelSet == "Celeste")
+        public static void OverrideASideMeta(this patch_AreaData self, AreaMode value) {
+            if (self.LevelSet == "Celeste")
                 return;
 
             if (value == AreaMode.Normal)
@@ -590,7 +604,7 @@ namespace Celeste {
             if (!(mapMeta.OverrideASideMeta ?? false))
                 return;
 
-            mapMeta.ApplyToForOverride(areaData);
+            mapMeta.ApplyToForOverride(self);
         }
     }
 }

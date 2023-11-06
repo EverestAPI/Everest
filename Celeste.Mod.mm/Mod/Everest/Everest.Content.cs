@@ -1,4 +1,4 @@
-﻿using Celeste.Mod.Helpers;
+using Celeste.Mod.Helpers;
 using Celeste.Mod.Meta;
 using Ionic.Zip;
 using MAB.DotIgnore;
@@ -17,7 +17,7 @@ using System.Threading;
 namespace Celeste.Mod {
 
     /// <summary>
-    /// Special meta type for assets. 
+    /// Special meta type for assets.
     /// A ModAsset with a Type field that subclasses from this will not log path conflicts.
     /// </summary>
     public abstract class AssetTypeNonConflict { }
@@ -531,7 +531,7 @@ namespace Celeste.Mod {
                 Celeste.Instance.Content = new EverestContentManager(Celeste.Instance.Content);
 
                 Directory.CreateDirectory(PathContentOrig = Path.Combine(PathGame, Celeste.Instance.Content.RootDirectory));
-                Directory.CreateDirectory(PathDUMP = Path.Combine(PathEverest, "ModDUMP"));
+                PathDUMP = Path.Combine(PathEverest, "ModDUMP");
 
                 Crawl(new AssemblyModContent(typeof(Everest).Assembly) {
                     Name = "Everest",
@@ -632,7 +632,7 @@ namespace Celeste.Mod {
                     if (pathSplit[i].StartsWith(".") || BlacklistFolders.Contains(pathSplit[i]) || (i == 0 && BlacklistRootFolders.Contains(pathSplit[0])))
                         return false;
                 }
-                
+
                 if (metadata != null &&
                     (metadata.Source?.Ignore?.IsIgnored(path, metadata.Type == typeof(AssetTypeDirectory)) ?? false)) {
                     return false;
@@ -715,7 +715,7 @@ namespace Celeste.Mod {
             /// </summary>
             public static event TypeGuesser OnGuessType;
             /// <summary>
-            /// Guess the file type and format based on its path. 
+            /// Guess the file type and format based on its path.
             /// </summary>
             /// <param name="file">The relative asset path.</param>
             /// <param name="type">The file type.</param>
@@ -727,7 +727,7 @@ namespace Celeste.Mod {
                 if (format.Length >= 1)
                     format = format.Substring(1);
 
-                // Assign game asset types 
+                // Assign game asset types
                 if (format == "dll") {
                     type = typeof(AssetTypeAssembly);
 
@@ -837,7 +837,7 @@ namespace Celeste.Mod {
             public static void Update(ModAsset prev, ModAsset next) {
                 if (prev != null) {
                     foreach (object target in prev.Targets) {
-                        if (target is MTexture mtex) {
+                        if (target is patch_MTexture mtex) {
                             AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_UNLOADINGTEXTURE")} {Path.GetFileName(prev.PathVirtual)}", () => {
                                 mtex.UndoOverride(prev);
                             });
@@ -1013,11 +1013,11 @@ namespace Celeste.Mod {
                 if (asset == null || mapping == null)
                     return;
 
-                if (asset is Atlas atlas) {
+                if (asset is patch_Atlas atlas) {
                     string reloadingText = Dialog.Language == null ? "" : Dialog.Clean(mapping.Children.Count == 0 ? "ASSETRELOADHELPER_RELOADINGTEXTURE" : "ASSETRELOADHELPER_RELOADINGTEXTURES");
                     AssetReloadHelper.Do(load, $"{reloadingText} {Path.GetFileName(mapping.PathVirtual)}", () => {
                         atlas.ResetCaches();
-                        (atlas as patch_Atlas).Ingest(mapping);
+                        atlas.Ingest(mapping);
                     });
 
                     // if the atlas is (or contains) an emoji, register it.
@@ -1153,7 +1153,7 @@ namespace Celeste.Mod {
                     }
                     /**/
 
-                } else if (asset is Atlas atlas) {
+                } else if (asset is patch_Atlas atlas) {
 
                     /*
                     for (int i = 0; i < atlas.Sources.Count; i++) {
@@ -1171,7 +1171,7 @@ namespace Celeste.Mod {
                     }
                     */
 
-                    Dictionary<string, MTexture> textures = atlas.GetTextures();
+                    Dictionary<string, MTexture> textures = atlas.Textures;
                     foreach (KeyValuePair<string, MTexture> kvp in textures) {
                         string name = kvp.Key;
                         MTexture source = kvp.Value;

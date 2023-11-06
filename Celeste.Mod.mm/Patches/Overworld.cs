@@ -36,16 +36,16 @@ namespace Celeste {
                 orig_Update();
 
                 // if the mountain model is currently fading, use the one currently displayed, not the one currently selected, which is different if the fade isn't done yet.
-                AreaData currentAreaData = null;
+                patch_AreaData currentAreaData = null;
                 string currentlyDisplayedSID = (Mountain?.Model as patch_MountainModel)?.PreviousSID;
                 if (currentlyDisplayedSID != null) {
                     // use the settings of the currently displayed mountain
                     currentAreaData = patch_AreaData.Get(currentlyDisplayedSID);
                 } else if (SaveData.Instance != null) {
                     // use the settings of the currently selected map
-                    currentAreaData = AreaData.Get(SaveData.Instance.LastArea);
+                    currentAreaData = patch_AreaData.Get(SaveData.Instance.LastArea);
                 }
-                MapMetaMountain mountainMetadata = currentAreaData?.GetMeta()?.Mountain;
+                MapMetaMountain mountainMetadata = currentAreaData?.Meta?.Mountain;
 
                 Snow3D.Visible = mountainMetadata?.ShowSnow ?? true;
 
@@ -95,7 +95,7 @@ namespace Celeste {
 
             if (!EnteringPico8) {
                 Remove(Snow);
-                RendererList.UpdateLists();
+                ((patch_RendererList) (object) RendererList).UpdateLists();
                 Snow = null;
             }
         }
