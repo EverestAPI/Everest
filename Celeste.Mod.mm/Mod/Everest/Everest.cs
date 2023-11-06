@@ -544,40 +544,10 @@ namespace Celeste.Mod {
                 module.LoadContent(true);
             }
             if (_Initialized) {
-                Tracker.Initialize();
-                module.Initialize();
-                Input.Initialize();
-                ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
-
-                if (SaveData.Instance != null) {
-                    // we are in a save. we are expecting the save data to already be loaded at this point
-                    Logger.Log(LogLevel.Verbose, "core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                    if (module.SaveDataAsync) {
-                        module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
-                    } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                        module.LoadSaveData(SaveData.Instance.FileSlot);
-#pragma warning restore CS0618
-                    }
-
-                    if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                        // we are in a level. we are expecting the session to already be loaded at this point
-                        Logger.Log(LogLevel.Verbose, "core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
-                        if (module.SaveDataAsync) {
-                            module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
-                        } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                            module.LoadSession(SaveData.Instance.FileSlot, false);
-#pragma warning restore CS0618
-                        }
-                    }
-                }
-
-                // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
-                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has map data processors: reloading maps.");
-                    AssetReloadHelper.ReloadAllMaps();
-                }
+                if (_DelayedModuleInitializationQueue != null)
+                    _DelayedModuleInitializationQueue.Enqueue(module);
+                else
+                    LateInitializeMods(Enumerable.Repeat(module, 1));
             }
 
             if (Engine.Instance != null && Engine.Scene is Overworld overworld) {
@@ -609,6 +579,58 @@ namespace Celeste.Mod {
             Events.Everest.RegisterModule(module);
 
             CheckDependenciesOfDelayedMods();
+        }
+
+        [ThreadStatic]
+        internal static Queue<EverestModule> _DelayedModuleInitializationQueue = null;
+
+        internal static void LateInitializeMods(IEnumerable<EverestModule> modules) {
+            // Re-initialize the tracker
+            Tracker.Initialize();
+
+            // Initialize mods
+            foreach (EverestModule module in modules)
+                module.Initialize();
+
+            // Re-initialize inputs + reload commands
+            Input.Initialize();
+            ((Monocle.patch_Commands) Engine.Commands).ReloadCommandsList();
+
+            // If we are in a save, load save data
+            if (SaveData.Instance != null) {
+                foreach (EverestModule module in modules) {
+                    // we are in a save. we are expecting the save data to already be loaded at this point
+                    Logger.Log(LogLevel.Verbose, "core", $"Loading save data slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                    if (module.SaveDataAsync) {
+                        module.DeserializeSaveData(SaveData.Instance.FileSlot, module.ReadSaveData(SaveData.Instance.FileSlot));
+                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                        module.LoadSaveData(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                    }
+
+                    if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                        // we are in a level. we are expecting the session to already be loaded at this point
+                        Logger.Log(LogLevel.Verbose, "core", $"Loading session slot {SaveData.Instance.FileSlot} for {module.Metadata}");
+                        if (module.SaveDataAsync) {
+                            module.DeserializeSession(SaveData.Instance.FileSlot, module.ReadSession(SaveData.Instance.FileSlot));
+                        } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                            module.LoadSession(SaveData.Instance.FileSlot, false);
+#pragma warning restore CS0618
+                        }
+                    }
+                }
+            }
+
+            // Check if any module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
+            foreach (EverestModule module in modules) {
+                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
+                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has map data processors: reloading maps.");
+                    AssetReloadHelper.ReloadAllMaps();
+                    break;
+                }
+            }
         }
 
         internal static void CheckDependenciesOfDelayedMods() {

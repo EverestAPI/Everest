@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Celeste.Mod {
@@ -372,12 +373,12 @@ namespace Celeste.Mod {
             => state == TouchLocationState.Released || state == TouchLocationState.Invalid;
 
         [ThreadStatic]
-        private static HashSet<string> _SafeTypes;
+        private static ConditionalWeakTable<Type, object> _SafeTypes;
         public static bool IsSafe(this Type type) {
-            _SafeTypes ??= new HashSet<string>();
+            _SafeTypes ??= new ConditionalWeakTable<Type, object>();
 
             try {
-                if (_SafeTypes.Contains(type.AssemblyQualifiedName))
+                if (!_SafeTypes.TryGetValue(type, out _))
                     return true;
 
                 // "Probe" the type
@@ -391,7 +392,7 @@ namespace Celeste.Mod {
                 if (!type.BaseType?.IsSafe() ?? false)
                     return false;
 
-                _SafeTypes.Add(type.AssemblyQualifiedName);
+                _SafeTypes.Add(type, new object());
                 return true;
             } catch {
                 return false;

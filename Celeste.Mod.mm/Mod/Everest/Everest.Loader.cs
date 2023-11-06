@@ -798,15 +798,27 @@ namespace Celeste.Mod {
                         }
 
                         // Load modules in the reverse order determined before (dependencies before dependents)
-                        foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
-                            if (loadMod.Dependencies.Any(dep => !DependencyLoaded(dep))) {
-                                Logger.Log(LogLevel.Warn, "loader", $"-> skipping reload of mod '{loadMod.Name}' as dependency failed to load");
-                                continue;
-                            }
+                        // Delay initialization until all mods have been loaded
+                        Trace.Assert(_DelayedModuleInitializationQueue == null);
+                        try {
+                            _DelayedModuleInitializationQueue = new Queue<EverestModule>();
 
-                            Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
-                            if (!LoadMod(loadMod))
-                                Logger.Log(LogLevel.Warn, "loader", $"-> failed to reload mod '{loadMod.Name}'!");
+                            foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
+                                if (loadMod.Dependencies.Any(dep => !DependencyLoaded(dep))) {
+                                    Logger.Log(LogLevel.Warn, "loader", $"-> skipping reload of mod '{loadMod.Name}' as dependency failed to load");
+                                    continue;
+                                }
+
+                                Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
+                                if (!LoadMod(loadMod))
+                                    Logger.Log(LogLevel.Warn, "loader", $"-> failed to reload mod '{loadMod.Name}'!");
+                            }
+                        } finally {
+                            Queue<EverestModule> moduleInitQueue = _DelayedModuleInitializationQueue;
+                            _DelayedModuleInitializationQueue = null;
+
+                            if (moduleInitQueue.Count > 0)
+                                Everest.LateInitializeMods(moduleInitQueue);
                         }
                     }, static () => AssetReloadHelper.ReloadLevel(true));
                 });
