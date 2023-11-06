@@ -34,10 +34,10 @@ namespace Celeste {
         /// A helper function that is called from <c>Routine</c> to determent which c-side unlock postcard to display
         /// </summary>
         private static string GetCSidePostcard(Session session) {
-            AreaData areaData = AreaData.Get(session);
+            patch_AreaData areaData = patch_AreaData.Get(session);
             string customLevelCSidePostcardDialog = $"{areaData.Name}_CSIDES_POSTCARD";
 
-            if (areaData.GetLevelSet() == "Celeste" || !Dialog.Has(customLevelCSidePostcardDialog)) {
+            if (areaData.LevelSet == "Celeste" || !Dialog.Has(customLevelCSidePostcardDialog)) {
                 return "POSTCARD_CSIDES";
             } else {
                 return customLevelCSidePostcardDialog;
