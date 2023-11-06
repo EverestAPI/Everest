@@ -29,7 +29,6 @@ namespace Celeste.Mod.UI {
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
         private Action startSearching;
-        private bool textBoxConsumedMenuCancel = false;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -388,7 +387,6 @@ namespace Celeste.Mod.UI {
                 modal.Visible = false;
                 textBox.ClearText();
                 updateHighlightedMods();
-                textBoxConsumedMenuCancel = true;
             }
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
@@ -399,6 +397,7 @@ namespace Celeste.Mod.UI {
                     Audio.Play(SFX.ui_main_rename_entry_backspace);
                 } else {
                     exitSearch(textBox);
+                    Input.MenuCancel.ConsumePress();
                 }
             };
 
@@ -472,11 +471,6 @@ namespace Celeste.Mod.UI {
                     startSearching?.Invoke();
                     return;
                 }
-            }
-
-            if (textBoxConsumedMenuCancel) {
-                textBoxConsumedMenuCancel = false;
-                Input.MenuCancel.ConsumePress();
             }
 
             base.Update();

@@ -1401,6 +1401,8 @@ namespace Celeste {
             private bool previousMountainAllowUserRotation;
             private bool previousEngineCommandsEnabled;
 
+            private readonly Queue<char> inputQueue = new();
+
 
             public TextBox() {
                 Selectable = true;
@@ -1460,7 +1462,6 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_on);
                     Typing = true;
                     Container.Focused = false;
-                    TextInput.OnInput += OnTextInput;
 
                     previousEngineCommandsEnabled = Engine.Commands.Enabled;
                     Engine.Commands.Enabled = false;
@@ -1469,17 +1470,23 @@ namespace Celeste {
                         previousMountainAllowUserRotation = overworld.Mountain.AllowUserRotation;
                         overworld.Mountain.AllowUserRotation = false;
                     }
+
+                    inputQueue.Clear();
+                    TextInput.OnInput += OnTextInput;
                 }
             }
 
             public void StopTyping() {
                 if (Typing) {
+                    TextInput.OnInput -= OnTextInput;
+                    inputQueue.Clear();
+
+
                     Audio.Play(SFX.ui_main_button_toggle_off);
                     Typing = false;
                     Container.Focused = true;
                     TextBoxConsumedInput = false;
                     MInput.Disabled = false;
-                    TextInput.OnInput -= OnTextInput;
                     Engine.Commands.Enabled = previousEngineCommandsEnabled;
 
                     if (overworld != null) {
@@ -1505,6 +1512,15 @@ namespace Celeste {
 
             public void OnTextInput(char c) {
                 if (Typing) {
+                    // This method will be called outside of the normal game Update cycle
+                    // we use this queue to processes inputs in the main Update cycle
+                    inputQueue.Enqueue(c);
+                }
+            }
+
+            public override void Update() {
+                while (inputQueue.Count > 0 && Typing) {
+                    char c = inputQueue.Dequeue();
                     if (OnTextInputCharActions.TryGetValue(c, out Action<TextBox> action)) {
                         action(this);
                         TextBoxConsumedInput = true;
@@ -1512,9 +1528,7 @@ namespace Celeste {
                         TextBoxConsumedInput = HandleNewInputChar(c);
                     }
                 }
-            }
 
-            public override void Update() {
                 if (Typing) {
                     if (MInput.Keyboard.Pressed(Keys.Delete)) {
                         if (Text.Length > 0) {
@@ -1523,6 +1537,8 @@ namespace Celeste {
                         }
                         TextBoxConsumedInput = true;
                     }
+
+
                     // We need to disable all other inputs if the textBox consumed that an input,
                     MInput.Disabled = TextBoxConsumedInput;
 
