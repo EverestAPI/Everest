@@ -391,7 +391,7 @@ namespace Celeste.Mod.UI {
                 modal.Visible = true;
                 textBox.StartTyping();
 
-                if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
                     && modToggles.ContainsKey(currentOption.Label)) {
                     currentOption.UnselectedColor = currentOption.Container.HighlightColor;
                 }
@@ -401,7 +401,7 @@ namespace Celeste.Mod.UI {
                 updateHighlightedMods();
 
                 string searchTarget = textBox.Text.ToLower();
-                List<TextMenu.Item> menuItems = menu.GetItems();
+                List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
                 int currentSelection = menu.Selection;
 
                 bool searchPredicate(TextMenu.Item item) => item is patch_TextMenu.patch_Option<bool> currentOption
@@ -453,7 +453,7 @@ namespace Celeste.Mod.UI {
                         searchNextMod(false)(textBox);
                     } else if (Input.MenuUp.Pressed) {
                         searchNextMod(true)(textBox);
-                    } else if (menu.GetItems()[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                    } else if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
                                && currentOption.UnselectedColor == currentOption.Container.HighlightColor) {
                         if (Input.MenuLeft.Pressed) {
                             currentOption.LeftPressed();
