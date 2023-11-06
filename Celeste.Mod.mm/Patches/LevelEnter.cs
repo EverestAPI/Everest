@@ -106,7 +106,7 @@ namespace Celeste {
 
             string postCardDialog = $"{areaData.Name}{postCardDialogInfix}_postcard";
 
-            if (areaMeta != null && areaData.GetLevelSet() != "Celeste" &&
+            if (areaMeta != null && areaData.LevelSet != "Celeste" &&
                 Dialog.Has(postCardDialog) &&
                 session.StartedFromBeginning && !fromSaveData &&
                 (!SaveData.Instance.Areas[session.Area.ID].Modes[areaModeIndex].Completed || SaveData.Instance.DebugMode)) {
