@@ -47,7 +47,7 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LazyLoading) {
-                MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+                MainThreadHelper.Do(() => patch_VirtualContent.UnloadOverworld());
             }
 
             // Vanilla TileToIndex mappings.
@@ -84,8 +84,8 @@ namespace Celeste {
             string path = "";
 
             try {
-                AreaData area = AreaData.Get(session);
-                MapMeta meta = area.GetMeta();
+                patch_AreaData area = patch_AreaData.Get(session);
+                MapMeta meta = area.Meta;
 
                 path = meta?.BackgroundTiles;
                 if (string.IsNullOrEmpty(path))
@@ -124,8 +124,8 @@ namespace Celeste {
                         SpriteData valueMod = kvpBank.Value;
 
                         if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
-                            IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
-                            IDictionary animsMod = valueMod.Sprite.GetAnimations();
+                            IDictionary animsOrig = ((patch_Sprite) valueOrig.Sprite).Animations;
+                            IDictionary animsMod = ((patch_Sprite) valueMod.Sprite).Animations;
                             foreach (DictionaryEntry kvpAnim in animsMod) {
                                 animsOrig[kvpAnim.Key] = kvpAnim.Value;
                             }

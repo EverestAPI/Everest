@@ -22,6 +22,12 @@
 	POSTCARD_LEVELGONE= 		{big}고마워요, ((player))!{/big}{n}하지만 {#ff1144}((sid)){#}은(는) 다른 산에 있어요/
 	POSTCARD_LEVELLOADFAILED= 	{big}죄송합니다!{/big}{n}{#ff1144}((sid)){#}로딩에 실패했습니다.{n}맵 제작자한테 {#44adf7}log.txt{#}를 보내주세요.
 	POSTCARD_LEVELNOSPAWN= 		{big}이런!{/big}{n}누군가가 {#44adf7}시작 지점{#}을 잘못 배치했네요!{n}맵에 {#44adf7}플레이어{#} 엔티티가 포함되어 있는지 확인해보세요.
+	POSTCARD_BADTILEID=			{big}이런!{/big}{n}룸 {#ff1144}((room)){#}의 {#ff1144}(((x)), ((y))){#}에{n}정의되지 않은 ((type))타일 ID {#ff1144}((id)){#}가 있습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
+	POSTCARD_DECALREGERROR=		{big}이런!{/big}{n}{#ff1144}((property)){#} property를 {#ff1144}((decal)){#}에{n}적용하는 과정에서 오류가 발생했습니다.{n}{#44adf7}Decal Registry{#}에 누락되거나 부적절한 attribute가 있는 것 같습니다.
+	POSTCARD_MISSINGTUTORIAL=	{big}이런!{/big}{n}플레이백 튜토리얼 {#ff1144}((tutorial)){#}을(를) 찾을 수 없습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
+	POSTCARD_TILEXMLERROR=		{big}이런!{/big}{n}{#ff1144}((path)){#}의 타일셋을 파싱하는 과정에서 에러가 발생했습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
+	POSTCARD_XMLERROR=			{big}이런!{/big}{n}{#ff1144}((path)){#}에 구문 오류가 있습니다.{n}더 자세한 정보는 {#44adf7}log.txt{#}를 확인해주세요.
+	POSTCARD_BOSSLASTNODEHIT=	{big}이런!{/big}{n}{#ff1144}보스 배들린이{#} 마지막 노드에서 피격되었습니다. 해당 룸에서 보스 배들린이 피격될 수 없는 위치에 노드를 추가해주세요.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
@@ -29,6 +35,7 @@
 	MENU_MODOPTIONS= 		모드 옵션
 	MENU_PAUSE_MODOPTIONS= 	모드 옵션
 	
+	MENU_MODOPTIONS_UPDATE_FAILED=				에베레스트 업데이트에 실패했습니다.
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		모드 1개를 로드하지 못했습니다.
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	모드 {0}개를 로드하지 못했습니다.
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		everest.yaml 로드 에러가 발생했습니다.
@@ -57,31 +64,53 @@
 	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				인트로 없이 실행하기
 	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				일시정지 화면에서 모드 옵션 보여주기
 	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			에버레스트 타이틀 화면 보여주기
-	MODOPTIONS_COREMODULE_INPUTGUI= 						입력 방식
+	MODOPTIONS_COREMODULE_INPUTGUI= 						입력 방법
 	MODOPTIONS_COREMODULE_INPUTGUI_= 						AUTO
 	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				키보드
-	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						SWITCH
-	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			SWITCH L
-	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			SWITCH R
+	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						닌텐도 스위치
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			닌텐도 스위치 왼쪽 조이콘
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			닌텐도 스위치 오른쪽 조이콘
 	MODOPTIONS_COREMODULE_INPUTGUI_PS4= 					PS4
-	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBONE
+	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBOX ONE
 	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					TOUCH
 	MODOPTIONS_COREMODULE_MAINMENUMODE= 					메인 메뉴 표기 방식
 	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					세로
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				가로
 	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				TOUCH
-	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			시작할 때 자동으로 모드를 업데이트하기
+	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			시작할 때 모드를 자동으로 업데이트하기
 	MODOPTIONS_COREMODULE_MODUPDATES= 						모드 업데이트 확인하기
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			키보드로 텍스트 입력하기
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			everest.yaml 에러를 표시
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		모드 제작자한테 유용한 옵션
-	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				디스코드 Rich Presence 기능 활성화
-	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page Up in Menus
-	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page Down in Menus
-
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				메뉴 이동
+	MODOPTIONS_COREMODULE_MENUPAGEUP=						메뉴 위로 올리기
+	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						메뉴 아래로 내리기
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				디버그 모드
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						디버그 콘솔
+	MODOPTIONS_COREMODULE_DEBUGMAP=							디버그 맵
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			메인 화면 산 카메라
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					카메라 앞으로 이동
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					카메라 뒤로 이동
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						카메라 오른쪽으로 이동
+	MODOPTIONS_COREMODULE_CAMERALEFT=						카메라 왼쪽으로 이동
+	MODOPTIONS_COREMODULE_CAMERAUP=							카메라 위로 이동
+	MODOPTIONS_COREMODULE_CAMERADOWN=						카메라 아래로 이동
+	MODOPTIONS_COREMODULE_CAMERASLOW=						카메라 천천히 이동하기
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						카메라 위치 이동하기
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			자유 시점 카메라 활성화
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						사운드 테스트
-	MODOPTIONS_COREMODULE_OOBE= 							초기 설정 화면 표시
+	MODOPTIONS_COREMODULE_OOBE= 							처음 설정으로 되돌리기
 	MODOPTIONS_COREMODULE_TOGGLEMODS=						모드 활성화/비활성화
+	
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				디스코드 Rich Presence
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Rich Presence 설정
+	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					아이콘 보여주기
+	MODOPTIONS_COREMODULE_DISCORDSHOWMAP=					챕터 이름 보여주기
+	MODOPTIONS_COREMODULE_DISCORDSHOWSIDE=					챕터 사이드 보여주기 (A, B...)
+	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					룸 이름 보여주기
+	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				모은 딸기 개수 보여주기
+	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				죽은 횟수 보여주기
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					디스코드에 연결할 수 없습니다. 설정을 껐다 켜 다시 시도해보세요.
 
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						모드 로드에 실패했습니다.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						자세한 사항은 log.txt를 확인해주세요.
@@ -89,7 +118,7 @@
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						everest.yaml 파일 로드에 실패했습니다.
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						OFF
-	MODOPTIONS_VANILLATRISTATE_EVEREST=						에버레스트
+	MODOPTIONS_VANILLATRISTATE_EVEREST=						에베레스트
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						항상
 
 # Sound Test
@@ -123,9 +152,20 @@
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	버전 리스트 다운로드에 실패했습니다.
 	UPDATER_VERSIONS_ERR_FORMAT= 	포맷을 읽을 수 없습니다.
+
+	UPDATER_CURRENT_BRANCH=			현재 브랜치
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
+	UPDATER_SRC_BUILDBOT_AZURE=		자동 빌드 (Azure)
 	
+# currently unused
 	UPDATER_SRC_BUILDBOT= 			자동 빌드
-	
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	이 플랫폼에서 업데이트가 지원되지 않습니다. - 업데이트 취소
 	EVERESTUPDATER_NOUPDATE=		업데이트가 없습니다. - 업데이트 취소
@@ -141,6 +181,8 @@
 	EVERESTUPDATER_RESTARTING=		다시 실행
 	EVERESTUPDATER_RESTARTINGIN=	{0}초 후 다시 실행
 	EVERESTUPDATER_STARTINGFAILED=	인스톨러 실행 실패!
+	EVERESTUPDATER_MISSINGRUNTIME_A=	.NET Core Everest를 설치하려면 .NET 7.0 런타임을 먼저 설치해야 합니다.
+	EVERESTUPDATER_MISSINGRUNTIME_B=	.NET 7.0 런타임은 이 곳에서 설치할 수 있습니다: {0}
 	EVERESTUPDATER_ERRORHINT1=		GitHub @ https://github.com/EverestAPI/Everest 에서 새로운 이슈를 작성하거나
 	EVERESTUPDATER_ERRORHINT2=		셀레스트 공식 디스코드의 #modding_help 채널에 방문해주세요(위의 리포지토리에서 참여 가능).
 	EVERESTUPDATER_ERRORHINT3=		log.txt를 잊지 말고 꼭 업로드해주세요.
@@ -161,7 +203,10 @@
 	MODUPDATECHECKER_UPDATE_ALL=	모든 모드 업데이트
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	모든 모드 업데이트 중...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	모든 모드 업데이트 완료.
-	MODUPDATECHECKER_SHUTDOWN= 종료
+	MODUPDATECHECKER_RESTARTNEEDED= 모드를 적용하려면 셀레스트를 다시 시작해야 합니다.
+	MODUPDATECHECKER_MENU_HEADER_RESTART= 선택
+	MODUPDATECHECKER_SHUTDOWN= 셀레스트 종료
+	MODUPDATECHECKER_RESTART= 다시 실행
 	
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		모드 업데이트 확인 중...
@@ -182,6 +227,7 @@
 	DEPENDENCYDOWNLOADER_DONE=						완료.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	에러: 데이터베이스 다운로드에 실패했습니다. 자세한 사항은 log.txt를 확인해주세요.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		경고: 일부 모드를 구동하기 위해선 에버레스트를 업데이트해야 합니다. 에버레스트 버전 변경하기 메뉴에서 최신 버전을 설치해주세요.
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		WARNING: A (currently WIP) .NET Core build of Everest is required for some mods to load. Install it from the Change Everest Version menu.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			일부 모드를 구동하기 위해 에버레스트는 {0}으로 업데이트 됩니다. 확인 버튼을 눌러 진행해주세요.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				에러: 데이터베이스에서 {0}을(를) 찾을 수 없습니다. 해당 모드는 수동으로 설치해주세요.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			에러: 일부 모드를 구동하기 위해선 최신 버전의 셀레스트가 필요합니다. 셀레스트를 업데이트해주세요.

@@ -13,7 +13,7 @@ namespace Celeste.Mod.UI {
 
         protected abstract void addOptionsToMenu(TextMenu menu, OuiFileSelectSlot slot, EverestModuleSaveData modSaveData, bool fileExists);
 
-        protected override void addOptionsToMenu(TextMenu menu) {
+        protected override void addOptionsToMenu(patch_TextMenu menu) {
             addOptionsToMenu(menu, parameters[0] as OuiFileSelectSlot, parameters[1] as EverestModuleSaveData, (bool) parameters[2]);
         }
     }

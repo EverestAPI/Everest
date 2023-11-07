@@ -19,208 +19,277 @@
 # {anchor} controls the visual position of the textbox in-game
 
 # Helper Postcards
-	POSTCARD_LEVELGONE= 		{big}Спасибо, ((player))!{/big}{n}Но {#ff1144}((sid)){#} на другой горе.
-	POSTCARD_LEVELLOADFAILED= 	{big}Простите!{/big}{n}Нам не удалось загрузить{#ff1144}((sid)){#}{n}Пожайлуста, отправте ваш {#44adf7}log.txt{#}{n} создателю карты.
-	POSTCARD_LEVELNOSPAWN= 		{big}Упс!{/big}{n}Кто-то (или что-то) поставил ваше{n}{#44adf7}место начала{#} не на то место!{n}Проверьте, есть ли в вашей карте{n}объект {#44adf7}Player{#}.
+	POSTCARD_LEVELGONE= 		{big}Спасибо, ((player))!{/big}{n}Но {#ff1144}((sid)){#} находится на другой горе.
+	POSTCARD_LEVELLOADFAILED= 	{big}Извините!{/big}{n}Но {#ff1144}((sid)){#} загрузить не удалось.{n}Пожайлуста, отправте ваш {#44adf7}log.txt{#}{n} создателю карты.
+	POSTCARD_LEVELNOSPAWN= 		{big}Упс!{/big}{n}Кто-то переместил вашу {#44adf7}стартовую позицию!{#}{n}Пожайлуста, проверьте вашу карту{n}на наличие объекта {#44adf7}Player{#}.
+	POSTCARD_BADTILEID=			{big}Упс!{/big}{n}Неопределенный ((type))tile id {#ff1144}((id)){#} на{n}{#ff1144}(((x)), ((y))){#} в комнате {#ff1144}((room)){#}{n}Проверьте свой {#44adf7}log.txt{#} для большей информации.
+	POSTCARD_DECALREGERROR=		{big}Упс!{/big}{n}Ошибка при применении свойства{n}{#ff1144}((property)){#} к {#ff1144}((decal)){#}{n}Пропущенный или некорректный {#44adf7}Decal Registry{#}.
+	POSTCARD_MISSINGTUTORIAL=	{big}Упс!{/big}{n}Воспроизведение туториала {#ff1144}((tutorial)){#} не было найдено.{n}Проверьте свой {#44adf7}log.txt{#} для большей информации.
+	POSTCARD_TILEXMLERROR=		{big}Упс!{/big}{n}Ошибка соответствия набора текстур в {#ff1144}((path)){#}{n}Проверьте свой {#44adf7}log.txt{#} для большей информации.
+	POSTCARD_XMLERROR=			{big}Упс!{/big}{n}{#ff1144}((path)){#} содержит синтаксическую ошибку.{n}Проверьте свой {#44adf7}log.txt{#} для большей информации.
+	POSTCARD_BOSSLASTNODEHIT=	{big}Упс!{/big}{n}Сущность {#ff1144}Badeline Boss{#} была побеждена на последнем узле.{n}Пожайлуста, добавьте дополнительный узел за пределами карты, чтобы игрок не мог поразить его.
 
 # Main Menu
-	MENU_TITLETOUCH= 		НАЖМИТЕ
-	MENU_MAPLIST= 			Список Карт
-	MENU_MODOPTIONS= 		Настройки Модов
-	MENU_PAUSE_MODOPTIONS= 	Настройки Модов
+	MENU_TITLETOUCH= 			НАЖАТИЕ
+	MENU_MAPLIST= 				Список Карт
+	MENU_MODOPTIONS= 			Настройки Модов
+	MENU_PAUSE_MODOPTIONS= 		Настройки Модов
 	
-	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		Произошла ошибка загрузки everest.yaml!
+	MENU_MODOPTIONS_UPDATE_FAILED=				Не Удалось Загрузить Обновление Everest
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		Не удалось загрузить 1 мод
-	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	Не удалось загрузить {0} модов
-	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Есть новое обновление для Everest!
-	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Доступно новое обновление для 1 мода!
-	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Доступно обновление для {0} модов.
+	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	Не удалось загрузить модов: {0}
+	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		При загрузке everest.yaml произошла ошибка
+	MENU_MODOPTIONS_UPDATE_AVAILABLE=			Доступно новое обновление для Everest
+	MENU_MODOPTIONS_MOD_UPDATE_AVAILABLE=		Доступно новое обновление для 1 мода
+	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Доступно обновление для {0} модов
 
 # Title Screen
-	MENU_TITLESCREEN_RESTART_VANILLA= Перезагружаюсь в orig/Celeste.exe
+	MENU_TITLESCREEN_RESTART_VANILLA= Перезагрузить как orig/Celeste.exe
     
 # Extra Key Mapping
     KEY_CONFIG_ADDING= НАЖМИТЕ ДОПОЛНИТЕЛЬНУЮ КЛАВИШУ ДЛЯ
-    KEY_CONFIG_ADDITION_HINT= Нажмите SHIFT + CONFIRM чтобы добавить дополнительную клавишу
+    KEY_CONFIG_ADDITION_HINT= Нажмите SHIFT + CONFIRM чтобы добавить или убрать дополнительную клавишу
 
-# Mod Options
+# Mod OptionsChange Everest Version
 	MODOPTIONS_TITLE= 										EVEREST
-	MODOPTIONS_NEEDSRELAUNCH=								Необходима перезагрузка чтобы иметь эффект
+	MODOPTIONS_NEEDSRELAUNCH=								Для применения необходима перезагрузка
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Обновить Everest до ((version))
-	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Скачать недостающие зависимости
+	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Установить Недостающие Зависимости
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Изменить Версию Everest
 	MODOPTIONS_COREMODULE_TITLE= 							Ядро Everest
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Режим Отладки
-	# better to keep this in english
-	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 	 Загружаться с FMOD Live Update 
-	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 			  Загружаться без введения
-	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=			  Показывать настройки модов в игре
-	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			Показывать меню Everest
+	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Запускать с FMOD Live Update
+	MODOPTIONS_COREMODULE_LAUNCHWITHOUTINTRO= 				Запускать без Интро
+	MODOPTIONS_COREMODULE_SHOWMODOPTIONSINGAME=				Показывать Настройки Модов в Игре
+	MODOPTIONS_COREMODULE_SHOWEVERESTTITLESCREEN=			Показывать Загрузочный Экран Everest
 	MODOPTIONS_COREMODULE_INPUTGUI= 						Ввод
 	MODOPTIONS_COREMODULE_INPUTGUI_= 						АВТО
 	MODOPTIONS_COREMODULE_INPUTGUI_KEYBOARD= 				КЛАВИАТУРА
 	MODOPTIONS_COREMODULE_INPUTGUI_NS= 						SWITCH
-	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			ПРАВЫЙ JOYCON
-	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			ЛЕВЫЙ JOYCON
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_LEFTJOYCON= 			SWITCH L
+	MODOPTIONS_COREMODULE_INPUTGUI_NS_RIGHTJOYCON= 			SWITCH R
 	MODOPTIONS_COREMODULE_INPUTGUI_PS4= 					PS4
 	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBONE
 	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					НАЖАТИЕ
-	MODOPTIONS_COREMODULE_MAINMENUMODE= 					Режим главного меню
-	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					ОБЫЧНЫЙ
+	MODOPTIONS_COREMODULE_MAINMENUMODE= 					Режим Главного Меню
+	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					ВАНИЛЬНЫЙ
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				РЯДЫ
 	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				НАЖАТИЕ
-	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=      Автоматически обновлять моды при загрузке
-	MODOPTIONS_COREMODULE_MODUPDATES= 						Проверить обновления модов
-	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Использовать клавиатуру для ввода
-	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Предупреждать об ошибках everest.yaml
+	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			Автоматически Обновлять Моды при Запуске
+	MODOPTIONS_COREMODULE_MODUPDATES= 						Проверить Обновления Модов
+	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Использовать Клавиатуру для Ввода
+	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Предупреждать об Ошибках everest.yaml
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Полезно для создателей модов
-	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
-	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page Up в Меню
-	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page Down в Меню
-
-	MODOPTIONS_COREMODULE_SOUNDTEST= 						Тест Звука
-
-	MODOPTIONS_COREMODULE_OOBE= 							Сменить начальную загрузку
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				НАВИГАЦИЯ В МЕНЮ
+	MODOPTIONS_COREMODULE_MENUPAGEUP=						Меню Вверх
+	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Меню Вниз
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				РЕЖИМ ОТЛАДКИ
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Консоль Отладки
+	MODOPTIONS_COREMODULE_DEBUGMAP=							Карта Отладки
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			КАМЕРА ДЛЯ 3D ГОРЫ
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					Камера Вперёд
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					Камера Назад
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						Камера Вправо
+	MODOPTIONS_COREMODULE_CAMERALEFT=						Камера Влево
+	MODOPTIONS_COREMODULE_CAMERAUP=							Камера Вверх
+	MODOPTIONS_COREMODULE_CAMERADOWN=						Камера Вниз
+	MODOPTIONS_COREMODULE_CAMERASLOW=						Камера Медленно
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						Записать Позицию Камеры
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			Включить Свободную Камеру
+	MODOPTIONS_COREMODULE_SOUNDTEST= 						Проверка Звука
+	MODOPTIONS_COREMODULE_OOBE= 							Повторить Первоначальную Настройку
+	MODOPTIONS_COREMODULE_TOGGLEMODS=						Включить или Выключить Моды
 	
-	MODOPTIONS_COREMODULE_TOGGLEMODS=						Включить или Выключить моды
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCE=				Discord Rich Presence
+	MODOPTIONS_COREMODULE_DISCORDRICHPRESENCEOPTIONS=		Настройки Rich Presence
+	MODOPTIONS_COREMODULE_DISCORDSHOWICON=					Показывать Иконку
+	MODOPTIONS_COREMODULE_DISCORDSHOWMAP=					Показывать Карту
+	MODOPTIONS_COREMODULE_DISCORDSHOWSIDE=					Показывать Сторону (A, B...)
+	MODOPTIONS_COREMODULE_DISCORDSHOWROOM=					Показывать Имя Комнаты
+	MODOPTIONS_COREMODULE_DISCORDSHOWBERRIES=				Показывать Количество Ягод
+	MODOPTIONS_COREMODULE_DISCORDSHOWDEATHS=				Показывать Количество Смертей
+	MODOPTIONS_COREMODULE_DISCORDFAILED=					Ошибка соединения с Discord. Выключите и попробуйте ещё раз.
 
-	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Не удалось загрузить некоторые моды.
-	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Проверьте ваш log.txt.
-	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} не найдено
-	MODOPTIONS_COREMODULE_YAMLERRORS= 						Некоторые everest.yaml файлы не могут быть загружены.
+	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Некоторые моды не были загружены.
+	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Проверьте свой log.txt для большей информации.
+	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} не были найдены
+	MODOPTIONS_COREMODULE_YAMLERRORS= 						Некоторые файлы everest.yaml не были загружены.
 
-	MODOPTIONS_VANILLATRISTATE_NEVER=						НИКОГДА
+	MODOPTIONS_VANILLATRISTATE_NEVER=						ВЫКЛ.
 	MODOPTIONS_VANILLATRISTATE_EVEREST=						EVEREST
 	MODOPTIONS_VANILLATRISTATE_ALWAYS=						ВСЕГДА
 
 # Sound Test
-	SOUNDTEST_TITLE=	ТЕСТ ЗВУКА
+	SOUNDTEST_TITLE=	ПРОВЕРКА ЗВУКА
 	SOUNDTEST_AUDIOPARAMS_OPEN_1=	Нажмите
-	SOUNDTEST_AUDIOPARAMS_OPEN_2=	чтобы изменить настройки Аудио
-	SOUNDTEST_AUDIOPARAMS=	Настройки Аудио
+	SOUNDTEST_AUDIOPARAMS_OPEN_2=	чтобы менять Параметры Аудио
+	SOUNDTEST_AUDIOPARAMS=	Параметры Аудио
 
 # Maplist
 	MAPLIST_TITLE= 			СПИСОК КАРТ
-	MAPLIST_FILTERS= 		Фильтры
+	MAPLIST_FILTERS= 		Фильры
 	MAPLIST_TYPE= 			От
 	MAPLIST_TYPE_ALLMODS= 	Все Моды
-	MAPLIST_SIDE= 			Сторона
+	MAPLIST_SIDE= 			Стороны
 	MAPLIST_LIST= 			Карты
-	MAPLIST_UNCATEGORIZED= 	Некатегоризированные
+	MAPLIST_UNCATEGORIZED= 	Без Категории
 	MAPLIST_SEARCH=			Поиск
-	MAPLIST_SEARCH_MATCH=	Quick Match
-	MAPLIST_TYPE_EVERYTHING=  Все
-	MAPLIST_RESULTS_SINGULAR= {0} результат найден
+	MAPLIST_SEARCH_MATCH=	Быстрый Поиск
+	MAPLIST_TYPE_EVERYTHING=  Любой
+	MAPLIST_RESULTS_SINGULAR= {0} результатов найдено
 	MAPLIST_RESULTS_PLURAL=   {0} результатов найдено
 
 	LEVELSET_CELESTE= 		Celeste
-	LEVELSET_= 				Некатегоризированные
+	LEVELSET_= 				Без Категории
 
 # Updater
-	UPDATER_TITLE= 					ОБНОВЛЕНИЯ
+	UPDATER_TITLE= 					УСТАНОВЩИК
 	UPDATER_VERSIONS_TITLE= 		ИЗМЕНИТЬ ВЕРСИЮ EVEREST
 	UPDATER_VERSIONS_CURRENT= 		Установлено: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Обновляю...
 	
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Не удалось загрузить список версий.
-	UPDATER_VERSIONS_ERR_FORMAT= 	Непонятный формат.
+	UPDATER_VERSIONS_ERR_FORMAT= 	Неизвестный формат.
+
+	UPDATER_CURRENT_BRANCH=			Текущая сборка
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		Tagged releases (GitHub)
+	UPDATER_SRC_BUILDBOT_AZURE=		Automatic builds (Azure)
 	
+# currently unused
 	UPDATER_SRC_BUILDBOT= 			Автоматические сборки
-	
+
 # Everest Updater
-	EVERESTUPDATER_NOTSUPPORTED=	Обновление не поддерживается на этом устройстве - отмена.
-	EVERESTUPDATER_NOUPDATE=		Обновления отсутствуют - отмена.
-	EVERESTUPDATER_UPDATING=		Обновляю до {0} (ветвь: {1}) @ {2}
+	EVERESTUPDATER_NOTSUPPORTED=	Обновление не поддерживается данной платформой - отменяю.
+	EVERESTUPDATER_NOUPDATE=		Нет обновлений - отменяю.
+	EVERESTUPDATER_UPDATING=		Обновление на {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Загрузка
-	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Загрузка:
-	EVERESTUPDATER_DOWNLOADFAILED=	Ошибка загрузки!
+	EVERESTUPDATER_DOWNLOADING_PROGRESS=	Загрузка:
+	EVERESTUPDATER_DOWNLOADFAILED=		Не удалось загрузить!
 	EVERESTUPDATER_DOWNLOADFINISHED=	Загрузка завершена.
-	EVERESTUPDATER_EXTRACTING=		Распаковываем обновление .zip
-	EVERESTUPDATER_ZIPENTRIES=		записи
-	EVERESTUPDATER_EXTRACTIONFAILED=	Ошибка распаковки!
+	EVERESTUPDATER_EXTRACTING=			Распаковка обновления .zip
+	EVERESTUPDATER_ZIPENTRIES=			entries
+	EVERESTUPDATER_EXTRACTIONFAILED=	Не удалось распаковать!
 	EVERESTUPDATER_EXTRACTIONFINISHED=	Распаковка завершена.
-	EVERESTUPDATER_RESTARTING=		Перезагружаю
-	EVERESTUPDATER_RESTARTINGIN=	Перезагрузка через {0}
-	EVERESTUPDATER_STARTINGFAILED=	Ошибка запуска установщика!
-	# not sure about "проблема" - issue, because in Russian issue and problem has the same translation and meaning, so it will be good maybe if will stay in English
-	EVERESTUPDATER_ERRORHINT1=		Пожалуйста, создайте новую проблему на GitHub @ https://github.com/EverestAPI/Everest
-	EVERESTUPDATER_ERRORHINT2=		или сообщите в #modding_help канал в Дискорде (приглашение в репозитории).
-	EVERESTUPDATER_ERRORHINT3=		Не забудьте прикрепить log.txt
+	EVERESTUPDATER_RESTARTING=		Перезапуск
+	EVERESTUPDATER_RESTARTINGIN=	Перезапуск через {0}
+	EVERESTUPDATER_MISSINGRUNTIME_A=	Установка .NET Core Everest требует среду .NET 7.0
+	EVERESTUPDATER_MISSINGRUNTIME_B=	Вы можете установить его по следующей ссылке: {0}
+	EVERESTUPDATER_STARTINGFAILED=	Не удалось запустить установщик!
+	EVERESTUPDATER_ERRORHINT1=		Пожалуйста, создайте новый отчёт на GitHub @ https://github.com/EverestAPI/Everest
+	EVERESTUPDATER_ERRORHINT2=		или посетите канал #modding_help в Discord (приглашение в репозитории).
+	EVERESTUPDATER_ERRORHINT3=		Не забудьте загрузить ваш log.txt
 
 # Mod Updater
 	MODUPDATECHECKER_MENU_TITLE=	ОБНОВЛЕНИЯ МОДОВ
-	MODUPDATECHECKER_NOUPDATE=		Обновления отсутствуют
-	MODUPDATECHECKER_MENU_HEADER=	Доступные Обновления
-	MODUPDATECHECKER_FETCHING=		Проверяю обновления...
+	MODUPDATECHECKER_NOUPDATE=		Нет доступных обновлений
+	MODUPDATECHECKER_MENU_HEADER=	Доступные обновления
+	MODUPDATECHECKER_FETCHING=		Проверка обновлений...
 	MODUPDATECHECKER_ERROR=			Не удалось проверить обновления.
-	MODUPDATECHECKER_UPDATED=		Обновлено!
-	MODUPDATECHECKER_DOWNLOADING=	Загружаю...
-	MODUPDATECHECKER_INSTALLING=	Устанавливаю...
-	MODUPDATECHECKER_FAILED=		Произошла ошибка в обновлении!
-	MODUPDATECHECKER_CANCELLING=	отменяю обновление...
+	MODUPDATECHECKER_UPDATED=		обновлено
+	MODUPDATECHECKER_DOWNLOADING=	загрузка...
+	MODUPDATECHECKER_INSTALLING=	установка...
+	MODUPDATECHECKER_FAILED=		не удалось обновить!
+	MODUPDATECHECKER_CANCELLING=	отмена обновления...
 	MODUPDATECHECKER_CANCELLED=		обновление отменено
-	MODUPDATECHECKER_WILLRESTART=	Нажмите Назад чтобы перезагрузить Celeste
+	MODUPDATECHECKER_WILLRESTART=	нажмите Назад чтобы перезапустить Celeste
 	MODUPDATECHECKER_UPDATE_ALL=	Обновить все моды
-	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Обновляю все моды...
-	MODUPDATECHECKER_UPDATE_ALL_DONE=	Все моды были обновлены.
-	MODUPDATECHECKER_SHUTDOWN= Выход
+	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Обновление всех модов...
+	MODUPDATECHECKER_UPDATE_ALL_DONE=		Все моды были обновлены.
+	MODUPDATECHECKER_RESTARTNEEDED= 		для продолжения необходимо перезапустить Celeste
+	MODUPDATECHECKER_MENU_HEADER_RESTART= 	Выберите действие
+	MODUPDATECHECKER_SHUTDOWN= 	Выход
+	MODUPDATECHECKER_RESTART= 	Перезапуск
 	
 # Auto Mod Updater
-	AUTOUPDATECHECKER_CHECKING=		Проверяю обновления модов...
-	AUTOUPDATECHECKER_UPDATING=		Авто-обновляю
-	AUTOUPDATECHECKER_DOWNLOADING=	Загружаю
-	AUTOUPDATECHECKER_VERIFYING=	Проверяю
-	AUTOUPDATECHECKER_INSTALLING=	Устанавливаю
-	AUTOUPDATECHECKER_FAILED=		Не удалось установить некоторые обновления. Проверьте ваш log.txt.
-	AUTOUPDATECHECKER_CONTINUE=		Нажмите Подтвердить чтобы продолжить
-	AUTOUPDATECHECKER_REBOOT=		Нажмите Подтвердить чтобы перезагрузить Celeste
+	AUTOUPDATECHECKER_CHECKING=		Проверка обновлений...
+	AUTOUPDATECHECKER_UPDATING=		Авто-обновление
+	AUTOUPDATECHECKER_DOWNLOADING=	Загрузка
+	AUTOUPDATECHECKER_VERIFYING=	Проверка
+	AUTOUPDATECHECKER_INSTALLING=	Установка
+	AUTOUPDATECHECKER_FAILED=		Не удалось обновить. Проверьте свой log.txt для большей информации.
+	AUTOUPDATECHECKER_CONTINUE=		Для продолжения нажмите Принять
+	AUTOUPDATECHECKER_REBOOT=		Нажмите Принять чтобы перезапустить Celeste
 	AUTOUPDATECHECKER_SKIP=			Пропустить
-	AUTOUPDATECHECKER_SKIPPING=		Пропускаю обновление...
+	AUTOUPDATECHECKER_SKIPPING=		Пропуск обновления...
 
 # Dependency downloader
 	DEPENDENCYDOWNLOADER_TITLE=						УСТАНОВКА ЗАВИСИМОСТЕЙ
-	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Загружаем датабазу модов...
-	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Загружаю информацию об установленных модах...
-	DEPENDENCYDOWNLOADER_DONE=						завершено.
-	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ОШИБКА: Не удалось загрузить датабазу. Проверьте ваш log.txt.
-	# You need to highlight the "Change Everest version". I did it by adding inverted commas, but you can add color
-	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ВНИМАНИЕ: Для некоторых модов необходима новая версия Everest. Установите её в меню "Изменить Версию Everest".
-	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest будет обновлен до {0} для работы некоторых модов. Нажмите Подтвердить для продолжения.
-	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ОШИБКА: В датабазе не найден {0}. Установите этот мод самостоятельно.
-	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ОШИБКА: Некоторые из ваших модов требуют более новую версию Celeste для работы. Пожалуйста, обновите игру.
-	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ОШИБКА: {0} доступен в нескольких версиях и не может быть установлен автоматически. Установите этот мод самостоятельно.
-	DEPENDENCYDOWNLOADER_MOD_BLACKLISTED=			ВНИМАНИЕ: {0}.zip находится в вашем чёрном списке. Уберите его оттуда, чтобы пользоваться им как зависимостью.
-	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ОШИБКА: Требуется версия {1} для {0}, но есть только {2}. Установите этот мод самостоятельно.
-	DEPENDENCYDOWNLOADER_RESTARTING=				Перезагружаюсь
-	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Перезагружаюсь через {0}
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=	  Нажмите Назад чтобы перезагрузить Celeste.
-	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Нажмите Назад чтобы вернуться к Меню Модов.
-	DEPENDENCYDOWNLOADER_DOWNLOADING=				Загружаю {0} от {1}...
-	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		Ошибка загрузки, загружаю с зеркала {0}...
+	DEPENDENCYDOWNLOADER_DOWNLOADING_DATABASE=		Загрузка базы данных модов...
+	DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS=	Загрузка информации об установленных модах...
+	DEPENDENCYDOWNLOADER_DONE=						выполнено.
+	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	ОШИБКА: Загрузка базы данных модов прервана. Проверьте свой log.txt для большей информации.
+	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		ПРЕДУПРЕЖДЕНИЕ: Для загрузки некоторых модов необходима более поздня версия Everest. Установите её в меню Изменить Версию Everest.
+	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		ПРЕДУПРЕЖДЕНИЕ: Для загрузки  некоторых модов необходима (последняя WIP) сборка .NET Core Everest. Установите её в меню Изменить Версию Everest.
+	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest будет обновлён до {0} для работы некоторых модов. Для продолжения нажмите Принять.
+	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				ОШИБКА: {0} не был найден в базе данных. Пожалуйста, установите этот мод вручную.
+	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			ОШИБКА: Для работы некоторых модов необходима более поздня версия Celeste. Пожалуйста, обновите вашу игру.
+	DEPENDENCYDOWNLOADER_MOD_NOT_AUTO_INSTALLABLE=	ОШИБКА: У {0} доступно несколько версий, поэтому он не может быть установлен автоматически. Пожалуйста, установите этот мод вручную.
+	DEPENDENCYDOWNLOADER_MOD_WRONG_VERSION=			ОШИБКА: Необходима версия {1} мода {0}, но доступна только {2}. Пожалуйста, установите этот мод вручную.
+	DEPENDENCYDOWNLOADER_RESTARTING=				Перезапуск
+	DEPENDENCYDOWNLOADER_RESTARTING_IN=				Перезапуск через {0}
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_RESTART=		Нажмите Назад чтобы перезапустить Celeste.
+	DEPENDENCYDOWNLOADER_PRESS_BACK_TO_GO_BACK=		Нажмите Назад чтобы вернуться к Настройкам Модов.
+	DEPENDENCYDOWNLOADER_DOWNLOADING=				Загрузка {0} из {1}...
+	DEPENDENCYDOWNLOADER_DOWNLOADING_MIRROR=		Загрузка прервана, пробуем зеркало {0}...
 	DEPENDENCYDOWNLOADER_DOWNLOAD_FINISHED=			Загрузка завершена.
-	# not sure what checksum means, but this is correct too
-	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Проверяю...
-	DEPENDENCYDOWNLOADER_UPDATING=					Устанавливаю обновление {0} ({1} -> {2}) к {3}...
-	DEPENDENCYDOWNLOADER_INSTALLING=				Устанавливаю мод {0} v.{1} к {2}...
-	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ОШИБКА: Не удалось установить {0}. Проверьте ваш log.txt.
-	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Убираю {0} из чёрного списка...
-	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Ошибка в автоматическом удалении некоторых модов из чёрного списка. Проверьте log.txt для большей информации.
+	DEPENDENCYDOWNLOADER_VERIFYING_CHECKSUM=		Финальная проверка...
+	DEPENDENCYDOWNLOADER_UPDATING=					Установка мода с {0} ({1} -> {2}) до {3}...
+	DEPENDENCYDOWNLOADER_INSTALLING=				Установка мода {0} v.{1} до {2}...
+	DEPENDENCYDOWNLOADER_INSTALL_FAILED=			ОШИБКА: Установка {0} прервана. Проверьте свой log.txt для большей информации.
+	DEPENDENCYDOWNLOADER_MOD_UNBLACKLIST=			Убираем мод {0} из чёрного списка...
+	DEPENDENCYDOWNLOADER_UNBLACKLIST_FAILED=		Не удалось автоматически убрать мод из чёрного  списка. Проверьте свой log.txt для большей информации.
 	DEPENDENCYDOWNLOADER_LOADING_MOD=				Загрузка {0} из {1}...
 	DEPENDENCYDOWNLOADER_LOADING_MOD_NOMETA=		Загрузка мода из {0}...
 
 # OOBE (Out Of Box Experience) - first launch stuff
 	OOBE_WELCOME_HEADER=		Добро пожаловать в Everest!
-	OOBE_WELCOME_SUBHEADER=		Что вы хотите сделать?
-	OOBE_WELCOME_PLAY=			Я хочу ИГРАТЬ с модами.
-	OOBE_WELCOME_SPEEDRUN=		Я хочу играть НА СКОРОСТЬ.
+	OOBE_WELCOME_SUBHEADER=		Что вы хотите делать?
+	OOBE_WELCOME_PLAY=			Я хочу ИГРАТЬ в моды.
+	OOBE_WELCOME_SPEEDRUN=		Я хочу СПИДРАНИТЬ.
 	OOBE_WELCOME_CREATE=		Я хочу СОЗДАВАТЬ моды.
 	OOBE_WELCOME_SKIP=			Мне не нужна помощь.
 
-	OOBE_SETTINGS_PLAY=			Вы можете находить моды на GameBanana.{n}Установленные карты можно найти на карте мира.{n}Ваш прогресс можно увидеть в вашем статусе в Discord, если включен Rich Presence.{n}Нажмите F6 в режиме отладки чтобы открыть новый режим откладки карт.
-	OOBE_SETTINGS_SPEEDRUN=		Держите кнопку вправо на главном меню чтобы перезагрузить в обычную игру.{n}Вы можете находить и устанавливать моды на GameBanana.{n}Установленные карты можно найти на карте мира.{n}Нажмите F6 в режиме отладки чтобы открыть новый режим отладки карт.
-	OOBE_SETTINGS_CREATE=		Вы можете публиковать и искать моды на GameBanana.{n}Карты можно найти на карте мира.{n}Нажмите F6 в режиме отладки чтобы открыть новый режим отладки карт.{n}Нажмите F5 чтобы перезагрузить карту, в которой вы играете, или CTRL+F5 чтобы перезагрузить всю игру.{n}Если у вас нестандартная клавиатура . - открывает консоль, а q - закрывает.
-	OOBE_SETTINGS_SUBHEADER=	Вот настройки, которые могут вам помочь.
-	OOBE_SETTINGS_MORE=			Вы можете изменить это и не только в "Настройках Модов".
-	OOBE_SETTINGS_OK=			ОК
+	OOBE_SETTINGS_PLAY=			Вы можете находить и устанавливать моды на сайте GameBanana.{n}Вы сможете найти установленные карты на карте мира.{n}Ваш прогресс можно увидеть в игровом статусе Discord.{n}Используйте F6 в режиме отладки, чтобы включить карту уровня.
+	OOBE_SETTINGS_SPEEDRUN=		Зажмите вправо на экране названия, чтобы перезапуститься в ванильной версии.{n}Вы можете находить и устанавливать моды на сайте GameBanana.{n}Вы сможете найти установленные карты на карте мира.{n}Используйте F6 в режиме отладки, чтобы включить карту уровня.
+	OOBE_SETTINGS_CREATE=		Вы можете находить и делиться модами на сайте GameBanana.{n}Вы сможете найти установленные карты на карте мира.{n}Используйте F6 в режиме отладки, чтобы включить карту уровня.{n}Нажмите F5 чтобы перезагрузить текущую карту, или CTRL+F5 чтобы перезапустить игру.{n}Если у вас не-QWERTY клавиатура:{n}. (клавиша "ю", но английская раскладка) открывает консоль, а команда q закроет её.
+	OOBE_SETTINGS_SUBHEADER=	Вот некоторые настройки, которые могут вам понадобиться.
+	OOBE_SETTINGS_MORE=			Вы сможете изменить это и многое другое в Настройках Модов.
+	OOBE_SETTINGS_OK=			Хорошо
+
+# Mod Toggle Menu
+	MODOPTIONS_MODTOGGLE=				ВКЛЮЧЕНИЕ МОДОВ
+	MODOPTIONS_MODTOGGLE_LOADING=		Загрузка информации о модах...
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	Автоматически включать зависимости
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	Когда вы включаете мод, все зависимости тоже будут включены.
+	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	Когда вы выключаете мод, все моды, которым он был необходим, будут выключены.
+	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Когда вы вкючаете или выключаете моды, ваш файл blacklist.txt будет изменён,
+	MODOPTIONS_MODTOGGLE_MESSAGE_2=		и будет необходимо перезапустить Celeste для принятия изменений.
+	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Подсвеченные моды (зависимости) используются другими включенными модами.
+	MODOPTIONS_MODTOGGLE_WHITELISTWARN= Отключите свой белый список, чтобы эти настройки были применены должным образом.
+	MODOPTIONS_MODTOGGLE_ENABLEALL=		Включить Всё
+	MODOPTIONS_MODTOGGLE_DISABLEALL=	Выключить Всё
+	MODOPTIONS_MODTOGGLE_CANCEL=		Отмена
+	MODOPTIONS_MODTOGGLE_ZIPS=			Zip Файлы
+	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Папки
+	MODOPTIONS_MODTOGGLE_BINS=			Bin Файлы Карты
+
+# Asset Reload Helper
+	ASSETRELOADHELPER_RELOADINGMAP=			Перезагрузка карты
+	ASSETRELOADHELPER_RELOADINGLEVEL=		Перезагрузка уровня
+	ASSETRELOADHELPER_UNLOADINGTEXTURE=		Выгрузка текстуры:
+	ASSETRELOADHELPER_RELOADINGMAPNAME=		Перезагрузка карты:
+	ASSETRELOADHELPER_RELOADINGALLMAPS=		Перезагрузить все карты
+	ASSETRELOADHELPER_RELOADINGDIALOG=		Перезагрузка диалога:
+	ASSETRELOADHELPER_RELOADINGTEXTURE=		Перезагрузка текстуры:
+	ASSETRELOADHELPER_RELOADINGTEXTURES=	Перезагрузка текстур:
+	ASSETRELOADHELPER_LOADINGNEWMOD=		Загрузка нового мода:
+	ASSETRELOADHELPER_RELOADINGMODASSEMBLY=	Перезагрузка сборки мода:
+	ASSETRELOADHELPER_RELOADINGMOUNTAIN=	Перезагрузка горы

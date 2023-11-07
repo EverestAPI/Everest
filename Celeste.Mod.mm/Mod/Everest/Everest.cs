@@ -315,6 +315,10 @@ namespace Celeste.Mod {
                     if (Enum.TryParse(queue.Dequeue(), ignoreCase: true, out LogLevel level))
                         Logger.SetLogLevelFromSettings("", level);
                 }
+                
+                else if (arg == "--use-scancodes") {
+                    Environment.SetEnvironmentVariable("FNA_KEYBOARD_USE_SCANCODES", "1");
+                }
             }
         }
 
@@ -468,7 +472,11 @@ namespace Celeste.Mod {
             STAThreadHelper.Instance = new STAThreadHelper(Celeste.Instance);
             TypeHelper.BakeVanillaEntityData(); // Creates a dictionary for EntityData::Name => Type and bakes vanilla values into it.
             // Register our core module and load any other modules.
-            new CoreModule().Register();
+            CoreModule core = new CoreModule();
+            core.Register();
+            Assembly asm = typeof(CoreModule).Assembly;
+            Type[] types = asm.GetTypesSafe();
+            Loader.ProcessAssembly(core.Metadata, asm, types);
 
             // Note: Everest fulfills some mod dependencies by itself.
             new NullModule(new EverestModuleMetadata() {
@@ -581,94 +589,27 @@ namespace Celeste.Mod {
                 _Modules.Add(module);
             }
 
-            LuaLoader.Precache(module.GetType().Assembly);
-
-            bool newStrawberriesRegistered = false;
-
-            foreach (Type type in module.GetType().Assembly.GetTypesSafe()) {
-                // Search for all entities marked with the CustomEntityAttribute.
-                foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
-                    foreach (string idFull in attrib.IDs) {
-                        string id;
-                        string genName;
-                        string[] split = idFull.Split('=');
-
-                        if (split.Length == 1) {
-                            id = split[0];
-                            genName = "Load";
-
-                        } else if (split.Length == 2) {
-                            id = split[0];
-                            genName = split[1];
-
-                        } else {
-                            Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
-                            continue;
-                        }
-
-                        id = id.Trim();
-                        genName = genName.Trim();
-
-                        patch_Level.EntityLoader loader = null;
-
-                        ConstructorInfo ctor;
-                        MethodInfo gen;
-
-                        gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
-                        if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
-                            loader = (level, levelData, offset, entityData) => {
-                                Entity e = (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
-                                (e as patch_Entity).EntityData = entityData;
-                                return e;
-                            };
-                            goto RegisterEntityLoader;
-                        }
-
                         ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
                         if (ctor != null) {
-                            loader = (level, levelData, offset, entityData) => {
-                                Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
-                                (e as patch_Entity).EntityData = entityData;
-                                return e;
-                            };
-                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                TypeHelper.entityDataNameToType[id] = type;
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
                         if (ctor != null) {
-                            loader = (level, levelData, offset, entityData) => { 
-                                Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset });
-                                (e as patch_Entity).EntityData = entityData;
-                                return e;
-                            };
-                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                TypeHelper.entityDataNameToType[id] = type;
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
                         if (ctor != null) {
-                            loader = (level, levelData, offset, entityData) => {
-                                Entity e = (Entity) ctor.Invoke(new object[] { offset });
-                                (e as patch_Entity).EntityData = entityData;
-                                return e;
-                            };
-                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                TypeHelper.entityDataNameToType[id] = type;
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
                             goto RegisterEntityLoader;
                         }
 
                         ctor = type.GetConstructor(_EmptyTypeArray);
                         if (ctor != null) {
-                            loader = (level, levelData, offset, entityData) => { 
-                                Entity e = (Entity) ctor.Invoke(_EmptyObjectArray);
-                                (e as patch_Entity).EntityData = entityData;
-                                return e;
-                            };
-                            if (!TypeHelper.entityDataNameToType.ContainsKey(id))
-                                TypeHelper.entityDataNameToType[id] = type;
+                            loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
                             goto RegisterEntityLoader;
                         }
 
@@ -842,9 +783,8 @@ namespace Celeste.Mod {
                 }
 
                 // Check if the module defines a PrepareMapDataProcessors method. If this is the case, we want to reload maps so that they are applied.
-                // We should also run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
-                if (newStrawberriesRegistered || module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
-                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has custom strawberries or map data processors: reloading maps.");
+                if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
+                    Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has map data processors: reloading maps.");
                     AssetReloadHelper.ReloadAllMaps();
                 }
             }
@@ -874,7 +814,7 @@ namespace Celeste.Mod {
                 patch_Audio.IngestNewBanks();
             }
 
-            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} registered.");
+            module.LogRegistration();
             Events.Everest.RegisterModule(module);
 
             CheckDependenciesOfDelayedMods();
@@ -970,10 +910,6 @@ namespace Celeste.Mod {
             module.OnInputDeregister();
             module.Unload();
 
-            Assembly asm = module.GetType().Assembly;
-            MainThreadHelper.Do(() => _DetourModManager.Unload(asm));
-            _RelinkedAssemblies.Remove(asm);
-
             // TODO: Unload from LuaLoader
             // TODO: Unload from EntityLoaders
             // TODO: Undo event listeners
@@ -992,7 +928,8 @@ namespace Celeste.Mod {
 
             InvalidateInstallationHash();
 
-            Logger.Log(LogLevel.Info, "core", $"Module {module.Metadata} unregistered.");
+            module.LogUnregistration();
+            
         }
 
         /// <summary>
