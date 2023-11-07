@@ -283,6 +283,7 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=						Zip Files
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=				Directories
 	MODOPTIONS_MODTOGGLE_BINS=						Map Bin Files
+	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		Press 'Tab' or 'Enter' to scroll to the next match
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Reloading map

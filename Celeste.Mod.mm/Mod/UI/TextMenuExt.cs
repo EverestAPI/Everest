@@ -1418,7 +1418,7 @@ namespace Celeste {
                         } else if (virtualButton.Binding.Keyboard.Count > 0) {
                             buttonTexture = Input.GuiKey(virtualButton.Binding.Keyboard[0]);
                         } else {
-                            buttonTexture = Input.GuiKey(Microsoft.Xna.Framework.Input.Keys.None);
+                            buttonTexture = Input.GuiKey(Keys.None);
                         }
 
                         buttonTexture.DrawJustified(lineOffset, justify, ButtonColor * strokeAlpha, Scale);
@@ -1476,6 +1476,8 @@ namespace Celeste {
             public delegate void OnTextChangeHandler(string text);
             public event OnTextChangeHandler OnTextChange;
 
+            public string PlaceholderText;
+
             private string _text = "";
             public string Text {
                 get => _text; protected set {
@@ -1489,6 +1491,7 @@ namespace Celeste {
             public Vector2 TextJustify { get; set; } = new Vector2(0f, 0.5f);
             public float StrokeSize { get; set; } = 2f;
             public Color StrokeColor { get; set; } = Color.Black;
+            public Color PlaceHolderTextColor { get; set; } = Color.LightGray * 0.75f;
             public Color SearchBarColor { get; set; } = Color.DarkSlateGray * 0.8f;
             public Vector2 TextScale { get; set; } = Vector2.One * DEFAULT_TEXT_SCALE;
             public Vector2 TextPadding { get; set; } = new Vector2(ActiveFont.Measure(' ').X * DEFAULT_TEXT_SCALE, ActiveFont.LineHeight * DEFAULT_TEXT_SCALE / 6);
@@ -1541,15 +1544,31 @@ namespace Celeste {
 
                 Draw.Rect(position, Width, Height(), SearchBarColor);
 
-                ActiveFont.DrawOutline(
-                    Text + (Typing ? "_" : ""),
-                    textPosition,
-                    TextJustify,
-                    TextScale,
-                    TextColor * Alpha,
-                    StrokeSize,
-                    StrokeColor * (Alpha * Alpha * Alpha)
-                );
+                if (Text.Length <= 0 && !string.IsNullOrEmpty(PlaceholderText)) {
+                    Vector2 placeholderSize = ActiveFont.Measure(PlaceholderText) * TextScale;
+                    float overflowScale = Math.Min((Width - TextPadding.X * 4) / placeholderSize.X, 1f);
+
+                    ActiveFont.DrawOutline(
+                        PlaceholderText,
+                        textPosition,
+                        TextJustify,
+                        TextScale * overflowScale,
+                        PlaceHolderTextColor * Alpha,
+                        StrokeSize * overflowScale,
+                        StrokeColor * (Alpha * Alpha * Alpha)
+                    );
+                } else {
+                    ActiveFont.DrawOutline(
+                        Text + (Typing ? "_" : ""),
+                        textPosition,
+                        TextJustify,
+                        TextScale,
+                        TextColor * Alpha,
+                        StrokeSize,
+                        StrokeColor * (Alpha * Alpha * Alpha)
+                    );
+                }
+
             }
 
             public override void ConfirmPressed() {
@@ -1609,8 +1628,7 @@ namespace Celeste {
 
             private bool HandleNewInputChar(char c) {
                 Vector2 newTextSize = ActiveFont.Measure(Text + c + "_") * TextScale;
-                // We pad from both the right and the left (so we multiply padding by 2)
-                Vector2 totalTextPadding = TextPadding * 2;
+                Vector2 totalTextPadding = TextPadding * 4;
 
                 if (!char.IsControl(c) && ActiveFont.FontSize.Characters.ContainsKey(c) && (newTextSize + totalTextPadding).X < Width) {
                     Text += c;

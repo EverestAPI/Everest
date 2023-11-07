@@ -383,7 +383,10 @@ namespace Celeste.Mod.UI {
         }
 
         private void AddSearchBox(TextMenu menu) {
-            TextMenuExt.TextBox textBox = new(Overworld);
+            TextMenuExt.TextBox textBox = new(Overworld) {
+                PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
+            };
+
             TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
             menu.Add(modal);
 
