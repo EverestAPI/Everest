@@ -624,33 +624,62 @@ namespace Celeste.Mod {
                             ConstructorInfo ctor;
                             MethodInfo gen;
 
+
                             gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
                             if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
-                                loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                                loader = (level, levelData, offset, entityData) => {
+                                    Entity e = (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                                    (e as patch_Entity).EntityData = entityData;
+                                    return e;
+                                };
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                                loader = (level, levelData, offset, entityData) => {
+                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                                    (e as patch_Entity).EntityData = entityData;
+                                    return e;
+                                };
+                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                    TypeHelper.entityDataNameToType[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                                loader = (level, levelData, offset, entityData) => {
+                                    Entity e = (Entity) ctor.Invoke(new object[] { entityData, offset });
+                                    (e as patch_Entity).EntityData = entityData;
+                                    return e;
+                                };
+                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                    TypeHelper.entityDataNameToType[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                                loader = (level, levelData, offset, entityData) => {
+                                    Entity e = (Entity) ctor.Invoke(new object[] { offset });
+                                    (e as patch_Entity).EntityData = entityData;
+                                    return e;
+                                };
+                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                    TypeHelper.entityDataNameToType[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
                             ctor = type.GetConstructor(_EmptyTypeArray);
                             if (ctor != null) {
-                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                                loader = (level, levelData, offset, entityData) => {
+                                    Entity e = (Entity) ctor.Invoke(_EmptyObjectArray);
+                                    (e as patch_Entity).EntityData = entityData;
+                                    return e;
+                                };
+                                if (!TypeHelper.entityDataNameToType.ContainsKey(id))
+                                    TypeHelper.entityDataNameToType[id] = type;
                                 goto RegisterEntityLoader;
                             }
 
