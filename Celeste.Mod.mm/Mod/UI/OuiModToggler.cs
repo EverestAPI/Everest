@@ -436,8 +436,8 @@ namespace Celeste.Mod.UI {
             }
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
-            textBox.OnTextInputCharActions['\n'] = exitSearch;
-            textBox.OnTextInputCharActions['\r'] = exitSearch;
+            textBox.OnTextInputCharActions['\n'] = (_) => { };
+            textBox.OnTextInputCharActions['\r'] = searchNextMod(false);
             textBox.OnTextInputCharActions['\b'] = (textBox) => {
                 if (textBox.DeleteCharacter()) {
                     Audio.Play(SFX.ui_main_rename_entry_backspace);
@@ -456,15 +456,6 @@ namespace Celeste.Mod.UI {
                         searchNextMod(false)(textBox);
                     } else if (Input.MenuUp.Pressed) {
                         searchNextMod(true)(textBox);
-                    } else if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
-                               && currentOption.UnselectedColor == currentOption.Container.HighlightColor) {
-                        if (Input.MenuLeft.Pressed) {
-                            currentOption.LeftPressed();
-                        } else if (Input.MenuRight.Pressed) {
-                            currentOption.RightPressed();
-                        }
-
-                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
                     }
                 }
             };
