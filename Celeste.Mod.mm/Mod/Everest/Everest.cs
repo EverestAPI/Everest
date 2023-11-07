@@ -641,10 +641,11 @@ namespace Celeste.Mod {
             private Queue<EverestModule> lateModuleInitQueue = null;
 
             public ModInitializationBatch() {
-                if (_ModInitBatch == null)
+                if (_ModInitBatch != null)
                     return;
 
                 IsActive = true;
+                _ModInitBatch = this;
             }
 
             public void Dispose() {
