@@ -14,6 +14,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -544,10 +545,10 @@ namespace Celeste.Mod {
                 module.LoadContent(true);
             }
             if (_Initialized) {
-                if (_DelayedModuleInitializationQueue != null)
-                    _DelayedModuleInitializationQueue.Enqueue(module);
+                if (_ModInitBatch != null)
+                    _ModInitBatch.LateInitializeModule(module);
                 else
-                    LateInitializeMods(Enumerable.Repeat(module, 1));
+                    LateInitializeModules(Enumerable.Repeat(module, 1));
             }
 
             if (Engine.Instance != null && Engine.Scene is Overworld overworld) {
@@ -581,10 +582,7 @@ namespace Celeste.Mod {
             CheckDependenciesOfDelayedMods();
         }
 
-        [ThreadStatic]
-        internal static Queue<EverestModule> _DelayedModuleInitializationQueue = null;
-
-        internal static void LateInitializeMods(IEnumerable<EverestModule> modules) {
+        internal static void LateInitializeModules(IEnumerable<EverestModule> modules) {
             // Re-initialize the tracker
             Tracker.Initialize();
 
@@ -627,10 +625,77 @@ namespace Celeste.Mod {
             foreach (EverestModule module in modules) {
                 if (module.GetType().GetMethod("PrepareMapDataProcessors", new Type[] { typeof(MapDataFixup) })?.DeclaringType == module.GetType()) {
                     Logger.Log(LogLevel.Verbose, "core", $"Module {module.Metadata} has map data processors: reloading maps.");
-                    AssetReloadHelper.ReloadAllMaps();
+                    TriggerModInitMapReload();
                     break;
                 }
             }
+        }
+
+        [ThreadStatic]
+        private static ModInitializationBatch _ModInitBatch;
+
+        internal class ModInitializationBatch : IDisposable {
+            public bool IsActive { get; private set; }
+
+            private bool shouldReloadMaps = false;
+            private Queue<EverestModule> lateModuleInitQueue = null;
+
+            public ModInitializationBatch() {
+                if (_ModInitBatch == null)
+                    return;
+
+                IsActive = true;
+            }
+
+            public void Dispose() {
+                if (!IsActive)
+                    return;
+                Trace.Assert(_ModInitBatch == this);
+
+                // Flush the batch
+                Flush();
+
+                // Reset the mod init batch
+                _ModInitBatch = null;
+                IsActive = false;
+            }
+
+            public void ReloadMaps() {
+                if (!IsActive)
+                    throw new InvalidOperationException("Can't add tasks to an inactive mod initialization batch");
+                shouldReloadMaps = true;
+            }
+
+            public void LateInitializeModule(EverestModule module) {
+                if (!IsActive)
+                    throw new InvalidOperationException("Can't add tasks to an inactive mod initialization batch");
+                lateModuleInitQueue.Enqueue(module);
+            }
+
+            public void Flush() {
+                if (!IsActive)
+                    return;
+
+                // Flush the module late-initialization queue
+                // This might set shouldReloadMaps
+                if (lateModuleInitQueue.Count > 0) {
+                    LateInitializeModules(lateModuleInitQueue);
+                    lateModuleInitQueue.Clear();
+                }
+
+                // Reload maps if we should
+                if (shouldReloadMaps) {
+                    AssetReloadHelper.ReloadAllMaps();
+                    shouldReloadMaps = false;
+                }
+            }
+        }
+
+        internal static void TriggerModInitMapReload() {
+            if (_ModInitBatch != null)
+                _ModInitBatch.ReloadMaps();
+            else
+                AssetReloadHelper.ReloadAllMaps();
         }
 
         internal static void CheckDependenciesOfDelayedMods() {
