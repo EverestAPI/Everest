@@ -266,6 +266,7 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Fichiers ZIP
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Dossiers
 	MODOPTIONS_MODTOGGLE_BINS=			Fichiers .bin de maps
+	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		Appuyez sur Tab ou Entrée pour lancer la recherche
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...
