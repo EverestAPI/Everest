@@ -638,7 +638,7 @@ namespace Celeste.Mod {
             public bool IsActive { get; private set; }
 
             private bool shouldReloadMaps = false;
-            private Queue<EverestModule> lateModuleInitQueue = null;
+            private Queue<EverestModule> lateModuleInitQueue = new Queue<EverestModule>();
 
             public ModInitializationBatch() {
                 if (_ModInitBatch != null)
