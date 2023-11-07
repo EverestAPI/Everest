@@ -14,8 +14,6 @@ namespace Celeste {
 
         public bool RestartedFromGolden;
 
-        public patch_Session(AreaKey area, string checkpoint = null, AreaStats oldStats = null) { }
-
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
 
         [MonoModConstructor]
