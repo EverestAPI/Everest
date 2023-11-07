@@ -755,9 +755,15 @@ namespace Celeste.Mod.UI {
             base.Render();
 
             if (modLoadingTask == null) {
-                Vector2 searchIconLocation = new(128f, 952f);
-                GFX.Gui["menu/mapsearch"].DrawCentered(searchIconLocation, Color.White);
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White);
+                MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+                const float PREFERRED_ICON_X = 100f;
+                float spaceNearMenu = (Engine.Width - menu.Width) / 2;
+                float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
+
+                Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
+                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
             }
         }
 
