@@ -378,7 +378,7 @@ namespace Celeste.Mod {
             _SafeTypes ??= new ConditionalWeakTable<Type, object>();
 
             try {
-                if (!_SafeTypes.TryGetValue(type, out _))
+                if (_SafeTypes.TryGetValue(type, out _))
                     return true;
 
                 // "Probe" the type
