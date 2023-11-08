@@ -14,6 +14,9 @@ namespace Celeste {
     class patch_TheoCrystal : TheoCrystal {
         public patch_Holdable Hold; // avoids extra cast
 
+        // we need to expose that vanilla private field to our patch class.
+	    private patch_Level Level;
+
         public patch_TheoCrystal(EntityData data, Vector2 offset)
             : base(data, offset) {
         }
@@ -34,9 +37,9 @@ namespace Celeste {
             bool isPlayerHoldingItem = false;
             bool isUpTransition = false;
 
-            if (new DynamicData(theoCrystal).Get<Level>("Level") is patch_Level level && level.Tracker.GetEntity<Player>() is Player player) {
+            if (Level.Tracker.GetEntity<Player>() is Player player) {
                 isPlayerHoldingItem = player.Holding?.IsHeld ?? false;
-                isUpTransition = level.Transitioning && level.TransitionDirection == -Vector2.UnitY;
+                isUpTransition = Level.Transitioning && Level.TransitionDirection == -Vector2.UnitY;
             }
 
             return isPlayerHoldingItem && isUpTransition;
