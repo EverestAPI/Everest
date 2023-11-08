@@ -23,6 +23,7 @@ namespace Celeste {
         private bool wasDashB;
         private HashSet<Trigger> triggersInside;
         private List<Entity> temp;
+        private readonly Hitbox normalHitbox;
 
         private static int diedInGBJ = 0;
         private int framesAlive;
@@ -277,7 +278,6 @@ namespace Celeste {
             bool theoBlockingUpTransition = false;
 
             if (origCanUnDuck && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
-                Collider normalHitbox = new DynamicData(this).Get<Collider>("normalHitbox");
                 theoBlockingUpTransition = normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
             }
 
