@@ -33,8 +33,11 @@ namespace Celeste {
         private static HashSet<string> ingestedModBankPaths = new HashSet<string>();
         public static bool AudioInitialized { get; private set; } = false;
 
-        [MonoModIgnore]
-        internal static extern void CheckFmod(RESULT result);
+        [MonoModReplace]
+        internal static void CheckFmod(RESULT result) {
+            if (result != RESULT.OK)
+                throw new Exception($"FMOD Failed: {result} ({Error.String(result)})");
+        }
 
         public static extern void orig_Init();
         public static void Init() {
@@ -354,9 +357,6 @@ namespace Celeste {
 
     }
     public static class AudioExt {
-
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
 
         public static Dictionary<string, Bank> Banks => patch_Audio.patch_Banks.Banks;
 

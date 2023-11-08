@@ -634,7 +634,7 @@ namespace Celeste.Mod {
         /// <param name="menu">Menu to add the section to.</param>
         /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
         /// <param name="snapshot">The Level.PauseSnapshot</param>
-        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public virtual void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
             if (type == null || settings == null)
@@ -890,6 +890,14 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="context">The context to add the processors to.</param>
         public virtual void PrepareMapDataProcessors(MapDataFixup context) {
+        }
+
+        public virtual void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Registered code module {GetType().FullName} for module {Metadata}.");
+        }
+
+        public virtual void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {GetType().FullName} for module {Metadata}.");
         }
 
     }

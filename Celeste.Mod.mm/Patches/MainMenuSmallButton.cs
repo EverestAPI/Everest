@@ -50,18 +50,22 @@ namespace Celeste {
         /// <summary>
         /// Get the original label name dialog key. Useful when inserting your own button between others.
         /// </summary>
+        [Obsolete("Use MainMenuSmallButton.LabelName instead.")]
         public static string GetLabelName(this MainMenuSmallButton self)
             => ((patch_MainMenuSmallButton) self).LabelName;
 
         /// <summary>
         /// Get the original GUI atlas icon path. Useful when inserting your own button between others.
         /// </summary>
+        [Obsolete("Use MainMenuSmallButton.IconName instead.")]
         public static string GetIconName(this MainMenuSmallButton self)
             => ((patch_MainMenuSmallButton) self).IconName;
 
+        [Obsolete("Use MainMenuSmallButton.Ease instead.")]
         public static float GetEase(this MainMenuSmallButton self) {
             return ((patch_MainMenuSmallButton) self).Ease;
         }
+        [Obsolete("Use MainMenuSmallButton.Wiggler instead.")]
         public static Wiggler GetWiggler(this MainMenuSmallButton self) {
             return ((patch_MainMenuSmallButton) self).Wiggler;
         }

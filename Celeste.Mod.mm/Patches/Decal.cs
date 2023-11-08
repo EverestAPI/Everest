@@ -332,8 +332,10 @@ namespace Celeste {
 
     public static class DecalExt {
 
+        [Obsolete("Use Decal.Scale instead.")]
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
+        [Obsolete("Use Decal.Scale instead.")]
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
 

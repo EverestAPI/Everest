@@ -236,10 +236,8 @@ namespace Celeste {
     }
     public static class DialogExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_Dialog.CleanLevelSet(string)"/>
+        [Obsolete("Use Dialog.CleanLevelSet instead.")]
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
 

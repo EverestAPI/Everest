@@ -27,8 +27,8 @@ namespace Celeste {
         [PatchMountainRendererUpdate]
         public extern void orig_Update(Scene scene);
         public override void Update(Scene scene) {
-            AreaData area = -1 < Area && Area < (AreaData.Areas?.Count ?? 0) ? AreaData.Get(Area) : null;
-            MapMeta meta = area?.GetMeta();
+            patch_AreaData area = -1 < Area && Area < (AreaData.Areas?.Count ?? 0) ? patch_AreaData.Get(Area) : null;
+            MapMeta meta = area?.Meta;
 
             bool wasFreeCam = inFreeCameraDebugMode;
 
