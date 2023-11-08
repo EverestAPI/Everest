@@ -808,15 +808,15 @@ namespace MonoMod {
             MethodDefinition m_BlockUpTransitionsWithoutHoldable = method.DeclaringType.FindMethod("BlockUpTransitionsWithoutHoldable");
 
             new ILContext(method).Invoke(il => {
-                ILCursor curser = new(il);
+                ILCursor cursor = new(il);
 
-                curser.GotoNext(MoveType.After,
+                cursor.GotoNext(MoveType.After,
                     instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
                     instr => instr.MatchStloc(2));
-                curser.Emit(OpCodes.Ldloc_2);
-                curser.Emit(OpCodes.Ldarg_1);
-                curser.Emit(OpCodes.Ldloc_0);
-                curser.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
+                cursor.Emit(OpCodes.Ldloc_2);
+                cursor.Emit(OpCodes.Ldarg_1);
+                cursor.Emit(OpCodes.Ldloc_0);
+                cursor.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
             });
         }
     }
