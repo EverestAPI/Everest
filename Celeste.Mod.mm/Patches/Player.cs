@@ -23,6 +23,7 @@ namespace Celeste {
         private bool wasDashB;
         private HashSet<Trigger> triggersInside;
         private List<Entity> temp;
+        private readonly Hitbox normalHitbox;
 
         private static int diedInGBJ = 0;
         private int framesAlive;
@@ -285,6 +286,18 @@ namespace Celeste {
         [PatchPlayerApproachMaxMove]
         private extern int NormalUpdate();
 
+        public extern bool orig_get_CanUnDuck();
+
+        public bool get_CanUnDuck() {
+            bool origCanUnDuck = orig_get_CanUnDuck();
+            bool theoBlockingUpTransition = false;
+
+            if (origCanUnDuck && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
+                theoBlockingUpTransition = normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
+            }
+
+            return origCanUnDuck && !theoBlockingUpTransition;
+        }
     }
 
     public static class PlayerExt {
@@ -347,7 +360,7 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtor))]
     class PatchPlayerCtorAttribute : Attribute { }
-    
+
     /// <summary>
     /// Patches the method to fix puffer boosts breaking on respawn.
     /// </summary>

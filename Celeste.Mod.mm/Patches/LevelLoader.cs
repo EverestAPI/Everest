@@ -124,6 +124,50 @@ namespace Celeste {
                         SpriteData valueMod = kvpBank.Value;
 
                         if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
+                            // in order to allow map metadata Sprites.xml to override sprite origin and position, we
+                            // need to manually copy the property from the map metadata sprites onto the main spritebank
+                            // (done only if the overriding Sprites.xml specifies a value for that property)
+                            
+                            bool foundOrigin = false; // Center, Justify, Origin are all ways to specify the origin
+                            bool foundPosition = false;
+                            
+                            // iterate through the sources list, starting from the end (the most recently added source
+                            // setting a particular type of property is used)
+                            for (int i = valueMod.Sources.Count - 1; i >= 0; i--) {
+                                XmlElement xml = valueMod.Sources[i].XML;
+                                
+                                if (xml != null) {
+                                    // based on SpriteData.Add()
+                                    if (!foundOrigin) {
+                                        if (xml.HasChild("Center")) {
+                                            valueOrig.Sprite.CenterOrigin();
+                                            valueOrig.Sprite.Justify = new Vector2(0.5f, 0.5f);
+                                            foundOrigin = true;
+                                        }
+                                        else if (xml.HasChild("Justify")) {
+                                            valueOrig.Sprite.JustifyOrigin(xml.ChildPosition("Justify"));
+                                            valueOrig.Sprite.Justify = xml.ChildPosition("Justify");
+                                            foundOrigin = true;
+                                        }
+                                        else if (xml.HasChild("Origin")) {
+                                            valueOrig.Sprite.Origin = xml.ChildPosition("Origin");
+                                            foundOrigin = true;
+                                        }
+                                    }
+
+                                    if (!foundPosition) {
+                                        if (xml.HasChild("Position")) {
+                                            valueOrig.Sprite.Position = xml.ChildPosition("Position");
+                                            foundPosition = true;
+                                        }
+                                    }
+
+                                    if (foundOrigin && foundPosition) {
+                                        break;
+                                    }
+                                }
+                            }
+
                             IDictionary animsOrig = ((patch_Sprite) valueOrig.Sprite).Animations;
                             IDictionary animsMod = ((patch_Sprite) valueMod.Sprite).Animations;
                             foreach (DictionaryEntry kvpAnim in animsMod) {

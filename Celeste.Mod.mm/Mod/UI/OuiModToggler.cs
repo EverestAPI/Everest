@@ -1,5 +1,6 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections;
@@ -379,7 +380,7 @@ namespace Celeste.Mod.UI {
             }
 
             nextModIndex = startIndex;
-            return false;
+            return predicate(items[nextModIndex]);
         }
 
         private void AddSearchBox(TextMenu menu) {
@@ -437,7 +438,14 @@ namespace Celeste.Mod.UI {
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
             textBox.OnTextInputCharActions['\n'] = (_) => { };
-            textBox.OnTextInputCharActions['\r'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\r'] = (textBox) => {
+                if (MInput.Keyboard.CurrentState.IsKeyDown(Keys.LeftShift)
+                    || MInput.Keyboard.CurrentState.IsKeyDown(Keys.RightShift)) {
+                    searchNextMod(true)(textBox);
+                } else {
+                    searchNextMod(false)(textBox);
+                }
+            };
             textBox.OnTextInputCharActions['\b'] = (textBox) => {
                 if (textBox.DeleteCharacter()) {
                     Audio.Play(SFX.ui_main_rename_entry_backspace);
