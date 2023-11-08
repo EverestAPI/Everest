@@ -501,6 +501,8 @@ namespace Celeste.Mod {
             } else
                 ShareVanillaSaveFiles = true;
 
+            AutoSplitter.Init();
+
             // Add the previously created managers.
             Celeste.Instance.Components.Add(MainThreadHelper.Instance);
             Celeste.Instance.Components.Add(STAThreadHelper.Instance);
@@ -518,6 +520,7 @@ namespace Celeste.Mod {
         internal static void Shutdown() {
             DebugRC.Shutdown();
             TextInput.Shutdown();
+            AutoSplitter.Shutdown();
             Events.Celeste.Shutdown();
             LegacyMonoModCompatLayer.Uninitialize();
         }
