@@ -236,10 +236,8 @@ namespace Celeste {
     }
     public static class DialogExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_Dialog.CleanLevelSet(string)"/>
+        [Obsolete("Use Dialog.CleanLevelSet instead.")]
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
 
@@ -259,13 +257,20 @@ namespace MonoMod {
             // we can't use method.DeclaringType.FindMethod extension here because importing MonoMod.Utils causes ambiguous string.SpacedPascalCase above
             MethodDefinition m_GetFiles = Utils.Extensions.FindMethod(method.DeclaringType, "System.String[] _GetFiles(System.String,System.String,System.IO.SearchOption)");
 
+            bool match = false;
+
             Mono.Collections.Generic.Collection<Instruction> instrs = method.Body.Instructions;
             for (int instri = 0; instri < instrs.Count; instri++) {
                 Instruction instr = instrs[instri];
 
                 if (instr.MatchCall("System.IO.Directory", "GetFiles")) {
                     instr.Operand = m_GetFiles;
+                    match = true;
                 }
+            }
+
+            if (!match) {
+                throw new Exception("Call to GetFiles not found in " + method.FullName + "!");
             }
         }
 

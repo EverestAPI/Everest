@@ -1,5 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using System.Linq;
+using MonoMod;
+using System;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using MonoMod.Cil;
 
 namespace Celeste {
     public class patch_StrawberrySeed : StrawberrySeed {
@@ -23,6 +28,10 @@ namespace Celeste {
         private extern void orig_OnPlayer(Player player);
 #pragma warning restore CS0626
 
+        [MonoModIgnore]
+        [PatchPatchStrawberrySeedOnAllCollected]
+        public new extern void OnAllCollected();
+
         private void OnPlayer(Player player) {
             orig_OnPlayer(player);
 
@@ -36,5 +45,43 @@ namespace Celeste {
                 }
             }
         }
+    }
+}
+namespace MonoMod {
+    /// <summary>
+    /// Patches OnAllCollected to add a check if this.follower.Leader is null.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberrySeedOnAllCollected))]
+    class PatchPatchStrawberrySeedOnAllCollectedAttribute : Attribute { }
+
+    static partial class MonoModRules {
+
+        public static void PatchStrawberrySeedOnAllCollected(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new(context);
+            ILLabel beforeLoseFollower = cursor.DefineLabel();
+            ILLabel afterLoseFollower = cursor.DefineLabel();
+
+            // we want to add a null check on Leader before calling LoseFollower so we change:
+            // this.follower.Leader.LoseFollower(this.follower);
+            // to
+            // this.follower.Leader?.LoseFollower(this.follower);
+
+            // move cursor to the point where Leader is on top of the stack, and then duplicate it for the branch true
+            cursor.GotoNext(MoveType.After, inst => inst.MatchLdfld("Celeste.Follower", "Leader"));
+            cursor.Emit(OpCodes.Dup);
+            
+            // brach to the calling path if we are not null
+            cursor.Emit(OpCodes.Brtrue, beforeLoseFollower);
+            // on null discard duplicated value and jump over the calling path
+            cursor.Emit(OpCodes.Pop);
+            cursor.Emit(OpCodes.Br, afterLoseFollower);
+            
+            cursor.GotoNext(MoveType.Before, inst => inst.MatchLdarg(0));
+            cursor.MarkLabel(beforeLoseFollower);
+            
+            cursor.GotoNext(MoveType.After, inst => inst.MatchCallvirt("Celeste.Leader", "LoseFollower"));
+            cursor.MarkLabel(afterLoseFollower);
+        }
+
     }
 }

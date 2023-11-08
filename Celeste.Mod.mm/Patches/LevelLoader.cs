@@ -47,7 +47,7 @@ namespace Celeste {
             }
 
             if (CoreModule.Settings.LazyLoading) {
-                MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+                MainThreadHelper.Do(() => patch_VirtualContent.UnloadOverworld());
             }
 
             // Vanilla TileToIndex mappings.
@@ -84,8 +84,8 @@ namespace Celeste {
             string path = "";
 
             try {
-                AreaData area = AreaData.Get(session);
-                MapMeta meta = area.GetMeta();
+                patch_AreaData area = patch_AreaData.Get(session);
+                MapMeta meta = area.Meta;
 
                 path = meta?.BackgroundTiles;
                 if (string.IsNullOrEmpty(path))
@@ -124,7 +124,6 @@ namespace Celeste {
                         SpriteData valueMod = kvpBank.Value;
 
                         if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
-                            
                             // in order to allow map metadata Sprites.xml to override sprite origin and position, we
                             // need to manually copy the property from the map metadata sprites onto the main spritebank
                             // (done only if the overriding Sprites.xml specifies a value for that property)
@@ -168,9 +167,9 @@ namespace Celeste {
                                     }
                                 }
                             }
-                            
-                            IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
-                            IDictionary animsMod = valueMod.Sprite.GetAnimations();
+
+                            IDictionary animsOrig = ((patch_Sprite) valueOrig.Sprite).Animations;
+                            IDictionary animsMod = ((patch_Sprite) valueMod.Sprite).Animations;
                             foreach (DictionaryEntry kvpAnim in animsMod) {
                                 animsOrig[kvpAnim.Key] = kvpAnim.Value;
                             }
@@ -240,7 +239,7 @@ namespace Celeste {
 
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLoadingThreadAddEvent] // ... except for manually manipulating the method via MonoModRules
-        [PatchLoadingThreadAddSubHudRenderer] 
+        [PatchLoadingThreadAddSubHudRenderer]
         private extern void LoadingThread();
 
         private void LoadingThread_Safe() {
@@ -259,14 +258,14 @@ namespace Celeste {
                                 break;
                             }
                         }
-                        
+
                         string type = "";
                         if (e.TypeInStacktrace(typeof(SolidTiles))) {
                             type = "fg";
                         } else if (e.TypeInStacktrace(typeof(BackgroundTiles))) {
                             type = "bg";
                         }
-                        
+
                         patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_badtileid")
                             .Replace("((type))", type).Replace("((id))", ex.ID.ToString()).Replace("((x))", ex.X.ToString())
                             .Replace("((y))", ex.Y.ToString()).Replace("((room))", room).Replace("((sid))", sid);
@@ -293,9 +292,16 @@ namespace Celeste {
             base_Update();
             if (Loaded && !started) {
                 if (patch_LevelEnter.ErrorMessage == null) {
-                    StartLevel();
-                }
-                else {
+                    try {
+                        StartLevel();
+                    } catch (Exception e) {
+                        string SID = session.Area.GetSID();
+                        patch_LevelEnter.ErrorMessage = Dialog.Get("postcard_levelloadfailed").Replace("((sid))", SID);
+                        Logger.Log(LogLevel.Warn, "LevelLoader", $"Failed Starting Level at room {session.Level} of {SID}");
+                        e.LogDetailed();
+                        LevelEnter.Go(session, false);
+                    }
+                } else {
                     LevelEnter.Go(session, false); // We encountered an error, so display the error screen
                 }
             }

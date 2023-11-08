@@ -58,12 +58,19 @@ namespace Celeste.Mod.UI {
             Everest.Updater.Entry everestVersionToInstall = null;
 
             Dictionary<string, ModUpdateInfo> availableDownloads = ModUpdaterHelper.DownloadModUpdateList();
+
             if (availableDownloads == null) {
                 shouldAutoExit = false;
                 shouldRestart = false;
 
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED"));
             } else {
+                // add transitive dependencies to the list of dependencies to download, by using the mod dependency graph.
+                Dictionary<string, EverestModuleMetadata> modDependencyGraph = ModUpdaterHelper.DownloadModDependencyGraph();
+                if (modDependencyGraph != null) {
+                    addTransitiveDependencies(modDependencyGraph);
+                }
+
                 // load information on all installed mods, so that we can spot blacklisted ones easily.
                 LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_LOADING_INSTALLED_MODS"));
 
@@ -280,6 +287,36 @@ namespace Celeste.Mod.UI {
             }
         }
 
+        private static void addTransitiveDependencies(Dictionary<string, EverestModuleMetadata> modDependencyGraph) {
+            List<EverestModuleMetadata> newlyMissing = new List<EverestModuleMetadata>();
+            do {
+                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", "Checking for transitive dependencies...");
+
+                newlyMissing.Clear();
+
+                // All transitive dependencies must be either loaded or missing. If not, they're added as missing as well.
+                foreach (EverestModuleMetadata metadata in MissingDependencies) {
+                    if (!modDependencyGraph.TryGetValue(metadata.Name, out EverestModuleMetadata graphEntry)) {
+                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{metadata.Name} was not found in the graph");
+                    } else {
+                        foreach (EverestModuleMetadata dependency in graphEntry.Dependencies) {
+                            if (Everest.Loader.DependencyLoaded(dependency)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is loaded");
+                            } else if (MissingDependencies.Any(dep => dep.Name == dependency.Name) || newlyMissing.Any(dep => dep.Name == dependency.Name)) {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is already missing");
+                            } else {
+                                Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} was added to the missing dependencies!");
+                                newlyMissing.Add(dependency);
+                            }
+                        }
+                    }
+                }
+
+                MissingDependencies.AddRange(newlyMissing);
+
+            } while (newlyMissing.Count > 0);
+        }
+
         private static bool tryUnblacklist(EverestModuleMetadata dependency, Dictionary<EverestModuleMetadata, string> allModsInformation, HashSet<string> modsToUnblacklist) {
             KeyValuePair<EverestModuleMetadata, string> match = default;
 
@@ -384,10 +421,10 @@ namespace Celeste.Mod.UI {
 
                     if (source.UpdatePriority < updatePrio)
                         continue;
- 
+
                     if (source.UpdatePriority == updatePrio && entry.Build < updateEntry?.Build)
                         continue;
- 
+
                     updatePrio = source.UpdatePriority;
                     updateEntry = entry;
                 }

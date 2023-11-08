@@ -6,11 +6,13 @@ namespace Celeste {
     public class patch_Session {
         public bool RestartedFromGolden;
 
+        public patch_Session(AreaKey area, string checkpoint = null, AreaStats oldStats = null) { }
+
         public extern void orig_ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null);
 
         [MonoModConstructor]
         public void ctor(AreaKey area, string checkpoint = null, AreaStats oldStats = null) {
-            AreaData areaData = AreaData.Get(area);
+            patch_AreaData areaData = patch_AreaData.Get(area);
             if (area.Mode == AreaMode.Normal) {
                 areaData.RestoreASideAreaData();
             } else {

@@ -32,9 +32,9 @@ namespace Celeste.Mod.UI {
         }
 
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            TextMenu menu = new TextMenu();
-            ((patch_TextMenu) menu).CompactWidthMode = true;
-            ((patch_TextMenu) menu).BatchMode = true;
+            patch_TextMenu menu = new patch_TextMenu();
+            menu.CompactWidthMode = true;
+            menu.BatchMode = true;
 
             menu.Add(new TextMenuExt.HeaderImage("menu/everest") {
                 ImageColor = Color.White,
@@ -142,7 +142,7 @@ namespace Celeste.Mod.UI {
         /// </summary>
         /// <returns>true if an element matching 'criteria' was found, false otherwise.</returns>
         private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
-            TextMenu menu, bool inGame, EventInstance snapshot) {
+            patch_TextMenu menu, bool inGame, EventInstance snapshot) {
 
             bool foundMatch = false;
 

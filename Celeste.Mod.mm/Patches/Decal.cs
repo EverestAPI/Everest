@@ -33,6 +33,8 @@ namespace Celeste {
 
         public float Rotation = 0f;
 
+        public Color Color;
+
         private bool scaredAnimal;
 
         private float hideRange;
@@ -57,7 +59,7 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
+            [PatchDecalImageRender]
             public extern override void Render();
 
         }
@@ -70,7 +72,7 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
+            [PatchDecalImageRender]
             public extern override void Render();
 
         }
@@ -82,7 +84,7 @@ namespace Celeste {
             }
 
             [MonoModIgnore]
-            [PatchDecalImageRotation]
+            [PatchDecalImageRender]
             public extern override void Render();
 
         }
@@ -109,7 +111,7 @@ namespace Celeste {
 
             public override void Render() {
                 if (activeTextures.Count > 0)
-                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Color.White, Decal.scale, Decal.Rotation);
+                    activeTextures[(int) frame % activeTextures.Count].DrawCentered(Decal.Position, Decal.Color, Decal.scale, Decal.Rotation);
             }
         }
 
@@ -123,14 +125,21 @@ namespace Celeste {
             hideRange = 32f;
             showRange = 48f;
             solids = new List<Solid>();
+            Color = Color.White;
 
             orig_ctor(texture, position, scale, depth);
         }
 
         [MonoModConstructor]
-        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation) {
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation, Color color) {
             ctor(texture, position, scale, depth);
             Rotation = MathHelper.ToRadians(rotation);
+            Color = color;
+        }
+
+        [MonoModConstructor]
+        public void ctor(string texture, Vector2 position, Vector2 scale, int depth, float rotation, string color_hex) {
+            ctor(texture, position, scale, depth, rotation, patch_Calc.HexToColorWithAlpha(color_hex));
         }
 
         [MonoModIgnore]
@@ -217,7 +226,7 @@ namespace Celeste {
                 },
                 OnShake = v => Position += v,
                 OnAttach = p => {
-                    p.Add(new EntityRemovedListener(() => { 
+                    p.Add(new EntityRemovedListener(() => {
                         RemoveSelf();
                         solids.ForEach(s => s.RemoveSelf());
                     }));
@@ -227,6 +236,10 @@ namespace Celeste {
             if (jumpThrus)
                 staticMover.JumpThruChecker = s => s.CollideRect(new Rectangle((int) X + x, (int) X + y, w, h));
             Add(staticMover);
+        }
+
+        public void MakeAnimation(int[] frames) {
+            textures = frames.Select(i => textures[i]).ToList();
         }
 
         public void MakeScaredAnimation(int hideRange, int showRange, int[] idleFrames, int[] hiddenFrames, int[] showFrames, int[] hideFrames) {
@@ -288,7 +301,7 @@ namespace Celeste {
                             Logger.Log(LogLevel.Warn, "Decal Registry", $"Failed to apply property '{property.Key}' to {text}");
                             e.LogDetailed();
                         }
-                        
+
                     } else {
                         Logger.Log(LogLevel.Warn, "Decal Registry", $"Unknown property {property.Key} in decal {text}");
                     }
@@ -319,8 +332,10 @@ namespace Celeste {
 
     public static class DecalExt {
 
+        [Obsolete("Use Decal.Scale instead.")]
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
+        [Obsolete("Use Decal.Scale instead.")]
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
 
@@ -337,8 +352,8 @@ namespace MonoMod {
     /// <summary>
     /// Allow decal images to be rotated.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRotation))]
-    class PatchDecalImageRotationAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDecalImageRender))]
+    class PatchDecalImageRenderAttribute : Attribute { }
 
     /// <summary>
     /// Allow mirror masks to be rotated.
@@ -364,10 +379,13 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_showRange);
         }
 
-        public static void PatchDecalImageRotation(ILContext context, CustomAttribute attrib) {
+        public static void PatchDecalImageRender(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Decal = MonoModRule.Modder.FindType("Celeste.Decal").Resolve();
             TypeDefinition t_MTexture = MonoModRule.Modder.FindType("Monocle.MTexture").Resolve();
+
             FieldReference f_Decal_Rotation = t_Decal.FindField("Rotation");
+            FieldReference f_Decal_Color = t_Decal.FindField("Color");
+
             MethodReference m_get_Decal = null;
             MethodReference m_Draw_old = null;
 
@@ -390,6 +408,17 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Ldfld, f_Decal_Rotation);
             // ...and replace the draw call to accept it
             cursor.Emit(OpCodes.Callvirt, m_Draw_new);
+            cursor.Remove();
+
+            // go back to the start
+            cursor.Index = 0;
+
+            // move to just before the colour white is obtained, and replace it with some other colour
+            cursor.GotoNext(MoveType.Before, instr => instr.MatchCallOrCallvirt(out MethodReference method)
+                                                   && method.FullName == "Microsoft.Xna.Framework.Color Microsoft.Xna.Framework.Color::get_White()");
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Callvirt, m_get_Decal);
+            cursor.Emit(OpCodes.Ldfld, f_Decal_Color);
             cursor.Remove();
         }
 

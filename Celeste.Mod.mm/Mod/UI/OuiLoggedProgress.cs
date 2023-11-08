@@ -18,7 +18,9 @@ namespace Celeste.Mod.UI {
         public int Progress;
         public int ProgressMax;
 
+        public bool WaitForConfirmOnFinish;
         public event Action OnFinish;
+        private Action gotoAction;
 
         private float alpha = 0f;
         private float time = 0f;
@@ -42,11 +44,18 @@ namespace Celeste.Mod.UI {
             Progress = 0;
             ProgressMax = max;
 
-            OnFinish += () => Overworld.Goto<T>();
+            OnFinish += (gotoAction = () => Overworld.Goto<T>());
 
             if (task.Status == TaskStatus.Created)
                 task.Start();
 
+            return this;
+        }
+
+        public OuiLoggedProgress SwitchGoto<T>() where T : Oui {
+            if (gotoAction != null)
+                OnFinish -= gotoAction;
+            OnFinish += (gotoAction = () => Overworld.Goto<T>());
             return this;
         }
 
@@ -117,8 +126,10 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Task != null && (Task.IsCompleted || Task.IsCanceled || Task.IsFaulted)) {
-                OnFinish?.Invoke();
-                Task = null;
+                if (!WaitForConfirmOnFinish || Input.MenuConfirm.Pressed) {
+                    OnFinish?.Invoke();
+                    Task = null;
+                }
             }
 
             time += Engine.DeltaTime;

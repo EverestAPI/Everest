@@ -2,6 +2,7 @@
 
 using Celeste.Mod;
 using MonoMod;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -197,12 +198,10 @@ namespace Monocle {
     }
     public static class SpriteBankExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get the path to the file from which the SpriteBank was loaded.
         /// </summary>
+        [Obsolete("Use SpriteBank.XMLPath instead.")]
         public static string GetXMLPath(this SpriteBank self)
             => ((patch_SpriteBank) self).XMLPath;
 

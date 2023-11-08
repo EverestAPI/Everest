@@ -7,7 +7,7 @@ using System.Xml;
 using System.Xml.Serialization;
 
 namespace Celeste {
-    class patch_AreaStats : AreaStats {
+    public class patch_AreaStats : AreaStats {
 
         [XmlAttribute]
         [MonoModLinkFrom("System.Int32 Celeste.AreaStats::ID_Unsafe")]
@@ -21,13 +21,13 @@ namespace Celeste {
         public int ID_Safe {
             get {
                 if (!string.IsNullOrEmpty(SID))
-                    return AreaDataExt.Get(SID)?.ID ?? ID_Unsafe;
+                    return patch_AreaData.Get(SID)?.ID ?? ID_Unsafe;
                 return ID_Unsafe;
             }
             set {
                 ID_Unsafe = value;
                 if (ID_Unsafe != -1)
-                    SID = AreaData.Areas[ID_Unsafe].GetSID();
+                    SID = patch_AreaData.Areas[ID_Unsafe].SID;
                 else
                     SID = null;
             }
@@ -84,31 +84,33 @@ namespace Celeste {
         }
 
     }
-    public static class AreaStatsExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
+    [Obsolete("Use AreaStats members instead.")]
+    public static class AreaStatsExt {
 
         /// <summary>
         /// Get an AreaKey for this area.
         /// </summary>
-        public static AreaKey ToKey(this AreaStats self, AreaMode mode)
-            => new AreaKey(self.ID, mode).SetSID(self.GetSID());
+        public static AreaKey ToKey(this patch_AreaStats self, AreaMode mode)
+            => new AreaKey(self.ID, mode).SetSID(self.SID);
 
         /// <summary>
         /// Get the name of the level set this area belongs to.
         /// </summary>
+        [Obsolete("Use AreaStats.LevelSet instead.")]
         public static string GetLevelSet(this AreaStats self)
             => ((patch_AreaStats) self).LevelSet;
 
         /// <summary>
         /// Get the SID (string ID) of the area.
         /// </summary>
+        [Obsolete("Use AreaStats.SID instead.")]
         public static string GetSID(this AreaStats self)
             => ((patch_AreaStats) self).SID;
         /// <summary>
         /// Set the SID (string ID) of the area.
         /// </summary>
+        [Obsolete("Use AreaStats.SID instead.")]
         public static AreaStats SetSID(this AreaStats self, string value) {
             ((patch_AreaStats) self).SID = value;
             return self;

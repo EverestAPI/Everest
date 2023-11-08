@@ -15,18 +15,18 @@ namespace Celeste.Mod.UI {
             this.selectSlot = selectSlot;
 
             // if the default starting level set still exists, set it by default.
-            if (AreaData.Areas.Any(area => area.GetLevelSet() == CoreModule.Settings.DefaultStartingLevelSet)) {
+            if (patch_AreaData.Areas.Any(area => area.LevelSet == CoreModule.Settings.DefaultStartingLevelSet)) {
                 NewGameLevelSet = CoreModule.Settings.DefaultStartingLevelSet;
             }
 
-            Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
+            Label = patch_Dialog.CleanLevelSet(NewGameLevelSet ?? "Celeste");
             Scale = 0.5f;
             Action = () => changeStartingLevelSet(1);
 
             // find out what is the width of the biggest level set out there.
             float levelSetNameWidth = 0;
-            foreach (AreaData areaData in AreaData.Areas) {
-                levelSetNameWidth = Math.Max(levelSetNameWidth, ActiveFont.Measure(DialogExt.CleanLevelSet(areaData.GetLevelSet())).X);
+            foreach (patch_AreaData areaData in AreaData.Areas) {
+                levelSetNameWidth = Math.Max(levelSetNameWidth, ActiveFont.Measure(patch_Dialog.CleanLevelSet(areaData.LevelSet)).X);
             }
             arrowOffset = new Vector2(20f + levelSetNameWidth / 2 * Scale, 0f);
         }
@@ -63,9 +63,9 @@ namespace Celeste.Mod.UI {
 
             int id;
             if (direction > 0) {
-                id = AreaData.Areas.FindLastIndex(area => area.GetLevelSet() == NewGameLevelSet) + direction;
+                id = patch_AreaData.Areas.FindLastIndex(area => area.LevelSet == NewGameLevelSet) + direction;
             } else {
-                id = AreaData.Areas.FindIndex(area => area.GetLevelSet() == NewGameLevelSet) + direction;
+                id = patch_AreaData.Areas.FindIndex(area => area.LevelSet == NewGameLevelSet) + direction;
             }
 
             if (id >= AreaData.Areas.Count)
@@ -73,9 +73,9 @@ namespace Celeste.Mod.UI {
             if (id < 0)
                 id = AreaData.Areas.Count - 1;
 
-            NewGameLevelSet = AreaData.Areas[id].GetLevelSet();
+            NewGameLevelSet = patch_AreaData.Areas[id].LevelSet;
 
-            Label = DialogExt.CleanLevelSet(NewGameLevelSet ?? "Celeste");
+            Label = patch_Dialog.CleanLevelSet(NewGameLevelSet ?? "Celeste");
             ((patch_OuiFileSelectSlot) selectSlot).WiggleMenu();
         }
     }

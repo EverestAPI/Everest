@@ -7,7 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -81,8 +81,7 @@ namespace Celeste.Mod {
                     string data;
                     try {
                         Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
-                        using (WebClient wc = new WebClient()) {
-                            wc.Headers.Add("User-Agent", "Everest/" + Everest.VersionString);
+                        using (WebClient wc = new CompressedWebClient()) {
                             data = wc.DownloadString(Index());
                         }
                     } catch (Exception e) {
@@ -207,7 +206,7 @@ namespace Celeste.Mod {
             private static string _everestUpdaterDatabaseURL;
             private static string GetEverestUpdaterDatabaseURL() {
                 if (string.IsNullOrEmpty(_everestUpdaterDatabaseURL)) {
-                    using (WebClient wc = new WebClient()) {
+                    using (WebClient wc = new CompressedWebClient()) {
                         Logger.Log(LogLevel.Verbose, "updater", "Fetching everest updater database URL");
                         
                         UriBuilder uri = new UriBuilder(wc.DownloadString("https://everestapi.github.io/everestupdater.txt").Trim());
@@ -336,6 +335,7 @@ namespace Celeste.Mod {
                 if (!Flags.SupportUpdatingEverest) {
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOTSUPPORTED"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
@@ -345,15 +345,19 @@ namespace Celeste.Mod {
                     // Exit immediately.
                     progress.Init<OuiModOptions>(Dialog.Clean("updater_title"), new Task(() => { }), 1).Progress = 1;
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_NOUPDATE"));
+                    progress.WaitForConfirmOnFinish = true;
                     return;
                 }
 
                 // The user has made their choice, so we will save the desired branch now.
                 CoreModule.Settings.CurrentBranch = version.Source.Name;
                 CoreModule.Instance.SaveSettings();
-                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => _UpdateStart(progress, version)), 0);
+                progress.Init<OuiHelper_Shutdown>(Dialog.Clean("updater_title"), new Task(() => {
+                    if (!_UpdateStart(progress, version))
+                        progress.SwitchGoto<OuiModOptions>().WaitForConfirmOnFinish = true;
+                }), 0);
             }
-            private static void _UpdateStart(OuiLoggedProgress progress, Entry version) {
+            private static bool _UpdateStart(OuiLoggedProgress progress, Entry version) {
                 // Last line printed on error.
                 string errorHint = $"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}";
 
@@ -383,7 +387,7 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    return false;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_DOWNLOADFINISHED"));
 
@@ -430,7 +434,7 @@ namespace Celeste.Mod {
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
-                    return;
+                    return false;
                 }
                 progress.LogLine(Dialog.Clean("EVERESTUPDATER_EXTRACTIONFINISHED"));
 
@@ -445,9 +449,6 @@ namespace Celeste.Mod {
                 progress.Lines[progress.Lines.Count - 1] = action;
 
                 try {
-                    // Store the update version for later
-                    File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
-
                     // Start MiniInstaller in a separate process.
                     Process installer = new Process();
                     string installerPath = Path.Combine(extractedPath, "MiniInstaller.exe");
@@ -469,10 +470,72 @@ namespace Celeste.Mod {
                             }
                         }
                     } else {
+                        // Check if the .NET runtime is installed
+                        Process dotnetProc = null;
+                        try {
+                            dotnetProc = Process.Start(new ProcessStartInfo() {
+                                FileName = "dotnet",
+                                Arguments = "--list-runtimes",
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true
+                            });
+                        } catch (Win32Exception) {
+                            // Fallback to the default runtime path
+                            string dotnetPath = null;
+                            if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                                if (Environment.Is64BitOperatingSystem)
+                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles") ?? string.Empty) + "\\dotnet";
+                                else
+                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? string.Empty) + "\\dotnet";
+                            } else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux))
+                                dotnetPath = "/usr/share/dotnet";
+                            else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))
+                                dotnetPath = "/usr/local/share/dotnet";
+
+                            if (File.Exists(dotnetPath)) {
+                                try {
+                                    dotnetProc = Process.Start(new ProcessStartInfo() {
+                                        FileName = dotnetPath,
+                                        Arguments = "--list-runtimes",
+                                        UseShellExecute = false,
+                                        RedirectStandardOutput = true
+                                    });
+                                } catch (Win32Exception) {
+                                    dotnetProc = null;
+                                }
+                            } else
+                                dotnetProc = null;
+                        }
+
+                        dotnetProc?.WaitForExit();
+                        string runtimeOut = dotnetProc?.ExitCode == 0 ? dotnetProc?.StandardOutput?.ReadToEnd() : null;
+
+                        if (!(runtimeOut?.Contains("Microsoft.NETCore.App 7.") ?? false)) {
+                            // The .NET Runtime is not installed
+                            string installerLink = 
+                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
+                                    (Environment.Is64BitOperatingSystem ?
+                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x64-installer" :
+                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x86-installer"
+                                    ) :
+                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) ?
+                                    "https://learn.microsoft.com/en-us/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website"
+                                : MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS) ?
+                                    "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-macos-x64-installer"
+                                : "https://dotnet.microsoft.com/en-us/download/dotnet/7.0";
+
+                            progress.LogLine(string.Empty);
+                            progress.LogLine(Dialog.Clean("EVERESTUPDATER_MISSINGRUNTIME_A"));
+                            progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_MISSINGRUNTIME_B"), installerLink));
+                            progress.Progress = 0;
+                            progress.ProgressMax = 1;
+                            return false;
+                        }
+
                         // This build ships with native MiniInstaller binaries
                         installer.StartInfo.FileName = installerPath = Path.Combine(extractedPath,
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
-                                (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Bits64) ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
+                                (Environment.Is64BitOperatingSystem ? "MiniInstaller-win64.exe" : "MiniInstaller-win.exe") :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux)   ? "MiniInstaller-linux" :
                             MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)   ? "MiniInstaller-osx" :
                             throw new Exception("Unknown OS platform")
@@ -492,6 +555,10 @@ namespace Celeste.Mod {
                             throw new Exception("Failed to set MiniInstaller executable flag");
                     }
 
+                    // Store the update version for later
+                    File.WriteAllText(Path.Combine(extractedPath, "update-build.txt"), version.Build.ToString());
+
+                    // Start MiniInstaller
                     installer.StartInfo.WorkingDirectory = extractedPath;
                     if (Environment.OSVersion.Platform == PlatformID.Unix) {
                         installer.StartInfo.UseShellExecute = false;
@@ -499,12 +566,14 @@ namespace Celeste.Mod {
                     } else {
                         installer.Start();
                     }
+                    return true;
                 } catch (Exception e) {
                     progress.LogLine(Dialog.Clean("EVERESTUPDATER_STARTINGFAILED"));
                     e.LogDetailed();
                     progress.LogLine(errorHint);
                     progress.Progress = 0;
                     progress.ProgressMax = 1;
+                    return false;
                 }
             }
 

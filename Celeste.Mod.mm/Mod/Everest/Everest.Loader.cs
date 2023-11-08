@@ -1,7 +1,11 @@
-﻿using Celeste.Mod.Core;
+﻿using Celeste.Mod.Backdrops;
+using Celeste.Mod.Core;
+using Celeste.Mod.Entities;
 using Celeste.Mod.Helpers;
 using Ionic.Zip;
 using MAB.DotIgnore;
+using Microsoft.Xna.Framework;
+using Monocle;
 using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
@@ -33,6 +37,12 @@ namespace Celeste.Mod {
             /// The currently loaded mod blacklist.
             /// </summary>
             public static ReadOnlyCollection<string> Blacklist => _Blacklist?.AsReadOnly();
+
+            /// <summary>
+            /// The path to the Everest /Mods/favorites.txt file.
+            /// </summary>
+            public static string PathFavorites { get; internal set; }
+            internal static HashSet<string> Favorites = new HashSet<string>();
 
             /// <summary>
             /// The path to the Everest /Mods/temporaryblacklist.txt file.
@@ -149,6 +159,15 @@ namespace Celeste.Mod {
                         writer.WriteLine("# This is the Updater Blacklist. Lines starting with # are ignored.");
                         writer.WriteLine("# If you put the name of a mod zip in this file, it won't be auto-updated and it won't show update notifications on the title screen.");
                         writer.WriteLine("SomeMod.zip");
+                    }
+                }
+
+                PathFavorites = Path.Combine(PathMods, "favorites.txt");
+                if (File.Exists(PathFavorites)) {
+                    Favorites = new HashSet<string>(File.ReadAllLines(PathFavorites).Select(l => (l.StartsWith("#") ? "" : l).Trim()));
+                } else {
+                    using (StreamWriter writer = File.CreateText(PathFavorites)) {
+                        writer.WriteLine("# This is the favorites list. Lines starting with # are ignored.");
                     }
                 }
 
@@ -544,9 +563,7 @@ namespace Celeste.Mod {
                 }
 
                 bool foundModule = false;
-                for (int i = 0; i < types.Length; i++) {
-                    Type type = types[i];
-
+                foreach (Type type in types) {
                     EverestModule mod = null;
                     try {
                         if (typeof(EverestModule).IsAssignableFrom(type) && !type.IsAbstract) {
@@ -560,15 +577,221 @@ namespace Celeste.Mod {
                         Logger.Log(LogLevel.Warn, "loader", $"Skipping type '{type.FullName}' likely depending on optional dependency: {e}");
                     }
 
-                   if (mod != null) {
+                    if (mod != null) {
                         mod.Metadata = meta;
                         mod.Register();
-                   }
+                    }
                 }
 
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
                 if (!foundModule)
                     Logger.Log(LogLevel.Warn, "loader", "Assembly doesn't contain an EverestModule!");
+                
+                ProcessAssembly(meta, asm, types);
+            }
+
+            internal static void ProcessAssembly(EverestModuleMetadata meta, Assembly asm, Type[] types) {
+                LuaLoader.Precache(asm);
+
+                bool newStrawberriesRegistered = false;
+                
+                foreach (Type type in types) {
+                    // Search for all entities marked with the CustomEntityAttribute.
+                    foreach (CustomEntityAttribute attrib in type.GetCustomAttributes<CustomEntityAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id;
+                            string genName;
+                            string[] split = idFull.Split('=');
+
+                            if (split.Length == 1) {
+                                id = split[0];
+                                genName = "Load";
+
+                            } else if (split.Length == 2) {
+                                id = split[0];
+                                genName = split[1];
+
+                            } else {
+                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+
+                            id = id.Trim();
+                            genName = genName.Trim();
+
+                            patch_Level.EntityLoader loader = null;
+
+                            ConstructorInfo ctor;
+                            MethodInfo gen;
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(Level), typeof(LevelData), typeof(Vector2), typeof(EntityData) });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                                loader = (level, levelData, offset, entityData) => (Entity) gen.Invoke(null, new object[] { level, levelData, offset, entityData });
+                                goto RegisterEntityLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2), typeof(EntityID) });
+                            if (ctor != null) {
+                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset, new EntityID(levelData.Name, entityData.ID) });
+                                goto RegisterEntityLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(EntityData), typeof(Vector2) });
+                            if (ctor != null) {
+                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { entityData, offset });
+                                goto RegisterEntityLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(Vector2) });
+                            if (ctor != null) {
+                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(new object[] { offset });
+                                goto RegisterEntityLoader;
+                            }
+
+                            ctor = type.GetConstructor(_EmptyTypeArray);
+                            if (ctor != null) {
+                                loader = (level, levelData, offset, entityData) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                                goto RegisterEntityLoader;
+                            }
+
+                            RegisterEntityLoader:
+                            if (loader == null) {
+                                Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
+                                continue;
+                            }
+                            patch_Level.EntityLoaders[id] = loader;
+                        }
+                    }
+                    // Register with the StrawberryRegistry all entities marked with RegisterStrawberryAttribute.
+                    foreach (RegisterStrawberryAttribute attrib in type.GetCustomAttributes<RegisterStrawberryAttribute>()) {
+                        List<string> names = new List<string>();
+                        foreach (CustomEntityAttribute nameAttrib in type.GetCustomAttributes<CustomEntityAttribute>())
+                            foreach (string idFull in nameAttrib.IDs) {
+                                string[] split = idFull.Split('=');
+                                if (split.Length == 0) {
+                                    Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                    continue;
+                                }
+                                names.Add(split[0]);
+                            }
+                        if (names.Count == 0)
+                            goto NoDefinedBerryNames; // no customnames? skip out on registering berry
+
+                        foreach (string name in names) {
+                            StrawberryRegistry.Register(type, name, attrib.isTracked, attrib.blocksNormalCollection);
+                            newStrawberriesRegistered = true;
+                        }
+                    }
+                    NoDefinedBerryNames:
+                    ;
+
+                    // Search for all Entities marked with the CustomEventAttribute.
+                    foreach (CustomEventAttribute attrib in type.GetCustomAttributes<CustomEventAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id;
+                            string genName;
+                            string[] split = idFull.Split('=');
+
+                            if (split.Length == 1) {
+                                id = split[0];
+                                genName = "Load";
+
+                            } else if (split.Length == 2) {
+                                id = split[0];
+                                genName = split[1];
+
+                            } else {
+                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+
+                            id = id.Trim();
+                            genName = genName.Trim();
+
+                            patch_EventTrigger.CutsceneLoader loader = null;
+
+                            ConstructorInfo ctor;
+                            MethodInfo gen;
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Entity))) {
+                                loader = (trigger, player, eventID) => (Entity) gen.Invoke(null, new object[] { trigger, player, eventID });
+                                goto RegisterCutsceneLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(EventTrigger), typeof(Player), typeof(string) });
+                            if (ctor != null) {
+                                loader = (trigger, player, eventID) => (Entity) ctor.Invoke(new object[] { trigger, player, eventID });
+                                goto RegisterCutsceneLoader;
+                            }
+
+                            ctor = type.GetConstructor(_EmptyTypeArray);
+                            if (ctor != null) {
+                                loader = (trigger, player, eventID) => (Entity) ctor.Invoke(_EmptyObjectArray);
+                                goto RegisterCutsceneLoader;
+                            }
+
+                            RegisterCutsceneLoader:
+                            if (loader == null) {
+                                Logger.Log(LogLevel.Warn, "core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
+                                continue;
+                            }
+                            patch_EventTrigger.CutsceneLoaders[id] = loader;
+                        }
+                    }
+
+                    // Search for all Backdrops marked with the CustomBackdropAttribute.
+                    foreach (CustomBackdropAttribute attrib in type.GetCustomAttributes<CustomBackdropAttribute>()) {
+                        foreach (string idFull in attrib.IDs) {
+                            string id;
+                            string genName;
+                            string[] split = idFull.Split('=');
+
+                            if (split.Length == 1) {
+                                id = split[0];
+                                genName = "Load";
+                            } else if (split.Length == 2) {
+                                id = split[0];
+                                genName = split[1];
+                            } else {
+                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
+                                continue;
+                            }
+
+                            id = id.Trim();
+                            genName = genName.Trim();
+
+                            patch_MapData.BackdropLoader loader = null;
+
+                            ConstructorInfo ctor;
+                            MethodInfo gen;
+
+                            gen = type.GetMethod(genName, new Type[] { typeof(BinaryPacker.Element) });
+                            if (gen != null && gen.IsStatic && gen.ReturnType.IsCompatible(typeof(Backdrop))) {
+                                loader = data => (Backdrop) gen.Invoke(null, new object[] { data });
+                                goto RegisterBackdropLoader;
+                            }
+
+                            ctor = type.GetConstructor(new Type[] { typeof(BinaryPacker.Element) });
+                            if (ctor != null) {
+                                loader = data => (Backdrop) ctor.Invoke(new object[] { data });
+                                goto RegisterBackdropLoader;
+                            }
+
+                            RegisterBackdropLoader:
+                            if (loader == null) {
+                                Logger.Log(LogLevel.Warn, "core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
+                                continue;
+                            }
+                            patch_MapData.BackdropLoaders[id] = loader;
+                        }
+                    }
+                }
+                // We should run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
+                if (newStrawberriesRegistered && _Initialized) {
+                    Logger.Log(LogLevel.Verbose, "core", $"Assembly {asm.FullName} for module {meta} has custom strawberries: reloading maps.");
+                    AssetReloadHelper.ReloadAllMaps();
+                }
             }
 
             internal static void ReloadModAssembly(object source, FileSystemEventArgs e, bool retrying = false) {
@@ -577,16 +800,14 @@ namespace Celeste.Mod {
 
                 Logger.Log(LogLevel.Info, "loader", $"Reloading mod assembly: {e.FullPath}");
                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
-                    EverestModule module = _Modules.FirstOrDefault(m => m.Metadata.DLL == e.FullPath);
-                    if (module == null)
-                        return;
-
                     AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {Path.GetFileName(e.FullPath)}", () => {
-                        Assembly asm = null;
+                        List<EverestModule> modules = _Modules.FindAll(m => m.Metadata.DLL == e.FullPath);
+                        
+                        Assembly newAsm;
                         using (FileStream stream = File.OpenRead(e.FullPath))
-                            asm = Relinker.GetRelinkedAssembly(module.Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
+                            newAsm = Relinker.GetRelinkedAssembly(modules[0].Metadata, Path.GetFileNameWithoutExtension(e.FullPath), stream);
 
-                        if (asm == null) {
+                        if (newAsm == null) {
                             if (!retrying) {
                                 // Retry.
                                 QueuedTaskHelper.Do("ReloadModAssembly:" + e.FullPath, () => {
@@ -597,36 +818,43 @@ namespace Celeste.Mod {
                         }
 
                         ((FileSystemWatcher) source).Dispose();
-
-                        // be sure to save this module's save data and session before reloading it, so that they are not lost.
-                        if (SaveData.Instance != null) {
-                            Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
-                            if (module.SaveDataAsync) {
-                                module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
-                            } else {
-#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
-                                if (CoreModule.Settings.SaveDataFlush ?? false)
-                                    module.ForceSaveDataFlush++;
-                                module.SaveSaveData(SaveData.Instance.FileSlot);
-#pragma warning restore CS0618
-                            }
-
-                            if (SaveData.Instance.CurrentSession?.InArea ?? false) {
-                                Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                        
+                        foreach (EverestModule module in modules) {
+                            // be sure to save this module's save data and session before reloading it, so that they are not lost.
+                            if (SaveData.Instance != null) {
+                                Logger.Log(LogLevel.Verbose, "core", $"Saving save data slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
                                 if (module.SaveDataAsync) {
-                                    module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
+                                    module.WriteSaveData(SaveData.Instance.FileSlot, module.SerializeSaveData(SaveData.Instance.FileSlot));
                                 } else {
 #pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
                                     if (CoreModule.Settings.SaveDataFlush ?? false)
                                         module.ForceSaveDataFlush++;
-                                    module.SaveSession(SaveData.Instance.FileSlot);
+                                    module.SaveSaveData(SaveData.Instance.FileSlot);
 #pragma warning restore CS0618
                                 }
-                            }
-                        }
 
-                        Unregister(module);
-                        LoadModAssembly(module.Metadata, asm);
+                                if (SaveData.Instance.CurrentSession?.InArea ?? false) {
+                                    Logger.Log(LogLevel.Verbose, "core", $"Saving session slot {SaveData.Instance.FileSlot} for {module.Metadata} before reloading");
+                                    if (module.SaveDataAsync) {
+                                        module.WriteSession(SaveData.Instance.FileSlot, module.SerializeSession(SaveData.Instance.FileSlot));
+                                    } else {
+#pragma warning disable CS0618 // Synchronous save / load IO is obsolete but some mods still override / use it.
+                                        if (CoreModule.Settings.SaveDataFlush ?? false)
+                                            module.ForceSaveDataFlush++;
+                                        module.SaveSession(SaveData.Instance.FileSlot);
+#pragma warning restore CS0618
+                                    }
+                                }
+                            }
+
+                            Unregister(module);
+                        }
+                        
+                        Assembly oldAsm = modules[0].GetType().Assembly;
+                        MainThreadHelper.Do(() => _DetourModManager.Unload(oldAsm));
+                        _RelinkedAssemblies.Remove(oldAsm);
+                        
+                        LoadModAssembly(modules[0].Metadata, newAsm);
                     });
                     AssetReloadHelper.ReloadLevel();
                 });

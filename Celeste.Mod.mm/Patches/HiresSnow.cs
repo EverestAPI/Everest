@@ -18,7 +18,7 @@ namespace Celeste {
         public void ctor(float overlayAlpha = 0.45f) {
             // THe vanilla overlay texture has got a 4x4 transparent blob formed by transparent pixels at each corner.
             MTexture overlay = OVR.Atlas["overlay"];
-            if (overlay.Texture.GetMetadata() == null) {
+            if (((patch_VirtualTexture) (object) overlay.Texture).Metadata == null) {
                 Texture2D texture = overlay.Texture.Texture;
                 if (overlay.ClipRect.X == 0 && overlay.ClipRect.Y == 0 &&
                     overlay.ClipRect.Width == texture.Width && overlay.ClipRect.Height == texture.Height) {

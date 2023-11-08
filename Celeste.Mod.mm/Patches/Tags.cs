@@ -15,9 +15,6 @@ namespace Celeste {
     }
     public static class TagsExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Tag to be used for entities rendering like a HUD, but below the actual game HUD.
         /// </summary>
