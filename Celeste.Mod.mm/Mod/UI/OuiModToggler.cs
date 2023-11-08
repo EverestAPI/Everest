@@ -379,7 +379,7 @@ namespace Celeste.Mod.UI {
             }
 
             nextModIndex = startIndex;
-            return false;
+            return predicate(items[nextModIndex]);
         }
 
         private void AddSearchBox(TextMenu menu) {
