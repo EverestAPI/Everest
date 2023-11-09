@@ -803,18 +803,21 @@ namespace MonoMod {
         }
 
 
-        public static void PatchLevelEnforceBounds(ILContext il, CustomAttribute attrib) {
-            MethodDefinition m_BlockUpTransitionsWithoutHoldable = il.Method.DeclaringType.FindMethod("BlockUpTransitionsWithoutHoldable");
-            
-            ILCursor cursor = new(il);
+        public static void PatchLevelEnforceBounds(MethodDefinition method, CustomAttribute attrib) {
 
-            cursor.GotoNext(MoveType.After,
-                instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
-                instr => instr.MatchStloc(2));
-            cursor.Emit(OpCodes.Ldloc_2);
-            cursor.Emit(OpCodes.Ldarg_1);
-            cursor.Emit(OpCodes.Ldloc_0);
-            cursor.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
+            MethodDefinition m_BlockUpTransitionsWithoutHoldable = method.DeclaringType.FindMethod("BlockUpTransitionsWithoutHoldable");
+
+            new ILContext(method).Invoke(il => {
+                ILCursor cursor = new(il);
+
+                cursor.GotoNext(MoveType.After,
+                    instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
+                    instr => instr.MatchStloc(2));
+                cursor.Emit(OpCodes.Ldloc_2);
+                cursor.Emit(OpCodes.Ldarg_1);
+                cursor.Emit(OpCodes.Ldloc_0);
+                cursor.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
+            });
         }
     }
 }

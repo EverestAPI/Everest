@@ -57,23 +57,26 @@ namespace MonoMod {
     class PatchTheoCrystalUpdateAttribute : Attribute { }
 
     static partial class MonoModRules {
-        public static void PatchTheoCrystalUpdate(ILContext il, CustomAttribute attrib) {
-            MethodDefinition m_IsPlayerHoldingItemAndTransitioningUp = il.Method.DeclaringType.FindMethod("IsPlayerHoldingItemAndTransitioningUp");
-            
+        public static void PatchTheoCrystalUpdate(MethodDefinition method, CustomAttribute attrib) {
+
+            MethodDefinition m_IsPlayerHoldingItemAndTransitioningUp = method.DeclaringType.FindMethod("IsPlayerHoldingItemAndTransitioningUp");
             ILLabel afterDieLabel = null;
-            ILCursor cursor = new(il);
-            cursor.GotoNext(MoveType.After,
-                instr => instr.MatchCall("Microsoft.Xna.Framework.Rectangle", "get_Bottom"),
-                instr => instr.MatchConvR4(),
-                instr => instr.MatchBleUn(out afterDieLabel),
-                instr => instr.MatchLdarg(0),
-                instr => instr.MatchCallvirt("Celeste.TheoCrystal", "Die"));
 
-            cursor.Index -= 2;
+            new ILContext(method).Invoke(il => {
+                ILCursor curser = new(il);
+                curser.GotoNext(MoveType.After,
+                    instr => instr.MatchCall("Microsoft.Xna.Framework.Rectangle", "get_Bottom"),
+                    instr => instr.MatchConvR4(),
+                    instr => instr.MatchBleUn(out afterDieLabel),
+                    instr => instr.MatchLdarg(0),
+                    instr => instr.MatchCallvirt("Celeste.TheoCrystal", "Die"));
 
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Call, m_IsPlayerHoldingItemAndTransitioningUp);
-            cursor.Emit(OpCodes.Brtrue, afterDieLabel);
+                curser.Index -= 2;
+
+                curser.Emit(OpCodes.Ldarg_0);
+                curser.Emit(OpCodes.Call, m_IsPlayerHoldingItemAndTransitioningUp);
+                curser.Emit(OpCodes.Brtrue, afterDieLabel);
+            });
         }
     }
 }
