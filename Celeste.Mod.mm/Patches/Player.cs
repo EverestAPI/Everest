@@ -270,19 +270,11 @@ namespace Celeste {
         [PatchPlayerStarFlyReturnToNormalHitbox]
         private extern void StarFlyReturnToNormalHitbox();
 
+        private bool theoBlockingUpTransition() => level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true) && normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
 
-        public extern bool orig_get_CanUnDuck();
-
-        public bool get_CanUnDuck() {
-            bool origCanUnDuck = orig_get_CanUnDuck();
-            bool theoBlockingUpTransition = false;
-
-            if (origCanUnDuck && level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true)) {
-                theoBlockingUpTransition = normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
-            }
-
-            return origCanUnDuck && !theoBlockingUpTransition;
-        }
+        [MonoModIgnore]
+        [PatchPlayerGetCanUnDuck]
+        public extern bool get_CanUnDuck();
     }
     public static class PlayerExt {
 
@@ -350,6 +342,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
     class PatchPlayerExplodeLaunchAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patches the property getter to prevent unducking into a screen transition when Theo is not carried.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerGetCanUnDuck))]
+    class PatchPlayerGetCanUnDuckAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -517,5 +515,19 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
+        public static void PatchPlayerGetCanUnDuck(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_theoBlockingUpTransition = context.Method.DeclaringType.FindMethod("theoBlockingUpTransition");
+            ILCursor cursor = new ILCursor(context);
+
+            // inserts: if (theoBlockingUpTransition()) return false;
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchCall("Monocle.Entity", "get_Collider"));
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Call, m_theoBlockingUpTransition);
+            ILLabel orig = cursor.DefineLabel();
+            cursor.Emit(OpCodes.Brfalse_S, orig);
+            cursor.Emit(OpCodes.Ldc_I4_0);
+            cursor.Emit(OpCodes.Ret);
+            cursor.MarkLabel(orig);
+        }
     }
 }
