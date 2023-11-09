@@ -161,7 +161,7 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Get a Vector2 from any float[] with a length of 2.
+        /// Get a Vector2 from any float[] with a length of 1 or 2.
         /// </summary>
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector2 or null if the length doesn't match.</returns>
@@ -176,7 +176,7 @@ namespace Celeste.Mod {
         }
 
         /// <summary>
-        /// Get a Vector3 from any float[] with a length of 3.
+        /// Get a Vector3 from any float[] with a length of 1 or 3.
         /// </summary>
         /// <param name="a">The input array.</param>
         /// <returns>The output Vector3 or null if the length doesn't match.</returns>
@@ -293,18 +293,6 @@ namespace Celeste.Mod {
             return option;
         }
 
-        // Celeste already ships with this.
-        /*
-        public static string ReadNullTerminatedString(this BinaryReader stream) {
-            string text = "";
-            char c;
-            while ((c = stream.ReadChar()) > '\0') {
-                text += c.ToString();
-            }
-            return text;
-        }
-        */
-
         /// <summary>
         /// Write the string to the BinaryWriter in a C-friendly format.
         /// </summary>
@@ -407,8 +395,7 @@ namespace Celeste.Mod {
         }
 
         public static BinaryPacker.Element SetAttr(this BinaryPacker.Element el, string name, object value) {
-            if (el.Attributes == null)
-                el.Attributes = new Dictionary<string, object>();
+            el.Attributes ??= new Dictionary<string, object>();
             el.Attributes[name] = value;
             return el;
         }
