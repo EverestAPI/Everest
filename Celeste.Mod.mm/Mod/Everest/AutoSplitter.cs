@@ -137,9 +137,9 @@ namespace Celeste.Mod {
             //Strings are encoded as null-terminated UTF8 strings
             //Additionally, the length of the string is stored as a ushort right before the string data at offset -2
             byte[] utf8Str = Encoding.UTF8.GetBytes(str);
-            view.Write(offset - 2, (ushort) utf8Str.Length);
-            view.WriteArray(offset, utf8Str, 0, utf8Str.Length);
-            view.Write(offset + utf8Str.Length, (byte) 0);
+            view.Write(offset, (ushort) utf8Str.Length);
+            view.WriteArray(offset + 2, utf8Str, 0, utf8Str.Length);
+            view.Write(offset + 2 + utf8Str.Length, (byte) 0);
 
             long ptrOff = offset + 1;
             offset += 2 + utf8Str.Length + 1;
