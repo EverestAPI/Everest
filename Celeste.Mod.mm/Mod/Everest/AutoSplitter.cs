@@ -89,7 +89,6 @@ namespace Celeste.Mod {
 
             // Initialize the header
             ref AutoSplitterInfo info = ref SplitterInfo;
-            long infoSize = Marshal.SizeOf<AutoSplitterInfo>();
 
             // - magic bytes
             fixed (byte* magicSrcPtr = AutoSplitterInfo.MagicBytes, magicDstPtr = info.Magic)
@@ -102,16 +101,15 @@ namespace Celeste.Mod {
             info.InfoVersion = AutoSplitterInfo.CurrentVersion;
 
             // - Everest version string
-            byte[] utf8VersionStr = Encoding.UTF8.GetBytes(Everest.VersionString);
-            _SplitterInfoView.WriteArray(infoSize, utf8VersionStr, 0, utf8VersionStr.Length);
-            _SplitterInfoView.Write(infoSize + utf8VersionStr.Length, (byte) 0);
-            info.EverestVersionStrPtr = (nint) (_SplitterInfoPtr + infoSize);
+            long strOff = Marshal.SizeOf<AutoSplitterInfo>();
+            info.EverestVersionStrPtr = (nint) (_SplitterInfoPtr + WriteString(_SplitterInfoView, ref strOff, Everest.VersionString));
 
             _IsInitialized = true;
         }
 
         internal static void Shutdown() {
-            Trace.Assert(_IsInitialized);
+            if (!_IsInitialized)
+                return;
 
             // Release pointers
             if (_SplitterInfoPtr != null)
@@ -135,18 +133,22 @@ namespace Celeste.Mod {
             _StringPoolOffset = 0;
         }
 
-        private static nint WriteUTF8String(string str) {
+        private static long WriteString(MemoryMappedViewAccessor view, ref long offset, string str) {
+            //Strings are encoded as null-terminated UTF8 strings
+            //Additionally, the length of the string is stored as a ushort right before the string data at offset -2
             byte[] utf8Str = Encoding.UTF8.GetBytes(str);
+            view.Write(offset - 2, (ushort) utf8Str.Length);
+            view.WriteArray(offset, utf8Str, 0, utf8Str.Length);
+            view.Write(offset + utf8Str.Length, (byte) 0);
 
-            //Append the string to the string pool
-            long stringOff = _StringPoolOffset;
-            _StringPoolOffset += utf8Str.Length + 1;
+            long ptrOff = offset + 1;
+            offset += 2 + utf8Str.Length + 1;
+            return ptrOff;
+        }
 
-            MemoryMappedViewAccessor stringPool = _UseStringPoolB ? _StringPoolBView : _StringPoolAView;
-            stringPool.WriteArray(stringOff, utf8Str, 0, utf8Str.Length);
-            stringPool.Write(stringOff + utf8Str.Length, (byte) 0);
-
-            return (nint) ((_UseStringPoolB ? _StringPoolBPtr : _StringPoolAPtr) + stringOff);
+        private static nint AppendStringToPool(string str) {
+            long ptrOff = WriteString(_UseStringPoolB ? _StringPoolBView : _StringPoolAView, ref _StringPoolOffset, str);
+            return (nint) ((_UseStringPoolB ? _StringPoolBPtr : _StringPoolAPtr) + ptrOff);
         }
 
         internal static void Update() {
@@ -160,7 +162,7 @@ namespace Celeste.Mod {
             if (Engine.Scene is Level lvl) {
                 info.Chapter = lvl.Session.Area.ID;
                 info.Mode = (int) lvl.Session.Area.Mode;
-                info.LevelStrPtr = WriteUTF8String(lvl.Session.Level);
+                info.LevelStrPtr = AppendStringToPool(lvl.Session.Level);
 
                 info.ChapterTime = lvl.Session.Time;
                 info.ChapterStrawberries = lvl.Session.Strawberries.Count;
@@ -175,7 +177,7 @@ namespace Celeste.Mod {
             } else {
                 info.Chapter = -1;
                 info.Mode = -1;
-                info.LevelStrPtr = WriteUTF8String(string.Empty);
+                info.LevelStrPtr = AppendStringToPool(string.Empty);
 
                 info.ChapterTime = 0;
                 info.ChapterStrawberries = 0;
