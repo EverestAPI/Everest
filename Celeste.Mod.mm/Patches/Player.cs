@@ -23,7 +23,6 @@ namespace Celeste {
         private bool wasDashB;
         private HashSet<Trigger> triggersInside;
         private List<Entity> temp;
-        private readonly Hitbox normalHitbox;
 
         private static int diedInGBJ = 0;
         private int framesAlive;
@@ -285,12 +284,6 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerApproachMaxMove]
         private extern int NormalUpdate();
-        
-        private bool theoBlockingUpTransition() => level.Tracker.GetEntity<TheoCrystal>() != null && (!Holding?.IsHeld ?? true) && normalHitbox.Top + Position.Y < level.Bounds.Top + 1;
-
-        [MonoModIgnore]
-        [PatchPlayerGetCanUnDuck]
-        public extern bool get_CanUnDuck();
     }
 
     public static class PlayerExt {
@@ -353,18 +346,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtor))]
     class PatchPlayerCtorAttribute : Attribute { }
-
+    
     /// <summary>
     /// Patches the method to fix puffer boosts breaking on respawn.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
     class PatchPlayerExplodeLaunchAttribute : Attribute { }
-    
-    /// <summary>
-    /// Patches the property getter to prevent unducking into a screen transition when Theo is not carried.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerGetCanUnDuck))]
-    class PatchPlayerGetCanUnDuckAttribute : Attribute { }
 
     /// <summary>
     /// Patches the method to fix float jank when calculationg Calc.ApproachTo maxMove values
@@ -568,21 +555,6 @@ namespace MonoMod {
                         throw new Exception($"Unexpected instruction in DeltaTime multiplier calculation: {instr}");
                 }
             }
-        }
-
-        public static void PatchPlayerGetCanUnDuck(ILContext context, CustomAttribute attrib) {
-            MethodDefinition m_theoBlockingUpTransition = context.Method.DeclaringType.FindMethod("theoBlockingUpTransition");
-            ILCursor cursor = new ILCursor(context);
-
-            // inserts: if (theoBlockingUpTransition()) return false;
-            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg(0), instr => instr.MatchCall("Monocle.Entity", "get_Collider"));
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Call, m_theoBlockingUpTransition);
-            ILLabel orig = cursor.DefineLabel();
-            cursor.Emit(OpCodes.Brfalse_S, orig);
-            cursor.Emit(OpCodes.Ldc_I4_0);
-            cursor.Emit(OpCodes.Ret);
-            cursor.MarkLabel(orig);
         }
     }
 }

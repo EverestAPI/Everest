@@ -61,8 +61,6 @@ namespace Celeste {
         [Obsolete("Use RegisterLoadOverride instead")] public static int SkipScreenWipes;
         [Obsolete("Use RegisterLoadOverride instead")] public static bool ShouldAutoPause = false;
 
-        public Vector2 TransitionDirection { get; private set; } = new();
-
         public delegate Entity EntityLoader(Level level, LevelData levelData, Vector2 offset, EntityData entityData);
         public static readonly Dictionary<string, EntityLoader> EntityLoaders = new Dictionary<string, EntityLoader>();
 
@@ -95,10 +93,6 @@ namespace Celeste {
         [MonoModIgnore] // We don't want to change anything about the method...
         [PatchLevelUpdate] // ... except for manually manipulating the method via MonoModRules
         public extern new void Update();
-
-        [MonoModIgnore] // We don't want to change anything about the method...
-        [PatchLevelEnforceBounds] // ... except for manually manipulating the method via MonoModRules
-        public extern new void EnforceBounds(Player player);
 
         [MonoModReplace]
         public new void RegisterAreaComplete() {
@@ -187,7 +181,6 @@ namespace Celeste {
 
         public extern void orig_TransitionTo(LevelData next, Vector2 direction);
         public new void TransitionTo(LevelData next, Vector2 direction) {
-            TransitionDirection = direction;
             orig_TransitionTo(next, direction);
             Everest.Events.Level.TransitionTo(this, next, direction);
         }
@@ -237,7 +230,6 @@ namespace Celeste {
 
                 yield return orig.Current;
             }
-            TransitionDirection = new();
         }
 
         [PatchLevelLoader] // Manually manipulate the method via MonoModRules
@@ -610,14 +602,6 @@ namespace Celeste {
 
             return errorPresent;
         }
-
-        private static void BlockUpTransitionsWithoutHoldable(TheoCrystal entity, Player player, Rectangle bounds) {
-            // we stay consistent with base game, so we let the player transition with any holdable item and not just TheoCrystal
-            if (entity != null && player.Top < (bounds.Top + 1) && (!player.Holding?.IsHeld ?? true)) {
-                player.Top = bounds.Top + 1;
-                player.OnBoundsV();
-            }
-        }
     }
 
     public static class LevelExt {
@@ -670,12 +654,6 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelCanPause))]
     class PatchLevelCanPauseAttribute : Attribute { }
-
-    /// <summary>
-    /// A patch for the EnforceBounds method that checks if the player can transition up with Theo in the room.
-    /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLevelEnforceBounds))]
-    class PatchLevelEnforceBoundsAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -895,19 +873,5 @@ namespace MonoMod {
             c.Emit(OpCodes.Ldc_I4_0);
         }
 
-
-        public static void PatchLevelEnforceBounds(ILContext il, CustomAttribute attrib) {
-            MethodDefinition m_BlockUpTransitionsWithoutHoldable = il.Method.DeclaringType.FindMethod("BlockUpTransitionsWithoutHoldable");
-            
-            ILCursor cursor = new(il);
-
-            cursor.GotoNext(MoveType.After,
-                instr => instr.MatchCallvirt("Monocle.Tracker", "GetEntity"),
-                instr => instr.MatchStloc(2));
-            cursor.Emit(OpCodes.Ldloc_2);
-            cursor.Emit(OpCodes.Ldarg_1);
-            cursor.Emit(OpCodes.Ldloc_0);
-            cursor.Emit(OpCodes.Call, m_BlockUpTransitionsWithoutHoldable);
-        }
     }
 }
