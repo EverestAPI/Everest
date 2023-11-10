@@ -16,13 +16,14 @@ namespace Celeste.Mod {
 #region Splitter Info
         [StructLayout(LayoutKind.Explicit)]
         internal struct AutoSplitterInfo {
-            public const byte CurrentVersion = 1;
+            public const byte CurrentVersion = 2;
 
             public const int MagicSize = 0x14;
             public static readonly byte[] MagicBytes = Encoding.ASCII.GetBytes("EVERESTAUTOSPLIT").Concat(new byte[] { 0xf0, 0xf1, 0xf2, 0xf3,  }).ToArray();
 
             static AutoSplitterInfo() => Trace.Assert(MagicBytes.Length == MagicSize);
 
+            //Info Header
             [FieldOffset(0x00)] public fixed byte Magic[MagicSize];
             [FieldOffset(0x14)] public byte CelesteVersionMajor;
             [FieldOffset(0x15)] public byte CelesteVersionMinor;
@@ -30,20 +31,25 @@ namespace Celeste.Mod {
             [FieldOffset(0x17)] public byte InfoVersion;
             [FieldOffset(0x18)] public nint EverestVersionStrPtr;
 
-            [FieldOffset(0x20)] public int Chapter;
-            [FieldOffset(0x24)] public int Mode;
-            [FieldOffset(0x28)] public nint LevelStrPtr;
+            //Chapter / Level Metadata
+            [FieldOffset(0x20)] public nint LevelSetStrPtr;
+            [FieldOffset(0x28)] public nint ChapterSIDStrPtr;
+            [FieldOffset(0x30)] public int ChapterID;
+            [FieldOffset(0x34)] public int ChapterMode;
+            [FieldOffset(0x38)] public nint RoomNameStrPtr;
 
-            [FieldOffset(0x30)] public long ChapterTime;
-            [FieldOffset(0x38)] public int ChapterStrawberries;
-            [FieldOffset(0x3c)] public AutoSplitterChapterFlags ChapterFlags;
+            //Chapter Progress
+            [FieldOffset(0x40)] public long ChapterTime;
+            [FieldOffset(0x48)] public int ChapterStrawberries;
+            [FieldOffset(0x4c)] public AutoSplitterChapterFlags ChapterFlags;
 
-            [FieldOffset(0x40)] public long FileTime;
-            [FieldOffset(0x48)] public int FileStrawberries;
-            [FieldOffset(0x4c)] public int FileGoldenStrawberries;
-            [FieldOffset(0x50)] public int FileCassettes;
-            [FieldOffset(0x54)] public int FileHearts;
-            [FieldOffset(0x58)] public AutoSplitterFileFlags FileFlags;
+            //File Progress
+            [FieldOffset(0x50)] public long FileTime;
+            [FieldOffset(0x58)] public int FileStrawberries;
+            [FieldOffset(0x5c)] public int FileGoldenStrawberries;
+            [FieldOffset(0x60)] public int FileCassettes;
+            [FieldOffset(0x64)] public int FileHearts;
+            [FieldOffset(0x68)] public AutoSplitterFileFlags FileFlags;
         }
 
         [Flags]
@@ -58,7 +64,13 @@ namespace Celeste.Mod {
         }
 
         [Flags]
-        internal enum AutoSplitterFileFlags : uint {}
+        internal enum AutoSplitterFileFlags : uint {
+            IsDebug         = 1U << 0,
+            AssistMode      = 1U << 1,
+            VariantsMode    = 1U << 2,
+
+            FileActive      = 1U << 31,
+        }
 #endregion
 
         private static bool _IsInitialized;
@@ -147,6 +159,9 @@ namespace Celeste.Mod {
         }
 
         private static nint AppendStringToPool(string str) {
+            if (string.IsNullOrEmpty(str))
+                return 0;
+
             long ptrOff = WriteString(_UseStringPoolB ? _StringPoolBView : _StringPoolAView, ref _StringPoolOffset, str);
             return (nint) ((_UseStringPoolB ? _StringPoolBPtr : _StringPoolAPtr) + ptrOff);
         }
@@ -160,9 +175,11 @@ namespace Celeste.Mod {
 
             // Update chapter / level data
             if (Engine.Scene is Level lvl) {
-                info.Chapter = lvl.Session.Area.ID;
-                info.Mode = (int) lvl.Session.Area.Mode;
-                info.LevelStrPtr = AppendStringToPool(lvl.Session.Level);
+                info.LevelSetStrPtr = AppendStringToPool(lvl.Session.Area.GetLevelSet());
+                info.ChapterSIDStrPtr = AppendStringToPool(lvl.Session.Area.GetSID());
+                info.ChapterID = lvl.Session.Area.ID;
+                info.ChapterMode = (int) lvl.Session.Area.Mode;
+                info.RoomNameStrPtr = AppendStringToPool(lvl.Session.Level);
 
                 info.ChapterTime = lvl.Session.Time;
                 info.ChapterStrawberries = lvl.Session.Strawberries.Count;
@@ -175,9 +192,11 @@ namespace Celeste.Mod {
                     (!lvl.Completed ? AutoSplitterChapterFlags.TimerActive : 0)
                 ;
             } else {
-                info.Chapter = -1;
-                info.Mode = -1;
-                info.LevelStrPtr = AppendStringToPool(string.Empty);
+                info.LevelSetStrPtr = 0;
+                info.ChapterSIDStrPtr = 0;
+                info.ChapterID = -1;
+                info.ChapterMode = -1;
+                info.RoomNameStrPtr = 0;
 
                 info.ChapterTime = 0;
                 info.ChapterStrawberries = 0;
@@ -191,7 +210,12 @@ namespace Celeste.Mod {
                 info.FileGoldenStrawberries = saveData.TotalGoldenStrawberries;
                 info.FileCassettes = saveData.TotalCassettes;
                 info.FileHearts = saveData.TotalHeartGems;
-                info.FileFlags = 0;
+                info.FileFlags = 
+                    AutoSplitterFileFlags.FileActive |
+                    (saveData.DebugMode ? AutoSplitterFileFlags.IsDebug : 0) |
+                    (saveData.AssistMode ? AutoSplitterFileFlags.AssistMode : 0) |
+                    (saveData.VariantMode ? AutoSplitterFileFlags.VariantsMode : 0)
+                ;
             } else {
                 info.FileTime = 0;
                 info.FileStrawberries = 0;
