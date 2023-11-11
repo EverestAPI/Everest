@@ -761,6 +761,9 @@ namespace MonoMod {
             FieldDefinition f_DecalData_ColorHex = t_DecalData.FindField("ColorHex");
             FieldDefinition f_DecalData_Depth    = t_DecalData.FindField("Depth");
 
+            FieldDefinition f_Decal_DepthSetByPlacement = t_Decal.FindField("DepthSetByPlacement");
+
+            MethodDefinition m_DecalData_HasDepth = t_DecalData.FindMethod("HasDepth");
             MethodDefinition m_DecalData_GetDepth = t_DecalData.FindMethod("GetDepth");
 
             MethodDefinition m_Decal_ctor = t_Decal.FindMethod("System.Void .ctor(System.String,Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2,System.Int32,System.Single,System.String)");
@@ -790,6 +793,17 @@ namespace MonoMod {
                 // and replace the Decal constructor to accept it
                 cursor.Emit(OpCodes.Newobj, m_Decal_ctor);
                 cursor.Remove();
+
+                // if the depth was set in the DecalData...
+                ILLabel after_set = cursor.DefineLabel();
+                cursor.Emit(OpCodes.Ldloc_S, (byte) loc_decaldata);
+                cursor.Emit(OpCodes.Call, m_DecalData_HasDepth);
+                cursor.Emit(OpCodes.Brfalse_S, after_set);
+                // store that information in the Decal
+                cursor.Emit(OpCodes.Dup);
+                cursor.Emit(OpCodes.Ldc_I4_1);
+                cursor.Emit(OpCodes.Stfld, f_Decal_DepthSetByPlacement);
+                cursor.MarkLabel(after_set);
 
                 matches++;
             }

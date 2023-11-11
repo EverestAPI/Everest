@@ -11,5 +11,9 @@ namespace Celeste {
             return Depth ?? fallback;
         }
 
+        public bool HasDepth() {
+            return Depth.HasValue;
+        }
+
     }
 }

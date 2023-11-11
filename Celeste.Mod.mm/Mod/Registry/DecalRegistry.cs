@@ -39,7 +39,7 @@ namespace Celeste.Mod {
                 ((patch_Decal)decal).CreateSmoke(offset, inbg);
             }},
             { "depth", delegate(Decal decal, XmlAttributeCollection attrs) {
-                if (attrs["value"] != null)
+                if (attrs["value"] != null && !((patch_Decal)decal).DepthSetByPlacement)
                     decal.Depth = int.Parse(attrs["value"].Value);
             }},
             { "animationSpeed", delegate(Decal decal, XmlAttributeCollection attrs) {
