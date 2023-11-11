@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -173,6 +174,10 @@ namespace Celeste.Mod {
             ref AutoSplitterInfo info = ref SplitterInfo;
             ResetStringPool();
 
+            // Mark the splitter info as currently being updated
+            info.InfoVersion = 0;
+            Thread.MemoryBarrier();
+
             // Update chapter / level data
             if (Engine.Scene is Level lvl) {
                 info.LevelSetStrPtr = AppendStringToPool(lvl.Session.Area.GetLevelSet());
@@ -224,6 +229,10 @@ namespace Celeste.Mod {
                 info.FileHearts = 0;
                 info.FileFlags = 0;
             }
+
+            // Mark the splitter info as being valid again
+            info.InfoVersion = AutoSplitterInfo.CurrentVersion;
+            Thread.MemoryBarrier();
         }
     }
 }
