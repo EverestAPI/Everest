@@ -85,7 +85,7 @@ namespace Celeste.Mod {
 
                     string data;
                     try {
-                        Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index);
+                        Logger.Log(LogLevel.Debug, "updater", "Attempting to download update list from source: " + Index());
                         using (HttpClient hc = new CompressedHttpClient())
                             data = hc.GetStringAsync(Index()).Result;
                     } catch (Exception e) {
