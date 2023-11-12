@@ -350,14 +350,20 @@ namespace MiniInstaller {
                     //Create symlinks with elevation
                     retry:;
                     try {
-                        Process elevatedProc = Process.Start(new ProcessStartInfo() {
-                            FileName = "dotnet.exe",
+                        ProcessStartInfo startInfo = new ProcessStartInfo() {
+                            FileName = Environment.ProcessPath ?? throw new Exception("No process path available"),
                             Verb = "RunAs",
-                            UseShellExecute = true,
-                            Arguments = $"\"{Assembly.GetEntryAssembly().Location}\" {nameof(CreateBackupSymlinksWithElevation)}_PostElevationRequest \"{PathGame}\" \"{PathOrig}\""
-                        });
-                        elevatedProc.WaitForExit();
+                            UseShellExecute = true
+                        };
+                        foreach (string arg in Environment.GetCommandLineArgs()[1..])
+                            startInfo.ArgumentList.Add(arg);
 
+                        startInfo.ArgumentList.Add($"{nameof(CreateBackupSymlinksWithElevation)}_PostElevationRequest");
+                        startInfo.ArgumentList.Add(PathGame);
+                        startInfo.ArgumentList.Add(PathOrig);
+
+                        Process elevatedProc = Process.Start(startInfo);
+                        elevatedProc.WaitForExit();
                         if (elevatedProc.ExitCode == 0) {
                             LogLine("Succesfully created backup symlinks with elevation");
                             break;
@@ -474,6 +480,10 @@ namespace MiniInstaller {
                 LogLine("Moving files from update directory");
                 srcPath ??= PathUpdate;
                 dstPath ??= PathGame;
+
+                // Check if we have a new runtime (=there is a piton-runtime folder both in the game and the update directory)
+                if (Directory.Exists(Path.Combine(PathGame, "piton-runtime")) && Directory.Exists(Path.Combine(PathUpdate, "piton-runtime")))
+                    Directory.Delete(Path.Combine(PathGame, "piton-runtime"), true);
             }
 
             if (!Directory.Exists(dstPath))
@@ -816,7 +826,7 @@ namespace MiniInstaller {
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "monomachineconfig"));
             File.Delete(Path.Combine(Path.GetDirectoryName(appExe), "FNA.dll.config"));
 
-            string hostsDir = Path.Combine(PathGame, "apphosts");
+            string hostsDir = Path.Combine(PathGame, "piton-apphosts");
 
             switch (Platform) {
                 case InstallPlatform.Windows: {
