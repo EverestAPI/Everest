@@ -232,6 +232,8 @@ namespace Celeste {
 
         [MonoModReplace]
         private IEnumerator EnterFirstAreaRoutine() {
+            ((patch_OuiFileSelect) fileSelect).startingNewFile = true; // Set this flag for autosplitters
+
             // Replace ID 0 with SaveData.Instance.LastArea.ID
 
             Overworld overworld = fileSelect.Overworld;

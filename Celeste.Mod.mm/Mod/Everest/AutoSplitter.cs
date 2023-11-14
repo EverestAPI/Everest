@@ -16,13 +16,13 @@ namespace Celeste.Mod {
     internal unsafe static class AutoSplitter {
 #region Splitter Info
         [StructLayout(LayoutKind.Explicit)]
-        internal struct AutoSplitterInfo {
-            public const byte CurrentVersion = 2;
+        internal struct CoreAutoSplitterInfo {
+            public const byte CurrentVersion = 3;
 
             public const int MagicSize = 0x14;
             public static readonly byte[] MagicBytes = Encoding.ASCII.GetBytes("EVERESTAUTOSPLIT").Concat(new byte[] { 0xf0, 0xf1, 0xf2, 0xf3,  }).ToArray();
 
-            static AutoSplitterInfo() => Trace.Assert(MagicBytes.Length == MagicSize);
+            static CoreAutoSplitterInfo() => Trace.Assert(MagicBytes.Length == MagicSize);
 
             //Info Header
             [FieldOffset(0x00)] public fixed byte Magic[MagicSize];
@@ -70,6 +70,7 @@ namespace Celeste.Mod {
             AssistMode      = 1U << 1,
             VariantsMode    = 1U << 2,
 
+            StartingNewFile = 1U << 30,
             FileActive      = 1U << 31,
         }
 #endregion
@@ -82,7 +83,7 @@ namespace Celeste.Mod {
         private static bool _UseStringPoolB;
         private static long _StringPoolOffset;
 
-        internal static ref AutoSplitterInfo SplitterInfo => ref Unsafe.AsRef<AutoSplitterInfo>((void*) _SplitterInfoPtr);
+        internal static ref CoreAutoSplitterInfo SplitterInfo => ref Unsafe.AsRef<CoreAutoSplitterInfo>((void*) _SplitterInfoPtr);
 
         internal static void Init() {
             Trace.Assert(!_IsInitialized);
@@ -101,20 +102,20 @@ namespace Celeste.Mod {
             _StringPoolBView.SafeMemoryMappedViewHandle.AcquirePointer(ref _StringPoolBPtr);
 
             // Initialize the header
-            ref AutoSplitterInfo info = ref SplitterInfo;
+            ref CoreAutoSplitterInfo info = ref SplitterInfo;
 
             // - magic bytes
-            fixed (byte* magicSrcPtr = AutoSplitterInfo.MagicBytes, magicDstPtr = info.Magic)
-                Buffer.MemoryCopy(magicSrcPtr, magicDstPtr, AutoSplitterInfo.MagicSize, AutoSplitterInfo.MagicSize);
+            fixed (byte* magicSrcPtr = CoreAutoSplitterInfo.MagicBytes, magicDstPtr = info.Magic)
+                Buffer.MemoryCopy(magicSrcPtr, magicDstPtr, CoreAutoSplitterInfo.MagicSize, CoreAutoSplitterInfo.MagicSize);
 
             // - version numbers
             info.CelesteVersionMajor = (byte) Celeste.Instance.Version.Major;
             info.CelesteVersionMinor = (byte) Celeste.Instance.Version.Minor;
             info.CelesteVersionBuild = (byte) Celeste.Instance.Version.Build;
-            info.InfoVersion = AutoSplitterInfo.CurrentVersion;
+            info.InfoVersion = CoreAutoSplitterInfo.CurrentVersion;
 
             // - Everest version string
-            long strOff = Marshal.SizeOf<AutoSplitterInfo>();
+            long strOff = Marshal.SizeOf<CoreAutoSplitterInfo>();
             info.EverestVersionStrPtr = (nint) (_SplitterInfoPtr + WriteString(_SplitterInfoView, ref strOff, Everest.VersionString));
 
             _IsInitialized = true;
@@ -171,7 +172,7 @@ namespace Celeste.Mod {
             if (!_IsInitialized)
                 return;
 
-            ref AutoSplitterInfo info = ref SplitterInfo;
+            ref CoreAutoSplitterInfo info = ref SplitterInfo;
             ResetStringPool();
 
             // Mark the splitter info as currently being updated
@@ -221,6 +222,10 @@ namespace Celeste.Mod {
                     (saveData.AssistMode ? AutoSplitterFileFlags.AssistMode : 0) |
                     (saveData.VariantMode ? AutoSplitterFileFlags.VariantsMode : 0)
                 ;
+
+                // Set a file flag when a new file has just been started
+                if (Engine.Scene is Overworld ovw && ovw.GetUI<OuiFileSelect>() is patch_OuiFileSelect fileSelect && fileSelect.startingNewFile)
+                    info.FileFlags |= AutoSplitterFileFlags.StartingNewFile;
             } else {
                 info.FileTime = 0;
                 info.FileStrawberries = 0;
@@ -231,7 +236,7 @@ namespace Celeste.Mod {
             }
 
             // Mark the splitter info as being valid again
-            info.InfoVersion = AutoSplitterInfo.CurrentVersion;
+            info.InfoVersion = CoreAutoSplitterInfo.CurrentVersion;
             Thread.MemoryBarrier();
         }
     }
