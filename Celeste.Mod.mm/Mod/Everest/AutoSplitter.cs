@@ -176,7 +176,7 @@ namespace Celeste.Mod {
             ResetStringPool();
 
             // Mark the splitter info as currently being updated
-            info.InfoVersion = 0;
+            info.InfoVersion = 0xff;
             Thread.MemoryBarrier();
 
             // Update chapter / level data
