@@ -155,7 +155,7 @@ namespace Celeste.Mod {
             view.WriteArray(offset + 2, utf8Str, 0, utf8Str.Length);
             view.Write(offset + 2 + utf8Str.Length, (byte) 0);
 
-            long ptrOff = offset + 1;
+            long ptrOff = offset + 2;
             offset += 2 + utf8Str.Length + 1;
             return ptrOff;
         }
