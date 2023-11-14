@@ -13,10 +13,10 @@ namespace Celeste.Mod {
     /// <summary>
     /// Manages the in-memory autosplitter info
     /// </summary>
-    internal unsafe static class AutoSplitter {
+    public unsafe static class AutoSplitter {
 #region Splitter Info
         [StructLayout(LayoutKind.Explicit)]
-        internal struct CoreAutoSplitterInfo {
+        public struct CoreAutoSplitterInfo {
             public const byte CurrentVersion = 3;
 
             public const int MagicSize = 0x14;
@@ -54,7 +54,7 @@ namespace Celeste.Mod {
         }
 
         [Flags]
-        internal enum AutoSplitterChapterFlags : uint {
+        public enum AutoSplitterChapterFlags : uint {
             ChapterStarted  = 1U << 0,
             ChapterComplete = 1U << 1,
             ChapterCassette = 1U << 2,
@@ -65,7 +65,7 @@ namespace Celeste.Mod {
         }
 
         [Flags]
-        internal enum AutoSplitterFileFlags : uint {
+        public enum AutoSplitterFileFlags : uint {
             IsDebug         = 1U << 0,
             AssistMode      = 1U << 1,
             VariantsMode    = 1U << 2,
@@ -168,7 +168,7 @@ namespace Celeste.Mod {
             return (nint) ((_UseStringPoolB ? _StringPoolBPtr : _StringPoolAPtr) + ptrOff);
         }
 
-        internal static void Update() {
+        public static void Update() {
             if (!_IsInitialized)
                 return;
 
@@ -235,9 +235,15 @@ namespace Celeste.Mod {
                 info.FileFlags = 0;
             }
 
+            // Run update event handlers
+            OnUpdateInfo?.Invoke(ref info, AppendStringToPool);
+
             // Mark the splitter info as being valid again
             info.InfoVersion = CoreAutoSplitterInfo.CurrentVersion;
             Thread.MemoryBarrier();
         }
+
+        public delegate void InfoUpdateHandler(ref CoreAutoSplitterInfo info, Func<string, nint> stringWriter);
+        public static event InfoUpdateHandler OnUpdateInfo;
     }
 }
