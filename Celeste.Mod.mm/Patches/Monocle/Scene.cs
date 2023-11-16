@@ -4,8 +4,10 @@ using System;
 namespace Monocle {
     class patch_Scene : Scene {
 
+#pragma warning disable CS0414
         [MonoModIgnore]
     	public new event Action OnEndOfFrame;
+#pragma warning restore CS0414
 
         [MonoModReplace]
         public new bool OnInterval(float interval) {
