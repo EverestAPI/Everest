@@ -240,6 +240,12 @@ namespace Celeste.Mod.Core {
 
         public Everest.CompatMode CompatibilityMode { get; set; } = Everest.CompatMode.None; // TODO Better default logic
 
+        [SettingNeedsRelaunch]
+        [SettingName("MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN")]
+        [SettingSubText("MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN_DESC")]
+        [SettingInGame(false)]
+        public bool D3D11UseExclusiveFullscreen { get; set; }
+
         [SettingInGame(false)]
         public bool UseKeyboardForTextInput { get; set; } = true;
 
