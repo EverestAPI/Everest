@@ -1023,7 +1023,7 @@ namespace Celeste.Mod {
                     // if the atlas is (or contains) an emoji, register it.
                     if (Emoji.IsInitialized()) {
                         if (refreshEmojis(mapping)) {
-                            MainThreadHelper.Do(() => {
+                            MainThreadHelper.Schedule(() => {
                                 Logger.Verbose("content", "Reloading fonts after late emoji registration");
                                 Fonts.Reload();
                             });

@@ -430,7 +430,7 @@ namespace Celeste.Mod {
             Type[] types = asm.GetTypesSafe();
             Loader.ProcessAssembly(core.Metadata, asm, types);
 
-            if (CoreModule.Settings.ColorizedLogging && PlatformHelper.Is(MonoMod.Utils.Platform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
+            if (CoreModule.Settings.ColorizedLogging && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
                 Logger.Error("core", "Failed to enalbe Windows VT support!");
             }
 

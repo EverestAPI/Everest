@@ -224,7 +224,7 @@ namespace Celeste.Mod {
                     return;
 
                 Logger.Info("loader", $"Possible new mod container: {e.FullPath}");
-                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_LOADINGNEWMOD")} {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Do(() => {
+                QueuedTaskHelper.Do("LoadAutoUpdated:" + e.FullPath, () => AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_LOADINGNEWMOD")} {Path.GetFileName(e.FullPath)}", () => MainThreadHelper.Schedule(() => {
                     if (Directory.Exists(e.FullPath))
                         LoadDir(e.FullPath);
                     else if (e.FullPath.EndsWith(".zip"))
@@ -560,6 +560,8 @@ namespace Celeste.Mod {
                 // Warn if we didn't find a module, as that could indicate an oversight from the developer
                 if (!foundModule)
                     Logger.Warn("loader", "Assembly doesn't contain an EverestModule!");
+
+                ProcessAssembly(meta, asm, types);
             }
 
             internal static void ProcessAssembly(EverestModuleMetadata meta, Assembly asm, Type[] types) {
@@ -584,7 +586,7 @@ namespace Celeste.Mod {
                                 genName = split[1];
 
                             } else {
-                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                Logger.Warn("core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
 
@@ -628,7 +630,7 @@ namespace Celeste.Mod {
 
                             RegisterEntityLoader:
                             if (loader == null) {
-                                Logger.Log(LogLevel.Warn, "core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
+                                Logger.Warn("core", $"Found custom entity without suitable constructor / {genName}(Level, LevelData, Vector2, EntityData): {id} ({type.FullName})");
                                 continue;
                             }
                             patch_Level.EntityLoaders[id] = loader;
@@ -641,7 +643,7 @@ namespace Celeste.Mod {
                             foreach (string idFull in nameAttrib.IDs) {
                                 string[] split = idFull.Split('=');
                                 if (split.Length == 0) {
-                                    Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
+                                    Logger.Warn("core", $"Invalid number of custom entity ID elements: {idFull} ({type.FullName})");
                                     continue;
                                 }
                                 names.Add(split[0]);
@@ -673,7 +675,7 @@ namespace Celeste.Mod {
                                 genName = split[1];
 
                             } else {
-                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
+                                Logger.Warn("core", $"Invalid number of custom cutscene ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
 
@@ -705,7 +707,7 @@ namespace Celeste.Mod {
 
                             RegisterCutsceneLoader:
                             if (loader == null) {
-                                Logger.Log(LogLevel.Warn, "core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
+                                Logger.Warn("core", $"Found custom cutscene without suitable constructor / {genName}(EventTrigger, Player, string): {id} ({type.FullName})");
                                 continue;
                             }
                             patch_EventTrigger.CutsceneLoaders[id] = loader;
@@ -726,7 +728,7 @@ namespace Celeste.Mod {
                                 id = split[0];
                                 genName = split[1];
                             } else {
-                                Logger.Log(LogLevel.Warn, "core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
+                                Logger.Warn("core", $"Invalid number of custom backdrop ID elements: {idFull} ({type.FullName})");
                                 continue;
                             }
 
@@ -752,7 +754,7 @@ namespace Celeste.Mod {
 
                             RegisterBackdropLoader:
                             if (loader == null) {
-                                Logger.Log(LogLevel.Warn, "core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
+                                Logger.Warn("core", $"Found custom backdrop without suitable constructor / {genName}(BinaryPacker.Element): {id} ({type.FullName})");
                                 continue;
                             }
                             patch_MapData.BackdropLoaders[id] = loader;
@@ -761,7 +763,7 @@ namespace Celeste.Mod {
                 }
                 // We should run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
                 if (newStrawberriesRegistered && _Initialized) {
-                    Logger.Log(LogLevel.Verbose, "core", $"Assembly {asm.FullName} for module {meta} has custom strawberries: triggering map reload.");
+                    Logger.Verbose("core", $"Assembly {asm.FullName} for module {meta} has custom strawberries: triggering map reload.");
                     Everest.TriggerModInitMapReload();
                 }
             }
@@ -775,7 +777,7 @@ namespace Celeste.Mod {
                     return;
 
                 QueuedTaskHelper.Do($"ReloadModAssembly: {meta.Name}", () => {
-                    Logger.Log(LogLevel.Info, "loader", $"Reloading mod assemblies: {meta.Name}");
+                    Logger.Info("loader", $"Reloading mod assemblies: {meta.Name}");
 
                     AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMODASSEMBLY")} {meta.Name}", () => {
                         // Determine the order to load/unload modules in
@@ -805,7 +807,7 @@ namespace Celeste.Mod {
 
                         // Unload modules in the order determined before (dependents before dependencies)
                         foreach (EverestModuleMetadata unloadMod in reloadMods) {
-                            Logger.Log(LogLevel.Verbose, "loader", $"-> unloading: {unloadMod.Name}");
+                            Logger.Verbose("loader", $"-> unloading: {unloadMod.Name}");
                             unloadMod.AssemblyContext?.Dispose();
                             unloadMod.AssemblyContext = null;
                         }
@@ -815,13 +817,13 @@ namespace Celeste.Mod {
                         using (new ModInitializationBatch()) {
                             foreach (EverestModuleMetadata loadMod in reloadMods.Reverse<EverestModuleMetadata>()) {
                                 if (loadMod.Dependencies.Any(dep => !DependencyLoaded(dep))) {
-                                    Logger.Log(LogLevel.Warn, "loader", $"-> skipping reload of mod '{loadMod.Name}' as dependency failed to load");
+                                    Logger.Warn("loader", $"-> skipping reload of mod '{loadMod.Name}' as dependency failed to load");
                                     continue;
                                 }
 
-                                Logger.Log(LogLevel.Verbose, "loader", $"-> reloading: {loadMod.Name}");
+                                Logger.Verbose("loader", $"-> reloading: {loadMod.Name}");
                                 if (!LoadMod(loadMod))
-                                    Logger.Log(LogLevel.Warn, "loader", $"-> failed to reload mod '{loadMod.Name}'!");
+                                    Logger.Warn("loader", $"-> failed to reload mod '{loadMod.Name}'!");
                             }
                         }
                     }, static () => AssetReloadHelper.ReloadLevel(true));

@@ -613,7 +613,7 @@ namespace Celeste.Mod.UI {
 
         private void addToFavorites(string modFileName) {
             favoriteMods.Add(modFileName);
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added to favorites");
+            Logger.Verbose("OuiModToggler", $"{modFileName} was added to favorites");
 
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
                 foreach (string dependenciesFileName in dependenciesFileNames) {
@@ -636,7 +636,7 @@ namespace Celeste.Mod.UI {
 
             // Add dependent mod
             dependents.Add(dependentModFileName);
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
+            Logger.Verbose("OuiModToggler", $"{modFileName} was added as a favorite dependency of {dependentModFileName}");
 
 
             // we want to walk the dependence graph and add all the sub-dependencies as dependencies of the original dependentModFileName  
@@ -649,7 +649,7 @@ namespace Celeste.Mod.UI {
 
         private void removeFromFavorites(string modFileName) {
             favoriteMods.Remove(modFileName);
-            Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from favorites");
+            Logger.Verbose("OuiModToggler", $"{modFileName} was removed from favorites");
 
             if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {
                 foreach (string dependencyFileName in dependenciesFileNames) {
@@ -662,11 +662,11 @@ namespace Celeste.Mod.UI {
             if (favoriteModDependencies.TryGetValue(modFileName, out HashSet<string> dependents) && dependents.Contains(dependentModFileName)) {
 
                 dependents.Remove(dependentModFileName);
-                Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} was removed from being a favorite dependency of {dependentModFileName}");
+                Logger.Verbose("OuiModToggler", $"{modFileName} was removed from being a favorite dependency of {dependentModFileName}");
 
                 if (dependents.Count == 0) {
                     favoriteModDependencies.Remove(modFileName);
-                    Logger.Log(LogLevel.Verbose, "OuiModToggler", $"{modFileName} is no longer a favorite dependency");
+                    Logger.Verbose("OuiModToggler", $"{modFileName} is no longer a favorite dependency");
                 }
 
                 if (TryGetModDependenciesFileNames(modFileName, out List<string> dependenciesFileNames)) {

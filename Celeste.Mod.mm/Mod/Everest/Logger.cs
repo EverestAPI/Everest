@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Runtime.CompilerServices;
-using MonoMod.Utils;
 using Celeste.Mod.Core;
 
 namespace Celeste.Mod {
@@ -133,7 +132,7 @@ namespace Celeste.Mod {
         /// <param name="tag">The tag, preferably short enough to identify your mod, but not too long to clutter the log.</param>
         /// <param name="str">The string / message to log.</param>
         public static void Log(string tag, string str)
-            => Log(LogLevel.Verbose, tag, str);
+            => Verbose(tag, str);
 
         /// <summary>
         /// Log a string to the console and to log.txt

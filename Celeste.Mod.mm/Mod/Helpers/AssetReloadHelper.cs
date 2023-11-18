@@ -49,7 +49,7 @@ namespace Celeste.Mod {
         public static Task Do(string text, Func<bool, Task> action, bool silent = false, bool useWorkerThread = true) {
             // Check if the crash handler is currently active
             if (CriticalErrorHandler.CurrentHandler != null) {
-                Logger.Log(LogLevel.Warn, "reload", $"Delaying reload action until critical error handler is closed: {text}");
+                Logger.Warn("reload", $"Delaying reload action until critical error handler is closed: {text}");
                 return DelayReloadUntilAfterCrash(silent, text, action, useWorkerThread);
             }
 

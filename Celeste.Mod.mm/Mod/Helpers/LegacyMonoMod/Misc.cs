@@ -17,12 +17,12 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
     internal static class LegacyMonoModCompatLayer {
         public static void Initialize() {
             LegacyDynamicDataCompatHooks.InstallHook();
-            Logger.Log(LogLevel.Info, "legacy-monomod", "Initialized legacy MonoMod compatibility layer");
+            Logger.Info("legacy-monomod", "Initialized legacy MonoMod compatibility layer");
         }
 
         public static void Uninitialize() {
             LegacyDynamicDataCompatHooks.UninstallHook();
-            Logger.Log(LogLevel.Info, "legacy-monomod", "Uninitialized legacy MonoMod compatibility layer");
+            Logger.Info("legacy-monomod", "Uninitialized legacy MonoMod compatibility layer");
         }
     }
 
@@ -97,16 +97,16 @@ namespace Celeste.Mod.Helpers.LegacyMonoMod {
             // But because it "used to worked":tm:, we can't give them the crash they deserve
             // So we at least yell at them loudly in the log file (once) ._.
             if (!string.IsNullOrWhiteSpace(perpetratorMeta?.PathDirectory) || loggedCrimes.Add((descr, perpetrator, Environment.StackTrace))) {
-                Logger.Log(LogLevel.Error, "legacy-monomod", "##################################################################################");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "                              MONOMOD CRIME DETECTED                              ");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "##################################################################################");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "                 !!! This means one of your mods has a bug !!!                    ");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "   However, for the sake of backwards compatibility, a crash has been prevented   ");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "      Please report this to the mod author so that they can fix their mod!        ");
-                Logger.Log(LogLevel.Error, "legacy-monomod", "");
+                Logger.Error("legacy-monomod", "##################################################################################");
+                Logger.Error("legacy-monomod", "                              MONOMOD CRIME DETECTED                              ");
+                Logger.Error("legacy-monomod", "##################################################################################");
+                Logger.Error("legacy-monomod", "                 !!! This means one of your mods has a bug !!!                    ");
+                Logger.Error("legacy-monomod", "   However, for the sake of backwards compatibility, a crash has been prevented   ");
+                Logger.Error("legacy-monomod", "      Please report this to the mod author so that they can fix their mod!        ");
+                Logger.Error("legacy-monomod", "");
                 if (perpetratorMeta != null)
-                    Logger.Log(LogLevel.Error, "legacy-monomod", $"Suspected perpetrator: {perpetratorMeta.Name} version {perpetratorMeta.VersionString} [{perpetratorMeta.Version}]");
-                Logger.Log(LogLevel.Error, "legacy-monomod", $"Details of infraction: {descr}");
+                    Logger.Error("legacy-monomod", $"Suspected perpetrator: {perpetratorMeta.Name} version {perpetratorMeta.VersionString} [{perpetratorMeta.Version}]");
+                Logger.Error("legacy-monomod", $"Details of infraction: {descr}");
                 Logger.LogDetailed(LogLevel.Error, "legacy-monomod", $"Stacktrace:");
             }
 

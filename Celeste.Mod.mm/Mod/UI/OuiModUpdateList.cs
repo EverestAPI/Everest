@@ -162,7 +162,7 @@ namespace Celeste.Mod.UI {
         }
 
         private void renderUpdateList() {
-            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
+            Logger.Verbose("OuiModUpdateList", "Rendering updates");
 
             // remove the "loading" button
             menu.Remove(fetchingButton);

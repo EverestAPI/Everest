@@ -270,7 +270,7 @@ https://discord.gg/6qjaePQ");
                 orig_ctor_Celeste();
             }
 
-            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+            Logger.Info("boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
 
             try {
                 Everest.Boot();

@@ -2,9 +2,9 @@
 using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
 
 namespace Celeste.Mod.Core {
@@ -273,7 +273,7 @@ namespace Celeste.Mod.Core {
         public bool ColorizedLogging { 
             get => _ColorizedLogging;
             set {
-                if (value && PlatformHelper.Is(MonoMod.Utils.Platform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
+                if (value && RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Logger.TryEnableWindowsVTSupport()) {
                     Logger.Error("core", "Failed to enalbe Windows VT support!");
                 }
                 _ColorizedLogging = value;

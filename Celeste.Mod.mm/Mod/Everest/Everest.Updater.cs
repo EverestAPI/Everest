@@ -328,7 +328,7 @@ namespace Celeste.Mod {
                 try {
                     if (Build != int.Parse(File.ReadAllText(updateBuildPath)))
                         UpdateFailed = true;
-                } catch(Exception e) {
+                } catch (Exception e) {
                     Logger.Warn("updater", "Exception when trying to determine update build number");
                     Logger.LogDetailed(e);
                     UpdateFailed = true;
@@ -430,7 +430,7 @@ namespace Celeste.Mod {
                     progress.Lines[^1] = baseLine;
 
                     if (installerProc.ExitCode != 0) {
-                        Logger.Log(LogLevel.Warn, "updater", $"LegacyRef update failed: MiniInstaller exited with code {installerProc.ExitCode}");
+                        Logger.Warn("updater", $"LegacyRef update failed: MiniInstaller exited with code {installerProc.ExitCode}");
                         progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_INSTALLERFAILED"), installerProc.ExitCode));
                         progress.LogLine($"\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT1")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT2")}\n{Dialog.Clean("EVERESTUPDATER_ERRORHINT3")}");
                         progress.Progress = 0;
