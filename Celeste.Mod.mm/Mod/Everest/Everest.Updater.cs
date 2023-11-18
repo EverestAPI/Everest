@@ -158,15 +158,6 @@ namespace Celeste.Mod {
                     Index = GetEverestUpdaterDatabaseURL,
                     ParseData = UpdateListParser("dev")
                 },
-                new Source {
-                    Name = "updater_src_core",
-                    Description = "updater_src_buildbot_azure",
-
-                    UpdatePriority = UpdatePriority.None,
-
-                    Index = GetEverestUpdaterDatabaseURL,
-                    ParseData = UpdateListParser("core")
-                },
             };
 
             public static Task RequestAll() {
