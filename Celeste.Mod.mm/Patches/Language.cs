@@ -72,7 +72,7 @@ namespace Celeste {
             path = path.Substring(Everest.Content.PathContentOrig.Length + 1);
             path = path.Replace('\\', '/');
             path = path.Substring(0, path.Length - 4);
-            string dummy = $"LANGUAGE={path.Substring(7).ToLowerInvariant()}";
+            string dummy = string.Format("LANGUAGE={0}", path.Substring(7).ToLowerInvariant());
 
             if (!ready) {
                 ready = true;

@@ -204,13 +204,20 @@ namespace Celeste {
             ((patch_Binding) UpDashOnly).Mouse.Clear();
         }
 
+        [MonoModIfFlag("RelinkXNA")]
+        private static void TranslateKeys(List<Keys> keys) {
+            for (int i = 0; i < keys.Count; i++)
+                keys[i] = Keyboard.GetKeyFromScancodeEXT(keys[i]);
+        }
+
     }
 }
 
 namespace MonoMod {
     /// <summary>
     /// Patches Settings.SetDefaultKeyboardControls to take mouse bindings into account
-    /// and ensure that TranslateKeys only gets called when reset = true.
+    /// and ensure that TranslateKeys only gets called when reset = true. Additionaly
+    /// adds code missing on XNA to the end of the function.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSettingsSetDefaultKeyboardControls))]
     class PatchSettingsSetDefaultKeyboardControls : Attribute { }
@@ -279,8 +286,39 @@ namespace MonoMod {
                 c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Existed"));
                 c.Emit(OpCodes.Brtrue, jumpTarget);
             }
-        }
 
+            // Add missing code to the end of XNA versions of the function
+            if (!IsRelinkingXNAInstall)
+                return;
+
+            c.GotoNext(i => i.MatchRet());
+            c.MoveAfterLabels();
+
+            ILLabel checkSuccess = c.DefineLabel(), checkFail = c.DefineLabel();
+
+            c.Emit(OpCodes.Ldarg_1);
+            c.Emit(OpCodes.Brtrue_S, checkSuccess);
+
+            c.Emit(OpCodes.Ldarg_0);
+            c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField("Existed"));
+            c.Emit(OpCodes.Brtrue_S, checkFail);
+            c.MarkLabel(checkSuccess);
+
+            MethodReference m_Settings_TranslateKeys = il.Method.DeclaringType.FindMethod("TranslateKeys");
+            FieldReference f_Binding_Keyboard = il.Module.GetType("Monocle.Binding").FindField("Keyboard");
+            foreach (string bindingName in new string[] {
+                "Left", "Right", "Down", "Up", "MenuLeft", "MenuRight", "MenuDown", "MenuUp",
+                "Grab", "Jump", "Dash", "Talk", "Pause", "Confirm", "Cancel", "Journal", "QuickRestart", "DemoDash",
+                "LeftMoveOnly", "RightMoveOnly", "UpMoveOnly", "DownMoveOnly", "LeftDashOnly", "RightDashOnly", "UpDashOnly", "DownDashOnly"
+            }) {
+                c.Emit(OpCodes.Ldarg_0);
+                c.Emit(OpCodes.Ldfld, il.Method.DeclaringType.FindField(bindingName));
+                c.Emit(OpCodes.Ldfld, f_Binding_Keyboard);
+                c.Emit(OpCodes.Call, m_Settings_TranslateKeys);
+            }
+
+            c.MarkLabel(checkFail);
+        }
 
     }
 }

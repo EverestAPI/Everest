@@ -14,6 +14,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using System.Collections;
 
 namespace Celeste {
     class patch_Player : Player {
@@ -54,8 +55,40 @@ namespace Celeste {
 
         [MonoModIgnore]
         [MonoModConstructor]
-        [PatchPlayerCtorOnFrameChange]
+        [PatchPlayerCtor]
         public extern void ctor(Vector2 position, PlayerSpriteMode spriteMode);
+
+        private void PostCtor() {
+            // setup vanilla state names
+            ((patch_StateMachine) StateMachine).SetStateName(StNormal, "Normal");
+            ((patch_StateMachine) StateMachine).SetStateName(StClimb, "Climb");
+            ((patch_StateMachine) StateMachine).SetStateName(StDash, "Dash");
+            ((patch_StateMachine) StateMachine).SetStateName(StSwim, "Swim");
+            ((patch_StateMachine) StateMachine).SetStateName(StBoost, "Boost");
+            ((patch_StateMachine) StateMachine).SetStateName(StRedDash, "RedDash");
+            ((patch_StateMachine) StateMachine).SetStateName(StHitSquash, "HitSquash");
+            ((patch_StateMachine) StateMachine).SetStateName(StLaunch, "Launch");
+            ((patch_StateMachine) StateMachine).SetStateName(StPickup, "Pickup");
+            ((patch_StateMachine) StateMachine).SetStateName(StDreamDash, "DreamDash");
+            ((patch_StateMachine) StateMachine).SetStateName(StSummitLaunch, "SummitLaunch");
+            ((patch_StateMachine) StateMachine).SetStateName(StDummy, "Dummy");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroWalk, "IntroWalk");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroJump, "IntroJump");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroRespawn, "IntroRespawn");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroWakeUp, "IntroWakeUp");
+            ((patch_StateMachine) StateMachine).SetStateName(StBirdDashTutorial, "BirdDashTutorial");
+            ((patch_StateMachine) StateMachine).SetStateName(StFrozen, "Frozen");
+            ((patch_StateMachine) StateMachine).SetStateName(StReflectionFall, "ReflectionFall");
+            ((patch_StateMachine) StateMachine).SetStateName(StStarFly, "StarFly");
+            ((patch_StateMachine) StateMachine).SetStateName(StTempleFall, "TempleFall");
+            ((patch_StateMachine) StateMachine).SetStateName(StCassetteFly, "CassetteFly");
+            ((patch_StateMachine) StateMachine).SetStateName(StAttract, "Attract");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroMoonJump, "IntroMoonJump");
+            ((patch_StateMachine) StateMachine).SetStateName(StFlingBird, "FlingBird");
+            ((patch_StateMachine) StateMachine).SetStateName(StIntroThinkForABit, "IntroThinkForABit");
+            // then allow mods to register new ones
+            Everest.Events.Player.RegisterStates(this);
+        }
 
         public extern void orig_Added(Scene scene);
         public override void Added(Scene scene) {
@@ -138,7 +171,7 @@ namespace Celeste {
 
         private extern void orig_BoostBegin();
         private void BoostBegin() {
-            if (SceneAs<Level>()?.Session.MapData.GetMeta()?.TheoInBubble ?? false) {
+            if (((patch_MapData) SceneAs<patch_Level>()?.Session.MapData).Meta?.TheoInBubble ?? false) {
                 RefillDash();
                 RefillStamina();
             } else {
@@ -178,6 +211,21 @@ namespace Celeste {
             if (Sprite.Mode == PlayerSpriteMode.MadelineAsBadeline)
                 return wasDashB ? NormalBadelineHairColor : UsedBadelineHairColor;
             return wasDashB ? NormalHairColor : UsedHairColor;
+        }
+        
+        /// <summary>
+        /// Adds a new state to this player with the given behaviour, and returns the index of the new state.
+        ///
+        /// States should always be added at the end of the <c>Player</c> constructor.
+        /// </summary>
+        /// <param name="name">The name of this state, for display purposes by mods only.</param>
+        /// <param name="onUpdate">A function to run every frame during this state, returning the index of the state that should be switched to next frame.</param>
+        /// <param name="coroutine">A function that creates a coroutine to run when this state is switched to.</param>
+        /// <param name="begin">An action to run when this state is switched to.</param>
+        /// <param name="end">An action to run when this state ends.</param>
+        /// <returns>The index of the new state.</returns>
+        public int AddState(string name, Func<Player, int> onUpdate, Func<Player, IEnumerator> coroutine = null, Action<Player> begin = null, Action<Player> end = null){
+            return ((patch_StateMachine)StateMachine).AddState(name, onUpdate, coroutine, begin, end);
         }
 
         public Vector2 ExplodeLaunch(Vector2 from, bool snapUp = true) {
@@ -220,19 +268,35 @@ namespace Celeste {
         [MonoModIgnore]
         [PatchPlayerStarFlyReturnToNormalHitbox]
         private extern void StarFlyReturnToNormalHitbox();
+
+        [MonoModIgnore]
+        [PatchPlayerApproachMaxMove]
+        public new extern IEnumerator DummyWalkTo(float x, bool walkBackwards = false, float speedMultiplier = 1f, bool keepWalkingIntoWalls = false);
+
+        [MonoModIgnore]
+        [PatchPlayerApproachMaxMove]
+        public new extern IEnumerator DummyWalkToExact(int x, bool walkBackwards = false, float speedMultiplier = 1f, bool cancelOnFall = false);
+
+        [MonoModIgnore]
+        [PatchPlayerApproachMaxMove]
+        private extern int DummyUpdate();
+        
+        [MonoModIgnore]
+        [PatchPlayerApproachMaxMove]
+        private extern int NormalUpdate();
     }
+
     public static class PlayerExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <inheritdoc cref="patch_Player.GetCurrentTrailColor"/>
+        [Obsolete("Use Player.GetCurrentTrailColor instead.")]
         public static Color GetCurrentTrailColor(this Player self)
             => ((patch_Player) self).GetCurrentTrailColor();
 
         /// <summary>
         /// Get whether the player is in an intro state or not.
         /// </summary>
+        [Obsolete("Use Player.IsIntroState instead.")]
         public static bool IsIntroState(this Player self)
             => ((patch_Player) self).IsIntroState;
 
@@ -277,16 +341,23 @@ namespace MonoMod {
     class PatchPlayerOrigWallJumpAttribute : Attribute { }
 
     /// <summary>
-    /// Patches the method to un-hardcode the FMOD event string used to play the footstep and grab sound effect.
+    /// Patches the method to un-hardcode the FMOD event string used to play the footstep and grab sound effect,
+    /// and handle player state management.
     /// </summary>
-    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtorOnFrameChange))]
-    class PatchPlayerCtorOnFrameChangeAttribute : Attribute { }
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerCtor))]
+    class PatchPlayerCtorAttribute : Attribute { }
     
     /// <summary>
     /// Patches the method to fix puffer boosts breaking on respawn.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerExplodeLaunch))]
     class PatchPlayerExplodeLaunchAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches the method to fix float jank when calculationg Calc.ApproachTo maxMove values
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchPlayerApproachMaxMove))]
+    class PatchPlayerApproachMaxMoveAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -423,7 +494,18 @@ namespace MonoMod {
             cursor.Remove();
         }
 
-        public static void PatchPlayerCtorOnFrameChange(MethodDefinition method, CustomAttribute attrib) {
+        public static void PatchPlayerCtor(MethodDefinition method, CustomAttribute attrib) {
+            // We need to run player state management code just after the constructor, but can't use regular hooking
+            // as many mods IL hook the constructor already.
+            new ILContext(method).Invoke(il => {
+                MethodDefinition m_Player_PostCtor = il.Module.GetType("Celeste.Player").FindMethod("PostCtor");
+                ILCursor cursor = new ILCursor(il);
+                cursor.Index = -1;
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Emit(OpCodes.Callvirt, m_Player_PostCtor);
+            });
+
+            // then hook another method given the context available.
             method = method.DeclaringType.FindMethod("<.ctor>b__280_1");
 
             new ILContext(method).Invoke(il => {
@@ -443,5 +525,36 @@ namespace MonoMod {
             cursor.Emit(OpCodes.Call, m_SetPlayerWasExplodeLaunchedThisFrame);
         }
 
+        public static void PatchPlayerApproachMaxMove(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+            while (cursor.TryGotoNext(MoveType.After, i => i.MatchCall("Monocle.Calc", "Approach"))) {
+                // Previous instructions must be: call Monocle.Engine::get_DeltaTime; mul
+                if (!cursor.Prev.Previous.MatchMul() || !cursor.Prev.Previous.Previous.MatchCall("Monocle.Engine", "get_DeltaTime"))
+                    throw new Exception("Unexpected instructions before Calc.Approach");
+
+                // Patch calculation of DeltaTime multiplier
+                int stackDepth = 1;
+                for (int instrIdx = cursor.Index - 4; stackDepth > 0; instrIdx--) {
+                    Instruction instr = context.Instrs[instrIdx];
+
+                    if (instr.MatchAdd() || instr.MatchSub() || instr.MatchMul() || instr.MatchDiv() || instr.MatchRem()) {
+                        // Operation instructions remain unaffected
+                        stackDepth++;
+                    } else if (instr.MatchLdcR4(out float v)) {
+                        // ldc.r4 <constant> -> ...; conv.r8
+                        context.Instrs.Insert(instrIdx+1, Instruction.Create(OpCodes.Conv_R8));
+                        stackDepth--;
+                    } else if (instr.MatchLdloc(out int idx)) {
+                        // ldloc <variable> -> ...; conv.r8
+                        if (context.Body.Variables[idx].VariableType.MetadataType != MetadataType.Single)
+                            throw new Exception($"Unexpected non-float variable load: {instr}");
+
+                        context.Instrs.Insert(instrIdx+1, Instruction.Create(OpCodes.Conv_R8));
+                        stackDepth--;
+                    } else
+                        throw new Exception($"Unexpected instruction in DeltaTime multiplier calculation: {instr}");
+                }
+            }
+        }
     }
 }

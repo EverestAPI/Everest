@@ -3,18 +3,17 @@
 
 using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using Mono.Cecil;
-using Mono.Cecil.Cil;
-using MonoMod.Cil;
-using MonoMod.InlineRT;
-using MonoMod.Utils;
-using Celeste.Mod;
 
 namespace Celeste {
     class patch_OuiChapterPanel : OuiChapterPanel {
@@ -56,7 +55,7 @@ namespace Celeste {
         internal static string _GetCheckpointPreviewName(AreaKey area, string level) {
             int split = level?.IndexOf('|') ?? -1;
             if (split >= 0) {
-                area = AreaDataExt.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
+                area = patch_AreaData.Get(level.Substring(0, split))?.ToKey(area.Mode) ?? area;
                 level = level.Substring(split + 1);
             }
 
@@ -70,7 +69,7 @@ namespace Celeste {
             if (MTN.Checkpoints.Has(result))
                 return result;
 
-            return $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/{level ?? "start"}";
+            return string.Format("{0}/{1}/{2}", area.GetSID(), (char) ('A' + (int) area.Mode), level ?? "start");
         }
 
         public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
@@ -81,8 +80,8 @@ namespace Celeste {
             }
 
             if (start == Overworld.StartMode.AreaComplete || start == Overworld.StartMode.AreaQuit) {
-                AreaData area = AreaData.Get(SaveData.Instance.LastArea.ID);
-                area = AreaDataExt.Get(area?.GetMeta()?.Parent) ?? area;
+                patch_AreaData area = patch_AreaData.Get(SaveData.Instance.LastArea.ID);
+                area = patch_AreaData.Get(area?.Meta?.Parent) ?? area;
                 if (area != null)
                     SaveData.Instance.LastArea.ID = area.ID;
             }
@@ -151,14 +150,14 @@ namespace Celeste {
 
             HashSet<string> set;
 
-            AreaData areaData = AreaData.Areas[area.ID];
+            patch_AreaData areaData = patch_AreaData.Areas[area.ID];
             ModeProperties mode = areaData.Mode[(int) area.Mode];
 
             if (save.DebugMode || save.CheatMode) {
                 set = new HashSet<string>();
                 if (mode.Checkpoints != null)
                     foreach (CheckpointData cp in mode.Checkpoints)
-                        set.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+                        set.Add(string.Format("{0}|{1}", (patch_AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData).SID, cp.Level));
                 return set;
 
             }
@@ -173,15 +172,15 @@ namespace Celeste {
             }
 
             set.RemoveWhere((string a) => !mode.Checkpoints.Any((CheckpointData b) => b.Level == a));
-            AreaData[] subs = AreaData.Areas.Where(other =>
-                other.GetMeta()?.Parent == areaData.GetSID() &&
+            AreaData[] subs = patch_AreaData.Areas.Where(other =>
+                other.Meta?.Parent == areaData.SID &&
                 other.HasMode(area.Mode)
             ).ToArray();
             return new HashSet<string>(set.Select(s => {
-                foreach (AreaData sub in subs) {
+                foreach (patch_AreaData sub in subs) {
                     foreach (CheckpointData cp in sub.Mode[(int) area.Mode].Checkpoints) {
                         if (cp.Level == s) {
-                            return $"{sub.GetSID()}|{s}";
+                            return string.Format("{0}|{1}", sub.SID, s);
                         }
                     }
                 }
@@ -193,7 +192,7 @@ namespace Celeste {
         private IEnumerator StartRoutine(string checkpoint = null) {
             int checkpointAreaSplit = checkpoint?.IndexOf('|') ?? -1;
             if (checkpointAreaSplit >= 0) {
-                Area = AreaDataExt.Get(checkpoint.Substring(0, checkpointAreaSplit))?.ToKey(Area.Mode) ?? Area;
+                Area = patch_AreaData.Get(checkpoint.Substring(0, checkpointAreaSplit))?.ToKey(Area.Mode) ?? Area;
                 checkpoint = checkpoint.Substring(checkpointAreaSplit + 1);
             }
 
@@ -209,7 +208,7 @@ namespace Celeste {
             Audio.SetAmbience(null);
             // TODO: Determine if the area should keep the overworld snow.
             if ((Area.ID == 0 || Area.ID == 9) && checkpoint == null && Area.Mode == AreaMode.Normal) {
-                Overworld.RendererList.UpdateLists();
+                ((patch_RendererList) (object) Overworld.RendererList).UpdateLists();
                 Overworld.RendererList.MoveToFront(Overworld.Snow);
             }
             yield return 0.5f;
@@ -225,6 +224,7 @@ namespace Celeste {
         [PatchOuiChapterPanelReset]
         private extern void Reset();
 
+        [PatchStrawberryWidthInChapterPanel]
         private extern void orig_DrawCheckpoint(Vector2 center, Option option, int checkpointIndex);
         private void DrawCheckpoint(Vector2 center, Option option, int checkpointIndex) {
             // search for the actual checkpoint index, since checkpointIndex might not be correct if checkpoints are skipped.
@@ -235,7 +235,7 @@ namespace Celeste {
                     CheckpointData cp = mode.Checkpoints[i];
 
                     if (option.CheckpointLevelName == cp.Level
-                        || option.CheckpointLevelName == $"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}") {
+                        || option.CheckpointLevelName == $"{((patch_AreaData) (AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData)).SID}|{cp.Level}") {
 
                         checkpointIndex = i + 1;
                         break;
@@ -252,22 +252,23 @@ namespace Celeste {
             List<string> filteredList = new List<string>();
             if (mode.Checkpoints != null)
                 foreach (CheckpointData cp in mode.Checkpoints)
-                    filteredList.Add($"{(AreaData.Get(cp.GetArea()) ?? areaData).GetSID()}|{cp.Level}");
+                    filteredList.Add($"{((patch_AreaData) (AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData)).SID}|{cp.Level}");
             return filteredList;
         }
 
         private string _ModAreaselectTexture(string textureName) {
             // First, check for area (chapter) specific textures.
             string area = AreaData.Areas[Area.ID].Name;
-            string areaTextureName = textureName.Replace("areaselect/", $"areaselect/{area}_");
+            string areaTextureName = textureName.Replace("areaselect/", string.Format("areaselect/{0}_", area));
             if (GFX.Gui.Has(areaTextureName)) {
                 textureName = areaTextureName;
                 return textureName;
             }
 
             // If none are found, fall back to levelset textures.
-            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
-            string levelSetTextureName = textureName.Replace("areaselect/", $"areaselect/{levelSet}/");
+            string levelSet = ((patch_SaveData) SaveData.Instance)?.LevelSet ?? "Celeste";
+            string levelSetTextureName = textureName.Replace("areaselect/", string.Format("areaselect/{0}/", levelSet));
+
             if (GFX.Gui.Has(levelSetTextureName)) {
                 textureName = levelSetTextureName;
                 return textureName;
@@ -287,7 +288,7 @@ namespace Celeste {
             }
 
             // If none are found, fall back to levelset textures.
-            string levelSet = SaveData.Instance?.GetLevelSet() ?? "Celeste";
+            string levelSet = ((patch_SaveData) SaveData.Instance)?.LevelSet ?? "Celeste";
             string levelSetTextureName = textureName.Replace("menu/", $"menu/{levelSet}/");
             if (GFX.Gui.Has(levelSetTextureName)) {
                 textureName = levelSetTextureName;
@@ -301,6 +302,27 @@ namespace Celeste {
         private float _FixTitleLength(float vanillaValue) {
             float mapNameSize = ActiveFont.Measure(Dialog.Clean(AreaData.Get(Area).Name)).X;
             return vanillaValue - Math.Max(0f, mapNameSize + vanillaValue - 490f);
+        }
+
+
+        private static float vanillaOffsetForStrawberryWidth = 0;
+
+        private float getStrawberryWidth(float vanillaValue, int strawberryCount, int checkpointIndex) {
+            bool hasCassette = (Area.Mode == AreaMode.Normal && Data.CassetteCheckpointIndex == checkpointIndex);
+            float maxWidth = hasCassette ? 440 : 520;
+
+            float modifiedValue = vanillaValue;
+            if (vanillaValue * strawberryCount > maxWidth) {
+                modifiedValue = maxWidth / strawberryCount;
+            }
+
+            vanillaOffsetForStrawberryWidth = vanillaValue - modifiedValue;
+            return modifiedValue;
+        }
+
+        private static Vector2 correctInitialStrawberryOffset(Vector2 initialOffset, Vector2 directionVector) {
+            initialOffset -= directionVector * vanillaOffsetForStrawberryWidth;
+            return initialOffset;
         }
     }
 }
@@ -329,6 +351,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchOuiChapterPanelReset))]
     class PatchOuiChapterPanelResetAttribute : Attribute { }
+
+    /// <summary>
+    /// Patches chapter panel tab rendering to allow for custom backpack/cassette icons.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchStrawberryWidthInChapterPanel))]
+    class PatchStrawberryWidthInChapterPanelAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -463,5 +491,30 @@ namespace MonoMod {
             }
         }
 
+
+        public static void PatchStrawberryWidthInChapterPanel(ILContext context, CustomAttribute attrib) {
+            MethodDefinition m_getStrawberryWidth = context.Method.DeclaringType.FindMethod("System.Single Celeste.OuiChapterPanel::getStrawberryWidth(System.Single,System.Int32,System.Int32)");
+            MethodDefinition m_correctInitialStrawberryOffset = context.Method.DeclaringType.FindMethod("Microsoft.Xna.Framework.Vector2 Celeste.OuiChapterPanel::correctInitialStrawberryOffset(Microsoft.Xna.Framework.Vector2,Microsoft.Xna.Framework.Vector2)");
+            int boolArrayIndex = context.Body.Variables.Where(var => var.VariableType.FullName == "System.Boolean[]").First().Index;
+
+            ILCursor cursor = new ILCursor(context);
+
+            for (int i = 0; i < 2; i++) {
+                cursor.GotoNext(instr => instr.MatchLdcR4(44f));
+                cursor.Emit(OpCodes.Ldarg_0);
+                cursor.Index++;
+                cursor.Emit(OpCodes.Ldloc, boolArrayIndex);
+                cursor.Emit(OpCodes.Ldlen);
+                cursor.Emit(OpCodes.Ldarg_3);
+                cursor.Emit(OpCodes.Call, m_getStrawberryWidth);
+
+                if (i == 0) {
+                    cursor.GotoNext(instr => instr.OpCode == OpCodes.Stloc_S);
+                    int vectorIndex = (cursor.Next.Operand as VariableReference).Index;
+                    cursor.Emit(OpCodes.Ldloc, vectorIndex - 1);
+                    cursor.Emit(OpCodes.Call, m_correctInitialStrawberryOffset);
+                }
+            }
+        }
     }
 }

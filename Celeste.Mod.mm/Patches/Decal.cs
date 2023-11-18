@@ -17,6 +17,7 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using MonoMod.InlineRT;
+using Celeste.Mod.Helpers;
 
 namespace Celeste {
     class patch_Decal : Decal {
@@ -230,7 +231,7 @@ namespace Celeste {
                         RemoveSelf();
                         solids.ForEach(s => s.RemoveSelf());
                     }));
-                    CoreModule.Session.AttachedDecals.Add($"{Name}||{Position.X}||{Position.Y}");
+                    CoreModule.Session.AttachedDecals.Add(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y));
                 }
             };
             if (jumpThrus)
@@ -273,7 +274,7 @@ namespace Celeste {
 
         public override void Awake(Scene scene) {
             base.Awake(scene);
-            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains($"{Name}||{Position.X}||{Position.Y}")) {
+            if (staticMover?.Platform == null && CoreModule.Session.AttachedDecals.Contains(string.Format("{0}||{1}||{2}", Name, Position.X, Position.Y))) {
                 RemoveSelf();
             }
         }
@@ -332,8 +333,10 @@ namespace Celeste {
 
     public static class DecalExt {
 
+        [Obsolete("Use Decal.Scale instead.")]
         public static Vector2 GetScale(this Decal self)
             => ((patch_Decal) self).Scale;
+        [Obsolete("Use Decal.Scale instead.")]
         public static void SetScale(this Decal self, Vector2 value)
             => ((patch_Decal) self).Scale = value;
 

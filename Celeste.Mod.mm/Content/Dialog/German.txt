@@ -39,7 +39,8 @@
 
 # Title Screen
 	MENU_TITLESCREEN_RESTART_VANILLA= Neustart mit orig/Celeste.exe
-    
+	MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN= WARNUNG: Aufgrund von Betriebssystem-Einschränkungen werden Spielstände nicht geteilt!
+
 # Extra Key Mapping
     KEY_CONFIG_ADDING= DRÜCKE ZUSÄTZLICHE TASTE FÜR
     KEY_CONFIG_ADDITION_HINT= Drücke UMSCHALT + BESTÄTIGEN, um zusätzliche Tasten hinzuzufügen oder zu entfernen
@@ -52,6 +53,8 @@
 	MODOPTIONS_COREMODULE_UPDATE= 							Everest-Update auf ((version))
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Fehlende benötigte Mods installieren
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Everest-Version wechseln
+	MODOPTIONS_COREMODULE_LEGACYREF=						Erstelle legacyRef Installation
+	MODOPTIONS_COREMODULE_LEGACYREF_DESCR=					Benötigt um nicht-Core code mods mit .NET Core Everest zu bauen
 	MODOPTIONS_COREMODULE_TITLE= 							Everest-Kernfunktionen
 	MODOPTIONS_COREMODULE_DEBUGMODE= 						Debug-Modus
 	MODOPTIONS_COREMODULE_LAUNCHWITHFMODLIVEUPDATE= 		Mit FMOD Live Update starten
@@ -71,6 +74,19 @@
 	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					VANILLA
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				REIHEN
 	MODOPTIONS_COREMODULE_MAINMENUMODE_TOUCH= 				TOUCH
+	MODOPTIONS_COREMODULE_COMPATMODE=						Kompatibilitätsmodus
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE=					KEINER
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_A=
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_B=
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA=				LEGACY XNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_A=		Emuliert den 61 FPS XNA-Bug
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_B=		NUR EMPFOHLEN, WENN MAN VON DIESEM BETROFFEN IST
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA=				LEGACY FNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_A=		Emuliert die Input-Latenz von alten FNA-Installationen
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_B=		NUR EMPFOHLEN, WENN MAN AN DIESE GEWÖHNT IST
+	MODOPTIONS_COREMODULE_COMPATMODE_INCOMPATIBLE=			Warnung: Inkompatibel mit dem Vanilla-Framework!
+	MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN=			Verwende Exclusive Fullscreen
+	MODOPTIONS_COREMODULE_D3D11EXCLUSIVEFULLSCREEN_DESC=	Betrifft den Windows D3D11-Renderer
 	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			Mods beim Start automatisch updaten
 	MODOPTIONS_COREMODULE_MODUPDATES= 						Auf Mod-Updates prüfen
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Tastatur für Texteingabe benutzen
@@ -103,6 +119,7 @@
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Einige Mods konnten nicht geladen werden.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Bitte überprüfe log.txt für mehr Informationen.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND= 				{0} nicht gefunden
+	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			Mod-Assembly konnte nicht geladen werden
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						Einige everest.yaml-Dateien konnten nicht geladen werden.
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						AUS
@@ -134,10 +151,12 @@
 
 # Updater
 	UPDATER_TITLE= 					UPDATER
+	UPDATER_LEGACYREF_TITLE=		LEGACYREF SETUP
 	UPDATER_VERSIONS_TITLE= 		EVEREST-VERSION ÄNDERN
 	UPDATER_VERSIONS_CURRENT= 		Installiert: ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Neu laden...
 	
+	UPDATER_VERSIONS_WAIT_REQUEST=	Warte auf Versionsliste...
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Versionsliste konnte nicht heruntergeladen werden.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Unbekanntes Format.
 	
@@ -146,6 +165,8 @@
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	Updates werden auf dieser Plattform nicht unterstützt - Abbruch.
 	EVERESTUPDATER_NOUPDATE=		Kein Update - Abbruch.
+	EVERESTUPDATER_CREATINGLEGACYREF=	Erstelle legacyRef Basisinstallation
+	EVERESTUPDATER_NOTAVAILABLE=	Benötigter Everest-Build nicht verfügbar!
 	EVERESTUPDATER_UPDATING=		Update auf {0} (branch: {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Download
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Download:
@@ -157,9 +178,9 @@
 	EVERESTUPDATER_EXTRACTIONFINISHED=	Entpacken abgeschlossen.
 	EVERESTUPDATER_RESTARTING=		Neustart
 	EVERESTUPDATER_RESTARTINGIN=	Neustart in {0}
+	EVERESTUPDATER_WAITFORINSTALLER=	Warte auf Installationsprozess
+	EVERESTUPDATER_INSTALLERFAILED=	Installation schlug fehl: exit code {0}
 	EVERESTUPDATER_STARTINGFAILED=	Installer konnte nicht gestartet werden!
-	EVERESTUPDATER_MISSINGRUNTIME_A=	Die Installation von .NET Core Everest benötigt die .NET 7.0 runtime
-	EVERESTUPDATER_MISSINGRUNTIME_B=	Diese kann von der folgenden Seite heruntergeladen werden: {0}
 	EVERESTUPDATER_ERRORHINT1=		Bitte erstelle einen neuen Issue auf GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		oder tritt dem Kanal #modding_help auf Discord bei (Einladung im Repo).
 	EVERESTUPDATER_ERRORHINT3=		Stelle sicher, log.txt hochzuladen
@@ -202,7 +223,6 @@
 	DEPENDENCYDOWNLOADER_DONE=						fertig.
 	DEPENDENCYDOWNLOADER_DOWNLOAD_DATABASE_FAILED=	FEHLER: Download der Datenbank fehlgeschlagen. Bitte überprüfe log.txt für mehr Informationen.
 	DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST=		WARNUNG: Einige Mods benötigen eine neuere Everest-Version zum Laden. Installiere sie im Menü zum Ändern der Everest-Version.
-	DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST=		WARNUNG: Einige Mods benötigen eine (aktuell noch WIP) .NET Core Everest-Version zum Laden. Installiere sie im Menü zum Ändern der Everest-Version.
 	DEPENDENCYDOWNLOADER_EVEREST_UPDATE=			Everest wird auf {0} geupdatet, damit einige Mods geladen werden können. Drücke Bestätigen, um fortzufahren.
 	DEPENDENCYDOWNLOADER_MOD_NOT_FOUND=				FEHLER: {0} konnte nicht in der Datenbank gefunden werden. Bitte installiere diese Mod manuell.
 	DEPENDENCYDOWNLOADER_UPDATE_CELESTE=			FEHLER: Einige Mods benötigen eine neuere Version von Celeste. Bitte update dein Spiel.

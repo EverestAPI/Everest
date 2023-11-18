@@ -126,6 +126,11 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             if (Task != null && (Task.IsCompleted || Task.IsCanceled || Task.IsFaulted)) {
+                if (Task.IsFaulted) {
+                    LogLine(">>>>> FATAL ERROR: WORKER TASK HAS FAULTED - THIS IS A BUG <<<<<");
+                    WaitForConfirmOnFinish = true;
+                }
+
                 if (!WaitForConfirmOnFinish || Input.MenuConfirm.Pressed) {
                     OnFinish?.Invoke();
                     Task = null;

@@ -32,9 +32,9 @@ namespace Celeste.Mod.UI {
         }
 
         public static TextMenu CreateMenu(bool inGame, EventInstance snapshot) {
-            TextMenu menu = new TextMenu();
-            ((patch_TextMenu) menu).CompactWidthMode = true;
-            ((patch_TextMenu) menu).BatchMode = true;
+            patch_TextMenu menu = new patch_TextMenu();
+            menu.CompactWidthMode = true;
+            menu.BatchMode = true;
 
             menu.Add(new TextMenuExt.HeaderImage("menu/everest") {
                 ImageColor = Color.White,
@@ -46,9 +46,16 @@ namespace Celeste.Mod.UI {
                 List<EverestModuleMetadata> missingDependencies = new List<EverestModuleMetadata>();
 
                 lock (Everest.Loader.Delayed) {
-                    if (Everest.Loader.Delayed.Count > 0) {
+                    if (Everest.Loader.Delayed.Count > 0 || Everest.Loader.ModsWithAssemblyLoadFailures.Count > 0) {
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_a")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
                         menu.Add(new TextMenuExt.SubHeaderExt(Dialog.Clean("modoptions_coremodule_notloaded_b")) { HeightExtra = 0f, TextColor = Color.OrangeRed });
+
+                        foreach (EverestModuleMetadata mod in Everest.Loader.ModsWithAssemblyLoadFailures) {
+                            menu.Add(new TextMenuExt.SubHeaderExt($"{mod.Name} | v.{mod.VersionString} ({Dialog.Get("modoptions_coremodule_notloaded_asmloaderror")})") {
+                                HeightExtra = 0f,
+                                TextColor = Color.PaleVioletRed
+                            });
+                        }
 
                         foreach (Tuple<EverestModuleMetadata, Action> mod in Everest.Loader.Delayed) {
                             string missingDepsString = "";
@@ -142,7 +149,7 @@ namespace Celeste.Mod.UI {
         /// </summary>
         /// <returns>true if an element matching 'criteria' was found, false otherwise.</returns>
         private static bool createModMenuSectionAndDelete(List<EverestModule> modules, Predicate<EverestModule> criteria,
-            TextMenu menu, bool inGame, EventInstance snapshot) {
+            patch_TextMenu menu, bool inGame, EventInstance snapshot) {
 
             bool foundMatch = false;
 

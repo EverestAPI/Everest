@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Celeste.Mod.Helpers {
@@ -29,8 +30,8 @@ namespace Celeste.Mod.Helpers {
 
                 Logger.Verbose("ModUpdaterHelper", $"Downloading last versions list from {modUpdaterDatabaseUrl}");
 
-                using (WebClient wc = new CompressedWebClient()) {
-                    string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
+                using (HttpClient hc = new CompressedHttpClient()) {
+                    string yamlData = hc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     updateCatalog = YamlHelper.Deserializer.Deserialize<Dictionary<string, ModUpdateInfo>>(yamlData);
                     foreach (string name in updateCatalog.Keys) {
                         updateCatalog[name].Name = name;
@@ -62,8 +63,8 @@ namespace Celeste.Mod.Helpers {
 
                 Dictionary<string, EverestModuleMetadata> dependencyGraph = new Dictionary<string, EverestModuleMetadata>();
 
-                using (WebClient wc = new CompressedWebClient()) {
-                    string yamlData = wc.DownloadString(modUpdaterDatabaseUrl);
+                using (HttpClient wc = new CompressedHttpClient()) {
+                    string yamlData = wc.GetStringAsync(modUpdaterDatabaseUrl).Result;
                     Dictionary<string, DependencyGraphEntry> dependencyGraphUnparsed = YamlHelper.Deserializer.Deserialize<Dictionary<string, DependencyGraphEntry>>(yamlData);
 
                     foreach (KeyValuePair<string, DependencyGraphEntry> entry in dependencyGraphUnparsed) {
@@ -189,9 +190,9 @@ namespace Celeste.Mod.Helpers {
         /// This should point to a running instance of https://github.com/maddie480/EverestUpdateCheckerServer.
         /// </summary>
         private static string getModUpdaterDatabaseUrl(string database) {
-            using (WebClient wc = new CompressedWebClient()) {
+            using (HttpClient hc = new CompressedHttpClient()) {
                 Logger.Verbose("ModUpdaterHelper", "Fetching mod updater database URL");
-                return wc.DownloadString("https://everestapi.github.io/" + database + ".txt").Trim();
+                return hc.GetStringAsync("https://everestapi.github.io/" + database + ".txt").Result.Trim();
             }
         }
 

@@ -9,13 +9,14 @@ using System.Collections.Generic;
 namespace Celeste.Mod.UI {
     public class OuiVersionList : Oui, OuiModOptions.ISubmenu {
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
 
         private TextMenu.SubHeader currentBranchName;
 
         private const float onScreenX = 960f;
         private const float offScreenX = 2880f;
 
+        private bool waitingForRequest;
         private float alpha = 0f;
 
         private List<TextMenuExt.IItemExt> items = new List<TextMenuExt.IItemExt>();
@@ -45,13 +46,19 @@ namespace Celeste.Mod.UI {
 
             Everest.Updater.Source currentSource = null;
             foreach (Everest.Updater.Source source in Everest.Updater.Sources) {
+                if ((source.Entries?.Count ?? 0) <= 0 && string.IsNullOrWhiteSpace(source.ErrorDialog))
+                    continue;
+
                 currentBranch.Add(source.Name.DialogCleanOrNull() ?? source.Name, source, source.Name == CoreModule.Settings.CurrentBranch);
                 if (source.Name == CoreModule.Settings.CurrentBranch)
                     currentSource = source;
             }
             currentBranch.Change(ReloadItems);
 
-            ReloadItems(currentSource ?? currentBranch.Values[0].Item2);
+            if (currentSource != null)
+                ReloadItems(currentSource);
+            else if (currentBranch.Values.Count > 0)
+                ReloadItems(currentBranch.Values[0].Item2);
 
             return menu;
         }
@@ -152,7 +159,7 @@ namespace Celeste.Mod.UI {
                 Scene.Remove(menu);
             }
 
-            menu = CreateMenu(false, null);
+            menu = (patch_TextMenu) CreateMenu(false, null);
 
             if (selected >= 0) {
                 menu.Selection = selected;
@@ -163,9 +170,27 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Enter(Oui from) {
+            Visible = true;
+
+            if (!(Everest.Updater._VersionListRequestTask?.IsCompleted ?? false)) {
+                waitingForRequest = true;
+                alpha = 1f;
+
+                while (!(Everest.Updater._VersionListRequestTask?.IsCompletedSuccessfully ?? false)) {
+                    if (Input.MenuCancel.Pressed) {
+                        Audio.Play(SFX.ui_main_button_back);
+                        Overworld.Goto<OuiModOptions>();
+                        yield break;
+                    }
+                    yield return null;
+                }
+
+                waitingForRequest = false;
+            }
+
             ReloadMenu();
 
-            menu.Visible = (Visible = true);
+            menu.Visible = true;
             menu.Focused = false;
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
@@ -178,18 +203,25 @@ namespace Celeste.Mod.UI {
         }
 
         public override IEnumerator Leave(Oui next) {
-            Audio.Play(SFX.ui_main_whoosh_large_out);
-            menu.Focused = false;
+            waitingForRequest = false;
+
+            if (menu != null) {
+                Audio.Play(SFX.ui_main_whoosh_large_out);
+                menu.Focused = false;
+            }
 
             for (float p = 0f; p < 1f; p += Engine.DeltaTime * 4f) {
-                menu.X = onScreenX + 1920f * Ease.CubeIn(p);
+                if (menu != null)
+                    menu.X = onScreenX + 1920f * Ease.CubeIn(p);
                 alpha = 1f - Ease.CubeIn(p);
                 yield return null;
             }
 
-            menu.Visible = Visible = false;
-            menu.RemoveSelf();
-            menu = null;
+            if (menu != null) {
+                menu.Visible = Visible = false;
+                menu.RemoveSelf();
+                menu = null;
+            }
         }
 
         public override void Update() {
@@ -205,6 +237,14 @@ namespace Celeste.Mod.UI {
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+
+            if (waitingForRequest) {
+                if ((!Everest.Updater._VersionListRequestTask?.IsFaulted) ?? true)
+                    ActiveFont.Draw(Dialog.Clean("updater_versions_wait_request"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.White);
+                else
+                    ActiveFont.Draw(Dialog.Clean("updater_versions_err_download"), Celeste.TargetCenter, Vector2.One / 2, Vector2.One * 1.2f, Color.OrangeRed);
+            }
+
             base.Render();
         }
 

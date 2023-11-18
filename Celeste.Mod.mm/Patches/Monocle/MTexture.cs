@@ -44,6 +44,14 @@ namespace Monocle {
 
         private List<ModAsset> _ModAssets;
 
+        [MonoModIgnore]
+        public patch_MTexture(VirtualTexture vtex)
+            : base(vtex) { }
+
+        [MonoModIgnore]
+        public patch_MTexture(VirtualTexture vtex, Vector2 offset, int width, int height)
+            : base(vtex, offset, width, height) { }
+
         // Patching constructors is ugly.
         public extern void orig_ctor(patch_MTexture parent, int x, int y, int width, int height);
         [MonoModConstructor]
@@ -92,7 +100,7 @@ namespace Monocle {
         /// Override the given MTexture with the given mod asset.
         /// </summary>
         public void SetOverride(ModAsset asset) {
-            if (!_HasOrig && Texture.GetMetadata() == asset) {
+            if (!_HasOrig && ((patch_VirtualTexture) (object) Texture).Metadata == asset) {
                 Metadata = asset;
                 asset.Targets.Add(this);
                 return;
@@ -107,7 +115,7 @@ namespace Monocle {
                 asset.Targets.Add(this);
             }
 
-            VirtualTexture vtex = VirtualContentExt.CreateTexture(asset);
+            VirtualTexture vtex = patch_VirtualContent.CreateTexture(asset);
             MTextureMeta meta = asset.GetMeta<MTextureMeta>();
 
             if (meta != null) {
@@ -158,8 +166,8 @@ namespace Monocle {
         /// </summary>
         public void UndoOverride(ModAsset asset) {
             if (asset == Metadata) {
-                Atlas atlas = Atlas;
-                if (atlas != null && atlas.GetTextures().ContainsValue(this)) {
+                patch_Atlas atlas = (patch_Atlas) Atlas;
+                if (atlas != null && atlas.Textures.ContainsValue(this)) {
                     // TODO: Delayed removal - allow other textures to overwrite THIS ALREADY REFERENCED OBJECT before loosening it.
                     /*
                     atlas.ResetCaches();
@@ -809,37 +817,45 @@ namespace Monocle {
     }
     public static class MTextureExt {
 
+        [Obsolete("Use MTexture.Atlas instead.")]
         public static void SetAtlas(this MTexture self, Atlas atlas)
             => ((patch_MTexture) self).Atlas = atlas;
 
+        [Obsolete("Use MTexture.Atlas instead.")]
         public static Atlas GetAtlas(this MTexture self)
             => ((patch_MTexture) self).Atlas;
 
         /// <inheritdoc cref="patch_MTexture.SetOverride(VirtualTexture, Vector2, int, int)"/>
+        [Obsolete("Use MTexture.SetOverride instead.")]
         public static void SetOverride(this MTexture self, VirtualTexture texture, Vector2 drawOffset, int frameWidth, int frameHeight)
             => ((patch_MTexture) self).SetOverride(texture, drawOffset, frameWidth, frameHeight);
 
         /// <inheritdoc cref="patch_MTexture.SetOverride(ModAsset)"/>
+        [Obsolete("Use MTexture.SetOverride instead.")]
         public static void SetOverride(this MTexture self, ModAsset asset)
             => ((patch_MTexture) self).SetOverride(asset);
 
         /// <inheritdoc cref="patch_MTexture.UndoOverride()"/>
+        [Obsolete("Use MTexture.UndoOverride instead.")]
         public static void UndoOverride(this MTexture self)
             => ((patch_MTexture) self).UndoOverride();
 
         /// <inheritdoc cref="patch_MTexture.UndoOverride(ModAsset)"/>
+        [Obsolete("Use MTexture.UndoOverride instead.")]
         public static void UndoOverride(this MTexture self, ModAsset asset)
             => ((patch_MTexture) self).UndoOverride(asset);
 
         /// <summary>
         /// Gets the parent texture of the given MTexture.
         /// </summary>
+        [Obsolete("Use MTexture.Parent instead.")]
         public static MTexture GetParent(this MTexture self)
             => ((patch_MTexture) self).Parent;
 
         /// <summary>
         /// Sets the parent texture of the given MTexture.
         /// </summary>
+        [Obsolete("Use MTexture.Parent instead.")]
         public static void SetParent(this MTexture self, MTexture parent)
             => ((patch_MTexture) self).Parent = (patch_MTexture) parent;
 

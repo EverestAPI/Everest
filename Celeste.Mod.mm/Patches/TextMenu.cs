@@ -382,7 +382,7 @@ namespace Celeste {
                 List<string> currentContent = Values.Select(val => val.Item1).ToList();
                 if (!cachedRightWidthContent.SequenceEqual(currentContent)) {
                     // contents changed, or the width wasn't computed yet.
-                    cachedRightWidth = orig_RightWidth() * 0.8f + 44f;
+                    cachedRightWidth = orig_RightWidth();
                     cachedRightWidthContent = currentContent;
                 }
                 return cachedRightWidth;
@@ -514,20 +514,20 @@ namespace Celeste {
 
     public static partial class TextMenuExt {
 
-        // Mods can't access patch_ classes directly.
-        // We thus expose any new members through extensions.
-
         /// <summary>
         /// Get a list of all items which have been added to the menu.
         /// </summary>
+        [Obsolete("Use TextMenu.Items instead")]
         public static List<TextMenu.Item> GetItems(this TextMenu self)
             => ((patch_TextMenu) self).Items;
 
         /// <inheritdoc cref="patch_TextMenu.Insert(int, TextMenu.Item)"/>
+        [Obsolete("Use TextMenu.Insert instead")]
         public static TextMenu Insert(this TextMenu self, int index, TextMenu.Item item)
             => ((patch_TextMenu) self).Insert(index, item);
 
         /// <inheritdoc cref="patch_TextMenu.Remove(TextMenu.Item)"/>
+        [Obsolete("Use TextMenu.Remove instead")]
         public static TextMenu Remove(this TextMenu self, TextMenu.Item item)
             => ((patch_TextMenu) self).Remove(item);
 
@@ -552,13 +552,18 @@ namespace MonoMod {
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
             FieldReference f_UnselectedColor = context.Method.DeclaringType.FindField("UnselectedColor");
 
+            //Explicitly instantiate the generic Option<T> type
+            GenericInstanceType genericInst = new GenericInstanceType(f_UnselectedColor.DeclaringType);
+            genericInst.GenericArguments.AddRange(f_UnselectedColor.DeclaringType.GenericParameters);
+            f_UnselectedColor.DeclaringType = genericInst;
+
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
         }
-
+    
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
             MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
             FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");

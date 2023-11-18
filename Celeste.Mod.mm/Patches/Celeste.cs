@@ -7,11 +7,9 @@ using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
-using MonoMod.Utils;
 using System;
 using System.IO;
 using System.Linq;
-using System.Management;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Mono.Cecil;
@@ -19,6 +17,9 @@ using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Reflection;
+using System.Runtime.Versioning;
+using System.ComponentModel;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -41,12 +42,6 @@ namespace Celeste {
 
             // we cannot use Everest.Flags.IsFNA at this point because flags aren't initialized yet.
             File.WriteAllText($"BuildIs{(typeof(Game).Assembly.FullName.Contains("FNA") ? "FNA" : "XNA")}.txt", "");
-
-            // macOS is FUN.
-            if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
-                // https://github.com/mono/mono/blob/79b6e3f256a59ede74596ce82547f320bf1e9a99/mono/metadata/filewatcher.c#L66
-                Environment.SetEnvironmentVariable("MONO_DARWIN_USE_KQUEUE_FSW", "1");
-            }
 
             if (File.Exists("everest-launch.txt")) {
                 args =
@@ -120,8 +115,13 @@ namespace Celeste {
                 }
             }
 
-            if (args.Contains("--console") && PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+            if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 AllocConsole();
+
+                // Invalidate console streams
+                typeof(Console).GetField("s_in", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_out", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
+                typeof(Console).GetField("s_error", BindingFlags.NonPublic | BindingFlags.Static).SetValue(null, null);
             }
 
             if (args.Contains("--nolog")) {
@@ -171,6 +171,7 @@ namespace Celeste {
             }
 
             Everest.PathLog = logfile;
+
             using (Stream fileStream = new FileStream(logfile, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
             using (StreamWriter fileWriter = new StreamWriter(fileStream, Console.OutputEncoding))
             using (LogWriter logWriter = new LogWriter(Console.Out, Console.Error, fileWriter)) {
@@ -185,6 +186,7 @@ namespace Celeste {
 
             try {
                 Everest.ParseArgs(args);
+                ParseFNAArgs(args);
                 orig_Main(args);
             } catch (Exception e) {
                 CriticalFailureHandler(e);
@@ -195,6 +197,31 @@ namespace Celeste {
 
             Everest.Shutdown();
         }
+
+        private static void ParseFNAArgs(string[] args) {
+            // FNA's main function already does this, but it doesn't work on Linux because the runtime doesn't call setenv :catassault:
+
+            static void SetEnvVar(string name, string value) {
+                Environment.SetEnvironmentVariable(name, value);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                    if (setenv(name, value, 1) != 0)
+                        throw new Win32Exception();
+            }
+
+            SetEnvVar("FNA_AUDIO_DISABLE_SOUND", "1");
+            for (int i = 0; i < args.Length; i++) {
+                if (args[i] == "--graphics" && i < args.Length - 1) {
+                    SetEnvVar("FNA3D_FORCE_DRIVER", args[i + 1]);
+                    i++;
+                }
+                // No --disable-lateswaptear as that is now explicitly opt-in
+            }
+        }
+
+        [SupportedOSPlatform("linux")]
+        [DllImport("libc", CallingConvention=CallingConvention.Cdecl, SetLastError=true)]
+        private extern static int setenv(string name, string val, int overwrite);
 
         private static void UnhandledExceptionHandler(object sender, UnhandledExceptionEventArgs e) {
             if (e.IsTerminating) {
@@ -242,6 +269,9 @@ https://discord.gg/6qjaePQ");
             } else {
                 orig_ctor_Celeste();
             }
+
+            Logger.Log(LogLevel.Info, "boot", $"Active compatibility mode: {Everest.CompatibilityMode}");
+
             try {
                 Everest.Boot();
             } catch (Exception e) {

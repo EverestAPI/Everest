@@ -1,16 +1,23 @@
-﻿# Check English.txt for up-to-date notes.
+﻿﻿# Check English.txt for up-to-date notes.
 
 # Helper Postcards
 	POSTCARD_LEVELGONE= 		{big}Merci ((player)) !{/big}{n}Mais {#ff1144}((sid)){#} est dans une autre montagne.
 	POSTCARD_LEVELLOADFAILED= 	{big}Désolé !{/big}{n}Mais {#ff1144}((sid)){#}{n}n'a pas pu être chargé.{n}Envoyez votre {#44adf7}log.txt{#}{n}au créateur de la map.
 	POSTCARD_LEVELNOSPAWN= 		{big}Oups !{/big}{n}Quelqu'un a mal placé{n}votre {#44adf7}point de départ !{#}{n}Vérifiez que votre map{n}contient une entité {#44adf7}Player{#}.
+	POSTCARD_BADTILEID=			{big}Oups !{/big}{n}Une ((type))tile inexistante dont l'id est {#ff1144}((id)){#} est présente à la position{n}{#ff1144}(((x)), ((y))){#} dans la salle {#ff1144}((room)){#}{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_DECALREGERROR=		{big}Oups !{/big}{n}Il y a eu une erreur lors de l'application de la propriété{n}{#ff1144}((property)){#} à {#ff1144}((decal)){#}{n}Vous avez peut-être un attribut manquant ou invalide dans votre fichier {#44adf7}DecalRegistry.xml{#}.
+	POSTCARD_MISSINGTUTORIAL=	{big}Oups !{/big}{n}Le tutorial {#ff1144}((tutorial)){#} est introuvable.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_TILEXMLERROR=		{big}Oups !{/big}{n}Une erreur est survenue lors de la lecture d'un tileset dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_XMLERROR=			{big}Oups !{/big}{n}Il y a une erreur de syntaxe dans {#ff1144}((path)){#}.{n}Vérifiez le fichier {#44adf7}log.txt{#} pour plus d'informations.
+	POSTCARD_BOSSLASTNODEHIT=	{big}Oups !{/big}{n}Le dernier noeud de l'entité {#ff1144}Badeline Boss{#} a été touché, veuillez ajouter un autre noeud en-dehors de la salle de façon à ce que le joueur ne puisse pas l'atteindre.
 
 # Main Menu
 	MENU_TITLETOUCH= 		TOUCH
 	MENU_MAPLIST= 			Liste des maps
 	MENU_MODOPTIONS= 		Options des mods
 	MENU_PAUSE_MODOPTIONS= 	Options des mods
-	
+
+	MENU_MODOPTIONS_UPDATE_FAILED=				L'installation de la mise à jour d'Everest a échoué
 	MENU_MODOPTIONS_ONE_MOD_FAILEDTOLOAD=		1 mod n'a pas pu être chargé
 	MENU_MODOPTIONS_MULTIPLE_MODS_FAILEDTOLOAD=	{0} mods n'ont pas pu être chargés
 	MENU_MODOPTIONS_EVEREST_YAML_ERRORS=		Erreurs de chargement de everest.yaml
@@ -19,7 +26,8 @@
 	MENU_MODOPTIONS_MOD_UPDATES_AVAILABLE=		Mises à jour disponibles pour {0} mods
 	
 # Title Screen
-	MENU_TITLESCREEN_RESTART_VANILLA= Lancement de orig/Celeste.exe
+	MENU_TITLESCREEN_RESTART_VANILLA= Lancement du jeu non modifié
+	MENU_TITLESCREEN_RESTART_VANILLA_SAVES_WARN= ATTENTION : En raison de limitations imposées par l'OS, les sauvegardes ne sont pas partagées !
 
 # Extra Key Mapping
 	KEY_CONFIG_ADDING= APPUYEZ SUR LA TOUCHE SUPPLÉMENTAIRE POUR
@@ -31,6 +39,8 @@
 
 # Core Module Options
 	MODOPTIONS_COREMODULE_UPDATE= 							Mettre à jour vers ((version))
+	MODOPTIONS_COREMODULE_LEGACYREF=						Installer legacyRef
+	MODOPTIONS_COREMODULE_LEGACYREF_DESCR=					Requis pour compiler des mods non-Core avec une installation Everest .NET Core
 	MODOPTIONS_COREMODULE_DOWNLOADDEPS= 					Installer les dépendances manquantes
 	MODOPTIONS_COREMODULE_VERSIONLIST= 						Changer de version d'Everest
 	MODOPTIONS_COREMODULE_TITLE= 							Everest Core
@@ -49,6 +59,17 @@
 	MODOPTIONS_COREMODULE_INPUTGUI_XB1= 					XBONE
 	MODOPTIONS_COREMODULE_INPUTGUI_TOUCH= 					TOUCH
 	MODOPTIONS_COREMODULE_MAINMENUMODE= 					Disposition du menu principal
+	MODOPTIONS_COREMODULE_COMPATMODE=						Mode de compatibilité
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE=					AUCUN
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_A=
+	MODOPTIONS_COREMODULE_COMPATMODE_NONE_DESCR_B=
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA=				LEGACY XNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_A=		Reproduit le bug des 61 FPS présent sous XNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYXNA_DESCR_B=		A ACTIVER UNIQUEMENT SI VOUS ETES AFFECTE PAR CE PROBLEME !
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA=				LEGACY FNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_A=		Reproduit la latence sur les contrôles présente sur FNA
+	MODOPTIONS_COREMODULE_COMPATMODE_LEGACYFNA_DESCR_B=		A ACTIVER UNIQUEMENT SI VOUS AVEZ L'HABITUDE DE CETTE LATENCE !
+	MODOPTIONS_COREMODULE_COMPATMODE_INCOMPATIBLE=			Attention : Ce mode est incompatible avec votre installation non modifiée !
 	MODOPTIONS_COREMODULE_AUTOUPDATEMODSONSTARTUP=			Mettre à jour les mods au démarrage
 	MODOPTIONS_COREMODULE_MAINMENUMODE_= 					DÉFAUT
 	MODOPTIONS_COREMODULE_MAINMENUMODE_ROWS= 				LIGNES
@@ -57,8 +78,23 @@
 	MODOPTIONS_COREMODULE_USEKEYBOARDFORTEXTINPUT=			Utiliser le clavier pour saisir du texte
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS=			Avertir en cas d'erreur sur everest.yaml
 	MODOPTIONS_COREMODULE_WARNONEVERESTYAMLERRORS_DESC=		Utile pour les créateurs de mods
+	MODOPTIONS_COREMODULE_MENUNAV_SUBHEADER=				NAVIGATION DANS LES MENUS
 	MODOPTIONS_COREMODULE_MENUPAGEUP=						Page précédente (menus)
 	MODOPTIONS_COREMODULE_MENUPAGEDOWN=						Page suivante (menus)
+	MODOPTIONS_COREMODULE_DEBUGMODE_SUBHEADER=				MODE DEBUG
+	MODOPTIONS_COREMODULE_TOGGLEDEBUGCONSOLE=				Ouvrir/Fermer la console de debug
+	MODOPTIONS_COREMODULE_DEBUGCONSOLE=						Ouvrir la console de debug
+	MODOPTIONS_COREMODULE_DEBUGMAP=							Ouvrir la carte de debug
+	MODOPTIONS_COREMODULE_MOUNTAINCAM_SUBHEADER=			CAMERA DANS LE MENU PRINCIPAL
+	MODOPTIONS_COREMODULE_CAMERAFORWARD=					Avancer
+	MODOPTIONS_COREMODULE_CAMERABACKWARD=					Reculer
+	MODOPTIONS_COREMODULE_CAMERARIGHT=						Droite
+	MODOPTIONS_COREMODULE_CAMERALEFT=						Gauche
+	MODOPTIONS_COREMODULE_CAMERAUP=							Haut
+	MODOPTIONS_COREMODULE_CAMERADOWN=						Bas
+	MODOPTIONS_COREMODULE_CAMERASLOW=						Ralentir
+	MODOPTIONS_COREMODULE_CAMERAPRINT=						Ecrire la position dans les logs
+	MODOPTIONS_COREMODULE_TOGGLEMOUNTAINFREECAM=			Activer la Free Cam
 
 	MODOPTIONS_COREMODULE_SOUNDTEST= 						Test sons
 	MODOPTIONS_COREMODULE_OOBE= 							Ouvrir l'écran de premier démarrage
@@ -77,6 +113,7 @@
 	MODOPTIONS_COREMODULE_NOTLOADED_A= 						Certains mods n'ont pas pu être chargés.
 	MODOPTIONS_COREMODULE_NOTLOADED_B= 						Vérifiez votre log.txt pour plus d'informations.
 	MODOPTIONS_COREMODULE_NOTLOADED_NOTFOUND=				{0} non trouvé(s)
+	MODOPTIONS_COREMODULE_NOTLOADED_ASMLOADERROR=			échec de chargement de la DLL
 	MODOPTIONS_COREMODULE_YAMLERRORS= 						Certains fichiers everest.yaml n'ont pas pu être chargés.
 
 	MODOPTIONS_VANILLATRISTATE_NEVER=						DÉSACTIVÉ
@@ -108,18 +145,33 @@
 
 # Updater
 	UPDATER_TITLE= 					MISE À JOUR
+	UPDATER_LEGACYREF_TITLE=		INSTALLATION DE LEGACYREF
 	UPDATER_VERSIONS_TITLE= 		CHANGER DE VERSION D'EVEREST
 	UPDATER_VERSIONS_CURRENT= 		Installée : ((version))
 	UPDATER_VERSIONS_REQUESTING= 	Actualisation...
 	
+	UPDATER_VERSIONS_WAIT_REQUEST=	Chargement de la liste des versions...
 	UPDATER_VERSIONS_ERR_DOWNLOAD= 	Erreur de chargement de la liste des versions.
 	UPDATER_VERSIONS_ERR_FORMAT= 	Format inconnu.
 	
-	UPDATER_SRC_BUILDBOT= 			Constructions automatiques
+	UPDATER_CURRENT_BRANCH=			Branche actuelle
+
+	UPDATER_SRC_STABLE=				STABLE
+	UPDATER_SRC_BETA=				BETA
+	UPDATER_SRC_DEV=				DEV
+	UPDATER_SRC_CORE=				CORE
+
+	UPDATER_SRC_RELEASE_GITHUB=		Versions publiées sur GitHub
+	UPDATER_SRC_BUILDBOT_AZURE=		Versions compilées automatiquement par Azure
 	
+# currently unused
+	UPDATER_SRC_BUILDBOT= 			Versions compilées automatiquement
+
 # Everest Updater
 	EVERESTUPDATER_NOTSUPPORTED=	La mise à jour n'est pas supportée sur cette plateforme - annulation.
 	EVERESTUPDATER_NOUPDATE=		Pas de mise à jour à installer - annulation.
+	EVERESTUPDATER_CREATINGLEGACYREF=	Création de l'installation legacyRef en cours
+	EVERESTUPDATER_NOTAVAILABLE=	La version d'Everest demandée n'est pas disponible !
 	EVERESTUPDATER_UPDATING=		Mise à jour vers la version {0} (branche : {1}) @ {2}
 	EVERESTUPDATER_DOWNLOADING=		Téléchargement
 	EVERESTUPDATER_DOWNLOADING_PROGRESS=		Téléchargement :
@@ -131,6 +183,8 @@
 	EVERESTUPDATER_EXTRACTIONFINISHED=	Extraction terminée.
 	EVERESTUPDATER_RESTARTING=		Redémarrage
 	EVERESTUPDATER_RESTARTINGIN=	Redémarrage dans {0}
+	EVERESTUPDATER_WAITFORINSTALLER=	Installation en cours...
+	EVERESTUPDATER_INSTALLERFAILED=	L'installation a échoué ! Code de retour : {0}
 	EVERESTUPDATER_STARTINGFAILED=	Le lancement de l'installateur a échoué.
 	EVERESTUPDATER_ERRORHINT1=		Merci de créer une "issue" sur GitHub @ https://github.com/EverestAPI/Everest
 	EVERESTUPDATER_ERRORHINT2=		ou de rejoindre le salon #modding_help sur Discord (invitation sur le dépôt GitHub),
@@ -152,7 +206,10 @@
 	MODUPDATECHECKER_UPDATE_ALL=	Mettre à jour tous les mods
 	MODUPDATECHECKER_UPDATE_ALL_INPROGRESS=	Mise à jour des mods en cours...
 	MODUPDATECHECKER_UPDATE_ALL_DONE=	Tous les mods ont été mis à jour.
-	MODUPDATECHECKER_SHUTDOWN= Quitter
+	MODUPDATECHECKER_RESTARTNEEDED= Celeste doit redémarrer pour continuer
+	MODUPDATECHECKER_MENU_HEADER_RESTART= Choisissez une action
+	MODUPDATECHECKER_SHUTDOWN= Fermer
+	MODUPDATECHECKER_RESTART= Redémarrer
 
 # Auto Mod Updater
 	AUTOUPDATECHECKER_CHECKING=		Vérification des mises à jour des mods...
@@ -215,6 +272,8 @@
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS=	(Dés)activer les dépendances automatiquement
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE1=	Si vous activez un mod, toutes ses dépendances seront également activées.
 	MODOPTIONS_MODTOGGLE_TOGGLEDEPS_MESSAGE2=	Si vous désactivez un mod, tous les mods qui l'utilisent comme dépendance seront désactivés.
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES=			Protéger les mods favoris
+	MODOPTIONS_MODTOGGLE_PROTECTFAVORITES_MESSAGE=	Appuyez sur {0} pour ajouter/supprimer des mods de la liste des favoris.
 	MODOPTIONS_MODTOGGLE_MESSAGE_1=		Si vous activez ou désactivez des mods, votre blacklist.txt sera remplacé,
 	MODOPTIONS_MODTOGGLE_MESSAGE_2=		et Celeste va redémarrer pour appliquer les changements.
 	MODOPTIONS_MODTOGGLE_MESSAGE_3=		Les mods mis en surbrillance sont utilisés par d'autres mods activés comme des dépendances.
@@ -225,6 +284,7 @@
 	MODOPTIONS_MODTOGGLE_ZIPS=			Fichiers ZIP
 	MODOPTIONS_MODTOGGLE_DIRECTORIES=	Dossiers
 	MODOPTIONS_MODTOGGLE_BINS=			Fichiers .bin de maps
+	MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER=		Appuyez sur Tab ou Entrée pour lancer la recherche
 
 # Asset Reload Helper
 	ASSETRELOADHELPER_RELOADINGMAP=			Rechargement de la map...

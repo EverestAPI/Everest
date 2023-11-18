@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Celeste.Mod.UI {
     class OuiModUpdateList : Oui, OuiModOptions.ISubmenu {
 
-        private TextMenu menu;
+        private patch_TextMenu menu;
         private TextMenuExt.SubHeaderExt subHeader;
         private TextMenuExt.SubHeaderExt subRestartHeader;
         private TextMenu.Button fetchingButton;
@@ -22,56 +22,27 @@ namespace Celeste.Mod.UI {
 
         private float alpha = 0f;
 
-        private Task task;
-
-        private Task renderButtonsTask;
-
         private bool shouldRestart = false;
-
         private bool restartMenuAdded = false;
 
-        private static List<ModUpdateHolder> updatableMods = null;
+        private Task updateTask = null;
 
-        private static bool ongoingUpdateCancelled = false;
+        private List<ModUpdateHolder> updatableMods = null;
+        private bool isFetchingDone = false;
 
-        private static bool isFetchingDone = false;
-
+        private bool ongoingUpdateCancelled = false;
         private bool menuOnScreen = false;
 
         public override IEnumerator Enter(Oui from) {
             Everest.Loader.AutoLoadNewMods = false;
 
-            menu = new TextMenu();
-
             // display the title and a dummy "Fetching" button
-            menu.Add(new TextMenu.Header(Dialog.Clean("MODUPDATECHECKER_MENU_TITLE")));
 
-            menu.Add(subHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER")));
-            
-            if (updatableMods == null) {
-                updatableMods = new List<ModUpdateHolder>();
-                task = new Task(() => {checkForUpdates(); isFetchingDone = true;});
-                task.Start();
-                fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
-                fetchingButton.Disabled = true;
-                menu.Add(fetchingButton);
-            } else if (isFetchingDone) { // mods have been already fetched
-                fetchingButton = null;
-                // if there are multiple updates...
-                if (updatableMods.Count > 1) {
-                    // display an "update all" button at the top of the list
-                    updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
-                    updateAllButton.Pressed(() => downloadAllMods());
-                    menu.Add(updateAllButton);
-                }
-                foreach (ModUpdateHolder modHolder in updatableMods) {
-                    menu.Add(modHolder.button); // buttons should get automatically generated
-                }
-            } else { // fetching button without task
-                fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING"));
-                fetchingButton.Disabled = true;
-                menu.Add(fetchingButton);
-            }
+            menu = new patch_TextMenu {
+                new TextMenu.Header(Dialog.Clean("MODUPDATECHECKER_MENU_TITLE")),
+                (subHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER"))),
+                (fetchingButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_FETCHING")) { Disabled = true })
+            };
 
             Scene.Add(menu);
 
@@ -110,8 +81,9 @@ namespace Celeste.Mod.UI {
                     updMod.RemoveButton();
                 }
 
-            task = null;
-            renderButtonsTask = null;
+            updateTask = null;
+            updatableMods = null;
+            isFetchingDone = false;
         }
 
         public override void Update() {
@@ -120,11 +92,11 @@ namespace Celeste.Mod.UI {
                 return;
             }
 
-            if (renderButtonsTask != null) {
-                renderButtonsTask.RunSynchronously();
-                renderButtonsTask = null;
+            if (!isFetchingDone && ModUpdaterHelper.IsAsyncUpdateCheckingDone()) {
+                renderUpdateList();
+                isFetchingDone = true;
             }
-            
+
             // check if the "press Back to restart" message has to be toggled
             if (menu.Focused && shouldRestart) {
                 subHeader.TextColor = Color.OrangeRed;
@@ -137,8 +109,8 @@ namespace Celeste.Mod.UI {
                 subHeader.TextColor = Color.Gray;
                 subHeader.Title = Dialog.Clean("MODUPDATECHECKER_MENU_HEADER");
             }
-            
-            if (Input.MenuCancel.Pressed && !menu.Focused && menuOnScreen) { 
+
+            if (Input.MenuCancel.Pressed && !menu.Focused && menuOnScreen) {
                 // cancel any ongoing download (this has no effect if no download is ongoing anyway).
                 ongoingUpdateCancelled = true;
 
@@ -146,8 +118,6 @@ namespace Celeste.Mod.UI {
                     // cancelling out during check for updates: go back to mod options instead
                     Audio.Play(SFX.ui_main_button_back);
                     Overworld.Goto<OuiModOptions>();
-
-                    renderButtonsTask = null; // make sure no leftover tasks are there
                 }
             } else if (Input.MenuCancel.Pressed && menu.Focused && Selected) {
                 if (shouldRestart && subRestartHeader != null) {
@@ -171,14 +141,15 @@ namespace Celeste.Mod.UI {
         }
 
         private void addRestartButtons() {
-            if (restartMenuAdded) return;
+            if (restartMenuAdded)
+                return;
             menu.Add(subRestartHeader = new TextMenuExt.SubHeaderExt(Dialog.Clean("MODUPDATECHECKER_MENU_HEADER_RESTART")));
             TextMenu.Button shutdownButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_SHUTDOWN"));
             shutdownButton.Pressed(() => {
                 new FadeWipe(base.Scene, false, delegate {
-				    Engine.Scene = new Scene();
-				    Engine.Instance.Exit();
-			    });
+                    Engine.Scene = new Scene();
+                    Engine.Instance.Exit();
+                });
             });
             TextMenu.Button restartButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_RESTART"));
             restartButton.Pressed(() => Everest.QuickFullRestart());
@@ -190,51 +161,30 @@ namespace Celeste.Mod.UI {
             }
         }
 
-        private void checkForUpdates() {
-            // 1. Download the mod updates database
-            Dictionary<string, ModUpdateInfo> updateCatalog = null;
-            updateCatalog = ModUpdaterHelper.DownloadModUpdateList();
+        private void renderUpdateList() {
+            Logger.Log(LogLevel.Verbose, "OuiModUpdateList", "Rendering updates");
 
-            // 2. Find out what actually has been updated
-            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdatesCatalog = new SortedDictionary<ModUpdateInfo, EverestModuleMetadata>();
-            if (updateCatalog != null) {
-                availableUpdatesCatalog = ModUpdaterHelper.ListAvailableUpdates(updateCatalog, excludeBlacklist: false);
-            }
+            // remove the "loading" button
+            menu.Remove(fetchingButton);
+            fetchingButton = null;
 
+            SortedDictionary<ModUpdateInfo, EverestModuleMetadata> availableUpdates = ModUpdaterHelper.GetAsyncLoadedModUpdates();
 
-
-            // 3. Render on screen
-            Logger.Verbose("OuiModUpdateList", "Rendering updates");
-
-            
-            if (updateCatalog == null) {
+            if (availableUpdates == null) {
                 // display an error message
-                renderButtonsTask = new Task(() => {
-                    menu.Remove(fetchingButton);
-                    fetchingButton = null;
-                    TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR"));
-                    button.Disabled = true;
-                    menu.Add(button);
-                });
-                isFetchingDone = false;
-                updatableMods = null;
+                menu.Add(new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_ERROR")) { Disabled = true });
                 return;
-            } else if (availableUpdatesCatalog.Count == 0) {
+            } else if (availableUpdates.Count == 0) {
                 // display a dummy "no update available" button
-                renderButtonsTask = new Task(() => {
-                    menu.Remove(fetchingButton);
-                    fetchingButton = null;
-                    TextMenu.Button button = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE"));
-                    button.Disabled = true;
-                    menu.Add(button);
-                });
+                menu.Add(new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_NOUPDATE")) { Disabled = true });
                 return;
             }
 
             List<TextMenu.Button> queuedItems = new List<TextMenu.Button>();
+            updatableMods = new List<ModUpdateHolder>();
 
             // if there are multiple updates...
-            if (availableUpdatesCatalog.Count > 1) {
+            if (availableUpdates.Count > 1) {
                 // display an "update all" button at the top of the list
                 updateAllButton = new TextMenu.Button(Dialog.Clean("MODUPDATECHECKER_UPDATE_ALL"));
                 updateAllButton.Pressed(() => downloadAllMods());
@@ -243,15 +193,15 @@ namespace Celeste.Mod.UI {
             }
 
             // then, display one button per update
-            foreach (ModUpdateInfo update in availableUpdatesCatalog.Keys) {
-                EverestModuleMetadata metadata = availableUpdatesCatalog[update];
+            foreach (ModUpdateInfo update in availableUpdates.Keys) {
+                EverestModuleMetadata metadata = availableUpdates[update];
 
                 string versionUpdate = metadata.VersionString;
                 if (metadata.VersionString != update.Version)
                     versionUpdate = $"{metadata.VersionString} > {update.Version}";
-                
+
                 ModUpdateHolder holder = new ModUpdateHolder(update: update, metadata: metadata, buttonGenerator: () => null);
-                
+
                 Func<TextMenu.Button> buttonGenerator = new Func<TextMenu.Button>(() => {
 
                     TextMenu.Button button = new TextMenu.Button(
@@ -270,7 +220,7 @@ namespace Celeste.Mod.UI {
                     // if there isn't, add it to the list of mods that can be updated via "update all"
                     if (update.xxHash.Count > 1) {
                         button.Disabled = true;
-                    } 
+                    }
                     return button;
                 });
 
@@ -283,15 +233,12 @@ namespace Celeste.Mod.UI {
                 }
 
                 queuedItems.Add(holder.button);
-                
+
             }
-            renderButtonsTask = new Task(() => {
-                foreach (TextMenu.Button button in queuedItems) {
-                    menu.Remove(fetchingButton);
-                    fetchingButton = null;
-                    menu.Add(button);
-                }
-            });
+
+            foreach (TextMenu.Button button in queuedItems) {
+                menu.Add(button);
+            }
         }
 
         /// <summary>
@@ -299,7 +246,7 @@ namespace Celeste.Mod.UI {
         /// </summary>
         /// <param name="modHolder">The relevant info for the mod</param>
         private void downloadModUpdate(ModUpdateHolder modHolder) {
-            task = new Task(() => {
+            updateTask = new Task(() => {
                 bool updateSuccess = doDownloadModUpdate(modHolder.update, modHolder.metadata, modHolder.button);
 
                 if (updateSuccess) {
@@ -324,7 +271,7 @@ namespace Celeste.Mod.UI {
                 menu.Focused = true;
             });
 
-            task.Start();
+            updateTask.Start();
         }
 
         /// <summary>
@@ -389,7 +336,7 @@ namespace Celeste.Mod.UI {
         /// <param name="update">The update info coming from the update server</param>
         /// <param name="button">The button for that mod shown on the interface</param>
         /// <param name="zipPath">The path to the zip the update will be downloaded to</param>
-        private static void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
+        private void downloadMod(ModUpdateInfo update, TextMenu.Button button, string zipPath) {
             Logger.Verbose("OuiModUpdateList", $"Downloading {update.URL} to {zipPath}");
 
             Func<int, long, int, bool> progressCallback = (position, length, speed) => {
@@ -418,7 +365,7 @@ namespace Celeste.Mod.UI {
         /// Downloads all automatically updatable mods
         /// </summary>
         private void downloadAllMods() {
-            task = new Task(() => {
+            updateTask = new Task(() => {
                 // make the menu non-interactive
                 menu.Focused = false;
                 updateAllButton.Disabled = true;
@@ -463,11 +410,12 @@ namespace Celeste.Mod.UI {
                 // give the menu control back to the player
                 menu.Focused = true;
             });
-            task.Start();
+
+            updateTask.Start();
         }
 
         private void focusOn(TextMenu.Button button) {
-            int index = menu.GetItems().IndexOf(button);
+            int index = menu.Items.IndexOf(button);
             if (index != -1) {
                 menu.Selection = index;
             }

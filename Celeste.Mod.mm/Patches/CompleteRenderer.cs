@@ -67,7 +67,7 @@ namespace Celeste {
                             continue;
                         }
 
-                        Layers.Add(new ImageLayerNoXML(Offset, atlas, layer));
+                        Layers.Add(new ImageLayerNoXML(Offset, (patch_Atlas) atlas, layer));
                     }
                 }
             }
@@ -147,7 +147,7 @@ namespace Celeste {
 
         public class ImageLayerNoXML : patch_ImageLayer {
 
-            public ImageLayerNoXML(Vector2 offset, Atlas atlas, MapMetaCompleteScreenLayer meta)
+            public ImageLayerNoXML(Vector2 offset, patch_Atlas atlas, MapMetaCompleteScreenLayer meta)
                 : base(offset, atlas, FakeXML) {
                 Position = meta.Position + offset;
                 ScrollFactor = meta.Scroll;
@@ -157,7 +157,7 @@ namespace Celeste {
                     if (atlas.Has(img)) {
                         Images.Add(atlas[img]);
                     } else {
-                        Logger.Warn("Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.GetDataPath().Substring(17)}/{img}");
+                        Logger.Warn("Atlas", $"Requested CompleteScreen texture that does not exist: {atlas.DataPath.Substring(17)}/{img}");
                         Images.Add(null);
                     }
                 }

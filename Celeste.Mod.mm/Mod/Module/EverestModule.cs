@@ -100,7 +100,7 @@ namespace Celeste.Mod {
             if (SettingsType == null)
                 return;
 
-            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
 
             string path = patch_UserIO.GetSaveFilePath("modsettings-" + Metadata.Name);
 
@@ -127,7 +127,7 @@ namespace Celeste.Mod {
             }
 
             if (_Settings == null)
-                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+                _Settings = (EverestModuleSettings) SettingsType.GetConstructor(Type.EmptyTypes).Invoke(null);
         }
 
         /// <summary>
@@ -268,7 +268,7 @@ namespace Celeste.Mod {
             if (SaveDataType == null)
                 return;
 
-            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _SaveData = (EverestModuleSaveData) SaveDataType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _SaveData.Index = index;
 
             if (data == null)
@@ -419,7 +419,7 @@ namespace Celeste.Mod {
             if (SessionType == null)
                 return;
 
-            _Session = (EverestModuleSession) SessionType.GetConstructor(Everest._EmptyTypeArray).Invoke(Everest._EmptyObjectArray);
+            _Session = (EverestModuleSession) SessionType.GetConstructor(Type.EmptyTypes).Invoke(null);
             _Session.Index = index;
 
             if (data == null)
@@ -634,7 +634,7 @@ namespace Celeste.Mod {
         /// <param name="menu">Menu to add the section to.</param>
         /// <param name="inGame">Whether we're in-game (paused) or in the main menu.</param>
         /// <param name="snapshot">The Level.PauseSnapshot</param>
-        public virtual void CreateModMenuSection(TextMenu menu, bool inGame, EventInstance snapshot) {
+        public virtual void CreateModMenuSection(patch_TextMenu menu, bool inGame, EventInstance snapshot) {
             Type type = SettingsType;
             EverestModuleSettings settings = _Settings;
             if (type == null || settings == null)
@@ -797,7 +797,7 @@ namespace Celeste.Mod {
                         headerCreated = true;
                     }
 
-                    creator.GetFastDelegate()(settings, menu, inGame);
+                    creator.CreateDelegate<Action<TextMenu, bool>>(settings)(menu, inGame);
                     continue;
                 }
 
@@ -818,7 +818,7 @@ namespace Celeste.Mod {
                         );
 
                         if (creator != null) {
-                            creator.GetFastDelegate()(propObject, subMenu, inGame);
+                            creator.CreateDelegate<Action<TextMenuExt.SubMenu, bool>>(propObject)(subMenu, inGame);
                             continue;
                         }
 
@@ -890,6 +890,14 @@ namespace Celeste.Mod {
         /// </summary>
         /// <param name="context">The context to add the processors to.</param>
         public virtual void PrepareMapDataProcessors(MapDataFixup context) {
+        }
+
+        public virtual void LogRegistration() {
+            Logger.Log(LogLevel.Info, "core", $"Registered code module {GetType().FullName} for module {Metadata}.");
+        }
+
+        public virtual void LogUnregistration() {
+            Logger.Log(LogLevel.Info, "core", $"Unregistered code module {GetType().FullName} for module {Metadata}.");
         }
 
     }

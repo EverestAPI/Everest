@@ -44,7 +44,7 @@ namespace Celeste.Mod.UI {
             // add on-screen elements like GameLoader/OverworldLoader
             Add(new HudRenderer());
             Add(snow);
-            RendererList.UpdateLists();
+            ((patch_RendererList) (object) RendererList).UpdateLists();
 
             // register the routine
             Entity entity = new Entity();

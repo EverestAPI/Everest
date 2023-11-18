@@ -1,10 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using Mono.Cecil;
+﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Monocle;
 using MonoMod;
-using MonoMod.RuntimeDetour;
-using MonoMod.Utils;
-using SDL2;
 using Steamworks;
 using System;
 using System.Collections;
@@ -13,9 +10,12 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Runtime.Loader;
+using System.Runtime.Versioning;
 using System.Text.RegularExpressions;
 using System.Threading;
+using YamlDotNet.Serialization;
 
 namespace Celeste.Mod {
     /// <summary>
@@ -26,9 +26,6 @@ namespace Celeste.Mod {
         [MakeEntryPoint]
         private static void Main(string[] args) {
             try {
-                CultureInfo originalCurrentThreadCulture = Thread.CurrentThread.CurrentCulture;
-                CultureInfo originalCurrentThreadUICulture = Thread.CurrentThread.CurrentUICulture;
-
                 // 0.1 parses into 1 in regions using ,
                 // This also somehow sets the exception message language to English.
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -47,160 +44,62 @@ namespace Celeste.Mod {
                         return;
                 } catch {
                 }
-                
 
-                if (args.FirstOrDefault() == "--no-appdomain") {
-                    Console.WriteLine("Loading Everest, no AppDomain");
-                    patch_Celeste.Main(args);
-                    goto Exit;
-                }
+                // Load the compatibility mode setting
+                Everest.CompatibilityMode = Everest.CompatMode.None;
+                bool useExclusiveFullscreen = false;
+                try {
+                    string path = patch_UserIO.GetSaveFilePath("modsettings-Everest");
+                    if (File.Exists(path)) {
+                        using Stream stream = File.OpenRead(path);
+                        using StreamReader reader = new StreamReader(stream);
+                        Dictionary<object, object> settings = new Deserializer().Deserialize<Dictionary<object, object>>(reader);
 
-                if (!AppDomain.CurrentDomain.IsDefaultAppDomain()) {
-                    try {
-                        patch_Celeste.Main(args);
-
-                    } finally {
-                        // FNA registers an AppDomain-wide process exit handler to run SDL_Quit when the process exits.
-                        // That never gets fired when juggling AppDomains around though.
-                        typeof(Game).Assembly
-                            .GetType("Microsoft.Xna.Framework.SDL2_FNAPlatform")
-                            ?.GetMethod("ProgramExit")
-                            ?.Invoke(null, new object[] { null, null });
-                    }
-                    AppDomain.CurrentDomain.SetData("EverestRestartVanilla", Everest.RestartVanilla);
-                    return;
-                }
-
-                string vanillaDummy = Path.Combine(Path.GetDirectoryName(everestPath), "nextLaunchIsVanilla.txt");
-                if (File.Exists(vanillaDummy)) {
-                    File.Delete(vanillaDummy);
-                    goto StartVanilla;
-                }
-
-                if (args.FirstOrDefault() == "--vanilla")
-                    goto StartVanilla;
-
-
-                // This gets skipped when directly starting into vanilla mode or when restarting into vanilla.
-                // Sadly returning from vanilla to Everest is impossible as vanilla forcibly kills the process outside of Windows.
-
-                StartEverest:
-                Console.WriteLine("Loading Everest");
-                using (AppDomainWrapper adw = new AppDomainWrapper("Everest", out bool[] status)) {
-                    AppDomain ad = adw.AppDomain;
-
-                    ThreadIfNeeded("EVEREST", () => ad.ExecuteAssembly(everestPath, args));
-
-                    if (ad.GetData("EverestRestart") as bool? ?? false) {
-                        if (!adw.WaitDispose()) {
-                            StartCelesteProcess();
-                            goto Exit;
+                        if (settings.TryGetValue(nameof(CoreModuleSettings.CompatibilityMode), out object val)) {
+                            Everest.CompatibilityMode = Enum.Parse<Everest.CompatMode>((string) val);
+                            Console.WriteLine($"Loaded compatibility mode setting: {Everest.CompatibilityMode}");
                         }
-
-                        goto StartEverest;
+                        if (settings.TryGetValue(nameof(CoreModuleSettings.D3D11UseExclusiveFullscreen), out val))
+                            useExclusiveFullscreen = bool.Parse((string) val);
                     }
-
-                    if (ad.GetData("EverestRestartVanilla") as bool? ?? false) {
-                        if (!adw.WaitDispose())
-                            throw new Exception("Cannot unload Everest. Please restart Celeste using --vanilla if needed.");
-
-                        goto StartVanilla;
-                    }
-
+                } catch (Exception ex) {
+                    LogError("COMPAT-MODE-LOAD", ex);
                     goto Exit;
                 }
 
+                // Handle the compatibility modes here, so that vanilla is also affected
+                if (Everest.CompatibilityMode == Everest.CompatMode.LegacyFNA) {
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_FORCE_BITBLT", "1");
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_EXCLUSIVE_FULLSCREEN", "1");
+                } else if(!useExclusiveFullscreen)
+                    Environment.SetEnvironmentVariable("FNA3D_D3D11_NO_EXCLUSIVE_FULLSCREEN", "1");
 
-                StartVanilla:
-                using (AppDomainWrapper adw = new AppDomainWrapper("Celeste", out bool[] status)) {
-                    // reset culture setting when starting vanilla
-                    CultureInfo.DefaultThreadCurrentCulture = null;
-                    CultureInfo.DefaultThreadCurrentUICulture = null;
-                    Thread.CurrentThread.CurrentCulture = originalCurrentThreadCulture;
-                    Thread.CurrentThread.CurrentUICulture = originalCurrentThreadUICulture;
+                if (useExclusiveFullscreen)
+                    Console.WriteLine("Enabling D3D11 exclusive fullscreen support");
 
-                    Console.WriteLine("Loading Vanilla");
-                    AppDomain ad = adw.AppDomain;
-
-                    string vanillaPath = Path.Combine(Path.GetDirectoryName(everestPath), "orig", "Celeste.exe");
-                    string loaderPath = Path.Combine(Path.GetDirectoryName(everestPath), "EverestVanillaLoader.dll");
-                    string calFullName = "Celeste.Mod.EverestVanillaLoader";
-
-                    try {
-                        if (File.Exists(loaderPath))
-                            File.Delete(loaderPath);
-                    } catch (UnauthorizedAccessException) {
-                        // Assume that there is another instance running.
-                        if (File.Exists(loaderPath))
-                            goto SkipCreateEverestVanillaLoader;
-                        throw;
-                    }
-
-                    // Separate the EverestVanillaLoader class into its own assembly.
-                    // This is needed to not load Everest's Celeste.exe by accident.
-                    using (ModuleDefinition wrapper = ModuleDefinition.CreateModule("EverestVanillaLoader", new ModuleParameters() {
-                        ReflectionImporterProvider = MMReflectionImporter.Provider
-                    }))
-                    using (EverestVanillaLoaderMonoModder mm = new EverestVanillaLoaderMonoModder() {
-                        Module = wrapper,
-                        CleanupEnabled = false,
-                        MissingDependencyThrow = false
-                    }) {
-                        mm.WriterParameters.WriteSymbols = false;
-                        mm.WriterParameters.SymbolWriterProvider = null;
-
-                        mm.MapDependency(mm.Module, "Celeste");
-                        if (!mm.DependencyCache.TryGetValue("Celeste", out ModuleDefinition celeste))
-                            throw new FileNotFoundException("Celeste not found!");
-
-                        TypeDefinition orig = mm.Orig = mm.FindType("Celeste.Mod.BOOT/EverestVanillaLoader").Resolve();
-                        orig.DeclaringType = null;
-                        orig.IsNestedPublic = false;
-                        orig.IsPublic = true;
-                        orig.Namespace = "Celeste.Mod";
-
-                        wrapper.Architecture = celeste.Architecture;
-                        wrapper.Runtime = celeste.Runtime;
-                        wrapper.RuntimeVersion = celeste.RuntimeVersion;
-                        wrapper.Attributes = celeste.Attributes;
-                        wrapper.Characteristics = celeste.Characteristics;
-                        wrapper.Kind = ModuleKind.Dll;
-
-                        mm.PrePatchType(orig, forceAdd: true);
-                        mm.PatchType(orig);
-                        mm.PatchRefs();
-                        mm.Write(null, loaderPath);
-                    };
-
-                    SkipCreateEverestVanillaLoader:
-
-                    try {
-                        // Move the current Celeste.exe away so that it won't get loaded by accident.
-                        if (File.Exists(everestPath + "_"))
-                            File.Delete(everestPath + "_");
-                        File.Move(everestPath, everestPath + "_");
-
-                        // Can't do this as it'd permanently change Assembly.GetEntryAssembly()
-                        // ad.ExecuteAssembly(loaderPath, new string[] { everestPath, vanillaPath, typeof(Celeste).Assembly.FullName });
-
-                        // Must use reflection as the separated type is different from doing typeof(EverestVanillaLoader) here.
-                        Type cal = ad.Load("EverestVanillaLoader").GetType(calFullName);
-                        ad.SetData("EverestPath", everestPath);
-                        ad.SetData("VanillaPath", vanillaPath);
-                        ad.SetData("CelesteName", typeof(Celeste).Assembly.FullName);
-                        ad.DoCallBack(cal.GetMethod("Run").CreateDelegate(typeof(CrossAppDomainDelegate)) as CrossAppDomainDelegate);
-
-                    } finally {
-                        if (File.Exists(everestPath + "_"))
-                            File.Move(everestPath + "_", everestPath);
-                    }
-
-                    // Luckily the newly loaded vanilla Celeste.exe becomes the executing assembly from now on.
-                    ThreadIfNeeded("VANILLA", () => ad.ExecuteAssembly(vanillaPath, args));
-
+                // Start vanilla if instructed to
+                string vanillaDummy = Path.Combine(Path.GetDirectoryName(everestPath), "nextLaunchIsVanilla.txt");
+                if (File.Exists(vanillaDummy) || args.FirstOrDefault() == "--vanilla") {
+                    File.Delete(vanillaDummy);
+                    StartVanilla();
                     goto Exit;
                 }
 
+                // Required for native libs to be picked up on Linux / MacOS
+                SetupNativeLibPaths();
+
+                patch_Celeste.Main(args);
+
+                if (AppDomain.CurrentDomain.GetData("EverestRestart") as bool? ?? false) {
+                    // Restart the original process
+                    // This is as fast as the old "fast restarts" were
+                    StartCelesteProcess();
+                    goto Exit;
+                } else if (Everest.RestartVanilla) {
+                    // Start the vanilla process
+                    StartVanilla();
+                    goto Exit;
+                }
             } catch (Exception e) {
                 LogError("BOOT-CRITICAL", e);
                 goto Exit;
@@ -216,6 +115,10 @@ namespace Celeste.Mod {
 
         public static void LogError(string tag, Exception e) {
             e.LogDetailed(tag);
+
+            if (Debugger.IsAttached)
+                Debugger.Break();
+
             try {
                 ErrorLog.Write(e.ToString());
                 ErrorLog.Open();
@@ -239,233 +142,100 @@ namespace Celeste.Mod {
             return false;
         }
 
-        // Last resort full restart in case we're unable to unload the AppDomain while quick-restarting.
-        // This is also used by Everest.SlowFullRestart
-        public static void StartCelesteProcess() {
-            string path = Path.GetDirectoryName(typeof(Celeste).Assembly.Location);
+        private static void SetupNativeLibPaths() {
+            // MacOS SIP Steam overlay hack (taken from the Linux launcher script - is this required?)
+            bool didApplySteamSIPHack = false;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX) &&
+                !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("STEAM_DYLD_INSERT_LIBRARIES")) &&
+                string.IsNullOrEmpty(Environment.GetEnvironmentVariable("DYLD_INSERT_LIBRARIES"))
+            ) {
+                Console.WriteLine("Applying Steam DYLD_INSERT_LIBRARIES...");
+                Environment.SetEnvironmentVariable("DYLD_INSERT_LIBRARIES", Environment.GetEnvironmentVariable("STEAM_DYLD_INSERT_LIBRARIES"));
+                didApplySteamSIPHack = true;
+            }
+
+            // This is a bit hacky, but I'm not getting MiniInstaller to set an rpath ._.
+            static void EnsureLibPathEnvVarSet(string envVar, string libPath) {
+                libPath = Path.GetFullPath(libPath);
+
+                string[] ldPath = Environment.GetEnvironmentVariable(envVar)?.Split(":") ?? Array.Empty<string>();
+                if (!ldPath.Any(path => !string.IsNullOrWhiteSpace(path) && Path.GetFullPath(path) == libPath)) {
+                    Environment.SetEnvironmentVariable(envVar, $"{libPath}:{Environment.GetEnvironmentVariable(envVar)}");
+                    Console.WriteLine($"Restarting with {envVar}=\"{Environment.GetEnvironmentVariable(envVar)}\"...");
+
+                    Process proc = StartCelesteProcess(clearFNAEnv: false);
+                    proc.WaitForExit();
+                    Environment.Exit(proc.ExitCode);
+                }
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                SetDllDirectory(Path.Combine(AppContext.BaseDirectory, $"lib64-win-{(Environment.Is64BitProcess ? "x64" : "x86")}")); // Windows is the only platform with an API like this
+
+                // Register an unmanaged DLL resolver so that we can take redirect fmod.dll to fmod64.dll
+                AssemblyLoadContext.Default.ResolvingUnmanagedDll += static (_, name) => {
+                    if (!name.Equals("fmod", StringComparison.OrdinalIgnoreCase) && !name.Equals("fmod.dll", StringComparison.OrdinalIgnoreCase))
+                        return IntPtr.Zero;
+
+                    return NativeLibrary.Load("fmod64.dll");
+                };
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                EnsureLibPathEnvVarSet("LD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-linux"));
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                EnsureLibPathEnvVarSet("DYLD_LIBRARY_PATH", Path.Combine(AppContext.BaseDirectory, "lib64-osx"));
+
+            // If we got here without restarting the process, restart it now if required
+            if (didApplySteamSIPHack) {
+                Process proc = StartCelesteProcess(clearFNAEnv: false);
+                proc.WaitForExit();
+                Environment.Exit(proc.ExitCode);
+            }
+
+        }
+
+        [SupportedOSPlatform("windows")]
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool SetDllDirectory(string lpPathName);
+
+        public static Process StartCelesteProcess(string gameDir = null, bool clearFNAEnv = true) {
+            gameDir ??= AppContext.BaseDirectory;
 
             Process game = new Process();
 
-            // Unix-likes use the wrapper script
-            if (Environment.OSVersion.Platform == PlatformID.Unix ||
-                Environment.OSVersion.Platform == PlatformID.MacOSX) {
-                game.StartInfo.FileName = Path.Combine(path, "Celeste");
-                // 1.3.3.0 splits Celeste into two, so to speak.
-                if (!File.Exists(game.StartInfo.FileName) && Path.GetFileName(path) == "Resources")
-                    game.StartInfo.FileName = Path.Combine(Path.GetDirectoryName(path), "MacOS", "Celeste");
-            } else {
-                game.StartInfo.FileName = Path.Combine(path, "Celeste.exe");
-            }
+            game.StartInfo.FileName = Path.Combine(gameDir,
+                RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Celeste.exe" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "Celeste" :
+                RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "Celeste" :
+                throw new Exception("Unknown OS platform")
+            );
+            game.StartInfo.WorkingDirectory = gameDir;
 
-            game.StartInfo.WorkingDirectory = path;
+            if (clearFNAEnv) {
+                game.StartInfo.Environment.Clear();
+                foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables()) {
+                    string name = (string) entry.Key;
+                    if (name.StartsWith("FNA_") || name.StartsWith("FNA3D_"))
+                        continue;
+                    game.StartInfo.Environment.Add(name, (string) entry.Value);
+                }
+            }
 
             Regex escapeArg = new Regex(@"(\\+)$");
             game.StartInfo.Arguments = string.Join(" ", Environment.GetCommandLineArgs().Select(s => "\"" + escapeArg.Replace(s, @"$1$1") + "\""));
 
             game.Start();
+            return game;
         }
 
-        public static void ThreadIfNeeded(string tag, ThreadStart start) {
-            ThreadStart wrap = () => {
-                try {
-                    start();
-                } catch (Exception e) {
-                    LogError(tag, e);
-                }
-            };
-
-            if (PlatformHelper.Is(MonoMod.Utils.Platform.MacOS)) {
-                // macOS must run the game on the main thread. Otherwise this happens:
-                // https://cdn.discordapp.com/attachments/429775439423209472/694105211802746940/dump.txt
-                wrap();
-                return;
-            }
-
-            // Win32 requires a separate thread for a separate message queue / pump.
-            // Linux might benefit from additional thread local isolation.
-            Thread t = new Thread(wrap);
-            t.Start();
-            t.Join();
-        }
-
-        // Utility MonoModder responsible for separating EverestVanillaLoader into its own assembly.
-        internal class EverestVanillaLoaderMonoModder : MonoModder {
-            public TypeDefinition Orig;
-
-            public override void Log(string text) {
-            }
-
-            public override IMetadataTokenProvider Relinker(IMetadataTokenProvider mtp, IGenericParameterProvider context) {
-                if (mtp is TypeReference && ((TypeReference) mtp).FullName == Orig.FullName) {
-                    return Module.GetType(Orig.FullName);
-                }
-                return base.Relinker(mtp, context);
-            }
-        }
-
-        // This class will be separated into its own assembly just to force-load the original Celeste.exe in the vanilla AppDomain.
-        public static class EverestVanillaLoader {
-            static string EverestPath = AppDomain.CurrentDomain.GetData("EverestPath") as string;
-            static string VanillaPath = AppDomain.CurrentDomain.GetData("VanillaPath") as string;
-            static string CelesteName = AppDomain.CurrentDomain.GetData("CelesteName") as string;
-            static Assembly CelesteAsm;
-
-            public static void Run() {
-                AppDomain ad = AppDomain.CurrentDomain;
-                ad.AssemblyResolve += AssemblyResolver;
-                ad.TypeResolve += TypeResolver;
-                CelesteAsm = Assembly.Load(CelesteName);
-                Console.WriteLine($"EverestVanillaLoader loaded Celeste from: {CelesteAsm.Location}");
-
-                // The loaded Celeste.exe is in the orig subfolder.
-                // Sadly Monocle assumes the entry executable to be in the same folder as the content dir.
-                // Luckily we can hackfix that.
-
-                // Sadly we can't set the value or even try-catch RuntimeHelpers.RunClassConstructor(CelesteAsm.GetType("Monocle.Engine").TypeHandle)
-                // Throwing class constructors will just rerun until they don't throw.
-
-                // Furthermore, we can't just set a magic field, at least not on mono.
-                // In .NET, Assembly.GetEntryAssembly() -> AppDomainManager.EntryAssembly with a cached field
-                // In mono, AppDomainManager.EntryAssembly -> Assembly.GetEntryAssembly(), internal call
-                // Let's do the ugliest thing ever: native detour .NET
-
-                using (NativeDetour pleaseEndMeAlreadyWhatDidIDoToDeserveThis = new NativeDetour(
-                    typeof(Assembly).GetMethod("GetEntryAssembly"),
-                    typeof(EverestVanillaLoader).GetMethod("GetEntryAssembly")
-                )) {
-                    CelesteAsm
-                        .GetType("Monocle.Engine")
-                        .GetField("AssemblyDirectory", BindingFlags.NonPublic | BindingFlags.Static)
-                        .SetValue(null, Path.GetDirectoryName(EverestPath));
-
-                    // Similar restrictions apply to XNA's TitleLocation.Path, which is reimplemented accurately by FNA.
-                    // Sadly, XNA uses GetEntryAssembly as well.
-                    // Luckily, some basic reflection exposed a (presumably cache) field that doesn't exist in FNA.
-                    typeof(TitleContainer).Assembly
-                        .GetType("Microsoft.Xna.Framework.TitleLocation")
-                        ?.GetField("_titleLocation", BindingFlags.NonPublic | BindingFlags.Static)
-                        ?.SetValue(null, Path.GetDirectoryName(EverestPath));
-                }
-            }
-
-            public static Assembly AssemblyResolver(object sender, ResolveEventArgs args) {
-                if ((CelesteAsm != null && args.Name == CelesteAsm.FullName) || new AssemblyName(args.Name).Name == "Celeste")
-                    return CelesteAsm ?? (CelesteAsm = Assembly.LoadFrom(VanillaPath));
-                return null;
-            }
-
-            public static Assembly TypeResolver(object sender, ResolveEventArgs args) {
-                if (args.Name == CelesteAsm.FullName || new AssemblyName(args.Name).Name == "Celeste")
-                    return CelesteAsm.GetType(args.Name) != null ? CelesteAsm : null;
-                return null;
-            }
-
-            public static Assembly GetEntryAssembly() {
-                return CelesteAsm;
-            }
-        }
-
-        // Basic app domain wrapper helper.
-        public class AppDomainWrapper : IDisposable {
-            public AppDomain AppDomain;
-            private readonly bool[] _Status;
-            private readonly Dictionary<string, string> _EnvironmentVariables;
-
-            public AppDomainWrapper(string suffix, out bool[] status) {
-                AppDomain pad = AppDomain.CurrentDomain;
-                AppDomain = AppDomain.CreateDomain($"{pad.FriendlyName ?? "Celeste"}+{suffix}", null, new AppDomainSetup() {
-                    ApplicationBase = pad.BaseDirectory,
-                    LoaderOptimization = LoaderOptimization.SingleDomain
-                });
-
-                _Status = status = new bool[1];
-
-                _EnvironmentVariables = _GetEnvironmentVariables();
-                _SetEnvironmentVariables();
-            }
-
-            private Dictionary<string, string> _GetEnvironmentVariables() {
-                Dictionary<string, string> env = new Dictionary<string, string>();
-                foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
-                    env[(string) entry.Key] = (string) entry.Value;
-                return env;
-            }
-
-            private void _SetEnvironmentVariables() {
-                foreach (string key in _GetEnvironmentVariables().Keys) {
-                    if (!_EnvironmentVariables.ContainsKey(key)) {
-                        // Console.WriteLine($"SET \"{key}\" = NULL");
-                        Environment.SetEnvironmentVariable(key, null);
-                    }
-                }
-
-                foreach (KeyValuePair<string, string> entry in _EnvironmentVariables) {
-                    // Console.WriteLine($"SET \"{entry.Key}\" = \"{entry.Value}\"");
-                    Environment.SetEnvironmentVariable(entry.Key, entry.Value);
-                }
-            }
-
-            public void Dispose() {
-                if (AppDomain == null)
-                    return;
-
-                string name = AppDomain.FriendlyName;
-
-                try {
-                    AppDomain.Unload(AppDomain);
-                    AppDomain = null;
-                    _Status[0] = true;
-                    Console.WriteLine($"Unloaded AppDomain {name}");
-
-                    GC.Collect();
-                    GC.Collect();
-                    GC.WaitForPendingFinalizers();
-
-                    _SetEnvironmentVariables();
-
-                    _ResetXFNA();
-
-                } catch (CannotUnloadAppDomainException e) {
-                    _Status[0] = false;
-                    Console.WriteLine($"COULDN'T UNLOAD APPDOMAIN {name}");
-                    Console.WriteLine(e);
-                }
-            }
-
-            public bool WaitDispose(int retries = 5, int sleep = 1000) {
-                for (int i = 0; i < retries; i++) {
-                    Dispose();
-
-                    if (_Status[0])
-                        return true;
-
-                    if (i < retries - 1)
-                        Thread.Sleep(sleep);
-                }
-                return false;
-            }
-
-            [MonoModIgnore]
-            private static extern void _ResetXFNA();
-
-            [MonoModIfFlag("XNA")]
-            [MonoModPatch("_ResetXFNA")]
-            [MonoModReplace]
-            private static void _ResetXNA() {
-                // No resetting needed on XNA.
-            }
-
-            [MonoModIfFlag("FNA")]
-            [MonoModPatch("_ResetXFNA")]
-            [MonoModReplace]
-            private static void _ResetFNA() {
-                // GL attributes don't get reset, meaning that creating a GLES context in FNA once
-                // will make all following contexts GLES by default.
-
-                // There's a slight chance that OpenGL isn't even the current render.
-                // But that shouldn't cause any issues, as SDL2 always gets built with GL support... right?
-                SDL.SDL_GL_ResetAttributes();
-            }
+        public static void StartVanilla() {
+            // Revert native library path to prevent accidentally messing with vanilla
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                SetDllDirectory(null);
+            else
+                Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", null);
+            
+            // Don't clear FNA vars to preserve FNA compat mode
+            StartCelesteProcess(Path.Combine(AppContext.BaseDirectory, "orig"), clearFNAEnv: false);
         }
 
     }

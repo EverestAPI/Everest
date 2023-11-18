@@ -114,7 +114,7 @@ namespace Celeste {
             timer = Stopwatch.StartNew();
             MainThreadHelper.Boost = 50;
             patch_VirtualTexture.WaitFinishFastTextureLoading();
-            MainThreadHelper.Get(() => MainThreadHelper.Boost = 0).GetResult();
+            MainThreadHelper.Schedule(() => MainThreadHelper.Boost = 0).AsTask().Wait();
             // FIXME: There could be ongoing tasks which add to the main thread queue right here.
             Console.WriteLine(" - FASTTEXTURELOADING LOAD: " + timer.ElapsedMilliseconds + "ms");
             timer.Stop();
@@ -166,12 +166,6 @@ namespace Celeste {
             } catch {
                 // oops, version is null or can't be parsed for any reason.
                 previousVersion = new Version(0, 0, 0);
-            }
-
-            // skip creating a backup if we are on a develop build
-            if (previousVersion == new Version(0, 0, 0)) {
-                Logger.Verbose("core", "Previous Everest version was a development build, skipping backup.");
-                return;
             }
 
             if (previousVersion < new Version(1, 2109, 0)) {

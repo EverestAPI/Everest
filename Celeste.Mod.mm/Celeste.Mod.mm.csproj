@@ -1,11 +1,11 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452</TargetFrameworks>
+    <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>Celeste.Mod.mm</AssemblyName>
     <RootNamespace>Celeste</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <LangVersion>9</LangVersion>
+    <LangVersion>11</LangVersion>
     <ShouldIncludeNativeLua>false</ShouldIncludeNativeLua>
   </PropertyGroup>
 
@@ -16,10 +16,6 @@
   <PropertyGroup>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Reference Include="System.Management" />
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Celeste">
@@ -55,19 +51,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
     <PackageReference Include="Mono.Cecil" Version="0.11.4" />
-    <PackageReference Include="MonoMod" Version="22.01.04.03" />
-    <PackageReference Include="MonoMod.RuntimeDetour" Version="22.01.04.03" />
-    <PackageReference Include="MonoMod.RuntimeDetour.HookGen" Version="22.01.04.03" />
-    <PackageReference Include="MonoMod.Utils" Version="22.01.04.03" />
-    <PackageReference Include="DotNetZip" Version="1.15.0" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Patcher\MonoMod.Patcher.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.Utils\MonoMod.Utils.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour\MonoMod.RuntimeDetour.csproj" />
+    <ProjectReference Include="..\external\MonoMod\src\MonoMod.RuntimeDetour.HookGen\MonoMod.RuntimeDetour.HookGen.csproj" />
+    <PackageReference Include="DotNetZip" Version="1.16.0" />
+    <PackageReference Include="System.Drawing.Common" Version="7.0.0" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
     <PackageReference Include="YamlDotNet" Version="8.1.2" />
     <PackageReference Include="Jdenticon-net" Version="2.2.1" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="KeraLua" Version="1.0.22" />
-    <PackageReference Include="NLua" Version="1.4.25" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <ProjectReference Include="..\external\NLua\build\net6.0\NLua.net6.0.csproj" />
     <PackageReference Include="MAB.DotIgnore" Version="3.0.2" />
   </ItemGroup>
 
@@ -85,24 +80,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\lib-ext\**\*">
+    <Content Include="..\lib-ext\**\*" Link="everest-lib\%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="..\lib-mono\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\linux-x64\native\liblua53.so">
-      <Link>lib64\liblua53.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\osx\native\liblua53.dylib">
-      <Link>liblua53.dylib</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="$(NuGetPackageRoot)\keralua\1.0.22\runtimes\win-x86\native\lua53.dll">
-      <Link>lua53.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Remove="..\lib-ext\.gitignore" />
+    <Content Remove="..\lib-ext\FNA3D.patch" />
   </ItemGroup>
 
   <ItemGroup>
@@ -116,6 +98,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DiscordGameSDK\DiscordGameSDK.csproj" />
+    <ProjectReference Include="..\NETCoreifier\NETCoreifier.csproj" />
   </ItemGroup>
-  
+
 </Project>

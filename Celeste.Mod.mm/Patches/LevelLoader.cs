@@ -25,7 +25,7 @@ namespace Celeste {
 
         private bool started;
         private Session session;
-        public bool Loaded { get; private set; }
+        public bool Loaded { [MonoModIgnore] get; [MonoModIgnore] private set; }
 
         private static WeakReference<Thread> LastLoadingThread;
 
@@ -43,11 +43,11 @@ namespace Celeste {
             if (LastLoadingThread != null &&
                 LastLoadingThread.TryGetTarget(out Thread lastThread) &&
                 (lastThread?.IsAlive ?? false)) {
-                lastThread?.Abort();
+                lastThread?.Interrupt();
             }
 
             if (CoreModule.Settings.LazyLoading) {
-                MainThreadHelper.Do(() => VirtualContentExt.UnloadOverworld());
+                MainThreadHelper.Schedule(() => patch_VirtualContent.UnloadOverworld());
             }
 
             // Vanilla TileToIndex mappings.
@@ -84,8 +84,8 @@ namespace Celeste {
             string path = "";
 
             try {
-                AreaData area = AreaData.Get(session);
-                MapMeta meta = area.GetMeta();
+                patch_AreaData area = patch_AreaData.Get(session);
+                MapMeta meta = area.Meta;
 
                 path = meta?.BackgroundTiles;
                 if (string.IsNullOrEmpty(path))
@@ -124,8 +124,52 @@ namespace Celeste {
                         SpriteData valueMod = kvpBank.Value;
 
                         if (bankOrig.SpriteData.TryGetValue(key, out SpriteData valueOrig)) {
-                            IDictionary animsOrig = valueOrig.Sprite.GetAnimations();
-                            IDictionary animsMod = valueMod.Sprite.GetAnimations();
+                            // in order to allow map metadata Sprites.xml to override sprite origin and position, we
+                            // need to manually copy the property from the map metadata sprites onto the main spritebank
+                            // (done only if the overriding Sprites.xml specifies a value for that property)
+                            
+                            bool foundOrigin = false; // Center, Justify, Origin are all ways to specify the origin
+                            bool foundPosition = false;
+                            
+                            // iterate through the sources list, starting from the end (the most recently added source
+                            // setting a particular type of property is used)
+                            for (int i = valueMod.Sources.Count - 1; i >= 0; i--) {
+                                XmlElement xml = valueMod.Sources[i].XML;
+                                
+                                if (xml != null) {
+                                    // based on SpriteData.Add()
+                                    if (!foundOrigin) {
+                                        if (xml.HasChild("Center")) {
+                                            valueOrig.Sprite.CenterOrigin();
+                                            valueOrig.Sprite.Justify = new Vector2(0.5f, 0.5f);
+                                            foundOrigin = true;
+                                        }
+                                        else if (xml.HasChild("Justify")) {
+                                            valueOrig.Sprite.JustifyOrigin(xml.ChildPosition("Justify"));
+                                            valueOrig.Sprite.Justify = xml.ChildPosition("Justify");
+                                            foundOrigin = true;
+                                        }
+                                        else if (xml.HasChild("Origin")) {
+                                            valueOrig.Sprite.Origin = xml.ChildPosition("Origin");
+                                            foundOrigin = true;
+                                        }
+                                    }
+
+                                    if (!foundPosition) {
+                                        if (xml.HasChild("Position")) {
+                                            valueOrig.Sprite.Position = xml.ChildPosition("Position");
+                                            foundPosition = true;
+                                        }
+                                    }
+
+                                    if (foundOrigin && foundPosition) {
+                                        break;
+                                    }
+                                }
+                            }
+
+                            IDictionary animsOrig = ((patch_Sprite) valueOrig.Sprite).Animations;
+                            IDictionary animsMod = ((patch_Sprite) valueMod.Sprite).Animations;
                             foreach (DictionaryEntry kvpAnim in animsMod) {
                                 animsOrig[kvpAnim.Key] = kvpAnim.Value;
                             }
