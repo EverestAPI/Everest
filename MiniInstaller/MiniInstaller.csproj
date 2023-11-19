@@ -26,10 +26,10 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <AppHost_win-x86>..\lib-ext\piton\piton-win_x86.exe</AppHost_win-x86>
-    <AppHost_win-x64>..\lib-ext\piton\piton-win_x64.exe</AppHost_win-x64>
+    <AppHost_win-x86>..\lib-ext\piton\piton-gui-win_x86.exe</AppHost_win-x86>
+    <AppHost_win-x64>..\lib-ext\piton\piton-gui-win_x64.exe</AppHost_win-x64>
     <AppHost_linux-x64>..\lib-ext\piton\piton-linux_x64</AppHost_linux-x64>
-    <AppHost_osx-x64>..\lib-ext\piton\piton-macos_x64</AppHost_osx-x64>
+    <AppHost_osx-x64>..\lib-ext\piton\piton-gui-macos_x64</AppHost_osx-x64>
   </PropertyGroup>
 
   <!-- Include AppHosts in the build (so that MiniInstaller can bind them for the Celeste executable) -->
