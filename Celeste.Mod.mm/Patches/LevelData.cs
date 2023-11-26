@@ -8,6 +8,7 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.InlineRT;
 using MonoMod.Utils;
+using System.Collections.Generic;
 using System.Globalization;
 
 namespace Celeste {
@@ -34,6 +35,72 @@ namespace Celeste {
             if (DefaultSpawn == null && spawn.Attributes.TryGetValue("isDefaultSpawn", out object isDefaultSpawn) && Convert.ToBoolean(isDefaultSpawn, CultureInfo.InvariantCulture)) {
                 DefaultSpawn = coords;
             }
+        }
+
+        // Optimise the method
+        [MonoModReplace]
+        private EntityData CreateEntityData(BinaryPacker.Element entity) {
+            EntityData entityData = new() {
+                Name = entity.Name,
+                Level = this
+            };
+            
+            if (entity.Attributes != null) {
+                foreach ((string key, object value) in entity.Attributes) {
+                    switch (key)
+                    {
+                        case "id":
+                            entityData.ID = (int) value;
+                            break;
+                        case "x":
+                            entityData.Position.X = Convert.ToSingle(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "y":
+                            entityData.Position.Y = Convert.ToSingle(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "width":
+                            entityData.Width = (int) value;
+                            break;
+                        case "height":
+                            entityData.Height = (int) value;
+                            break;
+                        case "originX":
+                            entityData.Origin.X = Convert.ToSingle(value, CultureInfo.InvariantCulture);
+                            break;
+                        case "originY":
+                            entityData.Origin.Y = Convert.ToSingle(value, CultureInfo.InvariantCulture);
+                            break;
+                        default:
+                        {
+                            // We'll assume that most entities have id, x, y but not width, height, originX/Y
+                            // This means our resulting dict should have count - 3 elements in the end.
+                            // For resizable entities this makes the dict too large,
+                            // but auto-resizing from passing a capacity too small would probably make it too big anyway.
+                            entityData.Values ??= new Dictionary<string, object>(entity.Attributes.Count - 3);
+                            
+                            entityData.Values.Add(key, value);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (entity.Children is { Count: > 0 }) {
+                entityData.Nodes = new Vector2[entity.Children.Count];
+                for (int index = 0; index < entityData.Nodes.Length; index++) {
+                    var attributesFromBinary = entity.Children[index].Attributes;
+                    ref var node = ref entityData.Nodes[index];
+
+                    if (attributesFromBinary.TryGetValue("x", out object x))
+                        node.X = Convert.ToSingle(x, CultureInfo.InvariantCulture);
+                    if (attributesFromBinary.TryGetValue("y", out object y))
+                        node.Y = Convert.ToSingle(y, CultureInfo.InvariantCulture);
+                }
+            } else {
+                entityData.Nodes = Array.Empty<Vector2>();
+            }
+
+            return entityData;
         }
     }
 }
