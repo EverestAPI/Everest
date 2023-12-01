@@ -1,6 +1,7 @@
 ﻿using Celeste.Mod.Core;
 using FMOD.Studio;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 using Monocle;
 using System;
 using System.Collections;
@@ -26,6 +27,8 @@ namespace Celeste.Mod.UI {
         private float alpha = 0f;
 
         private int savedMenuIndex = -1;
+
+        private Action startSearching;
 
         public OuiModOptions() {
             Instance = this;
@@ -176,6 +179,7 @@ namespace Celeste.Mod.UI {
             }
 
             menu = CreateMenu(false, null);
+            AddSearchBox(menu);
 
             if (selected >= 0) {
                 menu.Selection = selected;
@@ -183,6 +187,82 @@ namespace Celeste.Mod.UI {
             }
 
             Scene.Add(menu);
+        }
+
+        private void AddSearchBox(TextMenu menu) {
+            TextMenuExt.TextBox textBox = new(Overworld) {
+                PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
+            };
+
+            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            menu.Add(modal);
+
+            startSearching = () => {
+                modal.Visible = true;
+                textBox.StartTyping();
+            };
+
+
+            Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
+                string searchTarget = textBox.Text.ToLower();
+                List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
+
+                bool searchNextPredicate(TextMenu.Item item) {
+                    string searchLabel = ((patch_TextMenu.patch_Item) item).SearchLabel();
+                    return item.Visible && item.Selectable && !item.Disabled && searchLabel != null && searchLabel.ToLower().Contains(searchTarget);
+                }
+
+
+                if (TextMenuExt.TextBox.WrappingLinearSearch(menuItems, searchNextPredicate, menu.Selection + (inReverse ? -1 : 1), inReverse, out int targetSelectionIndex)) {
+                    if (targetSelectionIndex >= menu.Selection) {
+                        Audio.Play(SFX.ui_main_roll_down);
+                    } else {
+                        Audio.Play(SFX.ui_main_roll_up);
+                    }
+
+                    menu.Selection = targetSelectionIndex;
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                }
+            };
+
+            void exitSearch(TextMenuExt.TextBox textBox) {
+                textBox.StopTyping();
+                modal.Visible = false;
+                textBox.ClearText();
+            }
+
+            textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\n'] = (_) => { };
+            textBox.OnTextInputCharActions['\r'] = (textBox) => {
+                if (MInput.Keyboard.CurrentState.IsKeyDown(Keys.LeftShift)
+                    || MInput.Keyboard.CurrentState.IsKeyDown(Keys.RightShift)) {
+                    searchNextMod(true)(textBox);
+                } else {
+                    searchNextMod(false)(textBox);
+                }
+            };
+            textBox.OnTextInputCharActions['\b'] = (textBox) => {
+                if (textBox.DeleteCharacter()) {
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                } else {
+                    exitSearch(textBox);
+                    Input.MenuCancel.ConsumePress();
+                }
+            };
+
+
+            textBox.AfterInputConsumed = () => {
+                if (textBox.Typing) {
+                    if (Input.ESC.Pressed) {
+                        exitSearch(textBox);
+                    } else if (Input.MenuDown.Pressed) {
+                        searchNextMod(false)(textBox);
+                    } else if (Input.MenuUp.Pressed) {
+                        searchNextMod(true)(textBox);
+                    }
+                }
+            };
         }
 
         public override IEnumerator Enter(Oui from) {
@@ -233,12 +313,31 @@ namespace Celeste.Mod.UI {
                 Overworld.Goto<OuiMainMenu>();
             }
 
+            if (Selected && Focused) {
+                if (Input.QuickRestart.Pressed) {
+                    startSearching?.Invoke();
+                    return;
+                }
+            }
+
             base.Update();
         }
 
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
+
+
+            MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+            const float PREFERRED_ICON_X = 100f;
+            float spaceNearMenu = (Engine.Width - menu.Width) / 2;
+            float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
+
+            Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
+            searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+            Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
+
             base.Render();
         }
 

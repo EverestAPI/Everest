@@ -431,7 +431,7 @@ namespace Celeste {
         /// <br/><br/>
         /// Currently does not support recursive submenus
         /// </summary>
-        public class SubMenu : TextMenu.Item {
+        public class SubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -751,6 +751,10 @@ namespace Celeste {
                 Container.Focused = true;
             }
 
+            public override string SearchLabel() {
+                return Label;
+            }
+
             #endregion
 
             #region TextMenu.Item
@@ -902,7 +906,7 @@ namespace Celeste {
 		/// <br/><br/>
 		/// Currently does not support recursive submenus
 		/// </summary>
-		public class OptionSubMenu : TextMenu.Item {
+		public class OptionSubMenu : patch_Item {
             public string Label;
             MTexture Icon;
 
@@ -1153,6 +1157,10 @@ namespace Celeste {
                     }
                 }
                 return offset - item.Height() * 0.5f - ItemSpacing;
+            }
+
+            public override string SearchLabel() {
+                return Label;
             }
 
             #endregion
