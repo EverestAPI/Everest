@@ -28,6 +28,11 @@ namespace Celeste {
         private bool recalculatingSizeInBatchMode;
 
         /// <summary>
+        /// Force the TextMenu to render as focused
+        /// </summary>
+        public bool RenderAsFocused = false;
+
+        /// <summary>
         /// The items contained in this menu.
         /// </summary>
         public List<Item> Items => items;
@@ -225,7 +230,7 @@ namespace Celeste {
                         Vector2 drawPosition = currentPosition + new Vector2(0f, itemHeight * 0.5f + item.SelectWiggler.Value * 8f);
                         // skip rendering the option if it is off-screen.
                         if (((patch_Item) item).AlwaysRender || (drawPosition.Y + itemHeight * 0.5f > 0 && drawPosition.Y - itemHeight * 0.5f < Engine.Height)) {
-                            item.Render(drawPosition, Focused && Current == item);
+                            item.Render(drawPosition, (Focused || RenderAsFocused) && Current == item);
                         }
                     } else {
                         skippedItems = true;

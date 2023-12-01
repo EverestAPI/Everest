@@ -360,29 +360,6 @@ namespace Celeste.Mod.UI {
             modLoadingTask.Start();
         }
 
-        private static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
-            int step = inReverse ? -1 : 1;
-
-            if (startIndex > items.Count) {
-                nextModIndex = 0;
-                return false;
-            }
-
-            for (int currentIndex = (startIndex + step) % items.Count; currentIndex != startIndex; currentIndex = (currentIndex + step) % items.Count) {
-                if (currentIndex < 0) {
-                    currentIndex = items.Count - 1;
-                }
-
-                if (predicate(items[currentIndex])) {
-                    nextModIndex = currentIndex;
-                    return true;
-                }
-            }
-
-            nextModIndex = startIndex;
-            return predicate(items[nextModIndex]);
-        }
-
         private void AddSearchBox(TextMenu menu) {
             TextMenuExt.TextBox textBox = new(Overworld) {
                 PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
@@ -394,11 +371,6 @@ namespace Celeste.Mod.UI {
             startSearching = () => {
                 modal.Visible = true;
                 textBox.StartTyping();
-
-                if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
-                    && modToggles.ContainsKey(currentOption.Label)) {
-                    currentOption.UnselectedColor = currentOption.Container.HighlightColor;
-                }
             };
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
@@ -412,8 +384,7 @@ namespace Celeste.Mod.UI {
                                                             && modToggles.ContainsKey(currentOption.Label)
                                                             && currentOption.Label.ToLower().Contains(searchTarget);
 
-                if (WrappingLinearSearch(menuItems, searchPredicate, menu.Selection, inReverse, out int targetSelectionIndex)) {
-
+                if (TextMenuExt.TextBox.WrappingLinearSearch(menuItems, searchPredicate, menu.Selection + (inReverse ? -1 : 1), inReverse, out int targetSelectionIndex)) {
                     if (targetSelectionIndex >= menu.Selection) {
                         Audio.Play(SFX.ui_main_roll_down);
                     } else {
@@ -421,9 +392,6 @@ namespace Celeste.Mod.UI {
                     }
 
                     menu.Selection = targetSelectionIndex;
-                    if (menuItems[targetSelectionIndex] is patch_TextMenu.patch_Option<bool> currentOption) {
-                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
-                    }
                 } else {
                     Audio.Play(SFX.ui_main_button_invalid);
                 }

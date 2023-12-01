@@ -1593,6 +1593,7 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_on);
                     Typing = true;
                     Container.Focused = false;
+                    ((patch_TextMenu) Container).RenderAsFocused = true;
 
                     previousEngineCommandsEnabled = Engine.Commands.Enabled;
                     Engine.Commands.Enabled = false;
@@ -1616,6 +1617,7 @@ namespace Celeste {
                     Audio.Play(SFX.ui_main_button_toggle_off);
                     Typing = false;
                     Container.Focused = true;
+                    ((patch_TextMenu) Container).RenderAsFocused = false;
                     TextBoxConsumedInput = false;
                     MInput.Disabled = false;
                     Engine.Commands.Enabled = previousEngineCommandsEnabled;
@@ -1680,6 +1682,25 @@ namespace Celeste {
                 }
 
                 TextBoxConsumedInput = false;
+            }
+
+            private static int NegativeModulo(int number, int modulo) {
+                return (number % modulo + modulo) % modulo;
+            }
+
+            public static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
+                int step = inReverse ? -1 : 1;
+                int targetIndex = NegativeModulo(startIndex - step, items.Count);
+
+                for (int currentIndex = NegativeModulo(startIndex, items.Count); currentIndex != targetIndex; currentIndex = NegativeModulo(currentIndex + step, items.Count)) {
+                    if (predicate(items[currentIndex])) {
+                        nextModIndex = currentIndex;
+                        return true;
+                    }
+                }
+
+                nextModIndex = startIndex;
+                return false;
             }
         }
 
