@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Mono.Cecil;
@@ -176,6 +177,33 @@ namespace Celeste {
                 RefillStamina();
             } else {
                 orig_BoostBegin();
+            }
+        }
+
+        private extern IEnumerator orig_ReflectionFallCoroutine();
+
+        private IEnumerator ReflectionFallCoroutine() {
+            if (SceneAs<Level>().Session.Area.GetLevelSet() == "Celeste") {
+                IEnumerator enumerator = orig_ReflectionFallCoroutine();
+                while (enumerator.MoveNext()) {
+                    yield return enumerator.Current;
+                }
+            } else {
+                Sprite.Play("bigFall");
+                for (float t = 0f; t < 2f; t += Engine.DeltaTime) {
+                    Speed.Y = 0f;
+                    yield return null;
+                }
+                FallEffects.Show(visible: true);
+                Speed.Y = 320f;
+                while (!CollideCheck<Water>()) {
+                    yield return null;
+                }
+                Input.Rumble(RumbleStrength.Strong, RumbleLength.Medium);
+                FallEffects.Show(visible: false);
+                Sprite.Play("bigFallRecover");
+                yield return 1.2f;
+                StateMachine.State = 0;
             }
         }
 
