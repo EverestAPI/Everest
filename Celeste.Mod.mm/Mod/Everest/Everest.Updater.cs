@@ -462,65 +462,68 @@ namespace Celeste.Mod {
                         }
                     } else {
                         // Check if the .NET runtime is installed
-                        Process dotnetProc = null;
-                        try {
-                            dotnetProc = Process.Start(new ProcessStartInfo() {
-                                FileName = "dotnet",
-                                Arguments = "--list-runtimes",
-                                UseShellExecute = false,
-                                RedirectStandardOutput = true
-                            });
-                        } catch (Win32Exception) {
-                            // Fallback to the default runtime path
-                            string dotnetPath = null;
-                            if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
-                                if (Environment.Is64BitOperatingSystem)
-                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles") ?? string.Empty) + "\\dotnet";
-                                else
-                                    dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? string.Empty) + "\\dotnet";
-                            } else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux))
-                                dotnetPath = "/usr/share/dotnet";
-                            else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))
-                                dotnetPath = "/usr/local/share/dotnet";
+                        // Build 4415 is the first one to use Piton, so a runtime check isn't required anymore
+                        if (version.Build != 0 && version.Build < 4415) {
+                            Process dotnetProc = null;
+                            try {
+                                dotnetProc = Process.Start(new ProcessStartInfo() {
+                                    FileName = "dotnet",
+                                    Arguments = "--list-runtimes",
+                                    UseShellExecute = false,
+                                    RedirectStandardOutput = true
+                                });
+                            } catch (Win32Exception) {
+                                // Fallback to the default runtime path
+                                string dotnetPath = null;
+                                if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows)) {
+                                    if (Environment.Is64BitOperatingSystem)
+                                        dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles") ?? string.Empty) + "\\dotnet";
+                                    else
+                                        dotnetPath = (Environment.GetEnvironmentVariable("ProgramFiles(x86)") ?? string.Empty) + "\\dotnet";
+                                } else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux))
+                                    dotnetPath = "/usr/share/dotnet";
+                                else if (MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS))
+                                    dotnetPath = "/usr/local/share/dotnet";
 
-                            if (File.Exists(dotnetPath)) {
-                                try {
-                                    dotnetProc = Process.Start(new ProcessStartInfo() {
-                                        FileName = dotnetPath,
-                                        Arguments = "--list-runtimes",
-                                        UseShellExecute = false,
-                                        RedirectStandardOutput = true
-                                    });
-                                } catch (Win32Exception) {
+                                if (File.Exists(dotnetPath)) {
+                                    try {
+                                        dotnetProc = Process.Start(new ProcessStartInfo() {
+                                            FileName = dotnetPath,
+                                            Arguments = "--list-runtimes",
+                                            UseShellExecute = false,
+                                            RedirectStandardOutput = true
+                                        });
+                                    } catch (Win32Exception) {
+                                        dotnetProc = null;
+                                    }
+                                } else
                                     dotnetProc = null;
-                                }
-                            } else
-                                dotnetProc = null;
-                        }
+                            }
 
-                        dotnetProc?.WaitForExit();
-                        string runtimeOut = dotnetProc?.ExitCode == 0 ? dotnetProc?.StandardOutput?.ReadToEnd() : null;
+                            dotnetProc?.WaitForExit();
+                            string runtimeOut = dotnetProc?.ExitCode == 0 ? dotnetProc?.StandardOutput?.ReadToEnd() : null;
 
-                        if (!(runtimeOut?.Contains("Microsoft.NETCore.App 7.") ?? false)) {
-                            // The .NET Runtime is not installed
-                            string installerLink = 
-                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
-                                    (Environment.Is64BitOperatingSystem ?
-                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x64-installer" :
-                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x86-installer"
-                                    ) :
-                                MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) ?
-                                    "https://learn.microsoft.com/en-us/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website"
-                                : MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS) ?
-                                    "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-macos-x64-installer"
-                                : "https://dotnet.microsoft.com/en-us/download/dotnet/7.0";
+                            if (!(runtimeOut?.Contains("Microsoft.NETCore.App 7.") ?? false)) {
+                                // The .NET Runtime is not installed
+                                string installerLink = 
+                                    MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Windows) ?
+                                        (Environment.Is64BitOperatingSystem ?
+                                            "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x64-installer" :
+                                            "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-windows-x86-installer"
+                                        ) :
+                                    MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.Linux) ?
+                                        "https://learn.microsoft.com/en-us/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website"
+                                    : MonoMod.Utils.PlatformHelper.Is(MonoMod.Utils.Platform.MacOS) ?
+                                        "https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-7.0.9-macos-x64-installer"
+                                    : "https://dotnet.microsoft.com/en-us/download/dotnet/7.0";
 
-                            progress.LogLine(string.Empty);
-                            progress.LogLine(Dialog.Clean("EVERESTUPDATER_MISSINGRUNTIME_A"));
-                            progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_MISSINGRUNTIME_B"), installerLink));
-                            progress.Progress = 0;
-                            progress.ProgressMax = 1;
-                            return false;
+                                progress.LogLine(string.Empty);
+                                progress.LogLine(Dialog.Clean("EVERESTUPDATER_MISSINGRUNTIME_A"));
+                                progress.LogLine(string.Format(Dialog.Get("EVERESTUPDATER_MISSINGRUNTIME_B"), installerLink));
+                                progress.Progress = 0;
+                                progress.ProgressMax = 1;
+                                return false;
+                            }
                         }
 
                         // This build ships with native MiniInstaller binaries
