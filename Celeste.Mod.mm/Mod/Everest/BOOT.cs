@@ -39,6 +39,9 @@ namespace Celeste.Mod {
                 if (Environment.OSVersion.Platform == PlatformID.Win32NT)
                     Environment.CurrentDirectory = Path.GetDirectoryName(everestPath);
 
+                // Required for native libs to be properly picked up
+                SetupNativeLibPaths();
+
                 try {
                     if (RestartViaLauncher())
                         return;
@@ -84,9 +87,6 @@ namespace Celeste.Mod {
                     StartVanilla();
                     goto Exit;
                 }
-
-                // Required for native libs to be picked up on Linux / MacOS
-                SetupNativeLibPaths();
 
                 patch_Celeste.Main(args);
 
