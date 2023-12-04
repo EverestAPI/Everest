@@ -276,6 +276,24 @@ namespace Celeste.Mod {
                 internal static object ParseCommand(string command)
                     => OnParseCommand?.InvokeWhileNull<object>(command);
             }
+
+            public static class AssetReload {
+                public delegate void ReloadHandler(bool silent);
+                public static event ReloadHandler OnBeforeReload, OnAfterReload;
+                internal static void BeforeReload(bool silent)
+                    => OnBeforeReload?.Invoke(silent);
+                internal static void AfterReload(bool silent)
+                    => OnAfterReload?.Invoke(silent);
+
+                public delegate void ReloadLevelHandler(global::Celeste.Level level);
+                public static ReloadLevelHandler OnReloadLevel;
+                internal static void ReloadLevel(global::Celeste.Level level)
+                    => OnReloadLevel?.Invoke(level);
+
+                public static Action OnReloadAllMaps;
+                internal static void ReloadAllMaps()
+                    => OnReloadAllMaps?.Invoke();
+            }
         }
     }
 }
