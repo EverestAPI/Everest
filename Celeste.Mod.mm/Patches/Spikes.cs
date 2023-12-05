@@ -1,4 +1,6 @@
-﻿using Celeste.Mod.Helpers;
+﻿#pragma warning disable CS0626 // Method, operator, or accessor is marked external and has no attributes on it
+
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -9,9 +11,19 @@ using System;
 
 namespace Celeste {
     public class patch_Spikes : Spikes {
-        public patch_Spikes(Vector2 position, int size, Directions direction, string type) 
+        public patch_Spikes(Vector2 position, int size, Directions direction, string type)
             : base(position, size, direction, type) {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
+        }
+
+        public extern void orig_ctor(EntityData data, Vector2 offset, Directions dir);
+
+        [MonoModConstructor]
+        public void ctor(EntityData data, Vector2 offset, Directions dir) {
+            orig_ctor(data, offset, dir);
+            if (data.Has("attachToSolid") && !data.Bool("attachToSolid")) {
+                Remove(Get<StaticMover>());
+            }
         }
 
         [MonoModIgnore]
