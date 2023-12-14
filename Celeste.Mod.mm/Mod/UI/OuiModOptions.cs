@@ -198,8 +198,11 @@ namespace Celeste.Mod.UI {
             menu.Add(modal);
 
             startSearching = () => {
-                modal.Visible = true;
-                textBox.StartTyping();
+                // we want to ensure we don't open the search box while we are in a sub-menu
+                if (menu.Focused) {
+                    modal.Visible = true;
+                    textBox.StartTyping();
+                }
             };
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
