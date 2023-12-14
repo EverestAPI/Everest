@@ -191,7 +191,7 @@ namespace Celeste.Mod.UI {
 
         private void AddSearchBox(TextMenu menu) {
             TextMenuExt.TextBox textBox = new(Overworld) {
-                PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
+                PlaceholderText = Dialog.Clean("MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER")
             };
 
             TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
@@ -201,7 +201,6 @@ namespace Celeste.Mod.UI {
                 modal.Visible = true;
                 textBox.StartTyping();
             };
-
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
                 string searchTarget = textBox.Text.ToLower();
