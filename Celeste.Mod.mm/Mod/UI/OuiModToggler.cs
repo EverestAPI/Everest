@@ -374,8 +374,6 @@ namespace Celeste.Mod.UI {
             };
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
-                updateHighlightedMods();
-
                 string searchTarget = textBox.Text.ToLower();
                 List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
                 int currentSelection = menu.Selection;
@@ -401,7 +399,6 @@ namespace Celeste.Mod.UI {
                 textBox.StopTyping();
                 modal.Visible = false;
                 textBox.ClearText();
-                updateHighlightedMods();
             }
 
             textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
