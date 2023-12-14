@@ -534,6 +534,8 @@ namespace Celeste.Mod {
                                     entry.Extract(stream);
                             }
                         }
+
+                        Directory.CreateDirectory(Path.GetDirectoryName(cachePath));
                         File.WriteAllText(cachePath + ".sum", modHash);
                     }
 
