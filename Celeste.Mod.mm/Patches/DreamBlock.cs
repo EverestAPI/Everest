@@ -1,9 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod;
+using MonoMod.Cil;
 using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Linq;
 
 namespace Celeste {
     class patch_DreamBlock : DreamBlock {
@@ -33,6 +37,10 @@ namespace Celeste {
         public void ctor(Vector2 position, float width, float height, Vector2? node, bool fastMoving, bool oneUse) {
             ctor(position, width, height, node, fastMoving, oneUse, false);
         }
+
+        [MonoModIgnore]
+        [PatchDreamBlockSetup]
+        public new extern void Setup();
 
         public void DeactivateNoRoutine() {
             if (playerHasDreamDash) {
@@ -220,6 +228,41 @@ namespace Celeste {
             [MethodImpl(MethodImplOptions.NoInlining)]
             private static float JITBarrier(float v) => v;
 
+        }
+
+    }
+}
+
+namespace MonoMod {
+    /// <summary>
+    /// Patches <see cref="Celeste.DreamBlock.Setup()" /> to not rely on
+    /// non-IEEE 754 compliant .NET Framework jank anymore, by patching the
+    /// dream block particle count calculation to be done using doubles (the x86
+    /// .NET Framework JIT uses 80 bit x87 registers for this calculation,
+    /// however 64 bit doubles seem to have enough precision to end up at the
+    /// same results). This fixes issue #556.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchDreamBlockSetup))]
+    class PatchDreamBlockSetupAttribute : Attribute {}
+
+    static partial class MonoModRules {
+
+        public static void PatchDreamBlockSetup(ILContext context, CustomAttribute attrib) {
+            // Patch instructions before the 'conv.i4' cast to use doubles instead of floats
+            for (int i = 0; i < context.Instrs.Count; i++) {
+                Instruction instr = context.Instrs[i];
+
+                if (instr.MatchConvI4())
+                    break;
+
+                // call(virt) <method returning float>
+                if (instr.MatchCallOrCallvirt(out MethodReference method) && method.ReturnType.MetadataType == MetadataType.Single)
+                    context.Instrs.Insert(++i, Instruction.Create(OpCodes.Conv_R8)); // cast return value to double
+
+                // ldc.r4 <float constant>
+                if (instr.MatchLdcR4(out float val))
+                    context.Instrs[i] = Instruction.Create(OpCodes.Ldc_R8, (double) val);
+            }
         }
 
     }

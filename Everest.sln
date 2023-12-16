@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordGameSDK", "DiscordGameSDK\DiscordGameSDK.csproj", "{6930075C-30DC-4501-BFE6-E576C03496D7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NETCoreifier", "NETCoreifier\NETCoreifier.csproj", "{CD55DE23-DD59-4204-A556-C5DD1D032671}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{6930075C-30DC-4501-BFE6-E576C03496D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6930075C-30DC-4501-BFE6-E576C03496D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6930075C-30DC-4501-BFE6-E576C03496D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD55DE23-DD59-4204-A556-C5DD1D032671}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD55DE23-DD59-4204-A556-C5DD1D032671}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD55DE23-DD59-4204-A556-C5DD1D032671}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD55DE23-DD59-4204-A556-C5DD1D032671}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

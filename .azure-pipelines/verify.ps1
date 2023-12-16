@@ -28,11 +28,11 @@ if ($env:CACHE_RESTORED -eq "false") {
 	Expand-Archive -Path "$env:AGENT_TEMPDIRECTORY/Celeste.zip" -DestinationPath $env:VANILLA_CACHE
 }
 
-Copy-Item -Path "$env:VANILLA_CACHE/*" -Destination $PATCH
+Copy-Item -Path "$env:VANILLA_CACHE/*" -Destination $PATCH -Recurse
 
 Write-Output "Applying Everest patch"
-Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $PATCH
-$MINIINSTALLER = Start-Process -FilePath "mono" -ArgumentList "$PATCH/MiniInstaller.exe" -WorkingDirectory $PATCH -Wait -PassThru
+Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/main/*" -Destination $PATCH -Recurse
+$MINIINSTALLER = Start-Process -FilePath "$PATCH/MiniInstaller-linux" -WorkingDirectory $PATCH -Wait -PassThru
 if ($MINIINSTALLER.ExitCode -ne 0) {
 	Write-Output "##vso[task.logissue type=error]Patch verification step failed."
 }

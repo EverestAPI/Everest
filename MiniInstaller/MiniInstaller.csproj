@@ -1,22 +1,69 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net452</TargetFrameworks>
+    <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>MiniInstaller</AssemblyName>
     <RootNamespace>MiniInstaller</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <OutputType>Exe</OutputType>
-    <LangVersion>9</LangVersion>
+    <LangVersion>11</LangVersion>
+    <UseAppHost>false</UseAppHost> <!-- MiniInstaller will create its own AppHosts -->
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0" PrivateAssets="all" />
-  </ItemGroup>
 
   <ItemGroup>
     <Compile Include="..\Celeste.Mod.mm\Mod\Helpers\LogWriter.cs">
       <Link>LogWriter.cs</Link>
     </Compile>
+
+    <Content Include="..\lib-stripped\Celeste-icon.png" CopyToOutputDirectory="always" />
   </ItemGroup>
+
+  <!-- Set up Piton AppHosts -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
+
+    <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <AppHost_win-x86>..\lib-ext\piton\piton-gui-win_x86.exe</AppHost_win-x86>
+    <AppHost_win-x64>..\lib-ext\piton\piton-gui-win_x64.exe</AppHost_win-x64>
+    <AppHost_linux-x64>..\lib-ext\piton\piton-linux_x64</AppHost_linux-x64>
+    <AppHost_osx-x64>..\lib-ext\piton\piton-gui-macos_x64</AppHost_osx-x64>
+  </PropertyGroup>
+
+  <!-- Include AppHosts in the build (so that MiniInstaller can bind them for the Celeste executable) -->
+  <ItemGroup>
+    <Content Include="$(AppHost_win-x86)" TargetPath="piton-apphosts\win.x86.exe" CopyToOutputDirectory="always" />
+    <Content Include="$(AppHost_win-x64)" TargetPath="piton-apphosts\win.x64.exe" CopyToOutputDirectory="always" />
+    <Content Include="$(AppHost_linux-x64)" TargetPath="piton-apphosts\linux" CopyToOutputDirectory="always" />
+    <Content Include="$(AppHost_osx-x64)" TargetPath="piton-apphosts\osx" CopyToOutputDirectory="always" />
+  </ItemGroup>
+
+  <!-- Bind AppHosts for MiniInstaller itself -->
+  <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
+    <PropertyGroup>
+      <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\MiniInstaller-win.exe</AppHostIntermediatePath_win-x86>
+      <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\MiniInstaller-win64.exe</AppHostIntermediatePath_win-x64>
+      <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\MiniInstaller-linux</AppHostIntermediatePath_linux-x64>
+      <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\MiniInstaller-osx</AppHostIntermediatePath_osx-x64>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="MiniInstaller-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="MiniInstaller-win64.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="MiniInstaller-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+      <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="MiniInstaller-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
+    <Message Importance="High" Text="Binding MiniInstaller AppHosts..." />
+
+    <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+    <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
+  </Target>
 
 </Project>

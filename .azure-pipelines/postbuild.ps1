@@ -45,7 +45,7 @@ Write-Output "Copying patched files"
 Copy-Item -Path "$env:BUILD_ARTIFACTSTAGINGDIRECTORY/patch/*" -Destination $LIB_STRIPPED
 
 Write-Output "Generating stripped files"
-$files = Get-ChildItem -Path "$LIB_STRIPPED/*" -Include *.dll,*.exe
+$files = Get-ChildItem -Path "$LIB_STRIPPED/*" -Include *.dll
 foreach ($dll in $files) {
 	mono-cil-strip -q $dll
 }

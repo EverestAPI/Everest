@@ -69,7 +69,7 @@ namespace Celeste {
             if (MTN.Checkpoints.Has(result))
                 return result;
 
-            return $"{area.GetSID()}/{(char) ('A' + (int) area.Mode)}/{level ?? "start"}";
+            return string.Format("{0}/{1}/{2}", area.GetSID(), (char) ('A' + (int) area.Mode), level ?? "start");
         }
 
         public extern bool orig_IsStart(Overworld overworld, Overworld.StartMode start);
@@ -156,8 +156,8 @@ namespace Celeste {
             if (save.DebugMode || save.CheatMode) {
                 set = new HashSet<string>();
                 if (mode.Checkpoints != null)
-                    foreach (patch_CheckpointData cp in mode.Checkpoints)
-                        set.Add($"{(patch_AreaData.Get(cp.Area) ?? areaData).SID}|{cp.Level}");
+                    foreach (CheckpointData cp in mode.Checkpoints)
+                        set.Add(string.Format("{0}|{1}", (patch_AreaData.Get(((patch_CheckpointData) cp).Area) ?? areaData).SID, cp.Level));
                 return set;
 
             }
@@ -180,7 +180,7 @@ namespace Celeste {
                 foreach (patch_AreaData sub in subs) {
                     foreach (CheckpointData cp in sub.Mode[(int) area.Mode].Checkpoints) {
                         if (cp.Level == s) {
-                            return $"{sub.SID}|{s}";
+                            return string.Format("{0}|{1}", sub.SID, s);
                         }
                     }
                 }
@@ -259,15 +259,16 @@ namespace Celeste {
         private string _ModAreaselectTexture(string textureName) {
             // First, check for area (chapter) specific textures.
             string area = AreaData.Areas[Area.ID].Name;
-            string areaTextureName = textureName.Replace("areaselect/", $"areaselect/{area}_");
+            string areaTextureName = textureName.Replace("areaselect/", string.Format("areaselect/{0}_", area));
             if (GFX.Gui.Has(areaTextureName)) {
                 textureName = areaTextureName;
                 return textureName;
             }
 
             // If none are found, fall back to levelset textures.
-            string levelSet = patch_SaveData.Instance?.LevelSet ?? "Celeste";
-            string levelSetTextureName = textureName.Replace("areaselect/", $"areaselect/{levelSet}/");
+            string levelSet = ((patch_SaveData) SaveData.Instance)?.LevelSet ?? "Celeste";
+            string levelSetTextureName = textureName.Replace("areaselect/", string.Format("areaselect/{0}/", levelSet));
+
             if (GFX.Gui.Has(levelSetTextureName)) {
                 textureName = levelSetTextureName;
                 return textureName;

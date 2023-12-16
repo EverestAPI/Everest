@@ -21,23 +21,25 @@ For information about mod development, check out the [Everest Wiki](https://gith
 - ***If you just want to install Everest, go to the [Everest website](https://everestapi.github.io/).***
 - If you've **previously installed Everest and updated Celeste** or switched betas / branches, delete the `orig` directory where Celeste is installed.
     - macOS: Right-click and browse the Celeste app in Finder, then naviagte to `Contents`, then `MacOS`.
-- Clone the Everest repo, either in your IDE, via the CLI, or by downloading the .zip from GitHub.
+- Clone the Everest repo + submodules, either in your IDE, via the CLI, or by downloading the .zip from GitHub.
 - Restore Nuget packages either via your IDE or the command line.
 
 ### Windows
 - Open the .sln in the repo with Visual Studio
-- Build all
-- Copy everything in `MiniInstaller\bin\Debug` and `Celeste.Mod.mm\bin\Debug` to your Celeste directory
-- Run MiniInstaller.exe
+- Publish all projects
+    - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
+- Copy everything in `MiniInstaller\bin\Release\net7.0\publish`, `Celeste.Mod.mm\bin\Release\net7.0\publish` and `NETCoreifier\bin\Release\net7.0\publish` to your Celeste directory
+- Run MiniInstaller-win.exe
 
 ### macOS / Linux
 - [Install the mono runtime](https://www.mono-project.com/download/stable/)
-- Build all
+- Publish all projects
     - _With MonoDevelop:_ Open the .sln in the repo with MonoDevelop
-    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet build`
-- Copy everything in `MiniInstaller/bin/Debug` and `Celeste.Mod.mm/bin/Debug` to your Celeste directory
-    - macOS: `Celeste.app/Contents/MacOS`
-- Run `mono MiniInstaller.exe`
+    - _Manually:_ Open the terminal in the Everest directory and run `msbuild` or `dotnet publish`
+    - **NOTE:** It is very important that you *publish* the project instead of simply building it, as otherwise required dependency DLLs won't be copied!
+- Copy everything in `MiniInstaller\bin\Release\net7.0\publish`, `Celeste.Mod.mm\bin\Release\net7.0\publish` and `NETCoreifier\bin\Release\net7.0\publish` to your Celeste directory
+    - macOS: `Celeste.app/Contents/Resources`
+- Run `./MiniInstaller-linux` or `./MiniInstaller-osx`
 
 ## Contributing
 Contributions of any kind are welcome, and a guide on how to contribute effectively to the Everest project is available [here](./CONTRIBUTING.md).

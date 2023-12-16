@@ -4,7 +4,6 @@ using Ionic.Zip;
 using MAB.DotIgnore;
 using Microsoft.Xna.Framework.Graphics;
 using Monocle;
-using MonoMod.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -13,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod {
 
@@ -863,19 +863,19 @@ namespace Celeste.Mod {
                             .FirstOrDefault(modeSel => modeSel?.MapData?.Filename == mapName);
 
                         if (mode != null) {
-                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAPNAME")} {name}", () => {
+                            AssetReloadHelper.Do($"{Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAPNAME")} {name}", _ => {
                                 mode.MapData.Reload();
-                            });
-
-                            if (levelPrev?.Session.MapData == mode.MapData)
-                                AssetReloadHelper.ReloadLevel();
-
+                                return Task.CompletedTask;
+                            }).ContinueWith(_ => MainThreadHelper.Schedule(() => {
+                                if (levelPrev?.Session.MapData == mode.MapData)
+                                    AssetReloadHelper.ReloadLevel();
+                            }));
                         } else {
                             // What can go wrong?
-                            AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), () => {
+                            AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGALLMAPS"), _ => {
                                 AssetReloadHelper.ReloadAllMaps();
-                            });
-                            AssetReloadHelper.ReloadLevel();
+                                return Task.CompletedTask;
+                            }).ContinueWith(_ => AssetReloadHelper.ReloadLevel());
                         }
 
                     } else if (next.Type == typeof(AssetTypeXml) || next.Type == typeof(AssetTypeSpriteBank)) {
@@ -913,9 +913,9 @@ namespace Celeste.Mod {
                         } else {
                             MTNExt.ObjModelCache.Remove(next.PathVirtual + ".export");
                         }
-                        MainThreadHelper.Do(() => MTNExt.ReloadModData());
+                        MainThreadHelper.Schedule(() => MTNExt.ReloadModData());
                     } else if (next.Type == typeof(AssetTypeFont)) {
-                        MainThreadHelper.Do(() => Fonts.Reload());
+                        MainThreadHelper.Schedule(() => Fonts.Reload());
                     }
 
                     // Loaded assets can be folders, which means that we need to check the updated assets' entire path.
@@ -1023,7 +1023,7 @@ namespace Celeste.Mod {
                     // if the atlas is (or contains) an emoji, register it.
                     if (Emoji.IsInitialized()) {
                         if (refreshEmojis(mapping)) {
-                            MainThreadHelper.Do(() => {
+                            MainThreadHelper.Schedule(() => {
                                 Logger.Log(LogLevel.Verbose, "content", "Reloading fonts after late emoji registration");
                                 Fonts.Reload();
                             });
@@ -1033,7 +1033,7 @@ namespace Celeste.Mod {
                     if ((MTNExt.ModsLoaded || MTNExt.ModsDataLoaded) && potentiallyContainsMountainTextures(mapping)) {
                         AssetReloadHelper.Do(load, Dialog.Clean("ASSETRELOADHELPER_RELOADINGMOUNTAIN"), () => {
                             MTNExt.ReloadMod();
-                            MainThreadHelper.Do(() => MTNExt.ReloadModData());
+                            MainThreadHelper.Schedule(() => MTNExt.ReloadModData());
                         });
                     }
                 }

@@ -28,6 +28,12 @@ namespace Celeste.Mod {
         public string PathDirectory { get; set; }
 
         /// <summary>
+        /// The mod's assembly context. Can be null if this is the metadata of a mod which isn't loaded. Set at runtime.
+        /// </summary>
+        [YamlIgnore]
+        public EverestModuleAssemblyContext AssemblyContext { get; internal set; }
+
+        /// <summary>
         /// The name of the mod.
         /// </summary>
         public string Name { get; set; }
@@ -78,7 +84,10 @@ namespace Celeste.Mod {
         /// </summary>
         public bool SupportsCodeReload { get; set; } = true;
 
-        internal FileSystemWatcher DevWatcher;
+        /// <summary>
+        /// Whether this module is .NET Core only or not.
+        /// </summary>
+        public bool IsNetCoreOnlyMod { get; set; } = false;
 
         public override string ToString() {
             return Name + " " + Version;
@@ -96,10 +105,14 @@ namespace Celeste.Mod {
             foreach (EverestModuleMetadata dep in Dependencies) {
                 if (dep.Name == "API")
                     dep.Name = CoreModule.Instance.Metadata.Name;
-                if (dep.Name == CoreModule.Instance.Metadata.Name) {
+                if (dep.Name == CoreModule.Instance.Metadata.Name || dep.Name == CoreModule.NETCoreMetaName) {
+                    if (dep.Name == CoreModule.NETCoreMetaName)
+                        IsNetCoreOnlyMod = true;
+
                     dependsOnAPI = true;
                     break;
                 }
+
             }
             if (!dependsOnAPI) {
                 // Logger.Log(LogLevel.Warn, "loader", $"No dependency to API found in {this}! Adding dependency to {CoreModule.Instance.Metadata}");

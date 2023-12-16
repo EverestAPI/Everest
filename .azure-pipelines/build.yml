@@ -16,11 +16,13 @@ name: '$(Build.BuildId)+$(Build.BuildIdOffset)'
 
 steps:
 # Pre-build steps.
-- task: DotNetCoreCLI@2
+- task: NuGetToolInstaller@1
+
+- task: NuGetCommand@2
   displayName: 'Restore NuGet packages'
   inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
+    restoreSolution: '$(solution)'
+
 - task: PowerShell@2
   displayName: 'Run .azure-pipelines/prebuild.ps1'
   inputs:
@@ -30,21 +32,43 @@ steps:
 - task: DotNetCoreCLI@2
   displayName: 'Build'
   inputs:
-    command: 'build'
-    projects: '**/*.csproj'
+    command: 'publish'
+    publishWebProjects: false
+    zipAfterPublish: false
+    projects: '*/*.csproj'
     arguments: '--configuration $(buildConfiguration) "/p:Configuration=$(buildConfiguration)"'
 
 # Create and "publish" main artifact.
 - task: CopyFiles@2
-  displayName: 'Pack main artifact'
+  displayName: 'Pack main artifact: NETCoreifier'
   continueOnError: true
   inputs:
-    sourceFolder: '$(Agent.BuildDirectory)'
-    contents: '**/bin/**/*'
+    sourceFolder: '$(Build.SourcesDirectory)/NETCoreifier/bin/Release/net7.0/publish'
+    contents: '**'
     targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
     cleanTargetFolder: true
     overWrite: true
-    flattenFolders: true
+    flattenFolders: false
+- task: CopyFiles@2
+  displayName: 'Pack main artifact: Celeste.Mod.mm'
+  continueOnError: true
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/Celeste.Mod.mm/bin/Release/net7.0/publish'
+    contents: '**'
+    targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
+    cleanTargetFolder: false
+    overWrite: true
+    flattenFolders: false
+- task: CopyFiles@2
+  displayName: 'Pack main artifact: MiniInstaller'
+  continueOnError: true
+  inputs:
+    sourceFolder: '$(Build.SourcesDirectory)/MiniInstaller/bin/Release/net7.0/publish'
+    contents: '**'
+    targetFolder: '$(Build.ArtifactStagingDirectory)/main/'
+    cleanTargetFolder: false
+    overWrite: true
+    flattenFolders: false
 - task: PublishBuildArtifacts@1
   displayName: 'Publish main artifact'
   continueOnError: true

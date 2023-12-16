@@ -201,7 +201,7 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
-                MainThreadHelper.Do(() => {
+                MainThreadHelper.Schedule(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
                     modFilename = BuildModFilenameDictionary(modYamls);
 
