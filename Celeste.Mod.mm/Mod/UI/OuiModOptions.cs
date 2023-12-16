@@ -179,7 +179,7 @@ namespace Celeste.Mod.UI {
             }
 
             menu = CreateMenu(false, null);
-            AddSearchBox(menu);
+            startSearching = AddSearchBox(menu, Overworld);
 
             if (selected >= 0) {
                 menu.Selection = selected;
@@ -189,21 +189,14 @@ namespace Celeste.Mod.UI {
             Scene.Add(menu);
         }
 
-        private void AddSearchBox(TextMenu menu) {
-            TextMenuExt.TextBox textBox = new(Overworld) {
+        static public Action AddSearchBox(TextMenu menu, Overworld overworld = null) {
+            TextMenuExt.TextBox textBox = new(overworld) {
                 PlaceholderText = Dialog.Clean("MODOPTIONS_COREMODULE_SEARCHBOX_PLACEHOLDER")
             };
 
-            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            TextMenuExt.Modal modal = new(textBox, absoluteX: null, absoluteY: 85);
             menu.Add(modal);
-
-            startSearching = () => {
-                // we want to ensure we don't open the search box while we are in a sub-menu
-                if (menu.Focused) {
-                    modal.Visible = true;
-                    textBox.StartTyping();
-                }
-            };
+            menu.Add(new TextMenuExt.SearchToolTip());
 
             Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
                 string searchTarget = textBox.Text.ToLower();
@@ -258,11 +251,20 @@ namespace Celeste.Mod.UI {
                 if (textBox.Typing) {
                     if (Input.ESC.Pressed) {
                         exitSearch(textBox);
+                        Input.ESC.ConsumePress();
                     } else if (Input.MenuDown.Pressed) {
                         searchNextMod(false)(textBox);
                     } else if (Input.MenuUp.Pressed) {
                         searchNextMod(true)(textBox);
                     }
+                }
+            };
+
+            return () => {
+                // we want to ensure we don't open the search box while we are in a sub-menu
+                if (menu.Focused) {
+                    modal.Visible = true;
+                    textBox.StartTyping();
                 }
             };
         }
@@ -328,18 +330,6 @@ namespace Celeste.Mod.UI {
         public override void Render() {
             if (alpha > 0f)
                 Draw.Rect(-10f, -10f, 1940f, 1100f, Color.Black * alpha * 0.4f);
-
-
-            MTexture searchIcon = GFX.Gui["menu/mapsearch"];
-
-            const float PREFERRED_ICON_X = 100f;
-            float spaceNearMenu = (Engine.Width - menu.Width) / 2;
-            float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
-
-            Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
-            searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
-            Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
-
             base.Render();
         }
 

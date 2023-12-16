@@ -365,8 +365,9 @@ namespace Celeste.Mod.UI {
                 PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
             };
 
-            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            TextMenuExt.Modal modal = new(textBox, absoluteX: null, absoluteY: 85);
             menu.Add(modal);
+            menu.Add(new TextMenuExt.SearchToolTip());
 
             startSearching = () => {
                 modal.Visible = true;
@@ -720,18 +721,6 @@ namespace Celeste.Mod.UI {
 
         public override void Render() {
             base.Render();
-
-            if (modLoadingTask == null) {
-                MTexture searchIcon = GFX.Gui["menu/mapsearch"];
-
-                const float PREFERRED_ICON_X = 100f;
-                float spaceNearMenu = (Engine.Width - menu.Width) / 2;
-                float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
-
-                Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
-                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
-                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
-            }
         }
 
         public override IEnumerator Leave(Oui next) {

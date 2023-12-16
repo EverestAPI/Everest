@@ -1716,16 +1716,16 @@ namespace Celeste {
             public Color BoxBorderColor { get; set; } = Color.White;
             public Color BoxBackgroundColor { get; set; } = Color.Black * 0.8f;
             public int BorderThickness { get; set; } = 2;
-            public bool CenterItem { get; set; } = true;
-
-            private readonly float absoluteY;
+            private readonly float? absoluteY;
+            private readonly float? absoluteX;
             private readonly TextMenu.Item item;
 
-            public Modal(float absoluteY, TextMenu.Item item) {
+            public Modal(TextMenu.Item item, float? absoluteX, float? absoluteY) {
                 AboveAll = true;
                 Visible = false;
                 IncludeWidthInMeasurement = false;
                 this.absoluteY = absoluteY;
+                this.absoluteX = absoluteX;
                 this.item = item;
             }
 
@@ -1752,11 +1752,34 @@ namespace Celeste {
             }
 
             public override void Render(Vector2 position, bool highlighted) {
+                Vector2 renderPosition = new(absoluteX ?? position.X, absoluteY ?? position.Y);
                 for (int i = 1; i <= BorderThickness; i++) {
-                    Draw.HollowRect(position.X - i, absoluteY - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
+                    Draw.HollowRect(renderPosition.X - i, renderPosition.Y - i, item.Width + (2 * i), item.Height() + (2 * i), BoxBorderColor * Container.Alpha);
                 }
 
-                item.Render(new Vector2(position.X, absoluteY), highlighted);
+                item.Render(renderPosition, highlighted);
+            }
+        }
+
+        public class SearchToolTip : patch_Item {
+            public Vector2 preferredRenderLocation = new(100f, 952f);
+
+            private readonly MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+            public SearchToolTip() {
+                AboveAll = true;
+                Selectable = false;
+                IncludeWidthInMeasurement = false;
+            }
+
+            public override bool AlwaysRender => true;
+
+            public override void Render(Vector2 position, bool highlighted) {
+                float spaceNearMenu = (Engine.Width - Container.Width) / 2;
+                float scaleFactor = Math.Min(spaceNearMenu / (preferredRenderLocation.X + searchIcon.Width / 2), 1);
+                Vector2 searchIconLocation = new(preferredRenderLocation.X * scaleFactor, preferredRenderLocation.Y);
+                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
             }
         }
     }
