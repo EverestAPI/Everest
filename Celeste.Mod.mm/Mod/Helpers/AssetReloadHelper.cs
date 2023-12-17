@@ -557,24 +557,26 @@ namespace Celeste.Mod {
             GraphicsDevice graphicsDev = Engine.Instance.GraphicsDevice;
 
             // Render the scene and get the back buffer data
-            int width = graphicsDev.PresentationParameters.BackBufferWidth, height = graphicsDev.PresentationParameters.BackBufferHeight;
+            Viewport engineViewport = Engine.Viewport, graphicsViewport = graphicsDev.Viewport;
+            int width = engineViewport.Width, height = engineViewport.Height;
             Color[] backbufData = new Color[width * height];
 
             try {
                 scene.BeforeRender();
         
-                graphicsDev.Viewport = Engine.Viewport;
+                graphicsDev.Viewport = engineViewport;
                 graphicsDev.SetRenderTarget(null);
                 graphicsDev.Clear(Engine.ClearColor);
                 scene.Render();
 
                 scene.AfterRender();
-                graphicsDev.GetBackBufferData<Color>(backbufData);
+                graphicsDev.GetBackBufferData<Color>(engineViewport.Bounds, backbufData, 0, backbufData.Length);
             } catch (Exception ex) {
                 Logger.Log(LogLevel.Warn, "reload", $"Failed to render original scene for reload snapshot:");
                 Logger.LogDetailed(ex, "reload");
             } finally {
                 graphicsDev.SetRenderTarget(null);
+                graphicsDev.Viewport = graphicsViewport;
 
                 try {
                     Draw.SpriteBatch.End();
