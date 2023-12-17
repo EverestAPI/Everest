@@ -337,7 +337,7 @@ namespace Celeste.Mod.UI {
 
                 Process.Start(new ProcessStartInfo() {
                    FileName = openProg,
-                   Arguments = Path.GetDirectoryName(LogFile),
+                   ArgumentList = { Path.GetDirectoryName(LogFile) },
                    UseShellExecute = true 
                 });
             }));
