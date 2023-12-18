@@ -248,6 +248,7 @@ namespace Celeste.Mod.UI {
                 writer.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> AMENDED INFORMATION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
                 writer.WriteLine();
                 writer.WriteLine($"Encountered an additional error after the initial crash: {descr}");
+                writer.WriteLine("!!!!!!!!!!!!!!!!!!!! THIS IS NOT THE MAIN CRASH! !!!!!!!!!!!!!!!!!!!!");
                 writer.WriteLine($"Exception: {error}");
 
                 Logger.Log(LogLevel.Info, "crit-error-handler", $"Amended backed up log file '{logFile}' after encountering an additional error after the initial crash");
