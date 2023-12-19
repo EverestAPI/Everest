@@ -17,6 +17,10 @@ namespace Celeste {
         [PatchWaterUpdate] // ... except manipulating it manually with MonoModRules
         public extern override void Update();
 
+        private bool _IsShallowAtRectangle(Rectangle rectangle) {
+            return Scene.CollideCheck<Solid>(new Vector2(rectangle.Left, Top + 8), new Vector2(rectangle.Right, Top + 8));
+        }
+
     }
 }
 
@@ -30,68 +34,57 @@ namespace MonoMod {
     static partial class MonoModRules {
 
         public static void PatchWaterUpdate(ILContext context, CustomAttribute attrib) {
-            MethodReference m_WaterInteraction_get_Bounds = MonoModRule.Modder.Module.GetType("Celeste.WaterInteraction").FindProperty("Bounds").GetMethod;
-            TypeReference t_Rectangle = m_WaterInteraction_get_Bounds.ReturnType;
-            MethodReference m_Rectangle_get_Center = MonoModRule.Modder.Module.ImportReference(t_Rectangle.Resolve().FindProperty("Center").GetMethod);
-            TypeReference t_Point = m_Rectangle_get_Center.ReturnType;
-            FieldReference f_Point_Y = MonoModRule.Modder.Module.ImportReference(t_Point.Resolve().FindField("Y"));
+            TypeDefinition t_WaterInteraction = MonoModRule.Modder.Module.GetType("Celeste.WaterInteraction");
+            MethodReference m_WaterInteraction_Check = t_WaterInteraction.FindMethod("Check")!;
+            MethodReference m_WaterInteraction_get_Bounds = t_WaterInteraction.FindProperty("Bounds")!.GetMethod;
+            MethodReference m_WaterInteraction_get_AbsoluteCenter = t_WaterInteraction.FindProperty("AbsoluteCenter")!.GetMethod;
 
-            MethodReference m_Component_get_Entity = MonoModRule.Modder.Module.GetType("Monocle.Component").FindMethod("Monocle.Entity get_Entity()");
-            MethodReference m_Entity_CollideRect = MonoModRule.Modder.Module.GetType("Monocle.Entity").FindMethod($"System.Boolean CollideRect({t_Rectangle.FullName})");
-
-            MethodReference m_Point_ToVector2 = MonoModRule.Modder.Module.GetType("Celeste.Mod.Extensions").FindMethod($"Microsoft.Xna.Framework.Vector2 Celeste.Mod.Extensions::ToVector2(Microsoft.Xna.Framework.Point)");
-
-            VariableDefinition v_Bounds = new VariableDefinition(t_Rectangle);
-            context.Body.Variables.Add(v_Bounds);
-
+            TypeDefinition t_Water = context.Method.DeclaringType;
+            MethodReference m_Water_IsShallowAtRectangle = t_Water.FindMethod("_IsShallowAtRectangle")!;
+            
+            TypeReference t_Vector2 = m_WaterInteraction_get_AbsoluteCenter.ReturnType;
+            VariableDefinition v_AbsoluteCenter = new VariableDefinition(t_Vector2);
+            context.Body.Variables.Add(v_AbsoluteCenter);
+            
             ILCursor cursor = new ILCursor(context);
-            // Load the WaterInteraction Bounds into a local variable
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCallvirt("Monocle.Component", "get_Entity"));
-            cursor.Prev.Operand = m_WaterInteraction_get_Bounds;
-            cursor.Next.OpCode = OpCodes.Stloc_S;
-            cursor.Next.Operand = v_Bounds;
-
-            // Replace the collision check (I think this technically loses precision but nobody's complained yet)
-            cursor.GotoNext(instr => instr.MatchCall("Monocle.Entity", "CollideCheck"));
-            cursor.Next.Operand = m_Entity_CollideRect;
-
-            // Replace the Rectangle creation, and any values used for it, with our Bounds value.
-            cursor.GotoNext(MoveType.After, instr => instr.MatchCall("Monocle.Entity", "get_Scene"));
-            while (!cursor.Next.MatchNewobj("Microsoft.Xna.Framework.Rectangle")) {
+            
+            // store the WaterInteraction's AbsoluteCenter in a local variable
+            int waterInteractionVar = -1;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchCastclass("Celeste.WaterInteraction"), instr => instr.MatchStloc(out waterInteractionVar));
+            cursor.EmitLdloc(waterInteractionVar);
+            cursor.EmitCall(m_WaterInteraction_get_AbsoluteCenter);
+            cursor.EmitStloc(v_AbsoluteCenter);
+            
+            // replace: this.CollideCheck(entity)
+            // with: component.Check(this)
+            int parentEntityVar = -1;
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg0(), instr => instr.MatchLdloc(out parentEntityVar), instr => instr.MatchCall("Monocle.Entity", "CollideCheck"));
+            cursor.EmitLdloc(waterInteractionVar);
+            cursor.EmitLdarg0();
+            cursor.EmitCall(m_WaterInteraction_Check);
+            cursor.RemoveRange(3);
+            
+            // Replace the Rectangle creation, and any values used for it, with our custom shallowness check.
+            cursor.GotoNext(MoveType.AfterLabel, instr => instr.MatchLdarg0(), instr => instr.MatchCall("Monocle.Entity", "get_Scene"));
+            cursor.EmitLdarg0();
+            cursor.EmitLdloc(waterInteractionVar);
+            cursor.EmitCall(m_WaterInteraction_get_Bounds);
+            cursor.EmitCall(m_Water_IsShallowAtRectangle);
+            while (!cursor.Next!.MatchBrfalse(out _)) {
                 cursor.Remove();
             }
-            cursor.Next.OpCode = OpCodes.Ldloc_S;
-            cursor.Next.Operand = v_Bounds;
 
-            // Start again from the top and retrieve the Bounds instead of the entity (but only up to a certain point)
+            // replace all instances of entity.Center with the stored AbsoluteCenter
             cursor.Goto(0);
-            for (int i = 0; i < 10; i++) {
-                cursor.GotoNext(MoveType.After, instr => instr.OpCode == OpCodes.Ldloc_3);
-                cursor.Prev.OpCode = OpCodes.Ldloca_S;
-                cursor.Prev.Operand = v_Bounds;
-
-                // Modify any method calls/field accesses to the Bounds
-                if (cursor.Next.MatchCallvirt("Monocle.Entity", "get_Center")) {
-                    cursor.Remove();
-                    cursor.Emit(OpCodes.Call, m_Rectangle_get_Center);
-                    if (cursor.Next.OpCode == OpCodes.Ldfld) {
-                        cursor.Remove();
-                        cursor.Emit(OpCodes.Ldfld, f_Point_Y);
-                        cursor.Emit(OpCodes.Conv_R4);
-                    } else {
-                        cursor.Emit(OpCodes.Call, m_Point_ToVector2);
-                    }
-                } else {
-                    cursor.Prev.OpCode = OpCodes.Ldloc_S;
-                    cursor.Prev.Operand = v_Bounds;
-                }
+            int matches = 0;
+            while (cursor.TryGotoNext(MoveType.AfterLabel, instr => instr.MatchLdloc(parentEntityVar), instr => instr.MatchCallvirt("Monocle.Entity", "get_Center"))) {
+                matches++;
+                cursor.EmitLdloc(v_AbsoluteCenter);
+                cursor.RemoveRange(2);
             }
-
-            // We have reached the end of the code to be patched, we can finally load the WaterInteraction's Entity and continue as normal
-            cursor.GotoNext(instr => instr.Next.MatchIsinst("Celeste.Player"));
-            cursor.Emit(OpCodes.Ldloc_2);
-            cursor.Emit(OpCodes.Callvirt, m_Component_get_Entity);
-            cursor.Emit(OpCodes.Stloc_3);
+            if (matches != 9) {
+                throw new Exception($"Incorrect number of matches for entity.Center: {matches}");
+            }
         }
 
     }
