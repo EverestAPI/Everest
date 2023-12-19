@@ -382,7 +382,7 @@ namespace Celeste {
                 List<string> currentContent = Values.Select(val => val.Item1).ToList();
                 if (!cachedRightWidthContent.SequenceEqual(currentContent)) {
                     // contents changed, or the width wasn't computed yet.
-                    cachedRightWidth = orig_RightWidth() * 0.8f + 44f;
+                    cachedRightWidth = orig_RightWidth();
                     cachedRightWidthContent = currentContent;
                 }
                 return cachedRightWidth;
@@ -552,13 +552,18 @@ namespace MonoMod {
         public static void PatchTextMenuOptionColor(ILContext context, CustomAttribute attrib) {
             FieldReference f_UnselectedColor = context.Method.DeclaringType.FindField("UnselectedColor");
 
+            //Explicitly instantiate the generic Option<T> type
+            GenericInstanceType genericInst = new GenericInstanceType(f_UnselectedColor.DeclaringType);
+            genericInst.GenericArguments.AddRange(f_UnselectedColor.DeclaringType.GenericParameters);
+            f_UnselectedColor.DeclaringType = genericInst;
+
             ILCursor cursor = new ILCursor(context);
             cursor.GotoNext(instr => instr.MatchCall("Microsoft.Xna.Framework.Color", "get_White"));
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Next.OpCode = OpCodes.Ldfld;
             cursor.Next.Operand = f_UnselectedColor;
         }
-
+    
         public static void PatchTextMenuSettingUpdate(ILContext il, CustomAttribute _) {
             MethodReference m_MouseButtonsHash = il.Method.DeclaringType.FindMethod("_MouseButtonsHash");
             FieldReference f_Binding_Mouse = MonoModRule.Modder.FindType("Monocle.Binding").Resolve().FindField("Mouse");

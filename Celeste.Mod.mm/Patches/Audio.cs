@@ -5,8 +5,10 @@ using Celeste.Mod;
 using Celeste.Mod.Core;
 using FMOD;
 using FMOD.Studio;
+using Microsoft.Xna.Framework;
 using Monocle;
 using MonoMod;
+using SDL2;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +20,7 @@ namespace Celeste {
 
         private static FMOD.Studio.System system;
         private static bool ready;
+        private static FMOD.Studio._3D_ATTRIBUTES attributes3d;
         public static FMOD.Studio.System System => system;
 
         public static Dictionary<Guid, string> cachedPaths = new Dictionary<Guid, string>();
@@ -39,12 +42,36 @@ namespace Celeste {
                 throw new Exception($"FMOD Failed: {result} ({Error.String(result)})");
         }
 
-        public static extern void orig_Init();
+        [MonoModIfFlag("RelinkXNA")]
+        [DllImport("fmod_SDL", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void FMOD_SDL_Register(IntPtr system);
+
+        [MonoModReplace]
         public static void Init() {
             bool fmodLiveUpdate = Settings.Instance.LaunchWithFMODLiveUpdate;
             Settings.Instance.LaunchWithFMODLiveUpdate |= CoreModule.Settings.LaunchWithFMODLiveUpdateInEverest;
+        
+            // Original initialization code
+            {
+                FMOD.Studio.INITFLAGS flags = FMOD.Studio.INITFLAGS.NORMAL;
+                if (Settings.Instance.LaunchWithFMODLiveUpdate)
+                    flags = FMOD.Studio.INITFLAGS.LIVEUPDATE;
 
-            orig_Init();
+                CheckFmod(FMOD.Studio.System.create(out system));
+
+                // The following snippet is missing on XNA
+                system.getLowLevelSystem(out var lowLevelSystem);
+                if (SDL.SDL_GetPlatform().Equals("Linux"))
+                    FMOD_SDL_Register(lowLevelSystem.getRaw());
+
+                CheckFmod(system.initialize(1024, flags, FMOD.INITFLAGS.NORMAL, IntPtr.Zero));
+
+                attributes3d.forward = new VECTOR { x = 0f, y = 0f, z = 1f };
+                attributes3d.up = new VECTOR { x = 0f, y = 1f, z = 0f };
+                Audio.SetListenerPosition(new Vector3(0f, 0f, 1f), new Vector3(0f, 1f, 0f), new Vector3(0f, 0f, -345f));
+
+                ready = true;
+            }
 
             Settings.Instance.LaunchWithFMODLiveUpdate = fmodLiveUpdate;
 
@@ -153,7 +180,7 @@ namespace Celeste {
             patch_Banks.ModCache[asset] = bank;
 
             bank.getID(out Guid id);
-            cachedBankPaths[id] = $"bank:/mods/{asset.PathVirtual.Substring("Audio/".Length)}";
+            cachedBankPaths[id] = string.Format("bank:/mods/{0}", asset.PathVirtual.Substring("Audio/".Length));
             return bank;
         }
 
@@ -294,7 +321,7 @@ namespace Celeste {
                     return bank;
 
                 ModAsset asset;
-                if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}", out asset)) {
+                if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}", name), out asset)) {
                     bank = IngestBank(asset);
 
                 } else {
@@ -305,7 +332,7 @@ namespace Celeste {
                 }
 
                 if (loadStrings) {
-                    if (Everest.Content.TryGet<AssetTypeBank>($"Audio/{name}.strings", out asset)) {
+                    if (Everest.Content.TryGet<AssetTypeBank>(string.Format("Audio/{0}.strings", name), out asset)) {
                         IngestBank(asset);
                     } else {
                         Bank strings;

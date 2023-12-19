@@ -5,7 +5,6 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Security.Policy;
 
 namespace Celeste.Mod.Helpers {
     public sealed class FakeAssembly : Assembly {
@@ -103,39 +102,15 @@ namespace Celeste.Mod.Helpers {
 
         // All following overrides just invoke Inner.* where possible.
 
-        public override string CodeBase {
-            get {
-                return Inner.CodeBase;
-            }
-        }
-
         public override MethodInfo EntryPoint {
             get {
                 return Inner.EntryPoint;
             }
         }
 
-        public override string EscapedCodeBase {
-            get {
-                return Inner.EscapedCodeBase;
-            }
-        }
-
-        public override Evidence Evidence {
-            get {
-                return Inner.Evidence;
-            }
-        }
-
         public override string FullName {
             get {
                 return Inner.FullName;
-            }
-        }
-
-        public override bool GlobalAssemblyCache {
-            get {
-                return Inner.GlobalAssemblyCache;
             }
         }
 

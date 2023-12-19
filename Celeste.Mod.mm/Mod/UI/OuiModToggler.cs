@@ -1,5 +1,7 @@
 ﻿using Ionic.Zip;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Monocle;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -40,6 +42,7 @@ namespace Celeste.Mod.UI {
 
         private Dictionary<string, TextMenu.OnOff> modToggles;
         private Task modLoadingTask;
+        private Action startSearching;
 
         internal static Dictionary<string, EverestModuleMetadata[]> LoadAllModYamls(Action<float> progressCallback) {
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -198,7 +201,7 @@ namespace Celeste.Mod.UI {
                 });
                 updateTimer.Stop();
 
-                MainThreadHelper.Do(() => {
+                MainThreadHelper.Schedule(() => {
                     modToggles = new Dictionary<string, TextMenu.OnOff>();
                     modFilename = BuildModFilenameDictionary(modYamls);
 
@@ -280,6 +283,8 @@ namespace Celeste.Mod.UI {
                         onBackPressed(Overworld);
                     }));
 
+                    AddSearchBox(menu);
+
                     // reset the mods list
                     allMods = new List<string>();
                     blacklistedMods = new HashSet<string>();
@@ -353,6 +358,115 @@ namespace Celeste.Mod.UI {
                 });
             });
             modLoadingTask.Start();
+        }
+
+        private static bool WrappingLinearSearch<T>(List<T> items, Func<T, bool> predicate, int startIndex, bool inReverse, out int nextModIndex) {
+            int step = inReverse ? -1 : 1;
+
+            if (startIndex > items.Count) {
+                nextModIndex = 0;
+                return false;
+            }
+
+            for (int currentIndex = (startIndex + step) % items.Count; currentIndex != startIndex; currentIndex = (currentIndex + step) % items.Count) {
+                if (currentIndex < 0) {
+                    currentIndex = items.Count - 1;
+                }
+
+                if (predicate(items[currentIndex])) {
+                    nextModIndex = currentIndex;
+                    return true;
+                }
+            }
+
+            nextModIndex = startIndex;
+            return predicate(items[nextModIndex]);
+        }
+
+        private void AddSearchBox(TextMenu menu) {
+            TextMenuExt.TextBox textBox = new(Overworld) {
+                PlaceholderText = Dialog.Clean("MODOPTIONS_MODTOGGLE_SEARCHBOX_PLACEHOLDER")
+            };
+
+            TextMenuExt.Modal modal = new(absoluteY: 85, textBox);
+            menu.Add(modal);
+
+            startSearching = () => {
+                modal.Visible = true;
+                textBox.StartTyping();
+
+                if (((patch_TextMenu) menu).Items[menu.Selection] is patch_TextMenu.patch_Option<bool> currentOption
+                    && modToggles.ContainsKey(currentOption.Label)) {
+                    currentOption.UnselectedColor = currentOption.Container.HighlightColor;
+                }
+            };
+
+            Action<TextMenuExt.TextBox> searchNextMod(bool inReverse) => (TextMenuExt.TextBox textBox) => {
+                updateHighlightedMods();
+
+                string searchTarget = textBox.Text.ToLower();
+                List<TextMenu.Item> menuItems = ((patch_TextMenu) menu).Items;
+                int currentSelection = menu.Selection;
+
+                bool searchPredicate(TextMenu.Item item) => item is patch_TextMenu.patch_Option<bool> currentOption
+                                                            && modToggles.ContainsKey(currentOption.Label)
+                                                            && currentOption.Label.ToLower().Contains(searchTarget);
+
+                if (WrappingLinearSearch(menuItems, searchPredicate, menu.Selection, inReverse, out int targetSelectionIndex)) {
+
+                    if (targetSelectionIndex >= menu.Selection) {
+                        Audio.Play(SFX.ui_main_roll_down);
+                    } else {
+                        Audio.Play(SFX.ui_main_roll_up);
+                    }
+
+                    menu.Selection = targetSelectionIndex;
+                    if (menuItems[targetSelectionIndex] is patch_TextMenu.patch_Option<bool> currentOption) {
+                        currentOption.UnselectedColor = currentOption.Container.HighlightColor;
+                    }
+                } else {
+                    Audio.Play(SFX.ui_main_button_invalid);
+                }
+            };
+
+            void exitSearch(TextMenuExt.TextBox textBox) {
+                textBox.StopTyping();
+                modal.Visible = false;
+                textBox.ClearText();
+                updateHighlightedMods();
+            }
+
+            textBox.OnTextInputCharActions['\t'] = searchNextMod(false);
+            textBox.OnTextInputCharActions['\n'] = (_) => { };
+            textBox.OnTextInputCharActions['\r'] = (textBox) => {
+                if (MInput.Keyboard.CurrentState.IsKeyDown(Keys.LeftShift)
+                    || MInput.Keyboard.CurrentState.IsKeyDown(Keys.RightShift)) {
+                    searchNextMod(true)(textBox);
+                } else {
+                    searchNextMod(false)(textBox);
+                }
+            };
+            textBox.OnTextInputCharActions['\b'] = (textBox) => {
+                if (textBox.DeleteCharacter()) {
+                    Audio.Play(SFX.ui_main_rename_entry_backspace);
+                } else {
+                    exitSearch(textBox);
+                    Input.MenuCancel.ConsumePress();
+                }
+            };
+
+
+            textBox.AfterInputConsumed = () => {
+                if (textBox.Typing) {
+                    if (Input.ESC.Pressed) {
+                        exitSearch(textBox);
+                    } else if (Input.MenuDown.Pressed) {
+                        searchNextMod(false)(textBox);
+                    } else if (Input.MenuUp.Pressed) {
+                        searchNextMod(true)(textBox);
+                    }
+                }
+            };
         }
 
         private void addFileToMenu(TextMenu menu, string file) {
@@ -443,6 +557,14 @@ namespace Celeste.Mod.UI {
 
         public override void Update() {
             canGoBack = (modLoadingTask == null || modLoadingTask.IsCompleted || modLoadingTask.IsCanceled || modLoadingTask.IsFaulted);
+
+            if (Selected && Focused) {
+                if (Input.QuickRestart.Pressed) {
+                    startSearching?.Invoke();
+                    return;
+                }
+            }
+
             base.Update();
         }
 
@@ -628,6 +750,23 @@ namespace Celeste.Mod.UI {
 
             // this mod has no yaml, and as such, can't be a dependency of anything.
             return false;
+        }
+
+
+        public override void Render() {
+            base.Render();
+
+            if (modLoadingTask == null) {
+                MTexture searchIcon = GFX.Gui["menu/mapsearch"];
+
+                const float PREFERRED_ICON_X = 100f;
+                float spaceNearMenu = (Engine.Width - menu.Width) / 2;
+                float scaleFactor = Math.Min(spaceNearMenu / (PREFERRED_ICON_X + searchIcon.Width / 2), 1);
+
+                Vector2 searchIconLocation = new(PREFERRED_ICON_X * scaleFactor, 952f);
+                searchIcon.DrawCentered(searchIconLocation, Color.White, scaleFactor);
+                Input.GuiKey(Input.FirstKey(Input.QuickRestart)).Draw(searchIconLocation, Vector2.Zero, Color.White, scaleFactor);
+            }
         }
 
         public override IEnumerator Leave(Oui next) {

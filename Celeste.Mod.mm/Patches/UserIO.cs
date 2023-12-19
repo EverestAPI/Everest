@@ -15,9 +15,14 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.Utils;
+using System.Runtime.InteropServices;
 
 namespace Celeste {
     static class patch_UserIO {
+
+        [MonoModIfFlag("RelinkXNA")]
+        [MonoModReplace]
+        private static string SavePath = GetSavePath("Saves"), BackupPath = GetSavePath("Backups");
 
         private static List<Tuple<EverestModule, byte[], byte[]>> savingModFileData;
         private static byte[] savingMouseBindingsData;
@@ -28,22 +33,39 @@ namespace Celeste {
         [MonoModIgnore]
         public static bool Saving { get; private set; }
 
-        private static extern string orig_GetSavePath(string dir);
-        [MonoModIfFlag("FNA")]
         private static string GetSavePath(string dir) {
             string env = Environment.GetEnvironmentVariable("EVEREST_SAVEPATH");
             if (!string.IsNullOrEmpty(env))
                 return Path.Combine(env, dir);
 
             try {
-                return orig_GetSavePath(dir);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                    string home = Environment.GetEnvironmentVariable("XDG_DATA_HOME");
+                    if (!string.IsNullOrEmpty(home))
+                        return Path.Combine(home, "Celeste/" + dir);
+
+                    home = Environment.GetEnvironmentVariable("HOME");
+                    if (!string.IsNullOrEmpty(home))
+                        return Path.Combine(home, ".local/share/Celeste/" + dir);
+                } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    string home = Environment.GetEnvironmentVariable("HOME");
+                    if (!string.IsNullOrEmpty(home))
+                        return Path.Combine(home, "Library/Application Support/Celeste/" + dir);
+                }
+                
+                return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, dir);
             } catch (NotSupportedException) {
                 return Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), dir);
             }
         }
 
         [MonoModIgnore]
+        [PatchUserIOPaths]
         private static extern string GetHandle(string name);
+
+        [MonoModIgnore]
+        [PatchUserIOPaths]
+        private static extern string GetBackupHandle(string name);
 
         public static string GetSaveFilePath(string name = null)
             => string.IsNullOrEmpty(name) ? Path.GetDirectoryName(GetSaveFilePath("dummy")) : GetHandle(name);
@@ -215,6 +237,12 @@ namespace MonoMod {
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchSaveDataFlushSaves))]
     class PatchSaveDataFlushSavesAttribute : Attribute { }
 
+    /// <summary>
+    /// Patches the method to use UserIO.SavePath/BackupPath instead of hardcoded constants on XNA.
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchUserIOPaths))]
+    class PatchUserIOPathsAttribute : Attribute { }
+
     static partial class MonoModRules {
 
         public static void PatchSaveRoutine(MethodDefinition method, CustomAttribute attrib) {
@@ -263,6 +291,28 @@ namespace MonoMod {
             // replace Files.Copy with _saveAndFlushToFile
             c.Next.OpCode = OpCodes.Call;
             c.Next.Operand = il.Method.DeclaringType.FindMethod("_saveAndFlushToFile");
+        }
+
+        public static void PatchUserIOPaths(ILContext il, CustomAttribute attrib) {
+            // Patch UserIO.SavePath
+            {
+                ILCursor c = new ILCursor(il);
+                FieldDefinition f_UserIO_SavePath = il.Method.DeclaringType.FindField("SavePath");
+                while (c.TryGotoNext(MoveType.After, i => i.MatchLdstr("Saves"))) {
+                    c.Instrs[c.Index-1].OpCode = OpCodes.Ldsfld;
+                    c.Instrs[c.Index-1].Operand = f_UserIO_SavePath;
+                }
+            }
+
+            // Patch UserIO.BackupPath
+            {
+                ILCursor c = new ILCursor(il);
+                FieldDefinition f_UserIO_SavePath = il.Method.DeclaringType.FindField("BackupPath");
+                while (c.TryGotoNext(MoveType.After, i => i.MatchLdstr("Backups"))) {
+                    c.Instrs[c.Index-1].OpCode = OpCodes.Ldsfld;
+                    c.Instrs[c.Index-1].Operand = f_UserIO_SavePath;
+                }
+            }
         }
 
     }

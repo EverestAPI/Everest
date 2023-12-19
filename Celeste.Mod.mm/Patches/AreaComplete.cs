@@ -59,12 +59,12 @@ namespace Celeste {
             versionOffset = 0;
 
             if (Settings.Instance.SpeedrunClock > SpeedrunType.Off) {
-                versionFull = $"{Celeste.Instance.Version}\n{Everest.Build}";
+                versionFull = string.Format("{0}\n{1}", Celeste.Instance.Version, Everest.Build);
 
                 if (session != null &&
-                    Everest.Content.TryGet($"Maps/{AreaData.Get(session).Mode[(int) session.Area.Mode].Path}", out ModAsset asset) &&
+                    Everest.Content.TryGet(string.Format("Maps/{0}", AreaData.Get(session).Mode[(int) session.Area.Mode].Path), out ModAsset asset) &&
                     asset.Source.Mod?.Multimeta?.Length >= 1) {
-                    versionFull = $"{versionFull}\n{asset.Source.Mod.Multimeta[0].Version}";
+                    versionFull = string.Format("{0}\n{1}", versionFull, asset.Source.Mod.Multimeta[0].Version);
                     versionOffset -= 32;
                 }
 

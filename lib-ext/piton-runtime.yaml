@@ -1,0 +1,23 @@
+windows-x86:
+  version: 7.0.12
+  download: https://download.visualstudio.microsoft.com/download/pr/e6be672b-53a9-4050-9b55-53f74a55523c/b59ab5af9be85681cf415865a159624f/dotnet-runtime-7.0.12-win-x86.zip
+  download-sha512: 760f4483b9848c2165be30ad4623de4099529fdcbf61c4e6c1738dfe22e3d776ca7ced89e4d7485dc0337c988b1c3bf1c5757a01e97d156df4ad0cf848226244
+  download-format: zip
+  
+windows-x86_64:
+  version: 7.0.12
+  download: https://download.visualstudio.microsoft.com/download/pr/6d97a102-c4f3-4183-91d7-d810e96e73a1/272349ea2adf0145d9364e2c12bd23a4/dotnet-runtime-7.0.12-win-x64.zip
+  download-sha512: fada96dfe5c0ff99799032b21323b0c75764df8c7991e67c0f2757a0f4d9946c68dee07831a0bda7e884713749150121d618973d14bdcc915d389799b36848bb
+  download-format: zip
+
+linux-x86_64:
+  version: 7.0.12
+  download: https://download.visualstudio.microsoft.com/download/pr/47a663ab-0c5f-4502-9ea1-93c27df8f9ed/5ee65ca13eb40220631dab82a27972d8/dotnet-runtime-7.0.12-linux-x64.tar.gz
+  download-sha512: 74bea25e88bd917a733a6899a3b3c9ac40c85a64f82dc0f36840714669621716afbb8fec6c3c398b1ffb522c0ed11958862cff5a4be0bf6268188cdb276bc109
+  download-format: targz
+
+macos-x86_64:
+  version: 7.0.12
+  download: https://download.visualstudio.microsoft.com/download/pr/5a3eed2a-4c5f-4c05-9ef5-4b59de889a9e/4a577fd9e4b278dfebc16d901691b90f/dotnet-runtime-7.0.12-osx-x64.tar.gz
+  download-sha512: 3cfa807b64eb345ff104f33d7120d7d973443d40aedfe5fb49c0b67adb69f743c18a6e762a8463f59ee29b4a291970e8af48f97f841a94ed220809b56258b0e0
+  download-format: targz

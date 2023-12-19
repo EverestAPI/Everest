@@ -1,7 +1,7 @@
 ﻿using Celeste.Mod.Core;
+using Celeste.Mod.Helpers;
 using Microsoft.Xna.Framework;
 using Monocle;
-using MonoMod.Utils;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -341,7 +341,7 @@ header {
                     InfoHTML = "Refocus the game window. Doesn't work on Windows 10.",
                     Handle = c => {
                         if (SDL_RaiseWindow != null)
-                            SDL_RaiseWindow(null, Celeste.Instance.Window.Handle);
+                            SDL_RaiseWindow(Celeste.Instance.Window.Handle);
                         else
                             SetForegroundWindow(Celeste.Instance.Window.Handle);
 
@@ -587,15 +587,14 @@ header {
                             Array.Copy(commandAndArgs, 1, args, 0, args.Length);
 
                             StringBuilder output = new StringBuilder();
-                            MainThreadHelper.Get<object>(() => { // prevent interfering with commands run from ingame console
+                            MainThreadHelper.Schedule(() => { // prevent interfering with commands run from ingame console
                                 try {
                                     ((Monocle.patch_Commands) Engine.Commands).debugRClog = output;
                                     Engine.Commands.ExecuteCommand(commandAndArgs[0].ToLower(), args);
                                 } finally {
                                     ((Monocle.patch_Commands) Engine.Commands).debugRClog = null;
                                 }
-                                return null;
-                            }).GetResult(); // wait for command to finish before writing output
+                            }).AsTask().Wait(); // wait for command to finish before writing output
                             Write(c, output.ToString());
                         }
                     }
@@ -612,7 +611,7 @@ header {
             private static extern bool SetForegroundWindow(IntPtr hWnd);
 
             private static Type SDL = typeof(Game).Assembly.GetType("SDL2.SDL");
-            private static FastReflectionDelegate SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.GetFastDelegate();
+            private static Action<IntPtr> SDL_RaiseWindow = SDL?.GetMethod("SDL_RaiseWindow")?.CreateDelegate<Action<IntPtr>>(null);
 
             private class SessionInfo {
 

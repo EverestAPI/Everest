@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.UI;
+using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
 using _Decal = Celeste.Decal;
@@ -16,6 +17,21 @@ namespace Celeste.Mod {
         /// Events that are called at various points in the game.
         /// </summary>
         public static class Events {
+
+            public static event Action<CriticalErrorHandler> OnCriticalError;
+            internal static void CriticalError(CriticalErrorHandler handler) {
+                if (OnCriticalError == null)
+                    return;
+
+                foreach (Action<CriticalErrorHandler> deleg in OnCriticalError.GetInvocationList()) {
+                    try {
+                        deleg(handler);
+                    } catch (Exception ex) {
+                        Logger.Log(LogLevel.Error, "crit-error-handler", $"Error invoking critical error event handler {deleg.Method}:");
+                        Logger.LogDetailed(ex, "crit-error-handler");
+                    }
+                }
+            }
 
             public static class Celeste {
                 /// <summary>
@@ -259,6 +275,24 @@ namespace Celeste.Mod {
                 public static event ParseCommandHandler OnParseCommand;
                 internal static object ParseCommand(string command)
                     => OnParseCommand?.InvokeWhileNull<object>(command);
+            }
+
+            public static class AssetReload {
+                public delegate void ReloadHandler(bool silent);
+                public static event ReloadHandler OnBeforeReload, OnAfterReload;
+                internal static void BeforeReload(bool silent)
+                    => OnBeforeReload?.Invoke(silent);
+                internal static void AfterReload(bool silent)
+                    => OnAfterReload?.Invoke(silent);
+
+                public delegate void ReloadLevelHandler(global::Celeste.Level level);
+                public static ReloadLevelHandler OnReloadLevel;
+                internal static void ReloadLevel(global::Celeste.Level level)
+                    => OnReloadLevel?.Invoke(level);
+
+                public static Action OnReloadAllMaps;
+                internal static void ReloadAllMaps()
+                    => OnReloadAllMaps?.Invoke();
             }
         }
     }

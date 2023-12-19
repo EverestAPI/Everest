@@ -12,6 +12,8 @@ using MonoMod.Cil;
 namespace Celeste {
     class patch_OuiFileSelect : OuiFileSelect {
 
+        internal bool startingNewFile;
+
         [PatchOuiFileSelectSubmenuChecks] // we want to manipulate the orig method with MonoModRules
         public extern IEnumerator orig_Enter(Oui from);
         public new IEnumerator Enter(Oui from) {

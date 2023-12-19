@@ -1,9 +1,8 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Celeste.Mod.Helpers;
+using Microsoft.Xna.Framework;
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,13 +10,14 @@ namespace Celeste.Mod {
     public class STAThreadHelper : GameComponent {
 
         public static STAThreadHelper Instance;
+        public static STAThreadHelper InstanceSafe => Instance ?? throw new InvalidOperationException("STAThreadHelper is currently not running");
 
-        private static readonly Queue<Action> Queue = new Queue<Action>();
-        private static readonly HashSet<object> Enqueued = new HashSet<object>();
-        private static readonly Dictionary<object, object> EnqueuedWaiting = new Dictionary<object, object>();
+        private static bool IsWorkerThread => Thread.CurrentThread == InstanceSafe.TaskScheduler.WorkerThread;
 
-        private static Thread Worker;
-        private static CancellationTokenSource WaitTokenSource;
+        private static ConcurrentDictionary<object, Task> KeyedTasks = new ConcurrentDictionary<object, Task>();
+
+        private readonly WorkerThreadTaskScheduler TaskScheduler;
+        private readonly TaskFactory TaskFactory;
 
         public STAThreadHelper(Game game)
             : base(game) {
@@ -25,137 +25,81 @@ namespace Celeste.Mod {
 
             UpdateOrder = -500000;
 
-            WaitTokenSource = new CancellationTokenSource();
+            TaskScheduler = new WorkerThreadTaskScheduler("Everest STAThread Worker", autoStart: false);
+            TaskFactory = new TaskFactory(TaskScheduler.CancellationToken);
 
-            Worker = new Thread(WorkerLoop) {
-                Name = "Everest STAThread Worker",
-                IsBackground = true
-            };
-            Worker.SetApartmentState(ApartmentState.STA);
-            Worker.Start();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                TaskScheduler.WorkerThread.SetApartmentState(ApartmentState.STA);
+            TaskScheduler.WorkerThread.Start();
         }
 
         protected override void Dispose(bool disposing) {
             base.Dispose(disposing);
-            Worker = null;
-            WaitTokenSource?.Cancel();
-            WaitTokenSource?.Dispose();
-            WaitTokenSource = null;
+            TaskScheduler.Dispose();
         }
 
-        private static bool Poke() {
-            if (WaitTokenSource == null)
-                return false;
-            WaitTokenSource.Cancel();
-            WaitTokenSource.Dispose();
-            WaitTokenSource = new CancellationTokenSource();
-            return true;
+        public static ValueTask Schedule(Action act) {
+            if (IsWorkerThread) {
+                act();
+                return ValueTask.CompletedTask;
+            } else
+                return new ValueTask(InstanceSafe.TaskFactory.StartNew(act));
         }
 
-        private static void WorkerLoop() {
-            while (Worker != null) {
-                while (WaitTokenSource == null)
-                    continue;
-                try {
-                    WaitTokenSource.Token.WaitHandle.WaitOne();
-                } catch (OperationCanceledException) {
-                } catch (ObjectDisposedException) {
-                }
-
-                while (Worker != null) {
-                    Action nextAction;
-                    lock (Queue) {
-                        if (Queue.Count == 0)
-                            break;
-                        nextAction = Queue.Dequeue();
-                    }
-                    nextAction.Invoke();
-                }
-            }
+        public static ValueTask<T> Schedule<T>(Func<T> act) {
+            if (IsWorkerThread)
+                return new ValueTask<T>(act());
+            else
+                return new ValueTask<T>(InstanceSafe.TaskFactory.StartNew(act));
         }
 
-        public static void Do(Action a) {
-            if (Thread.CurrentThread == Worker) {
-                a();
+        public static Task Schedule(Func<Task> act) {
+            if (IsWorkerThread)
+                return act();
+            else
+                return InstanceSafe.TaskFactory.StartNew(() => act()).Unwrap();
+        }
+
+        public static Task<T> Schedule<T>(Func<Task<T>> act) {
+            if (IsWorkerThread)
+                return act();
+            else
+                return InstanceSafe.TaskFactory.StartNew(() => act()).Unwrap();
+        }
+
+        [Obsolete("Use Schedule instead")] public static void Do(Action a) => Schedule(a);
+        [Obsolete("Use Schedule instead")]
+        public static void Do(object key, Action act) {
+            if (IsWorkerThread) {
+                act();
                 return;
             }
 
-            lock (Queue) {
-                Queue.Enqueue(a);
-            }
-
-            Poke();
-        }
-
-        public static void Do(object key, Action a) {
-            if (Thread.CurrentThread == Worker) {
-                a();
+            if (KeyedTasks.TryGetValue(key, out Task task) && !task.IsCompleted)
                 return;
-            }
 
-            lock (Queue) {
-                if (!Enqueued.Add(key))
+            lock (KeyedTasks) {
+                if (KeyedTasks.TryGetValue(key, out task) && task.IsCompleted)
                     return;
 
-                Queue.Enqueue(() => {
-                    a?.Invoke();
-                    lock (Queue) {
-                        Enqueued.Remove(key);
-                    }
-                });
+                KeyedTasks[key] = Schedule(act).AsTask();
             }
-
-            Poke();
         }
 
-        public static MaybeAwaitable<T> Get<T>(Func<T> f) {
-            if (Thread.CurrentThread == Worker) {
-                return new MaybeAwaitable<T>(f());
+        [Obsolete("Use Schedule instead")] public static MaybeAwaitable<T> Get<T>(Func<T> f) => new MaybeAwaitable<T>(Schedule(f));
+        [Obsolete("Use Schedule instead")]
+        public static MaybeAwaitable<T> Get<T>(object key, Func<T> act) {
+            if (IsWorkerThread)
+                return new MaybeAwaitable<T>(act());
+
+            if (!KeyedTasks.TryGetValue(key, out Task task) || task.IsCompleted) {
+                lock (KeyedTasks) {
+                    if (!KeyedTasks.TryGetValue(key, out task) || task.IsCompleted)
+                        KeyedTasks[key] = task = Schedule(act).AsTask();
+                }
             }
 
-            MaybeAwaitable<T> awaitable;
-            lock (Queue) {
-                T result = default;
-                Task<T> proxy = new Task<T>(() => result);
-                awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
-
-                Queue.Enqueue(() => {
-                    result = f != null ? f.Invoke() : default;
-                    proxy.Start();
-                });
-            }
-
-            Poke();
-            return awaitable;
-        }
-
-        public static MaybeAwaitable<T> Get<T>(object key, Func<T> f) {
-            if (Thread.CurrentThread == Worker) {
-                return new MaybeAwaitable<T>(f());
-            }
-
-            MaybeAwaitable<T> awaitable;
-            lock (Queue) {
-                if (!Enqueued.Add(key))
-                    return (MaybeAwaitable<T>) EnqueuedWaiting[key];
-
-                T result = default;
-                Task<T> proxy = new Task<T>(() => result);
-                awaitable = new MaybeAwaitable<T>(proxy.GetAwaiter());
-                EnqueuedWaiting[key] = awaitable;
-
-                Queue.Enqueue(() => {
-                    result = f != null ? f.Invoke() : default;
-                    proxy.Start();
-                    lock (Queue) {
-                        EnqueuedWaiting.Remove(key);
-                        Enqueued.Remove(key);
-                    }
-                });
-            }
-
-            Poke();
-            return awaitable;
+            return new MaybeAwaitable<T>(((Task<T>) task).GetAwaiter());
         }
 
     }

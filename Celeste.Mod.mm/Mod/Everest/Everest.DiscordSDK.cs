@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -36,9 +36,9 @@ namespace Celeste.Mod {
             internal static void LoadRichPresenceIcons() {
                 new Task(() => {
                     JArray list;
-                    using (WebClient webClient = new CompressedWebClient()) {
-                        list = JsonConvert.DeserializeObject<JArray>(webClient.DownloadString(IconBaseURL + "/rich-presence-icons/list.json"));
-                    }
+                    using (HttpClient hc = new CompressedHttpClient())
+                        list = JsonConvert.DeserializeObject<JArray>(hc.GetStringAsync(IconBaseURL + "/rich-presence-icons/list.json").Result);
+
                     foreach (string element in list.Children<JValue>()) {
                         RichPresenceIcons.Add(element);
                     }

@@ -7,12 +7,14 @@ using Mono.Cecil.Cil;
 using Monocle;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
+using MonoMod.Utils;
 using NLua;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod.Core {
     /// <summary>
@@ -20,6 +22,7 @@ namespace Celeste.Mod.Core {
     /// </summary>
     public class CoreModule : EverestModule {
 
+        public const string NETCoreMetaName = "EverestCore";
         public static CoreModule Instance;
 
         public override Type SettingsType => typeof(CoreModuleSettings);
@@ -33,6 +36,8 @@ namespace Celeste.Mod.Core {
         public static CoreModuleSession Session => (CoreModuleSession) Instance._Session;
 
         private static ILHook nluaAssemblyGetTypesHook;
+        private static Hook nluaObjectTranslatorFindType;
+        private static Hook legacyXNAGameTickHook;
 
         public CoreModule() {
             Instance = this;
@@ -67,6 +72,10 @@ namespace Celeste.Mod.Core {
             Everest.Events.MainMenu.OnCreateButtons += CreateMainMenuButtons;
             Everest.Events.Level.OnCreatePauseMenuButtons += CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook = new ILHook(typeof(Lua).Assembly.GetType("NLua.Extensions.TypeExtensions").GetMethod("GetExtensionMethods"), patchNLuaAssemblyGetTypes);
+            nluaObjectTranslatorFindType = new Hook(typeof(ObjectTranslator).GetMethod("FindType", BindingFlags.NonPublic | BindingFlags.Instance), hookNLuaObjectTranslatorFindType);
+
+            if (Everest.CompatibilityMode == Everest.CompatMode.LegacyXNA)
+                legacyXNAGameTickHook = new Hook(typeof(Game).GetMethod("Tick"), hookLegacyXNAGameTick);
 
             foreach (KeyValuePair<string, LogLevel> logLevel in Settings.LogLevels) {
                 Logger.SetLogLevelFromSettings(logLevel.Key, logLevel.Value);
@@ -102,10 +111,10 @@ namespace Celeste.Mod.Core {
                 if (!(Engine.Scene is Level level))
                     return;
 
-                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), () => {
+                AssetReloadHelper.Do(Dialog.Clean("ASSETRELOADHELPER_RELOADINGMAP"), _ => {
                     AreaData.Areas[level.Session.Area.ID].Mode[(int) level.Session.Area.Mode].MapData.Reload();
-                });
-                AssetReloadHelper.ReloadLevel();
+                    return Task.CompletedTask;
+                }).ContinueWith(_ => AssetReloadHelper.ReloadLevel());
             };
         }
 
@@ -143,8 +152,41 @@ namespace Celeste.Mod.Core {
             while (cursor.TryGotoNext(instr => instr.MatchCallvirt<Assembly>("GetTypes"))) {
                 Logger.Log(LogLevel.Verbose, "core", $"Redirecting Assembly.GetTypes => Extensions.GetTypesSafe in {il.Method.FullName}, index {cursor.Index}");
                 cursor.Next.OpCode = OpCodes.Call;
-                cursor.Next.Operand = typeof(Extensions).GetMethod("GetTypesSafe");
+                cursor.Next.Operand = cursor.Module.ImportReference(typeof(Extensions).GetMethod("GetTypesSafe"));
             }
+        }
+
+        private Type hookNLuaObjectTranslatorFindType(Func<ObjectTranslator, string, Type> orig, ObjectTranslator translator, string typeName) {
+            if (orig(translator, typeName) is Type origType)
+                return origType;
+
+            // Try to find the type in mod assemblies
+            EverestModuleAssemblyContext._AllContextsLock.EnterReadLock();
+            try {
+                if (EverestModuleAssemblyContext._AllContexts
+                    .SelectMany(alc => alc?.Assemblies ?? Enumerable.Empty<Assembly>())
+                    .Select(asm => asm.GetType(typeName))
+                    .FirstOrDefault(type => type != null) is Type type
+                )
+                    return type;
+            } finally {
+                EverestModuleAssemblyContext._AllContextsLock.ExitReadLock();
+            }
+
+            return null;
+        }
+
+        private static readonly FastReflectionHelper.FastInvoker fGame_accumulatedElapsedTime = typeof(Game).GetField("accumulatedElapsedTime", BindingFlags.NonPublic | BindingFlags.Instance).GetFastInvoker();
+        private static readonly object[] fGame_accumulatedElapsedTime_ArgsCache = new object[1];
+        private void hookLegacyXNAGameTick(Action<Game> orig, Game game) {
+            orig(game);
+
+            // Add an additional bias value into the elapsed time accumulator to simulate XNA's snapping logic
+            // This is not completely accurate (lag frames and machine dependent offsets), but it's good enough for what we need
+            TimeSpan accumulatedElapsedTime = (TimeSpan) fGame_accumulatedElapsedTime(game, Array.Empty<object>());
+            accumulatedElapsedTime += TimeSpan.FromTicks(game.TargetElapsedTime.Ticks >> 6);
+            fGame_accumulatedElapsedTime_ArgsCache[0] = accumulatedElapsedTime;
+            fGame_accumulatedElapsedTime(game, fGame_accumulatedElapsedTime_ArgsCache);
         }
 
         public override void Unload() {
@@ -153,6 +195,10 @@ namespace Celeste.Mod.Core {
             Everest.Events.Level.OnCreatePauseMenuButtons -= CreatePauseMenuButtons;
             nluaAssemblyGetTypesHook?.Dispose();
             nluaAssemblyGetTypesHook = null;
+            nluaObjectTranslatorFindType?.Dispose();
+            nluaObjectTranslatorFindType = null;
+            legacyXNAGameTickHook?.Dispose();
+            legacyXNAGameTickHook = null;
         }
 
         public void CreateMainMenuButtons(OuiMainMenu menu, List<MenuButton> buttons) {
@@ -257,6 +303,12 @@ namespace Celeste.Mod.Core {
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_versionlist")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiVersionList>();
                 }));
+
+                TextMenu.Item setupLegacyRefBtn = new TextMenu.Button(Dialog.Clean("modoptions_coremodule_legacyref")).Pressed(() => {
+                    Everest.Updater.UpdateLegacyRef(OuiModOptions.Instance.Overworld.Goto<OuiLoggedProgress>());
+                });
+                menu.Insert(items.Count - 2, setupLegacyRefBtn);
+                setupLegacyRefBtn.AddDescription(menu, Dialog.Clean("modoptions_coremodule_legacyref_descr"));
 
                 menu.Insert(items.Count - 2, new TextMenu.Button(Dialog.Clean("modoptions_coremodule_modupdates")).Pressed(() => {
                     OuiModOptions.Instance.Overworld.Goto<OuiModUpdateList>();

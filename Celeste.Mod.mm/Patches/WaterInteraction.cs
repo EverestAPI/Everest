@@ -11,13 +11,13 @@ namespace Celeste {
         /// </summary>
         public Rectangle Bounds {
             get {
-                if (_bounds != null) {
-                    return new Rectangle((int) Entity.X + _bounds.X, (int) Entity.Y + _bounds.Y, _bounds.Width, _bounds.Height);
+                if (_bounds is Rectangle bounds) {
+                    return new Rectangle((int) Entity.X + bounds.X, (int) Entity.Y + bounds.Y, bounds.Width, bounds.Height);
                 } else
                     return new Rectangle((int) Entity.Center.X - 4, (int) Entity.Center.Y, 8, 16);
             }
         }
-        private Rectangle _bounds;
+        private Rectangle? _bounds = null;
 
 
         /// <summary>

@@ -1,4 +1,5 @@
 using Celeste.Mod.Entities;
+using Celeste.Mod.UI;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
@@ -7,6 +8,10 @@ using MonoMod;
 using MonoMod.Cil;
 using MonoMod.Utils;
 using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 
 namespace Monocle {
     class patch_Engine : Engine {
@@ -34,11 +39,45 @@ namespace Monocle {
             // no-op. MonoMod ignores this - we only need this to make the compiler shut up.
         }
 
+        private static readonly FieldInfo f_Game_RunApplication = typeof(Game).GetField("RunApplication", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo m_Game_RunLoop = typeof(Game).GetMethod("RunLoop", BindingFlags.NonPublic | BindingFlags.Instance);
+        private static readonly MethodInfo m_Game_AfterLoop = typeof(Game).GetMethod("AfterLoop", BindingFlags.NonPublic | BindingFlags.Instance);
+
         [MonoModReplace]
         public new void RunWithLogging() {
+            bool continueLoop = false;
+            restart:;
             try {
-                Run();
-            } catch (Exception e) {
+                if (!continueLoop)
+                    Run();
+                else {
+                    m_Game_RunLoop.Invoke(this, Array.Empty<object>());
+                    EndRun();
+                    m_Game_AfterLoop.Invoke(this, Array.Empty<object>());
+                }
+            } catch (Exception ex) {
+                if (continueLoop && ex is TargetInvocationException)
+                    ex = ex.InnerException;
+
+                // Try to handle the error by opening an in-game handler first (unless the exception occurred while exiting)
+                if ((bool) f_Game_RunApplication.GetValue(this)) {
+                    ExceptionDispatchInfo dispatch = CriticalErrorHandler.HandleCriticalError(ExceptionDispatchInfo.Capture(ex));
+                    if (dispatch == null)  {
+                        // Restart the update loop
+                        try {
+                            Monocle.Draw.SpriteBatch.End(); // This prevents hard crash cascades
+                        } catch {}
+
+                        (Scene as patch_Scene)?.ClearOnEndOfFrame();
+
+                        continueLoop = true;
+                        goto restart;
+                    }
+
+                    // The exception handling failed
+                    ex = dispatch.SourceException;
+                }
+
                 // Lazy loading can cause some issues, f.e. vanishing outlines on dust bunnies.
                 // It thus shouldn't be enabled automatically.
                 /*
@@ -48,7 +87,7 @@ namespace Monocle {
                 }
                 */
 
-                ErrorLog.Write(e);
+                ErrorLog.Write(ex);
                 ErrorLog.Open();
             }
         }
@@ -58,16 +97,12 @@ namespace Monocle {
         protected override extern void Update(GameTime gameTime);
 
         private static float GetTimeRateComponentMultiplier(Scene scene) {
-            if (scene == null)
-                return 1f;
-
-            float result = 1f;
-            foreach (TimeRateModifier trm in scene.Tracker.GetComponents<TimeRateModifier>()) {
-                if (trm.Enabled)
-                    result *= trm.Multiplier;
-            }
-
-            return result;
+            return scene?.Tracker.GetComponents<TimeRateModifier>()
+                                 .Cast<TimeRateModifier>()
+                                 .Where(trm => trm.Enabled)
+                                 .Select(trm => trm.Multiplier)
+                                 .Aggregate(1f, (acc, val) => acc * val)
+                   ?? 1;
         }
 
     }
@@ -104,19 +139,19 @@ namespace Monocle {
 }
 
 namespace MonoMod {
-
+    
     /// <summary>
     /// Patch the method to apply TimeRateModifier multipliers.
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchEngineUpdate))]
     class PatchEngineUpdateAttribute : Attribute { }
-
+    
     static partial class MonoModRules {
         public static void PatchEngineUpdate(ILContext context, CustomAttribute attrib) {
             TypeDefinition t_Engine = context.Method.DeclaringType;
             FieldReference f_scene = t_Engine.FindField("scene");
             MethodReference m_GetTimeRateComponentMultiplier = t_Engine.FindMethod("GetTimeRateComponentMultiplier");
-
+            
             ILCursor cursor = new ILCursor(context);
             // multiply time rate with GetTimeRateComponentMultiplier(scene)
             cursor.GotoNext(MoveType.After, instr => instr.MatchLdsfld("Monocle.Engine", "TimeRateB"),

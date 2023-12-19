@@ -104,9 +104,6 @@ namespace Celeste.Mod.UI {
                 // Everest should be updated to satisfy a dependency on Everest
                 bool shouldUpdateEverestManually = false;
 
-                // a mod is .NET Core Everest only
-                bool requiresNetCoreEverest = false;
-
                 // these mods are absent from the database
                 HashSet<string> modsNotFound = new HashSet<string>();
 
@@ -124,7 +121,7 @@ namespace Celeste.Mod.UI {
                     if (Everest.Loader.Delayed.Any(delayedMod => dependency.Name == delayedMod.Item1.Name)) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is installed but load is delayed, skipping");
 
-                    } else if (dependency.Name == "Everest") {
+                    } else if (dependency.Name == "Everest" || dependency.Name == Core.CoreModule.NETCoreMetaName) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"Everest should be updated");
                         shouldAutoExit = false;
 
@@ -139,13 +136,6 @@ namespace Celeste.Mod.UI {
                                 shouldUpdateEverestManually = true;
                             }
                         }
-                    } else if (dependency.Name == "EverestCore") {
-                        Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} requires .NET Core Everest");
-                        shouldUpdateEverestManually = true;
-                        everestVersionToInstall = null;
-                        requiresNetCoreEverest = true;
-                        shouldAutoExit = false;
-
                     } else if (tryUnblacklist(dependency, allModsInformation, modFilenamesToUnblacklist)) {
                         Logger.Log(LogLevel.Verbose, "OuiDependencyDownloader", $"{dependency.Name} is blacklisted, and should be unblacklisted instead");
 
@@ -233,9 +223,7 @@ namespace Celeste.Mod.UI {
                 }
 
                 // display all mods that couldn't be accounted for
-                if (requiresNetCoreEverest)
-                    LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_NEEDS_CORE_EVEREST"));
-                else if (shouldUpdateEverestManually)
+                if (shouldUpdateEverestManually)
                     LogLine(Dialog.Clean("DEPENDENCYDOWNLOADER_MUST_UPDATE_EVEREST"));
 
                 foreach (string mod in modsNotFound) {
@@ -525,7 +513,7 @@ namespace Celeste.Mod.UI {
         public void Exit() {
             task = null;
             Lines.Clear();
-            MainThreadHelper.Do(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
+            MainThreadHelper.Schedule(() => ((patch_OuiMainMenu) Overworld.GetUI<OuiMainMenu>())?.RebuildMainAndTitle());
             Audio.Play(SFX.ui_main_button_back);
             Overworld.Goto<OuiModOptions>();
         }
