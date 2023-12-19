@@ -2,6 +2,8 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod;
 using MonoMod.Cil;
+using MonoMod.InlineRT;
+using MonoMod.Utils;
 using System;
 
 namespace Celeste {
@@ -13,8 +15,11 @@ namespace Celeste {
 
         [MonoModIgnore]
         [PatchLavaRectResize]
-        public extern new void Resize(float width, float height, int step);
+        public new extern void Resize(float width, float height, int step);
 
+        [MonoModIgnore]
+        [PatchLavaRectRender]
+        public override extern void Render();
     }
 }
 
@@ -24,6 +29,12 @@ namespace MonoMod {
     /// </summary>
     [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLavaRectResize))]
     class PatchLavaRectResizeAttribute : Attribute { }
+    
+    /// <summary>
+    /// Patch LavaRect.Render to fix the half pixel offset issue on FNA. This is planned to be patched in Celeste 1.4.1.0!
+    /// </summary>
+    [MonoModCustomMethodAttribute(nameof(MonoModRules.PatchLavaRectRender))]
+    class PatchLavaRectRenderAttribute : Attribute { }
 
     static partial class MonoModRules {
 
@@ -66,6 +77,19 @@ namespace MonoMod {
                     // Abort once we hit the loop
                     break;
             }
+        }
+
+        public static void PatchLavaRectRender(ILContext context, CustomAttribute attrib) {
+            ILCursor cursor = new ILCursor(context);
+
+            MethodReference m_Vector2_op_Addition = null;
+            cursor.GotoNext(MoveType.After, instr => instr.MatchLdfld("Celeste.LavaRect", "Position"), instr => instr.MatchCall(out m_Vector2_op_Addition));
+
+            MethodReference m_Vector2_ctor = MonoModRule.Modder.Module.ImportReference(m_Vector2_op_Addition.DeclaringType.Resolve().FindMethod("System.Void Microsoft.Xna.Framework.Vector2::.ctor(System.Single,System.Single)")!);
+            cursor.EmitLdcR4(0.5f);
+            cursor.EmitDup();
+            cursor.EmitNewobj(m_Vector2_ctor);
+            cursor.EmitCall(m_Vector2_op_Addition);
         }
 
     }
