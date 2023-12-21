@@ -30,6 +30,7 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
+        // EverestSplash related, will be null when that is not loaded
         private static NamedPipeServerStream splashPipeServerStream;
         private static Task splashPipeServerStreamConnection;
 
@@ -37,12 +38,6 @@ namespace Celeste {
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
         public static void Main(string[] args) {
-            // Get the splash up and running asap
-            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash")) {
-                Process.Start("EverestSplash");
-                splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
-                splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
-            }
             if (Thread.CurrentThread.Name != "Main Thread") {
                 Thread.CurrentThread.Name = "Main Thread";
             }
@@ -125,6 +120,13 @@ namespace Celeste {
 
                     Environment.SetEnvironmentVariable(key, value);
                 }
+            }
+            
+            // Get the splash up and running asap
+            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash")) {
+                Process.Start("EverestSplash");
+                splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
+                splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
             }
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
