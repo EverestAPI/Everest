@@ -5,3 +5,6 @@
 [submodule "external/NLua"]
 	path = external/NLua
 	url = https://github.com/Popax21/NLua
+[submodule "external/SDL2-CS"]
+    path = external/SDL2-CS
+    url = https://github.com/flibitijibibo/SDL2-CS
