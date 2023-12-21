@@ -122,5 +122,21 @@ namespace Celeste.Mod {
             }
         }
 
+        /// <summary>
+        /// Performs the mod registration tasks that should be performed for every mod once, not for every instance of EverestModule or every DLL.
+        /// Called after the EverestModules have been registered.
+        /// </summary>
+        internal void RegisterMod() {
+            Everest.InvalidateInstallationHash();
+            Hash = Everest.GetChecksum(this);
+
+            // Audio banks are cached, and as such use the module's hash. We can only ingest those now.
+            if (patch_Audio.AudioInitialized) {
+                patch_Audio.IngestNewBanks();
+            }
+            
+            Everest.CheckDependenciesOfDelayedMods();
+        }
+
     }
 }

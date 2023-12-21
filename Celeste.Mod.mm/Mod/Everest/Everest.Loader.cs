@@ -486,7 +486,7 @@ namespace Celeste.Mod {
 
                 if (hasLuaModule) {
                     new LuaModule(meta).Register();
-                    return true;
+                    goto success;
                 }
 
                 // Try to load a module from a DLL
@@ -498,11 +498,13 @@ namespace Celeste.Mod {
                     }
 
                     LoadModAssembly(meta, asm);
-                    return true;
+                    goto success;
                 }
 
                 // Register a null module for content mods.
                 new NullModule(meta).Register();
+                success:
+                meta.RegisterMod();
                 return true;
             }
 
@@ -760,11 +762,21 @@ namespace Celeste.Mod {
                             patch_MapData.BackdropLoaders[id] = loader;
                         }
                     }
+
+                    // we already are in the overworld. Register new Ouis real quick!
+                    if (Engine.Instance != null && Engine.Scene is Overworld overworld && typeof(Oui).IsAssignableFrom(type) && !type.IsAbstract) {
+                        Logger.Log(LogLevel.Verbose, "core", $"Instantiating UI from {meta}: {type.FullName}");
+
+                        Oui oui = (Oui) Activator.CreateInstance(type);
+                        oui.Visible = false;
+                        overworld.Add(oui);
+                        overworld.UIs.Add(oui);
+                    }
                 }
                 // We should run the map data processors again if new berry types are registered, so that CoreMapDataProcessor assigns them checkpoint IDs and orders.
                 if (newStrawberriesRegistered && _Initialized) {
                     Logger.Log(LogLevel.Verbose, "core", $"Assembly {asm.FullName} for module {meta} has custom strawberries: triggering map reload.");
-                    Everest.TriggerModInitMapReload();
+                    TriggerModInitMapReload();
                 }
             }
 
