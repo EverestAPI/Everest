@@ -64,7 +64,7 @@ public static class EverestSplash {
 /// </summary>
 [SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name, PipeDirection.InOut);
+    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name, PipeDirection.In);
     private static readonly string WindowTitle = "Starting Everest...";
     private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static readonly int WindowWidth = 800;
