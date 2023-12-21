@@ -20,6 +20,9 @@ using System.Text;
 using System.Reflection;
 using System.Runtime.Versioning;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO.Pipes;
+using System.Threading.Tasks;
 
 namespace Celeste {
     class patch_Celeste : Celeste {
@@ -27,10 +30,19 @@ namespace Celeste {
         // We're effectively in Celeste, but still need to "expose" private fields to our mod.
         private bool firstLoad;
 
+        private static NamedPipeServerStream splashPipeServerStream;
+        private static Task splashPipeServerStreamConnection;
+
         [PatchCelesteMain]
         public static extern void orig_Main(string[] args);
         [MonoModPublic]
         public static void Main(string[] args) {
+            // Get the splash up and running asap
+            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash")) {
+                Process.Start("EverestSplash");
+                splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
+                splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
+            }
             if (Thread.CurrentThread.Name != "Main Thread") {
                 Thread.CurrentThread.Name = "Main Thread";
             }
@@ -332,6 +344,19 @@ https://discord.gg/6qjaePQ");
             patch_VirtualTexture.StopFastTextureLoading();
 
             Everest._ContentLoaded = true;
+        }
+
+        protected override void BeginRun() {
+            // This is as close as we can get to the showwindow call
+            base.BeginRun();
+            if (splashPipeServerStream != null) {
+                if (!splashPipeServerStreamConnection.IsCompleted) {
+                    Console.WriteLine("Could not connect to splash");
+                    return;
+                }
+                using StreamWriter sw = new(splashPipeServerStream);
+                sw.WriteLine("stop");
+            }
         }
 
         protected override void OnExiting(object sender, EventArgs args) {
