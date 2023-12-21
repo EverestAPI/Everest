@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <AssemblyName>EverestSplash</AssemblyName>
+    <RootNamespace>EverestSplash</RootNamespace>
+    <LangVersion>11</LangVersion>
+    <Nullable>enable</Nullable>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="../external/SDL2-CS/SDL2-CS.Core.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Content Include="SplashContent/*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    
+  </ItemGroup>
+
+</Project>
