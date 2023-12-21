@@ -121,12 +121,28 @@ namespace Celeste {
                     Environment.SetEnvironmentVariable(key, value);
                 }
             }
+
+            string BinaryOsSuffix() {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+                    return RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "-win64.exe" : "-win.exe";
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+                    return "-linux";
+                }
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                    return "-osx";
+                }
+
+                return "";
+            }
             
             // Get the splash up and running asap
-            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash")) {
-                Process.Start("EverestSplash");
+            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash"+BinaryOsSuffix())) {
+                Process.Start("EverestSplash" + BinaryOsSuffix());
                 splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
-                splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();
+                splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();    
             }
 
             if (args.Contains("--console") && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
