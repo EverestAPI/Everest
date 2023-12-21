@@ -54,7 +54,7 @@ public static class EverestSplash {
     /// </summary>
     public static void LaunchWindow() {
         EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
-        window.StartOnThread();
+        window.Run();
     }
 }
 
@@ -64,7 +64,7 @@ public static class EverestSplash {
 /// </summary>
 [SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name, PipeDirection.In);
+    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name, PipeDirection.InOut);
     private static readonly string WindowTitle = "Starting Everest...";
     private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static readonly int WindowWidth = 800;
@@ -90,8 +90,6 @@ public class EverestSplashWindow {
 
     private WindowInfo windowInfo;
 
-    private readonly Thread thread;
-
     public static EverestSplashWindow CreateNewWindow() {
         if (instance != null)
             throw new InvalidOperationException(EverestSplash.Name + "Window created multiple times!");
@@ -100,9 +98,6 @@ public class EverestSplashWindow {
 
     private EverestSplashWindow() {
         instance = this;
-        thread = new Thread(Run) {
-            Name = EverestSplash.Name
-        };
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             Console.WriteLine("Connected with splash!");
             using StreamReader sr = new(ClientPipe);
@@ -111,15 +106,11 @@ public class EverestSplashWindow {
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
+            Console.WriteLine("Event sent");
         });
     }
 
-    public void StartOnThread() {
-        if (thread.IsAlive) return; // Ignore extra starts
-        thread.Start();
-    }
-
-    private void Run() {
+    public void Run() { // Calling this multiple times is asking for trouble
         Init();
         
         LoadTextures();
