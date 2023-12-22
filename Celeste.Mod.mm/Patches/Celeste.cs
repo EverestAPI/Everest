@@ -122,25 +122,28 @@ namespace Celeste {
                 }
             }
 
-            string BinaryOsSuffix() {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                    return RuntimeInformation.ProcessArchitecture == Architecture.X64 ? "-win64.exe" : "-win.exe";
-                }
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                    return "-linux";
-                }
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-                    return "-osx";
-                }
-
-                return "";
-            }
-            
             // Get the splash up and running asap
-            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash"+BinaryOsSuffix())) {
-                Process.Start("EverestSplash" + BinaryOsSuffix());
+            if (!args.Contains("--disable-splash") && File.Exists("EverestSplash.dll")) {
+                Type everestSplashType = Assembly.LoadFile(Path.GetFullPath("EverestSplash.dll"))
+                    .GetType("EverestSplash.EverestSplash");
+                MethodInfo createWindowMethod = 
+                    everestSplashType?.GetMethod("CreateWindow", BindingFlags.Public | BindingFlags.Static);
+                MethodInfo runWindowMethod = 
+                    everestSplashType?.GetMethod("RunWindow", BindingFlags.Public | BindingFlags.Static); 
+                
+                // Work starts here!
+                using Barrier barrier = new(2);
+                // We require that the sdl_init happens synchronously but on the thread where its going to be used
+                // its not documented anywhere that this is dangerous, so danger is assumed
+                Thread thread = new(() => {
+                    object window = createWindowMethod?.Invoke(null, null); // Static & parameter-less
+                    // ReSharper disable once AccessToDisposedClosure
+                    barrier.SignalAndWait();
+                    runWindowMethod?.Invoke(null, new []{window});
+                });
+                thread.Start();
+                barrier.SignalAndWait();
+                
                 splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
                 splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();    
             }

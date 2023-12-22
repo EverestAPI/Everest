@@ -1,12 +1,11 @@
 ﻿using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Threading;
 using SDL2;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
-using Timer = System.Timers.Timer;
+using System.Timers;
 
 namespace EverestSplash;
 
@@ -21,38 +20,35 @@ namespace EverestSplash;
 public static class EverestSplash {
     public const string Name = "EverestSplash";
 
-    public static void Main(string[] args) {
-        for (int i = 0; i < args.Length; i++) {
-            if (args[i] == "--testmode") {
-                int delay = 5000;
-                if (args.Length > i + 1) {
-                    try {
-                        delay = int.Parse(args[i + 1]);
-                    } catch (Exception) {
-                        // NOOP: ignore invalid numbers
-                    }
-                }
-                Task.Run(async () => {
-                    NamedPipeServerStream server = new(Name, PipeDirection.Out);
-                    await server.WaitForConnectionAsync();
+    public static EverestSplashWindow CreateWindow() {
+        return EverestSplashWindow.CreateNewWindow();
+    }
 
-                    await Task.Delay(delay);
-
-                    await using (StreamWriter sw = new(server)) {
-                        await sw.WriteLineAsync("test");
-                    }
-                });
-                break;
-            }
-        }
-        
-        LaunchWindow();
+    public static void RunWindow(EverestSplashWindow window) {
+        window.Run();
     }
 
     /// <summary>
     /// Launches the window, to be closes via named pipes
     /// </summary>
     public static void LaunchWindow() {
+        EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
+        window.Run();
+    }
+
+    /// <summary>
+    /// Launches a new window, which will last s seconds
+    /// </summary>
+    /// <param name="s">Window lifespan</param>
+    public static void LaunchWindowSeconds(int s) {
+        Task.Run(async () => {
+            NamedPipeServerStream server = new(Name, PipeDirection.Out);
+            await server.WaitForConnectionAsync();
+            await Task.Delay(s*1000);
+            await using (StreamWriter sw = new(server)) {
+                await sw.WriteLineAsync("test");
+            }
+        });
         EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
         window.Run();
     }
@@ -99,20 +95,20 @@ public class EverestSplashWindow {
     private EverestSplashWindow() {
         instance = this;
         ClientPipe.ConnectAsync().ContinueWith(_ => {
-            Console.WriteLine("Connected with splash!");
+            Console.WriteLine("Splash connected!");
             using StreamReader sr = new(ClientPipe);
             sr.ReadLine(); // Once we read a line, send the stop event  (for now)
             SDL.SDL_Event userEvent = new() { // Fake an user event, we don't need anything fancier for now
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
             SDL.SDL_PushEvent(ref userEvent); // This is thread safe :)
-            Console.WriteLine("Event sent");
         });
+        
+        Init(); // Init right away
     }
 
     public void Run() { // Calling this multiple times is asking for trouble
-        Init();
-        
+        // init is done in constructor
         LoadTextures();
         
         HandleWindow();
@@ -262,7 +258,10 @@ public class EverestSplashWindow {
 
         SDL.SDL_DestroyWindow(windowInfo.window);
         
-        SDL.SDL_Quit();
+        // Do not call this under any circumstance when running together with everest
+        // It will mess with fna and cause a hangup/segfault
+        // I mean it makes sense, this un-initializes everything, something fna doesnt expect :P
+        // SDL.SDL_Quit();
 
         foreach (Timer timer in timers) {
             timer.Stop();

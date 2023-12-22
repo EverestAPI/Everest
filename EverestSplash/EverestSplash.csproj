@@ -1,76 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <AssemblyName>EverestSplash</AssemblyName>
     <RootNamespace>EverestSplash</RootNamespace>
     <LangVersion>11</LangVersion>
     <Nullable>enable</Nullable>
-    <OutputType>Exe</OutputType>
-    <UseAppHost>false</UseAppHost>
+    <OutputType>Library</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  
-  <ItemGroup>
-    <Compile Include="../external/SDL2-CS/src/SDL2.cs" />
-    <Compile Include="../external/SDL2-CS/src/SDL2_image.cs" />
-  </ItemGroup>
   
   <ItemGroup>
     <Content Include="SplashContent/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Folder Include="SDL2\" />
   </ItemGroup>
-
-  <!-- Resolve AppHosts -->
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
-    <PackageReference Include="runtime.win-x86.Microsoft.NETCore.DotNetAppHost" Version="7.0.3" GeneratePathProperty="true" ExcludeAssets="all" />
-    <PackageReference Include="runtime.win-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.3" GeneratePathProperty="true" ExcludeAssets="all" />
-    <PackageReference Include="runtime.linux-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.3" GeneratePathProperty="true" ExcludeAssets="all" />
-    <PackageReference Include="runtime.osx-x64.Microsoft.NETCore.DotNetAppHost" Version="7.0.3" GeneratePathProperty="true" ExcludeAssets="all" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <AppHost_win-x86>$(Pkgruntime_win-x86_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x86\native\apphost.exe</AppHost_win-x86>
-    <AppHost_win-x64>$(Pkgruntime_win-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\win-x64\native\apphost.exe</AppHost_win-x64>
-    <AppHost_linux-x64>$(Pkgruntime_linux-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\linux-x64\native\apphost</AppHost_linux-x64>
-    <AppHost_osx-x64>$(Pkgruntime_osx-x64_Microsoft_NETCore_DotNetAppHost)\runtimes\osx-x64\native\apphost</AppHost_osx-x64>
-  </PropertyGroup>
-
-  <!-- Include AppHosts in the build (so that MiniInstaller can bind them for the Celeste executable) -->
-  <ItemGroup>
-    <Content Include="$(AppHost_win-x86)" TargetPath="apphosts\win.x86.exe" CopyToOutputDirectory="always" />
-    <Content Include="$(AppHost_win-x64)" TargetPath="apphosts\win.x64.exe" CopyToOutputDirectory="always" />
-    <Content Include="$(AppHost_linux-x64)" TargetPath="apphosts\linux" CopyToOutputDirectory="always" />
-    <Content Include="$(AppHost_osx-x64)" TargetPath="apphosts\osx" CopyToOutputDirectory="always" />
-  </ItemGroup>
-
-  <!-- Bind AppHosts for MiniInstaller itself -->
-  <Target Name="IncludeAppHosts" BeforeTargets="AssignTargetPaths">
-    <PropertyGroup>
-      <AppHostIntermediatePath_win-x86>$(IntermediateOutputPath)\EverestSplash-win.exe</AppHostIntermediatePath_win-x86>
-      <AppHostIntermediatePath_win-x64>$(IntermediateOutputPath)\EverestSplash-win64.exe</AppHostIntermediatePath_win-x64>
-      <AppHostIntermediatePath_linux-x64>$(IntermediateOutputPath)\EverestSplash-linux</AppHostIntermediatePath_linux-x64>
-      <AppHostIntermediatePath_osx-x64>$(IntermediateOutputPath)\EverestSplash-osx</AppHostIntermediatePath_osx-x64>
-    </PropertyGroup>
-
-    <ItemGroup>
-      <Content Include="$(AppHostIntermediatePath_win-x86)" TargetPath="EverestSplash-win.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-      <Content Include="$(AppHostIntermediatePath_win-x64)" TargetPath="EverestSplash-win64.exe" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-      <Content Include="$(AppHostIntermediatePath_linux-x64)" TargetPath="EverestSplash-linux" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-      <Content Include="$(AppHostIntermediatePath_osx-x64)" TargetPath="EverestSplash-osx" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
-      <Content Include="app.manifest" TargetPath="EverestSplash-win.exe.manifest" CopyToOutputDirectory="always" CopyToPublishDirectory="always" /> <!-- Needed as otherwise Windows will think we're an actual installer which requires admin privileges -->
-    </ItemGroup>
-  </Target>
-
-  <Target Name="BindAppHosts" AfterTargets="CoreCompile" DependsOnTargets="IncludeAppHosts">
-    <Message Importance="High" Text="Binding MiniInstaller AppHosts..." />
-
-    <CreateAppHost AppHostSourcePath="$(AppHost_win-x86)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x86)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-    <CreateAppHost AppHostSourcePath="$(AppHost_win-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_win-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-    <CreateAppHost AppHostSourcePath="$(AppHost_linux-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_linux-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-    <CreateAppHost AppHostSourcePath="$(AppHost_osx-x64)" AppHostDestinationPath="$(AppHostIntermediatePath_osx-x64)" AppBinaryName="$(AssemblyName)$(TargetExt)" IntermediateAssembly="@(IntermediateAssembly->'%(FullPath)')" />
-  </Target> 
-
 </Project>
