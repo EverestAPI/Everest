@@ -4,6 +4,7 @@ using System.IO.Pipes;
 using SDL2;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Timers;
 
@@ -65,16 +66,20 @@ public class EverestSplashWindow {
     private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static readonly int WindowWidth = 800;
     private static readonly TextureInfo EverestLogoTexture = new() {
-        path = "SplashContent/everest.png"
+        path = "SplashContent/everest.png",
+        embeddedResourcePath = "EverestSplash.SplashContent.everest.png" 
     };
     private static readonly TextureInfo StartingEverestTexture = new() {
-        path = "SplashContent/starting_everest_text.png"
+        path = "SplashContent/starting_everest_text.png",
+        embeddedResourcePath = "EverestSplash.SplashContent.starting_everest_text.png" 
     };
     private static readonly TextureInfo WheelTexture = new() {
-        path = "SplashContent/splash_wheel_blur.png"
+        path = "SplashContent/splash_wheel_blur.png",
+        embeddedResourcePath = "EverestSplash.SplashContent.splash_wheel_blur.png" 
     };
     private static readonly TextureInfo BgGradientTexture = new() {
-        path = "SplashContent/bg_gradient_2x.png"
+        path = "SplashContent/bg_gradient_2x.png",
+        embeddedResourcePath = "EverestSplash.SplashContent.bg_gradient_2x.png" 
     };
     private static readonly Color bgDark = new() {  // Everest's dark purple color
         R = 59, G = 45, B = 74, A = 255,
@@ -270,9 +275,43 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
-        IntPtr texture = SDL_image.IMG_LoadTexture(windowInfo.renderer, sprite.path);
+        return sprite.embeddedResourcePath == "" ? 
+            LoadTextureFromPath(sprite.path) : 
+            LoadTextureFromEmbeddedResource(sprite.embeddedResourcePath);
+    }
+
+    private IntPtr LoadTextureFromPath(string path) {
+        IntPtr texture = SDL_image.IMG_LoadTexture(windowInfo.renderer, path);
         if (texture.Equals(IntPtr.Zero)) {
-            Console.WriteLine(SDL_image.IMG_GetError());
+            throw new Exception(SDL_image.IMG_GetError());
+        }
+        return texture;
+    }
+
+    private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
+        Stream? stream = GetType().Assembly.GetManifestResourceStream(embeddedResourcePath);
+        if (stream == null) {
+            throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
+        }
+
+        IntPtr texture;
+        unsafe {
+            IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
+            Span<byte> data = new((byte*)data_ptr, (int)stream.Length);
+            int read = stream.Read(data);
+            if (read == 0) { // Basic error checking, we don't really know how many should we read anyways
+                throw new InvalidDataException(
+                    $"Could not read embedded resource stream for resource: {embeddedResourcePath}");
+            }
+
+            IntPtr rwData;
+            fixed (byte* data_bytes = data) {
+                rwData = SDL.SDL_RWFromConstMem(new IntPtr(data_bytes), read);
+            }
+            texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
+        }
+        if (texture.Equals(IntPtr.Zero)) {
+            throw new Exception(SDL_image.IMG_GetError());
         }
         return texture;
     }
@@ -297,7 +336,9 @@ public class EverestSplashWindow {
     }
 
     private struct TextureInfo {
-        public string path;
+        public string path = "";
+        public string embeddedResourcePath = "";
+        public TextureInfo() {}
     }
 
     public struct Color {

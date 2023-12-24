@@ -10,9 +10,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Content Include="SplashContent/*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="SplashContent/**" />
     <Folder Include="SDL2\" />
   </ItemGroup>
 </Project>
