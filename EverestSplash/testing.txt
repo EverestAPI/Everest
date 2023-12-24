@@ -1,0 +1,7 @@
+In order to modify and test this module it may be beneficial to detach it 
+from Everest and work on it in a separate environment.
+Consequently, to run this project you could just, if you ide supports it, 
+run the `LaunchWindow` method. Otherwise "hacking" it and adding a `Main`
+method and changing the output type to `Exe` is also valid for developing,
+just make sure to revert it. Finally, theres tools that are capable of
+loading a dll and running a method from it via cli arguments.
