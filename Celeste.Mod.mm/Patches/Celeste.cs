@@ -144,7 +144,7 @@ namespace Celeste {
                 thread.Start();
                 barrier.SignalAndWait();
                 
-                splashPipeServerStream = new NamedPipeServerStream("EverestSplash", PipeDirection.Out);
+                splashPipeServerStream = new NamedPipeServerStream("EverestSplash");
                 splashPipeServerStreamConnection = splashPipeServerStream.WaitForConnectionAsync();    
             }
 
@@ -375,8 +375,13 @@ https://discord.gg/6qjaePQ");
                     Console.WriteLine("Could not connect to splash");
                     return;
                 }
-                using StreamWriter sw = new(splashPipeServerStream);
+                StreamWriter sw = new(splashPipeServerStream);
                 sw.WriteLine("stop");
+                sw.Flush();
+                StreamReader sr = new(splashPipeServerStream);
+                // yes, this, inevitably, slows down the everest boot process, but, see EverestSplashWindow.FeedBack
+                // for mor info
+                sr.ReadLine();
             }
         }
 

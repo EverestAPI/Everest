@@ -37,6 +37,10 @@ public static class EverestSplash {
         window.Run();
     }
 
+    public static void LaunchWindowDefault() {
+        LaunchWindowSeconds(5);
+    }
+
     /// <summary>
     /// Launches a new window, which will last s seconds
     /// </summary>
@@ -61,7 +65,7 @@ public static class EverestSplash {
 /// </summary>
 [SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name, PipeDirection.In);
+    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
     private static readonly string WindowTitle = "Starting Everest...";
     private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static readonly int WindowWidth = 800;
@@ -100,9 +104,13 @@ public class EverestSplashWindow {
     private EverestSplashWindow() {
         instance = this;
         ClientPipe.ConnectAsync().ContinueWith(_ => {
-            Console.WriteLine("Splash connected!");
-            using StreamReader sr = new(ClientPipe);
-            sr.ReadLine(); // Once we read a line, send the stop event  (for now)
+            try {
+                StreamReader sr = new(ClientPipe);
+                sr.ReadLine(); // Once we read a line, send the stop event  (for now)
+            } catch (Exception e) {
+                Console.WriteLine(e);
+                // We want to exit if a read error occured, we must not be around when FNA's main loop starts
+            }
             SDL.SDL_Event userEvent = new() { // Fake an user event, we don't need anything fancier for now
                 type = SDL.SDL_EventType.SDL_USEREVENT,
             };
@@ -119,6 +127,8 @@ public class EverestSplashWindow {
         HandleWindow();
         
         Cleanup();
+        
+        FeedBack();
     }
 
     private void Init() {
@@ -270,8 +280,21 @@ public class EverestSplashWindow {
 
         foreach (Timer timer in timers) {
             timer.Stop();
+            timer.Dispose();
         }
         timers.Clear();
+    }
+
+    /// <summary>
+    /// Notifies the server that we're done.
+    /// When running this script as a thread with another sdl app loading up, which is the case of Everest with Celeste
+    /// The event loop from this program is going to mess with the one from the main app so we *must* have exited before
+    /// that one starts because, in the case where that other loop eats up our stop event, disaster will strike.
+    /// </summary>
+    private void FeedBack() {
+        StreamWriter sw = new(ClientPipe);
+        sw.WriteLine("done");
+        sw.Flush();
     }
 
     private IntPtr LoadTexture(TextureInfo sprite) {
