@@ -538,6 +538,7 @@ namespace MiniInstaller {
                     libDstDir = Path.Combine(PathGame, "lib64-linux");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "Celeste.exe.config"), "linux", dllMap, "lib{0}.so");
                     ParseMonoNativeLibConfig(Path.Combine(PathOrig, "FNA.dll.config"), "linux", dllMap, "lib{0}.so");
+                    dllMap.Add("libSDL2_image-2.0.so.0", "libSDL2_image.so"); // Required by EverestSplash
                 } break;
                 case InstallPlatform.MacOS:{
                     // Setup MacOS native libs
