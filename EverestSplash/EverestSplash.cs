@@ -47,12 +47,17 @@ public static class EverestSplash {
     /// <param name="s">Window lifespan</param>
     public static void LaunchWindowSeconds(int s) {
         Task.Run(async () => {
-            NamedPipeServerStream server = new(Name, PipeDirection.Out);
+            NamedPipeServerStream server = new(Name);
             await server.WaitForConnectionAsync();
+            Console.WriteLine($"Running for {s} seconds...");
             await Task.Delay(s*1000);
-            await using (StreamWriter sw = new(server)) {
-                await sw.WriteLineAsync("test");
-            }
+            StreamWriter sw = new(server);
+            await sw.WriteLineAsync("stop");
+            await sw.FlushAsync();
+            Console.WriteLine("Close request sent");
+            StreamReader sr = new(server);
+            await sr.ReadLineAsync();
+            Console.WriteLine("Close confirmation received");
         });
         EverestSplashWindow window = EverestSplashWindow.CreateNewWindow();
         window.Run();
@@ -84,6 +89,10 @@ public class EverestSplashWindow {
     private static readonly TextureInfo BgGradientTexture = new() {
         path = "SplashContent/bg_gradient_2x.png",
         embeddedResourcePath = "EverestSplash.SplashContent.bg_gradient_2x.png" 
+    };
+    private static readonly TextureInfo AppIcon = new() {
+        path = "./Celeste-icon.png",
+        embeddedResourcePath = "EverestSplash.Celeste-icon.png"
     };
     private static readonly Color bgDark = new() {  // Everest's dark purple color
         R = 59, G = 45, B = 74, A = 255,
@@ -147,8 +156,12 @@ public class EverestSplashWindow {
             SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
-        SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1" );
+        SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
         SDL.SDL_SetWindowBordered(window, SDL.SDL_bool.SDL_FALSE);
+
+        IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.embeddedResourcePath);
+        IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
+        SDL.SDL_SetWindowIcon(window, appIconSurface);
     }
 
     private void LoadTextures() {
@@ -185,7 +198,6 @@ public class EverestSplashWindow {
             wheelAngle += 0.1;
             // No value reset, its an angle anyways
         });
-        
         
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
@@ -312,15 +324,23 @@ public class EverestSplashWindow {
     }
 
     private IntPtr LoadTextureFromEmbeddedResource(string embeddedResourcePath) {
+        IntPtr rwData = LoadRWopsFromEmbeddedResource(embeddedResourcePath);
+        IntPtr texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
+        if (texture.Equals(IntPtr.Zero)) {
+            throw new Exception(SDL_image.IMG_GetError());
+        }
+        return texture;
+    }
+
+    private IntPtr LoadRWopsFromEmbeddedResource(string embeddedResourcePath) {
         Stream? stream = GetType().Assembly.GetManifestResourceStream(embeddedResourcePath);
         if (stream == null) {
             throw new FileNotFoundException($"Cannot find sprite with path as embeddedResource: {embeddedResourcePath}");
         }
 
-        IntPtr texture;
         unsafe {
             IntPtr data_ptr = Marshal.AllocHGlobal((int) (stream.Length * sizeof(byte)));
-            Span<byte> data = new((byte*)data_ptr, (int)stream.Length);
+            Span<byte> data = new((byte*) data_ptr, (int) stream.Length);
             int read = stream.Read(data);
             if (read == 0) { // Basic error checking, we don't really know how many should we read anyways
                 throw new InvalidDataException(
@@ -331,12 +351,9 @@ public class EverestSplashWindow {
             fixed (byte* data_bytes = data) {
                 rwData = SDL.SDL_RWFromConstMem(new IntPtr(data_bytes), read);
             }
-            texture = SDL_image.IMG_LoadTexture_RW(windowInfo.renderer, rwData, (int)SDL.SDL_bool.SDL_TRUE);
+
+            return rwData;
         }
-        if (texture.Equals(IntPtr.Zero)) {
-            throw new Exception(SDL_image.IMG_GetError());
-        }
-        return texture;
     }
 
     private List<Timer> timers = new();

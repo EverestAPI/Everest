@@ -11,6 +11,7 @@
   
   <ItemGroup>
     <EmbeddedResource Include="SplashContent/**" />
+    <EmbeddedResource Include="../lib-stripped/Celeste-icon.png" />
     <Folder Include="SDL2\" />
   </ItemGroup>
 </Project>
