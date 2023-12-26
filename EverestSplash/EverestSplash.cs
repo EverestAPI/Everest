@@ -70,7 +70,6 @@ public static class EverestSplash {
 /// </summary>
 [SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
-    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
     private static readonly string WindowTitle = "Starting Everest...";
     private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
     private static readonly int WindowWidth = 800;
@@ -102,7 +101,10 @@ public class EverestSplashWindow {
     };
     private static EverestSplashWindow? instance;
 
+    
+    private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
     private WindowInfo windowInfo;
+    private readonly FNAFixes fnaFixes = new();
 
     public static EverestSplashWindow CreateNewWindow() {
         if (instance != null)
@@ -162,6 +164,16 @@ public class EverestSplashWindow {
         IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.embeddedResourcePath);
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
         SDL.SDL_SetWindowIcon(window, appIconSurface);
+        
+        // Fna fixes
+        // FNA disables the cursor on game creation and when creating the window
+        fnaFixes.Add(
+            new FNAFixes.FNAFix(
+            () => SDL.SDL_ShowCursor(SDL.SDL_QUERY) == SDL.SDL_DISABLE,
+            () => SDL.SDL_ShowCursor(SDL.SDL_ENABLE),
+            () => SDL.SDL_ShowCursor(SDL.SDL_DISABLE)
+            )
+        );
     }
 
     private void LoadTextures() {
@@ -200,6 +212,8 @@ public class EverestSplashWindow {
         });
         
         while (true) { // while true :trolloshiro: (on a serious note, for our use case its fineee :))
+            fnaFixes.CheckAndFix();
+            
             while (SDL.SDL_PollEvent(out SDL.SDL_Event e) != 0) {
                 // An SDL_USEREVENT is sent when the splash receives the quit command
                 if (e.type is SDL.SDL_EventType.SDL_QUIT or SDL.SDL_EventType.SDL_USEREVENT) {
@@ -276,6 +290,8 @@ public class EverestSplashWindow {
     }
 
     private void Cleanup() {
+        fnaFixes.Dispose(); // Do this asap, theres no reason to (theoretically), but it wont hurt
+        
         SDL.SDL_DestroyTexture(windowInfo.everestLogoTexture);
         SDL.SDL_DestroyTexture(windowInfo.startingEverestTexture);
         SDL.SDL_DestroyTexture(windowInfo.wheelTexture);
@@ -381,11 +397,11 @@ public class EverestSplashWindow {
         public TextureInfo() {}
     }
 
-    public struct Color {
+    private struct Color {
         public byte R, G, B, A;
     }
 
-    public static Color LerpColor(Color s, Color e, float p) {
+    private static Color LerpColor(Color s, Color e, float p) {
         return new Color {
             R = LerpByte(s.R, e.R, p), 
             G = LerpByte(s.G, e.G, p), 
@@ -394,7 +410,38 @@ public class EverestSplashWindow {
         };
     }
 
-    public static byte LerpByte(byte s, byte e, float p) {
+    private static byte LerpByte(byte s, byte e, float p) {
         return (byte)(s + (e - s) * p);
+    }
+
+    /// <summary>
+    /// Simple class to manage fna fixes and modifications and easily undo them
+    /// </summary>
+    public class FNAFixes : IDisposable {
+        private readonly List<FNAFix> fixes = new();
+
+        public void Add(FNAFix fnaFix) {
+            fixes.Add(fnaFix);
+        }
+
+        public void CheckAndFix() {
+            foreach (FNAFix fix in fixes) {
+                if (fix.Predicate()) {
+                    fix.HasRan();
+                    fix.Fix();
+                }
+            }
+        }
+
+        public void Dispose() {
+            foreach (FNAFix fix in fixes) {
+                if (fix.HasFixed)
+                    fix.Undo();
+            }
+        }
+        public record FNAFix(Func<bool> Predicate, Action Fix, Action Undo) {
+            public bool HasFixed { get; private set; }
+            public void HasRan() => HasFixed = true;
+        }
     }
 }
