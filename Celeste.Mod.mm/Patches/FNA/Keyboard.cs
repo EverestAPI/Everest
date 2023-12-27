@@ -1,6 +1,7 @@
 using MonoMod;
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
@@ -8,7 +9,7 @@ using System.Runtime.Versioning;
 
 namespace Microsoft.Xna.Framework.Input {
     [GameDependencyPatch("FNA")]
-    struct patch_Keyboard {
+    static class patch_Keyboard {
 
         // FNA's keyboard input driver is rather jank (1 frame latency for IMEs
         // even when disabled, not registering all keys, etc.)
@@ -50,7 +51,8 @@ namespace Microsoft.Xna.Framework.Input {
                 // > virtual key. If the high-order bit is 1, the key is down;
                 // > otherwise, it is up.
                 if ((state[i] & 0x80) != 0)
-                    KeyboardState_InternalSetKey(ref kbState, (Keys) i);
+                    // We love unsafe magic :peaceline:
+                    Unsafe.As<KeyboardState, patch_KeyboardState>(ref kbState).SetKey((Keys) i);
             }
             return kbState;
         }
@@ -66,6 +68,18 @@ namespace Microsoft.Xna.Framework.Input {
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll", SetLastError = true)]
         private static extern unsafe bool GetKeyboardState(byte* lpKeyState);
+
+    }
+
+    [GameDependencyPatch("FNA")]
+    struct patch_KeyboardState {
+
+        // The FNA-internal method is private - we need to expose it internally
+
+        [MonoModIgnore]
+        private extern void InternalSetKey(Keys key);
+
+        internal void SetKey(Keys key) => InternalSetKey(key);
 
     }
 }
