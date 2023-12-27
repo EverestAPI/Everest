@@ -133,10 +133,16 @@ namespace Celeste {
                 
                 // Work starts here!
                 using Barrier barrier = new(2);
+                string targetRenderer = "";
+                for (int i = 0; i < args.Length; i++) { // The splash will use the same renderer as fna
+                    if (args[i] == "--graphics" && args.Length > i + 1) {
+                        targetRenderer = args[i + 1];
+                    }
+                }
                 // We require that the sdl_init happens synchronously but on the thread where its going to be used
                 // its not documented anywhere that this is dangerous, so danger is assumed
                 Thread thread = new(() => {
-                    object window = createWindowMethod?.Invoke(null, null); // Static & parameter-less
+                    object window = createWindowMethod?.Invoke(null, new object[]{targetRenderer});
                     // ReSharper disable once AccessToDisposedClosure
                     barrier.SignalAndWait();
                     runWindowMethod?.Invoke(null, new []{window});

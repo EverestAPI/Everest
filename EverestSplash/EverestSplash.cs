@@ -21,8 +21,13 @@ namespace EverestSplash;
 public static class EverestSplash {
     public const string Name = "EverestSplash";
 
-    public static EverestSplashWindow CreateWindow() {
-        return EverestSplashWindow.CreateNewWindow();
+    /// <summary>
+    /// This method requires always the targetRenderer, for ease of use with reflection
+    /// </summary>
+    /// <param name="targetRenderer">the sdl2 renderer to use, "" is any renderer</param>
+    /// <returns>The window created</returns>
+    public static EverestSplashWindow CreateWindow(string targetRenderer) {
+        return EverestSplashWindow.CreateNewWindow(targetRenderer);
     }
 
     public static void RunWindow(EverestSplashWindow window) {
@@ -105,15 +110,17 @@ public class EverestSplashWindow {
     private readonly NamedPipeClientStream ClientPipe = new(".", EverestSplash.Name);
     private WindowInfo windowInfo;
     private readonly FNAFixes fnaFixes = new();
+    private readonly string targetRenderer;
 
-    public static EverestSplashWindow CreateNewWindow() {
+    public static EverestSplashWindow CreateNewWindow(string targetRenderer = "") {
         if (instance != null)
             throw new InvalidOperationException(EverestSplash.Name + "Window created multiple times!");
-        return new EverestSplashWindow();
+        return new EverestSplashWindow(targetRenderer);
     }
 
-    private EverestSplashWindow() {
+    private EverestSplashWindow(string targetRenderer) {
         instance = this;
+        this.targetRenderer = targetRenderer;
         ClientPipe.ConnectAsync().ContinueWith(_ => {
             try {
                 StreamReader sr = new(ClientPipe);
@@ -151,15 +158,13 @@ public class EverestSplashWindow {
         SDL_image.IMG_Init(SDL_image.IMG_InitFlags.IMG_INIT_PNG);
 
         IntPtr window = SDL.SDL_CreateWindow(WindowTitle, SDL.SDL_WINDOWPOS_CENTERED, SDL.SDL_WINDOWPOS_CENTERED,
-            WindowWidth, WindowHeight, SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
-        // TODO: use same engine as fna for rendering?
+            WindowWidth, WindowHeight, SDL.SDL_WindowFlags.SDL_WINDOW_BORDERLESS | SDL.SDL_WindowFlags.SDL_WINDOW_HIDDEN);
 
-        IntPtr renderer = SDL.SDL_CreateRenderer(window, -1,
+        IntPtr renderer = SDL.SDL_CreateRenderer(window, GetSDLRendererIdx(),
             SDL.SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL.SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
         windowInfo = new WindowInfo() { window = window, renderer = renderer, };
         SDL.SDL_SetHint( SDL.SDL_HINT_RENDER_SCALE_QUALITY, "1");
-        SDL.SDL_SetWindowBordered(window, SDL.SDL_bool.SDL_FALSE);
 
         IntPtr appIconRWops = LoadRWopsFromEmbeddedResource(AppIcon.embeddedResourcePath);
         IntPtr appIconSurface = SDL_image.IMG_Load_RW(appIconRWops, (int) SDL.SDL_bool.SDL_TRUE); // Make sure to always free the RWops
@@ -370,6 +375,20 @@ public class EverestSplashWindow {
 
             return rwData;
         }
+    }
+
+    private int GetSDLRendererIdx() {
+        if (targetRenderer == "") // empty means any driver
+            return -1;
+        int renderDrivers = SDL.SDL_GetNumRenderDrivers();
+        for (int i = 0; i < renderDrivers; i++) {
+            SDL.SDL_GetRenderDriverInfo(i, out SDL.SDL_RendererInfo info);
+            if (Marshal.PtrToStringUTF8(info.name) == targetRenderer.ToLower()) {
+                return i;
+            }
+        }
+        Console.WriteLine($"Renderer target: {targetRenderer} not found or available");
+        return -1; // requested renderer is not available, use anything
     }
 
     private List<Timer> timers = new();
