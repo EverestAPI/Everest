@@ -126,7 +126,7 @@ namespace Celeste.Mod {
                         Logger.Log(LogLevel.Warn, "discord-game-sdk", "Discord was shut down! Disposing Game SDK.");
                         Dispose();
                     } else {
-                        throw e;
+                        throw;
                     }
                 }
             }
