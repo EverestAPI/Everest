@@ -76,8 +76,8 @@ public static class EverestSplash {
 [SuppressMessage("Performance", "CA1806:Do not ignore method results")]
 public class EverestSplashWindow {
     private static readonly string WindowTitle = "Starting Everest...";
-    private static readonly int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
-    private static readonly int WindowWidth = 800;
+    private static int WindowHeight = 340; // Currently hardcoded, TODO: fractional scaling
+    private static int WindowWidth = 800;
     private static readonly TextureInfo EverestLogoTexture = new() {
         path = "SplashContent/everest.png",
         embeddedResourcePath = "EverestSplash.SplashContent.everest.png" 
@@ -136,6 +136,7 @@ public class EverestSplashWindow {
         });
         
         Init(); // Init right away
+
     }
 
     public void Run() { // Calling this multiple times is asking for trouble
@@ -150,6 +151,16 @@ public class EverestSplashWindow {
     }
 
     private void Init() {
+        // Before init, check if we're on gamescope
+        string? xdgCurrentDesk = Environment.GetEnvironmentVariable("XDG_CURRENT_DESKTOP");
+        if (xdgCurrentDesk == "gamescope") {
+            // If so, default to 720p on 16:9
+            WindowHeight = 720;
+            WindowWidth = (int) (720.0 * 16 / 9); // 1280
+            // WindowHeight = 1280;
+            // WindowWidth = 720;
+        }
+        
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_EVENTS) != 0) { // Init as little as we can, we need to go fast
             // TODO: Proper error handling on the thread
             throw new Exception("Failed to create SDL window!");
@@ -195,6 +206,12 @@ public class EverestSplashWindow {
     }
 
     private void HandleWindow() {
+        // Query all the textures in one go, as those cannot change
+        SDL.SDL_QueryTexture(windowInfo.bgGradientTexture, out _, out _, out int bgW, out int bgH);
+        SDL.SDL_QueryTexture(windowInfo.wheelTexture, out _, out _, out int wheelW, out int wheelH);
+        SDL.SDL_QueryTexture(windowInfo.everestLogoTexture, out _, out _, out int logoW, out int logoH);
+        SDL.SDL_QueryTexture(windowInfo.startingEverestTexture, out _, out _, out int textW, out int allTextH);
+        
         SDL.SDL_ShowWindow(windowInfo.window);
 
         // Animation values, SDL timers are a pain to use, this is easier
@@ -202,12 +219,13 @@ public class EverestSplashWindow {
         AnimTimer(500, () => {
             startEverestSpriteIdx = (startEverestSpriteIdx + 1) % 3/*startEverestSpriteCount*/;
         });
-        float bgFloat = Random.Shared.NextSingle();
-        int bgBloomPos = -WindowHeight;
+        float bgFloat = Random.Shared.NextSingle(); 
+        int realBgH = bgH * WindowWidth / bgW;
+        int bgBloomPos = -realBgH/2;
         AnimTimer(16, () => {
             bgBloomPos += 1;
-            if (bgBloomPos > WindowHeight) {
-                bgBloomPos = -WindowHeight;
+            if (bgBloomPos > realBgH/2) {
+                bgBloomPos = -realBgH/2;
             }
         });
         double wheelAngle = 0;
@@ -236,15 +254,18 @@ public class EverestSplashWindow {
                 x = 0,
                 y = bgBloomPos,
                 w = WindowWidth,
-                h = WindowHeight*2,
+                h = realBgH, // We calculated this earlier for the animation
             };
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
             // Draw another one above because it tiles nicely
-            bgRect.y = bgBloomPos - WindowHeight * 2;
+            bgRect.y = bgBloomPos - bgRect.h;
+            SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
+            // Finally, draw another one below the first one (mostly for 16:9 mode)
+            bgRect.y = bgBloomPos + bgRect.h;
             SDL.SDL_RenderCopy(windowInfo.renderer, windowInfo.bgGradientTexture, IntPtr.Zero, ref bgRect);
             
+            
             // Background wheel
-            SDL.SDL_QueryTexture(windowInfo.wheelTexture, out _, out _, out int wheelW, out int wheelH);
             float scale = (float) WindowWidth / wheelW;
             SDL.SDL_Rect wheelRect = new() {
                 x = (int)(-wheelW*scale/2),
@@ -260,7 +281,6 @@ public class EverestSplashWindow {
             const int LRmargin = 32*2; // Left right margin
             const int Tmargin = 32; // Top margin
             // Bottom margin is missing since that one is adjusted via window height
-            SDL.SDL_QueryTexture(windowInfo.everestLogoTexture, out _, out _, out int logoW, out int logoH);
             int realWindowWidth = WindowWidth - LRmargin*2; // apply at both sides
             SDL.SDL_Rect everestLogoRect = new() {
                 x = LRmargin, // Add some margin
@@ -272,7 +292,6 @@ public class EverestSplashWindow {
             
             // Render the other
             realWindowWidth /= 2; // Make it half the width
-            SDL.SDL_QueryTexture(windowInfo.startingEverestTexture, out _, out _, out int textW, out int allTextH);
             int textH = allTextH / 3; // theres 3 texts
             SDL.SDL_Rect startingEverestRect = new() { 
                 x = LRmargin,
