@@ -157,8 +157,6 @@ public class EverestSplashWindow {
             // If so, default to 720p on 16:9
             WindowHeight = 720;
             WindowWidth = (int) (720.0 * 16 / 9); // 1280
-            // WindowHeight = 1280;
-            // WindowWidth = 720;
         }
         
         if (SDL.SDL_Init(SDL.SDL_INIT_VIDEO | SDL.SDL_INIT_EVENTS) != 0) { // Init as little as we can, we need to go fast
@@ -219,7 +217,6 @@ public class EverestSplashWindow {
         AnimTimer(500, () => {
             startEverestSpriteIdx = (startEverestSpriteIdx + 1) % 3/*startEverestSpriteCount*/;
         });
-        float bgFloat = Random.Shared.NextSingle(); 
         int realBgH = bgH * WindowWidth / bgW;
         int bgBloomPos = -realBgH/2;
         AnimTimer(16, () => {
@@ -245,7 +242,7 @@ public class EverestSplashWindow {
             }
 
             // BG color generation
-            Color bgColor = LerpColor(bgDark, bgLight, MathF.Abs(bgFloat));
+            Color bgColor = bgDark;
             SDL.SDL_SetRenderDrawColor(windowInfo.renderer, bgColor.R, bgColor.G, bgColor.B, bgColor.A);
             SDL.SDL_RenderClear(windowInfo.renderer);
             
