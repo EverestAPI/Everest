@@ -88,7 +88,7 @@ namespace Celeste {
 
         public static void RefreshLanguages() {
             PostLanguageLoad();
-
+            DialogExt.MissingDialogIDs.Clear();
             Dialog.Language = Dialog.Languages[Dialog.Language.Id];
         }
 
@@ -200,6 +200,9 @@ namespace Celeste {
             if (language != FallbackLanguage)
                 return Get(name, FallbackLanguage);
 
+            if (DialogExt.MissingDialogIDs.Add(name))
+                Logger.Log(LogLevel.Warn, "Dialog", $"Could not get Dialog ID: {name}");
+
             return "[" + name + "]";
         }
 
@@ -219,6 +222,9 @@ namespace Celeste {
             if (language != FallbackLanguage)
                 return Clean(name, FallbackLanguage);
 
+            if (DialogExt.MissingDialogIDs.Add(name))
+                Logger.Log(LogLevel.Warn, "Dialog", $"Could not clean Dialog ID: {name}");
+
             return "{" + name + "}";
         }
 
@@ -227,10 +233,19 @@ namespace Celeste {
         /// Tries to find a value under both "LEVELSET_NAME" and "NAME", otherwise returns name.SpacedPascalCase()
         /// </summary>
         public static string CleanLevelSet(string name) {
-            if (string.IsNullOrEmpty(name)) {
+            if (string.IsNullOrEmpty(name))
                 return Dialog.Clean("levelset_");
-            }
-            return ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull() ?? name.SpacedPascalCase();
+
+            name = name.DialogKeyify();
+
+            string cleaned = ("levelset_" + name).DialogCleanOrNull() ?? name.DialogCleanOrNull();
+            if (cleaned != null)
+                return cleaned;
+
+            if (DialogExt.MissingDialogIDs.Add(name))
+                Logger.Log(LogLevel.Warn, "Dialog", $"Could not clean level set Dialog ID: {name}");
+
+            return name.SpacedPascalCase();
         }
 
     }
@@ -240,6 +255,8 @@ namespace Celeste {
         [Obsolete("Use Dialog.CleanLevelSet instead.")]
         public static string CleanLevelSet(string name)
             => patch_Dialog.CleanLevelSet(name);
+
+        internal static readonly HashSet<string> MissingDialogIDs = new();
 
     }
 }
