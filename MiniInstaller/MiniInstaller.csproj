@@ -21,6 +21,8 @@
   <!-- Set up Piton AppHosts -->
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.HostModel" Version="3.1.16" />
+    <!-- We just use this to reference the types. The assembly will be loaded dynamically. -->
+    <PackageReference Include="Mono.Cecil" Version="0.11.4" PrivateAssets="all" />
 
     <Content Include="..\lib-ext\piton-runtime.yaml" TargetPath="piton-runtime.yaml" CopyToOutputDirectory="always" CopyToPublishDirectory="always" />
   </ItemGroup>

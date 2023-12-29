@@ -16,6 +16,12 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Xml;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using FieldAttributes = Mono.Cecil.FieldAttributes;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
+using ModuleDefinition = Mono.Cecil.ModuleDefinition;
+using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace MiniInstaller {
     public class Program {
@@ -37,7 +43,7 @@ namespace MiniInstaller {
         public static string PathGame;
         public static string PathOSXExecDir;
         public static string PathCelesteExe;
-        public static string PathEverestExe, PathEverestDLL;
+        public static string PathEverestExe, PathEverestDLL, PathEverestExePublic, PathEverestDLLPublic;
         public static string PathEverestLib;
         public static string PathOrig;
         public static string PathLog;
@@ -126,17 +132,21 @@ namespace MiniInstaller {
                         LoadModders();
 
                     ConvertToNETCore(Path.Combine(PathOrig, "Celeste.exe"), PathEverestExe);
+                    
+                    Publicize(PathEverestExe, PathEverestExePublic);
 
                     string everestModDLL = Path.ChangeExtension(PathCelesteExe, ".Mod.mm.dll");
                     string[] mods = new string[] { PathEverestLib, everestModDLL };
                     RunMonoMod(Path.Combine(PathEverestLib, "FNA.dll"), Path.Combine(PathGame, "FNA.dll"), dllPaths: mods); // We need to patch some methods in FNA as well
                     RunMonoMod(PathEverestExe, dllPaths: mods);
+                    RunMonoMod(PathEverestExePublic, dllPaths: mods);
 
                     string hookGenOutput = Path.Combine(PathGame, "MMHOOK_" + Path.ChangeExtension(Path.GetFileName(PathCelesteExe), ".dll"));
                     RunHookGen(PathEverestExe, PathCelesteExe);
                     RunMonoMod(hookGenOutput, dllPaths: mods); // We need to fix some MonoMod crimes, so relink it against the legacy MonoMod layer
 
                     MoveExecutable(PathEverestExe, PathEverestDLL);
+                    MoveExecutable(PathEverestExePublic, PathEverestDLLPublic);
                     CreateRuntimeConfigFiles(PathEverestDLL, new string[] { everestModDLL, hookGenOutput });
                     SetupAppHosts(PathEverestExe, PathEverestDLL, PathEverestDLL);
 
@@ -196,6 +206,8 @@ namespace MiniInstaller {
             // RIP Everest.exe 2019 - 2020
             PathEverestExe = PathCelesteExe;
             PathEverestDLL = Path.ChangeExtension(PathEverestExe, ".dll");
+            PathEverestExePublic = Path.ChangeExtension(PathEverestExe, ".public.exe");
+            PathEverestDLLPublic = Path.ChangeExtension(PathEverestExe, ".public.dll");
             PathEverestLib = Path.Combine(Path.GetDirectoryName(PathEverestExe), "everest-lib");
 
             PathOrig = Path.Combine(PathGame, "orig");
