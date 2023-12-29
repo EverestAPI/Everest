@@ -152,6 +152,8 @@ namespace MiniInstaller {
                     SetupAppHosts(PathEverestExe, PathEverestDLL, PathEverestDLL);
 
                     CombineXMLDoc(Path.ChangeExtension(PathCelesteExe, ".Mod.mm.xml"), Path.ChangeExtension(PathCelesteExe, ".xml"));
+                    
+                    File.Copy(Path.ChangeExtension(PathCelesteExe, ".xml"), Path.ChangeExtension(PathEverestExePublic, ".xml"));
 
                     // If we're updating, start the game. Otherwise, close the window.
                     if (PathUpdate != null) {
