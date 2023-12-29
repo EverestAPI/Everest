@@ -22,6 +22,7 @@ using FieldAttributes = Mono.Cecil.FieldAttributes;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ModuleDefinition = Mono.Cecil.ModuleDefinition;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
+using TypeDefinition = Mono.Cecil.TypeDefinition;
 
 namespace MiniInstaller {
     public class Program {
@@ -709,6 +710,56 @@ namespace MiniInstaller {
                 File.Delete(asmTmp);
                 File.Delete(Path.ChangeExtension(asmTmp, "pdb"));
                 File.Delete(Path.ChangeExtension(asmTmp, "mdb"));
+            }
+        }
+        
+        public static void Publicize(string asmFrom, string asmTo = null) {
+            asmTo ??= asmFrom;
+            
+            LogLine($"Publicizing {asmFrom}");
+            
+            ModuleDefinition module = null;
+            try {
+                // Read the module
+                ReaderParameters readerParams = new ReaderParameters()  { ReadSymbols = true };
+                try {
+                    module = ModuleDefinition.ReadModule(asmFrom, readerParams);
+                } catch (SymbolsNotFoundException) {
+                    readerParams.ReadSymbols = false;
+                    module = ModuleDefinition.ReadModule(asmFrom, readerParams);
+                } catch (SymbolsNotMatchingException) {
+                    readerParams.ReadSymbols = false;
+                    module = ModuleDefinition.ReadModule(asmFrom, readerParams);
+                }
+
+                // Publicize the module
+                foreach (var type in module.Types) {
+                    PublicizeType(type);
+                }
+
+                // Write the publicized module
+                module.Write(asmTo, new WriterParameters() { WriteSymbols = readerParams.ReadSymbols });
+            } finally {
+                module?.Dispose();
+            }
+        }
+        
+        public static void PublicizeType(TypeDefinition type) {
+            type.Attributes &= ~TypeAttributes.VisibilityMask;
+            type.Attributes |= type.IsNested ? TypeAttributes.NestedPublic : TypeAttributes.Public;
+                    
+            foreach (var field in type.Fields) {
+                field.Attributes &= ~FieldAttributes.FieldAccessMask;
+                field.Attributes |= FieldAttributes.Public;    
+            }
+                    
+            foreach (var method in type.Methods) {
+                method.Attributes &= ~MethodAttributes.MemberAccessMask;
+                method.Attributes |= MethodAttributes.Public;    
+            }
+            
+            foreach (var nested in type.NestedTypes) {
+                PublicizeType(nested);
             }
         }
 
